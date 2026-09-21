@@ -109,7 +109,7 @@ export function sheetStateFromCsv(text: string, sheetName = 'Sheet1', separator?
       const parsed = field === '' ? null : parseEntry(field)
       if (parsed) {
         line.push(parsed.value)
-        formats[formatKeyAt(r, c)] = { numFmt: parsed.numFmt }
+        if (parsed.numFmt) formats[formatKeyAt(r, c)] = { numFmt: parsed.numFmt }
         return
       }
       // A leading = would be read as a formula by the workbook, and this

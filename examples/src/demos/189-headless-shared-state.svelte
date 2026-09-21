@@ -16,7 +16,7 @@
     tableFeatures,
     rowSortingFeature,
     type GridColumns,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Row = { name: string; region: string; deals: number }
   const features = tableFeatures({ rowSortingFeature })

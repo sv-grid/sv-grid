@@ -1,5 +1,5 @@
 {
-  "description": "The headless Svelte 5 table: no <SvGrid> component at all. createSvGrid from @svgrid/grid computes the sorted and filtered rows with rowSortingFeature and columnFilteringFeature, and this component renders a plain hand-styled <table> from them. Click a header to sort, type to filter; the engine owns the logic and you own every element of markup.",
+  "description": "The headless Svelte 5 table: no <SvGrid> component at all. createSvGrid from @svgrid/grid/core computes the sorted and filtered rows with rowSortingFeature and columnFilteringFeature, and this component renders a plain hand-styled <table> from them. Click a header to sort, type to filter; the engine owns the logic and you own every element of markup.",
   "keywords": [
     "svelte headless table",
     "svelte 5 headless data grid",
@@ -14,7 +14,7 @@
     },
     {
       "question": "Is the headless engine a separate package?",
-      "answer": "No. createSvGrid and the feature functions are exported from @svgrid/grid alongside the SvGrid component, so you can start headless and adopt the render component later, or use both in one app."
+      "answer": "No. It is a subpath of the same package: import createSvGrid, the row-model factories, the feature functions, the virtualizers and the ARIA helpers from @svgrid/grid/core and nothing from the render component reaches your bundle. The same symbols are also on the main @svgrid/grid barrel, so you can start headless and adopt the SvGrid component later, or use both in one app."
     },
     {
       "question": "How do I make a header sortable in my own markup?",

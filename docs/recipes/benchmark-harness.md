@@ -266,5 +266,5 @@ the assignment brackets exactly that.
 ## See also
 
 - [Profiling with a FPS HUD](./profiling-with-fps-hud.md) - the matching live tool
-- [Bundle size reference](../reference/bundle-size.md) - the per-feature cost
+- [Bundle size reference](../help/bundle-size.md) - the per-feature cost
 - [Million rows recipe](./million-rows.md) - the engineering for very large grids

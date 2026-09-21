@@ -21,6 +21,8 @@ import { linkAt, type LinksMap } from './links'
 import { threadAt, type CommentsMap } from './comments'
 import type { Rect } from './rects'
 import { loadZip, type ZipCtor } from './xlsx-document'
+import { accountingParts, accountingPattern } from './number-format'
+import { autoFilterOds, filteredRows, filtersFromOds } from './filter-files'
 
 // ---------------------------------------------------------------------------
 // XML helpers. Local names throughout, so a document that spells its
@@ -239,11 +241,22 @@ const cellPart = (text: string): string => text.slice(text.lastIndexOf('.') + 1)
 
 /** An ODF data style as the pattern a cell's number format speaks. */
 function patternFromDataStyle(style: Element): string | undefined {
+  const kids = Array.from(style.children)
+  // Excel's accounting format is a currency (or number) style with a fill:
+  // the symbol at the left edge, the figure at the right, spaces between.
+  // Read as the one pattern `accountingPattern` spells, so the cell keeps
+  // the alignment it had rather than becoming a currency amount.
+  if ((style.localName === 'currency-style' || style.localName === 'number-style') && kids.some((k) => k.localName === 'fill-character' && (k.textContent ?? '') === ' ')) {
+    const number = kids.find((k) => k.localName === 'number')
+    if (number) return accountingPattern(kids.find((k) => k.localName === 'currency-symbol')?.textContent ?? '', numAttr(number, 'decimal-places') ?? 0)
+  }
   const parts: string[] = []
   let sawSomething = false
-  for (const node of Array.from(style.children)) {
+  for (const node of kids) {
     switch (node.localName) {
       case 'text': parts.push(quoteLiteral(node.textContent ?? '')); break
+      // A run of one character to the cell's edge: Excel's `*` fill.
+      case 'fill-character': parts.push(`*${(node.textContent ?? ' ').slice(0, 1) || ' '}`); break
       case 'number': {
         sawSomething = true
         const decimals = numAttr(node, 'decimal-places') ?? 0
@@ -480,6 +493,8 @@ export function sheetStateFromOds(parts: Record<string, string>): SheetState {
       const times = blank ? 1 : repeat
       for (let n = 0; n < times; n += 1, row += 1) {
         if (height !== undefined && !blank) rowHeights.push([row, height])
+        // A row the filter folded is hidden too; the document releases the
+        // ones its criteria fold again (see releaseFilteredRows).
         if (shown === 'collapse' || shown === 'filter') hidden.rows.push(row)
         let c = 0
         for (const cellNode of cellNodes) {
@@ -558,9 +573,12 @@ export function sheetStateFromOds(parts: Record<string, string>): SheetState {
     const from = odfCell(fromText ?? '')
     const to = odfCell(toText ?? '')
     if (!from || !to || !from.sheet) continue
-    const entry = entries[from.sheet] ?? Object.entries(entries).find(([name]) => name.toLowerCase() === from.sheet!.toLowerCase())?.[1]
+    const found = Object.entries(entries).find(([name]) => name === from.sheet || name.toLowerCase() === from.sheet!.toLowerCase())
+    const entry = found?.[1]
     if (!entry || entry.autoFilter) continue
-    entry.autoFilter = { range: [from.row, from.col, to.row, to.col] as Rect, filters: {} }
+    const rect = [from.row, from.col, to.row, to.col] as Rect
+    const filterEl = kid(range, 'filter')
+    entry.autoFilter = { range: rect, filters: filterEl ? filtersFromOds(filterEl, rect).filters : {} }
   }
 
   // Defined names: `table:named-expressions` beside the tables.
@@ -710,6 +728,18 @@ const ERROR_TEXT = /^#(REF!|DIV\/0!|VALUE!|NAME\?|NUM!|N\/A|NULL!|SPILL!|CALC!|C
  * which is better than a style that says something untrue.
  */
 function dataStyleXml(pattern: string, name: string): string | null {
+  // Accounting: the symbol at the left edge, the figure at the right, and
+  // ODF's fill character for the space between, which is what LibreOffice
+  // writes for its own. Written as a plain currency style it came back as
+  // one, and the demo's "survives all three formats" was untrue for .ods.
+  const accounting = accountingParts(pattern)
+  if (accounting) {
+    const number = `<number:number number:decimal-places="${accounting.decimals}" number:min-decimal-places="${accounting.decimals}" number:min-integer-digits="1" number:grouping="true"/>`
+    const fill = '<number:fill-character> </number:fill-character>'
+    return accounting.symbol
+      ? `<number:currency-style style:name="${name}"><number:currency-symbol>${esc(accounting.symbol)}</number:currency-symbol>${fill}${number}</number:currency-style>`
+      : `<number:number-style style:name="${name}">${fill}${number}</number:number-style>`
+  }
   const body = pattern.split(';')[0]!.trim()
   if (body === '' || /^general$/i.test(body)) return null
   const dateLike = /[ymdhs]/i.test(body.replace(/"[^"]*"/g, '').replace(/\[[^\]]*\]/g, ''))
@@ -889,7 +919,10 @@ export function documentToOdsParts(doc: SheetDocument): Record<string, string> {
 
   const tables = wb.sheets.map((name) => {
     const state = doc.get(name)
-    const rows = wb.rowCount(name)
+    // The rows the AutoFilter folds away: ODF marks them as filtered, apart
+    // from the ones hidden by hand, and the criteria ride in the database range.
+    const filtered = filteredRows(doc, name)
+    const rows = Math.max(wb.rowCount(name), ...[...filtered].map((r) => r + 1))
     const cols = wb.colCount(name)
     const covered = new Set<string>()
     const spans = new Map<string, { across: number; down: number }>()
@@ -908,7 +941,7 @@ export function documentToOdsParts(doc: SheetDocument): Record<string, string> {
     for (let r = 0; r < rows; r += 1) {
       const height = state.heights.get(r)
       const style = height ? ` table:style-name="${rowName(height)}"` : ''
-      const hiddenRow = state.hidden.rows.has(r) ? ' table:visibility="collapse"' : ''
+      const hiddenRow = state.hidden.rows.has(r) ? ' table:visibility="collapse"' : filtered.has(r) ? ' table:visibility="filter"' : ''
       const cells: string[] = []
       for (let c = 0; c < Math.max(cols, 1); c += 1) {
         if (covered.has(`${r}:${c}`)) { cells.push('<table:covered-table-cell/>'); continue }
@@ -937,8 +970,9 @@ export function documentToOdsParts(doc: SheetDocument): Record<string, string> {
     if (!filter) return ''
     const [r1, c1, r2, c2] = filter.range
     const where = (r: number, c: number) => `${esc(name)}.${colToLetters(c)}${r + 1}`
+    const criteria = autoFilterOds(doc, name)
     return `<table:database-range table:name="__Anonymous_Sheet_DB__${wb.sheets.indexOf(name)}"`
-      + ` table:target-range-address="${where(r1, c1)}:${where(r2, c2)}" table:display-filter-buttons="true"/>`
+      + ` table:target-range-address="${where(r1, c1)}:${where(r2, c2)}" table:display-filter-buttons="true"${criteria ? `>${criteria}</table:database-range>` : '/>'}`
   }).join('')
 
   const content = `${XML_HEAD}<office:document-content ${NS} office:version="1.3">`

@@ -63,7 +63,7 @@ the bottom of the sheet when it grows sideways.
 | Ctrl/Cmd + Shift + ; | Stamp the current time. |
 | Ctrl/Cmd + ' | Copy the cell above, unchanged. |
 | Ctrl/Cmd + Shift + " | Copy the value of the cell above: what a formula there shows, as a number or text. |
-| Alt + = | AutoSum the run above, or to the left. |
+| Alt + = | AutoSum the run above, or to the left. With one cell selected the `=SUM(...)` is proposed in the cell's editor, as Excel's is, so the range can be corrected before Enter takes it; a wider selection has it written outright. |
 | F4 (while editing) | Turn the reference at the caret through `$A$1`, `A$1`, `$A1`, `A1`; a range turns both ends. Also in the formula bar. |
 | Alt + Enter (while editing) | A line break in the cell, which turns on Wrap Text. |
 | Enter after a run of Tabs | Down a row and back to the column the run began in. |
@@ -118,8 +118,11 @@ on a plain grid, `setRibbonActionHandler` decides what answers.
 A command that needs the clipboard calls `cmd.copy()`, `cmd.cut()` or
 `cmd.paste()` on its `GridCommandContext`: the selection copy, cut and
 paste that Ctrl+C, Ctrl+X and Ctrl+V run, cell by cell through
-`processCellForClipboard`. The api's `copyToClipboard` is something else,
-the export of the displayed rows with their headers.
+`processCellForClipboard`. A collapsed row is left out of a copy and a fill unless
+the grid's `includeCollapsedRows` says otherwise for it, which is how a
+spreadsheet copies a row hidden by hand and skips one a filter folded, and fills the same way. The
+api's `copyToClipboard` is something else, the export of the displayed
+rows with their headers.
 
 ### Workbook
 
@@ -185,6 +188,16 @@ nothing above it declines, and the key falls through to the grid.
 
 While a cell editor is open, every shortcut here declines, so nothing swallows
 a keystroke you meant for the editor.
+
+## Escape closes what is open
+
+Escape backs out of whatever is in front, the way Excel's does: the marching
+ants after a copy, an open right-click menu, or a dialog. A right-click menu
+closes on Escape as well as on a click away, so a keyboard user who opened it
+is never trapped under it. A dialog opens with focus on its first control -
+the active tab or the first field - never the header close button, so Enter
+runs the dialog's primary action rather than dismissing it the instant it
+opens; Escape closes it and hands focus back to the cells.
 
 ## Binding your own
 

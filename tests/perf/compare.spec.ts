@@ -26,6 +26,9 @@ type GridResult = {
   filter: number
   scrollP95: number
   scrollDropped: number
+  tickP95: number
+  tickOverBudget: number
+  tickSortHeld: boolean
   domRows: number
   error?: string
 }
@@ -43,7 +46,11 @@ test('grid comparison', async ({ page }) => {
     if (m.type() === 'error') errors.push(m.text())
   })
 
-  const url = `http://localhost:5174/bench.html?rows=${ROWS}&repeats=${REPEATS}&grids=${GRIDS}`
+  // SVGRID_BENCH_PORT: a private examples server (`npx vite --port N` in
+  // examples/) when :5174 is held by a hand-started one whose Vite dep cache
+  // reloads the page mid-run.
+  const PORT = process.env.SVGRID_BENCH_PORT ?? '5174'
+  const url = `http://localhost:${PORT}/bench.html?rows=${ROWS}&repeats=${REPEATS}&grids=${GRIDS}`
 
   // Warm Vite's dependency optimizer before measuring anything. The adapters
   // import their grids lazily, so the first run discovers new dependencies
@@ -115,7 +122,7 @@ test('grid comparison', async ({ page }) => {
   console.log(`\n  Grid comparison - ${ROWS.toLocaleString()} rows x 9 columns, median of ${REPEATS}\n`)
   console.log(
     `    ${pad('grid', 24)} ${rpad('mount', 9)} ${rpad('sort txt', 9)} ${rpad('sort num', 9)} ` +
-    `${rpad('filter', 8)} ${rpad('scroll p95', 11)} ${rpad('dropped', 8)} ${rpad('DOM rows', 9)}`,
+    `${rpad('filter', 8)} ${rpad('scroll p95', 11)} ${rpad('dropped', 8)} ${rpad('tick p95', 9)} ${rpad('over', 6)} ${rpad('DOM rows', 9)}`,
   )
   for (const r of results) {
     if (r.error) {
@@ -125,14 +132,15 @@ test('grid comparison', async ({ page }) => {
     console.log(
       `    ${pad(r.grid, 24)} ${rpad(num(r.mount), 9)} ${rpad(num(r.sortText), 9)} ` +
       `${rpad(num(r.sortNumber), 9)} ${rpad(num(r.filter), 8)} ${rpad(num(r.scrollP95), 11)} ` +
-      `${rpad(r.scrollDropped + '/180', 8)} ${rpad(r.domRows, 9)}`,
+      `${rpad(r.scrollDropped + '/180', 8)} ${rpad(num(r.tickP95) + (r.tickSortHeld ? '' : '!'), 9)} ${rpad(r.tickOverBudget, 6)} ${rpad(r.domRows, 9)}`,
     )
   }
   for (const r of results) {
     if (!r.error) console.log(`      ${r.grid}: ${r.version}, ${r.license}`)
   }
   console.log('\n    Lower is better except DOM rows, which shows virtualization is on.')
-  console.log('    Filter is indicative only - see the note in examples/src/bench/run.ts.\n')
+  console.log('    Filter is indicative only - see the note in examples/src/bench/run.ts.')
+  console.log('    A tick p95 marked ! means the grid did not keep the sort across the ticks.\n')
 
   if (errors.length) console.log(`    Page errors: ${errors.slice(0, 5).join(' | ')}\n`)
 

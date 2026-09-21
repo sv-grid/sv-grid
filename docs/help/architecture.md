@@ -130,15 +130,16 @@ mutate DOM nodes during a sort.
   primitive, drop `<SvGrid>` and read from `createSvGrid()` directly.
 - **Layer 2 is the public API surface.** Imports, exports, and types
   are versioned per the [API stability](./api-stability.md) policy.
-  The renderer's CSS classes are NOT - override them at your peril.
+  The `--sg-*` tokens are versioned too (the core set is not renamed in a minor).
+  The renderer's CSS classes and DOM structure are NOT - override them at your peril.
 
 ## Where the layers physically live
 
 | Layer | Source path                                       | Build output                         |
 | ----- | ------------------------------------------------- | ------------------------------------ |
 | 1     | Your app                                          | n/a                                  |
-| 2     | `packages/grid/src/core.ts` + row-models | `dist/index.js` (~2 kB gzip)     |
-| 3     | `packages/grid/src/SvGrid.svelte`    | bundled with the engine (~77 kB gzip + 9 kB CSS) |
+| 2     | `packages/grid/src/core.ts` + row-models | `dist/headless.js`, the `@svgrid/grid/core` entry (size in the [bundle size reference](./bundle-size.md)) |
+| 3     | `packages/grid/src/SvGrid.svelte`    | `dist/index.js`, bundled with the engine (size in the same reference) |
 |       | `packages/enterprise/src/{export,print,import,ai}.ts` | `@svgrid/enterprise/dist/*` (lazy-loaded peers) |
 
 ## Frequently asked questions

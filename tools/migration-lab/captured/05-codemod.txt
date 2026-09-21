@@ -1,0 +1,62 @@
+# 05 @svgrid/migrate 3.0.1, run from packages/migrate in this checkout (published as npx @svgrid/migrate): preview, then --write
+# captured 2026-09-20 by tools/migration-lab/run.mjs on win32 x64
+# node v24.18.0, npm 11.16.0, svelte 5.57.1, svelte-check 4.7.6, typescript 5.9.3, svelte-headless-table 0.18.3, @svgrid/grid not installed
+$ node packages/migrate/index.mjs src
+
+--- src\PeopleTable.svelte ---
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+  import type { Person } from './people'
+  export let people: Person[] = []
+  export let pageSize = 5
+
+  const columns: GridColumns<(typeof people)[number]> = [
+    {
+      header: 'Name',
+      field: 'name',
+    },
+    {
+      header: 'Department',
+      field: 'department',
+    },
+    {
+      header: 'City',
+      field: 'city',
+    },
+    {
+      header: 'Salary',
+      field: 'salary',
+      // TODO port: cell: ({ value }) => value.toLocaleString('en-US', { style: 'currency', currency: 'USD
+    },
+  ]
+</script>
+
+<SvGrid data={people} {columns} sortable filterable showColumnFilters pageable pageSize={pageSize} />
+
+<p>
+  {shown} rows, page {$pageIndex + 1} of {$pageCount}
+  <button on:click={() => ($pageIndex = Math.max(0, $pageIndex - 1))}>Previous</button>
+  <button on:click={() => ($pageIndex = Math.min($pageCount - 1, $pageIndex + 1))}>Next</button>
+</p>
+
+  warning A custom `cell` renderer was found. SvGrid renders cells with a snippet, not `createRender`, so this one needs porting by hand - it is preserved as a comment.
+  warning The template still reads `pageIndex`, `pageCount`, `shown` from the view model, which is gone. <SvGrid> renders its own pager and row count (`pageable`, `showPagination`), so remove that markup, or read the grid through `onApiReady` if you need the numbers.
+  warning The table markup dispatched `select` from a row; that handler went with the `<tr>`. Wire it to `onRowClick={({ row }) => ...}` (or `onCellClick`) on <SvGrid>, and turn the `createEventDispatcher` into a callback prop if the component is moving to runes.
+  note    Column resizing, keyboard navigation and ARIA grid semantics are built into <SvGrid>; the markup that provided them is intentionally gone.
+
+1 file(s) would change, with 3 warning(s).
+Re-run with --write to apply.
+
+(exit 0)
+
+$ node packages/migrate/index.mjs src --write
+migrated src\PeopleTable.svelte
+  warning A custom `cell` renderer was found. SvGrid renders cells with a snippet, not `createRender`, so this one needs porting by hand - it is preserved as a comment.
+  warning The template still reads `pageIndex`, `pageCount`, `shown` from the view model, which is gone. <SvGrid> renders its own pager and row count (`pageable`, `showPagination`), so remove that markup, or read the grid through `onApiReady` if you need the numbers.
+  warning The table markup dispatched `select` from a row; that handler went with the `<tr>`. Wire it to `onRowClick={({ row }) => ...}` (or `onCellClick`) on <SvGrid>, and turn the `createEventDispatcher` into a callback prop if the component is moving to runes.
+  note    Column resizing, keyboard navigation and ARIA grid semantics are built into <SvGrid>; the markup that provided them is intentionally gone.
+
+Rewrote 1 file(s). 3 warning(s) to review.
+Run your type-checker and tests - the markup is regenerated, not edited.
+
+(exit 0)

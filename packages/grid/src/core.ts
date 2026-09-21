@@ -786,12 +786,29 @@ type BaseRowCtx<TData extends RowData> = {
 const ROW_CTX = Symbol('svgrid.row.ctx')
 const ROW_VALUES = Symbol('svgrid.row.values')
 const ROW_CELLS = Symbol('svgrid.row.cells')
+// Where the filtered stage last put this row: the generation of that full
+// filter and the row's index in its output. Lets a tick swap a replaced row
+// into place without re-filtering everything (see createFilteredRowModel).
+const ROW_FILTER_GEN = Symbol('svgrid.row.filterGen')
+const ROW_FILTER_POS = Symbol('svgrid.row.filterPos')
+// Stamped on the rows a sort repair drops, so the merge skips them with one
+// property read per row instead of a Set lookup (3 ms per 100k rows).
+const ROW_SORT_DROPPED = Symbol('svgrid.row.sortDropped')
+// The key(s) the last full sort computed for a row: the key itself for a
+// one-clause sort, an array for several. Read by the repair path so a tick
+// never recomputes a kept row's key.
+const ROW_SORT_KEY = Symbol('svgrid.row.sortKey')
+let sortDropGeneration = 0
 
 /** A base row's private fields, on top of the public {@link Row} surface. */
 type BaseRowState<TData extends RowData> = Row<TData> & {
   [ROW_CTX]: BaseRowCtx<TData>
   [ROW_VALUES]: Array<unknown> | null
   [ROW_CELLS]: Array<Cell<TData>> | null
+  [ROW_FILTER_GEN]: number
+  [ROW_FILTER_POS]: number
+  [ROW_SORT_DROPPED]: number
+  [ROW_SORT_KEY]: unknown
 }
 
 /**
@@ -912,9 +929,26 @@ export function createCoreRowModel<TData extends RowData>(): RowModelFactory<TDa
  * `columnFilteringFeature`; without it there are no filters to apply.
  */
 export function createFilteredRowModel<TData extends RowData>(): RowModelFactory<TData> {
+  /**
+   * The last full filter, so a tick can repair it. When `getRowModel`
+   * reports which rows were replaced (`replacedRowsOf`) and the filter state
+   * and columns are the same objects as last time, each replacement is tested
+   * on its own: a row that stays in keeps its slot, a row that stays out
+   * stays out, and a row whose membership flips sends the whole thing back
+   * through the full pass, because an insertion has to land in data order.
+   * Positions come from stamps on the rows (ROW_FILTER_GEN / ROW_FILTER_POS)
+   * written by the full pass; no map is built.
+   */
+  let cache: { input: Array<Row<TData>>; output: Array<Row<TData>>; filters: ColumnFiltersState; columns: Array<Column<TData>>; gen: number } | null = null
+  let generation = 0
+
   return ({ table, rows }) => {
     const filters: ColumnFiltersState = table.getState().columnFilters ?? []
-    if (!filters.length) return rows
+    if (!filters.length) {
+      cache = null
+      return rows
+    }
+    const columns = table.getAllColumns()
 
     // Resolve each filter's match function once, outside the row loop.
     const compiled = filters.map((filter) => ({
@@ -922,8 +956,7 @@ export function createFilteredRowModel<TData extends RowData>(): RowModelFactory
       value: filter.value,
       fn: filter.fn ? filterFns[filter.fn] : filterFns.includesString,
     }))
-
-    return rows.filter((row) => {
+    const passes = (row: Row<TData>) => {
       for (let i = 0; i < compiled.length; i++) {
         const filter = compiled[i]!
         // `getCellValueByColumnId` rather than `getAllCells().find(...)`.
@@ -935,7 +968,48 @@ export function createFilteredRowModel<TData extends RowData>(): RowModelFactory
         if (!filter.fn(row.getCellValueByColumnId(filter.id), filter.value as any)) return false
       }
       return true
-    })
+    }
+
+    if (cache && cache.filters === filters && cache.columns === columns) {
+      if (cache.input === rows) return cache.output
+      const replaced = replacedRowsOf(table)
+      if (replaced && rows.length === cache.input.length) {
+        let out: Array<Row<TData>> | null = null
+        let ok = true
+        for (let i = 0; i < rows.length && ok; i++) {
+          const prev = cache.input[i]! as BaseRowState<TData>
+          const next = rows[i]! as BaseRowState<TData>
+          if (next === prev) continue
+          if (replaced.get(prev) !== next) { ok = false; break }
+          const wasIn = prev[ROW_FILTER_GEN] === cache.gen
+          const isIn = passes(next)
+          if (wasIn !== isIn) { ok = false; break }
+          if (!isIn) continue
+          out ??= cache.output.slice()
+          const pos = prev[ROW_FILTER_POS]
+          out[pos] = next
+          next[ROW_FILTER_GEN] = cache.gen
+          next[ROW_FILTER_POS] = pos
+        }
+        if (ok) {
+          const output = out ?? cache.output
+          cache = { ...cache, input: rows, output }
+          return output
+        }
+      }
+    }
+
+    const gen = ++generation
+    const output: Array<Row<TData>> = []
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]! as BaseRowState<TData>
+      if (!passes(row)) continue
+      row[ROW_FILTER_GEN] = gen
+      row[ROW_FILTER_POS] = output.length
+      output.push(row)
+    }
+    cache = { input: rows, output, filters, columns, gen }
+    return output
   }
 }
 /**
@@ -1225,6 +1299,15 @@ export function flattenTreeData<T extends RowData>(
 export function createExpandedRowModel<TData extends RowData>(): RowModelFactory<TData> {
   return ({ table, rows }) => {
     const expanded: ExpandedState = table.getState().expanded ?? {}
+    // Nothing expanded means every collapsed row hides its children and the
+    // output is the input, element for element. Returning it as is keeps the
+    // array identity the stages downstream and the render window key on, and
+    // skips a 100k-element copy per data change on a flat grid.
+    let anyExpanded = false
+    for (const id in expanded) {
+      if (expanded[id]) { anyExpanded = true; break }
+    }
+    if (!anyExpanded) return rows
     const flattened: Array<Row<TData>> = []
     const visit = (row: Row<TData>) => {
       flattened.push(row)
@@ -1241,13 +1324,68 @@ export function createExpandedRowModel<TData extends RowData>(): RowModelFactory
  * override the built-in {@link sortFns} - useful for locale-aware or
  * domain-specific ordering.
  */
+/**
+ * Which rows the last `getRowModel` rebuild replaced, old row -> new row, for
+ * the duration of the pipeline run that follows it.
+ *
+ * A live feed replaces a few hundred row objects in a hundred-thousand-row
+ * array and hands the grid the new array. The base rows are rebuilt reusing
+ * every row whose data object is the same (see `getRowModel`), so the rebuild
+ * knows exactly which rows are new. The filtered and sorted stages read that
+ * here and repair their previous output instead of recomputing it, when the
+ * replacements are few and nothing else changed. Cleared after the run; a
+ * stage that reads it outside a run sees null and does the full work.
+ *
+ * Keyed on the grid object in a WeakMap rather than carried on the public
+ * `SvGrid` type, so the stage signature stays `({ table, rows }) => rows`.
+ */
+const replacedRowsByGrid = new WeakMap<object, ReadonlyMap<Row<any>, Row<any>> | null>()
+
+/** The rows `getRowModel` replaced in the rebuild this pipeline run follows, or null. */
+export function replacedRowsOf(table: SvGrid<any>): ReadonlyMap<Row<any>, Row<any>> | null {
+  return replacedRowsByGrid.get(table) ?? null
+}
+
 export function createSortedRowModel<TData extends RowData>(
   localSortFns: typeof sortFns = sortFns,
 ): RowModelFactory<TData> {
-  return function sortedRowModelStage({ table, rows }) {
-    const sorting = table.getState().sorting ?? []
-    if (!sorting.length) return rows
+  /**
+   * What the last full sort produced, kept so a tick can repair it.
+   *
+   * A live feed replaces a few hundred row objects out of a hundred thousand
+   * and hands the grid a new array. Re-sorting all of it costs the same as
+   * the first sort did (115-149 ms in the browser for 100k rows, see
+   * docs/help/benchmarks.md); the order it would produce differs from the
+   * previous one only where the replaced rows land. So the previous output
+   * is kept, with its sort keys aligned to it, and when `getRowModel` says
+   * which rows were replaced (see `replacedRowsOf`) the stage drops those,
+   * sorts the replacements among themselves and merges them back in one
+   * linear pass: O(n + k log k) instead of O(n log n) key builds and
+   * comparisons.
+   *
+   * The repair is only attempted when everything else is the same object as
+   * last time - the sorting state, the columns, and every input row except
+   * the replaced ones - and it produces exactly what the full sort would:
+   * equal keys fall back to the data index, which is the order a stable sort
+   * over data-ordered input keeps.
+   */
+  let cache: {
+    input: Array<Row<TData>>
+    output: Array<Row<TData>>
+    sorting: SortingState
+    columns: Array<Column<TData>>
+    clauses: Array<SortClause>
+  } | null = null
 
+  type SortClause = {
+    desc: boolean
+    compare: (a: any, b: any) => number
+    /** The key for one row, or `MISSING_KEY` when it cannot be produced incrementally. */
+    keyOf: (row: Row<TData>) => any
+  }
+  const MISSING_KEY = Symbol('svgrid.sort.missing-key')
+
+  function fullSort(rows: Array<Row<TData>>, sorting: SortingState, allColumns: Array<Column<TData>>) {
     // Resolve every clause ONCE, before sorting.
     //
     // This used to live inside the comparator, so `getAllColumns().find(...)`
@@ -1255,11 +1393,11 @@ export function createSortedRowModel<TData extends RowData>(
     // 1,528,947 array scans, and a three-clause sort made 3,933,751 (measured;
     // `pnpm bench --case=sort-1col`). The comparator is called O(n log n)
     // times, so anything inside it that is not O(1) sets the cost of the sort.
-    const allColumns = table.getAllColumns()
     const clauses: Array<{
       keys: Array<any>
       desc: boolean
       compare: (a: any, b: any) => number
+      keyOf: (row: Row<TData>) => any
     }> = []
 
     for (const clause of sorting) {
@@ -1288,14 +1426,15 @@ export function createSortedRowModel<TData extends RowData>(
       const n = rows.length
       let keys: Array<any> = new Array(n)
       let compare: (a: any, b: any) => number
+      let keyOf: (row: Row<TData>) => any
 
       if (comparator === sortFns.number) {
-        for (let i = 0; i < n; i++) keys[i] = Number(rows[i]!.getCellValueByColumnId(columnId) ?? 0)
+        keyOf = (row) => Number(row.getCellValueByColumnId(columnId) ?? 0)
+        for (let i = 0; i < n; i++) keys[i] = keyOf(rows[i]!)
         compare = compareNumericKeys
       } else if (comparator === sortFns.date) {
-        for (let i = 0; i < n; i++) {
-          keys[i] = new Date(rows[i]!.getCellValueByColumnId(columnId) as any).getTime()
-        }
+        keyOf = (row) => new Date(row.getCellValueByColumnId(columnId) as any).getTime()
+        for (let i = 0; i < n; i++) keys[i] = keyOf(rows[i]!)
         compare = compareNumericKeys
       } else if (comparator === sortFns.auto) {
         const strings: string[] = new Array(n)
@@ -1354,19 +1493,24 @@ export function createSortedRowModel<TData extends RowData>(
           for (let i = 0; i < ordered.length; i++) rankOf.set(ordered[i]!, i)
           for (let i = 0; i < n; i++) keys[i] = rankOf.get(strings[i]!)!
           compare = compareNumericKeys
+          // A replacement whose text is not among the ranked values has no
+          // rank; the repair path treats that as "sort everything again".
+          keyOf = (row) => rankOf.get(String(row.getCellValueByColumnId(columnId))) ?? MISSING_KEY
         } else {
           keys = strings
           compare = compareCollatedKeys
+          keyOf = (row) => String(row.getCellValueByColumnId(columnId))
         }
       } else {
-        for (let i = 0; i < n; i++) keys[i] = rows[i]!.getCellValueByColumnId(columnId)
+        keyOf = (row) => row.getCellValueByColumnId(columnId)
+        for (let i = 0; i < n; i++) keys[i] = keyOf(rows[i]!)
         compare = comparator
       }
 
-      clauses.push({ keys, desc: clause.desc, compare })
+      clauses.push({ keys, desc: clause.desc, compare, keyOf })
     }
 
-    if (!clauses.length) return rows
+    if (!clauses.length) return null
 
     // Sort an index array, then materialise. `Array.prototype.sort` is stable,
     // so equal keys keep their original relative order exactly as the previous
@@ -1415,7 +1559,159 @@ export function createSortedRowModel<TData extends RowData>(
 
     const sorted = new Array<Row<TData>>(rows.length)
     for (let i = 0; i < order.length; i++) sorted[i] = rows[order[i]!]!
-    return sorted
+    // Each row keeps its key(s), so a later tick can place a replacement
+    // among the kept rows without reading any of them again. One property
+    // write per row; an array per row only when there are several clauses.
+    if (clauses.length === 1) {
+      const keys = clauses[0]!.keys
+      for (let i = 0; i < rows.length; i++) (rows[i] as any)[ROW_SORT_KEY] = keys[i]
+    } else {
+      for (let i = 0; i < rows.length; i++) {
+        const per = new Array(clauses.length)
+        for (let k = 0; k < clauses.length; k++) per[k] = clauses[k]!.keys[i]
+        ;(rows[i] as any)[ROW_SORT_KEY] = per
+      }
+    }
+    return { sorted, clauses: clauses.map(({ desc, compare, keyOf }) => ({ desc, compare, keyOf })) }
+  }
+
+  /**
+   * The previous output with the replaced rows swapped for their
+   * replacements, in sorted position. Null when the input is not the cached
+   * input plus replacements, or a replacement has no incremental key.
+   *
+   * Every row carries the key(s) the last full sort computed for it
+   * (ROW_SORT_KEY: the key itself for one clause, an array for several), so
+   * the merge moves row references and nothing else. At 100k rows the loop
+   * that also copied an aligned key array cost 3.7 ms; this one is the
+   * reference copy alone.
+   */
+  function repair(rows: Array<Row<TData>>, replaced: ReadonlyMap<Row<any>, Row<any>>) {
+    const c = cache!
+    if (rows.length !== c.input.length) return null
+    // Which rows of THIS stage's input changed. The map may name rows a
+    // stage upstream filtered out; only the ones that reach here matter.
+    const dropGen = ++sortDropGeneration
+    const added: Array<Row<TData>> = []
+    for (let i = 0; i < rows.length; i++) {
+      const prev = c.input[i]!
+      const next = rows[i]!
+      if (next === prev) continue
+      if (replaced.get(prev) !== next) return null
+      ;(prev as any)[ROW_SORT_DROPPED] = dropGen
+      added.push(next)
+    }
+    if (!added.length) return c.output
+
+    const clauses = c.clauses
+    const single = clauses.length === 1
+    for (let j = 0; j < added.length; j++) {
+      const row = added[j]! as any
+      if (single) {
+        const key = clauses[0]!.keyOf(row)
+        if (key === MISSING_KEY) return null
+        row[ROW_SORT_KEY] = key
+      } else {
+        const keys = new Array(clauses.length)
+        for (let k = 0; k < clauses.length; k++) {
+          const key = clauses[k]!.keyOf(row)
+          if (key === MISSING_KEY) return null
+          keys[k] = key
+        }
+        row[ROW_SORT_KEY] = keys
+      }
+    }
+
+    // Keys first, then the data index: the tie-break a stable sort over
+    // data-ordered input applies, so the merge lands where a full sort would.
+    const prevOut = c.output
+    const compareRows = single
+      ? (() => {
+          const { compare, desc } = clauses[0]!
+          return (a: Row<TData>, b: Row<TData>) => {
+            const r = compare((a as any)[ROW_SORT_KEY], (b as any)[ROW_SORT_KEY])
+            if (r !== 0) return desc ? -r : r
+            return a.index - b.index
+          }
+        })()
+      : (a: Row<TData>, b: Row<TData>) => {
+          const ka = (a as any)[ROW_SORT_KEY]
+          const kb = (b as any)[ROW_SORT_KEY]
+          for (let k = 0; k < clauses.length; k++) {
+            const clause = clauses[k]!
+            const r = clause.compare(ka[k], kb[k])
+            if (r !== 0) return clause.desc ? -r : r
+          }
+          return a.index - b.index
+        }
+
+    // Sort the replacements among themselves (k log k)...
+    added.sort(compareRows)
+
+    // ...find where each one goes in the previous output by binary search
+    // (k log n comparisons, against the dropped rows too - they are skipped
+    // below, which does not move an insertion point)...
+    const n = prevOut.length
+    const insertAt = new Array<number>(added.length)
+    let lo = 0
+    for (let j = 0; j < added.length; j++) {
+      // Monotone: the replacements are sorted, so each search starts where
+      // the previous one landed.
+      const row = added[j]!
+      let hi = n
+      while (lo < hi) {
+        const mid = (lo + hi) >>> 1
+        if (compareRows(row, prevOut[mid]!) < 0) hi = mid
+        else lo = mid + 1
+      }
+      insertAt[j] = lo
+    }
+
+    // ...then one linear pass that only moves references.
+    const out = new Array<Row<TData>>(rows.length)
+    let w = 0
+    let j = 0
+    let nextInsert = insertAt[0] ?? -1
+    for (let i = 0; i < n; i++) {
+      while (nextInsert === i) {
+        out[w++] = added[j++]!
+        nextInsert = j < added.length ? insertAt[j]! : -1
+      }
+      const prev = prevOut[i]!
+      if ((prev as any)[ROW_SORT_DROPPED] === dropGen) continue
+      out[w++] = prev
+    }
+    while (j < added.length) out[w++] = added[j++]!
+    return out
+  }
+
+  return function sortedRowModelStage({ table, rows }) {
+    const sorting = table.getState().sorting ?? []
+    if (!sorting.length) {
+      cache = null
+      return rows
+    }
+    const columns = table.getAllColumns()
+
+    if (cache && cache.sorting === sorting && cache.columns === columns) {
+      if (cache.input === rows) return cache.output
+      const replaced = replacedRowsOf(table)
+      if (replaced) {
+        const repaired = repair(rows, replaced)
+        if (repaired) {
+          cache = { ...cache, input: rows, output: repaired }
+          return repaired
+        }
+      }
+    }
+
+    const full = fullSort(rows, sorting, columns)
+    if (!full) {
+      cache = null
+      return rows
+    }
+    cache = { input: rows, output: full.sorted, sorting, columns, clauses: full.clauses }
+    return full.sorted
   }
 }
 
@@ -1545,6 +1841,8 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
   let cachedBaseRowsInput: ReadonlyArray<TData> | null = null
   let cachedBaseRowsColumns: Array<Column<TData>> | null = null
   let cachedBaseRows: Array<Row<TData>> = []
+  /** Old row -> new row for the rebuild the next pipeline run follows; see `replacedRowsOf`. */
+  let replacedRows: Map<Row<TData>, Row<TData>> | null = null
   let cachedRowCtx: BaseRowCtx<TData> | null = null
   let cachedRowModel: RowModel<TData> | null = null
   let cachedRowModelBaseRows: Array<Row<TData>> | null = null
@@ -1754,7 +2052,11 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
     },
     getRowModel() {
       const columns = grid.getAllColumns()
-      if (cachedBaseRowsInput !== options.data || cachedBaseRowsColumns !== columns) {
+      // Read once. `options.data` is a getter when <SvGrid> drives the engine
+      // (a $state.raw signal), and the rebuild below touched it twice per row:
+      // 200k tracked reads per 100k-row tick, 11 ms of a 65 ms tick.
+      const data = options.data
+      if (cachedBaseRowsInput !== data || cachedBaseRowsColumns !== columns) {
         // Same columns as last time: the shared context still describes them,
         // and a row whose data object sits at the same index can keep its
         // row object. A row model that streams blocks hands the grid a new
@@ -1764,7 +2066,11 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
         // an app may have changed the object in place before passing a new
         // array - that is the case the old rebuild covered by accident.
         const previous = cachedBaseRowsColumns === columns && cachedRowCtx ? cachedBaseRows : null
-        cachedBaseRowsInput = options.data
+        // Same length as last time: a replacement, not an add or remove, so
+        // each new row stands in for the old row at its index and the stages
+        // can repair rather than recompute. Anything else is structural.
+        replacedRows = previous && previous.length === data.length ? new Map() : null
+        cachedBaseRowsInput = data
         cachedBaseRowsColumns = columns
         // O(1) column-id → index lookup so getCellValueByColumnId doesn't do
         // a linear `findIndex` on every cell read (was O(rows × cells × cols)).
@@ -1786,7 +2092,7 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
           cachedRowCtx = rowCtx
         }
 
-        cachedBaseRows = new Array(options.data.length)
+        cachedBaseRows = new Array(data.length)
         const getRowId = options.getRowId
         const m = BASE_ROW_METHODS as unknown as {
           getCanExpand: Row<TData>['getCanExpand']
@@ -1797,8 +2103,8 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
           getAllCells: Row<TData>['getAllCells']
           getCellValueByColumnId: Row<TData>['getCellValueByColumnId']
         }
-        for (let index = 0; index < options.data.length; index++) {
-          const original = options.data[index]!
+        for (let index = 0; index < data.length; index++) {
+          const original = data[index]!
           const kept = previous?.[index] as BaseRowState<TData> | undefined
           if (kept && kept.original === original) {
             kept[ROW_VALUES] = null
@@ -1806,6 +2112,9 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
             cachedBaseRows[index] = kept
             continue
           }
+          // Past a quarter of the rows the merge stops being cheaper than a
+          // sort with the ranking pass; let the stages do the full work.
+          if (replacedRows && replacedRows.size * 4 >= data.length) replacedRows = null
           // `_values` and `_cells` stay null until something reads them - a
           // 100k-row grid showing twenty rows must not materialise every row's
           // values or cell objects to paint.
@@ -1817,6 +2126,10 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
             [ROW_CTX]: rowCtx,
             [ROW_VALUES]: null,
             [ROW_CELLS]: null,
+            [ROW_FILTER_GEN]: 0,
+            [ROW_FILTER_POS]: -1,
+            [ROW_SORT_DROPPED]: 0,
+            [ROW_SORT_KEY]: undefined,
             getCanExpand: m.getCanExpand,
             getIsExpanded: m.getIsExpanded,
             toggleExpanded: m.toggleExpanded,
@@ -1826,7 +2139,15 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
             getCellValueByColumnId: m.getCellValueByColumnId,
           }
           cachedBaseRows[index] = row
+          if (replacedRows && kept) replacedRows.set(kept, row)
         }
+        // A new array with every object the same is the documented way to
+        // say "I changed rows in place, re-read them" (docs/help/cells/
+        // view-refresh.md). Nothing was replaced, so there is nothing to
+        // repair around: the stages recompute from the current values. A
+        // repair assumes the rows it keeps are unchanged in value as well as
+        // identity, which is the immutable-update contract a tick follows.
+        if (replacedRows && replacedRows.size === 0) replacedRows = null
       }
 
       // Only the slices a pipeline stage actually READS belong in this key.
@@ -1873,9 +2194,17 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
         pipeline.expandedRowModel,
         pipeline.paginatedRowModel,
       ]
-      ordered.forEach((fn) => {
-        if (fn) rows = fn({ table: grid, rows })
-      })
+      // The stages read the replacements through `replacedRowsOf` while the
+      // run lasts; a stage that runs outside one sees null.
+      replacedRowsByGrid.set(grid, replacedRows)
+      try {
+        ordered.forEach((fn) => {
+          if (fn) rows = fn({ table: grid, rows })
+        })
+      } finally {
+        replacedRowsByGrid.set(grid, null)
+        replacedRows = null
+      }
       cachedPipeline = options._rowModels
       cachedSlices = currentSlices
       cachedRowModelBaseRows = cachedBaseRows

@@ -97,8 +97,74 @@ export type GridResult = {
   filter: number
   scrollP95: number
   scrollDropped: number
+  /** p95 wall time of one tick (TICK_ROWS rows replaced, sorted by that column), ms. */
+  tickP95: number
+  /** Ticks, of TICK_FRAMES, that took longer than one 60 Hz frame. */
+  tickOverBudget: number
+  /** Whether the first rows were still in sorted order after the ticks. */
+  tickSortHeld: boolean
   domRows: number
   error?: string
+}
+
+/** Rows replaced per tick, ticks per measurement, and the frame budget a tick is held to. */
+export const TICK_ROWS = 1_000
+export const TICK_FRAMES = 180
+const FRAME_BUDGET_MS = 1000 / 60
+
+/**
+ * A live feed against a grid sorted by the column that ticks.
+ *
+ * Each tick replaces TICK_ROWS row objects (new `amount`, everything else
+ * the same object) in a fresh copy of the array and hands it to the adapter
+ * on the grid's own update path; the tick's time runs until the changed
+ * cells are painted. Sorted by `amount` first, so every tick has to keep
+ * the order current, which is what a blotter asks of a grid. p95 rather
+ * than mean for the same reason as the scroll figure: one long tick a
+ * second is the stutter a user sees.
+ */
+async function measureTicks(adapter: GridAdapter, rows: BenchRow[], frames: number) {
+  // An adapter without an update path (a local one written before the tick
+  // case existed) reports n/a rather than failing the whole run.
+  if (!adapter.update) return { p95: NaN, overBudget: NaN, sortHeld: false }
+  const update = adapter.update.bind(adapter)
+  await adapter.sort('amount', true)
+  let current = rows
+  // Seeded, so every grid ticks the same rows to the same values.
+  let seed = 0x7a11
+  const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 0xffffffff)
+  const tick = () => {
+    const next = current.slice()
+    const changed: BenchRow[] = []
+    const picked = new Set<number>()
+    while (picked.size < TICK_ROWS) picked.add((rand() * next.length) | 0)
+    for (const at of picked) {
+      const row = { ...next[at]!, amount: Math.round(rand() * 1_000_00) / 100 }
+      next[at] = row
+      changed.push(row)
+    }
+    current = next
+    return { next, changed }
+  }
+  for (let i = 0; i < 10; i++) {
+    const t = tick()
+    await update(t.next, t.changed) // warm-up
+  }
+  const times: number[] = []
+  for (let i = 0; i < frames; i++) {
+    const t = tick()
+    times.push(await timed(() => update(t.next, t.changed)))
+  }
+  const sorted = [...times].sort((a, b) => a - b)
+  // The order must have held, or the grid did less than the others and its
+  // number is not comparable. Descending by amount: each row >= the next.
+  const top = adapter.firstRowAmounts?.(5) ?? []
+  const sortHeld = top.length >= 2 && top.every((v, i) => i === 0 || (Number.isFinite(v) && v <= top[i - 1]!))
+  return {
+    p95: sorted[Math.floor(sorted.length * 0.95)]!,
+    overBudget: times.filter((d) => d > FRAME_BUDGET_MS).length,
+    sortHeld,
+  }
 }
 
 /** Scroll for `frames` frames, returning the frame-interval distribution. */
@@ -159,6 +225,9 @@ export async function runOne(
 
     const scroll = await measureScroll(adapter, 180)
     const domRows = adapter.domRowCount()
+    // Last, and after the scroll, on the same mounted grid: sorting for the
+    // ticks changes nothing the earlier measurements read.
+    const ticks = await measureTicks(adapter, rows, TICK_FRAMES)
 
     return {
       grid: adapter.name,
@@ -170,6 +239,9 @@ export async function runOne(
       filter: best(filter),
       scrollP95: scroll.p95,
       scrollDropped: scroll.dropped,
+      tickP95: ticks.p95,
+      tickOverBudget: ticks.overBudget,
+      tickSortHeld: ticks.sortHeld,
       domRows,
     }
   } catch (err) {
@@ -183,6 +255,9 @@ export async function runOne(
       filter: NaN,
       scrollP95: NaN,
       scrollDropped: NaN,
+      tickP95: NaN,
+      tickOverBudget: NaN,
+      tickSortHeld: false,
       domRows: 0,
       error: err instanceof Error ? err.message : String(err),
     }

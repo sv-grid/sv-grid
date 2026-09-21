@@ -75,7 +75,7 @@ editing each switch on with the matching prop.
 ## Headless or render: same engine
 
 `<SvGrid />` is a renderer over a headless state machine, and the state machine is public. Import it
-from `@svgrid/grid/core` (2.5 KB gzipped, no DOM, no CSS) when you want your own markup, a canvas
+from `@svgrid/grid/core` (2.6 KB gzipped, no DOM, no CSS) when you want your own markup, a canvas
 renderer, or a row model you can unit-test in plain Node:
 
 ```ts
@@ -153,7 +153,7 @@ The MIT package has no license key, no watermark, and no row-count cap.
 |---|---|
 | **Package** | `@svgrid/grid`, peer dependency `svelte@^5` |
 | **License** | MIT, free for commercial use |
-| **Bundle (gzip)** | ~2.5 KB headless core, ~93 KB full `<SvGrid>` + ~10 KB CSS; charts, date pickers, menus and export load as separate chunks on first use |
+| **Bundle (gzip)** | ~2.6 KB headless core, ~96 KB full `<SvGrid>` + ~10 KB CSS; charts, date pickers, menus and export load as separate chunks on first use |
 | **SSR** | Header plus a viewport window of rows in the server HTML; checked in CI by `pnpm ssr:check` |
 | **Demos** | [400+ demos](https://svgrid.com/demos/), each with a StackBlitz button |
 | **AI grounding** | [MCP server](https://www.npmjs.com/package/@svgrid/mcp), [llms.txt](https://svgrid.com/llms.txt), [Agent Skill](https://svgrid.com/docs/help/skill/) |

@@ -141,6 +141,8 @@ export interface SvGridElement extends HTMLElement {
   /** property only - an attribute cannot hold this */
   processCellForClipboard: unknown
   /** property only - an attribute cannot hold this */
+  includeCollapsedRows: unknown
+  /** property only - an attribute cannot hold this */
   clipboardHtml: unknown
   /** property only - an attribute cannot hold this */
   processCellFromClipboard: unknown

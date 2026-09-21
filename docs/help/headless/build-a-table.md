@@ -22,7 +22,7 @@ this for you; here you do it explicitly.
     rowSortingFeature,
     columnFilteringFeature,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 
@@ -134,7 +134,7 @@ Two imports, one row model, one `{#each}`. Nothing here is a grid component -
 
 ```svelte {runnable}
 <script lang="ts">
-  import { createSvGrid, createCoreRowModel, tableFeatures, type ColumnDef } from '@svgrid/grid'
+  import { createSvGrid, createCoreRowModel, tableFeatures, type ColumnDef } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 
@@ -205,7 +205,7 @@ write, because the engine has no opinion about what a sorted header looks like.
     tableFeatures,
     rowSortingFeature,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 

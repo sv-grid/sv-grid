@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * 482. Iterative calculation
+   * 492. Iterative calculation
    * --------------------------
    * A circular reference is usually a mistake, and the shell says so: every
    * cell in the loop shows #CYCLE! while the rest of the sheet keeps

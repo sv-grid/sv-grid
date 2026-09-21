@@ -64,6 +64,17 @@ export function precedentsOf(
    * something forces a full recalculation.
    */
   resolveTable?: (node: Extract<Node, { k: 'table' }>) => { sheet: string; firstRow: number; lastRow: number; firstCol: number; lastCol: number } | null,
+  /**
+   * The rectangle a spilled-range operator (`A1#`) currently covers. The
+   * anchor cell is always recorded regardless, so a formula reading `A1#`
+   * recalculates whenever the array is re-typed and picks up the new extent;
+   * the covered cells are added on top so a change anywhere in the spill
+   * reaches it too.
+   */
+  resolveSpill?: (node: Extract<Node, { k: 'spill' }>) => { sheet: string | null; r1: number; c1: number; r2: number; c2: number } | null,
+  /** The sheets a 3D reference spans, so it recalculates when the cell on any
+   *  of them changes. */
+  resolveSheets?: (from: string, to: string) => string[] | null,
   depth = 0,
 ): CellKey[] {
   const out: CellKey[] = []
@@ -72,7 +83,33 @@ export function precedentsOf(
       // A name defined as another name is followed; a circular chain is cut
       // after a few hops rather than recursing forever.
       const target = depth < 8 ? resolveName?.(n.name) : null
-      if (target) out.push(...precedentsOf(target, self, lastRow, resolveName, resolveTable, depth + 1))
+      if (target) out.push(...precedentsOf(target, self, lastRow, resolveName, resolveTable, resolveSpill, resolveSheets, depth + 1))
+      return
+    }
+    if (n.k === 'ref3d') {
+      const sheets = resolveSheets?.(n.sheetFrom, n.sheetTo)
+      if (!sheets) return
+      const r1 = Math.min(n.from.row ?? 0, n.to.row ?? 0)
+      const r2 = Math.max(n.from.row ?? 0, n.to.row ?? 0)
+      const c1 = Math.min(n.from.col, n.to.col)
+      const c2 = Math.max(n.from.col, n.to.col)
+      for (const s of sheets) {
+        for (let r = r1; r <= r2; r += 1) {
+          for (let c = c1; c <= c2; c += 1) out.push(cellKey(s, r, c))
+        }
+      }
+      return
+    }
+    if (n.k === 'spill') {
+      // The anchor always: retyping the array changes the anchor cell, so
+      // this makes the reader recalculate and re-derive the extent below.
+      out.push(cellKey(n.ref.sheet ?? self.sheet, n.ref.row ?? 0, n.ref.col))
+      const rect = resolveSpill?.(n)
+      if (rect) {
+        for (let r = rect.r1; r <= rect.r2; r += 1) {
+          for (let c = rect.c1; c <= rect.c2; c += 1) out.push(cellKey(rect.sheet ?? self.sheet, r, c))
+        }
+      }
       return
     }
     if (n.k === 'table') {

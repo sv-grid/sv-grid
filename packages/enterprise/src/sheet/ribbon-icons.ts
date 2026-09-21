@@ -35,6 +35,7 @@ export type RibbonIconName =
   | 'border-all' | 'border-outside' | 'border-thick-bottom'
   | 'fill-colour' | 'font-colour'
   | 'align-left' | 'align-center' | 'align-right' | 'wrap'
+  | 'valign-top' | 'valign-center' | 'valign-bottom'
   | 'dec-more' | 'dec-less'
   | 'insert-cells' | 'delete-cells' | 'freeze' | 'unfreeze'
   | 'autosum' | 'fill-down' | 'fill-right' | 'clear' | 'find' | 'filter'
@@ -146,6 +147,10 @@ export const RIBBON_ICONS: Record<RibbonIconName, ReadonlyArray<IconPath>> = {
   'align-left': [{ d: 'M2.5 3.5h11M2.5 6.5h7M2.5 9.5h11M2.5 12.5h7' }],
   'align-center': [{ d: 'M2.5 3.5h11M4.5 6.5h7M2.5 9.5h11M4.5 12.5h7' }],
   'align-right': [{ d: 'M2.5 3.5h11M6.5 6.5h7M2.5 9.5h11M6.5 12.5h7' }],
+  // A rule at the anchored edge, with the text lines pushed against it.
+  'valign-top': [{ d: 'M2.5 3.5h11M5 6.5h6M5 8.5h6' }],
+  'valign-center': [{ d: 'M5 5.5h6M5 8h6M5 10.5h6' }],
+  'valign-bottom': [{ d: 'M5 7.5h6M5 9.5h6M2.5 12.5h11' }],
   wrap: [
     { d: 'M2.5 4h11M2.5 8h8a2.25 2.25 0 0 1 0 4.5H8.5M2.5 12h3' },
     { d: 'M10 10.5l-2 2 2 2' },

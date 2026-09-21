@@ -16,7 +16,7 @@
     rowSortingFeature,
     columnFilteringFeature,
     type GridColumns,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 

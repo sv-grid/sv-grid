@@ -59,6 +59,13 @@ describe('buildSparkline', () => {
     expect(g.bars[0]!.h).toBeCloseTo(g.bars[1]!.h)
   })
 
+  it('leaves a blank gap for a zero, marking only wins and losses', () => {
+    const g = buildSparkline([1, 0, -1, 0, 1], { type: 'winloss', height: 20 })!
+    // Two wins and a loss draw; the two zeros are gaps, as Excel draws them.
+    expect(g.bars).toHaveLength(3)
+    expect(g.bars.map((b) => b.negative)).toEqual([false, true, false])
+  })
+
   it('honors a fixed min/max scale', () => {
     const a = buildSparkline([5, 5, 5], { type: 'line', min: 0, max: 10 })!
     // flat series on a 0..10 scale sits at the vertical middle, not the top

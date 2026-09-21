@@ -299,7 +299,22 @@
   const saveComment = $derived(ctrl.saveComment);
   const removeComment = $derived(ctrl.removeComment);
   const closeCommentEditor = $derived(ctrl.closeCommentEditor);
+
+  function onContextMenuKeydown(event: KeyboardEvent) {
+    // Escape closes the context menu, the way every spreadsheet and desktop
+    // app does. The backdrop closes it on a click, but a keyboard user who
+    // opened it (Shift+F10, the Menu key) otherwise has no way out, and the
+    // menu sits over the sheet swallowing every other key. Handled at the
+    // window so it works whatever holds focus while the menu is open.
+    if (contextMenuFor && (event.key === "Escape" || event.key === "Esc")) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeContextMenu();
+    }
+  }
 </script>
+
+<svelte:window onkeydown={onContextMenuKeydown} />
 
   {#if tooltip}
     <!-- Custom hover tooltip. Floats above the grid; positioned by

@@ -133,10 +133,27 @@ test.describe('spreadsheet keyboard model', () => {
     await dialog.waitFor({ timeout: 10_000 })
     // Focus is inside the dialog, not left behind on the sheet.
     expect(await page.evaluate(() => Boolean(document.querySelector('.sv-modal')?.contains(document.activeElement)))).toBe(true)
+    // ...and on the content, not the header Close (x): Enter must not dismiss
+    // the dialog the instant it opens.
+    expect(await page.evaluate(() => document.activeElement?.classList.contains('sv-modal__x'))).toBe(false)
+    await page.keyboard.press('Enter')
+    await expect(dialog).toHaveCount(1)
 
     await page.keyboard.press('Escape')
     await expect(dialog).toHaveCount(0)
     expect(await onGrid()).toBe('grid')
+  })
+
+  test('the right-click context menu closes on Escape', async ({ page }) => {
+    test.setTimeout(120_000)
+    await theme(page, 'light')
+    await open(page, '207-blank-sheet')
+    await page.locator('.sv-sheet td[data-svgrid-row="2"][data-svgrid-col="2"]').click({ button: 'right' })
+    const menu = page.locator('.sv-grid-context-menu')
+    await menu.waitFor({ timeout: 10_000 })
+    await page.keyboard.press('Escape')
+    await expect(menu).toHaveCount(0)
+    await expect(page.locator('.sv-grid-menu-backdrop')).toHaveCount(0)
   })
 
   test('the Name Box reads the active cell as its value, not as a hint', async ({ page }) => {

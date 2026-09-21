@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * 476. Sparklines: a chart inside the cell
+   * 486. Sparklines: a chart inside the cell
    * ----------------------------------------
    * Excel's smallest chart. A sparkline is not an object floating over the
    * sheet: it IS the cell, one per row of a block of numbers, drawn from
@@ -22,7 +22,7 @@
    *
    * Try: type over a number in B2:M4 and watch its row redraw. Select N2
    * and press Column, then Edit to put the whole group on one scale.
-   * Select B5:M5 and press Line for a fourth sparkline of the totals.
+   * Select N6 and press Line to see the win/loss row as a line, then Ctrl+Z.
    * Save As and open the file in Excel: the sparklines are there too.
    */
   import { SvSheet, createWorkbook, createSheetDocument, sparklineId, type SparklineGroup } from '@svgrid/enterprise'

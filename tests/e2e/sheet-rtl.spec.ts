@@ -82,9 +82,10 @@ test.describe('right-to-left spreadsheet', () => {
     test.setTimeout(120_000)
     await open(page, '485-sheet-charts-objects', 'rtl')
     const sheet = (await box(page, '.sv-sheet'))!
-    const anchor = (await box(page, 'td[data-svgrid-row="6"][data-svgrid-col="0"]'))!
+    const anchor = (await box(page, 'td[data-svgrid-row="6"][data-svgrid-col="1"]'))!
     const object = (await box(page, '.sheet-object'))!
-    // Anchored at the cell's inline start, which is its right edge, minus the
+    // The demo anchors it at B7, clear of the frozen column A. Anchored at
+    // the cell's inline start, which is its right edge, minus the
     // object's own 8px offset - and growing leftwards, inside the sheet.
     expect(Math.abs(object.right - (anchor.right - 8))).toBeLessThanOrEqual(2)
     expect(object.left).toBeGreaterThanOrEqual(sheet.left - 1)
@@ -94,7 +95,7 @@ test.describe('right-to-left spreadsheet', () => {
   test('the same chart hangs from the other edge when the app is left to right', async ({ page }) => {
     test.setTimeout(120_000)
     await open(page, '485-sheet-charts-objects', 'ltr')
-    const anchor = (await box(page, 'td[data-svgrid-row="6"][data-svgrid-col="0"]'))!
+    const anchor = (await box(page, 'td[data-svgrid-row="6"][data-svgrid-col="1"]'))!
     const object = (await box(page, '.sheet-object'))!
     expect(Math.abs(object.left - (anchor.left + 8))).toBeLessThanOrEqual(2)
   })

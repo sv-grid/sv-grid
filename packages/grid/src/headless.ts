@@ -85,3 +85,27 @@ export {
 export { createGrid, createSvGrid, type SvelteGrid } from './createGrid.svelte'
 export { createGridState, createSvGridState } from './createGridState.svelte'
 export { subscribeGrid, subscribeSvGrid } from './subscribe'
+
+// The virtualizers are pure window arithmetic (scroll offset in, visible
+// range out) with no DOM of their own, and a custom renderer over 50k rows
+// needs one. They were only on the barrel, so the Headless demos imported
+// the barrel to reach them and paid for the whole thing.
+export { createVirtualizer } from './virtualization/virtualizer'
+export { createSvelteVirtualizer } from './virtualization/svelte-virtualizer.svelte'
+export { createColumnVirtualizer } from './virtualization/column-virtualizer'
+export type { VirtualItem, VirtualizerOptions, VirtualizerState } from './virtualization/types'
+
+// The WAI-ARIA attribute factories: plain objects to spread onto your own
+// markup (`role`, `aria-sort`, `aria-rowindex`, ...). No DOM is touched here
+// either; a custom renderer that wants keyboard navigation reads
+// `activeCell` from the store and spreads these.
+export {
+  getGridCellDomId,
+  getGridCellA11yProps,
+  getGridHeaderA11yProps,
+  getGridRootA11yProps,
+  getGridRowA11yProps,
+  type GridCellA11yInput,
+  type GridColumnA11yInput,
+  type GridSortDirection,
+} from './a11y'

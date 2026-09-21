@@ -1394,6 +1394,213 @@
         "date-picker",
         "command-palette"
       ]
+    },
+    {
+      "slug": "headless-table",
+      "kind": "feature",
+      "icon": "⌗",
+      "cardText": "The engine alone: your markup, your classes, your tokens.",
+      "query": "svelte headless table",
+      "h1": "Svelte Headless Table",
+      "seoTitle": "Svelte Headless Table - The Grid Engine, Your Markup",
+      "seoDescription": "A headless table engine for Svelte 5: sorting, filtering, grouping, selection and virtualization as reactive state, rendered with your own markup. MIT.",
+      "keywords": [
+        "svelte headless table",
+        "headless table svelte 5",
+        "svelte headless data grid",
+        "svelte table custom markup",
+        "headless ui table svelte"
+      ],
+      "tier": "community",
+      "intro": [
+        "A headless table is the part of a data grid that is not the DOM: which rows are visible after filtering, in what order after sorting, which are selected, which group is expanded, which cell is active. SvGrid ships that part on its own as @svgrid/grid/core. You call createSvGrid with data and columns, read rows and header groups back, and render them with whatever markup your design system already has.",
+        "Nothing on this subpath touches the DOM, ARIA or CSS. There is no stylesheet to override and no class name to fight, which is the reason platform teams with a strict internal component library reach for it: the engine owns the state, the design system owns the markup, and the two do not argue. The WAI-ARIA attribute factories and the virtualizers are exported alongside the engine, so an accessible, windowed table over 50,000 rows is still yours to draw.",
+        "The same engine drives the render-ready <SvGrid> component, so a team can start headless on the screens the design system covers and drop the component in where it does not. One state machine, two renderers, and the measured size of the engine alone is printed below rather than typed."
+      ],
+      "install": "npm i @svgrid/grid",
+      "sizeEntry": "headless",
+      "snippet": {
+        "lang": "svelte",
+        "code": "<script lang=\"ts\">\n  import {\n    createSvGrid, createCoreRowModel, createSortedRowModel,\n    tableFeatures, rowSortingFeature, type ColumnDef,\n  } from '@svgrid/grid/core'\n\n  const features = tableFeatures({ rowSortingFeature })\n  const columns: ColumnDef<typeof features, Person>[] = [\n    { field: 'name', header: 'Name' },\n    { field: 'age', header: 'Age', editorType: 'number' },\n  ]\n\n  let sorting = $state([{ id: 'age', desc: true }])\n  const table = createSvGrid({\n    _features: features,\n    _rowModels: { coreRowModel: createCoreRowModel(), sortedRowModel: createSortedRowModel() },\n    data, columns,\n    state: { sorting },\n    onSortingChange: (u) => (sorting = typeof u === 'function' ? u(sorting) : u),\n  })\n  const rows = $derived(table.getRowModel().rows)\n</script>\n\n<table class=\"your-table\">\n  <thead>\n    {#each table.getHeaderGroups() as hg (hg.id)}\n      <tr>\n        {#each hg.headers as h (h.id)}\n          <th onclick={h.column.getToggleSortingHandler()}>{h.column.columnDef.header}</th>\n        {/each}\n      </tr>\n    {/each}\n  </thead>\n  <tbody>\n    {#each rows as r (r.id)}\n      <tr><td>{r.original.name}</td><td>{r.original.age}</td></tr>\n    {/each}\n  </tbody>\n</table>"
+      },
+      "heroDemo": "186-headless-table",
+      "demos": [
+        "186-headless-table",
+        "187-headless-virtual",
+        "188-headless-styled",
+        "189-headless-shared-state",
+        "190-headless-row-models",
+        "191-headless-server-side"
+      ],
+      "docs": [
+        "why-headless",
+        "help/headless/overview",
+        "help/headless/build-a-table",
+        "help/headless/styling",
+        "help/headless/virtualization",
+        "help/bundle-size"
+      ],
+      "posts": [
+        "build-vs-buy-svelte-data-table",
+        "smallest-bundle-svelte-data-grid",
+        "why-we-bet-on-svelte-5-runes"
+      ],
+      "features": [
+        {
+          "title": "The engine does",
+          "body": "Sorting, filtering, grouping with aggregates, pagination, expansion, selection and the active cell, as a row-model pipeline you opt into stage by stage."
+        },
+        {
+          "title": "You do",
+          "body": "The elements, the class names, the tokens and the editors. A <table>, a CSS grid, shadcn-svelte Table primitives or a list of cards all read the same rows."
+        },
+        {
+          "title": "Virtualization included",
+          "body": "createSvelteVirtualizer turns a scroll offset into the visible window and a spacer height; 50,000 rows keep only the rows in view in the DOM."
+        },
+        {
+          "title": "Accessible on your markup",
+          "body": "getGridRootA11yProps, getGridHeaderA11yProps, getGridRowA11yProps and getGridCellA11yProps return the WAI-ARIA attributes to spread onto your own elements; moveActiveCell drives the keyboard."
+        },
+        {
+          "title": "Runs without a browser",
+          "body": "createSvGridCore is the same engine with no runes, so row models unit-test in plain Node and the sorted, filtered result can be computed on a server."
+        },
+        {
+          "title": "Measured, not estimated",
+          "body": "The size on this page is written by pnpm size:json on every release and checked in CI; the number in the docs is the number in the build."
+        }
+      ],
+      "faq": [
+        {
+          "question": "What is a headless table in Svelte?",
+          "answer": "A table engine without a renderer: it computes which rows to show, in what order, with what selection and grouping state, and hands you plain data to render. SvGrid exposes its engine as @svgrid/grid/core for exactly this use."
+        },
+        {
+          "question": "How is this different from a headless-only table library?",
+          "answer": "The engine is the same idea. The difference is that SvGrid also ships a render-ready <SvGrid> component over the same state machine, so you can go headless where your design system demands its own markup and use the component everywhere else, without two libraries."
+        },
+        {
+          "question": "Does headless mean no accessibility?",
+          "answer": "No. The core entry exports the WAI-ARIA attribute factories the render component uses, plus an activeCell state and moveActiveCell for keyboard navigation. Spread the attributes onto your own elements and screen readers announce the same grid."
+        },
+        {
+          "question": "Can I use it with shadcn-svelte or my own component library?",
+          "answer": "Yes. The engine returns rows and header groups; render them with Table.Root, Table.Row and Table.Cell or any elements you like. The headless styling guide shows the shadcn-svelte layout and a keyboard-navigable bare table."
+        },
+        {
+          "question": "How big is the headless engine?",
+          "answer": "The measured gzipped size of the createSvGrid entry is printed on this page from the size ledger the build writes, with the version and the date it was measured. The full render component is a separate figure on the bundle size page."
+        }
+      ],
+      "related": [
+        "data-table",
+        "editable-table",
+        "server-side-table"
+      ]
+    },
+    {
+      "slug": "trading-grid",
+      "kind": "feature",
+      "icon": "⇅",
+      "cardText": "A blotter that stays sorted while the feed ticks.",
+      "query": "svelte trading grid",
+      "h1": "Svelte Trading Grid",
+      "seoTitle": "Svelte Trading Grid - 100,000 Rows on a Live WebSocket Feed",
+      "seoDescription": "A trading blotter in Svelte 5: 100,000 instruments stay sorted by the column that ticks, updates batched per frame into one transaction, cell flash per move.",
+      "keywords": [
+        "svelte trading grid",
+        "svelte real-time data grid",
+        "svelte websocket table",
+        "svelte blotter",
+        "svelte 5 live updating grid"
+      ],
+      "tier": "community",
+      "intro": [
+        "A blotter is a grid sorted by something that ticks. Last price, percent change, P&L: the column the desk watches is the column the feed moves, so every update has to land in sorted position and the grid has to do that at the row count a desk actually has, not a demo's dozen.",
+        "SvGrid takes a tick feed on one path: the messages wait in a map keyed by instrument, the newest price per id wins the frame, and one applyTransaction per animation frame hands the grid a new array in which only the ticked rows are new objects. The row model reuses every row that did not change and repairs the sort around the ones that did instead of re-sorting 100,000 rows; the cost of that tick is measured and published on the benchmarks page, with the harness that produced it in the repository, next to the number a full sort would have cost.",
+        "The rest of the blotter is the grid as it comes: cellFlash restarts a colour fade only when that row's value changes, number formats with negative sections and a currency, sparklines from a rolling buffer, pinned symbol, row virtualization so 100,000 rows keep a few dozen elements in the DOM. For books larger than a browser tab should hold, the Enterprise server row model streams the visible window from your service and applies transactions to it."
+      ],
+      "install": "npm i @svgrid/grid",
+      "snippet": {
+        "lang": "svelte",
+        "code": "<script lang=\"ts\">\n  import { SvGrid, tableFeatures, rowSortingFeature, type GridColumns, type SvGridApi } from '@svgrid/grid'\n\n  const features = tableFeatures({ rowSortingFeature })\n  let rows = $state.raw<Quote[]>(initialQuotes)\n  let api = $state<SvGridApi | null>(null)\n\n  // Ticks wait in a map (newest price per id wins the frame) and go through\n  // one applyTransaction per animation frame: one data change, one pipeline\n  // run, however many messages arrived.\n  const pending = new Map<string, number>()\n  let frame: number | null = null\n  socket.onmessage = (e) => {\n    for (const [id, last] of JSON.parse(e.data).t) pending.set(id, last)\n    if (frame === null) frame = requestAnimationFrame(flush)\n  }\n  function flush() {\n    frame = null\n    const byId = new Map(api!.getData().map((r) => [r.id, r]))\n    const update = [...pending].flatMap(([id, last]) => {\n      const row = byId.get(id)\n      return row ? [{ ...row, last, direction: last > row.last ? 'up' : 'down' }] : []\n    })\n    pending.clear()\n    api!.applyTransaction({ update })\n  }\n\n  const columns: GridColumns<Quote> = [\n    { field: 'symbol', header: 'Symbol' },\n    { field: 'last', header: 'Last', editorType: 'number',\n      format: { type: 'number', options: { minimumFractionDigits: 2, maximumFractionDigits: 2 } },\n      cellFlash: { className: 'tick' },\n      cellClass: (ctx) => (ctx.row.original.direction === 'up' ? 'tick-up' : 'tick-down') },\n    { field: 'pct', header: 'Chg %', editorType: 'number' },\n  ]\n</script>\n\n<SvGrid data={rows} {columns} {features} getRowId={(r) => r.id}\n  initialSorting={[{ id: 'pct', desc: true }]} sortable onApiReady={(a) => (api = a)} />"
+      },
+      "heroDemo": "495-market-blotter-100k",
+      "demos": [
+        "495-market-blotter-100k",
+        "00-trading-desk",
+        "11-stock-market",
+        "145-transaction-api",
+        "34-realtime-orders",
+        "470-server-transactions"
+      ],
+      "docs": [
+        "help/real-time",
+        "help/rows/transactions",
+        "help/cells/highlighting-changes",
+        "help/cells/number-formats",
+        "help/benchmarks",
+        "help/server/server-transactions"
+      ],
+      "posts": [
+        "real-time-trading-grid",
+        "realtime-websocket-updates",
+        "fastest-svelte-data-grid"
+      ],
+      "features": [
+        {
+          "title": "Stays sorted under the feed",
+          "body": "A tick of replaced rows on a sorted grid repairs the previous order around the rows that changed. Same result as a full sort, a fraction of the cost, and a test that compares the two on every kind of sort key."
+        },
+        {
+          "title": "One transaction per frame",
+          "body": "applyTransaction({ update }) matches rows by id through a map built once per array, so a batch of a thousand updates is a thousand lookups and one copy, not a pass over every row."
+        },
+        {
+          "title": "Cell flash that knows the row",
+          "body": "cellFlash is keyed by row identity: a price change flashes, a row scrolling into a recycled cell does not. Pass your own class for green up, red down."
+        },
+        {
+          "title": "Finance formats",
+          "body": "Number formats with positive, negative and zero sections, [Red] negatives, accounting parentheses, currencies and Excel pattern strings, all on the raw number so sorting stays numeric."
+        },
+        {
+          "title": "Sparklines and pinned columns",
+          "body": "A sparkline column type over a rolling buffer per row, symbol pinned left, P&L pinned right, column virtualization for the wide books."
+        },
+        {
+          "title": "A million rows from the server",
+          "body": "The Enterprise server row model streams the visible window from your service, supports select-all across rows the browser never loaded, and applies transactions to what is loaded."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How many rows can a Svelte data grid keep sorted while prices tick?",
+          "answer": "The market blotter demo keeps 100,000 rows sorted by percent change with the feed pushing tens of thousands of updates a second, batched per animation frame. The engine cost of a tick, and how it compares to a full sort, is measured on the benchmarks page with the script that produced it."
+        },
+        {
+          "question": "Should I mutate rows in place or replace them?",
+          "answer": "For a sorted blotter, replace them: a proxy write updates one cell but the row model never runs, so the sort goes stale. applyTransaction replaces the ticked rows in a new array and the grid repairs the order around them. Mutate in place only when you will refresh with a new array afterwards."
+        },
+        {
+          "question": "Why batch ticks per animation frame?",
+          "answer": "The screen paints once per frame, so applying ticks faster than that runs the pipeline for results nobody sees. A map keyed by instrument merges a symbol that ticked five times in a frame into one update with its latest price."
+        },
+        {
+          "question": "Can I connect it to my own WebSocket feed?",
+          "answer": "Yes. The blotter demo reads any WebSocket URL you pass, and tools/tick-server.mjs in the repository is a forty-line feed with no dependency that shows the message format, so it doubles as a template for adapting yours."
+        },
+        {
+          "question": "Is the benchmark comparable to other grids?",
+          "answer": "The comparison harness in the repository runs the same tick against several grids, on each grid's own update path, and checks after the ticks that every grid kept its sort; a grid that answered a data change by dropping the order is marked, not credited. The results and the method are on the comparison page."
+        }
+      ],
+      "related": [
+        "data-table",
+        "server-side-table",
+        "headless-table"
+      ]
     }
   ]
 }

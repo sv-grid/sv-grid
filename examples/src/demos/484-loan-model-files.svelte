@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * 474. Loan model: PMT, accounting formats, and the File tab
+   * 484. Loan model: PMT, accounting formats, and the File tab
    * ----------------------------------------------------------
    * A mortgage model on the spreadsheet shell, built from the sheet's own
    * financial functions rather than a plug-in engine:

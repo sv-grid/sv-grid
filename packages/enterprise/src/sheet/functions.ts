@@ -428,6 +428,40 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
     const cell = results[at]
     return cell === undefined ? err('#REF!') : cell
   },
+  // LOOKUP(value, vector, [result]): the old approximate lookup that assumes
+  // its vector is sorted ascending and takes the largest item not past the
+  // value, returning the matching cell of the result vector - the lookup
+  // vector itself when none is given.
+  LOOKUP: (a) => {
+    const needle = nth(a, 0)
+    const vector = a.args[1] ?? []
+    const result = a.args[2] ?? vector
+    const at = nearestIndex(vector, needle, 1)
+    if (at < 0) return err('#N/A')
+    const cell = result[at]
+    return cell === undefined ? err('#N/A') : cell
+  },
+  // XMATCH(value, array, [matchMode], [searchMode]): MATCH's modern twin.
+  // matchMode 0 is the exact default, -1 falls back to the next smaller item,
+  // 1 to the next larger, 2 reads a wildcard; a negative searchMode reads from
+  // the end, so it finds the LAST of several matches.
+  XMATCH: (a) => {
+    const needle = nth(a, 0)
+    const pool = a.args[1] ?? []
+    const mode = a.args[2] !== undefined ? Math.round(toNumber(nth(a, 2))) : 0
+    const back = a.args[3] !== undefined && Math.round(toNumber(nth(a, 3))) < 0
+    const same = mode === 2
+      ? (v: CellValue) => patternEquals(v, needle)
+      : (v: CellValue) => looseEquals(v, needle)
+    let at = -1
+    for (let i = 0; i < pool.length; i += 1) {
+      const j = back ? pool.length - 1 - i : i
+      if (same(pool[j]!)) { at = j; break }
+    }
+    if (at < 0 && mode === -1) at = nearestIndex(pool, needle, 1)
+    if (at < 0 && mode === 1) at = nearestIndex(pool, needle, -1)
+    return at < 0 ? err('#N/A') : at + 1
+  },
 
   // ---- The packs: financial, more math and statistics, more text and
   // date. Each lives in its own module under ./packs so this table stays

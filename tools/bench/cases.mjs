@@ -10,7 +10,7 @@
  *
  * A case with no `counts` and no `heap` contributes nothing to `--check`.
  */
-import { makeRows, makeColumns } from './data.mjs'
+import { makeRows, makeColumns, rng } from './data.mjs'
 import { instrumentStage, countStageRuns, newCounters } from './counters.mjs'
 
 const ROWS = 100_000
@@ -349,6 +349,86 @@ export function buildCases(api) {
         }
       },
     },
+
+    /**
+     * A live feed's tick: a new data array in which K row objects were
+     * replaced (new prices), against a grid sorted by the ticking column.
+     *
+     * The sorted stage repairs its previous output for this - drops the K old
+     * rows, sorts the K new ones, one linear merge - instead of re-sorting all
+     * 100k. The gated count is cell reads on the rows that did NOT change: a
+     * repaired sort makes none, because their keys are cached alongside the
+     * output; a full sort reads every one of them again. `tick.newRowReads`
+     * proves the stage did handle the replacements.
+     *
+     * Not through `table()` on purpose: its row proxies are new objects on
+     * every stage call, and the repair keys on row identity.
+     */
+    ...[100, 1000].map((k) => ({
+      id: `tick-${k === 1000 ? '1k' : k}-of-100k-sorted`,
+      label: `Tick: replace ${k.toLocaleString()} of 100k rows, sorted by the ticking column`,
+      time() {
+        const ref = { data: rows100k().slice() }
+        const t = createSvGridCore({
+          _features: tableFeatures({ rowSortingFeature }),
+          _rowModels: { coreRowModel: createCoreRowModel(), sortedRowModel: createSortedRowModel() },
+          get data() { return ref.data },
+          columns,
+          state: { sorting: [{ id: 'amount', desc: true }] },
+          onSortingChange: () => {},
+        })
+        t.getRowModel()
+        const rand = rng(k)
+        return () => {
+          const next = ref.data.slice()
+          for (let i = 0; i < k; i++) {
+            const at = (rand() * next.length) | 0
+            next[at] = { ...next[at], amount: Math.round(rand() * 1_000_00) / 100 }
+          }
+          ref.data = next
+          return t.getRowModel().rows.length
+        }
+      },
+      counts() {
+        const ref = { data: rows100k().slice() }
+        const t = createSvGridCore({
+          _features: tableFeatures({ rowSortingFeature }),
+          _rowModels: { coreRowModel: createCoreRowModel(), sortedRowModel: createSortedRowModel() },
+          get data() { return ref.data },
+          columns,
+          state: { sorting: [{ id: 'amount', desc: true }] },
+          onSortingChange: () => {},
+        })
+        const first = t.getRowModel().rows
+        // Count reads on the rows that survive the tick by shadowing the
+        // shared method with an own property on each - same objects, so the
+        // stage still recognises them.
+        let keptReads = 0
+        for (const r of first) {
+          const original = r.getCellValueByColumnId
+          r.getCellValueByColumnId = function (id) { keptReads++; return original.call(this, id) }
+        }
+        const rand = rng(k)
+        const next = ref.data.slice()
+        for (let i = 0; i < k; i++) {
+          const at = (rand() * next.length) | 0
+          next[at] = { ...next[at], amount: Math.round(rand() * 1_000_00) / 100 }
+        }
+        ref.data = next
+        const before = keptReads
+        const rows = t.getRowModel().rows
+        const newRows = rows.filter((r) => !first.includes(r)).length
+        return {
+          'tick.rows': rows.length,
+          'tick.newRows': newRows,
+          'tick.keptRowReads': keptReads - before,
+        }
+      },
+      requires: ['tick.rows', 'tick.newRows'],
+      // Zero: a repaired sort never re-reads a row it kept. A full sort reads
+      // all 100k of them (minus the K replaced) to rebuild the keys.
+      gate: { 'tick.keptRowReads': { max: 0 } },
+    })),
 
     {
       id: 'csv-export',

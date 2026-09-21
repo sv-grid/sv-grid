@@ -489,6 +489,22 @@ whatever type your app already uses. If your app already sets a body font (or a
 
 ---
 
+<!-- tutorial:install-studio -->
+<figure class="docs-tutorial" id="tutorial-install-studio" data-docs-tutorial="install-studio">
+<video class="docs-tutorial-video" src="/tutorials/install-studio.mp4" poster="/tutorials/install-studio.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="SvGrid Studio: database to CRUD app, 72 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/install-studio.vtt" default>Your browser does not play embedded video. <a href="/tutorials/install-studio.mp4">Download the MP4</a>.</video>
+<figcaption><strong>SvGrid Studio: database to CRUD app</strong> (72 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>SvGrid Studio turns tables into a SvelteKit app. From the command line, one create command scaffolds a runnable app with sample tables.</p>
+<p>Point init at a real database and it reads the tables, then writes a list, an edit form and a record page for each one.</p>
+<p>The same generator runs in the browser. The designer opens with a wizard: start from sample data, your own database, or blank.</p>
+<p>Pick a dataset, choose which pages each table gets, and open the app.</p>
+<p>Two tables became six screens: an overview with a KPI and a chart, a list, a manage page and a detail page per table, all on the canvas to rearrange.</p>
+<p>Preview runs the app as a user sees it: the grid, the new record button, the navigation.</p>
+<p>Generate app writes the SvelteKit project: twenty-seven files, typed schemas, routes and a CI workflow. Download the zip or open it in StackBlitz.</p>
+</details>
+</figure>
+<!-- /tutorial:install-studio -->
+
 ## See also
 
 - [SvGrid Studio overview](../studio.md)

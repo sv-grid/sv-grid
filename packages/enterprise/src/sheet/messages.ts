@@ -89,6 +89,10 @@ export type SheetTextMessages = {
   menuNewComment: string
   menuEditComment: string
   menuDeleteComment: string
+  menuLink: string
+  menuEditLink: string
+  menuOpenLink: string
+  menuRemoveLink: string
   menuFormatCells: string
   menuColumnWidth: string
   menuRowHeight: string
@@ -163,6 +167,14 @@ export type SheetTextMessages = {
   selectBlockToChart: string
   selectChartFirst: string
   couldNotReadPicture: string
+  nothingToPaste: string
+  /** "{name} defined for {refersTo}" */
+  nameDefined: string
+  nameBoxBadName: string
+  /** "{count} {unit} left out of the file: a web address, or a type the file cannot hold" */
+  picturesNotSaved: string
+  unitPicture: string
+  unitPictures: string
   chartObject: string
   pictureObject: string
   sparklineObject: string
@@ -246,6 +258,10 @@ export const defaultDialogMessages = {
   'formatCells.align.left': 'Left (Indent)',
   'formatCells.align.center': 'Center',
   'formatCells.align.right': 'Right (Indent)',
+  'formatCells.vertical': 'Vertical:',
+  'formatCells.valign.top': 'Top',
+  'formatCells.valign.center': 'Center',
+  'formatCells.valign.bottom': 'Bottom',
   'formatCells.indent': 'Indent:',
   'formatCells.textControl': 'Text control',
   'formatCells.wrap': 'Wrap text',
@@ -565,7 +581,7 @@ export const defaultDialogMessages = {
   'removeDuplicates.columnLetter': 'Column {letter}',
   // Paste Special
   'pasteSpecial.title': 'Paste Special',
-  'pasteSpecial.empty': 'Nothing has been copied from the sheet yet. Copy a range first, then Paste Special.',
+  'pasteSpecial.empty': 'Nothing to paste yet. Copy cells on the sheet, or a table in another program, then Paste Special.',
   'pasteSpecial.paste': 'Paste',
   'pasteSpecial.all': 'All',
   'pasteSpecial.formulas': 'Formulas',
@@ -631,12 +647,15 @@ export const defaultDialogMessages = {
   'chartSetup.hint': 'The chart reads the range, so editing a cell redraws it. Drag the chart to move it, its corner to resize it, and press Delete to remove it.',
   // Create Table
   'table.title': 'Create Table',
+  'table.editTitle': 'Table',
   'table.range': 'Where are the cells?',
   'table.rangePlaceholder': 'A1:D20',
   'table.name': 'Name:',
   'table.namePlaceholder': 'Table1',
   'table.headers': 'My table has headers',
   'table.totals': 'Show a totals row',
+  /** The word in the first cell of Excel's Total Row. */
+  'table.totalLabel': 'Total',
   'table.hint': 'A table names its columns, so a formula can say Orders[Amount] and keep meaning it as rows are added. Typing under the last row grows it.',
   'table.style': 'Style:',
   'table.styleNone': 'None: keep the cells as they are',
@@ -861,6 +880,10 @@ export const defaultSheetTextMessages: SheetTextMessages = {
   menuNewComment: 'New Comment',
   menuEditComment: 'Edit Comment',
   menuDeleteComment: 'Delete Comment',
+  menuLink: 'Link...',
+  menuEditLink: 'Edit Link...',
+  menuOpenLink: 'Open Link',
+  menuRemoveLink: 'Remove Link',
   menuFormatCells: 'Format Cells...',
   menuColumnWidth: 'Column Width...',
   menuRowHeight: 'Row Height...',
@@ -924,6 +947,12 @@ export const defaultSheetTextMessages: SheetTextMessages = {
   selectBlockToChart: 'Select the cells to chart, headers included.',
   selectChartFirst: 'Select a chart first.',
   couldNotReadPicture: 'Could not read the picture.',
+  nothingToPaste: 'Nothing to paste. Copy cells first, or press Ctrl+V.',
+  nameDefined: '{name} now refers to {refersTo}',
+  nameBoxBadName: '"{name}" is not a valid name: letters, digits and underscores, and not a cell address',
+  picturesNotSaved: '{count} {unit} left out of the file: a web address, or a type the file cannot hold',
+  unitPicture: 'picture',
+  unitPictures: 'pictures',
   chartObject: 'Chart',
   pictureObject: 'Picture',
   sparklineObject: '{type} sparkline',

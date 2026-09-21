@@ -22,6 +22,11 @@ function ctxOf(
     },
     lastRow: (s) => Math.max(pick(s).length - 1, 0),
     resolveName: (n) => names[n],
+    sheetsBetween: (from, to) => {
+      const order = Object.keys(sheets)
+      const i = order.indexOf(from), j = order.indexOf(to)
+      return i < 0 || j < 0 ? null : i <= j ? order.slice(i, j + 1) : order.slice(j, i + 1)
+    },
     functions: withCustomFunctions(undefined),
   }
 }
@@ -390,6 +395,17 @@ describe('the function library', () => {
     expect(run('=POWER(2, 10)')).toBe(1024)
   })
 
+  it('reads a text date or time as its day number in arithmetic, as Excel reads a date cell', () => {
+    // 2026-03-04 is serial 46085; a day later is 46086, and two dates apart are days.
+    expect(run('=A1+1', [['2026-03-04']])).toBe(46086)
+    expect(run('=B1-A1', [['2026-03-04', '2026-03-11']])).toBe(7)
+    expect(run('=A1*2', [['10:30']])).toBe(0.875)
+    expect(run('=A1+0.5', [['2026-03-04 12:00']])).toBe(46086)
+    expect(run('=A1+1', [['3/4/2026']])).toBe(46086)
+    expect(run('=A1+1', [['hello']])).toEqual({ error: '#VALUE!' })
+    expect(run('=A1+1', [['2026-13-04']])).toEqual({ error: '#VALUE!' })
+  })
+
   it('does the date functions', () => {
     expect(run('=YEAR("2026-09-14")')).toBe(2026)
     expect(run('=MONTH("2026-09-14")')).toBe(9)
@@ -420,9 +436,42 @@ describe('the function library', () => {
     expect(run('=XLOOKUP("z", A1:A3, B1:B3, "missing")', table)).toBe('missing')
   })
 
+  it('does LOOKUP and XMATCH', () => {
+    const nums: CellValue[][] = [[2, 10], [4, 20], [6, 30], [8, 40], [10, 50]]
+    // LOOKUP takes the largest item not past the value, sorted ascending.
+    expect(run('=LOOKUP(6, A1:A5, B1:B5)', nums)).toBe(30)
+    expect(run('=LOOKUP(7, A1:A5, B1:B5)', nums)).toBe(30)
+    expect(run('=LOOKUP(1, A1:A5, B1:B5)', nums)).toEqual({ error: '#N/A' })
+    expect(run('=LOOKUP(6, A1:A5)', nums)).toBe(6)
+    // XMATCH: exact by default, and the modes for the next smaller or larger.
+    expect(run('=XMATCH(8, A1:A5)', nums)).toBe(4)
+    expect(run('=XMATCH(7, A1:A5, -1)', nums)).toBe(3)
+    expect(run('=XMATCH(7, A1:A5, 1)', nums)).toBe(4)
+    expect(run('=XMATCH(99, A1:A5)', nums)).toEqual({ error: '#N/A' })
+    // A negative search mode finds the last of several matches.
+    const dup: CellValue[][] = [['x'], ['y'], ['x']]
+    expect(run('=XMATCH("x", A1:A3, 0, -1)', dup)).toBe(3)
+  })
+
   it('does HLOOKUP across the header row', () => {
     const table: CellValue[][] = [['a', 'b'], [1, 2]]
     expect(run('=HLOOKUP("b", A1:B2, 2)', table)).toBe(2)
+  })
+
+  it('reads a 3D reference across a sheet range', () => {
+    const sheets = { Jan: [[10, 1]], Feb: [[20, 2]], Mar: [[30, 3]] }
+    // The same cell down the tabs, and a rectangle on each of them.
+    expect(run('=SUM(Jan:Mar!A1)', [], sheets)).toBe(60)
+    expect(run('=AVERAGE(Jan:Mar!A1)', [], sheets)).toBe(20)
+    expect(run('=SUM(Jan:Mar!A1:B1)', [], sheets)).toBe(66)
+    expect(run('=COUNT(Jan:Mar!A1)', [], sheets)).toBe(3)
+    expect(run('=MAX(Jan:Mar!A1)', [], sheets)).toBe(30)
+    // In scalar position it reads the first sheet's cell.
+    expect(run('=Jan:Mar!A1', [], sheets)).toBe(10)
+    // A range given the other way round still covers the tabs between.
+    expect(run('=SUM(Mar:Jan!A1)', [], sheets)).toBe(60)
+    // An unknown sheet name is #REF!.
+    expect(run('=SUM(Jan:Nope!A1)', [], sheets)).toEqual({ error: '#REF!' })
   })
 
   // A QA pass read these against Excel. The lookup family's approximate match

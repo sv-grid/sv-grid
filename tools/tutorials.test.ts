@@ -199,6 +199,7 @@ describe('recorded tutorials (manifest <-> docs <-> media)', () => {
     const unknown = [...onPages.keys()].filter((id) => !ids.has(id))
     expect(unknown, 'data-docs-tutorial ids with no manifest entry').toEqual([])
     const misplaced = manifest.tutorials
+      .filter((t) => t.kind !== 'marketing')
       .filter((t) => !(onPages.get(t.id) ?? []).includes(t.docsPage))
       .map((t) => `${t.id} -> ${t.docsPage} (found on: ${(onPages.get(t.id) ?? []).join(', ') || 'nowhere'})`)
     expect(misplaced, 'run node tools/tutorials/embed.mjs').toEqual([])
@@ -216,12 +217,16 @@ describe('recorded tutorials (manifest <-> docs <-> media)', () => {
     const problems: string[] = []
     for (const t of manifest.tutorials) {
       if (!/^[a-z0-9-]+$/.test(t.id)) problems.push(`${t.id}: id`)
-      if (!(t.duration >= 15 && t.duration <= 45)) problems.push(`${t.id}: duration ${t.duration}`)
+      // Feature tutorials aim at 30 s; an install walkthrough (terminal, editor,
+      // result) runs longer, and a marketing cut longer still.
+      const maxSeconds = t.kind === 'marketing' ? 150 : 90
+      if (!(t.duration >= 15 && t.duration <= maxSeconds)) problems.push(`${t.id}: duration ${t.duration}`)
       if (!t.description || t.description.length > 160) problems.push(`${t.id}: description length`)
       if (!t.transcript.length) problems.push(`${t.id}: empty transcript`)
       const text = [t.title, t.description, ...t.transcript.map((c) => c.text)].join(' ')
       if (/[\u2013\u2014]/.test(text)) problems.push(`${t.id}: em/en dash`)
-      if (!existsSync(join(ROOT, 'examples', 'src', 'demos', `${t.demo}.svelte`))) problems.push(`${t.id}: demo ${t.demo} missing`)
+      // A stage or website recording has no gallery demo.
+      if (t.demo && !existsSync(join(ROOT, 'examples', 'src', 'demos', `${t.demo}.svelte`))) problems.push(`${t.id}: demo ${t.demo} missing`)
     }
     expect(problems).toEqual([])
   })
@@ -230,6 +235,7 @@ describe('recorded tutorials (manifest <-> docs <-> media)', () => {
   it.skipIf(!hasSite)('committed media exists and stays within budget', async () => {
     const problems: string[] = []
     for (const t of manifest.tutorials) {
+      if (t.kind === 'marketing') continue // YouTube only, nothing under website/public
       for (const key of ['mp4', 'poster', 'vtt'] as const) {
         const abs = join(ROOT, 'website', 'public', t.files[key].replace(/^\//, ''))
         if (!existsSync(abs)) {
@@ -250,6 +256,7 @@ describe('recorded tutorials (manifest <-> docs <-> media)', () => {
     const corpus = await readFile(join(ROOT, 'website', 'public', 'llms-full.txt'), 'utf-8')
     const problems: string[] = []
     for (const t of manifest.tutorials) {
+      if (t.kind === 'marketing') continue
       const slug = t.docsPage.replace(/^docs\//, '').replace(/\.md$/, '')
       const page = index.find((p) => p.slug === slug)
       if (!page?.tutorials?.some((x) => x.id === t.id)) problems.push(`${t.id}: not in docs-index.json for ${slug} (run node tools/build-docs-page-index.mjs)`)

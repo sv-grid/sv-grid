@@ -97,3 +97,23 @@ describe('sorting on a colour', () => {
     expect(order).toEqual([2, 0, 1, 3])
   })
 })
+
+describe('guessHeaderRow over a block', () => {
+  const grid: CellValue[][] = [
+    ['Name', 'Dept', 'Pay'],
+    ['Zed', 'Ops', 50],
+    ['Amy', 'Eng', 70],
+  ]
+  const at = (r: number, c: number): CellValue => grid[r]?.[c] ?? ''
+
+  it('sees the header from any column of the block, not just the key', () => {
+    // Sorting by Name: text over text in that column, but Pay says header.
+    expect(guessHeaderRow(at, 0, 0, { left: 0, right: 2 })).toBe(true)
+    expect(guessHeaderRow(at, 0, 0)).toBe(false)
+  })
+
+  it('a number in the first row means the block starts with data', () => {
+    const numbers: CellValue[][] = [['Zed', 5, 50], ['Amy', 'x', 70]]
+    expect(guessHeaderRow((r, c) => numbers[r]?.[c] ?? '', 0, 2, { left: 0, right: 2 })).toBe(false)
+  })
+})

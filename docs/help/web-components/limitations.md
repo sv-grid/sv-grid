@@ -68,10 +68,13 @@ here because a custom element invites setting properties after upgrade.
 
 ## Bundle size
 
-The element bundles the grid **and** the Svelte runtime into one file, about
-104 KiB gzipped for the entry plus lazy chunks on demand. That is the price of
-a self-contained drop-in: a Svelte app importing `@svgrid/grid` shares the
-runtime it already has and ships less.
+The element bundles the grid **and** the Svelte runtime into one file, so it
+is larger than the component by roughly the runtime. The current figure is
+printed by `node packages/grid-wc/scripts/check-size.mjs`, which also holds
+the budget it is checked against in CI; the component's own numbers are on
+the [bundle size reference](../bundle-size.md). That is the
+price of a self-contained drop-in: a Svelte app importing `@svgrid/grid`
+shares the runtime it already has and ships less.
 
 If you are already on Svelte 5, use the component, not the element.
 

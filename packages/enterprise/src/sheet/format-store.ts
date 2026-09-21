@@ -33,6 +33,9 @@ export type CellFormatEntry = {
   /** Background fill. */
   fill?: string
   align?: 'left' | 'center' | 'right'
+  /** Vertical alignment within the row's height. Absent is the middle the
+   *  sheet draws by default, so only top and bottom are ever stored. */
+  valign?: 'top' | 'center' | 'bottom'
   fontFamily?: string
   fontSize?: number
   wrap?: boolean
@@ -277,6 +280,10 @@ export function entryToStyle(entry: CellFormatEntry | undefined): string {
   if (entry.color) parts.push(`color:${entry.color}`)
   if (entry.fill) parts.push(`background:${entry.fill}`)
   if (entry.align) parts.push(`text-align:${entry.align}`)
+  // The cell span is a grid box that fills its row and centres its content;
+  // top and bottom move that anchor, the middle is the default it already draws.
+  if (entry.valign === 'top') parts.push('align-items:start')
+  else if (entry.valign === 'bottom') parts.push('align-items:end')
   if (entry.fontFamily) parts.push(`font-family:${entry.fontFamily}`)
   if (entry.fontSize) parts.push(`font-size:${entry.fontSize}px`)
   if (entry.wrap) parts.push('white-space:pre-wrap')

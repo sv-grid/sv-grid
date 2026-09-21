@@ -183,6 +183,37 @@ describe('sorting with a row folded away', () => {
     expect(column).toEqual(['10', '20', '40', '30', '50'])
     expect(document.querySelector('.sv-sheet .status')?.textContent ?? '').toContain('hidden')
   })
+
+  it('moves a row\'s formulas the way a copy would, so a row total stays the row\'s', async () => {
+    // Each row's total reads its own row, and the thumbnail column reads
+    // the source beside it. Written verbatim after a sort, the Hosting row
+    // that landed in row 2 still read row 5, which by then was Licence:
+    // the wrong total, and the wrong picture under it.
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [
+      ['Product', 'Price', 'Qty', 'Total', 'Src', 'Pic'],
+      ['Licence', '1200', '2', '=B2*C2', 'a', '=IMAGE(E2)'],
+      ['Support', '480', '3', '=B3*C3', 'b', '=IMAGE(E3)'],
+      ['Hosting', '260', '5', '=B4*C4', 'c', '=IMAGE(E4)'],
+      ['Fixed', '', '', '=SUM($B$2:$B$4)', '', ''],
+    ] }] })
+    const { api, sheet } = await mountSheet({ document: doc, columns: 8 })
+    const cmd = api.getCommandContext()
+    // One cell in the Price column: the block is the region around it,
+    // its header row read as one, as Sort A to Z does from the ribbon.
+    cmd.setActiveCell(1, 1); cmd.setSelection(1, 1)
+    await paint()
+    sheet.act('sort-asc')
+    await paint()
+
+    const wb = doc.workbook
+    expect([1, 2, 3, 4].map((r) => wb.getRaw('S', r, 0))).toEqual(['Hosting', 'Support', 'Licence', 'Fixed'])
+    // The relative references follow the row; the absolute one stays put.
+    expect([1, 2, 3].map((r) => wb.getRaw('S', r, 3))).toEqual(['=B2*C2', '=B3*C3', '=B4*C4'])
+    expect([1, 2, 3].map((r) => wb.getRaw('S', r, 5))).toEqual(['=IMAGE(E2)', '=IMAGE(E3)', '=IMAGE(E4)'])
+    expect([1, 2, 3].map((r) => wb.getValue('S', r, 3))).toEqual([1300, 1440, 2400])
+    expect([1, 2, 3].map((r) => wb.getValue('S', r, 5))).toEqual(['c', 'b', 'a'])
+    expect(wb.getRaw('S', 4, 3)).toBe('=SUM($B$2:$B$4)')
+  })
 })
 
 describe('what the status bar claims happened', () => {

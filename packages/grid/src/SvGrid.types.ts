@@ -2000,6 +2000,15 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
     columnId: string;
   }) => unknown;
   /**
+   * Whether a collapsed row still takes part in a copy or a fill that
+   * spans it. Left out, both skip every collapsed row, which is what
+   * "filter, copy, paste" needs and what a fill dragged over a filtered
+   * list expects: the series runs over the rows that show. A spreadsheet
+   * answers per row: a row hidden by hand is copied and filled, as Excel
+   * does, while a row a filter folded away is not.
+   */
+  includeCollapsedRows?: (rowIndex: number) => boolean;
+  /**
    * An HTML rendering of what Ctrl+C copies, written to the clipboard as
    * `text/html` beside the TSV. Excel and Google Sheets read the HTML
    * first, so a table with inline styles pastes into them with its formats,
@@ -2164,10 +2173,11 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
     rows: TData[],
   ) => void;
   /**
-   * Fires whenever the cell-selection rectangle changes (mouse, keyboard,
-   * or `api.selectCells()`). `ranges` matches `api.getSelected()` -
-   * `[rowStart, colStart, rowEnd, colEnd]` rectangles in grid coords.
-   * Empty array when the user clears the selection.
+   * Fires whenever the cell selection changes (mouse, keyboard, or
+   * `api.selectCells()`). `ranges` is every selected rectangle, matching
+   * `api.getSelected()`: the ones a Ctrl+click committed and the active one
+   * last, each `[rowStart, colStart, rowEnd, colEnd]` in grid coords. Empty
+   * array when the user clears the selection.
    */
   onCellSelectionChange?: (
     ranges: Array<[number, number, number, number]>,

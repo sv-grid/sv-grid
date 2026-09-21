@@ -18,9 +18,22 @@
       setSort?: (field: string, desc: boolean) => void
       setFilter?: (field: string, value: string) => void
       scroller?: () => HTMLElement | null
+      setRows?: (rows: Array<Record<string, unknown>>) => void
     }
   }
   const { rows, columns, rowHeight, handle }: Props = $props()
+
+  // The tick path: the data prop replaced with a new array. SVAR drops the
+  // active sort when `data` changes (checked: after a replacement the rows
+  // came back in data order), so the sort is re-applied on every tick. That
+  // is what keeping a sorted blotter current costs on SVAR, and the harness
+  // verifies the order held for every grid rather than assume it.
+  let data = $state.raw<Array<Record<string, unknown>>>(rows)
+  let lastSort: { field: string; desc: boolean } | null = null
+  handle.setRows = (next) => {
+    data = next
+    if (lastSort) api?.exec('sort-rows', { key: lastSort.field, order: lastSort.desc ? 'desc' : 'asc' })
+  }
 
   const cols = columns.map((c) => ({ id: c.field, header: c.header, width: 140, sort: true }))
 
@@ -32,7 +45,10 @@
     api = a
   }
 
-  handle.setSort = (field, desc) => api?.exec('sort-rows', { key: field, order: desc ? 'desc' : 'asc' })
+  handle.setSort = (field, desc) => {
+    lastSort = { field, desc }
+    api?.exec('sort-rows', { key: field, order: desc ? 'desc' : 'asc' })
+  }
   handle.setFilter = (field, value) => {
     const needle = value.toLowerCase()
     api?.exec('filter-rows', {
@@ -44,6 +60,6 @@
 
 <div bind:this={rootEl} style="height:100%">
   <Willow>
-    <Grid data={rows} columns={cols} sizes={{ rowHeight, columnWidth: 140 }} {init} />
+    <Grid data={data} columns={cols} sizes={{ rowHeight, columnWidth: 140 }} {init} />
   </Willow>
 </div>

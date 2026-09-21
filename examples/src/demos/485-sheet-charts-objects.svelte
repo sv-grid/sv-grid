@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * 475. Charts and pictures on the sheet
+   * 485. Charts and pictures on the sheet
    * -------------------------------------
    * A quarterly sales sheet with two charts anchored over it, the way
    * Excel anchors one: each reads a RANGE rather than a copy of the
@@ -52,11 +52,13 @@
 
   // Two charts over the same numbers, read two ways: the quarters by
   // region, and the regions by quarter. Both are part of the document.
+  // Anchored from column B on: column A is frozen, and a frozen column
+  // paints over whatever scrolls under it, as a frozen pane does in Excel.
   const charts: SheetObject[] = [
     {
       id: objectId(),
       kind: 'chart',
-      anchor: { row: 6, col: 0, dx: 8, dy: 8, width: 430, height: 250 },
+      anchor: { row: 6, col: 1, dx: 8, dy: 8, width: 400, height: 250 },
       range: [0, 0, 3, 4],
       type: 'bar',
       headers: true,
@@ -66,7 +68,7 @@
     {
       id: objectId(),
       kind: 'chart',
-      anchor: { row: 6, col: 4, dx: 24, dy: 8, width: 430, height: 250 },
+      anchor: { row: 6, col: 5, dx: 32, dy: 8, width: 400, height: 250 },
       range: [0, 0, 3, 4],
       type: 'line',
       headers: true,

@@ -87,7 +87,7 @@ postfix `%` is tighter still, so `=-2%` is -0.02.
 | Information | `ISNUMBER` `ISTEXT` `ISNONTEXT` `ISLOGICAL` `ISBLANK` `ISERROR` `ISERR` `ISNA` `ISEVEN` `ISODD` `N` `T` `NA` |
 | Text | `LEN` `LEFT` `RIGHT` `MID` `UPPER` `LOWER` `PROPER` `TRIM` `CLEAN` `CONCAT` `CONCATENATE` `TEXTJOIN` `SUBSTITUTE` `REPLACE` `REPT` `FIND` `SEARCH` `EXACT` `TEXT` `VALUE` `NUMBERVALUE` `CHAR` `CODE` `UNICHAR` `UNICODE` |
 | Date | `TODAY` `NOW` `YEAR` `MONTH` `DAY` `DATE` `EOMONTH` `EDATE` `DAYS` `DAYS360` `DATEDIF` `YEARFRAC` `WEEKDAY` `WEEKNUM` `NETWORKDAYS` `WORKDAY` `HOUR` `MINUTE` `SECOND` `TIME` `DATEVALUE` `TIMEVALUE` |
-| Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `INDEX` `MATCH` `CHOOSE` `ROWS` `COLUMNS` `ROW` `COLUMN` `ADDRESS` `OFFSET` `INDIRECT` `HYPERLINK` `IMAGE` |
+| Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `LOOKUP` `INDEX` `MATCH` `XMATCH` `CHOOSE` `ROWS` `COLUMNS` `ROW` `COLUMN` `ADDRESS` `OFFSET` `INDIRECT` `HYPERLINK` `IMAGE` |
 | Dynamic arrays | `FILTER` `UNIQUE` `SORT` `SORTBY` `SEQUENCE` `TRANSPOSE` `TEXTSPLIT` |
 | Names and lambdas | `LET` `LAMBDA` `MAP` `BYROW` `BYCOL` `REDUCE` `SCAN` `MAKEARRAY` `HYPERLINK` |
 
@@ -146,6 +146,9 @@ default) down an ascending range, `-1` down a descending one, `0` exact.
 `XLOOKUP` is exact by default, and takes a match mode of `-1` to fall back to
 the next smaller item or `1` to the next larger one, plus a search mode of `-1`
 to read the range from the end and so return the last of several matches.
+`XMATCH` is `MATCH`'s modern twin and takes the same modes, returning the
+position; `LOOKUP` is the old approximate lookup, taking the largest item not
+past the value from a sorted vector and the matching cell of a second one.
 Only cells of the same type as the value looked up take part in an approximate
 match, so a text header above a column of numbers is never the answer.
 
@@ -157,6 +160,14 @@ are: a workbook recomputes a cell holding one on every write, since the
 dependency graph cannot see what text it will point at next. `ROW()` and
 `COLUMN()` without an argument need to know the cell they sit in, which a
 `Workbook` supplies as `currentCell`.
+
+A 3D reference reads the same cell or rectangle on a range of sheets:
+`=SUM(Sheet1:Sheet3!A1)` adds A1 down the tabs from Sheet1 to Sheet3, and
+`=AVERAGE(Jan:Dec!B5:B10)` averages the block on each month between. The
+sheets are taken in tab order, so a tab inserted between the two joins the
+sum, and renaming an endpoint follows it. The sheet names go unquoted, the
+common case; a name that needs quotes (`'Q1 2026':'Q4 2026'!B5`) is not
+read yet, and a 3D reference exports to xlsx but not to ODF.
 
 ### LET and LAMBDA
 
@@ -230,10 +241,16 @@ dynamic-array metadata, so Excel opens them as spills rather than as
 `@`-prefixed legacy formulas. `LET`, `LAMBDA` and the six helpers go into
 the file the same way, under the `_xlfn.` prefix Excel spells them with.
 
-Two of Excel's array conveniences are not here: the spill operator
-(`=SUM(D2#)`, which names the whole block a spill covers) and array
-constants written in braces (`={1;2;3}`). Both read as `#PARSE!`; name the
-spilled range or put the values in cells instead.
+The spilled-range operator names the whole block a spill covers by its
+anchor: `=SUM(E1#)` adds every cell `=SEQUENCE(3)` in E1 reaches, `=A6#`
+on its own spills a copy, and the reference grows and shrinks with the
+array because the anchor is always one of its precedents. A `#` on a cell
+that anchors no array is `#REF!`. It fills, transposes and moves like any
+reference, and a delete that removes the anchor takes it to `#REF!`.
+
+The one array convenience still absent is array constants written in
+braces (`={1;2;3}`), which read as `#PARSE!`; put the values in cells
+instead.
 
 Dates are `yyyy-mm-dd` text, and the date functions hand back the same;
 `DATEVALUE` and `VALUE` turn one into Excel's serial number, `TIME` and

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { sheetStateFromOds, documentToOdsParts, formulaFromOdf, formulaToOdf } from './ods-document'
 import { createSheetDocument } from './document'
 import { formatKeyAt } from './format-store'
+import { accountingPattern } from './number-format'
 
 /**
  * The .ods side, against the shapes LibreOffice writes. The fixtures here
@@ -230,5 +231,21 @@ describe('writing an .ods', () => {
     expect(back.get('Data').widths.A).toBe(140)
     expect(back.get('Data').formats.get('r1', 'B')?.numFmt).toBe('yyyy-mm-dd')
     expect(back.get('Data').formats.get('r0', 'A')?.bold).toBe(true)
+  })
+
+  it('keeps an accounting format, symbol or none, through the fill character', () => {
+    const source = createSheetDocument({ sheets: [{ name: 'S', cells: [['320000', '1767.05', '12']] }] })
+    const at = { rowIdAt: (i: number) => `r${i}`, columnIdAt: (i: number) => String.fromCharCode(65 + i) }
+    source.get('S').formats.set([[0, 0, 0, 0]], { numFmt: accountingPattern('$', 2) }, at)
+    source.get('S').formats.set([[0, 1, 0, 1]], { numFmt: accountingPattern('', 2) }, at)
+    source.get('S').formats.set([[0, 2, 0, 2]], { numFmt: '$#,##0.00' }, at)
+    const parts = documentToOdsParts(source)
+    // The alignment is ODF's fill character, which LibreOffice writes for its own.
+    expect(parts['content.xml']).toContain('<number:fill-character> </number:fill-character>')
+    const back = createSheetDocument({ state: sheetStateFromOds(parts) })
+    expect(back.get('S').formats.get('r0', 'A')?.numFmt).toBe(accountingPattern('$', 2))
+    expect(back.get('S').formats.get('r0', 'B')?.numFmt).toBe(accountingPattern('', 2))
+    // A plain currency stays a plain currency: no fill, no accounting.
+    expect(back.get('S').formats.get('r0', 'C')?.numFmt).not.toContain('*')
   })
 })

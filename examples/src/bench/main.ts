@@ -27,7 +27,7 @@ function render(results: GridResult[]) {
   const rows = results
     .map((r) =>
       r.error
-        ? `<tr><td>${r.grid}</td><td colspan="8" class="err">failed: ${r.error}</td></tr>`
+        ? `<tr><td>${r.grid}</td><td colspan="10" class="err">failed: ${r.error}</td></tr>`
         : `<tr>
              <td><strong>${r.grid}</strong><br><span class="dim">${r.version} · ${r.license}</span></td>
              <td>${n(r.mount)}</td>
@@ -36,6 +36,8 @@ function render(results: GridResult[]) {
              <td>${n(r.filter)}</td>
              <td>${n(r.scrollP95)}</td>
              <td>${r.scrollDropped}/180</td>
+             <td>${n(r.tickP95)}${r.tickSortHeld ? '' : ' <span class="err">(order not kept)</span>'}</td>
+             <td>${r.tickOverBudget}/180</td>
              <td>${r.domRows}</td>
            </tr>`,
     )
@@ -44,7 +46,8 @@ function render(results: GridResult[]) {
     <table>
       <thead><tr>
         <th>Grid</th><th>Mount (ms)</th><th>Sort text (ms)</th><th>Sort number (ms)</th>
-        <th>Filter (ms)</th><th>Scroll p95 (ms)</th><th>Dropped</th><th>DOM rows</th>
+        <th>Filter (ms)</th><th>Scroll p95 (ms)</th><th>Dropped</th>
+        <th>Tick p95 (ms)</th><th>Ticks over 16.7 ms</th><th>DOM rows</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
@@ -54,7 +57,10 @@ function render(results: GridResult[]) {
       rAF-driven so p95 cannot fall below the display refresh; the dropped
       column is the jank signal. The filter row is indicative only: the two
       grids' single-column filter APIs differ enough that this drives AG Grid's
-      quick filter, which searches every column and so does more work.
+      quick filter, which searches every column and so does more work. A tick
+      replaces 1,000 rows' amounts in a new array against a grid sorted by
+      amount, on each grid's own update path, timed until the cells paint;
+      180 ticks, p95 and the count that missed one 60 Hz frame.
     </p>`
 }
 

@@ -4,12 +4,14 @@ export type TutorialCue = { start: number; end: number; text: string }
 /** One entry of tools/tutorials/manifest.json. */
 export type TutorialEntry = {
   id: string
+  /** A marketing cut is published on YouTube only: no docs page, no media under website/public. */
+  kind?: 'marketing'
   title: string
   description: string
-  /** Gallery demo id the tutorial was recorded on. */
-  demo: string
-  /** Repo-relative docs page carrying the block, e.g. "docs/help/editing/overview.md". */
-  docsPage: string
+  /** Gallery demo id the tutorial was recorded on (null for a stage-only cut). */
+  demo: string | null
+  /** Repo-relative docs page carrying the block, e.g. "docs/help/editing/overview.md"; null for a marketing cut. */
+  docsPage: string | null
   tags: string[]
   /** Seconds. */
   duration: number
@@ -21,8 +23,8 @@ export type TutorialEntry = {
   /** ISO date the YouTube copy went up, else null. */
   publishedAt: string | null
   /** Root-relative site paths, e.g. "/tutorials/<id>.mp4". */
-  files: { mp4: string; poster: string; vtt: string; webm?: string }
-  bytes: { mp4: number; poster: number }
+  files: { mp4: string | null; poster: string | null; vtt: string | null; webm?: string }
+  bytes: { mp4: number; poster: number; master?: number }
   transcript: TutorialCue[]
 }
 

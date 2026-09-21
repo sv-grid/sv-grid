@@ -29,6 +29,7 @@ import { copyObject, objectId, shiftObjects, type SheetObject } from './objects'
 import { copySparkline, shiftSparklines, sparklineId, type SparklineGroup } from './sparklines'
 import { copyPivot, pivotId, shiftPivots, type SheetPivot } from './pivot-range'
 import { copyLinks, shiftLinks, type LinksMap } from './links'
+import { releaseFilteredRows } from './filter-files'
 import { colToLetters, lettersToCol } from './address'
 import { shiftValidation, type ValidationRule } from './validation'
 import { shiftCf, type CfRule } from './conditional-formats'
@@ -531,6 +532,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
         const kept = new Set(Object.keys(state.sheets ?? {}).map(key))
         for (const name of [...entries.keys()]) if (!kept.has(name) && !wantedKeys.has(name)) entries.delete(name)
         for (const name of workbook.sheets) hydrateEntry(get(name), state.sheets?.[name] ?? {})
+        for (const name of workbook.sheets) releaseFilteredRows(document, name)
       })
       changed({ kind: 'restore' })
     },
@@ -557,6 +559,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
       workbook.names.hydrate(init.state!.workbook.names ?? {})
       if (workbook.sheets.some((s) => key(s) === key(init.state!.workbook.active))) workbook.setActive(init.state!.workbook.active)
       for (const [name, entry] of Object.entries(init.state!.sheets ?? {})) hydrateEntry(get(name), entry)
+      for (const name of workbook.sheets) releaseFilteredRows(document, name)
     })
   }
 

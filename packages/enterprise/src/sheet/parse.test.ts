@@ -71,6 +71,21 @@ describe('references', () => {
     expect(n.ref.sheet).toBe("Bob's")
   })
 
+  it('parses a 3D reference across a sheet range, cell and range alike', () => {
+    const n = parse('=Sheet1:Sheet3!A1') as Extract<Node, { k: 'ref3d' }>
+    expect(n.k).toBe('ref3d')
+    expect([n.sheetFrom, n.sheetTo]).toEqual(['Sheet1', 'Sheet3'])
+    expect([n.from.col, n.from.row]).toEqual([0, 0])
+    expect(n.to).toEqual(n.from)
+    const r = parse('=Jan:Dec!B5:B10') as Extract<Node, { k: 'ref3d' }>
+    expect([r.sheetFrom, r.sheetTo]).toEqual(['Jan', 'Dec'])
+    expect([r.from.col, r.from.row, r.to.row]).toEqual([1, 4, 9])
+    // It round-trips, and a plain A1:B2 stays an ordinary range.
+    expect(formatFormula(parse('=SUM(Sheet1:Sheet3!A1)'))).toBe('=SUM(Sheet1:Sheet3!A1)')
+    expect(formatFormula(parse('=SUM(Jan:Dec!B5:B10)'))).toBe('=SUM(Jan:Dec!B5:B10)')
+    expect((parse('=A1:B2') as Node).k).toBe('range')
+  })
+
   it('parses a whole-column range with an open end', () => {
     const n = parse('=A:C') as Extract<Node, { k: 'range' }>
     expect(n.from).toMatchObject({ col: 0, row: null })

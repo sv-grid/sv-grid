@@ -1,0 +1,24 @@
+# 02 npm install svelte@5.57.1 with svelte-headless-table in package.json
+# captured 2026-09-20 by tools/migration-lab/run.mjs on win32 x64
+# node v24.18.0, npm 11.16.0, svelte 5.57.1, svelte-check 4.7.6, typescript 5.9.3, svelte-headless-table 0.18.3, @svgrid/grid not installed
+$ npm install svelte@5.57.1
+
+added 10 packages, removed 10 packages, and changed 2 packages in <time>
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: svgrid-migration-lab@undefined
+npm warn Found: svelte@4.2.20
+npm warn node_modules/svelte
+npm warn   peer svelte@"^4.0.0 || ^5.0.0-next.0" from svelte-check@4.7.6
+npm warn   node_modules/svelte-check
+npm warn     dev svelte-check@"4.7.6" from the root project
+npm warn   5 more (svelte-headless-table, svelte-keyed, svelte-render, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer svelte@"^4.0.0" from svelte-headless-table@0.18.3
+npm warn node_modules/svelte-headless-table
+npm warn   dev svelte-headless-table@"0.18.3" from the root project
+npm warn ERESOLVE overriding peer dependency
+npm warn ERESOLVE overriding peer dependency
+npm warn ERESOLVE overriding peer dependency
+
+(exit 0)

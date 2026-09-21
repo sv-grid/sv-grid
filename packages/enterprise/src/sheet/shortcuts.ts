@@ -550,7 +550,13 @@ export function preset(name: FormatPresetName): SheetCommand {
   return (cmd) => applyFormat(cmd, { numFmt: FORMAT_PRESETS[name] })
 }
 
-/** Alt+=. Inserts =SUM(range) over the run Excel would guess. */
+/**
+ * Alt+=. Proposes =SUM(range) over the run Excel would guess. With one cell
+ * selected the formula is opened in the cell's editor rather than written,
+ * as Excel's AutoSum does: the guess is often a row short, and the editor is
+ * where it gets corrected before Enter takes it. A wider selection has the
+ * sum written into the active cell outright.
+ */
 export const autoSum: SheetCommand = (cmd) => {
   const active = cmd.activeCell
   if (!active) return false
@@ -560,11 +566,11 @@ export const autoSum: SheetCommand = (cmd) => {
   const [minRow, minCol, maxRow, maxCol] = range
   const ref = (r: number, c: number) =>
     formatA1({ col: c, colAbs: false, row: r, rowAbs: false, sheet: null })
-  cmd.setCellValue(
-    active.rowIndex,
-    active.colIndex,
-    `=SUM(${ref(minRow, minCol)}:${ref(maxRow, maxCol)})`,
-  )
+  const formula = `=SUM(${ref(minRow, minCol)}:${ref(maxRow, maxCol)})`
+  const last = cmd.ranges[cmd.ranges.length - 1]
+  const oneCell = !last || (last[0] === last[2] && last[1] === last[3])
+  if (oneCell && cmd.startEditing(active.rowIndex, active.colIndex, formula)) return true
+  cmd.setCellValue(active.rowIndex, active.colIndex, formula)
   return true
 }
 
@@ -653,11 +659,20 @@ export const SHEET_BINDINGS: ReadonlyArray<SheetBinding> = [
   { key: '0', code: 'Digit0', mod: true, run: raise('hide-columns'), label: 'Hide the selected columns' },
   { key: '(', code: 'Digit9', mod: true, shift: true, run: raise('unhide-rows'), label: 'Unhide rows in the selection' },
   { key: ')', code: 'Digit0', mod: true, shift: true, run: raise('unhide-columns'), label: 'Unhide columns in the selection' },
+  // Ctrl+H is Excel's Replace and Ctrl+F its Find; the shell has one dialog
+  // for both, so both open it. Ctrl+F is the browser's find otherwise, and a
+  // spreadsheet user who presses it wants the cells searched, as in Excel
+  // and Sheets; the browser's is a keystroke away with the sheet unfocused.
   { key: 'h', mod: true, run: (cmd) => {
     if (!onFindReplace || !getFindTarget()) return false
     onFindReplace(cmd)
     return true
   }, label: 'Find and Replace' },
+  { key: 'f', mod: true, run: (cmd) => {
+    if (!onFindReplace || !getFindTarget()) return false
+    onFindReplace(cmd)
+    return true
+  }, label: 'Find' },
   { key: 'v', mod: true, shift: true, run: (cmd) => {
     if (!onPasteSpecial) return false
     onPasteSpecial(cmd)
@@ -668,14 +683,17 @@ export const SHEET_BINDINGS: ReadonlyArray<SheetBinding> = [
   // grid leaves Ctrl+PageDown to the browser.
   { key: 'PageDown', mod: true, run: () => switchSheet(1), label: 'Next sheet' },
   { key: 'PageUp', mod: true, run: () => switchSheet(-1), label: 'Previous sheet' },
-  { key: 'F11', shift: true, run: () => {
-    const wb = workbook
-    if (!wb) return false
-    wb.addSheet()
-    onWorkbookChange?.()
-    return true
-  }, label: 'New sheet' },
+  { key: 'F11', shift: true, run: () => newSheet(), label: 'New sheet' },
 ]
+
+/** Shift+F11 and the ribbon's Insert Sheet: a new sheet after the last, made active. */
+export function newSheet(): boolean {
+  const wb = workbook
+  if (!wb) return false
+  wb.addSheet()
+  onWorkbookChange?.()
+  return true
+}
 
 export function structural(cmd: GridCommandContext, kind: 'insert' | 'delete'): boolean {
   if (!getStructureTarget()) return false

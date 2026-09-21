@@ -182,6 +182,8 @@ worked example.
 
 ## See also
 
+- [Svelte headless table](https://svgrid.com/svelte/headless-table/) - the landing page: what the engine does, what you do, and its measured size
+- [Headless guides](./help/headless/overview.md) - build a table, styling, virtualization, controlled state, row models, server-side
 - [Getting started](./getting-started.md) - the wrapper-first walkthrough
 - [Column definitions](./help/columns/column-definitions.md) - the contract the headless core enforces
 - [Filter API](./help/filtering/filter-api.md) - example of headless state surfaced through the wrapper

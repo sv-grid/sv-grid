@@ -46,14 +46,14 @@ function fail(msg) {
 export function youtubeMeta(t, { privacy = 'unlisted' } = {}) {
   const suffix = ' - SvGrid, the Svelte 5 data grid'
   const title = normalizeNarration(t.title.length + suffix.length <= 100 ? `${t.title}${suffix}` : t.title).slice(0, 100)
-  const slug = t.docsPage.replace(/^docs\//, '').replace(/\.md$/, '')
+  const slug = t.docsPage ? t.docsPage.replace(/^docs\//, '').replace(/\.md$/, '') : null
   const description = [
     normalizeNarration(t.description),
     '',
     ...t.transcript.map((c) => normalizeNarration(c.text)),
     '',
-    `Docs: ${SITE}/docs/${slug}/`,
-    `Live demo: ${SITE}/demos/${t.demo}/`,
+    ...(slug ? [`Docs: ${SITE}/docs/${slug}/`] : [`Docs: ${SITE}/docs/`]),
+    ...(t.demo ? [`Live demo: ${SITE}/demos/${t.demo}/`] : [`Live demos: ${SITE}/demos/`]),
     'Install: npm i @svgrid/grid',
     '',
     '#Svelte #SvelteKit #DataGrid',

@@ -164,7 +164,7 @@ export function benchmarkBlock(ledger) {
   const b = ledger.benchmarks
   if (!b || !b.grids?.length) return null
   const lines = [BENCH_START]
-  const rig = [b.rig?.container, b.rig?.statistic, b.rig?.browser, b.rig?.machine].filter(Boolean).join('; ')
+  const rig = [b.rig?.container, b.rig?.statistic, b.rig?.browser, b.rig?.machine, b.rig?.tick ? `tick: ${b.rig.tick}` : null].filter(Boolean).join('; ')
   lines.push(`Measured ${formatDate(b.measuredAt)} with \`pnpm bench:compare\` (tests/perf/compare.spec.ts, recorded by tools/record-benchmarks.mjs): ${Number(b.rows).toLocaleString('en-US')} rows x 9 columns${rig ? `; ${rig}` : ''}. Lower is better.`)
   lines.push('')
   lines.push(`| Operation | ${b.grids.map((g) => g.label).join(' | ')} |`)
@@ -175,6 +175,7 @@ export function benchmarkBlock(ledger) {
     ['sortNumber', 'Sort, numeric column'],
     ['filter', 'Filter, one column (indicative only, see below)'],
     ['scrollP95', 'Scroll, p95 frame'],
+    ['tickP95', 'Live tick, 1,000 rows replaced, sorted by that column, p95'],
   ]
   for (const [key, label] of CASES) {
     if (!b.grids.some((g) => Number.isFinite(g.results?.[key]))) continue
@@ -182,6 +183,9 @@ export function benchmarkBlock(ledger) {
   }
   if (b.grids.some((g) => Number.isFinite(g.results?.scrollDropped))) {
     lines.push(`| Frames dropped while scrolling, of 180 | ${b.grids.map((g) => (Number.isFinite(g.results?.scrollDropped) ? String(g.results.scrollDropped) : 'n/a')).join(' | ')} |`)
+  }
+  if (b.grids.some((g) => Number.isFinite(g.results?.tickOverBudget))) {
+    lines.push(`| Ticks over one 60 Hz frame, of 180 | ${b.grids.map((g) => (Number.isFinite(g.results?.tickOverBudget) ? String(g.results.tickOverBudget) : 'n/a')).join(' | ')} |`)
   }
   if (b.grids.some((g) => Number.isFinite(g.results?.domRows))) {
     lines.push(`| Rows kept in the DOM (virtualization on) | ${b.grids.map((g) => (Number.isFinite(g.results?.domRows) ? String(g.results.domRows) : 'n/a')).join(' | ')} |`)
@@ -201,9 +205,53 @@ export function syncBenchmarkBlock(markdown, block) {
   return markdown.slice(0, start) + block + markdown.slice(end + BENCH_END.length)
 }
 
+export const SIZE_START = '<!-- size:start -->'
+export const SIZE_END = '<!-- size:end -->'
+
+/**
+ * The measured-size table for docs/help/bundle-size.md, from
+ * docs/_data/svgrid-size.json. The page typed its numbers by hand and sat a
+ * month behind the ledger (2.3 / 77.3 KB against 2.5 / 93 measured); it now
+ * carries this block and the typed-number guard covers it like a guide.
+ * @param {import('./competitor-facts.mjs').SvgridSize | null} size
+ */
+export function sizeBlock(size) {
+  if (!size?.entries) return null
+  const e = size.entries
+  const kb = (n) => (Number(n) > 0 ? `**${Number(n).toFixed(1)} KB**` : '-')
+  const lines = [SIZE_START]
+  lines.push(`Re-measured **${formatDate(size.measuredAt)}** at \`@svgrid/grid\` ${size.version} with the script that ships in the repo (\`pnpm size:json\`):`)
+  lines.push('')
+  lines.push('| Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |')
+  lines.push('| --- | ---: | ---: | ---: |')
+  const ROWS = [
+    ['headless', 'Headless core (`createSvGrid`)'],
+    ['core', 'Headless subpath (`@svgrid/grid/core`)'],
+    ['full', 'Full render component (`<SvGrid>`)'],
+    ['chart', 'Standalone chart (`<SvChart>`)'],
+  ]
+  for (const [key, label] of ROWS) {
+    const row = e[key]
+    if (!row) continue
+    lines.push(`| ${label} | ${kb(row.baseGzipKb)} | ${kb(row.cssGzipKb)} | ${kb(row.lazyGzipKb)} |`)
+  }
+  lines.push(SIZE_END)
+  return lines.join('\n')
+}
+
+/** Replace the size block in a page; no block, no change. */
+export function syncSizeBlock(markdown, block) {
+  const start = markdown.indexOf(SIZE_START)
+  if (start === -1 || !block) return markdown
+  const end = markdown.indexOf(SIZE_END, start)
+  if (end === -1) throw new Error('size:start without size:end')
+  return markdown.slice(0, start) + block + markdown.slice(end + SIZE_END.length)
+}
+
 /** A guide with its generated blocks removed, for the typed-number guard. */
 export function stripGeneratedBlocks(markdown) {
   return markdown
     .replace(new RegExp(`${FACTS_START_RE.source}[\\s\\S]*?${FACTS_END.replace(/[-]/g, '\\-')}`, 'g'), '')
     .replace(new RegExp(`${BENCH_START.replace(/[-]/g, '\\-')}[\\s\\S]*?${BENCH_END.replace(/[-]/g, '\\-')}`, 'g'), '')
+    .replace(new RegExp(`${SIZE_START.replace(/[-]/g, '\\-')}[\\s\\S]*?${SIZE_END.replace(/[-]/g, '\\-')}`, 'g'), '')
 }

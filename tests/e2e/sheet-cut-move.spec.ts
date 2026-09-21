@@ -86,8 +86,8 @@ test.describe('cut and paste moves cells the way Excel does', () => {
   })
 })
 
-test.describe('a copy leaves out the rows nobody can see', () => {
-  test('a hidden row is not carried, and the block closes up', async ({ page }) => {
+test.describe('a copy leaves out the rows a filter folded, not the ones hidden by hand', () => {
+  test('a row hidden with Ctrl+9 is carried, as Excel carries one', async ({ page }) => {
     await open(page)
     for (let r = 0; r < 5; r += 1) await type(page, r, 0, String((r + 1) * 11))
     // Ctrl+9 hides the row the way Excel does.
@@ -109,7 +109,37 @@ test.describe('a copy leaves out the rows nobody can see', () => {
 
     const pasted: string[] = []
     for (let r = 0; r < 5; r += 1) pasted.push(await shown(page, r, 2))
-    expect(pasted).toEqual(['11', '22', '44', '55', ''])
+    expect(pasted).toEqual(['11', '22', '33', '44', '55'])
+  })
+
+  test('a row a filter folded away is not carried, and the block closes up', async ({ page }) => {
+    await page.addInitScript(() => { try { localStorage.setItem('sg-theme', 'light') } catch { /* private mode */ } })
+    await page.goto(`${GALLERY}/#/464-ticket-log-autofilter`)
+    await page.locator('.sv-sheet td[data-svgrid-row]').first().waitFor({ timeout: 60_000 })
+    await page.waitForTimeout(600)
+    await expect(page.locator('.sv-sheet .status')).toContainText('34 of 40 records found')
+    // The Status column, header to the last ticket, copied and pasted at J1.
+    await cell(page, 0, 5).click()
+    await page.keyboard.press('Control+Shift+ArrowDown')
+    await page.keyboard.press('Control+c')
+    await page.waitForTimeout(250)
+    // J1 is the first free column on the sheet (the log ends at I).
+    await cell(page, 0, 9).click()
+    await page.keyboard.press('Control+v')
+    await page.waitForTimeout(600)
+    const pasted = await page.evaluate(() =>
+      [...document.querySelectorAll('.sv-sheet td[data-svgrid-col="9"]')].map((td) => td.textContent!.trim()).filter(Boolean))
+    expect(pasted[0]).toBe('Status')
+    expect(pasted).not.toContain('Closed')
+    // 34 matching tickets under the header: J35 is the last, J36 is empty.
+    // The rows are virtualised, so the Name Box takes the view down there.
+    const nameBox = page.locator('.sv-sheet input[aria-label="Name box"]').first()
+    await nameBox.click()
+    await nameBox.fill('J36')
+    await page.keyboard.press('Enter')
+    await page.waitForTimeout(400)
+    expect(await shown(page, 34, 9)).not.toBe('')
+    expect(await shown(page, 35, 9)).toBe('')
   })
 
   test('Delete over the block leaves the hidden row holding its value', async ({ page }) => {

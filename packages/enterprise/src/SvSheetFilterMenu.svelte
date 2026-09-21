@@ -70,7 +70,7 @@
     // Open on the column's state: the ticks it has, or the condition it has.
     const f = filter
     const all = values.map((v) => v.text)
-    if (f?.kind === 'values') ticked = new Set(all.filter((t) => !f.excluded.includes(t)))
+    if (f?.kind === 'values') ticked = new Set(f.included ? all.filter((t) => f.included!.includes(t)) : all.filter((t) => !f.excluded.includes(t)))
     else ticked = new Set(all)
     mode = f?.kind === 'condition' ? 'condition' : f?.kind === 'date' ? 'date' : f?.kind === 'top' ? 'top' : 'values'
     period = f?.kind === 'date' ? f.period : 'today'

@@ -24,10 +24,10 @@ function fullDocument() {
   wb.setRaw('Orders', 0, 5, '=SEQUENCE(2, 1, 7)')
   wb.setActive('Price list')
   const orders = doc.get('Orders')
-  orders.formats.set([[0, 0, 0, 4]], { bold: true, fill: '#e2e8f0', color: '#0f172a', align: 'center' }, lookup)
+  orders.formats.set([[0, 0, 0, 4]], { bold: true, fill: '#e2e8f0', color: '#0f172a', align: 'center', valign: 'top' }, lookup)
   orders.formats.set([[1, 2, 3, 3]], { numFmt: '$#,##0.00;($#,##0.00)' }, lookup)
   orders.formats.set([[1, 4, 2, 4]], { numFmt: 'yyyy-mm-dd' }, lookup)
-  orders.formats.set([[3, 3, 3, 3]], { border: { top: { width: 1 }, bottom: { style: 'double', color: '#000000' } }, locked: false, wrap: true, indent: 1, italic: true, underline: true, strike: true, fontSize: 16, fontFamily: 'Arial' }, lookup)
+  orders.formats.set([[3, 3, 3, 3]], { border: { top: { width: 1 }, bottom: { style: 'double', color: '#000000' } }, locked: false, wrap: true, indent: 1, italic: true, underline: true, strike: true, fontSize: 16, fontFamily: 'Arial', valign: 'bottom' }, lookup)
   orders.widths.A = 140
   orders.widths.E = 91
   orders.heights.set(0, 32)
@@ -150,13 +150,13 @@ describe('the round trip', () => {
     expect(again.workbook.getValue('Price list', 3, 1)).toEqual({ error: '#DIV/0!' })
 
     const o = again.get('Orders')
-    expect(o.formats.get('r0', 'A')).toEqual({ bold: true, fill: '#e2e8f0', color: '#0f172a', align: 'center' })
+    expect(o.formats.get('r0', 'A')).toEqual({ bold: true, fill: '#e2e8f0', color: '#0f172a', align: 'center', valign: 'top' })
     expect(o.formats.get('r1', 'C')).toEqual({ numFmt: '$#,##0.00;($#,##0.00)' })
     expect(o.formats.get('r1', 'E')).toEqual({ numFmt: 'yyyy-mm-dd' })
     expect(o.formats.get('r3', 'D')).toEqual({
       numFmt: '$#,##0.00;($#,##0.00)',
       border: { top: { width: 1 }, bottom: { style: 'double', width: 1, color: '#000000' } },
-      locked: false, wrap: true, indent: 1, italic: true, underline: true, strike: true, fontSize: 16, fontFamily: 'Arial',
+      locked: false, wrap: true, indent: 1, italic: true, underline: true, strike: true, fontSize: 16, fontFamily: 'Arial', valign: 'bottom',
     })
     expect(o.widths).toEqual({ A: 140, E: 91 })
     expect(o.heights.get(0)).toBe(32)
@@ -177,6 +177,23 @@ describe('the round trip', () => {
     const strip = (rules: Array<{ id: string }>) => rules.map(({ id: _id, ...rest }) => rest)
     expect(strip(o.validation)).toEqual(strip(before.sheets.Orders.validation))
     expect(strip(o.conditionalFormats)).toEqual(strip(before.sheets.Orders.conditionalFormats))
+  })
+
+  it('a time is a number under h:mm both ways, and a whole serial under a day format comes back as the date', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['0.4375', '=A1*2', '46085']] }] })
+    const s = doc.get('S')
+    s.formats.set([[0, 0, 0, 1]], { numFmt: 'h:mm' }, lookup)
+    s.formats.set([[0, 2, 0, 2]], { numFmt: 'm/d/yyyy' }, lookup)
+    const parts = documentToXlsxParts(doc)
+    // Written as numbers: Excel shows 10:30 and 21:00 through the format,
+    // not the text "0.4375" a time-typed cell went out as before.
+    expect(parts['xl/worksheets/sheet1.xml']).toMatch(/<c r="A1" s="\d+"><v>0\.4375<\/v><\/c>/)
+    const again = createSheetDocument({ state: documentFromXlsxParts(parts) })
+    expect(again.workbook.getRaw('S', 0, 0)).toBe('0.4375')
+    expect(again.get('S').formats.get('r0', 'A')).toEqual({ numFmt: 'h:mm' })
+    expect(again.get('S').formats.get('r0', 'B')).toEqual({ numFmt: 'h:mm' })
+    expect(again.workbook.getValue('S', 0, 1)).toBe(0.875)
+    expect(again.workbook.getRaw('S', 0, 2)).toBe('2026-03-04')
   })
 
   it('survives the zip, with the real jszip', async () => {

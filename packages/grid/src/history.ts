@@ -36,6 +36,15 @@ export type HistoryStep = {
    * functions do the work. Never serialised, since a closure cannot be.
    */
   custom?: { undo: () => void; redo: () => void }
+  /**
+   * The consumer's own mark on the step, copied from `api.setHistoryTag` at
+   * the moment it is recorded. The grid never reads it: it is there for a
+   * consumer that shows one of several data sets through the grid and has
+   * to know which one a step belongs to before it lets Ctrl+Z apply it (a
+   * workbook with several sheets, say). Kept as given, so an object tag
+   * compares by identity. Not serialised.
+   */
+  tag?: unknown
 }
 
 /** Ctx surface these helpers touch. The controller satisfies it structurally. */
@@ -48,6 +57,8 @@ type HistoryCtx = {
    *  inside it joins that group, so a command does not have to thread a group
    *  id down through the writers it calls. */
   historyGroupId: string | undefined
+  /** Stamped on every step recorded while it is set; see `HistoryStep.tag`. */
+  historyTag?: unknown
   applyHistoryStep(step: HistoryStep, direction: 'undo' | 'redo'): void
 }
 
@@ -69,6 +80,37 @@ function groupEnd(history: ReadonlyArray<HistoryStep>, start: number): number {
   let i = start
   while (i < history.length - 1 && history[i + 1]?.groupId === id) i += 1
   return i
+}
+
+/**
+ * The last `limit` ACTIONS of a history, whole groups kept. The cap used
+ * to count steps, and a sort of 5,000 rows is 20,000 steps in one group:
+ * it cut the group to its last 200 cells, so Ctrl+Z put a fifth of a
+ * column back and left the rest sorted. An action is one press of Ctrl+Z,
+ * so that is what the buffer counts; the steps inside are the cost of it.
+ */
+function lastActions(history: HistoryStep[], limit: number): HistoryStep[] {
+  let i = history.length
+  let actions = 0
+  while (i > 0 && actions < limit) {
+    i = groupStart(history, i - 1)
+    actions += 1
+  }
+  return i === 0 ? history : history.slice(i)
+}
+
+/** What the next undo would apply: the tag of the step Ctrl+Z takes next
+ *  (a group carries one tag, so its last step's is the group's). Null when
+ *  there is nothing to undo. */
+export function peekUndoHistory(ctx: HistoryCtx): { tag: unknown } | null {
+  const step = ctx.historyPtr >= 0 ? ctx.history[ctx.historyPtr] : undefined
+  return step ? { tag: step.tag } : null
+}
+
+/** The redo counterpart of `peekUndoHistory`. */
+export function peekRedoHistory(ctx: HistoryCtx): { tag: unknown } | null {
+  const step = ctx.historyPtr < ctx.history.length - 1 ? ctx.history[ctx.historyPtr + 1] : undefined
+  return step ? { tag: step.tag } : null
 }
 
 /** Undo one action. Returns false when there is nothing left to undo. */
@@ -123,9 +165,13 @@ export function pushHistory(
   // Outside one, a group of one is just a step. Tagging it would make undo do
   // the same work through a slower path and would show up in serialized state.
   const id = ctx.historyGroupId ?? (groupId && steps.length > 1 ? groupId : undefined)
+  const tag = ctx.historyTag
   let next = ctx.history.slice(0, ctx.historyPtr + 1)
-  for (const step of steps) next.push(id ? { ...step, groupId: id } : step)
-  if (next.length > ctx.UNDO_LIMIT) next = next.slice(next.length - ctx.UNDO_LIMIT)
+  for (const step of steps) {
+    const stamped = tag === undefined ? step : { ...step, tag }
+    next.push(id ? { ...stamped, groupId: id } : stamped)
+  }
+  next = lastActions(next, ctx.UNDO_LIMIT)
   ctx.history = next
   ctx.historyPtr = ctx.history.length - 1
   ctx.historyVersion += 1

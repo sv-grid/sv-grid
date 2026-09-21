@@ -54,7 +54,9 @@ export function parse(tokens: ReadonlyArray<Token>): Node {
       case 'bool': return { k: 'bool', v: t.v }
       case 'err': return { k: 'err', v: t.v }
       case 'ref': return { k: 'ref', ref: t.ref }
+      case 'spill': return { k: 'spill', ref: t.ref }
       case 'range': return { k: 'range', from: t.from, to: t.to }
+      case 'range3d': return { k: 'ref3d', sheetFrom: t.sheetFrom, sheetTo: t.sheetTo, from: t.from, to: t.to }
       case 'name': return { k: 'name', name: t.v }
       case 'table':
         return t.columnTo === undefined

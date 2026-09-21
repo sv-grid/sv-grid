@@ -36,11 +36,13 @@ export type SheetPresence = {
 
 /**
  * Eight colours that read as different people rather than as a heat map,
- * and stay legible as a thin box over a white sheet and over a dark one.
+ * stay legible as a thin box over a white sheet and over a dark one, and
+ * each carry a white name at 11px at 4.5:1 or better, so every tag wears
+ * the same white ink. The first set had five a shade too light for that.
  */
 export const PRESENCE_COLOURS: ReadonlyArray<string> = [
-  '#e11d48', '#2563eb', '#16a34a', '#a855f7',
-  '#ea580c', '#0891b2', '#ca8a04', '#db2777',
+  '#e11d48', '#2563eb', '#15803d', '#7e22ce',
+  '#c2410c', '#0e7490', '#a16207', '#db2777',
 ]
 
 /** A colour for an id: the same person gets the same one every session. */
@@ -48,6 +50,27 @@ export function presenceColour(id: string): string {
   let hash = 0
   for (let i = 0; i < id.length; i += 1) hash = (hash * 31 + id.charCodeAt(i)) >>> 0
   return PRESENCE_COLOURS[hash % PRESENCE_COLOURS.length]!
+}
+
+/**
+ * The ink for a name tag on a person's colour: black or white, whichever
+ * contrasts more. White on every colour was the first version, and white
+ * on the first set's green, orange or yellow was a little over 3:1, under
+ * the 4.5:1 an 11px name needs. The built-in set is dark enough now, but a
+ * collaborator's own colour can be anything, so the tag still asks.
+ * A colour that is not a hex triplet gets white, the way it always did.
+ */
+export function presenceInk(colour: string): '#000' | '#fff' {
+  const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(colour.trim())
+  if (!hex) return '#fff'
+  const digits = hex[1]!.length === 3 ? [...hex[1]!].map((d) => d + d).join('') : hex[1]!
+  const channel = (at: number) => {
+    const c = parseInt(digits.slice(at, at + 2), 16) / 255
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  }
+  const luminance = 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4)
+  // Contrast against white is (1.05 / (L + 0.05)); against black, (L + 0.05) / 0.05.
+  return 1.05 / (luminance + 0.05) >= (luminance + 0.05) / 0.05 ? '#fff' : '#000'
 }
 
 /** Two initials for the tag when the box is too small for a name. */

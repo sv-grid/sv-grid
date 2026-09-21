@@ -19,6 +19,21 @@ Everything between the ribbon and the sheet tabs, as one component.
 That is the whole required API. `<SvSheet />` with no props at all opens an
 empty single-sheet workbook, which is what "open a spreadsheet" means.
 
+<!-- tutorial:install-spreadsheet -->
+<figure class="docs-tutorial" id="tutorial-install-spreadsheet" data-docs-tutorial="install-spreadsheet">
+<video class="docs-tutorial-video" src="/tutorials/install-spreadsheet.mp4" poster="/tutorials/install-spreadsheet.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Install the SvGrid spreadsheet, 56 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/install-spreadsheet.vtt" default>Your browser does not play embedded video. <a href="/tutorials/install-spreadsheet.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Install the SvGrid spreadsheet</strong> (56 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>The spreadsheet ships in the enterprise package. Install it next to the grid; it runs unlicensed for evaluation.</p>
+<p>A workbook is plain data: sheets with a name and a cells matrix. Formulas are strings that start with an equals sign.</p>
+<p>Hand it to SvSheet. That is the whole API.</p>
+<p>The result is the full surface: a ribbon, the name box and formula bar, lettered columns, sheet tabs and a status bar, with the totals already computed.</p>
+<p>It behaves like a spreadsheet. Type a formula into a cell, press Enter, and the value appears while the formula bar keeps the source.</p>
+<p>Every Excel shortcut, fill handle, number formats, conditional formatting and xlsx import and export come with it. The docs list the whole surface.</p>
+</details>
+</figure>
+<!-- /tutorial:install-spreadsheet -->
+
 ## What you get
 
 | Part | Comes from |
@@ -44,12 +59,29 @@ the wiring BETWEEN the parts, done once:
 - The tab strip is told when a shortcut moved the active sheet, so
   `Ctrl+PageUp` and the tabs cannot disagree.
 - AutoSum measures its run against evaluated values, so a column of subtotals
-  counts as numbers rather than as `"=SUM(...)"` strings.
+  counts as numbers rather than as `"=SUM(...)"` strings. With one cell
+  selected it proposes the `=SUM(...)` in the cell's editor, as Excel's
+  does, so a guess that stopped a row short is corrected before Enter takes
+  it; a wider selection has the sum written outright.
+- Ctrl+Z and Ctrl+Y, and the ribbon's Undo and Redo, go to the sheet the
+  change was made on: a step made on Orders and undone from Summary brings
+  Orders up and changes the cell back there, as Excel does, rather than
+  landing on Summary's cell of the same address. Every step the grid
+  records is marked with its sheet for this (`api.setHistoryTag` and
+  `api.peekUndo` on the grid), the mark follows a rename, and Delete
+  Sheet empties the undo list, as Excel's does. A click that selects a
+  chart or a picture is not a step; a drag that moves one is.
+- A click on a sheet tab, on the strip's add button or on an entry of the
+  tab menu leaves the keyboard on the cells, so the arrow keys, Ctrl+Z and
+  Shift+F11 work on the sheet that just came up. The arrow keys inside the
+  strip keep the focus on the tabs, as a tablist's do.
 - Formats are kept per sheet, as they are in Excel. Bold on Summary!C5 says
   nothing about Orders!C5, and the store follows a sheet through a rename.
 - The Name Box lists the workbook's defined names. Pick one and the shell
   selects what it refers to, switching sheets first when it lives elsewhere;
-  type an address and press Enter to go there. Either way focus comes back
+  type an address and press Enter to go there; type a name that is not one
+  yet and it is defined for the selection, sheet-qualified and absolute as
+  the Name Manager writes one, one undo. Either way focus comes back
   to the sheet, so the next keystroke edits the cell just reached. Beside it
   sit Excel's three: Cancel and Enter while a formula is being typed, and
   fx, which raises `insert-function`.
@@ -59,7 +91,10 @@ the wiring BETWEEN the parts, done once:
 - Enter after an in-cell edit commits and moves down, Shift+Enter up, Tab
   right, as in Excel. Alt+Enter is a line break: the cell turns on Wrap
   Text and its row grows to show every line, as a wrapped row does after
-  Wrap Text on the ribbon or in Format Cells. F4 while editing turns the
+  Wrap Text on the ribbon or in Format Cells; a row the fitting grew is
+  back to its height once the wrap goes or the text gets shorter, while a
+  row sized by hand, dragged or typed into Row Height..., stays as the
+  user left it, which is Excel's auto-height rule. F4 while editing turns the
   reference at the caret through `$A$1`, `A$1`, `$A1` and back.
 - AutoComplete, as Excel's: while a cell is typed into, the text entries in
   the same column that run without a blank above and below it are matched
@@ -70,6 +105,15 @@ the wiring BETWEEN the parts, done once:
   offered, and two entries that both fit ("Apple", "Apricot" for "Ap")
   offer nothing until the typing tells them apart. `completeEntry(typed,
   entries)` is the rule on its own.
+- Formulas are typed the way Excel's are. Pointing: a click on a cell while
+  a formula is being typed, in the cell or in the bar, puts that cell's
+  address in at the caret rather than ending the edit, a drag puts a range,
+  and a second click replaces what the last one put there; typing goes on
+  from there. Formula AutoComplete: the function names a typed prefix could
+  be are listed under the cell, Up and Down walk them, Tab or Enter takes
+  one with the caret inside its brackets, Escape closes the list. Backspace
+  on a cell opens the editor empty, so Escape gives the value back where
+  Delete would have blanked it.
 - Data entry steps the way Excel's does: the Enter that ends a run of Tabs
   goes down from the column the run began in, and inside a selected block
   Enter and Tab walk the block and wrap at its edges while the block stays
@@ -80,12 +124,38 @@ the wiring BETWEEN the parts, done once:
 - The formula bar follows an in-cell edit as it is typed, and the cell
   follows the bar; both go back when the edit is cancelled.
 - The formula bar keeps a cell's line breaks. It shows one line until the
-  chevron at its end expands it to every line (up to six), and Alt+Enter
-  typed in the bar breaks the line there and expands the bar.
+  chevron at its end expands it to every line the text takes at the bar's
+  width, whether from a line break or from wrapping, up to six, with a
+  scrollbar past that; Alt+Enter typed in the bar breaks the line there and
+  expands the bar.
 - A typed `12%` is the number 0.12 shown as a percentage, `$1,200` is 1200
   shown as currency, `1,234.5` keeps its separator: the entry names a value
   and a format, and the cell takes both unless it already has a number
-  format of its own. `=A1*2` over a `12%` cell is 0.24.
+  format of the same kind (a time typed into a currency cell makes it a
+  time cell, as it does in Excel; `5%` typed into a `0.0%` cell keeps the
+  cell's decimals). `=A1*2` over a `12%` cell is 0.24. A plain number
+  typed into a cell that already shows percentages is that percentage, so
+  `5` in a `0%` cell is 5% rather than 500%, as Excel's automatic percent
+  entry has it; `(5)` is -5, the way a statement writes a negative. A mixed
+  fraction with a whole part, `3 1/2`, is 3.5 shown back as a fraction, and
+  `0 1/2` is how you enter a bare half without `1/2` becoming the second of
+  January; `=A1*2` over `3 1/2` is 7.
+- A date typed the American way, `3/4/2026`, `3/4/26` or `3/4`, or with
+  the month spelled out, `4-Mar-2026`, `4 Mar 26`, `March 4, 2026` or
+  `Mar 4` (English month names, in either order), is the sheet's
+  `2026-03-04` under a date format, and a clock time, `10:30`,
+  `6:00:00` or `10:30 PM`, is the fraction of a day it is under a time
+  format, so the times add up. In arithmetic a date written as text is its
+  day number, as a date cell is in Excel: `=A1+1` under a date is the next
+  day rather than `#VALUE!`, and `=B1-A1` over two dates is the days
+  between them.
+- A formula typed into a cell with no format takes the number format of
+  the first cell it reads, as Excel's does: `=A1*2` under `$5.00` is
+  `$10.00`, `=SUM(B2:B9)` over currency is currency, `=A1+1` under a date
+  is a date and `=TODAY()+7` is a day. A formula whose function returns a
+  count or a part (COUNT, LEN, YEAR and the rest) stays General, and so
+  does one date taken from another, which is a number of days, the one
+  exception Excel makes too.
 - File > Open reads what the other spreadsheets write, not only what this
   one wrote: a sheet's own `<cols>` or a table's filter, a row height
   LibreOffice left unflagged, `General` as the absence of a format, a row
@@ -97,7 +167,10 @@ the wiring BETWEEN the parts, done once:
 - A sort reorders the rows you can see and leaves the hidden ones where
   they are, as Excel's does, so sorting a filtered list cannot drag a
   filtered-out row into view or overwrite what one holds. The status bar
-  says how many stayed put.
+  says how many stayed put. A row takes its formulas along the way a copy
+  would: the relative references shift to the row's new place and the
+  absolute ones stay, so `=SUM(B5:E5)` on a row that lands in row 2 reads
+  `B2:E2`, and an `=IMAGE(C5)` thumbnail still shows its own row's picture.
 - `SUBTOTAL` follows the filter: `=SUBTOTAL(9, C2:C99)` under a filtered
   list totals the rows that matched, and the 101-111 codes leave out rows
   hidden by hand too. That is what a table's totals row should be written
@@ -107,10 +180,14 @@ the wiring BETWEEN the parts, done once:
   reading over a filtered block. Delete and Clear Contents leave such a row
   as it is, so clearing a filtered selection cannot wipe what the filter
   hid.
-- A copy carries only the cells you can see: a row a filter or Hide Rows
-  folded away is left out, and the block closes up around it, so filtering
-  a log and copying the block gives the rows that matched with nothing
-  between them. A hidden column goes the same way.
+- A copy leaves out the rows a filter folded away, and the block closes up
+  around them, so filtering a log and copying the block gives the rows that
+  matched with nothing between them. A row hidden by hand with Hide Rows
+  IS copied, as Excel copies one (the grid's `includeCollapsedRows` prop is
+  how the shell tells the two apart); a hidden column is left out. The
+  merges inside the block travel with a paste of everything or of the
+  formats, laid over the landing from its corner, and a merged cell copied
+  on its own is the whole merge, as it is in Excel.
 - Ctrl+X marks the block rather than emptying it, as Excel's cut does: the
   cells stay where they are until the paste lands, Escape leaves the sheet
   as it was, and one Ctrl+Z puts a whole move back. The ribbon's Cut and
@@ -133,8 +210,9 @@ the wiring BETWEEN the parts, done once:
   .xlsx as text keeps its prefix, so a part number survives the round trip.
 - The fill handle fills the way Excel's does: a lone value repeats, `1, 2`
   continues, `Jan` runs on to `Feb`, and a formula moves every relative
-  reference by the distance dragged. Double-click it to fill down as far as
-  the column beside the selection has data. A number too wide for its
+  reference by the distance dragged. Ctrl held at the release turns it the
+  other way, a series into a copy and one number into a series. Double-click
+  it to fill down as far as the column beside the selection has data. A number too wide for its
   column reads as `####` until the column fits it; `TRUE` and `FALSE`
   typed into a cell are booleans, centred.
 - Freeze Panes freezes everything above and left of the active cell, both
@@ -160,7 +238,11 @@ the wiring BETWEEN the parts, done once:
   to its sheet.
 - Text spills over empty neighbours and is clipped by the first cell that
   holds something, so a title in A1 reads in full and a label beside a
-  number does not run under it. Numbers never spill.
+  number does not run under it. Numbers never spill. The text runs only
+  over neighbours with the same background as its own cell: a title on a
+  banded row reads across the band, and a filled cell beside an unfilled
+  one (or the other way round) keeps its text in its cell, since the run
+  would drag one colour over the other.
 - General alignment: numbers right, text left, errors and booleans centred,
   unless the cell says otherwise.
 - The headers of every column and row the selection touches are shaded and
@@ -402,7 +484,8 @@ Open, Save As, Save As ODS, Save As XLS, Export CSV and Print. Open takes an
 bytes, not from the name - and replaces
 the document with everything the file holds that the document keeps
 (cells with their formulas, formats, widths and heights, hidden lines and
-sheets, frozen panes, merges, the filter region, validation, conditional
+sheets, frozen panes, merges, the filter with its criteria and the rows it
+folds, validation, conditional
 formatting, protection, comments, names, the active sheet); Save As
 downloads the document as an .xlsx that Excel, Google Sheets and LibreOffice
 open with the same parts; Save As ODS writes the same document in
@@ -432,7 +515,9 @@ either format: cells and their formulas (translated both ways, so
 `=SUM(A1:A3)` here is `of:=SUM([.A1:.A3])` there, and a structured reference
 becomes the rectangle it names, since ODF has none), number formats, the cell
 looks, column widths and row heights, merges, hidden rows and columns, the
-filter region, hyperlinks, notes, defined names and sheet protection. Charts,
+filter with its values and conditions (a date period or a colour has no ODF
+spelling, so its rows go out hidden instead), hyperlinks, notes, defined
+names and sheet protection. Charts,
 images, sparklines, pivots, validation, conditional formatting and frozen
 panes travel in the .xlsx and not yet in the .ods.
 
@@ -447,7 +532,8 @@ fills, borders, alignment, column widths, row heights, hidden rows, columns
 and sheets, merges, frozen panes, sheet protection and defined names travel;
 charts, pictures, sparklines, pivots, validation, conditional formatting and
 comments do not, since the format kept them somewhere this reader does not
-go. The sheet is 65,536 rows by 256 columns, and anything past that edge is
+go. A filter goes out as the rows it folds, hidden, and nothing else: the
+file shows the same rows, and the arrows do not come back from it. The sheet is 65,536 rows by 256 columns, and anything past that edge is
 left out rather than written wrong.
 
 An app that keeps its workbooks somewhere other than the user's disk takes
@@ -487,7 +573,8 @@ and Print Headings. Each change is one undo and reports
 File > Print (Ctrl+P) lays the sheet out as one HTML document and hands it
 to the browser's own print engine, so fonts, CJK and RTL come out right
 and nothing is bundled: the print area or the used range, column widths
-and row heights as the sheet shows them, hidden lines left out, merges as
+and row heights as the sheet shows them, hidden lines and the rows a filter
+folds away left out, merges as
 spans, every cell as it shows with its format and its conditional style,
 the title rows repeated on each page, the sparklines drawn in their cells
 and the charts and pictures hung from theirs, a table's header and banding
@@ -795,25 +882,36 @@ the cell menu is a button that does nothing:
 
 | Dialog | Opens from |
 | ------ | ---------- |
-| Find and Replace | `Ctrl+H`, Find & Select on the ribbon. Find Next, Find All, Replace, Replace All; match case, whole cell, look in values or formulas. Replace All is one undo. |
+| Find and Replace | `Ctrl+F` or `Ctrl+H`, Find & Select on the ribbon. Find Next, Find All, Replace, Replace All; match case, whole cell, look in values or formulas. Replace All is one undo. |
 | Paste Special | `Ctrl+Shift+V`, the Clipboard group's launcher, the last entry under the Paste arrow, the cell menu. All / Formulas / Values / Formats, Add / Subtract / Multiply / Divide, Skip blanks, Transpose. Works on what Ctrl+C took from the sheet. |
 | Chart | A double-click on a chart, or Insert > Setup while one is selected. Type (Column, Line, Area, Pie, Scatter), title, series in columns or rows, whether the first row and column are labels, stacking, a trendline over every series and one series on a secondary axis; Delete removes the chart. |
 | Page Setup | Page Layout > Print Titles, the Page Setup group's launcher. Orientation, paper, margins, scale, print area, rows to repeat at top, gridlines and headings; Print... applies and prints. |
 | Protect Sheet | Review > Protect Sheet. Excel's "allow all users of this worksheet to" list; OK protects with what is ticked. |
 | Allow Edit Ranges | Review > Allow Edit Ranges. Titled blocks that take an edit on a protected sheet; New over the selection, Modify, Delete, Protect Sheet... |
-| Format Cells | `Ctrl+1`, the launchers on the Font, Alignment and Number groups, the cell menu, and the end of Home > Cells > Format. Number (category, decimals, separator, the Accounting symbol, the Special type, custom code, live sample), Alignment, Font, Border presets, Fill, Protection. Opens on the active cell's format and applies only what was changed to the whole selection, as one undo. |
+| Format Cells | `Ctrl+1`, the launchers on the Font, Alignment and Number groups, the cell menu, and the end of Home > Cells > Format. Number (category, decimals, separator, the Accounting symbol, the Special type, custom code, live sample), Alignment (horizontal, vertical top/middle/bottom, wrap, indent), Font, Border presets, Fill, Protection. Opens on the active cell's format and applies only what was changed to the whole selection, as one undo. |
 | Insert Function | the `fx` button. Search or pick a category, read the signature and what the function does; OK starts the cell on `=NAME(` with the caret inside. |
 | Name Manager | Formulas > Name Manager, `Ctrl+F3`. Every defined name with what it refers to and its value; edit, delete, add. |
 | Goal Seek | Data > Goal Seek. Set a formula cell to a value by changing one input; the status page shows the answer and OK keeps it as one undo. |
-| Create Table | Insert > Table, `Ctrl+T`, and again on a cell inside a table, which is how one is renamed, resized or restyled. The range, the name its columns are read by, whether the first row is the header, a totals row, and the styles gallery. Insert > Table Styles opens the same dialog on the table the cursor is in. |
+| Create Table | Insert > Table, `Ctrl+T`, and again on a cell inside a table, which is how one is renamed, resized or restyled. The range (the selection, or the region around the active cell), the name its columns are read by, whether the first row is the header, a totals row, and the styles gallery. A totals row asked for is ADDED under the data, as Excel's Total Row is, with Total in the first column and `=SUBTOTAL(109,[Last column])` in the last; unticked, it goes. A structured reference is a range to SUBTOTAL, so a totals row's formulas skip the rows a filter folds. Insert > Table Styles opens the same dialog on the table the cursor is in. |
 | Evaluate Formula | Formulas > Evaluate Formula. The active cell's formula with the next part underlined; Evaluate replaces it with its value, Step Back and Restart walk it again. |
 | Error Checking | Formulas > Error Checking. Every cell on the sheet that reports an error, and every formula that breaks its column's pattern, walked with Previous and Next; Show Calculation Steps opens Evaluate Formula on the cell. |
 | Calculation Options | Formulas > Calculation Options. Excel's Enable iterative calculation, with the maximum passes and the smallest change worth another one; OK recalculates, so a circular reference goes from #CYCLE! to its fixed point, or back. See Iterative calculation below. |
-| Sort | Data > Sort. A level per key, each a column (named from the header row when "My data has headers" is on, as Excel guesses it), what to sort on and an order; Add Level and Delete Level; the block is the selection or the region around the active cell. Numbers sort before text, blanks go last, ties keep their order, formats and one-row merges ride with their rows, and it is one undo. A level can sort on the cell colour or the font colour instead of the value: the list offers the colours that column carries, and the one picked goes On Top or On Bottom while every other row keeps its order, which is Excel's model, because two colours are not greater or lesser than one another. Sort A to Z and Z to A beside it sort on the active cell's column. |
+| Sort | Data > Sort. A level per key, each a column (named from the header row when "My data has headers" is on; the guess looks across every column of the block, so a Name column over names still reads as a header when the Pay column beside it is text over numbers, as Excel guesses it), what to sort on and an order; Add Level and Delete Level; the block is the selection or the region around the active cell. Numbers sort before text, blanks go last, ties keep their order, formats and one-row merges ride with their rows, and it is one undo. A level can sort on the cell colour or the font colour instead of the value: the list offers the colours that column carries, and the one picked goes On Top or On Bottom while every other row keeps its order, which is Excel's model, because two colours are not greater or lesser than one another. Sort A to Z and Z to A beside it sort on the active cell's column. |
 | Text to Columns | Data > Text to Columns. The delimiter is guessed from the column, the preview shows the split, Finish writes it as one undo. |
 | Remove Duplicates | Data > Remove Duplicates. Tick the columns that decide a duplicate, say whether the first row is headers; the count goes to the status bar. |
 | Data Validation | Data > Data Validation. Settings (Allow, Data, the bounds or the source, Ignore blank, In-cell dropdown) and Error Alert (Style, Title, Message); OK puts one rule over the selection, Clear All removes it. See Data validation below. |
 | Conditional formatting | Home > Styles > Conditional Formatting: Greater Than..., Less Than..., Between..., Equal To..., Text that Contains..., Duplicate Values..., Top 10 Items..., Bottom 10 Items..., Above Average..., Below Average... and New Rule > Use a Formula... each open the small dialog (the value or values, or the formula, and the "with" style); Manage Rules... opens the Rules Manager. See Conditional formatting below. |
+
+Home > Cells > Insert and Delete are Excel's split buttons. The face takes
+the selection's axis: a whole column selected inserts or deletes columns,
+anything else rows, which is what Excel does with a cell selected. The
+arrow spells the axis out, so a column goes in from a cell without
+selecting the column first: Insert Sheet Rows, Insert Sheet Columns and
+Insert Sheet (Shift+F11); Delete Sheet Rows, Delete Sheet Columns and
+Delete Sheet, which asks the tab menu's question first when the sheet
+holds anything (raised as `delete-sheet`). The cell menu and the column
+and row header menus offer the same Insert and Delete for their axis, and
+Ctrl+Shift++ and Ctrl+- take a whole row or column selection.
 
 Home > Cells > Format is Excel's menu: Row Height..., AutoFit Row Height,
 Column Width... and AutoFit Column Width for the rows and columns the
@@ -976,12 +1074,17 @@ source in the sheet without storing it. Raised as `data-validation` and
 
 ### Objects: charts and pictures
 
-Insert > Chart charts the selected block: the first row and column are
+Insert > Chart charts the selected block, or the region of data around
+a single selected cell, as Excel starts one: the first row and column are
 read as the labels when they look like labels, each column of the block
 is a series, and the chart is anchored just under the block. It reads the
 **range**, not a copy of the numbers, so editing a cell redraws it.
 Insert > Picture puts an image on the sheet from a file, carried in the
-document as a data URL.
+document as a data URL. A file the .xlsx cannot hold as it is (an SVG, say:
+Excel keeps only a few raster types in `xl/media`) is drawn to a PNG on
+the way in, so what is on the sheet is what the file will carry; a picture
+whose source is a web address is left out of the file, and Save As says
+so in the status bar.
 
 **`=IMAGE(source, [alt])`** is the other kind of picture, and the
 difference is the point: an `IMAGE` cell IS the picture rather than
@@ -1037,7 +1140,9 @@ Two ways to put a link in a cell, both Excel's.
 text to display, and a ScreenTip. The cell keeps whatever it says and the
 link is kept beside it, so editing the text keeps the link, a format
 change keeps it, and clearing the cell takes it away. Insert > Remove
-takes the links off the selection. Each is one undo.
+takes the links off the selection. The cell menu has Excel's entries too:
+Link... on a plain cell; Edit Link..., Open Link and Remove Link on one
+that carries a link. Each is one undo.
 
 **`=HYPERLINK(link, [friendly])`** puts one in a formula, showing the
 friendly name. A cell holding that formula is clickable too, and its
@@ -1094,8 +1199,9 @@ file saved with iteration on opens with it on. Raised as `calc-options`.
 
 ### PivotTable from a range
 
-Insert > PivotTable summarises the selected block on the same pivot engine
-the grid uses for its own pivot mode. The dialog takes the source block
+Insert > PivotTable summarises the selected block, or the region around
+a single selected cell, on the same pivot engine the grid uses for its own
+pivot mode. The dialog takes the source block
 (its first row the field names), where the result goes, and which field is
 a row, a column or a measure, with Sum, Average, Count, Distinct count,
 Min and Max to summarise by.
@@ -1462,8 +1568,10 @@ leftwards. The arrow keys follow the reading order with it, so on a
 right-to-left ribbon ArrowLeft is the next tab.
 
 The two bands that cannot fit a phone pan with a finger rather than
-clipping: the ribbon scrolls sideways over its groups, and the cells pan
-in both axes. A tap picks a cell, a second tap on the same cell opens its
+clipping: the ribbon scrolls sideways over its groups and over its tab
+labels, and the cells pan in both axes. The formula bar keeps a long entry
+on one line, cut off at the right and scrolling with the caret, until the
+chevron expands it; a one-row box that wrapped would only hide the rest. A tap picks a cell, a second tap on the same cell opens its
 editor, and the formula bar is where the address and the formula are read
 and typed.
 

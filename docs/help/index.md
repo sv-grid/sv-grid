@@ -20,7 +20,9 @@ real-world scale:
 ## Background
 
 - [Why headless?](../why-headless.md) - what the headless core gives you and when to reach for it
+- [Headless](./headless/overview.md) - drive `@svgrid/grid/core` with your own markup: [build a table](./headless/build-a-table.md), [styling](./headless/styling.md), [virtualization](./headless/virtualization.md), [controlled state](./headless/controlled-state.md), [row models](./headless/row-models.md), [server-side](./headless/server-side.md)
 - [Architecture overview](./architecture.md) - the three-layer model: your data, the engine, the renderer
+- [Bundle size](./bundle-size.md) - what each entry costs gzipped, measured on every release, and how to reproduce the number
 - [Glossary](./glossary.md) - terminology used across the docs (accessor, snippet, row model, ...)
 - [Tailwind integration](./tailwind.md) - re-theming the grid via `--sg-*` tokens, dark-mode wiring, what *not* to do
 - [**Enterprise feature pack**](../enterprise/README.md) - landing page for the paid add-on; what's in it + how to license it
@@ -31,6 +33,7 @@ real-world scale:
 - [Pivot tables - Enterprise](./pivot.md) - `createPivotModel` + nested column headers; designer UI is a separate demo
 - [Alerts - Enterprise](./alerts.md) - no-code alert rules: toast / highlight / flash / prevent-edit when the data crosses a line; persisted + shareable
 - [Expression query language - Enterprise](./expressions-query.md) - the predicate / scalar / change language behind alerts (and styled + calculated columns)
+- [Upgrading a Svelte 4 table to Svelte 5](./svelte-5-upgrade-data-tables.md) - a svelte-headless-table app upgraded step by step, every diagnostic captured, and the three exits
 - **Migrating to SvGrid** - column / API translation guides from other grids:
   [AG Grid](./migrating-from-ag-grid.md) ·
   [TanStack Table](./migrating-from-tanstack-table.md) ·

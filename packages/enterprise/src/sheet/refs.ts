@@ -55,6 +55,7 @@ function render(node: Node): string {
     case 'bool': return node.v ? 'TRUE' : 'FALSE'
     case 'err': return node.v
     case 'ref': return node.ref.col < 0 || (node.ref.row ?? 0) < 0 ? '#REF!' : formatA1(node.ref)
+    case 'spill': return node.ref.col < 0 || (node.ref.row ?? 0) < 0 ? '#REF!' : `${formatA1(node.ref)}#`
     case 'range': {
       if (isBroken(node.from) || isBroken(node.to)) return '#REF!'
       // A whole-column range prints as A:C, not A1:C.
@@ -68,6 +69,15 @@ function render(node: Node): string {
       // The right-hand side drops a repeated sheet prefix: Sheet1!A1:B2.
       const to = formatA1({ ...node.to, sheet: null })
       return `${from}:${to}`
+    }
+    case 'ref3d': {
+      if (isBroken(node.from) || isBroken(node.to)) return '#REF!'
+      const q = (s: string) => (/^[A-Za-z_][A-Za-z0-9_.]*$/.test(s) ? s : `'${s.replace(/'/g, "''")}'`)
+      const cell = formatA1({ ...node.from, sheet: null })
+      const to = node.from.row === node.to.row && node.from.col === node.to.col
+        ? ''
+        : `:${formatA1({ ...node.to, sheet: null })}`
+      return `${q(node.sheetFrom)}:${q(node.sheetTo)}!${cell}${to}`
     }
     case 'name': return node.name
     case 'table': {
@@ -127,8 +137,61 @@ export function translateFormula(text: unknown, dRow: number, dCol: number): unk
   }
   const moved = mapNode(ast, (n) => {
     if (n.k === 'ref') return { ...n, ref: translateRef(n.ref, dRow, dCol) }
+    if (n.k === 'spill') return { ...n, ref: translateRef(n.ref, dRow, dCol) }
     if (n.k === 'range') {
       return { ...n, from: translateRef(n.from, dRow, dCol), to: translateRef(n.to, dRow, dCol) }
+    }
+    if (n.k === 'ref3d') {
+      return { ...n, from: translateRef(n.from, dRow, dCol), to: translateRef(n.to, dRow, dCol) }
+    }
+    return n
+  })
+  return formatFormula(moved)
+}
+
+/**
+ * A formula for a cell that a transposed paste moves from `source` to
+ * `dest`, its relative references turned with it.
+ *
+ * Excel rotates a relative offset on a transpose: a reference `dr` rows
+ * and `dc` columns away becomes `dc` rows and `dr` columns away. A cell
+ * inside the block moved the same way, so a formula that read the price
+ * beside it still reads that price, now above it, which is what makes a
+ * transposed totals column still total. A reference outside the block is
+ * turned too, as Excel turns it. Absolute parts stay where they point.
+ * A column-only reference has no row to turn and is left as it is.
+ */
+export function transposeFormula(
+  text: unknown,
+  source: { row: number; col: number },
+  dest: { row: number; col: number },
+): unknown {
+  if (typeof text !== 'string' || !text.startsWith('=')) return text
+  let ast: Node
+  try {
+    ast = parseFormula(text)
+  } catch {
+    return text
+  }
+  const turn = (ref: CellRef): CellRef => {
+    if (ref.row === null) return ref
+    return {
+      ...ref,
+      row: ref.rowAbs ? ref.row : dest.row + (ref.col - source.col),
+      col: ref.colAbs ? ref.col : dest.col + (ref.row - source.row),
+    }
+  }
+  const moved = mapNode(ast, (n) => {
+    if (n.k === 'ref') return { ...n, ref: turn(n.ref) }
+    if (n.k === 'spill') return { ...n, ref: turn(n.ref) }
+    if (n.k === 'range') {
+      // A turned range may come out with its corners swapped; a range is
+      // spelled top-left to bottom-right, so put them back in order.
+      const a = turn(n.from)
+      const b = turn(n.to)
+      const from = { ...a, row: a.row === null || b.row === null ? a.row : Math.min(a.row, b.row), col: Math.min(a.col, b.col), rowAbs: a.rowAbs, colAbs: a.colAbs }
+      const to = { ...b, row: a.row === null || b.row === null ? b.row : Math.max(a.row, b.row), col: Math.max(a.col, b.col), rowAbs: b.rowAbs, colAbs: b.colAbs }
+      return { ...n, from, to }
     }
     return n
   })
@@ -195,6 +258,10 @@ export function repointReferences(text: unknown, move: CellMove, self: string | 
   })
   const moved = mapNode(ast, (n) => {
     if (n.k === 'ref') {
+      if (!names(n.ref.sheet) || !inside(move, n.ref.row, n.ref.col)) return n
+      return { ...n, ref: landed(n.ref) }
+    }
+    if (n.k === 'spill') {
       if (!names(n.ref.sheet) || !inside(move, n.ref.row, n.ref.col)) return n
       return { ...n, ref: landed(n.ref) }
     }
@@ -274,9 +341,17 @@ export function renameSheetReferences(text: unknown, from: string, to: string): 
     changed = true
     return { ...ref, sheet: to }
   }
+  const swapName = (name: string): string => {
+    if (name.toLowerCase() !== wanted) return name
+    changed = true
+    return to
+  }
   const moved = mapNode(ast, (n) => {
     if (n.k === 'ref') return { ...n, ref: swap(n.ref) }
+    if (n.k === 'spill') return { ...n, ref: swap(n.ref) }
     if (n.k === 'range') return { ...n, from: swap(n.from), to: swap(n.to) }
+    // A 3D reference names its sheets by string, either end of the tab range.
+    if (n.k === 'ref3d') return { ...n, sheetFrom: swapName(n.sheetFrom), sheetTo: swapName(n.sheetTo) }
     return n
   })
   return changed ? formatFormula(moved) : text
@@ -357,6 +432,13 @@ export function fixupReferences(text: unknown, edit: StructuralEdit, scope?: Edi
 
   const moved = mapNode(ast, (n) => {
     if (n.k === 'ref') {
+      if (!touched(n.ref.sheet)) return n
+      const next = fixRef(n.ref, edit)
+      return next === null ? { k: 'ref' as const, ref: broken } : { ...n, ref: next }
+    }
+    if (n.k === 'spill') {
+      // The anchor moving carries the spill with it; the anchor being
+      // deleted takes the whole array reference to #REF!.
       if (!touched(n.ref.sheet)) return n
       const next = fixRef(n.ref, edit)
       return next === null ? { k: 'ref' as const, ref: broken } : { ...n, ref: next }

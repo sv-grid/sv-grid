@@ -1,0 +1,2 @@
+import { chromium } from 'playwright'
+export async function launch(){const b=await chromium.launch();const c=await b.newContext({viewport:{width:1440,height:900}});await c.addInitScript(()=>{try{localStorage.setItem('sg-theme','light')}catch{}});const p=await c.newPage();const logs=[];p.on('console',m=>{if(m.type()==='error')logs.push(m.text())});p.on('pageerror',e=>logs.push('[pageerror] '+e.message));return{browser:b,page:p,logs}}

@@ -29,7 +29,15 @@ export type DatePeriod =
   | 'nextYear' | 'thisYear' | 'lastYear' | 'yearToDate'
 
 export type ColumnFilter =
-  | { kind: 'values'; /** Display texts left unticked; '' stands for the blanks. */ excluded: string[] }
+  | {
+    kind: 'values'
+    /** Display texts left unticked; '' stands for the blanks. */
+    excluded: string[]
+    /** The texts ticked, from a file that lists what is IN (Excel and ODF
+     *  both do): wins over `excluded` while set. The menu writes the
+     *  exclusion form back the next time the filter is applied. */
+    included?: string[]
+  }
   | { kind: 'condition'; first: FilterCondition; join?: 'and' | 'or'; second?: FilterCondition }
   /** A date period; `value` and `valueTo` are `yyyy-mm-dd` for the typed bounds. */
   | { kind: 'date'; period: DatePeriod; value?: string; valueTo?: string }
@@ -166,7 +174,7 @@ export function passesFilter(
   extra: { fill?: string | null; today?: Date; topPasses?: (value: CellValue) => boolean } = {},
 ): boolean {
   switch (filter.kind) {
-    case 'values': return !filter.excluded.includes(display)
+    case 'values': return filter.included ? filter.included.includes(display) : !filter.excluded.includes(display)
     case 'date': {
       const bounds = datePeriodBounds(filter, extra.today)
       if (!bounds) return true
@@ -310,6 +318,7 @@ const PERIOD_WORDS: Record<DatePeriod, string> = {
 
 /** A filter in words, for the menu's heading. */
 export function describeFilter(filter: ColumnFilter): string {
+  if (filter.kind === 'values' && filter.included) return filter.included.length === 1 ? '1 value shown' : `${filter.included.length} values shown`
   if (filter.kind === 'values') return filter.excluded.length === 1 ? '1 value hidden' : `${filter.excluded.length} values hidden`
   if (filter.kind === 'date') {
     const word = PERIOD_WORDS[filter.period]

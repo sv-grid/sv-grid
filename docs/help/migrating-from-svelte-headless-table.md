@@ -11,7 +11,7 @@ Svelte 5 runes and ships a render component, so the port mostly
 > the `<table>` markup and `Subscribe` blocks you no longer need.
 
 <!-- facts:start svelte-headless-table pkg:@humanspeak/svelte-headless-table -->
-> **Facts, checked 12 Sep 2026.** `svelte-headless-table` 0.18.3, MIT, last published 28 Oct 2024, 90,100 npm downloads in the 30 days to 10 Sep 2026. `@humanspeak/svelte-headless-table` 6.2.0, MIT, last published 27 Aug 2026, 8,640 npm downloads in the same window. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 4.0.0 93.0 KB JS + 10.1 KB CSS (measured 17 Sep 2026); `svelte-headless-table` 0.18.3 5.7 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). svelte-headless-table pricing, as its site states it: svelte-headless-table is MIT and free; no paid licence or support is offered, and the author states there are no plans for a Svelte 5 port (https://github.com/bryanmylee/svelte-headless-table, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/).
+> **Facts, checked 12 Sep 2026.** `svelte-headless-table` 0.18.3, MIT, last published 28 Oct 2024, 90,100 npm downloads in the 30 days to 10 Sep 2026. `@humanspeak/svelte-headless-table` 6.2.0, MIT, last published 27 Aug 2026, 8,640 npm downloads in the same window. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.4 95.8 KB JS + 10.5 KB CSS (measured 20 Sep 2026); `svelte-headless-table` 0.18.3 5.7 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). svelte-headless-table pricing, as its site states it: svelte-headless-table is MIT and free; no paid licence or support is offered, and the author states there are no plans for a Svelte 5 port (https://github.com/bryanmylee/svelte-headless-table, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $599 per developer per year. Side by side, with sources: [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/).
 <!-- facts:end -->
 
 ## Know your options first
@@ -31,12 +31,15 @@ honest answers and you should know all of them:
    renderer instead.
 
 Pick SvGrid when the markup is the part you are tired of. Note that the blocker
-is the peer range, not the syntax: `svelte-headless-table@0.18.3` declares
-`svelte@^4`, so installing it beside Svelte 5 is a peer conflict. Slots and
-`let:` themselves still work in Svelte 5 - they are deprecated in favour of
-snippets, not removed - so the `Subscribe` blocks below keep rendering. What you
-cannot do is pass slotted content to a component that renders with
-`{@render ...}`, which is why the pattern grates in a runes codebase.
+is not the syntax and not really the install either: `svelte-headless-table@0.18.3`
+declares `svelte@^4`, which npm 11 overrides with a warning (older npm needed
+`--legacy-peer-deps`), and the untouched component then type-checks clean in
+legacy mode. Slots and `let:` still work in Svelte 5 - they are deprecated in
+favour of snippets, not removed - so the `Subscribe` blocks below keep
+rendering. The trouble starts when that component moves to runes: the library
+takes a store, your data is a rune, and the bridge between them is yours to
+write and maintain. We ran the whole upgrade and captured every line of it in
+[Upgrading a Svelte 4 table to Svelte 5](./svelte-5-upgrade-data-tables.md).
 
 ## Run the codemod
 
@@ -258,6 +261,7 @@ Sorting, filtering and selection, on a library that still ships for Svelte 5.
 
 ## See also
 
+- [Upgrading a Svelte 4 table to Svelte 5](./svelte-5-upgrade-data-tables.md) - the whole upgrade run and captured, step by step
 - [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/) - the side-by-side comparison, with a source and date for every claim
 - [Headless: build a table](./headless/build-a-table.md) - the demo above, step by step
 - [Migrating from TanStack Table](./migrating-from-tanstack-table.md) - sibling headless guide

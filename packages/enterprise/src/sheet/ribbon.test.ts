@@ -98,6 +98,32 @@ describe('the model is well-formed', () => {
     ])
   })
 
+  it('carries Excel\'s Top/Middle/Bottom Align toggles on Home > Alignment', () => {
+    const home = RIBBON_TABS.find((t) => t.id === 'home')!
+    const alignment = home.groups.find((g) => g.id === 'alignment')!
+    const ids = alignment.items.map((i) => i.id)
+    expect(ids).toEqual(expect.arrayContaining(['valign-top', 'valign-center', 'valign-bottom']))
+    for (const id of ['valign-top', 'valign-center', 'valign-bottom']) {
+      expect(alignment.items.find((i) => i.id === id)!.kind).toBe('toggle')
+    }
+  })
+
+  it('files each Conditional Formatting command under its own heading', () => {
+    // The Clear and New Rule headings were once swapped with their items, so
+    // two headings rendered back-to-back (an empty section) and the clear
+    // commands sat under "New Rule". Every heading must own the items below it.
+    const home = RIBBON_TABS.find((t) => t.id === 'home')!
+    const cf = home.groups.flatMap((g) => g.items).find((i) => i.id === 'conditional-formatting')!
+    const opts = cf.options!
+    opts.forEach((o, i) => {
+      if (o.heading) expect(opts[i + 1]?.heading, `"${o.label}" heading has no items`).toBeFalsy()
+    })
+    const at = (label: string) => opts.findIndex((o) => o.label === label)
+    expect(at('Use a Formula...')).toBe(at('New Rule') + 1)
+    expect(at('Clear Rules from Selected Cells')).toBe(at('Clear Rules') + 1)
+    expect(at('Clear Rules from Entire Sheet')).toBe(at('Clear Rules') + 2)
+  })
+
   it('Freeze Panes lives on View > Window as Excel\'s dropdown, and Home > Cells is one column', () => {
     const view = RIBBON_TABS.find((t) => t.id === 'view')!
     const freeze = view.groups.find((g) => g.id === 'window')!.items[0]!
@@ -297,18 +323,30 @@ describe('the buttons drive the real actions', () => {
     expect(item('fmt-percent').isOn!(cmd)).toBe(false)
   })
 
-  it('AutoSum writes a SUM over the run above', () => {
+  it('AutoSum opens the editor on a SUM over the run above, as Excel proposes it', () => {
     const cmd = makeCmd({
       activeCell: { rowIndex: 3, colIndex: 0, columnId: 'a' },
       ranges: [],
       getCellValue: (r: number) => (r < 3 ? 10 : undefined),
     })
     const written: unknown[] = []
+    const startEditing = vi.fn(() => true)
     const spy = makeCmd({
       ...cmd,
+      startEditing,
       setCellValue: (_r: number, _c: number, v: unknown) => { written.push(v) },
     } as never)
     expect(item('autosum').run!(spy)).toBe(true)
+    expect(startEditing).toHaveBeenCalledWith(3, 0, '=SUM(A1:A3)')
+    expect(written).toEqual([])
+    // A selection wider than one cell has the sum written outright.
+    const wide = makeCmd({
+      ...cmd,
+      ranges: [[0, 0, 3, 0]],
+      startEditing,
+      setCellValue: (_r: number, _c: number, v: unknown) => { written.push(v) },
+    } as never)
+    expect(item('autosum').run!(wide)).toBe(true)
     expect(written[0]).toBe('=SUM(A1:A3)')
   })
 

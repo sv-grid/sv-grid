@@ -1,0 +1,13 @@
+# 03 Svelte 5 installed with --legacy-peer-deps; the Svelte 4 component untouched
+# captured 2026-09-20 by tools/migration-lab/run.mjs on win32 x64
+# node v24.18.0, npm 11.16.0, svelte 5.57.1, svelte-check 4.7.6, typescript 5.9.3, svelte-headless-table 0.18.3, @svgrid/grid not installed
+$ npm install svelte@5.57.1 --legacy-peer-deps
+
+up to date in <time>
+
+(exit 0)
+
+$ npx svelte-check --tsconfig ./tsconfig.json --output human --threshold warning
+svelte-check found 0 errors and 0 warnings
+
+(exit 0)

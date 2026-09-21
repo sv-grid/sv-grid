@@ -119,7 +119,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `aligned-grid-group` | `alignedGridGroup` | `string` |
 | `filter-locale` | `filterLocale` | `string \| ReadonlyArray<string>` |
 
-### Properties only (37)
+### Properties only (38)
 
 Arrays, objects and functions. An HTML attribute is a string, so these can
 only be assigned in script: `el.columns = [...]`.
@@ -142,6 +142,7 @@ only be assigned in script: `el.columns = [...]`.
 | `initialColumnPinning` | `{ ... }` |
 | `processCellForFill` | `(params: { value: unknown; delta: { rows: number; cols: number }; rowIndex: number; col...` |
 | `processCellForClipboard` | `(params: { ... }) => unknown` |
+| `includeCollapsedRows` | `(rowIndex: number) => boolean` |
 | `clipboardHtml` | `(params: { rects: ReadonlyArray<{ ... }>; text: string; }) => string \| null \| undefined` |
 | `processCellFromClipboard` | `(params: { ... }) => unknown` |
 | `initialSorting` | `Array<{ id: string; desc: boolean }>` |

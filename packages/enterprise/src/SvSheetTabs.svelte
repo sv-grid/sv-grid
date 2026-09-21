@@ -25,6 +25,15 @@
     onRename?: (from: string, to: string) => void
     onRemove?: (name: string) => void
     /**
+     * Called when a pointer action on the strip is over: a tab clicked, the
+     * add button, an entry of the tab menu, a delete confirmed. Each leaves
+     * the focus on a button or nowhere; a consumer whose cells should keep
+     * the keyboard, as a spreadsheet's do, puts it back from here. Not
+     * called for the arrow keys inside the strip, which keep the focus on
+     * the tab they moved to, nor after a rename ends, which goes to its tab.
+     */
+    onReturnFocus?: () => void
+    /**
      * The sheets that are hidden: their tabs are not drawn and the menu
      * offers Unhide for each. The consumer keeps the list (the shell keeps
      * it in the document) and answers `onHide` / `onUnhide`.
@@ -48,7 +57,7 @@
     version?: number
   }
 
-  let { workbook, onChange, onRename, onRemove, hidden = [], onHide, onUnhide, onDuplicate, editable = true, version = 0 }: Props = $props()
+  let { workbook, onChange, onRename, onRemove, onReturnFocus, hidden = [], onHide, onUnhide, onDuplicate, editable = true, version = 0 }: Props = $props()
 
   const t = useSheetText()
 
@@ -89,11 +98,16 @@
     changed()
   }
 
+  let renameInput = $state<HTMLInputElement | null>(null)
   function startRename(name: string) {
     if (!editable) return
     renaming = name
     draft = name
     error = null
+    // Focused by hand rather than with `autofocus`, which only takes when
+    // nothing has the focus: the consumer may have just put it back on its
+    // cells after the click that preceded this double-click.
+    void tick().then(() => { renameInput?.focus(); renameInput?.select() })
   }
 
   function commitRename() {
@@ -113,6 +127,10 @@
     error = null
     onRename?.(from, to)
     changed()
+  }
+
+  function focusActiveTab() {
+    void tick().then(() => strip?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus())
   }
 
   function add() {
@@ -136,6 +154,11 @@
     if (workbook.sheets.length < 2) return
     if (hasContent(name)) confirmDelete = name
     else remove(name)
+  }
+  /** The ribbon's Delete Sheet: the tab menu's Delete for the active sheet,
+   *  with the same question first when the sheet holds anything. */
+  export function deleteSheet(name: string = workbook.active): void {
+    askRemove(name)
   }
 
   function remove(name: string) {
@@ -172,6 +195,13 @@
     event.preventDefault()
     select(name)
     menu = { name, x: event.clientX, y: event.clientY }
+  }
+  /** An entry was taken: the menu goes, and the keyboard goes back to the
+   *  consumer's cells, unless the entry opened something of its own (the
+   *  rename input, the delete question), which hands it on itself. */
+  function closeMenu() {
+    menu = null
+    if (renaming === null && confirmDelete === null) onReturnFocus?.()
   }
   /**
    * The tabs sit at the foot of the sheet, so a menu dropped from the click
@@ -306,17 +336,18 @@
         oncontextmenu={(e) => openMenu(e, name)}
       >
         {#if renaming === name}
-          <!-- svelte-ignore a11y_autofocus -->
           <input
             class="rename"
             aria-label={t('sheetName')}
-            autofocus
+            bind:this={renameInput}
             value={draft}
             oninput={(e) => (draft = e.currentTarget.value)}
             onblur={commitRename}
             onkeydown={(e) => {
-              if (e.key === 'Enter') { e.preventDefault(); commitRename() }
-              if (e.key === 'Escape') { e.preventDefault(); renaming = null }
+              // Enter and Escape hand the focus to the active tab, where a
+              // keyboard user came from; a click elsewhere keeps its own.
+              if (e.key === 'Enter') { e.preventDefault(); commitRename(); focusActiveTab() }
+              if (e.key === 'Escape') { e.preventDefault(); renaming = null; focusActiveTab() }
             }}
           />
         {:else}
@@ -325,7 +356,7 @@
             role="tab"
             aria-selected={isActive}
             tabindex={isActive ? 0 : -1}
-            onclick={() => select(name)}
+            onclick={() => { select(name); onReturnFocus?.() }}
             ondblclick={() => startRename(name)}
             onkeydown={(e) => onTabKey(e, name)}
           >{name}</button>
@@ -335,7 +366,7 @@
   </div>
 
   {#if editable}
-    <button type="button" class="add" aria-label={t('newSheet')} title={`${t('newSheet')} (Shift+F11)`} onclick={add}>
+    <button type="button" class="add" aria-label={t('newSheet')} title={`${t('newSheet')} (Shift+F11)`} onclick={() => { add(); onReturnFocus?.() }}>
       <svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><path d="M5 1.5v7M1.5 5h7" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" /></svg>
     </button>
   {/if}
@@ -351,23 +382,23 @@
     on the tab face, so a stray click cannot remove a sheet.
   -->
   <div class="sheet-menu" role="menu" aria-label={`${menu.name} sheet`} style:left={`${menu.x}px`} style:top={`${menu.y}px`} use:keepMenuInView={menu}>
-    <button type="button" role="menuitem" onclick={() => { insertBefore(menu!.name); menu = null }}>{t('tabInsert')}</button>
-    <button type="button" role="menuitem" disabled={workbook.sheets.length < 2} onclick={() => { askRemove(menu!.name); menu = null }}>{t('tabDelete')}</button>
+    <button type="button" role="menuitem" onclick={() => { insertBefore(menu!.name); closeMenu() }}>{t('tabInsert')}</button>
+    <button type="button" role="menuitem" disabled={workbook.sheets.length < 2} onclick={() => { askRemove(menu!.name); closeMenu() }}>{t('tabDelete')}</button>
     <button type="button" role="menuitem" onclick={() => { startRename(menu!.name); menu = null }}>{t('tabRename')}</button>
     {#if onDuplicate}
-      <button type="button" role="menuitem" onclick={() => { duplicate(menu!.name); menu = null }}>{t('tabDuplicate')}</button>
+      <button type="button" role="menuitem" onclick={() => { duplicate(menu!.name); closeMenu() }}>{t('tabDuplicate')}</button>
     {/if}
     <div class="sep" role="separator"></div>
-    <button type="button" role="menuitem" disabled={sheets.indexOf(menu.name) === 0} onclick={() => { moveBy(menu!.name, -1); menu = null }}>{t('tabMoveLeft')}</button>
-    <button type="button" role="menuitem" disabled={sheets.indexOf(menu.name) === sheets.length - 1} onclick={() => { moveBy(menu!.name, 1); menu = null }}>{t('tabMoveRight')}</button>
+    <button type="button" role="menuitem" disabled={sheets.indexOf(menu.name) === 0} onclick={() => { moveBy(menu!.name, -1); closeMenu() }}>{t('tabMoveLeft')}</button>
+    <button type="button" role="menuitem" disabled={sheets.indexOf(menu.name) === sheets.length - 1} onclick={() => { moveBy(menu!.name, 1); closeMenu() }}>{t('tabMoveRight')}</button>
     {#if onHide}
       <div class="sep" role="separator"></div>
-      <button type="button" role="menuitem" disabled={sheets.length < 2} onclick={() => { hide(menu!.name); menu = null }}>{t('tabHide')}</button>
+      <button type="button" role="menuitem" disabled={sheets.length < 2} onclick={() => { hide(menu!.name); closeMenu() }}>{t('tabHide')}</button>
       {#if hiddenSheets.length}
         <!-- Excel's Unhide opens a list; here each hidden sheet is an entry. -->
         <div class="heading" role="presentation">{t('tabUnhide')}</div>
         {#each hiddenSheets as name (name)}
-          <button type="button" role="menuitem" class="indent" onclick={() => { unhide(name); menu = null }}>{name}</button>
+          <button type="button" role="menuitem" class="indent" onclick={() => { unhide(name); closeMenu() }}>{name}</button>
         {/each}
       {/if}
     {/if}
@@ -380,8 +411,8 @@
   </div>
   {#snippet footer()}
     <div class="sv-sheet-dialog-buttons">
-      <button type="button" class="btn primary" onclick={() => { if (confirmDelete) remove(confirmDelete) }}>{t('delete')}</button>
-      <button type="button" class="btn" onclick={() => (confirmDelete = null)}>{t('cancel')}</button>
+      <button type="button" class="btn primary" onclick={() => { if (confirmDelete) remove(confirmDelete); onReturnFocus?.() }}>{t('delete')}</button>
+      <button type="button" class="btn" onclick={() => { confirmDelete = null; onReturnFocus?.() }}>{t('cancel')}</button>
     </div>
   {/snippet}
 </SvModal>

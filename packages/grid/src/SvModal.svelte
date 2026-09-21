@@ -16,6 +16,7 @@
   import { portalToBody } from './popover'
   import { nextEditorId } from './editor-contract'
   import { createOverlay } from './createOverlay.svelte'
+  import { getFocusable } from './a11y/focus-trap'
 
   type Props = {
     open?: boolean
@@ -33,6 +34,13 @@
     closeOnEsc?: boolean
     /** Hide the header close (x) button. */
     hideClose?: boolean
+    /**
+     * The element to focus when the dialog opens. Defaults to the first
+     * focusable control in the body or footer - never the header Close (x),
+     * so opening a dialog lands on its content and Enter does not dismiss it.
+     * Pass a getter to target a specific field (e.g. a search input).
+     */
+    initialFocus?: () => HTMLElement | null
     children?: Snippet
     footer?: Snippet
   }
@@ -48,6 +56,7 @@
     closeOnBackdrop = true,
     closeOnEsc = true,
     hideClose = false,
+    initialFocus,
     children,
     footer,
   }: Props = $props()
@@ -69,6 +78,19 @@
     closeOnEsc: () => closeOnEsc,
     closeOnBackdrop: () => closeOnBackdrop,
     onOpen: () => { drag = { x: 0, y: 0 }; box = null },
+    // Land focus on the dialog's content, not the header Close (x). The x is
+    // the first focusable in DOM order, so the trap's "first focusable"
+    // default sent focus there - where Enter immediately dismissed the
+    // dialog and the loud focus ring pointed at "close" over the primary
+    // action. Prefer the first focusable outside the header; fall back to the
+    // panel itself when the body has no control of its own.
+    initialFocus: () => {
+      const explicit = initialFocus?.()
+      if (explicit) return explicit
+      if (!dialogEl) return null
+      const first = getFocusable(dialogEl).find((el) => !el.closest('.sv-modal__header'))
+      return first ?? dialogEl
+    },
   })
 
   // --- Drag (header) ---------------------------------------------------------

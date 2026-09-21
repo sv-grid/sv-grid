@@ -301,6 +301,7 @@ import SheetTables491          from '../demos/491-sheet-tables.svelte'
 import SheetIterative492      from '../demos/492-sheet-iterative.svelte'
 import SheetAuditing493       from '../demos/493-sheet-auditing.svelte'
 import SheetCellImages494     from '../demos/494-sheet-cell-images.svelte'
+import MarketBlotter495       from '../demos/495-market-blotter-100k.svelte'
 import ServerCrud482            from '../demos/482-server-crud.svelte'
 import ServerMasterDetail483    from '../demos/483-server-master-detail.svelte'
 import SelectionBar430          from '../demos/430-selection-bar.svelte'
@@ -920,6 +921,7 @@ const baseDemos: Demo[] = [
   demo('11-stock-market',           'Stock market - live',         'WebSocket-style ticking feed. Cells flash on up/down ticks, pause control, throttle.', 'Real-time & Streaming', StockMarket),
   demo('14-industrial',             'Industrial - IoT sensors',    'Live sensor floor: threshold-driven status, sparkline trends, group by line.', 'Real-time & Streaming', Industrial),
   demo('20-industrial-dashboard',   'Industrial dashboard',        'KPI cards plus live line-status and active-alarms grids, on a 2-second tick.', 'Real-time & Streaming', IndustrialDashboard),
+  demo('495-market-blotter-100k',  'Market blotter: 100,000 rows on a socket', '100,000 instruments sorted by % change while a WebSocket feed pushes 1k, 10k or 50k price updates a second. Ticks wait in a map for the next animation frame and go through one applyTransaction per frame; the grid repairs the sort around the rows that changed instead of re-sorting 100k, and cellFlash colours each move. Frame-time p95 on screen. Point it at node tools/tick-server.mjs with ?ws=.', 'Real-time & Streaming', MarketBlotter495),
   demo('34-realtime-orders',        'Real-time / streaming',       'WebSocket-style live order stream with delta merge, out-of-order safety, pause / backlog, disconnect-reconnect, throughput slider.', 'Real-time & Streaming', RealtimeOrders),
   demo('149-realtime-collaboration','Real-time collaboration',     'Presence (who is here + where their cursor is) and live edits (a change in one client lands in every other) over a pluggable transport. createCollaboration + broadcastChannelTransport sync cursors and edits across tabs with zero backend; swap the transport for a WebSocket to go cross-machine. Also the substrate for multiple AI agents editing one grid.', 'Real-time & Streaming', RealtimeCollaboration),
   demo('145-transaction-api',       'Transaction API (batched)',   'api.applyTransaction({ add, update, remove }) applies a batch of row mutations in ONE data update - the high-frequency streaming path. update and remove-by-id match on getRowId; remove also accepts row refs. Live order book ticking via batched transactions.', 'Real-time & Streaming', TransactionApi),

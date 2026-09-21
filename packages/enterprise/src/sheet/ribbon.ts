@@ -26,16 +26,16 @@
  */
 import type { GridCommandContext } from '@svgrid/grid/shortcuts'
 import {
-  applyFormat, toggleFormat, preset, autoSum, structural, clearFormats,
+  applyFormat, toggleFormat, preset, autoSum, structural, clearFormats, newSheet,
   getFormatTarget, getWorkbook, withFormatUndo, nudgeFontSize, activeEntry,
   FONT_SIZES, DEFAULT_FONT_SIZE, applyBorders, formatAllowed, raiseRibbonAction,
   type SheetCommand, type BorderPreset,
 } from './shortcuts'
 export { FONT_SIZES, applyBorders, type BorderPreset } from './shortcuts'
-import { insertRows, deleteRows, getStructureTarget } from './structure'
+import { insertRows, deleteRows, insertColumns, deleteColumns, getStructureTarget } from './structure'
 import { fillDown, fillRight, targetRect } from './commands'
 import type { Rect } from './navigate'
-import { FORMAT_PRESETS, formatCategory, accountingParts, accountingPattern, type FormatPresetName } from './number-format'
+import { FORMAT_PRESETS, FORMAT_CATEGORY_PATTERNS, formatCategory, accountingParts, accountingPattern, formatWithPattern, type FormatPresetName } from './number-format'
 import type { CellFormatEntry } from './format-store'
 import type { RibbonIconName } from './ribbon-icons'
 import { ALL_COLOURS } from './palette'
@@ -166,6 +166,8 @@ export type RibbonActionId =
   | 'print-headings'
   | 'paste-special'
   | 'cut'
+  | 'undo'
+  | 'redo'
   | 'format-cells'
   | 'find-replace'
   | 'insert-function'
@@ -177,6 +179,7 @@ export type RibbonActionId =
   | 'insert-picture'
   | 'chart-setup'
   | 'delete-object'
+  | 'delete-sheet'
   | 'sparkline-line'
   | 'sparkline-column'
   | 'sparkline-winloss'
@@ -356,6 +359,23 @@ function alignItem(align: 'left' | 'center' | 'right', title: string): RibbonIte
   }
 }
 
+/** Excel's Top / Middle / Bottom Align. The middle is the sheet's default,
+ *  so its button clears the field rather than storing it, and reads as on
+ *  for a cell that has no vertical alignment of its own. */
+function valignItem(valign: 'top' | 'center' | 'bottom', title: string): RibbonItem {
+  return {
+    id: `valign-${valign}`,
+    label: '≡',
+    icon: `valign-${valign}` as RibbonIconName,
+    title,
+    kind: 'toggle',
+    run: (cmd) => applyFormat(cmd, { valign: valign === 'center' ? undefined : valign }),
+    isOn: (cmd) => everyCellHas(cmd, (entry) =>
+      valign === 'center' ? entry?.valign === undefined || entry?.valign === 'center' : entry?.valign === valign),
+    isEnabled: canFormat,
+  }
+}
+
 function presetItem(
   id: string, label: string, title: string, name: FormatPresetName, keys?: string,
 ): RibbonItem {
@@ -383,7 +403,10 @@ function fromCommand(command: SheetCommand): (cmd: GridCommandContext) => boolea
  *
  * Reads the active cell's current pattern rather than assuming one, so
  * pressing it on a currency cell keeps the currency and only moves the point.
- * A cell with no pattern starts from General, which Excel treats as 0 decimals.
+ * A cell with no pattern is General, and Excel moves from the decimals the
+ * value SHOWS there, not from zero: Increase on 3.14159 goes to six places,
+ * not down to one, and Decrease actually trims a place. Only when the cell is
+ * empty, or its value is not a number, does General behave like `0`.
  */
 function nudgeDecimals(delta: number): (cmd: GridCommandContext) => boolean {
   return (cmd) => {
@@ -395,9 +418,28 @@ function nudgeDecimals(delta: number): (cmd: GridCommandContext) => boolean {
     const current = rowId != null && columnId != null
       ? target.store.get(rowId, columnId)?.numFmt
       : undefined
-    const next = withDecimals(current ?? '0', delta)
+    let next: string | null
+    if (current) {
+      next = withDecimals(current, delta)
+    } else {
+      // General: start from what the value displays, so the point moves the
+      // way Excel's does rather than resetting to a single place.
+      const count = generalDecimals(active.rowIndex, active.colIndex) + delta
+      next = count < 0 || count > 30 ? null : count === 0 ? '0' : `0.${'0'.repeat(count)}`
+    }
     return next === null ? false : applyFormat(cmd, { numFmt: next })
   }
+}
+
+/** The decimals a General cell currently shows, so Increase/Decrease Decimal
+ *  moves from there. Zero for a blank cell or a non-numeric value. */
+function generalDecimals(row: number, col: number): number {
+  const wb = getWorkbook()
+  if (!wb) return 0
+  const value = wb.getValue(wb.active, row, col)
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0
+  const dot = formatWithPattern(value, 'General').indexOf('.')
+  return dot < 0 ? 0 : formatWithPattern(value, 'General').length - dot - 1
 }
 
 /**
@@ -737,6 +779,9 @@ const HOME: RibbonTab = {
       layout: 'flow',
       launcher: 'format-cells',
       items: [
+        small(1, valignItem('top', 'Top Align')),
+        small(1, valignItem('center', 'Middle Align')),
+        small(1, valignItem('bottom', 'Bottom Align')),
         small(1, {
           id: 'wrap', label: 'Wrap Text', title: 'Wrap Text', icon: 'wrap', kind: 'toggle', wide: true,
           run: (cmd) => toggleWrap(cmd),
@@ -783,7 +828,7 @@ const HOME: RibbonTab = {
             return category === 'custom' || category === 'special' ? fmt ?? 'general' : category
           },
           run: (cmd, value) =>
-            applyFormat(cmd, { numFmt: FORMAT_PRESETS[value as FormatPresetName] }),
+            applyFormat(cmd, { numFmt: FORMAT_CATEGORY_PATTERNS[value as FormatPresetName] }),
         }),
         // Excel's $ button applies Accounting; Ctrl+Shift+4 is Currency.
         small(2, presetItem('fmt-currency', '$', 'Accounting Number Format', 'accounting')),
@@ -804,19 +849,38 @@ const HOME: RibbonTab = {
       icon: 'table',
       label: 'Cells',
       items: [
+        // Excel's split buttons: the face takes the selection's axis (a
+        // whole column inserts columns, anything else rows, which is what
+        // Excel does with a cell selected), and the arrow spells the axis
+        // out, so a column can be inserted from a cell without selecting
+        // the column first.
         small(1, {
           id: 'insert', label: 'Insert', title: 'Insert Cells', keys: 'Ctrl+Shift++',
-          icon: 'insert-cells', kind: 'button', wide: true,
-          // A plain cell is ambiguous for the keystroke, which declines; the
-          // button behaves as Excel's does with a cell selected and inserts
-          // a row, shifting the sheet down.
-          run: (cmd) => structural(cmd, 'insert') || insertRows(cmd),
+          icon: 'insert-cells', kind: 'dropdown', split: true, wide: true,
+          run: (cmd, value) =>
+            value === 'rows' ? insertRows(cmd)
+              : value === 'columns' ? insertColumns(cmd)
+                : value === 'sheet' ? newSheet()
+                  : structural(cmd, 'insert') || insertRows(cmd),
+          options: [
+            { value: 'rows', label: 'Insert Sheet Rows' },
+            { value: 'columns', label: 'Insert Sheet Columns' },
+            { value: 'sheet', label: 'Insert Sheet', keys: 'Shift+F11' },
+          ],
           isEnabled: canRestructure,
         }),
         small(2, {
           id: 'delete', label: 'Delete', title: 'Delete Cells', keys: 'Ctrl+-',
-          icon: 'delete-cells', kind: 'button', wide: true,
-          run: (cmd) => structural(cmd, 'delete') || deleteRows(cmd),
+          icon: 'delete-cells', kind: 'dropdown', split: true, wide: true,
+          run: (cmd, value) =>
+            value === 'rows' ? deleteRows(cmd)
+              : value === 'columns' ? deleteColumns(cmd)
+                : structural(cmd, 'delete') || deleteRows(cmd),
+          options: [
+            { value: 'rows', label: 'Delete Sheet Rows' },
+            { value: 'columns', label: 'Delete Sheet Columns' },
+            { value: 'sheet', label: 'Delete Sheet', emits: 'delete-sheet' },
+          ],
           isEnabled: canRestructure,
         }),
         // Excel's Format menu: Cell Size, Visibility, and Format Cells at
@@ -872,9 +936,9 @@ const HOME: RibbonTab = {
             { value: 'cf-color-scale-3', label: 'Green - Yellow - Red Color Scale', icon: 'cf-scale', emits: 'cf-color-scale-3' },
             { value: 'cf-color-scale-2', label: 'Green - White Color Scale', icon: 'cf-scale', emits: 'cf-color-scale-2' },
             { value: 'cf-icon-set', label: 'Icon Set (3 Arrows)', icon: 'cf-icons', emits: 'cf-icon-set' },
-            { value: 'c', label: 'Clear Rules', heading: true },
             { value: 'n', label: 'New Rule', heading: true },
             { value: 'cf-formula', label: 'Use a Formula...', icon: 'cf-formula', emits: 'cf-formula' },
+            { value: 'c', label: 'Clear Rules', heading: true },
             { value: 'cf-clear-selection', label: 'Clear Rules from Selected Cells', emits: 'cf-clear-selection' },
             { value: 'cf-clear-sheet', label: 'Clear Rules from Entire Sheet', emits: 'cf-clear-sheet' },
             { value: 'm', label: 'Manage', heading: true },
@@ -891,15 +955,17 @@ const HOME: RibbonTab = {
         // Undo and Redo open the group as a column of two small icons, the
         // way Cut and Copy stand beside Paste; the owner wanted them here
         // rather than in a group of their own.
+        // Raised rather than run: a step made on another sheet is undone
+        // THERE, which means switching sheets first, and only the shell can.
         small(1, {
           id: 'undo', label: 'Undo', title: 'Undo', keys: 'Ctrl+Z', icon: 'undo', kind: 'button',
           isEnabled: (cmd) => cmd.api.canUndo(),
-          run: (cmd) => cmd.api.undo(),
+          emits: 'undo',
         }),
         small(2, {
           id: 'redo', label: 'Redo', title: 'Redo', keys: 'Ctrl+Y', icon: 'redo', kind: 'button',
           isEnabled: (cmd) => cmd.api.canRedo(),
-          run: (cmd) => cmd.api.redo(),
+          emits: 'redo',
         }),
         small(1, {
           id: 'autosum', label: 'AutoSum', title: 'AutoSum', keys: 'Alt+=',

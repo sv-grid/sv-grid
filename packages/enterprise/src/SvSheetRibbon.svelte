@@ -785,8 +785,14 @@
     gap: 0;
     height: 30px;
     padding: 0 8px;
+    /* On a phone the eight labels are wider than the screen. They scroll
+       sideways rather than shrink into each other, with no bar showing. */
+    overflow-x: auto;
+    scrollbar-width: none;
   }
+  .tabs::-webkit-scrollbar { display: none; }
   .tab {
+    flex: 0 0 auto;
     position: relative;
     font: inherit;
     border: 0;

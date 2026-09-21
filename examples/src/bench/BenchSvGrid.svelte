@@ -32,9 +32,15 @@
       setSort?: (field: string, desc: boolean) => void
       setFilter?: (field: string, value: string) => void
       scroller?: () => HTMLElement | null
+      setRows?: (rows: Array<Record<string, unknown>>) => void
     }
   }
   const { rows, columns, rowHeight, handle }: Props = $props()
+
+  // The tick path: a new array reference per update, held in $state.raw so
+  // the grid sees one reactive write and no proxy over 100k rows.
+  let data = $state.raw<Array<Record<string, unknown>>>(rows)
+  handle.setRows = (next) => (data = next)
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
 
@@ -59,7 +65,7 @@
 
 <div bind:this={rootEl} style="height:100%">
   <SvGrid
-    data={rows}
+    data={data}
     columns={cols}
     {features}
     rowHeight={rowHeight}

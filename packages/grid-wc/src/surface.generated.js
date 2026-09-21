@@ -396,6 +396,12 @@ export const ELEMENT_PROPS = [
     "ts": "(params: { value: unknown; column: unknown; row: TData; rowIndex: number; columnId: string; }) => unknown"
   },
   {
+    "name": "includeCollapsedRows",
+    "type": "Object",
+    "attribute": null,
+    "ts": "(rowIndex: number) => boolean"
+  },
+  {
     "name": "clipboardHtml",
     "type": "Object",
     "attribute": null,

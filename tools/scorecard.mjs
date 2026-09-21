@@ -40,6 +40,13 @@ const PACKAGES = [
   '@svgrid/mcp',
   '@svgrid/create',
   '@svgrid/studio',
+  // The migration lane's own signal: the codemod is what a stranded
+  // svelte-headless-table user runs first. 925/month on 2026-09-19; the
+  // 90-day target set with the Svelte 5 upgrade guide is 3,000.
+  '@svgrid/migrate',
+  // The lane's denominators, so the share is visible without a second tool.
+  'svelte-headless-table',
+  '@humanspeak/svelte-headless-table',
 ]
 
 const UA = { 'User-Agent': 'svgrid-scorecard', Accept: 'application/vnd.github+json' }

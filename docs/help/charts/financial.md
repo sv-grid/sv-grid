@@ -201,8 +201,8 @@ The whole toolkit on one page, standalone and then inside the grid panel:
 
 <!-- tutorial:financial-workbench -->
 <figure class="docs-tutorial" id="tutorial-financial-workbench" data-docs-tutorial="financial-workbench">
-<video class="docs-tutorial-video" src="/tutorials/financial-workbench.mp4" poster="/tutorials/financial-workbench.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="A financial chart workbench in Svelte, 31 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/financial-workbench.vtt" default>Your browser does not play embedded video. <a href="/tutorials/financial-workbench.mp4">Download the MP4</a>.</video>
-<figcaption><strong>A financial chart workbench in Svelte</strong> (31 s, silent).</figcaption>
+<video class="docs-tutorial-video" src="/tutorials/financial-workbench.mp4" poster="/tutorials/financial-workbench.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="A financial chart workbench in Svelte, 30 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/financial-workbench.vtt" default>Your browser does not play embedded video. <a href="/tutorials/financial-workbench.mp4">Download the MP4</a>.</video>
+<figcaption><strong>A financial chart workbench in Svelte</strong> (30 s, silent).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>A year of sessions as candles, with volume, RSI and MACD panes under the price and Bollinger bands on it.</p>
 <p>Toggle an indicator chip and its pane comes and goes.</p>

@@ -15,11 +15,14 @@ import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadComparisons, loadLedger, loadSvgridSize } from './lib/compare-data.mjs'
-import { guideFactsBlock, syncGuideFacts, guideFactsSlugs, guideFactsPackages, comparisonForGuide, benchmarkBlock, syncBenchmarkBlock } from './lib/guide-facts.mjs'
+import { guideFactsBlock, syncGuideFacts, guideFactsSlugs, guideFactsPackages, comparisonForGuide, benchmarkBlock, syncBenchmarkBlock, sizeBlock, syncSizeBlock } from './lib/guide-facts.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const HELP = join(ROOT, 'docs', 'help')
 const CHECK = process.argv.includes('--check')
+
+/** Pages outside docs/help that carry a generated `<!-- size:start -->` block. */
+export const SIZE_PAGES = ['docs/help/bundle-size.md', 'docs/help/benchmarks.md']
 
 /** comparison.md names its own slugs in the marker; a missing marker gets the two grids it compares. */
 const COMPARISON_MD_DEFAULT = ['ag-grid', 'tanstack-table']
@@ -30,7 +33,7 @@ export async function syncGuides({ write }) {
   const size = await loadSvgridSize()
   const ctx = { comparisons, ledger, size }
   const stale = []
-  const files = (await readdir(HELP)).filter((f) => f === 'comparison.md' || /^migrating-from-.*\.md$/.test(f))
+  const files = (await readdir(HELP)).filter((f) => f === 'comparison.md' || f === 'svelte-5-upgrade-data-tables.md' || /^migrating-from-.*\.md$/.test(f))
   for (const f of files) {
     const path = join(HELP, f)
     const fileSlug = f.replace(/\.md$/, '')
@@ -50,6 +53,18 @@ export async function syncGuides({ write }) {
     if (fileSlug === 'comparison') next = syncBenchmarkBlock(next, benchmarkBlock(ledger))
     if (next !== md) {
       stale.push(f)
+      if (write) await writeFile(path, crlf ? next.replace(/\n/g, '\r\n') : next, 'utf-8')
+    }
+  }
+  for (const rel of SIZE_PAGES) {
+    const path = join(ROOT, rel)
+    const raw = await readFile(path, 'utf-8')
+    const crlf = raw.includes('\r\n')
+    const md = raw.replace(/\r\n/g, '\n')
+    const next = syncSizeBlock(md, sizeBlock(size))
+    files.push(rel)
+    if (next !== md) {
+      stale.push(rel)
       if (write) await writeFile(path, crlf ? next.replace(/\n/g, '\r\n') : next, 'utf-8')
     }
   }

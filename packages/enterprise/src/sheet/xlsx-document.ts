@@ -39,6 +39,7 @@ import { findTableStyle, DEFAULT_TABLE_STYLE, NO_TABLE_STYLE } from './table-sty
 import { drawingPartsFor, objectsFromDrawing, rectOfRef, REL_DRAWING } from './xlsx-drawing'
 import { objectId } from './objects'
 import { sparklineLines, sparklineId, type SparklineGroup } from './sparklines'
+import { autoFilterXlsx, filteredRows, filtersFromXlsx } from './filter-files'
 
 // ---------------------------------------------------------------------------
 // Shared pieces
@@ -106,6 +107,20 @@ export function isDateFormat(fmt: string | undefined): boolean {
   if (!fmt) return false
   const bare = fmt.replace(/"[^"]*"/g, '').replace(/\[[^\]]*\]/g, '')
   return /[ymd]/i.test(bare) && !/[#0?]/.test(bare) && !/^General$/i.test(fmt)
+}
+
+/**
+ * A date format that shows a day (a year, month or day token), as against
+ * a time alone. The reader turns a whole serial under one of these into the
+ * sheet's yyyy-mm-dd text; under h:mm the fraction stays a number, which
+ * the sheet shows as the time it is.
+ */
+export function isDayFormat(fmt: string | undefined): boolean {
+  if (!isDateFormat(fmt)) return false
+  const bare = fmt!.replace(/"[^"]*"/g, '').replace(/\[[^\]]*\]/g, '')
+  if (/[yd]/i.test(bare)) return true
+  // An m beside an h or an s is minutes; any other is a month.
+  return /m/i.test(bare.replace(/h+:m+|m+:s+/gi, ''))
 }
 
 /** `$A$1:$D$10`, the way a print name spells a rectangle. */
@@ -208,6 +223,7 @@ function styleRegistry() {
     const border = intern(borders, borderIds, borderXml(e.border))
     const alignParts: string[] = []
     if (e.align) alignParts.push(`horizontal="${e.align}"`)
+    if (e.valign) alignParts.push(`vertical="${e.valign}"`)
     if (e.wrap) alignParts.push('wrapText="1"')
     if (e.indent) alignParts.push(`indent="${e.indent}"`)
     const align = alignParts.length ? `<alignment ${alignParts.join(' ')}/>` : ''
@@ -260,7 +276,7 @@ export function asText(text: string): string {
 }
 
 /** A cell's `<c>` element: a formula with its cached value, or a literal. */
-function cellXml(ref: string, raw: string, value: CellValue, s: number, dateFmt: boolean, spill?: { ref: string } | 'covered', inTable?: string): string {
+function cellXml(ref: string, raw: string, value: CellValue, s: number, spill?: { ref: string } | 'covered', inTable?: string): string {
   const sAttr = s ? ` s="${s}"` : ''
   const text = raw.trim()
   if (text === '' && spill === 'covered') {
@@ -294,7 +310,9 @@ function cellXml(ref: string, raw: string, value: CellValue, s: number, dateFmt:
   if (isError(value) && text.startsWith('#')) return `<c r="${ref}"${sAttr} t="e"><v>${esc(value.error)}</v></c>`
   const serial = isoToSerial(text)
   if (serial !== null) return `<c r="${ref}"${sAttr}><v>${serial}</v></c>`
-  if (typeof value === 'number' && !dateFmt) return `<c r="${ref}"${sAttr}><v>${value}</v></c>`
+  // A number under a date or time format is a serial to Excel, which shows
+  // it through the format: 0.4375 under h:mm is 10:30 there as here.
+  if (typeof value === 'number') return `<c r="${ref}"${sAttr}><v>${value}</v></c>`
   if (typeof value === 'boolean') return `<c r="${ref}"${sAttr} t="b"><v>${value ? 1 : 0}</v></c>`
   return `<c r="${ref}"${sAttr} t="inlineStr"><is><t xml:space="preserve">${esc(text)}</t></is></c>`
 }
@@ -486,9 +504,12 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
       colXml.push(`<col min="${c + 1}" max="${c + 1}"${px !== undefined ? ` width="${pxToWidth(px)}" customWidth="1"` : ' width="12.5"'}${hidden ? ' hidden="1"' : ''}/>`)
     }
 
-    // <sheetData>
+    // <sheetData>. The rows the AutoFilter folds away go out hidden, as
+    // Excel writes them, so the file opens in the same view; the criteria
+    // beside the region are what lets Clear Filter bring them back.
+    const filtered = filteredRows(doc, name)
     const rowXml: string[] = []
-    for (let r = 0; r <= maxRow; r += 1) {
+    for (let r = 0; r <= Math.max(maxRow, ...filtered); r += 1) {
       const cells: string[] = []
       for (let c = 0; c <= maxCol; c += 1) {
         const raw = wb.getRaw(name, r, c)
@@ -505,12 +526,12 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
         const s = look ? styles.xfId(look) : 0
         const xml = cellXml(
           `${colToLetters(c)}${r + 1}`, raw, raw.trim() === '' && !spill ? '' : wb.getValue(name, r, c),
-          s, dated || isDateFormat(entry?.numFmt), spill, wb.tables.at(name, r, c)?.name,
+          s, spill, wb.tables.at(name, r, c)?.name,
         )
         if (xml) cells.push(xml)
       }
       const height = state.heights.get(r)
-      const hidden = state.hidden.rows.has(r)
+      const hidden = state.hidden.rows.has(r) || filtered.has(r)
       if (!cells.length && height === undefined && !hidden) continue
       rowXml.push(`<row r="${r + 1}"${height !== undefined ? ` ht="${pxToPt(height)}" customHeight="1"` : ''}${hidden ? ' hidden="1"' : ''}>${cells.join('')}</row>`)
     }
@@ -534,7 +555,7 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
     const editRanges = state.protection.ranges.length
       ? `<protectedRanges>${state.protection.ranges.map((range) => `<protectedRange sqref="${range.rects.map(rectRef).join(' ')}" name="${esc(range.title)}"/>`).join('')}</protectedRanges>`
       : ''
-    const autoFilter = state.autoFilter ? `<autoFilter ref="${rectRef(state.autoFilter.range)}"/>` : ''
+    const autoFilter = autoFilterXlsx(doc, name)
     const merges = state.merges.length
       ? `<mergeCells count="${state.merges.length}">${state.merges.map((m) => `<mergeCell ref="${rectRef(m)}"/>`).join('')}</mergeCells>`
       : ''
@@ -976,6 +997,9 @@ function readStyles(xml: string | undefined): StyleTable {
     const align = kid(xf, 'alignment')
     const horizontal = attr(align, 'horizontal')
     if (horizontal === 'left' || horizontal === 'center' || horizontal === 'right') entry.align = horizontal
+    const vertical = attr(align, 'vertical')
+    // The middle is the sheet's default, so only top and bottom are kept.
+    if (vertical === 'top' || vertical === 'bottom') entry.valign = vertical
     if (flag(align, 'wrapText')) entry.wrap = true
     const indent = num(align, 'indent')
     if (indent) entry.indent = indent
@@ -1251,7 +1275,7 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
             else if (type === 'e') text = v ?? ''
             else if (v !== null && v !== '') {
               const n = Number(v)
-              text = Number.isFinite(n) && isDateFormat(s !== null ? styles.numFmtOf(s) : undefined) && n >= 0 && Number.isInteger(n) ? serialToIso(n) : v
+              text = Number.isFinite(n) && isDayFormat(s !== null ? styles.numFmtOf(s) : undefined) && n >= 0 && Number.isInteger(n) ? serialToIso(n) : v
             }
           }
           if (text !== '') put(ref.row, c, text)
@@ -1297,9 +1321,27 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
         entry.protection ??= { allow: {}, ranges: [] }
         entry.protection.ranges.push({ id: newEditRangeId(), title: attr(range, 'name') ?? `Range${entry.protection.ranges.length + 1}`, rects })
       }
-      const af = attr(kid(root, 'autoFilter'), 'ref')
+      const afNode = kid(root, 'autoFilter')
+      const af = attr(afNode, 'ref')
       const afRect = af ? refRect(af) : null
-      if (afRect) entry.autoFilter = { range: afRect, filters: {} }
+      if (afRect && afNode) {
+        // The criteria come back with the region. Excel writes the rows a
+        // filter hides as hidden rows; the document releases the ones its
+        // criteria hide again (see releaseFilteredRows), and the rest stay
+        // hidden by hand, which shows the rows Excel showed.
+        const isDateColumn = (col: number): boolean => {
+          let dates = 0
+          let filled = 0
+          for (let r = afRect[0] + 1; r <= afRect[2]; r += 1) {
+            const raw = cells[r]?.[col] ?? ''
+            if (raw === '') continue
+            filled += 1
+            if (isoToSerial(raw.trim()) !== null) dates += 1
+          }
+          return filled > 0 && dates === filled
+        }
+        entry.autoFilter = { range: afRect, filters: filtersFromXlsx(afNode, afRect, isDateColumn).filters }
+      }
       for (const merge of kids(kid(root, 'mergeCells'), 'mergeCell')) {
         const rect = refRect(attr(merge, 'ref') ?? '')
         if (rect) entry.merges.push([rect[0], rect[1], rect[2], rect[3]])

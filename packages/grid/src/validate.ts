@@ -77,7 +77,13 @@ export function validateGridConfig<
   // (a key absent from row 0 but present later) does not trip it. A row
   // model shows placeholder rows before its first block lands; those carry
   // no data keys at all and say nothing about the columns.
-  const sample = (input.data ?? []).filter((row) => !rowPlaceholderState(row)).slice(0, FIELD_SAMPLE_ROWS)
+  // Stops at the sample size: this runs on every data change, and a filter
+  // over all the rows first was O(n) per tick on a live feed.
+  const sample: TData[] = []
+  for (const row of input.data ?? []) {
+    if (sample.length >= FIELD_SAMPLE_ROWS) break
+    if (!rowPlaceholderState(row)) sample.push(row)
+  }
   // Under server-side grouping the first rows are group rows, which carry
   // a key and aggregates and none of the leaf fields; nothing to judge by.
   if (sample.length && !input.serverGroup) {

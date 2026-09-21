@@ -36,7 +36,7 @@ returns a `[get, set]` tuple - a reactive store you own (`createSvGridState` is
 an alias).
 
 ```ts
-import { createGridState } from '@svgrid/grid'
+import { createGridState } from '@svgrid/grid/core'
 
 // [getter, setter] - the getter reads reactive $state, the setter takes a
 // value or an updater function.
@@ -86,7 +86,7 @@ use `subscribeGrid` for a plain pub/sub interface (`subscribeSvGrid` is an
 alias).
 
 ```ts
-import { subscribeGrid } from '@svgrid/grid'
+import { subscribeGrid } from '@svgrid/grid/core'
 
 const unsub = subscribeGrid(table, (event) => {
   if (event.type === 'sorting') analytics.track('grid_sort', event.value)
@@ -112,7 +112,7 @@ the same value drive a URL, a saved view, or two grids at once.
     tableFeatures,
     rowSortingFeature,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 
@@ -177,7 +177,7 @@ path, and a header click stops working.
     tableFeatures,
     rowSortingFeature,
     type ColumnDef,
-  } from '@svgrid/grid'
+  } from '@svgrid/grid/core'
 
   type Repo = { name: string; lang: string; stars: number }
 

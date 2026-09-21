@@ -171,3 +171,104 @@ describe('migrate', () => {
     expect(r.warnings.join(' ')).toContain('createTable')
   })
 })
+
+/**
+ * The shape svelte-headless-table's own docs teach: a `writable` over a prop,
+ * `$:` to keep it in sync, plugin state destructured for a pager. This is
+ * the component tools/migration-lab runs the codemod on; the first run left
+ * the props out and the pager in, and nothing compiled.
+ */
+const DOCS_SHAPE = `<script lang="ts">
+  import { createEventDispatcher } from 'svelte'
+  import { writable } from 'svelte/store'
+  import { createTable, Subscribe, Render } from 'svelte-headless-table'
+  import { addSortBy, addPagination } from 'svelte-headless-table/plugins'
+  import type { Person } from './people'
+
+  export let people: Person[] = []
+  export let pageSize = 5
+
+  const dispatch = createEventDispatcher<{ select: Person }>()
+
+  const data = writable<Person[]>(people)
+  $: data.set(people)
+
+  const table = createTable(data, {
+    sort: addSortBy(),
+    page: addPagination({ initialPageSize: pageSize }),
+  })
+
+  const columns = table.createColumns([
+    table.column({ header: 'Name', accessor: 'name' }),
+  ])
+
+  const { headerRows, pageRows, tableAttrs, tableBodyAttrs, pluginStates } = table.createViewModel(columns)
+  const { pageIndex, pageCount } = pluginStates.page
+
+  $: shown = $pageRows.length
+</script>
+
+<table {...$tableAttrs}>
+  <tbody {...$tableBodyAttrs}>
+    {#each $pageRows as row (row.id)}
+      <tr><td>x</td></tr>
+    {/each}
+  </tbody>
+</table>
+
+<p>{shown} rows, page {$pageIndex + 1} of {$pageCount}</p>
+`
+
+describe('the docs shape (a store over a prop, a pager on plugin state)', () => {
+  test('unwraps a writable with a TypeScript generic', () => {
+    const r = migrate(DOCS_SHAPE)
+    expect(r.code).not.toContain('writable')
+  })
+
+  test('carries the props and the row-type import over, and binds data to the prop', () => {
+    const r = migrate(DOCS_SHAPE)
+    expect(r.code).toContain("import type { Person } from './people'")
+    expect(r.code).toContain('export let people: Person[] = []')
+    expect(r.code).toContain('export let pageSize = 5')
+    expect(r.code).toContain('data={people}')
+    expect(r.code).toContain('GridColumns<(typeof people)[number]>')
+    expect(r.code).not.toContain('const data =')
+    // The wiring and the dispatcher import are gone.
+    expect(r.code).not.toContain('createEventDispatcher')
+    expect(r.code).not.toContain('createViewModel')
+    expect(r.code).not.toContain('$: ')
+  })
+
+  test('passes an identifier page size through', () => {
+    const r = migrate(DOCS_SHAPE)
+    expect(r.code).toContain('pageSize={pageSize}')
+  })
+
+  test('names the view-model values the template still reads', () => {
+    const r = migrate(DOCS_SHAPE)
+    const w = r.warnings.find((x) => x.includes('still reads'))
+    expect(w).toBeTruthy()
+    expect(w).toContain('`pageIndex`')
+    expect(w).toContain('`pageCount`')
+    expect(w).toContain('`shown`')
+  })
+
+  test('keeps a $props() block and binds data to a prop declared there', () => {
+    const src = DOCS_SHAPE
+      .replace("  export let people: Person[] = []\n  export let pageSize = 5\n", "  let { people = [], pageSize = 5 }: { people?: Person[]; pageSize?: number } = $props()\n")
+    const r = migrate(src)
+    expect(r.code).toContain('= $props()')
+    expect(r.code).toContain('data={people}')
+  })
+})
+
+describe('events the table markup dispatched', () => {
+  test('are named with the SvGrid prop that carries them now', () => {
+    const src = DOCS_SHAPE.replace('<tr><td>x</td></tr>', "<tr on:click={() => dispatch('select', row.original)}><td>x</td></tr>")
+    const r = migrate(src)
+    const w = r.warnings.find((x) => x.includes('dispatched'))
+    expect(w).toBeTruthy()
+    expect(w).toContain('`select`')
+    expect(w).toContain('onRowClick')
+  })
+})

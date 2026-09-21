@@ -102,11 +102,13 @@ export function buildSparkline(
     const barW = Math.max(1, slot - gap)
     const mid = height / 2
     const h = innerH / 2
-    const bars: SparklineBar[] = values.map((v, i) => {
+    const bars: SparklineBar[] = []
+    values.forEach((v, i) => {
       const x = pad + i * slot + (slot - barW) / 2
-      if (v > 0) return { x, y: mid - h, w: barW, h, negative: false }
-      if (v < 0) return { x, y: mid, w: barW, h, negative: true }
-      return { x, y: mid - 1, w: barW, h: 2, negative: false }
+      // A win/loss sparkline marks a win up and a loss down; a zero is a
+      // blank gap, no mark at all, the way Excel draws one.
+      if (v > 0) bars.push({ x, y: mid - h, w: barW, h, negative: false })
+      else if (v < 0) bars.push({ x, y: mid, w: barW, h, negative: true })
     })
     return { ...base, linePath: '', areaPath: '', bars, lastPoint: null }
   }

@@ -53,6 +53,7 @@
   import SvSheetSort from './SvSheetSort.svelte'
   import { downloadBlobFile } from '@svgrid/grid'
   import { documentToXlsx, documentFromXlsx } from './sheet/xlsx-document'
+  import { xlsxCanCarryPicture } from './sheet/xlsx-drawing'
   import { csvText } from './sheet/csv'
   import { documentFromFile } from './sheet/open-file'
   import { documentToOds } from './sheet/ods-document'
@@ -72,7 +73,7 @@
   import { applyBorders, type BorderPreset } from './sheet/ribbon'
   import { RIBBON_ICONS, type RibbonIconName } from './sheet/ribbon-icons'
   import {
-    planPaste, resolvePasteCell, buildClipboardPayload, parseClipboardHtml, readClipboardOrigin, anchorForeignFormulas,
+    planPaste, resolvePasteCell, buildClipboardPayload, parseClipboard, parseClipboardText, parseClipboardHtml, readClipboardOrigin, anchorForeignFormulas,
     type ClipboardGrid, type PasteSpecialOptions, type PasteWhat,
   } from './sheet/paste-special'
   import { setStructureTarget, insertRows, insertColumns, deleteRows, deleteColumns, axisForSelection } from './sheet/structure'
@@ -80,12 +81,14 @@
   import { setFillTranslator, setSheetValueProbe } from './sheet/commands'
   import { translateFormula, type CellMove } from './sheet/refs'
   import { entryToStyle, type SheetFormatStore, type CellFormatEntry } from './sheet/format-store'
-  import { compileNumberFormat } from './sheet/number-format'
-  import { colToLetters, lettersToCol, parseA1 } from './sheet/address'
+  import { compileNumberFormat, formatCategory } from './sheet/number-format'
+  import { colToLetters, lettersToCol, parseA1, quoteSheet } from './sheet/address'
+  import { isValidName } from './sheet/names'
   import { referenceSpans, type ReferenceSpan } from './sheet/refs'
-  import { balanceParens } from './sheet/autocomplete'
+  import { balanceParens, suggestFunctions, applySuggestion, type FunctionSuggestion } from './sheet/autocomplete'
   import { parseEntry, completeEntry } from './sheet/entry'
-  import { isError, type CellValue } from './sheet/ast'
+  import { isError, type CellValue, type Node } from './sheet/ast'
+  import { parseFormula } from './sheet/parse'
   import { isLocked, cellLocked, rectsHaveLocked, rectsMixLocked, rangeText, type ProtectionAllow, type ProtectionPermission, type EditRange } from './sheet/protection'
   import SvSheetProtectSheet from './SvSheetProtectSheet.svelte'
   import SvSheetEditRanges from './SvSheetEditRanges.svelte'
@@ -114,7 +117,7 @@
   import { imageCall, isDrawableImageSource } from './sheet/cell-images'
   import { isValidTableName, type TableRegion } from './sheet/tables'
   import { tableStyleColours, tableStyleLabel, findTableStyle, DEFAULT_TABLE_STYLE } from './sheet/table-styles'
-  import { livePresence, presenceOnSheet, presenceAnchor, presenceColour, presenceInitials, type SheetPresence } from './sheet/presence'
+  import { livePresence, presenceOnSheet, presenceAnchor, presenceColour, presenceInitials, presenceInk, type SheetPresence } from './sheet/presence'
   import { SvChart, SvSparkline, chartToSvgString } from '@svgrid/grid'
   import { MARGIN_PRESETS, marginPresetOf, copyPageSetup, type PageSetup, type PaperSize } from './sheet/page-setup'
   import { sheetPrintHtml } from './sheet/print'
@@ -132,7 +135,7 @@
     ruleStats, evaluateCf, removeCf, cfId, COLOR_SCALES, DATA_BAR_COLOR,
     type CfRule, type CfRuleBody, type CfStats, type CfResult, type CfContext, type CfPreset, type CfBody, type CfStyledRule,
   } from './sheet/conditional-formats'
-  import type { Rect } from './sheet/rects'
+  import { rectsIntersect, type Rect } from './sheet/rects'
   import {
     mergePlan, unmergePlan, toGridMerges, isCoveredCell, selectionMerged, mergesIn, sortBlockedByMerges, reorderMerges,
     mergeAt as sheetMergeAt, normalRect, expandToMerges, type MergeKind, type MergePlan,
@@ -556,7 +559,10 @@
       defaultWidth: columnWidth,
       heights: state.heights,
       defaultHeight: rowHeight,
-      hidden: state.hidden,
+      // The rows the AutoFilter folds away are as hidden as the ones hidden by
+      // hand: Excel prints what the sheet shows, and a filtered list printed
+      // with its folded rows back in is not the list on screen.
+      hidden: { rows: new Set([...state.hidden.rows, ...state.filterHidden]), cols: state.hidden.cols },
       merges: state.merges,
       setup: state.pageSetup,
       objects: printObjects(name),
@@ -611,6 +617,16 @@
   async function saveXlsx() {
     try {
       downloadBlobFile(await toXlsx(), `${fileName}.xlsx`)
+      // The writer leaves out a picture whose bytes it does not have (a web
+      // address) or cannot store as they are; saying so beats a file that
+      // opens in Excel a picture short with nothing to explain it.
+      let left = 0
+      for (const name of wb.sheets) {
+        for (const object of doc.get(name).objects ?? []) {
+          if (object.kind === 'image' && !xlsxCanCarryPicture(object.src)) left += 1
+        }
+      }
+      if (left > 0) say(t('picturesNotSaved', { count: left, unit: t(left === 1 ? 'unitPicture' : 'unitPictures') }))
     } catch (e) {
       say(e instanceof Error ? e.message : t('couldNotSave'))
     }
@@ -952,6 +968,8 @@
   /** Where the editor points: the cell's box relative to the grid host. */
   let anchorRect = $state<{ left: number; top: number; width: number; height: number } | null>(null)
   let gridHost = $state<HTMLDivElement | null>(null)
+  /** The tab strip, for the ribbon's Delete Sheet, which asks the strip's question first. */
+  let tabs = $state<SvSheetTabs | null>(null)
   let showComments = $state(false)
   const allComments = $derived.by(() => { void version; return listComments(notesNow()) })
 
@@ -1787,13 +1805,23 @@
       }
       return
     }
-    const cmd = cmdOf()
-    const rects = selectedRects(cmd).map(normalRect)
-    const last = rects[rects.length - 1]
-    const region = cmd ? currentRegion(gridOf(cmd), { row: active.rowIndex, col: active.colIndex }) : null
-    const block: Rect | null = last && (last[0] !== last[2] || last[1] !== last[3]) ? last : region ?? last ?? null
+    const block = blockAround(cmdOf())
     if (!block || block[0] === block[2]) { say(t('selectBlockToTable')); return }
     tableSetup = { range: block, name: nextTableName(), headers: true, totals: false, style: DEFAULT_TABLE_STYLE, existing: null }
+  }
+
+  /**
+   * The block a table, a chart or a pivot is made of: the selection when
+   * it spans more than one cell, otherwise the region of data around the
+   * active cell, which is what Excel takes from a single cell inside a
+   * block so a chart or a PivotTable does not need the block selected first.
+   */
+  function blockAround(cmd: GridCommandContext | null): Rect | null {
+    const rects = selectedRects(cmd).map(normalRect)
+    const last = rects[rects.length - 1]
+    if (last && (last[0] !== last[2] || last[1] !== last[3])) return last
+    const region = cmd ? currentRegion(gridOf(cmd), { row: active.rowIndex, col: active.colIndex }) : null
+    return region ?? last ?? null
   }
 
   /** OK in the dialog: the table defined, and the filter arrows over it. */
@@ -1806,13 +1834,21 @@
     if (clash) { say(t('tableNameTaken', { name: next.name })); return }
     // Without a header row the table still needs one to name its columns,
     // so the first row becomes it, as Excel does when the box is unticked.
+    // A table that already has a totals row was opened with it inside the
+    // range; a table asked for one now gets it ADDED under the data, as
+    // Excel's Total Row does, rather than having its last row of data
+    // taken for it. The row below is used when it is empty across the
+    // table's columns, and pushed down otherwise.
+    const hadTotals = existing ? tablesNow().find((t) => t.name === existing)?.hasTotals ?? false : false
+    const lastRow = hadTotals ? r2 - 1 : r2
+    const addingTotals = next.totals && !hadTotals
     const table: TableRegion = {
       name: next.name,
       sheet: wb.active,
       headerRow: r1,
       firstCol: c1,
       lastCol: c2,
-      lastRow: next.totals ? r2 - 1 : r2,
+      lastRow,
       hasTotals: next.totals,
       style: next.style,
     }
@@ -1825,14 +1861,30 @@
         doc.shift(wb.active, { kind: 'insertRows', at: r1, count: 1 })
         for (let c = c1; c <= c2; c += 1) cmd.setCellValue(r1, c, `Column${c - c1 + 1}`)
       }
-      applyAutoFilter({ range: [r1, c1, next.totals ? r2 - 1 : r2, c2] as unknown as Rect, filters: {} }, cmd)
+      if (addingTotals) {
+        const totalsRow = lastRow + 1
+        let taken = false
+        for (let c = c1; c <= c2 && !taken; c += 1) taken = wb.getRaw(wb.active, totalsRow, c).trim() !== ''
+        if (taken) {
+          wb.applyStructuralEdit(wb.active, { kind: 'insertRows', at: totalsRow, count: 1 })
+          doc.shift(wb.active, { kind: 'insertRows', at: totalsRow, count: 1 })
+        }
+        // Excel's Total Row: the word in the first column, a SUBTOTAL over
+        // the last one, which leaves out the rows a filter folds.
+        cmd.setCellValue(totalsRow, c1, t('table.totalLabel'))
+        if (c2 > c1) cmd.setCellValue(totalsRow, c2, `=SUBTOTAL(109,[${wb.getRaw(wb.active, r1, c2).trim() || `Column${c2 - c1 + 1}`}])`)
+      } else if (!next.totals && hadTotals) {
+        // Total Row unticked: the row goes, as Excel takes it away.
+        for (let c = c1; c <= c2; c += 1) if (wb.getRaw(wb.active, r2, c) !== '') cmd.setCellValue(r2, c, '')
+      }
+      applyAutoFilter({ range: [r1, c1, lastRow, c2] as unknown as Rect, filters: {} }, cmd)
     })
     bump()
     // The dialog both makes a table and edits one, and the two are not the
     // same news: saying "Orders covers A1:E13" after a style was picked
     // reports something that did not happen. An edit names the look it now
     // wears, which is what was just chosen.
-    const range = `${colToLetters(c1)}${r1 + 1}:${colToLetters(c2)}${r2 + 1}`
+    const range = `${colToLetters(c1)}${r1 + 1}:${colToLetters(c2)}${(next.totals ? lastRow + 1 : lastRow) + 1}`
     const look = findTableStyle(next.style)
     say(existing
       ? t('tableUpdated', { name: next.name, range, style: look ? tableStyleLabel(look) : t('table.styleNoneShort') })
@@ -2104,8 +2156,7 @@
       pivotSetup = { pivot: here, fields: pivotFields(here.source, cellTextAt), existing: true }
       return
     }
-    const rects = selectedRects().map(normalRect)
-    const rect = rects[rects.length - 1]
+    const rect = blockAround(cmdOf())
     if (!rect || rect[0] === rect[2] || rect[1] === rect[3]) { say(t('selectBlockToPivot')); return }
     const fields = pivotFields(rect, cellTextAt)
     pivotSetup = { pivot: pivotFromRange(rect, fields), fields, existing: false }
@@ -2220,13 +2271,16 @@
    * window is simply not drawn this paint.
    */
   const peersHere = $derived.by(() => presenceOnSheet(livePresence(presence ?? []), wb.active))
-  let peerBoxes = $state<Record<string, { left: number; top: number; width: number; height: number; tagLeft: number; tagTop: number }>>({})
+  let peerBoxes = $state<Record<string, { left: number; top: number; width: number; height: number; tagLeft: number; tagTop: number; tagBelow: boolean }>>({})
 
   function measurePeers() {
     const host = gridHost
     if (!host || !peersHere.length) { peerBoxes = {}; return }
     const b = host.getBoundingClientRect()
     const cellBox = (row: number, col: number) => host.querySelector<HTMLElement>(`td[data-svgrid-row="${row}"][data-svgrid-col="${col}"]`)?.getBoundingClientRect() ?? null
+    // Where the cells begin: under the column header, and the frozen rows.
+    const headerBottom = host.querySelector('thead')?.getBoundingClientRect().bottom ?? b.top
+    const TAG_HEIGHT = 20
     const next: typeof peerBoxes = {}
     for (const person of peersHere) {
       const [r1, c1, r2, c2] = person.rect
@@ -2239,7 +2293,11 @@
       const height = Math.max(first.bottom, last.bottom) - b.top - top
       const anchor = presenceAnchor(person)
       const tag = cellBox(anchor.row, anchor.col) ?? first
-      next[person.id] = { left, top, width, height, tagLeft: startOf(tag, b), tagTop: tag.top - b.top }
+      // The tag hangs above its cell. On the first row, or a row scrolled
+      // up to the frozen ones, above is under the sticky header, so it
+      // sits below the cell instead, the way a name tag flips at an edge.
+      const tagBelow = tag.top - headerBottom < TAG_HEIGHT
+      next[person.id] = { left, top, width, height, tagLeft: startOf(tag, b), tagTop: (tagBelow ? tag.bottom : tag.top) - b.top, tagBelow }
     }
     peerBoxes = next
   }
@@ -2292,8 +2350,14 @@
     const object = objectsNow().find((o) => o.id === drag.id)
     const box = objectBoxes[drag.id]
     if (!object || !box) return
+    // A click that selects the object is not a move: nothing goes into the
+    // history, or the next Ctrl+Z would seem to do nothing.
+    if (event.clientX === drag.x && event.clientY === drag.y) return
     if (drag.kind === 'resize') {
-      replaceObject({ ...copyObject(object), anchor: { ...object.anchor, width: Math.round(box.width), height: Math.round(box.height) } })
+      const width = Math.round(box.width)
+      const height = Math.round(box.height)
+      if (width === object.anchor.width && height === object.anchor.height) return
+      replaceObject({ ...copyObject(object), anchor: { ...object.anchor, width, height } })
       return
     }
     // Moved: the cell now under the object's corner becomes its anchor, and
@@ -2315,27 +2379,63 @@
     } else {
       anchor.dx = Math.round(anchor.dx + (box.left - (objectBoxes[drag.id]?.left ?? box.left)))
     }
+    const o = object.anchor
+    if (anchor.row === o.row && anchor.col === o.col && anchor.dx === o.dx && anchor.dy === o.dy) return
     replaceObject({ ...copyObject(object), anchor })
   }
 
   /** Insert > Chart: a chart of the selected block, anchored under it. */
   function insertChart(cmd: GridCommandContext) {
     if (protectedNow()) { refuse(); return }
-    const rects = selectedRects(cmd).map(normalRect)
-    const rect = rects[rects.length - 1]
+    const rect = blockAround(cmd)
     if (!rect || (rect[0] === rect[2] && rect[1] === rect[3])) { say(t('selectBlockToChart')); return }
     addObject(chartFromRange(rect, (r, c) => wb.getValue(wb.active, r, c)))
   }
 
   /** Insert > Picture: the file as a data URL, anchored on the active cell. */
+  /**
+   * A picture as a PNG data URL, drawn through a canvas.
+   *
+   * For a file the .xlsx cannot carry as it is: an SVG logo went in through
+   * Insert > Picture, drew on the sheet, and was left out of the saved file
+   * without a word, because Excel keeps only a few raster types in
+   * `xl/media`. Rasterised on the way in, what is drawn is what is saved.
+   * A vector is drawn at twice the object's size, so it stays sharp when
+   * the object is enlarged a little; a raster keeps its own pixels.
+   */
+  async function pictureAsPng(src: string, width: number, height: number): Promise<string> {
+    const image = new Image()
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve()
+      image.onerror = () => reject(new Error('decode failed'))
+      image.src = src
+    })
+    const vector = /^data:image\/svg\+xml/i.test(src)
+    const natural = { w: image.naturalWidth || width, h: image.naturalHeight || height }
+    const scale = vector ? Math.max(1, (width * 2) / natural.w, (height * 2) / natural.h) : 1
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.round(natural.w * scale))
+    canvas.height = Math.max(1, Math.round(natural.h * scale))
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('no canvas')
+    context.drawImage(image, 0, 0, canvas.width, canvas.height)
+    return canvas.toDataURL('image/png')
+  }
+
   async function insertPicture(file: Blob & { name?: string }) {
     if (protectedNow()) { refuse(); return }
-    const src = await new Promise<string>((resolve, reject) => {
+    let src = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader()
       reader.onload = () => resolve(String(reader.result ?? ''))
       reader.onerror = () => reject(reader.error ?? new Error('read failed'))
       reader.readAsDataURL(file)
     })
+    if (!xlsxCanCarryPicture(src)) {
+      // A picture that cannot be rasterised (a type the browser does not
+      // decode) still goes on the sheet as it is: on screen it may draw,
+      // and Save As says what it leaves out.
+      try { src = await pictureAsPng(src, 240, 180) } catch { /* kept as read */ }
+    }
     addObject({
       id: objectId(),
       kind: 'image',
@@ -2561,6 +2661,10 @@
       if (cmd) applyFreeze(cmd, doc.get(wb.active).freeze)
     }
     targetsBoundTo = wb.active
+    // Every step recorded from here on is marked with the sheet it is made
+    // on (its document entry, which survives a rename), so Ctrl+Z can go
+    // back to that sheet before the grid applies it. See undoRedo.
+    api?.setHistoryTag(doc.get(wb.active))
     const store = storeFor()
     setFormatTarget({
       store, lookup,
@@ -2751,12 +2855,20 @@
     // A merged cell is as wide as its merge already; the text stays in it.
     if (sheetMergeAt(mergesNow(), r, c)) return 0
     if (entry?.align === 'right' || entry?.align === 'center') return 0
-    // A fill stays inside its cell in Excel; letting the span grow would
-    // drag the colour over the neighbours along with the text.
-    if (entry?.fill) return 0
+    // The span that spills paints its own background over the neighbours,
+    // the cell's fill or the sheet's, so it may only run over neighbours
+    // whose background is the same: an unfilled cell over unfilled cells,
+    // and a filled cell over cells wearing the SAME fill, which is a title
+    // on a banded row. "A filled cell never spills" was the first rule,
+    // and it cut every section title on a band at its column's edge; a
+    // neighbour with a different fill, or none, still stops the text, since
+    // the colour would drag over it.
+    const fill = entry?.fill ?? ''
+    const store = storeFor()
     let extra = 0
     for (let next = c + 1; next < colCount; next += 1) {
       if (wb.getRaw(wb.active, r, next) !== '') break
+      if ((store.get(`r${r}`, colToLetters(next))?.fill ?? '') !== fill) break
       extra += widthOf(next)
     }
     return extra
@@ -2812,9 +2924,52 @@
    * name that only worked on the sheet it was defined on would not be worth
    * listing.
    */
+  /**
+   * A name typed into the Name Box: Excel's quickest way to define one,
+   * for the selection, sheet-qualified and absolute the way the Name
+   * Manager writes it. One undo. Typed over the sheet's own address
+   * grammar it is an address and moves the cursor instead (see the bar).
+   */
+  function defineNameHere(name: string) {
+    if (!isValidName(name)) { say(t('nameBoxBadName', { name })); cmdOf()?.focus(); return }
+    const rects = selectedRects().map(normalRect)
+    const [r1, c1, r2, c2] = rects[rects.length - 1] ?? [active.rowIndex, active.colIndex, active.rowIndex, active.colIndex]
+    const cellRef = (r: number, c: number) => `$${colToLetters(c)}$${r + 1}`
+    const refersTo = `${quoteSheet(wb.active)}!${cellRef(r1, c1)}${r1 === r2 && c1 === c2 ? '' : `:${cellRef(r2, c2)}`}`
+    const put = (value: string | null) => {
+      if (value === null) wb.names.remove(name); else wb.names.define(name, value)
+      wb.recalculate()
+      doc.changed({ kind: 'workbook' })
+      bump()
+    }
+    put(refersTo)
+    const cmd = cmdOf()
+    cmd?.recordUndo(() => put(null), () => put(refersTo))
+    say(t('nameDefined', { name, refersTo: refersTo.replace(/^.*!/, '') }))
+    // The sheet takes the focus back, as after an address: the next Ctrl+Z
+    // is the sheet's, not the Name Box's own text undo.
+    cmd?.focus()
+  }
+
   async function jumpToName(name: string) {
     const node = wb.names.resolve(name)
-    if (!node) return
+    if (node) await selectNode(node)
+  }
+
+  /**
+   * The Name Box given a range or a sheet-qualified address, `B2:D4` or
+   * `Orders!C3`: Excel selects it, switching sheets first. False when the
+   * text is not a reference, so the bar can define it as a name instead.
+   */
+  function jumpToReference(text: string): boolean {
+    let node: Node
+    try { node = parseFormula(`=${text}`) } catch { return false }
+    if (node.k !== 'ref' && node.k !== 'range') return false
+    void selectNode(node)
+    return true
+  }
+
+  async function selectNode(node: Node) {
     const from = node.k === 'ref' ? node.ref : node.k === 'range' ? node.from : null
     const to = node.k === 'range' ? node.to : from
     if (!from || from.row === null) return
@@ -2972,6 +3127,48 @@
     return api ? api.getCommandContext() : null
   }
 
+  // --- undo across sheets -----------------------------------------------------
+  /** The sheet a history step was made on, from the tag it carries. */
+  function sheetOfTag(tag: unknown): string | null {
+    if (!tag) return null
+    return wb.sheets.find((name) => doc.get(name) === tag) ?? null
+  }
+  /**
+   * Whether the next Ctrl+Z (or Ctrl+Y) belongs to a sheet other than the
+   * one showing. The grid's history knows rows and columns, not sheets:
+   * applied as it stands, a step made on Orders would land on the same cell
+   * of Summary, since both sheets' rows carry the same ids.
+   */
+  function historyIsElsewhere(direction: 'undo' | 'redo'): boolean {
+    const next = direction === 'undo' ? api?.peekUndo() : api?.peekRedo()
+    if (!next) return false
+    const sheet = sheetOfTag(next.tag)
+    return sheet !== null && sheet.toLowerCase() !== wb.active.toLowerCase()
+  }
+  /**
+   * Excel's Ctrl+Z: a change made on another sheet is undone THERE. The
+   * sheet it was made on comes up first, then the grid, now showing that
+   * sheet's rows, applies the step, so the user sees the cell change back.
+   * A step on the sheet showing takes the grid's own path.
+   */
+  async function undoRedo(direction: 'undo' | 'redo'): Promise<boolean> {
+    const a = api
+    if (!a) return false
+    const next = direction === 'undo' ? a.peekUndo() : a.peekRedo()
+    if (!next) return false
+    const sheet = sheetOfTag(next.tag)
+    if (sheet !== null && sheet.toLowerCase() !== wb.active.toLowerCase()) {
+      // As a tab click switches: the workbook, then the repaint that
+      // rebinds the per-sheet targets and hands the grid that sheet's rows.
+      wb.setActive(sheet)
+      bump()
+      await tick()
+    }
+    const done = direction === 'undo' ? a.undo() : a.redo()
+    cmdOf()?.focus()
+    return done
+  }
+
   /** Ribbon actions this shell can answer without a dialog. */
   function handleAction(action: RibbonActionId, context: GridCommandContext) {
     switch (action) {
@@ -3018,7 +3215,7 @@
       case 'paste-formats':
       case 'paste-transpose':
         if (onAction?.(action, context) === true) return
-        pasteSpecial(
+        void pasteSpecial(
           action === 'paste-transpose' ? { transpose: true } : { what: action.slice('paste-'.length) as PasteWhat },
         )
         return
@@ -3173,12 +3370,17 @@
     if (!cmd || !cmd.activeCell) return null
     const last = selection[selection.length - 1]
     const isRange = last && (last[0] !== last[2] || last[1] !== last[3])
-    const rect = over ? over.rect : isRange ? last : currentRegion(gridOf(cmd), { row: active.rowIndex, col: active.colIndex })
-    const top = rect[0]
-    const left = rect[1]
-    const bottom = Math.min(rect[2], Math.max(wb.rowCount(wb.active) - 1, top))
-    const right = Math.min(rect[3], Math.max(wb.colCount(wb.active) - 1, left))
-    return { top, left, bottom, right }
+    const chosen = over ? over.rect : isRange ? last : currentRegion(gridOf(cmd), { row: active.rowIndex, col: active.colIndex })
+    // A merged cell selected is the whole merge to Excel, so a selection
+    // that runs down the first column of merged rows sorts the rows whole
+    // rather than being refused for cutting through their merges.
+    const top = chosen[0]
+    const left = chosen[1]
+    const bottom = Math.min(chosen[2], Math.max(wb.rowCount(wb.active) - 1, top))
+    const right = Math.min(chosen[3], Math.max(wb.colCount(wb.active) - 1, left))
+    if (over) return { top, left, bottom, right }
+    const rect = expandToMerges(mergesNow(), [top, left, bottom, right])
+    return { top: rect[0], left: rect[1], bottom: rect[2], right: rect[3] }
   }
 
   /** Sort A to Z / Z to A on the active cell's column, or a filter's. */
@@ -3187,7 +3389,7 @@
     if (!block) return
     const keyCol = Math.min(Math.max(over?.keyCol ?? active.colIndex, block.left), block.right)
     // An AutoFilter's region has its header in row 1 by definition.
-    const headerRow = over ? true : guessHeaderRow((r, c) => wb.getValue(wb.active, r, c), block.top, keyCol)
+    const headerRow = over ? true : guessHeaderRow((r, c) => wb.getValue(wb.active, r, c), block.top, keyCol, block)
     sortBy(block, [{ col: keyCol, direction }], headerRow)
   }
 
@@ -3223,6 +3425,13 @@
       raw: Array.from({ length: c2 - c1 + 1 }, (_, i) => wb.getRaw(wb.active, r, c1 + i)),
       formats: Array.from({ length: c2 - c1 + 1 }, (_, i) => store.get(`r${r}`, colToLetters(c1 + i))),
     }]))
+    const sheet = wb.active
+    // The rows written straight into the workbook, one recalculation after,
+    // rather than one cmd.setCellValue per cell: each of those copies the
+    // whole data array, so a sort of a few thousand rows was tens of
+    // thousands of array copies and took the better part of a minute. The
+    // value undo is one step recorded here; the formats keep their own.
+    const valueBefore = rows.map((row) => Array.from({ length: c2 - c1 + 1 }, (_, k) => wb.getRaw(sheet, row, c1 + k)))
     cmd.batch(() => {
       withFormatUndo(cmd, target, [[start, c1, r2, c2]], () => {
         order.forEach((source, i) => {
@@ -3230,13 +3439,26 @@
           const from = before.get(source)!
           for (let k = 0; k <= c2 - c1; k += 1) {
             const c = c1 + k
-            cmd.setCellValue(row, c, from.raw[k])
+            // A row that moves takes its formulas along the way a copy
+            // would, the relative references shifted by the move and the
+            // absolute ones left alone: `=SUM(B5:E5)` on a row that lands
+            // in row 2 reads B2:E2, as it does in Excel. Written verbatim,
+            // the row's own total read the row that took its place.
+            wb.setRaw(sheet, row, c, String(translateFormula(from.raw[k], row - source, 0) ?? ''))
             const one = [[row, c, row, c] as const]
             store.clear(one, target.lookup)
             if (from.formats[k]) store.set(one, from.formats[k]!, target.lookup)
           }
         })
       })
+      wb.recalculate()
+      const valueAfter = rows.map((row) => Array.from({ length: c2 - c1 + 1 }, (_, k) => wb.getRaw(sheet, row, c1 + k)))
+      const putValues = (grid: string[][]) => {
+        rows.forEach((row, i) => grid[i]!.forEach((text, k) => wb.setRaw(sheet, row, c1 + k, text)))
+        wb.recalculate(); bump(); changed({ kind: 'cells' })
+      }
+      cmd.recordUndo(() => putValues(valueBefore), () => putValues(valueAfter))
+      changed({ kind: 'cells' })
       // A one-row merge in the region rides with its row.
       if (mergesIn(mergesNow(), [[start, c1, r2, c2]]).length) {
         const rowFor = (oldRow: number) => { const i = order.indexOf(oldRow); return i < 0 ? oldRow : rows[i]! }
@@ -3291,8 +3513,11 @@
   function delegate(action: RibbonActionId, context: GridCommandContext) {
     if (onAction?.(action, context) === true) return
     switch (action) {
+      case 'undo': void undoRedo('undo'); return
+      case 'delete-sheet': tabs?.deleteSheet(wb.active); return
+      case 'redo': void undoRedo('redo'); return
       case 'find-replace': findOpen = true; return
-      case 'paste-special': pasteSpecialOpen = true; return
+      case 'paste-special': void openPasteSpecial(); return
       case 'format-cells': formatCellsOpen = true; return
       case 'insert-function': insertFunctionOpen = true; return
       case 'name-manager': nameManagerOpen = true; return
@@ -3310,7 +3535,7 @@
         const block = sortBlock()
         if (!block || block.bottom <= block.top) { say(t('selectBlockToSort')); return }
         const keyCol = Math.min(Math.max(active.colIndex, block.left), block.right)
-        sortDialog = { block, headerGuess: guessHeaderRow((r, c) => wb.getValue(wb.active, r, c), block.top, keyCol) }
+        sortDialog = { block, headerGuess: guessHeaderRow((r, c) => wb.getValue(wb.active, r, c), block.top, keyCol, block) }
         return
       }
       case 'data-validation': dataValidationOpen = true; return
@@ -3531,7 +3756,7 @@
    * block is moved rather than translated and a foreign one has nowhere to
    * have moved from, so both pass null. Values and formats are one undo.
    */
-  function pasteBlock(grid: ClipboardGrid, origin: { row: number; col: number } | null, opts: PasteSpecialOptions): boolean {
+  function pasteBlock(grid: ClipboardGrid, origin: { row: number; col: number } | null, opts: PasteSpecialOptions, merges: ReadonlyArray<Rect> = []): boolean {
     const cmd = cmdOf()
     const target = getFormatTarget()
     if (!cmd || !target) return false
@@ -3543,13 +3768,32 @@
     const fill = last
       ? { rows: Math.abs(last[2] - last[0]) + 1, cols: Math.abs(last[3] - last[1]) + 1 }
       : undefined
+    // Nothing is cut off at the grid's edge: a block taller than the rows
+    // the grid shows grows the sheet, as Excel's does. The cells past the
+    // edge are written into the workbook directly, since the grid has no
+    // row to write them through until it repaints, and recorded as one
+    // step of their own inside the paste's group.
     const plan = planPaste(grid, dest, opts, origin, fill)
-      .filter((entry) => entry.row < rowCount && entry.col < colCount)
     if (!plan.length) return false
+    const beyond = (entry: { row: number; col: number }) => entry.row >= rowCount || entry.col >= colCount
     // A protected sheet refuses the whole paste when it reaches a locked
     // cell, as Excel does; handled, so the grid does not paste the text.
     if (protectedNow() && plan.some((entry) => locked(entry.row, entry.col))) { refuse(); return true }
-    const landing = plan.filter((entry) => !covered(entry.row, entry.col))
+    // The block's merges come along with a paste of everything or of the
+    // formats, as Excel's do, laid over the landing from its corner; a
+    // merge already there is replaced, so the cells under it are written.
+    const laying = (opts.what === 'all' || opts.what === 'formats') && merges.length > 0
+      ? merges
+        .map((m): Rect => opts.transpose
+          ? [dest.row + m[1], dest.col + m[0], dest.row + m[3], dest.col + m[2]]
+          : [dest.row + m[0], dest.col + m[1], dest.row + m[2], dest.col + m[3]])
+        .filter((m) => m[2] < rowCount && m[3] < colCount)
+      : []
+    const landingRect: Rect | null = plan.length
+      ? [Math.min(...plan.map((e) => e.row)), Math.min(...plan.map((e) => e.col)), Math.max(...plan.map((e) => e.row)), Math.max(...plan.map((e) => e.col))]
+      : null
+    const replacing = laying.length && landingRect ? mergesNow().filter((m) => rectsIntersect(m, landingRect)) : []
+    const landing = plan.filter((entry) => !covered(entry.row, entry.col) || replacing.some((m) => entry.row >= m[0] && entry.row <= m[2] && entry.col >= m[1] && entry.col <= m[3]))
     const rects: Array<readonly [number, number, number, number]> = []
     for (const entry of landing) rects.push([entry.row, entry.col, entry.row, entry.col])
     // A cut lands as a MOVE: the cells leave where they were, and every
@@ -3561,19 +3805,45 @@
     pasting = true
     try {
       cmd.batch(() => {
+        if (laying.length) {
+          const gone = new Set(replacing)
+          if (moving) for (const m of moving.merges) gone.add(mergesNow().find((own) => own[0] === m[0] && own[1] === m[1] && own[2] === m[2] && own[3] === m[3]) ?? m)
+          setMerges([...mergesNow().filter((m) => !gone.has(m)), ...laying])
+        }
+        const sheet = wb.active
+        // A block that reaches past the rows or columns the grid holds is
+        // written into the workbook straight, every value, not just the ones
+        // over the edge: mixing cmd.setCellValue for the cells the grid has
+        // with wb.setRaw for the rest dropped a cell at the seam, because the
+        // grid's writer grows its row model underneath the loop. One path
+        // for the whole block avoids the seam; its own undo restores it.
+        const bulk = landing.some(beyond)
+        const direct: Array<{ row: number; col: number; before: string; after: string }> = []
         withFormatUndo(cmd, target, rects, () => {
           for (const entry of landing) {
             const at = { row: entry.row, col: entry.col }
-            const decision = resolvePasteCell(entry.source, wb.getValue(wb.active, entry.row, entry.col), opts, entry.offset, at)
+            const decision = resolvePasteCell(entry.source, wb.getValue(wb.active, entry.row, entry.col), opts, entry.offset, at, entry.turn)
             if (decision.kind === 'skip') continue
             const one = [[entry.row, entry.col, entry.row, entry.col] as const]
-            if (decision.kind === 'value' || decision.kind === 'both') cmd.setCellValue(entry.row, entry.col, decision.value)
+            if (decision.kind === 'value' || decision.kind === 'both') {
+              if (bulk) {
+                const before = wb.getRaw(sheet, entry.row, entry.col)
+                const after = String(decision.value ?? '')
+                if (before !== after) { wb.setRaw(sheet, entry.row, entry.col, after); direct.push({ row: entry.row, col: entry.col, before, after }) }
+              } else cmd.setCellValue(entry.row, entry.col, decision.value)
+            }
             if (decision.kind === 'format' || decision.kind === 'both') {
               if (decision.format) target.store.set(one, decision.format, target.lookup)
               else target.store.clear(one, target.lookup)
             }
           }
         })
+        if (direct.length) {
+          wb.recalculate()
+          const put = (which: 'before' | 'after') => { for (const d of direct) wb.setRaw(sheet, d.row, d.col, d[which]); wb.recalculate(); bump(); changed({ kind: 'cells' }) }
+          cmd.recordUndo(() => put('before'), () => put('after'))
+          changed({ kind: 'cells' })
+        }
       })
     } finally {
       pasting = false
@@ -3624,6 +3894,13 @@
       }
     }
     wb.repointAfterMove(move)
+    // A block cut from another sheet leaves its merges behind there; the
+    // paste laid them at the destination. Same-sheet moves drop them in
+    // pasteBlock, inside the merge step the paste records.
+    if (!sameSheet && block.merges.length) {
+      const source = doc.get(move.sheet)
+      source.merges = source.merges.filter((m) => !block.merges.some((b) => b[0] === m[0] && b[1] === m[1] && b[2] === m[2] && b[3] === m[3]))
+    }
     const after = getState()
     cmd.recordUndo?.(
       () => { doc.setState(before); registerSheetTargets(); applyLive(wb.active); bump() },
@@ -3644,11 +3921,70 @@
     if (copied) copied.cut = true
   }
 
-  function pasteSpecial(opts: PasteSpecialOptions) {
+  /**
+   * What the system clipboard holds, for a Paste Special of something
+   * copied OUTSIDE the sheet: a table from Excel or Sheets, a sheet in
+   * another tab, tab-separated text. Ctrl+V gets this from the paste event;
+   * a ribbon click has no event to read, so it asks the clipboard API,
+   * which a browser may refuse (no permission, no focus): null then.
+   */
+  async function readSystemClipboard(): Promise<{ text: string; html: string | null } | null> {
+    if (typeof navigator === 'undefined' || !navigator.clipboard) return null
+    try {
+      let text = ''
+      let html: string | null = null
+      for (const item of await navigator.clipboard.read()) {
+        if (item.types.includes('text/html')) html = await (await item.getType('text/html')).text()
+        if (item.types.includes('text/plain')) text = await (await item.getType('text/plain')).text()
+      }
+      return text || html ? { text, html } : null
+    } catch {
+      try {
+        const text = await navigator.clipboard.readText()
+        return text ? { text, html: null } : null
+      } catch {
+        return null
+      }
+    }
+  }
+
+  /**
+   * The system clipboard as read when the Paste Special dialog opened with
+   * nothing copied on the sheet, so the dialog can say whether there is
+   * anything to paste and OK pastes what was there at that moment.
+   */
+  let pendingPaste = $state<{ text: string; html: string | null } | null>(null)
+  async function openPasteSpecial() {
+    pendingPaste = copied ? null : await readSystemClipboard()
+    pasteSpecialOpen = true
+  }
+
+  /**
+   * Paste Special, from the ribbon's Paste menu (Values, Formulas,
+   * Formatting, Transpose) and from the dialog. The sheet's own copy is
+   * pasted as the block it is, formulas and formats included; anything
+   * else on the clipboard is read the way Ctrl+V reads it. The first
+   * version knew only the sheet's copy, so Transpose on a table copied
+   * from Excel did nothing at all, and said nothing.
+   */
+  async function pasteSpecial(opts: PasteSpecialOptions) {
     const cmd = cmdOf()
+    if (!cmd) return
     const block = copied
-    if (!cmd || !block) return
-    if (pasteBlock(copiedGrid(block, 'plain'), block.cut ? null : block.origin, opts)) focusSheet(cmd)
+    if (block && block.cells.length) {
+      if (pasteBlock(copiedGrid(block, 'plain'), block.cut ? null : block.origin, opts, blockMerges(block))) focusSheet(cmd)
+      return
+    }
+    const payload = pendingPaste ?? await readSystemClipboard()
+    pendingPaste = null
+    const grid = payload ? parseClipboard({ text: payload.text, html: payload.html ?? undefined }) : null
+    if (!grid || !grid.length || grid.every((line) => line.every((c) => c.text === '' && !c.formula))) {
+      say(t('nothingToPaste'))
+      return
+    }
+    const origin = payload?.html ? readClipboardOrigin(payload.html) : null
+    const placed = origin ? { grid, origin } : anchorForeignFormulas(grid)
+    if (pasteBlock(placed.grid, placed.origin, opts)) focusSheet(cmd)
   }
 
   /** A dialog took focus; the sheet gets it back once the dialog has gone. */
@@ -3745,6 +4081,7 @@
   }
   /** The brush lands on the release of the selecting click or drag. */
   function onSheetPointerUp(event: PointerEvent) {
+    pointDrag = null
     // Excel's rule for a linked cell: a click follows the link, and a drag
     // of more than a few pixels was a selection and follows nothing.
     const press = linkPress
@@ -3761,6 +4098,7 @@
     setTimeout(paintFormats, 0)
   }
   function onSheetKeyDownCapture(event: KeyboardEvent) {
+    if (functionListKey(event)) return
     acceptSuggestion(event)
     // A selected object takes Delete and Escape before the cells do, the
     // way Excel's does: the cells under a chart are not what Delete means
@@ -3789,7 +4127,32 @@
         return
       }
     }
+    // Ctrl+Z and Ctrl+Y for a step made on another sheet: the grid would
+    // apply it to this sheet's cells, so the sheet takes the key and goes
+    // there first. A step on this sheet is left to the grid, as before.
+    if ((event.ctrlKey || event.metaKey) && !event.altKey && !editorOf(event.target)) {
+      const key = event.key.toLowerCase()
+      const direction = key === 'z' ? (event.shiftKey ? 'redo' : 'undo') : key === 'y' && !event.shiftKey ? 'redo' : null
+      if (direction && historyIsElsewhere(direction)) {
+        event.preventDefault()
+        event.stopPropagation()
+        void undoRedo(direction)
+        return
+      }
+    }
     if (protectedNow() && !editorOf(event.target) && wouldEdit(event) && locked(active.rowIndex, active.colIndex)) refuse()
+    // Excel's Backspace on a cell opens the editor empty, so Escape gives
+    // the value back and Enter blanks it; the grid's own Backspace blanks
+    // the selection at once, like Delete, which is right for a data grid.
+    if (event.key === 'Backspace' && !event.ctrlKey && !event.metaKey && !event.altKey && !editorOf(event.target) && !selectedObject && !painter) {
+      const cmd = cmdOf()
+      if (cmd && !(protectedNow() && locked(active.rowIndex, active.colIndex))) {
+        event.preventDefault()
+        event.stopPropagation()
+        cmd.startEditing(active.rowIndex, active.colIndex, '')
+        return
+      }
+    }
     if (event.key === 'Escape' && marquee && !editorOf(event.target)) marquee = null
     // Excel's Enter while the ants are up: paste the block once, here, and
     // leave copy mode. Ctrl+V pastes and keeps the ants for the next paste;
@@ -3799,13 +4162,48 @@
       event.preventDefault()
       event.stopPropagation()
       const block = copied
-      pasteBlock(copiedGrid(block, 'plain'), block.cut ? null : block.origin, { what: 'all' })
+      pasteBlock(copiedGrid(block, 'plain'), block.cut ? null : block.origin, { what: 'all' }, blockMerges(block))
       marquee = null
       return
     }
     if (!painter) return
     if (event.key === 'Escape') { painter = null; statusMessage = null; event.preventDefault(); return }
     if (event.key === 'Enter' && !editorOf(event.target)) { event.preventDefault(); paintFormats() }
+  }
+
+  /** Functions whose result is a value of their arguments' kind, so the
+   *  first reference's format still describes it. COUNT, LEN, YEAR and the
+   *  rest return a plain number and stay General, as they do in Excel. */
+  const PASS_THROUGH_FUNCTIONS = new Set(['SUM', 'AVERAGE', 'MIN', 'MAX', 'MEDIAN', 'ROUND', 'ROUNDUP', 'ROUNDDOWN', 'ABS', 'IF', 'IFERROR', 'IFNA', 'SUMIF', 'SUMIFS', 'AVERAGEIF', 'AVERAGEIFS', 'MINIFS', 'MAXIFS', 'SUMPRODUCT', 'PRODUCT', 'SUBTOTAL', 'INDEX', 'VLOOKUP', 'HLOOKUP', 'XLOOKUP', 'LOOKUP', 'CHOOSE', 'N', 'OFFSET', 'INDIRECT', 'LARGE', 'SMALL', 'MOD', 'INT', 'TRUNC', 'CEILING', 'FLOOR', 'MROUND'])
+  /** Functions whose result is a day, whatever went in. */
+  const DATE_FUNCTIONS = new Set(['TODAY', 'DATE', 'EOMONTH', 'EDATE', 'WORKDAY', 'DATEVALUE'])
+  const ISO_DATE_TEXT = /^\d{4}-\d{2}-\d{2}$/
+  /**
+   * The number format a formula typed into a General cell takes, as Excel
+   * gives it: the first referenced cell's, so a sum of currency is
+   * currency and a day plus one is a day, and a date for a date function's
+   * result. None when a function in it returns a count or a part (COUNT,
+   * YEAR), and none for one date taken from another, which is a number of
+   * days and stays General, the one exception Excel makes too.
+   */
+  function inheritedNumFmt(formula: string): string | undefined {
+    const names = [...formula.matchAll(/([A-Za-z][A-Za-z0-9_.]*)\s*\(/g)].map((m) => m[1]!.toUpperCase())
+    if (names.some((name) => !PASS_THROUGH_FUNCTIONS.has(name) && !DATE_FUNCTIONS.has(name))) return undefined
+    if (names.some((name) => DATE_FUNCTIONS.has(name))) return 'yyyy-mm-dd'
+    const spans = referenceSpans(formula)
+    const first = spans[0]
+    if (!first) return undefined
+    const dateAt = (span: ReferenceSpan) => {
+      const [r, c] = span.rect
+      const fmt = storeFor().get(`r${r}`, colToLetters(c))?.numFmt
+      const category = fmt ? formatCategory(fmt).category : undefined
+      return category === 'date' || category === 'time' || (fmt === undefined && ISO_DATE_TEXT.test(wb.getRaw(wb.active, r, c).trim()))
+    }
+    if (spans.length === 2 && dateAt(first) && dateAt(spans[1]!) && /^=\s*\$?[A-Za-z]{1,3}\$?\d+\s*-\s*\$?[A-Za-z]{1,3}\$?\d+\s*$/.test(formula)) return undefined
+    const [r, c] = first.rect
+    const fmt = storeFor().get(`r${r}`, colToLetters(c))?.numFmt
+    if (fmt) return fmt
+    return dateAt(first) ? 'yyyy-mm-dd' : undefined
   }
 
   /**
@@ -3846,7 +4244,26 @@
     const parsed = parseEntry(text)
     if (parsed) {
       stored = parsed.value
-      if (!entry?.numFmt) patch.numFmt = parsed.numFmt
+      // The entry's format takes the cell when the cell has none, or one
+      // of another kind: 10:30 typed into a currency cell makes it a time
+      // cell, as it does in Excel, while 5% typed into a 0.0% cell keeps
+      // the cell's own decimals.
+      if (parsed.numFmt && (!entry?.numFmt || formatCategory(entry.numFmt).category !== formatCategory(parsed.numFmt).category)) patch.numFmt = parsed.numFmt
+    }
+    // Excel's rule for a formula typed into a General cell: it takes the
+    // number format of the first cell it reads, so =A1*2 under $5.00 is
+    // $10.00 and =A1+1 under a date is the next day rather than 46086.
+    if (!entry?.numFmt && text.startsWith('=')) {
+      const inherited = inheritedNumFmt(text)
+      if (inherited) patch.numFmt = inherited
+    }
+    // Excel's automatic percent entry: a plain number typed into a cell that
+    // already shows percentages is the percentage it reads as, so 5 in a
+    // cell formatted 0% is 5%, not 500%. A number with its own % sign, or
+    // a formula, is left to say what it says.
+    if (!parsed && !text.startsWith('=') && entry?.numFmt && formatCategory(entry.numFmt).category === 'percent') {
+      const plain = text.trim()
+      if (/^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(plain)) stored = String(Number(plain) / 100)
     }
     if (text.includes('\n') && !entry?.wrap) patch.wrap = true
     if (Object.keys(patch).length && target && cmd) {
@@ -3909,9 +4326,18 @@
    * wrapped cell no longer needs the extra height gives it back, and a row
    * the user dragged is left alone.
    */
+  /**
+   * The rows whose height this fitted, per sheet, as against one the user
+   * dragged: Excel keeps a row on "auto" until it is sized by hand, so a
+   * row that grew for wrapped text shrinks back when Wrap Text goes off or
+   * the text gets shorter, while a hand-sized row stays where it was put.
+   */
+  const autoFitRows = new Map<string, Set<number>>()
+  const autoFitOn = (sheet: string) => { let set = autoFitRows.get(sheet); if (!set) { set = new Set(); autoFitRows.set(sheet, set) } return set }
   function fitWrappedRows() {
     void tick().then(() => {
       if (!api || !root) return
+      const auto = autoFitOn(wb.active)
       const tallest = new Map<number, number>()
       for (const span of root.querySelectorAll<HTMLElement>('.sheet-cell.wrap')) {
         const td = span.closest<HTMLElement>('td')
@@ -3922,7 +4348,16 @@
       }
       for (const [r, needed] of tallest) {
         const current = api.getRowHeight(r)
-        if (needed > current) api.setRowHeight(r, needed)
+        if (needed > current) { api.setRowHeight(r, needed); auto.add(r) }
+      }
+      // A row this fitted before, rendered now and needing less: back down
+      // to what it needs, or to the default when nothing wraps in it.
+      for (const r of [...auto]) {
+        if (tallest.has(r) && tallest.get(r)! >= api.getRowHeight(r)) continue
+        if (!root.querySelector(`td[data-svgrid-row="${r}"]`)) continue
+        const needed = tallest.get(r)
+        if (needed !== undefined && needed > rowHeight) api.setRowHeight(r, needed)
+        else { api.setRowHeight(r, null); auto.delete(r) }
       }
     })
   }
@@ -3948,13 +4383,17 @@
     sheet: string
     cells: CopiedCell[][]
     /**
-     * Where each copied row and column sits in `cells`. A hidden or filtered
-     * row is not copied at all, so the block CLOSES UP around it the way
-     * Excel's does: filter, copy, paste gives the rows that matched, next to
-     * each other, rather than a block with holes in it.
+     * Where each copied row and column sits in `cells`. A row a filter
+     * folded away is not copied at all, so the block CLOSES UP around it the
+     * way Excel's does: filter, copy, paste gives the rows that matched, next
+     * to each other, rather than a block with holes in it. A row hidden by
+     * hand IS copied, as Excel copies one (includeCollapsedRows on the grid).
      */
     rowAt: Map<number, number>
     colAt: Map<number, number>
+    /** The merges lying inside the copied block, as they were: a paste of
+     *  the block lays them at the destination, as Excel's does. */
+    merges: Rect[]
     fresh: boolean
     cut: boolean
   }
@@ -4019,20 +4458,37 @@
     // The grid walks each rectangle top-left to bottom-right; the first
     // cell of the first one starts a new copy. Only the first rectangle is
     // kept, as Excel keeps only one.
-    const [minRow, minCol, maxRow, maxCol] = rects[0]!
+    const first = rects[0]!
+    // A merged cell selected on its own is the whole merge to Excel: the
+    // copy takes every cell under it, so a paste lays it out as one again.
+    const whole = first[0] === first[2] && first[1] === first[3] ? sheetMergeAt(mergesNow(), r, col) : null
+    const [minRow, minCol, maxRow, maxCol] = whole && whole[0] === r && whole[1] === col ? whole : first
     if (r === minRow && col === minCol) {
       copied = {
         origin: { row: r, col }, sheet: wb.active, cells: [],
         rowAt: new Map(), colAt: new Map(), fresh: true, cut: false,
+        merges: mergesNow().filter((m) => m[0] >= minRow && m[2] <= maxRow && m[1] >= minCol && m[3] <= maxCol).map((m) => [...m] as Rect),
       }
       queueMicrotask(() => { if (copied) copied.fresh = false })
       // A whole column or row is selected to Infinity; the ants stop at
       // the sheet's last line.
       marquee = { sheet: wb.active, rect: [minRow, minCol, Math.min(maxRow, rowCount - 1), Math.min(maxCol, colCount - 1)] }
+      // The grid walks only the anchor of a lone merged cell; the cells it
+      // covers are put in by hand, empty, so the block has the merge's shape.
+      if (whole && whole[0] === r && whole[1] === col) {
+        for (let rr = minRow; rr <= maxRow; rr += 1) {
+          copied.rowAt.set(rr, rr - minRow)
+          copied.cells[rr - minRow] = []
+          for (let cc = minCol; cc <= maxCol; cc += 1) {
+            copied.colAt.set(cc, cc - minCol)
+            if (rr !== r || cc !== col) copied.cells[rr - minRow]![cc - minCol] = { shown: '', raw: '', value: '', format: storeFor().get(`r${rr}`, colToLetters(cc)) }
+          }
+        }
+      }
     }
     if (copied && !copied.cut) {
       // Dense positions, not distances from the origin: the grid never
-      // offers a hidden row, so the block closes up around one.
+      // offers a filtered row, so the block closes up around one.
       let dr = copied.rowAt.get(r)
       if (dr === undefined) { dr = copied.rowAt.size; copied.rowAt.set(r, dr) }
       let dc = copied.colAt.get(col)
@@ -4062,6 +4518,17 @@
    * formula itself beside it. `shown` is what another application gets:
    * the display text, with the number behind it for a spreadsheet.
    */
+  /** The block's merges in its own dense coordinates, for laying at a paste. */
+  function blockMerges(block: Copied): Rect[] {
+    const out: Rect[] = []
+    for (const [r1, c1, r2, c2] of block.merges) {
+      const dr1 = block.rowAt.get(r1), dc1 = block.colAt.get(c1), dr2 = block.rowAt.get(r2), dc2 = block.colAt.get(c2)
+      if (dr1 === undefined || dc1 === undefined || dr2 === undefined || dc2 === undefined) continue
+      out.push([dr1, dc1, dr2, dc2])
+    }
+    return out
+  }
+
   function copiedGrid(block: Copied, text: 'plain' | 'shown'): ClipboardGrid {
     const width = block.cells.reduce((max, line) => Math.max(max, line.length), 0)
     return block.cells.map((line) =>
@@ -4107,10 +4574,19 @@
     const block = copied
     const text = payload.text.replace(/\r\n/g, '\n').replace(/\n$/, '')
     if (block && block.cells.length && copiedText(block) === text) {
-      return pasteBlock(copiedGrid(block, 'plain'), block.cut ? null : block.origin, { what: 'all' })
+      return pasteBlock(copiedGrid(block, 'plain'), block.cut ? null : block.origin, { what: 'all' }, blockMerges(block))
     }
     const grid = payload.html ? parseClipboardHtml(payload.html) : null
-    if (!grid) return undefined
+    if (!grid) {
+      // Plain text is the grid's to land, except a block that reaches past
+      // the rows or columns the grid has: the grid stops at its edge, and a
+      // 5,000-line paste into a fresh sheet landed 49 of them. Such a block
+      // goes through the sheet's own paste, which grows the sheet.
+      const lines = parseClipboardText(text)
+      const width = lines.reduce((max, line) => Math.max(max, line.length), 0)
+      const past = lines.length + active.rowIndex > rowCount || width + active.colIndex > colCount
+      return past ? pasteBlock(lines, null, { what: 'all' }) : undefined
+    }
     const origin = readClipboardOrigin(payload.html!)
     // Our own marker says where the block came from; a foreign block's
     // formulas are kept only where they can be placed (see the helper).
@@ -4137,6 +4613,8 @@
    */
   /** Whether the active cell carries a comment, for the menu's items. */
   const hasComment = () => commentAt(notesNow(), active.rowIndex, active.colIndex) !== undefined
+  /** Whether it carries a link, its own or a HYPERLINK's. */
+  const hasLink = () => linkOf(active.rowIndex, active.colIndex) !== undefined
   /** Whole rows, whole columns, or a block: what the menu's items are for. */
   const axis = (): 'rows' | 'cols' | 'ambiguous' => {
     const c = cmdOf()
@@ -4189,6 +4667,12 @@
     { key: 'new-comment', label: t('menuNewComment'), icon: glyph('comment'), hidden: () => axis() !== 'ambiguous' || hasComment(), action: () => withCmd((c) => handleAction('new-comment', c)) },
     { key: 'edit-comment', label: t('menuEditComment'), icon: glyph('comment'), hidden: () => axis() !== 'ambiguous' || !hasComment(), action: () => withCmd((c) => handleAction('edit-comment', c)) },
     { key: 'delete-comment', label: t('menuDeleteComment'), icon: glyph('comment-delete'), hidden: () => axis() !== 'ambiguous' || !hasComment(), action: () => withCmd((c) => handleAction('delete-comment', c)) },
+    'separator',
+    // Excel's Link... on a plain cell; Edit, Open and Remove on a linked one.
+    { key: 'insert-link', label: t('menuLink'), icon: glyph('link'), hidden: () => axis() !== 'ambiguous' || hasLink(), action: () => withCmd((c) => handleAction('insert-link', c)) },
+    { key: 'edit-link', label: t('menuEditLink'), icon: glyph('link'), hidden: () => axis() !== 'ambiguous' || !hasLink(), action: () => withCmd((c) => handleAction('insert-link', c)) },
+    { key: 'open-link', label: t('menuOpenLink'), icon: glyph('link'), hidden: () => axis() !== 'ambiguous' || !hasLink(), action: () => { const link = linkOf(active.rowIndex, active.colIndex); if (link) void followLink(link) } },
+    { key: 'remove-link', label: t('menuRemoveLink'), icon: glyph('unlink'), hidden: () => axis() !== 'ambiguous' || !hasLink(), action: () => withCmd((c) => handleAction('remove-link', c)) },
     'separator',
     { key: 'format-cells', label: t('menuFormatCells'), icon: glyph('format-cells'), action: () => withCmd((c) => delegate('format-cells', c)) },
     { key: 'column-width', label: t('menuColumnWidth'), icon: glyph('column-width'), hidden: () => axis() !== 'cols', action: () => openSizeDialog('cols') },
@@ -4276,6 +4760,8 @@
     }
     const before = read()
     put(targets.map((i) => [i, px] as const))
+    // A height typed into the dialog is the user's, like a dragged one.
+    if (kind === 'rows') for (const r of targets) autoFitOn(wb.active).delete(r)
     const after = read()
     const c = cmdOf()
     c?.recordUndo(() => put(before), () => put(after))
@@ -4547,6 +5033,100 @@
     resizeGuide = null
   }
 
+  // --- Excel's point mode -----------------------------------------------------
+  /**
+   * A click on a cell while a formula is being typed puts that cell's
+   * address into the formula rather than ending the edit, and a drag puts
+   * a range: how most formulas get written. The editor may be the cell's
+   * or the formula bar's. The click is taken in the capture phase, so the
+   * grid never sees a press that would commit the edit and move the
+   * cursor; the pointed reference is remembered so a second click, or the
+   * drag that follows the press, replaces it rather than adding another.
+   */
+  let pointed: { editor: Editor; start: number; end: number } | null = null
+  let pointDrag: { editor: Editor; row: number; col: number } | null = null
+  /** A pointing press whose click has not landed yet: that click is the grid's
+   *  "select and focus", which would end the edit, so it is swallowed. */
+  let pointedPress = false
+
+  /** The formula editor that has the focus, if it holds a formula. */
+  function formulaEditor(): Editor | null {
+    const el = document.activeElement
+    if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return null
+    if (!el.classList.contains('sv-grid-cell-editor') && !(el.classList.contains('formula') && el.closest('.sv-formula-bar'))) return null
+    return el.value.startsWith('=') ? el : null
+  }
+
+  /** Whether a reference can go in at the caret: after an operator, a bracket,
+   *  a comma or the leading =, or over the reference the last click put there. */
+  function wantsReference(editor: Editor): boolean {
+    const caret = editor.selectionStart ?? editor.value.length
+    if (pointed && pointed.editor === editor && pointed.end === caret) return true
+    if (editor.selectionEnd !== caret) return false
+    const before = editor.value.slice(0, caret).replace(/\s+$/, '')
+    return /[=(,;+\-*/^&<>:]$/.test(before)
+  }
+
+  function insertPointedReference(editor: Editor, r1: number, c1: number, r2: number, c2: number) {
+    const top = Math.min(r1, r2), left = Math.min(c1, c2), bottom = Math.max(r1, r2), right = Math.max(c1, c2)
+    const one = `${colToLetters(left)}${top + 1}`
+    const text = top === bottom && left === right ? one : `${one}:${colToLetters(right)}${bottom + 1}`
+    const caret = editor.selectionStart ?? editor.value.length
+    const replacing = pointed && pointed.editor === editor && pointed.end === caret
+    const start = replacing ? pointed!.start : caret
+    const end = replacing ? pointed!.end : caret
+    editor.value = editor.value.slice(0, start) + text + editor.value.slice(end)
+    const after = start + text.length
+    editor.setSelectionRange(after, after)
+    pointed = { editor, start, end: after }
+    // The grid and the bar keep their own drafts and read them from input events.
+    editor.dispatchEvent(new Event('input', { bubbles: true }))
+  }
+
+  /** A press on a cell while pointing: true when it was taken. */
+  function pointAt(event: PointerEvent, target: HTMLElement | null): boolean {
+    const editor = formulaEditor()
+    if (!editor || editorOf(target)) return false
+    const td = target?.closest<HTMLElement>('td[data-svgrid-row][data-svgrid-col]')
+    if (!td || td.contains(editor) || !wantsReference(editor)) return false
+    // Stopped here so the grid never sees the press; the focus it would
+    // move is a default of the MOUSE event, which Chromium fires whether
+    // or not pointerdown is cancelled, so that one is cancelled below.
+    event.stopPropagation()
+    const row = Number(td.dataset.svgridRow)
+    const col = Number(td.dataset.svgridCol)
+    insertPointedReference(editor, row, col, row, col)
+    pointDrag = { editor, row, col }
+    pointedPress = true
+    return true
+  }
+
+  /** The mouse events behind a pointing press: cancelled, so the editor keeps
+   *  the focus and the grid's click never selects the pointed cell. */
+  function onSheetMouseDown(event: MouseEvent) {
+    if (!pointDrag) return
+    event.preventDefault()
+    event.stopPropagation()
+  }
+  function onSheetClickCapture(event: MouseEvent) {
+    if (!pointedPress) return
+    pointedPress = false
+    event.preventDefault()
+    event.stopPropagation()
+  }
+
+  function pointDragTo(event: PointerEvent) {
+    const drag = pointDrag
+    if (!drag || document.activeElement !== drag.editor) return
+    const td = (document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null)?.closest<HTMLElement>('td[data-svgrid-row][data-svgrid-col]')
+    if (!td) return
+    const row = Number(td.dataset.svgridRow)
+    const col = Number(td.dataset.svgridCol)
+    // The reference under the caret is the one this press put there.
+    if (pointed && pointed.editor === drag.editor) drag.editor.setSelectionRange(pointed.end, pointed.end)
+    insertPointedReference(drag.editor, drag.row, drag.col, row, col)
+  }
+
   /** A press on a linked cell, waiting to see whether it becomes a drag. */
   let linkPress: { link: SheetLink; x: number; y: number } | null = null
 
@@ -4558,6 +5138,7 @@
     // A press on the cells puts an object down; the object's own handler
     // stops the event before this sees it.
     if (selectedObject && !target?.closest('.sheet-object')) selectedObject = null
+    if (pointAt(event, target)) return
     const handle = target?.closest<HTMLElement>('.sv-grid-resize-handle, .sv-grid-row-resize-handle')
     if (handle) { startResizeTip(handle, event); return }
     if (target?.closest('.sv-grid-fill-handle')) {
@@ -4606,6 +5187,7 @@
     cmd.focus()
   }
   function onSheetPointerMove(event: PointerEvent) {
+    if (pointDrag) { pointDragTo(event); return }
     if (fillDrag) { placeFillTip(event); return }
     if (resizing) { placeResizeTip(event); return }
     const drag = headerDrag
@@ -4716,6 +5298,7 @@
     growEditor(input)
     editingText = input.value
     formulaDraft = input.value.startsWith('=') ? input.value : null
+    offerFunctions(input)
   }
 
   /**
@@ -4780,9 +5363,59 @@
 
   function onEditorFocusOut(event: FocusEvent) {
     if (!editorOf(event.target)) return
+    pointed = null
+    fnSuggest = null
     formulaDraft = null
     editingText = null
   }
+
+  // --- function names offered in the cell -----------------------------------
+  /**
+   * Excel's Formula AutoComplete in the cell: as a function name is typed
+   * after = or an operator, the names it could be are listed under the
+   * cell, Up and Down walk them, Tab or Enter takes one and lands the caret
+   * inside its brackets, Escape closes the list. The formula bar has had
+   * this since the start; a formula typed in the cell, which is where most
+   * are typed, had nothing.
+   */
+  let fnSuggest = $state<{ items: FunctionSuggestion[]; index: number; left: number; top: number } | null>(null)
+  function offerFunctions(input: Editor) {
+    const host = gridHost
+    const td = input.closest<HTMLElement>('td')
+    if (!host || !td || !input.value.startsWith('=')) { fnSuggest = null; return }
+    const items = suggestFunctions(input.value, input.selectionStart ?? input.value.length)
+    if (!items.length) { fnSuggest = null; return }
+    const a = td.getBoundingClientRect()
+    const b = host.getBoundingClientRect()
+    fnSuggest = { items, index: 0, left: a.left - b.left, top: a.bottom - b.top }
+  }
+  function takeFunction(input: Editor, suggestion: FunctionSuggestion) {
+    const next = applySuggestion(input.value, suggestion)
+    input.value = next.text
+    input.setSelectionRange(next.caret, next.caret)
+    fnSuggest = null
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  }
+  /** The keys the list takes while it is up; true when one was taken. */
+  function functionListKey(event: KeyboardEvent): boolean {
+    const list = fnSuggest
+    const input = editorOf(event.target)
+    if (!list || !input) return false
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      const step = event.key === 'ArrowDown' ? 1 : -1
+      fnSuggest = { ...list, index: (list.index + step + list.items.length) % list.items.length }
+    } else if (event.key === 'Tab' || event.key === 'Enter') {
+      takeFunction(input, list.items[list.index]!)
+    } else if (event.key === 'Escape') {
+      fnSuggest = null
+    } else {
+      return false
+    }
+    event.preventDefault()
+    event.stopPropagation()
+    return true
+  }
+
 
   // --- Excel's reference colours -------------------------------------------
   /**
@@ -4916,7 +5549,14 @@
   {@const value = wb.getValue(wb.active, props.r, props.c)}
   {@const cf = showFormulas || typing ? null : cfAt(props.r, props.c, value)}
   {@const shown = typing ? { text: barDraft! } : display(props.r, props.c, cf?.style?.numFmt)}
-  {@const spill = showFormulas ? 0 : spillWidth(props.r, props.c, value, entry)}
+  {@const cellImage = showFormulas || typing ? null : imageAt(props.r, props.c)}
+  <!-- An IMAGE cell's VALUE is its source, a long string that would spill
+       over the empty cells beside it; the span that spills paints an opaque
+       background, and it covered the picture. The cell shows a picture, not
+       that text, so it never spills. -->
+  <!-- A conditional format's fill is painted by the span too, and the
+       neighbours are not under the same rule, so that text stays in its cell. -->
+  {@const spill = showFormulas || cellImage || cf?.style?.fill ? 0 : spillWidth(props.r, props.c, value, entry)}
   {@const align = typing ? 'left' : entry?.align ?? (showFormulas ? 'left' : typeof value === 'number' ? 'right' : typeof value === 'boolean' || isError(value) ? 'center' : 'left')}
   {@const hashes = typeof value === 'number' && !showFormulas && !typing ? hashesFor(shown.text, props.c, entry, props.r, entry?.numFmt || cf?.style?.numFmt ? undefined : value) : null}
   {#if cf?.dataBar}
@@ -4964,13 +5604,6 @@
   {/if}
   {@const link = showFormulas ? undefined : linkAt(activeLinks, props.r, props.c)}
   {@const linked = !!link || (!showFormulas && !!hyperlinkArgument(raw(props.r, props.c)))}
-  {@const cellImage = showFormulas || typing ? null : imageAt(props.r, props.c)}
-  {#if cellImage}
-    <!-- Excel's IMAGE: the picture IS the cell, so it sorts, filters and
-         moves with its row and nothing has to be kept in step. It fits the
-         cell, which is what Excel's default sizing does. -->
-    <img class="sheet-cell-image" src={cellImage.src} alt={cellImage.alt} draggable="false" />
-  {/if}
   {@const part = activeTables.length ? tablePartAt(props.r, props.c) : null}
   {#if part}
     <!-- Excel's table style, drawn rather than written into the cells: the
@@ -4989,6 +5622,14 @@
     style={`text-align:${align};${part && part.text !== 'inherit' ? `color:${part.text};${part.fill ? `background:${part.fill};` : ''}` : ''}${entryToStyle(entry)}${cf?.style ? `;${entryToStyle(cf.style)}` : ''}${shown.color ? `;color:${shown.color}` : ''}${spill > 0 ? `;max-width:calc(100% + ${spill}px)` : ''}`}
     title={link ? linkTitle(link) : hashes ? shown.text : raw(props.r, props.c)}
   >{#if cf?.icon}{@render cfIcon(cf.icon.set, cf.icon.index)}{/if}{cellImage ? '' : hashes ?? shown.text}</span>
+  {#if cellImage}
+    <!-- Excel's IMAGE: the picture IS the cell, so it sorts, filters and
+         moves with its row and nothing has to be kept in step. It fits the
+         cell, which is what Excel's default sizing does. Painted after the
+         span and the table band, so a fill or a banded row sits BEHIND the
+         picture, as in Excel, rather than over it. -->
+    <img class="sheet-cell-image" src={cellImage.src} alt={cellImage.alt} draggable="false" />
+  {/if}
   {@const arrow = filterArrowAt(props.r, props.c)}
   {#if arrow}
     <!-- Excel's AutoFilter arrow on the region's header row: a funnel once
@@ -5065,6 +5706,8 @@
       onCommit={commit}
       onNavigate={goTo}
       onSelectName={jumpToName}
+      onSelectReference={jumpToReference}
+      onDefineName={defineNameHere}
       onInsertFunction={() => { const c = cmdOf(); if (c) delegate('insert-function', c) }}
       onDraft={(text) => { formulaDraft = text; barDraft = text }}
       label={dragLabel}
@@ -5097,6 +5740,8 @@
     class:fill={height === '100%'}
     bind:this={gridHost}
     onpointerdowncapture={onSheetPointerDown}
+    onmousedowncapture={onSheetMouseDown}
+    onclickcapture={onSheetClickCapture}
     oncontextmenucapture={onSheetContextMenu}
     onfocusin={onEditorFocusIn}
     onfocusout={onEditorFocusOut}
@@ -5147,9 +5792,11 @@
           ></div>
           <span
             class="sheet-presence-tag"
+            class:below={box.tagBelow}
             style:inset-inline-start="{box.tagLeft}px"
             style:top="{box.tagTop}px"
             style:--sheet-presence-colour={colour}
+            style:color={presenceInk(colour)}
             title={person.name}
           >{person.name.length > 14 ? presenceInitials(person.name) : person.name}</span>
         {/if}
@@ -5201,6 +5848,18 @@
         {/if}
       {/each}
     </div>
+  {/if}
+  {#if fnSuggest}
+    <!-- Formula AutoComplete under the cell being edited: mousedown rather
+         than click, and prevented, so the editor keeps the focus and the
+         edit goes on with the name in place. -->
+    <ul class="sheet-fn-suggest" role="listbox" aria-label={t('functionSuggestions')} style:left="{fnSuggest.left}px" style:top="{fnSuggest.top}px">
+      {#each fnSuggest.items as item, i (item.name)}
+        <li role="option" aria-selected={i === fnSuggest.index}>
+          <button type="button" class:active={i === fnSuggest.index} tabindex="-1" onmousedown={(e) => { e.preventDefault(); const input = editorOf(document.activeElement); if (input) takeFunction(input, item) }}>{item.name}</button>
+        </li>
+      {/each}
+    </ul>
   {/if}
   {#if inputMessage && messageRect}
     <!-- Excel's Input Message: a small box under the selected cell, the
@@ -5282,6 +5941,7 @@
     editOnSecondClick={false}
     onApiReady={(next: SheetApi) => {
       api = next
+      next.setHistoryTag(doc.get(wb.active))
       // A document the consumer built (createSheetDocument({ state }), or
       // one seeded with widths, hidden lines, a filter, frozen panes) shows
       // its state from the first paint: the grid has just come up, so its
@@ -5303,10 +5963,18 @@
     }}
     onCellValueChange={onCellWritten}
     onColumnResize={() => { stashWidths(); changed({ kind: 'sizes' }) }}
-    onRowResize={(e) => { if (e.height === null) fitWrappedRows(); stashHeights(); changed({ kind: 'sizes' }) }}
+    onRowResize={(e) => {
+      // A height dragged by hand is the user's: the wrap fitting leaves
+      // the row alone from now on. A double-click on the edge asks for auto.
+      if (e.height === null) fitWrappedRows()
+      else autoFitOn(wb.active).delete(e.rowIndex)
+      stashHeights()
+      changed({ kind: 'sizes' })
+    }}
     processCellForFill={({ value, delta }) =>
       typeof value === 'string' && value.startsWith('=') ? translateFormula(value, delta.rows, delta.cols) : undefined}
     processCellForClipboard={toClipboard}
+    includeCollapsedRows={(r: number) => !doc.get(wb.active).filterHidden.has(r)}
     clipboardHtml={copiedHtml}
     onPasteClipboard={pasteFromSystem}
     onCellSelectionChange={(ranges: Array<[number, number, number, number]>) => {
@@ -5323,6 +5991,7 @@
 
   {#if showTabs}
     <SvSheetTabs
+      bind:this={tabs}
       workbook={wb}
       {version}
       onChange={bump}
@@ -5333,7 +6002,18 @@
         targetsBoundTo = to
         registerSheetTargets()
       }}
-      onRemove={(name) => doc.remove(name)}
+      onRemove={(name) => {
+        doc.remove(name)
+        // Excel's Delete Sheet empties the undo list: the steps made on
+        // the sheet have nowhere to go back to.
+        api?.clearHistory()
+      }}
+      onReturnFocus={() => {
+        // A tab or a button of the strip has the focus now; Excel's cursor
+        // stays on the cells, so the arrow keys, Shift+F11 and Ctrl+Z work
+        // on the sheet that just came up.
+        void tick().then(() => cmdOf()?.focus())
+      }}
       hidden={hiddenSheets}
       onHide={hideSheet}
       onUnhide={unhideSheet}
@@ -5359,7 +6039,7 @@
   {/if}
 
   <SvSheetFindReplace bind:open={findOpen} cmd={cmdOf} onClose={() => { const c = cmdOf(); if (c) focusSheet(c) }} />
-  <SvSheetPasteSpecial bind:open={pasteSpecialOpen} hasClipboard={copied !== null} onPaste={pasteSpecial} onClose={() => { const c = cmdOf(); if (c) focusSheet(c) }} />
+  <SvSheetPasteSpecial bind:open={pasteSpecialOpen} hasClipboard={copied !== null || pendingPaste !== null} onPaste={(opts) => { void pasteSpecial(opts) }} onClose={() => { const c = cmdOf(); if (c) focusSheet(c) }} />
   <SvSheetFormatCells bind:open={formatCellsOpen} entry={activeEntry} sample={activeValue} mixedLocked={mixedLocked} onApply={applyFormatCells} onClose={() => { const c = cmdOf(); if (c) focusSheet(c) }} />
   <SvSheetInsertFunction bind:open={insertFunctionOpen} onPick={insertFunction} />
   <SvSheetNameManager bind:open={nameManagerOpen} workbook={wb} onChange={() => { wb.recalculate(); doc.changed({ kind: 'workbook' }); bump() }} onClose={() => afterDialog()} />
@@ -5829,6 +6509,37 @@
     white-space: pre-wrap;
   }
   .sheet-input-message .title { font-weight: 700; }
+  /* Formula AutoComplete under the cell, styled as the formula bar's list. */
+  .sheet-fn-suggest {
+    position: absolute;
+    z-index: 40;
+    margin: 0;
+    padding: 2px;
+    list-style: none;
+    min-width: 180px;
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid var(--sg-border, #d1d1d1);
+    border-radius: 4px;
+    background: var(--sg-bg, #fff);
+    color: var(--sg-fg, #242424);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.14);
+    font-size: 12px;
+  }
+  .sheet-fn-suggest button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .sheet-fn-suggest button.active,
+  .sheet-fn-suggest button:hover { background: var(--sg-row-hover-bg, #f0f0f0); }
   /* The in-cell dropdown arrow: a small button at the cell's right edge,
      above the cell text like the note corner. */
   .sheet-dropdown-arrow {
@@ -6397,6 +7108,7 @@
     transform: translateY(-100%);
     padding: 1px 5px;
     border-radius: 3px 3px 3px 0;
+    z-index: 1;
     background: var(--sheet-presence-colour, #2563eb);
     color: #fff;
     font-size: 11px;
@@ -6405,6 +7117,11 @@
     max-width: 160px;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  /* No room above: under the cell, the corner turned the other way. */
+  .sheet-presence-tag.below {
+    transform: none;
+    border-radius: 0 3px 3px 3px;
   }
 
   /* Excel's link: the theme's link colour, underlined, and a hand over it.

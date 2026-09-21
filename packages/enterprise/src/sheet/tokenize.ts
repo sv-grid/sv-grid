@@ -28,7 +28,12 @@ export type Token =
   | { t: 'bool'; v: boolean }
   | { t: 'err'; v: SheetError }
   | { t: 'ref'; ref: CellRef }
+  /** The spilled-range operator `A1#`: the anchor a spill is read from. */
+  | { t: 'spill'; ref: CellRef }
   | { t: 'range'; from: CellRef; to: CellRef }
+  /** A 3D reference `Sheet1:Sheet3!A1`: the cell or rectangle on every sheet
+   *  in the tab range. `from`/`to` carry no sheet of their own. */
+  | { t: 'range3d'; sheetFrom: string; sheetTo: string; from: CellRef; to: CellRef }
   | { t: 'name'; v: string }
   | { t: 'fn'; v: string }
   | { t: 'op'; v: BinaryOp }
@@ -182,6 +187,11 @@ export function tokenize(src: string): Token[] {
       out.push({ t: 'name', v: word })
       return
     }
+    // `A1#` is the spilled-range operator: the `#` binds to the reference
+    // right before it, with no space between, and names the whole array the
+    // cell anchors. A `#` that starts an error literal is handled elsewhere;
+    // one sitting immediately after a cell is only ever this.
+    if (src[i] === '#') { i += 1; out.push({ t: 'spill', ref: left }); return }
     out.push({ t: 'ref', ref: left })
   }
 
@@ -249,6 +259,30 @@ export function tokenize(src: string): Token[] {
     if (/[A-Za-z$_]/.test(ch)) {
       const word = readWord()
       const upper = word.toUpperCase()
+
+      // A 3D reference: Sheet1:Sheet3!A1, the same cell on every sheet in the
+      // tab range. The `!` after the second name is what tells it apart from
+      // an ordinary A1:B2 range, so on anything else this backtracks.
+      if (src[i] === ':') {
+        const save = i
+        i += 1
+        const second = readWord()
+        if (second !== '' && src[i] === '!') {
+          i += 1
+          const from = parseA1(readWord(), null)
+          if (!from || from.row === null) throw new FormulaError('#PARSE!')
+          let to = from
+          if (src[i] === ':') {
+            i += 1
+            const right = parseA1(readWord(), null)
+            if (!right || right.row === null) throw new FormulaError('#PARSE!')
+            to = right
+          }
+          out.push({ t: 'range3d', sheetFrom: word, sheetTo: second, from, to })
+          continue
+        }
+        i = save
+      }
 
       // Unquoted sheet name: Orders!A1
       if (src[i] === '!') {

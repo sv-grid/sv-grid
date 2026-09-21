@@ -178,6 +178,19 @@ export function factsForComparison(cmp, ledger, size) {
       competitor: `${bundleText(bundle.jsGzipKb, bundle.cssGzipKb)}${ext}`,
       checked: bundle.measuredAt,
     })
+    // Against a headless library the full component is the wrong SvGrid to
+    // put beside it: the like-for-like figure is the engine alone, the
+    // `createSvGrid` entry, which is what a consumer of the other package's
+    // engine would take from this one.
+    const engine = size?.entries?.headless
+    if (engine && (cmp.group === 'headless' || cmp.group === 'svelte-native')) {
+      rows.push({
+        label: 'Engine alone, minified + gzip',
+        svgrid: `${bundleText(engine.baseGzipKb, engine.cssGzipKb)} (\`createSvGrid\` from \`@svgrid/grid/core\`)`,
+        competitor: 'the row above; the package is the engine',
+        checked: size.measuredAt,
+      })
+    }
     footnotes.push(
       `Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). ` +
         `SvGrid ${size.version} measured ${formatDate(size.measuredAt)} with packages/grid/scripts/measure-size.mjs; ` +
@@ -198,6 +211,7 @@ export const BENCHMARK_CASES = Object.freeze([
   ['sortNumber', 'Sort, numeric column'],
   ['filter', 'Filter, one column (indicative only)'],
   ['scrollP95', 'Scroll, p95 frame'],
+  ['tickP95', 'Live tick, 1,000 rows replaced, sorted by that column, p95'],
 ])
 
 /**
@@ -222,6 +236,9 @@ export function benchmarkForComparison(cmp, ledger) {
   const rows = BENCHMARK_CASES
     .filter(([key]) => Number.isFinite(own.results?.[key]) || Number.isFinite(theirs.results?.[key]))
     .map(([key, label]) => ({ label, svgrid: ms(own.results?.[key]), competitor: ms(theirs.results?.[key]) }))
+  if (Number.isFinite(own.results?.tickOverBudget) && Number.isFinite(theirs.results?.tickOverBudget)) {
+    rows.push({ label: 'Ticks over one 60 Hz frame, of 180', svgrid: String(own.results.tickOverBudget), competitor: String(theirs.results.tickOverBudget) })
+  }
   if (Number.isFinite(own.results?.domRows) && Number.isFinite(theirs.results?.domRows)) {
     rows.push({ label: 'Rows kept in the DOM (virtualization on)', svgrid: String(own.results.domRows), competitor: String(theirs.results.domRows) })
   }
@@ -229,7 +246,8 @@ export function benchmarkForComparison(cmp, ledger) {
     `Measured ${formatDate(b.measuredAt)} with the harness in the repository (pnpm bench:compare): ` +
     `${Number(b.rows).toLocaleString('en-US')} rows, ${b.rig?.statistic ?? 'fastest sample per operation'}, ` +
     `${b.rig?.browser ?? 'Chromium'}, on ${b.rig?.machine ?? 'a developer workstation'}. ` +
-    `Versions: @svgrid/grid ${own.version}, ${theirs.npm} ${theirs.version}. Lower is better.`
+    `Versions: @svgrid/grid ${own.version}, ${theirs.npm} ${theirs.version}. Lower is better.` +
+    (b.rig?.tick ? ` Tick: ${b.rig.tick}.` : '')
   const notes = [
     'The filter row is not like for like: each grid is driven through its own single-column filter API, and the amount of work differs. The comparison guide explains the method, what is left out and why.',
   ]

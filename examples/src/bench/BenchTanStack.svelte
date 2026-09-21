@@ -40,9 +40,18 @@
       setSort?: (field: string, desc: boolean) => void
       setFilter?: (field: string, value: string) => void
       scroller?: () => HTMLElement | null
+      setRows?: (rows: Array<Record<string, unknown>>) => void
     }
   }
   const { rows, columns, rowHeight, handle }: Props = $props()
+
+  // The tick path: the table reads `data` through its getter, and the
+  // version bump re-reads the row model, as an app would.
+  let data = $state.raw<Array<Record<string, unknown>>>(rows)
+  handle.setRows = (next) => {
+    data = next
+    version += 1
+  }
 
   const features = tableFeatures({
     rowSortingFeature,
@@ -65,7 +74,7 @@
     features,
     columns: cols as never,
     get data() {
-      return rows
+      return data
     },
   })
 

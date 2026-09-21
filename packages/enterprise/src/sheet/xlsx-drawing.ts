@@ -59,6 +59,18 @@ const IMAGE_TYPES: Record<string, string> = {
   'image/bmp': 'bmp',
 }
 
+/**
+ * Whether a picture's source is one the .xlsx can carry: a `data:` URL of a
+ * type Excel keeps in `xl/media`. An SVG is not one (Excel wants a PNG blip
+ * with the SVG as an extension), nor is a web address, whose bytes are
+ * elsewhere. The shell asks before it inserts a picture, so what it draws
+ * is what the file will hold.
+ */
+export function xlsxCanCarryPicture(src: string): boolean {
+  const data = dataUrlParts(src)
+  return !!data && data.mime in IMAGE_TYPES
+}
+
 /** A data URL split into its media type and its payload, or null. */
 export function dataUrlParts(src: string): { mime: string; base64: string } | null {
   const match = /^data:([^;,]+)(;base64)?,(.*)$/s.exec(src.trim())

@@ -1,8 +1,24 @@
 import { describe, expect, it } from 'vitest'
-import { translateFormula, fixupReferences, formatFormula, renameSheetReferences, referenceSpans, repointReferences, REFERENCE_COLOURS } from './refs'
+import { translateFormula, transposeFormula, fixupReferences, formatFormula, renameSheetReferences, referenceSpans, repointReferences, REFERENCE_COLOURS } from './refs'
 import { parseFormula } from './parse'
 
 const t = (src: string, dRow: number, dCol: number) => translateFormula(src, dRow, dCol)
+
+describe('a transposed formula', () => {
+  it('turns a relative offset: rows become columns and columns rows', () => {
+    // D2 reads B2 and C2, two and one columns to its left. Laid on its side
+    // at C6, it reads two and one rows ABOVE: C4 and C5.
+    expect(transposeFormula('=B2*C2', { row: 1, col: 3 }, { row: 5, col: 2 })).toBe('=C4*C5')
+  })
+  it('leaves absolute parts where they point, and turns a range corner by corner', () => {
+    // A1 is one column left of B1; from D4 that is one row up: D3.
+    expect(transposeFormula('=$A$1+A1', { row: 0, col: 1 }, { row: 3, col: 3 })).toBe('=$A$1+D3')
+    expect(transposeFormula('=SUM(A1:A3)', { row: 3, col: 0 }, { row: 0, col: 3 })).toBe('=SUM(A1:C1)')
+  })
+  it('leaves anything that is not a formula alone', () => {
+    expect(transposeFormula('12', { row: 0, col: 0 }, { row: 1, col: 1 })).toBe('12')
+  })
+})
 
 describe('the $ matrix', () => {
   // The bug this whole module exists for: every demo engine does
@@ -98,6 +114,20 @@ describe('renameSheetReferences', () => {
     expect(renameSheetReferences('Data!A1', 'Data', 'X')).toBe('Data!A1')
     expect(renameSheetReferences(7, 'Data', 'X')).toBe(7)
   })
+
+  it('renames an endpoint of a 3D reference', () => {
+    expect(renameSheetReferences('=SUM(Jan:Dec!B5)', 'Dec', 'December')).toBe('=SUM(Jan:December!B5)')
+    expect(renameSheetReferences('=SUM(Jan:Dec!B5)', 'Jan', 'Q1 Start')).toBe("=SUM('Q1 Start':Dec!B5)")
+  })
+})
+
+describe('a 3D reference through the rewriters', () => {
+  it('round-trips and shifts its cell on a fill', () => {
+    expect(formatFormula(parseFormula('=SUM(Sheet1:Sheet3!A1)'))).toBe('=SUM(Sheet1:Sheet3!A1)')
+    // Filling a 3D formula down moves the cell it reads, the sheets untouched.
+    expect(t('=SUM(Sheet1:Sheet3!A1)', 2, 0)).toBe('=SUM(Sheet1:Sheet3!A3)')
+    expect(t('=SUM(Jan:Dec!$B$5)', 3, 3)).toBe('=SUM(Jan:Dec!$B$5)')
+  })
 })
 
 describe('translateFormula', () => {
@@ -151,6 +181,29 @@ describe('translateFormula', () => {
   it('renders #REF! once a reference is pushed off the sheet', () => {
     expect(t('=A1', -1, 0)).toBe('=#REF!')
     expect(t('=A1', 0, -1)).toBe('=#REF!')
+  })
+})
+
+describe('the spilled-range operator survives rewriting', () => {
+  it('round-trips through the AST', () => {
+    expect(formatFormula(parseFormula('=SUM(A1#)'))).toBe('=SUM(A1#)')
+    expect(formatFormula(parseFormula('=A1#'))).toBe('=A1#')
+    expect(formatFormula(parseFormula('=$A$1#'))).toBe('=$A$1#')
+    expect(formatFormula(parseFormula('=Orders!B2#'))).toBe('=Orders!B2#')
+  })
+
+  it('shifts the anchor on a fill, keeping the operator', () => {
+    expect(t('=SUM(A1#)', 1, 0)).toBe('=SUM(A2#)')
+    expect(t('=A1#*2', 0, 3)).toBe('=D1#*2')
+    // An absolute anchor stays put.
+    expect(t('=$A$1#', 5, 5)).toBe('=$A$1#')
+  })
+
+  it('moves with an insert and breaks when the anchor is deleted', () => {
+    const insert = (at: number, count = 1) => ({ kind: 'insertRows' as const, at, count })
+    const remove = (at: number, count = 1) => ({ kind: 'deleteRows' as const, at, count })
+    expect(fixupReferences('=SUM(A5#)', insert(2))).toBe('=SUM(A6#)')
+    expect(fixupReferences('=SUM(A5#)', remove(4))).toBe('=SUM(#REF!)')
   })
 })
 

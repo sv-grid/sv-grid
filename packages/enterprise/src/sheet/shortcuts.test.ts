@@ -347,11 +347,12 @@ describe('the binding table', () => {
   })
 
   it('does not claim keys the free grid already owns', () => {
-    // Copy, cut, paste, undo, redo and find stay with the grid. Ctrl+H left
-    // this list when Find and Replace shipped; paste special will take
-    // Ctrl+C / X / V next, and this test is the reminder to update the docs
-    // when it does.
-    const reserved = ['c', 'x', 'v', 'z', 'y', 'f']
+    // Copy, cut, paste, undo and redo stay with the grid. Ctrl+H left this
+    // list when Find and Replace shipped, and Ctrl+F followed it: the
+    // sheet's dialog is Excel's Find, where the grid's overlay is a data
+    // grid's. Paste special will take Ctrl+C / X / V next, and this test
+    // is the reminder to update the docs when it does.
+    const reserved = ['c', 'x', 'v', 'z', 'y']
     for (const b of SHEET_BINDINGS) {
       if (b.mod && !b.shift && !b.alt) expect(reserved).not.toContain(b.key.toLowerCase())
     }

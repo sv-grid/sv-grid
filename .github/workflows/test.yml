@@ -115,7 +115,7 @@ jobs:
         # tutorials: every 30-second tutorial embedded on a docs page has a
         # manifest entry, its media under website/public/tutorials/, and stays
         # within the size budget.
-        run: pnpm vitest run tools/docs-snippets.test.ts tools/studio-docs.test.ts tools/ui-docs.test.ts tools/seo-guardrails.test.ts tools/docs-corpus.test.ts tools/competitor-facts.test.ts tools/tutorials.test.ts
+        run: pnpm vitest run tools/docs-snippets.test.ts tools/studio-docs.test.ts tools/ui-docs.test.ts tools/seo-guardrails.test.ts tools/docs-corpus.test.ts tools/competitor-facts.test.ts tools/migration-lab.test.ts tools/tutorials.test.ts
 
       - name: Demo page parity + meta coverage + search quality
         # A demo page's crawlable half is rendered twice, by the prerenderer

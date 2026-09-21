@@ -1,0 +1,48 @@
+# 06 After the codemod: @svgrid/grid installed, svelte-headless-table removed, svelte-check
+# captured 2026-09-20 by tools/migration-lab/run.mjs on win32 x64
+# node v24.18.0, npm 11.16.0, svelte 5.57.1, svelte-check 4.7.6, typescript 5.9.3, svelte-headless-table not installed, @svgrid/grid 3.0.4
+$ npm install @svgrid/grid@3.0.4 --legacy-peer-deps
+
+added 1 package in <time>
+
+(exit 0)
+
+$ npm uninstall svelte-headless-table --legacy-peer-deps
+
+removed 4 packages in <time>
+
+(exit 0)
+
+$ npx svelte-check --tsconfig ./tsconfig.json --output human --threshold warning
+<lab>\src\PeopleTable.svelte:31:23
+Error: `$pageIndex` is an illegal variable name. To reference a global variable called `$pageIndex`, use `globalThis.$pageIndex`
+https://svelte.dev/e/global_reference_invalid (svelte)
+
+<lab>\src\PeopleTable.svelte:31:4
+Error: Cannot find name 'shown'. (ts)
+
+<lab>\src\PeopleTable.svelte:31:23
+Error: Cannot find name '$pageIndex'. (ts)
+
+<lab>\src\PeopleTable.svelte:31:43
+Error: Cannot find name '$pageCount'. (ts)
+
+<lab>\src\PeopleTable.svelte:32:28
+Error: Cannot find name '$pageIndex'. (ts)
+
+<lab>\src\PeopleTable.svelte:32:53
+Error: Cannot find name '$pageIndex'. (ts)
+
+<lab>\src\PeopleTable.svelte:33:28
+Error: Cannot find name '$pageIndex'. (ts)
+
+<lab>\src\PeopleTable.svelte:33:50
+Error: Cannot find name '$pageCount'. (ts)
+
+<lab>\src\PeopleTable.svelte:33:66
+Error: Cannot find name '$pageIndex'. (ts)
+
+====================================
+svelte-check found 9 errors and 0 warnings in 1 file
+
+(exit 1)

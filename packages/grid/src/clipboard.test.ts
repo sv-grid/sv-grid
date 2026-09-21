@@ -441,6 +441,25 @@ describe('onFillPointerUp / applyFillPattern', () => {
     expect(ctx.selectionRange.focus).toEqual({ rowIndex: 3, colIndex: 0 })
   })
 
+  it('turns the fill the other way when the release holds Ctrl, as Excel does', () => {
+    // A series becomes a copy of the block...
+    const ctx = makeCtx({
+      columns: [{ id: 'a', field: 'a', editable: true, editorType: 'number' }],
+      data: [{ a: 1 }, { a: 2 }, { a: 0 }, { a: 0 }, { a: 0 }],
+    })
+    ctx.fillDrag = { sourceMinRow: 0, sourceMaxRow: 1, sourceMinCol: 0, sourceMaxCol: 0, targetRow: 4, targetCol: 0 }
+    createClipboard(ctx).onFillPointerUp({ ctrlKey: true } as PointerEvent)
+    expect([ctx.internalData[2].a, ctx.internalData[3].a, ctx.internalData[4].a]).toEqual([1, 2, 1])
+    // ...and one number, which copies on its own, becomes a series.
+    const one = makeCtx({
+      columns: [{ id: 'a', field: 'a', editable: true, editorType: 'number' }],
+      data: [{ a: 7 }, { a: 0 }, { a: 0 }],
+    })
+    one.fillDrag = { sourceMinRow: 0, sourceMaxRow: 0, sourceMinCol: 0, sourceMaxCol: 0, targetRow: 2, targetCol: 0 }
+    createClipboard(one).onFillPointerUp({ ctrlKey: true } as PointerEvent)
+    expect([one.internalData[1].a, one.internalData[2].a]).toEqual([8, 9])
+  })
+
   it('records the drag as one grouped history entry, so Ctrl+Z takes it all back', () => {
     // The fill used to write through writeCellRaw and push nothing: a drag
     // over twenty rows was invisible to undo.
@@ -485,6 +504,38 @@ describe('onFillPointerUp / applyFillPattern', () => {
     createClipboard(numeric).onFillPointerUp()
     expect(numeric.internalData[2].a).toBe(3)
     expect(numeric.internalData[3].a).toBe(4)
+  })
+
+  it('skips a collapsed row the consumer does not count, and moves the series over the rows that show', () => {
+    // A filtered row in a spreadsheet: not written, not a step of the
+    // number series, and the formula's delta is the real row distance.
+    const ctx = makeCtx({
+      columns: [{ id: 'a', field: 'a', editable: true, editorType: 'number' }],
+      data: [{ a: 10 }, { a: 20 }, { a: 0 }, { a: 0 }, { a: 0 }],
+    })
+    ctx.isRowCollapsed = (r: number) => r === 3
+    const deltas: number[] = []
+    ctx.props.processCellForFill = ({ delta }: { delta: { rows: number } }) => { deltas.push(delta.rows); return undefined }
+    ctx.fillDrag = { sourceMinRow: 0, sourceMaxRow: 1, sourceMinCol: 0, sourceMaxCol: 0, targetRow: 4, targetCol: 0 }
+    createClipboard(ctx).onFillPointerUp()
+    // Row 3 is left holding its 0; the series 30, (skip), 40 lands on 2 and 4.
+    expect(ctx.internalData.map((r: any) => r.a)).toEqual([10, 20, 30, 0, 40])
+    // The hook saw the real row distance from the source cell each target
+    // cycled from: row 2 is 2 below source row 0, row 4 is 3 below source
+    // row 1, not the 1 and 2 a step count would have given.
+    expect(deltas).toEqual([2, 3])
+  })
+
+  it('includeCollapsedRows brings a collapsed row back into the fill', () => {
+    const ctx = makeCtx({
+      columns: [{ id: 'a', field: 'a', editable: true, editorType: 'number' }],
+      data: [{ a: 10 }, { a: 0 }, { a: 0 }],
+    })
+    ctx.isRowCollapsed = (r: number) => r === 1
+    ctx.props.includeCollapsedRows = (r: number) => r === 1
+    ctx.fillDrag = { sourceMinRow: 0, sourceMaxRow: 0, sourceMinCol: 0, sourceMaxCol: 0, targetRow: 2, targetCol: 0 }
+    createClipboard(ctx).onFillPointerUp()
+    expect(ctx.internalData.map((r: any) => r.a)).toEqual([10, 10, 10])
   })
 
   it('double-click fills down as far as the neighbouring column has data', () => {

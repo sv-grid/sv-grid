@@ -46,6 +46,13 @@
      */
     label?: string | null
     onSelectName?: (name: string) => void
+    /** A name typed that is neither an address nor a name yet: Excel defines
+     *  it for the selection. Without a handler the entry is dropped. */
+    onDefineName?: (name: string) => void
+    /** A range or a sheet-qualified address typed into the Name Box, B2:D4 or
+     *  Orders!C3: the consumer selects it and answers true, or false when the
+     *  text is not a reference, which the bar then defines as a name. */
+    onSelectReference?: (text: string) => boolean
     /** The fx button: Excel's Insert Function. Without a handler the button
      *  is not drawn, since a button that does nothing is worse than none. */
     onInsertFunction?: () => void
@@ -73,6 +80,8 @@
     names = [],
     label = null,
     onSelectName,
+    onDefineName,
+    onSelectReference,
     onInsertFunction,
     onDraft,
     highlight,
@@ -120,7 +129,33 @@
    */
   let expanded = $state(false)
   const lines = $derived(draft.split('\n').length)
-  const rows = $derived(expanded ? Math.min(6, Math.max(2, lines)) : 1)
+  /**
+   * The lines the draft takes at the bar's width once it wraps, which is
+   * what the expanded bar is for: a long formula is one line of text and
+   * six lines on screen, and counting its line breaks gave it two rows with
+   * the rest cut off under `overflow: hidden`, so the chevron showed an
+   * empty second row and nothing more. Measured from the textarea at one
+   * row, where its scroll height is the text's rather than the box's.
+   */
+  let wrapped = $state(1)
+  /** The scrollbar's width once the bar scrolls, so the mirror wraps where the text does. */
+  let gutter = $state(0)
+  let mirror = $state<HTMLDivElement | null>(null)
+  $effect(() => {
+    void draft
+    if (!expanded || !input) { wrapped = 1; gutter = 0; return }
+    const el = input
+    const style = getComputedStyle(el)
+    const line = parseFloat(style.lineHeight) || 18
+    const pad = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0)
+    const was = el.rows
+    el.rows = 1
+    wrapped = Math.max(1, Math.round((el.scrollHeight - pad) / line))
+    el.rows = was
+    // Read after the rows settle: the gutter is there only past six lines.
+    requestAnimationFrame(() => { gutter = el.offsetWidth - el.clientWidth })
+  })
+  const rows = $derived(expanded ? Math.min(6, Math.max(2, lines, wrapped)) : 1)
   let nameBoxText = $state('')
   /** True while the Name Box has focus, which is when it shows a draft. */
   let nameBoxTyping = $state(false)
@@ -249,8 +284,20 @@
       nameBoxText = ''
       return
     }
-    if (names.some((n) => n.name.toUpperCase() === nameBoxText.trim().toUpperCase())) {
-      onSelectName?.(nameBoxText.trim())
+    const typed = nameBoxText.trim()
+    if (names.some((n) => n.name.toUpperCase() === typed.toUpperCase())) {
+      onSelectName?.(typed)
+      nameBoxText = ''
+      return
+    }
+    // A range, or an address on another sheet, is a place to go.
+    if (typed && onSelectReference?.(typed)) {
+      nameBoxText = ''
+      return
+    }
+    // Neither an address nor a name: Excel defines it for the selection.
+    if (typed) {
+      onDefineName?.(typed)
       nameBoxText = ''
     }
   }
@@ -347,15 +394,18 @@
          typed with Alt+Enter holds, and would commit "twolines" for a cell
          showing two lines. One row until there are breaks to show. -->
     {#if runs.length > 0}
-      <div class="formula mirror" aria-hidden="true">{#each runs as run, i (i)}{#if run.colour}<span style:color={run.colour}>{run.text}</span>{:else}{run.text}{/if}{/each}</div>
+      <div class="formula mirror" class:line={!expanded} bind:this={mirror} style:padding-right={gutter ? `${6 + gutter}px` : undefined} aria-hidden="true">{#each runs as run, i (i)}{#if run.colour}<span style:color={run.colour}>{run.text}</span>{:else}{run.text}{/if}{/each}</div>
     {/if}
     <textarea
       bind:this={input}
       class="formula"
       class:coloured={runs.length > 0}
+      class:tall={expanded}
+      class:line={!expanded}
       aria-label={t('formula')}
       autocomplete="off"
       spellcheck="false"
+      wrap={expanded ? 'soft' : 'off'}
       {rows}
       value={draft}
       disabled={disabled || active === null}
@@ -368,6 +418,7 @@
       }}
       onkeyup={syncCaret}
       onclick={syncCaret}
+      onscroll={(e) => { if (mirror) { mirror.scrollTop = e.currentTarget.scrollTop; mirror.scrollLeft = e.currentTarget.scrollLeft } }}
       onfocus={startEditing}
       onblur={() => { if (editing) commit('blur') }}
       onkeydown={onKeyDown}
@@ -536,6 +587,15 @@
     overflow: hidden;
     white-space: pre-wrap;
   }
+  /* Expanded, the bar shows up to six lines and scrolls past them, as
+     Excel's does; the mirror follows the scroll from the textarea's
+     onscroll. Collapsed, it stays one line with no scrollbar of its own. */
+  .formula.tall { overflow-y: auto; }
+  /* Collapsed, the line does not wrap: Excel's one-line bar is cut off at
+     the right and scrolls sideways with the caret, rather than folding a
+     long entry onto a second row that the one-row box then hides. The
+     mirror follows the scroll the same way. */
+  .formula.line { white-space: pre; overflow-x: hidden; }
   .formula:focus-visible {
     outline: 2px solid var(--sg-focus-ring, var(--sg-accent, #107c41));
     outline-offset: -2px;

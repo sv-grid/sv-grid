@@ -271,3 +271,20 @@ describe('formatNumericWithConfig - cache reuse', () => {
     expect(typeof result).toBe('string')
   })
 })
+
+describe('formatNumericWithConfig - formatter cache key', () => {
+  it('does not hand a signDisplay column the formatter another column cached without it', () => {
+    // Same digits, no sign: cached first, as a currency-like column would.
+    expect(
+      formatNumericWithConfig(3.27, { type: 'number', locales: 'en-US', options: { minimumFractionDigits: 2, maximumFractionDigits: 2 } }),
+    ).toBe('3.27')
+    // Same digits, with a sign: must not reuse the one above.
+    expect(
+      formatNumericWithConfig(3.27, {
+        type: 'number',
+        locales: 'en-US',
+        options: { minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: 'always' },
+      }),
+    ).toBe('+3.27')
+  })
+})

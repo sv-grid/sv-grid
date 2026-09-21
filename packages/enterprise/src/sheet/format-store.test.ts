@@ -211,6 +211,13 @@ describe('entryToStyle', () => {
     expect(entryToStyle({ indent: 2 })).toContain('padding-left:24px')
   })
 
+  it('moves the vertical anchor for top and bottom, leaving the middle default', () => {
+    expect(entryToStyle({ valign: 'top' })).toContain('align-items:start')
+    expect(entryToStyle({ valign: 'bottom' })).toContain('align-items:end')
+    // Middle is what the cell already draws, so it adds nothing.
+    expect(entryToStyle({ valign: 'center' })).not.toContain('align-items')
+  })
+
   it('combines underline and strike into one declaration', () => {
     // Two text-decoration declarations would have the second win, dropping
     // the underline.

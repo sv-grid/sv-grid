@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  livePresence, presenceOnSheet, presenceColour, presenceInitials, presenceAnchor,
+  livePresence, presenceOnSheet, presenceColour, presenceInitials, presenceAnchor, presenceInk,
   PRESENCE_COLOURS, type SheetPresence,
 } from './presence'
 
@@ -15,6 +15,18 @@ describe('presence', () => {
     expect(PRESENCE_COLOURS).toContain(presenceColour(''))
     // Different people usually differ; these two do.
     expect(presenceColour('ada')).not.toBe(presenceColour('brin'))
+  })
+
+  it('inks a tag black or white, whichever the colour contrasts more with', () => {
+    expect(presenceInk('#2563eb')).toBe('#fff')
+    // Green, orange and yellow are too light for white at 11px.
+    expect(presenceInk('#16a34a')).toBe('#000')
+    expect(presenceInk('#ea580c')).toBe('#000')
+    expect(presenceInk('#ca8a04')).toBe('#000')
+    expect(presenceInk('#fff')).toBe('#000')
+    expect(presenceInk('rebeccapurple')).toBe('#fff')
+    // The built-in set is dark enough that every tag reads white on colour.
+    for (const colour of PRESENCE_COLOURS) expect(presenceInk(colour), colour).toBe('#fff')
   })
 
   it('shortens a name to initials for a small box', () => {

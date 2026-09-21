@@ -34,6 +34,42 @@ export function dateSerial(d: Date): number {
   return (d.getTime() - EXCEL_EPOCH_MS) / 86400000
 }
 
+const ISO_DATE_TEXT = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/
+const SLASH_DATE_TEXT = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
+const CLOCK_TEXT = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/
+
+/**
+ * The serial a date or a time written as text is worth in arithmetic, or
+ * null when the text is neither. Dates are `yyyy-mm-dd` text in a sheet
+ * (see `toDate`), so `=A1+1` under one has to read it as Excel reads a
+ * date cell: as its day number, so the sum is the next day rather than
+ * `#VALUE!`. A clock time is the fraction of a day it is, `="10:30"*2` being
+ * 0.875, and `m/d/yyyy` is read the way `new Date` reads it, as toDate does.
+ */
+export function dateTextSerial(text: string): number | null {
+  const t = text.trim()
+  let m = ISO_DATE_TEXT.exec(t)
+  if (m) {
+    const month = Number(m[2]), day = Number(m[3]), hours = Number(m[4] ?? 0), minutes = Number(m[5] ?? 0)
+    if (month < 1 || month > 12 || day < 1 || day > 31 || hours > 23 || minutes > 59) return null
+    const ms = Date.UTC(Number(m[1]), month - 1, day, hours, minutes, Number(m[6] ?? 0))
+    return (ms - EXCEL_EPOCH_MS) / 86400000
+  }
+  m = SLASH_DATE_TEXT.exec(t)
+  if (m) {
+    const month = Number(m[1]), day = Number(m[2])
+    if (month < 1 || month > 12 || day < 1 || day > 31) return null
+    return (Date.UTC(Number(m[3]), month - 1, day) - EXCEL_EPOCH_MS) / 86400000
+  }
+  m = CLOCK_TEXT.exec(t)
+  if (m) {
+    const hours = Number(m[1]), minutes = Number(m[2]), seconds = Number(m[3] ?? 0)
+    if (hours > 23 || minutes > 59 || seconds > 59) return null
+    return (hours * 3600 + minutes * 60 + seconds) / 86400
+  }
+  return null
+}
+
 export function toNumber(v: CellValue): number {
   if (typeof v === 'number') return v
   if (typeof v === 'boolean') return v ? 1 : 0
@@ -41,6 +77,8 @@ export function toNumber(v: CellValue): number {
     if (v.trim() === '') return 0
     const n = Number(v)
     if (Number.isFinite(n)) return n
+    const serial = dateTextSerial(v)
+    if (serial !== null) return serial
     throw new FormulaError('#VALUE!')
   }
   if (isError(v)) throw new FormulaError(v.error)

@@ -33,6 +33,19 @@ export type EvalContext = {
   /** Last used row of a sheet, for open-ended whole-column ranges. */
   lastRow(sheet: string | null): number
   /**
+   * The rectangle a dynamic array anchored at (row, col) currently spills
+   * into, as `[r1, c1, r2, c2]`, or null when that cell is not a spill
+   * anchor. Backs the spilled-range operator `A1#`: without it the operator
+   * reads #REF!, since only the workbook knows how far an array spilled.
+   */
+  spillRect?(sheet: string | null, row: number, col: number): readonly [number, number, number, number] | null
+  /**
+   * The sheets from `from` to `to` in tab order, inclusive, or null when
+   * either name is unknown. Backs a 3D reference (`Sheet1:Sheet3!A1`), which
+   * reads its cell on each of them.
+   */
+  sheetsBetween?(from: string, to: string): string[] | null
+  /**
    * Resolve a defined name to the reference it stands for, or null when
    * there is no such name. The node is evaluated in place of the name, so a
    * name that refers to a range behaves as that range: `=SUM(Sales)` adds
@@ -183,9 +196,51 @@ function referenceOf(node: Node, ctx: EvalContext): RefRect | null {
     }
     case 'fn':
       return REFERENCE_FUNCTIONS.has(node.name) ? referenceCall(node, ctx) : null
+    case 'table': {
+      // A structured reference is a rectangle too, so SUBTOTAL(109,[Qty])
+      // in a totals row skips the rows a filter folds, as Excel's does,
+      // rather than reading the column's first cell as a scalar.
+      const rect = tableRectOf(node, ctx)
+      return rect ? { sheet: rect.sheet, r1: rect.firstRow, c1: rect.firstCol, r2: rect.lastRow, c2: rect.lastCol } : null
+    }
+    case 'spill':
+      return spillRectOf(node, ctx)
     default:
       return null
   }
+}
+
+/**
+ * The rectangle a spilled-range operator (`A1#`) stands for: the array the
+ * anchor currently spills. Null when the cell is not a spill anchor, which
+ * the callers turn into #REF!, the way Excel does for `A1#` on a cell that
+ * holds no dynamic array.
+ */
+function spillRectOf(node: Extract<Node, { k: 'spill' }>, ctx: EvalContext): RefRect | null {
+  const rect = ctx.spillRect?.(node.ref.sheet, node.ref.row ?? 0, node.ref.col)
+  return rect ? { sheet: node.ref.sheet, r1: rect[0], c1: rect[1], r2: rect[2], c2: rect[3] } : null
+}
+
+/**
+ * Every value a 3D reference reads: the cell or rectangle on each sheet in
+ * the tab range, in sheet order. Null when a sheet name is unknown, which the
+ * callers turn into #REF!. Aggregates take the flat list, so a nested
+ * rectangle spans sheet by sheet.
+ */
+function values3d(node: Extract<Node, { k: 'ref3d' }>, ctx: EvalContext): CellValue[] | null {
+  const sheets = ctx.sheetsBetween?.(node.sheetFrom, node.sheetTo)
+  if (!sheets) return null
+  const r1 = Math.min(node.from.row ?? 0, node.to.row ?? 0)
+  const r2 = Math.max(node.from.row ?? 0, node.to.row ?? 0)
+  const c1 = Math.min(node.from.col, node.to.col)
+  const c2 = Math.max(node.from.col, node.to.col)
+  const out: CellValue[] = []
+  for (const s of sheets) {
+    for (let r = r1; r <= r2; r += 1) {
+      for (let c = c1; c <= c2; c += 1) out.push(ctx.resolve(s, r, c))
+    }
+  }
+  return out
 }
 
 function rectGrid(rect: RefRect, ctx: EvalContext): CellValue[][] {
@@ -275,6 +330,21 @@ function evalNode(node: Node, ctx: EvalContext): CellValue {
       // what Excel does outside an array context.
       const grid = rangeGrid(node.from, node.to, ctx)
       return grid[0]?.[0] ?? ''
+    }
+
+    case 'spill': {
+      // The spilled range in scalar position is its top-left, the anchor's
+      // own value; a cell that anchors no array is #REF!.
+      const rect = spillRectOf(node, ctx)
+      return rect ? ctx.resolve(rect.sheet, rect.r1, rect.c1) : err('#REF!')
+    }
+
+    case 'ref3d': {
+      // In scalar position a 3D reference reads the cell on the first sheet
+      // of the range, the way an ordinary range collapses to its top-left.
+      const vals = values3d(node, ctx)
+      if (!vals) return err('#REF!')
+      return vals[0] ?? ''
     }
 
     case 'name': {
@@ -772,6 +842,7 @@ function transposeGrid(grid: Grid): Grid {
 function hasArray(node: Node, ctx: EvalContext, depth = 0): boolean {
   switch (node.k) {
     case 'range': return true
+    case 'spill': return true
     case 'name': {
       if (isGrid(localOf(ctx, node.name))) return true
       const target = depth < 8 ? nameTarget(node.name, ctx) : null
@@ -871,6 +942,24 @@ function collectArgs(args: ReadonlyArray<Node>, ctx: EvalContext): { perArg: Cel
         grids.push(grid)
         perArg.push(grid.flat())
       }
+    } else if (arg.k === 'spill') {
+      // The spilled range hands the whole array to the caller, so
+      // =SUM(E1#) adds every cell the dynamic array reaches.
+      const rect = spillRectOf(arg, ctx)
+      if (!rect) {
+        grids.push(null)
+        perArg.push([err('#REF!')])
+      } else {
+        const grid = rectGrid(rect, ctx)
+        grids.push(grid)
+        perArg.push(grid.flat())
+      }
+    } else if (arg.k === 'ref3d') {
+      // A 3D reference hands over its cell on every sheet in the range, so
+      // =SUM(Sheet1:Sheet3!A1) adds the same cell down the tabs.
+      const vals = values3d(arg, ctx)
+      grids.push(null)
+      perArg.push(vals ?? [err('#REF!')])
     } else if (arg.k === 'fn' && ARRAY_FUNCTIONS[arg.name]) {
       // An array function nested in another hands over its grid, so
       // =SORT(FILTER(...)) and =SUM(SEQUENCE(10)) work.
@@ -921,6 +1010,10 @@ export function rangeValues(node: Node, ctx: EvalContext): CellValue[][] | null 
   try {
     if (node.k === 'range') return rangeGrid(node.from, node.to, ctx)
     if (node.k === 'ref') return [[ctx.resolve(node.ref.sheet, node.ref.row ?? 0, node.ref.col)]]
+    if (node.k === 'spill') {
+      const rect = spillRectOf(node, ctx)
+      return rect ? rectGrid(rect, ctx) : [[err('#REF!')]]
+    }
     if (node.k === 'name') {
       const local = localOf(ctx, node.name)
       if (isGrid(local)) return local
@@ -957,7 +1050,7 @@ export function rangeValues(node: Node, ctx: EvalContext): CellValue[][] | null 
 export function evaluateSpill(node: Node, ctx: EvalContext): Grid | null {
   try {
     let grid: Grid | null = null
-    if (node.k === 'range' || node.k === 'name'
+    if (node.k === 'range' || node.k === 'name' || node.k === 'spill'
       || (node.k === 'fn' && (REFERENCE_FUNCTIONS.has(node.name) || ARRAY_FUNCTIONS[node.name] || LAMBDA_HELPERS.has(node.name) || node.name === 'LET'))) {
       grid = rangeValues(node, ctx)
     } else if ((node.k === 'binary' || node.k === 'unary') && hasArray(node, ctx)) {

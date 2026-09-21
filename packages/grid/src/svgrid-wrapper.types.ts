@@ -439,6 +439,16 @@ export type SvGridApi<
   getData(): ReadonlyArray<TData>
 
   /**
+   * The stable id the grid keys a row by: what the `getRowId` prop
+   * computed, or the row's position when no `getRowId` is set. Pass a
+   * display index (the space `getActiveCell`, `scrollToRow` and the cell
+   * methods use) or a row object; returns null for an unknown index or a
+   * row that is not in the data. Pair with `selectRows`, `toggleRowSelected`
+   * or an `applyTransaction` remove, all of which take these ids.
+   */
+  getRowId(row: number | TData): string | null
+
+  /**
    * Snapshot of every column the grid currently knows about, in visual
    * order, with the human-readable header label. Use this when exporting
    * or building a column-picker UI - the data is read once, no
@@ -588,6 +598,20 @@ export type SvGridApi<
   canRedo(): boolean
   /** Wipe both stacks (e.g. after a server save commits the buffer). */
   clearHistory(): void
+  /**
+   * Mark every step recorded from now on with `tag`, until the next call;
+   * `undefined` stops the marking. The grid never reads the tag. It is for a
+   * consumer that shows one of several data sets through the grid (a
+   * workbook's sheets, say) and has to know which one the next Ctrl+Z would
+   * change before it lets the grid apply it: it tags the steps with the data
+   * set they were made on and asks `peekUndo` first.
+   */
+  setHistoryTag(tag: unknown): void
+  /** The step the next `undo()` would apply, or null when there is none. A
+   *  multi-cell action carries one tag, so it reports as one. */
+  peekUndo(): { tag: unknown } | null
+  /** The step the next `redo()` would apply, or null when there is none. */
+  peekRedo(): { tag: unknown } | null
 
   // ----- Keyboard commands -----
   /**

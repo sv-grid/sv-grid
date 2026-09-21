@@ -137,7 +137,7 @@ describe('SvSheetPasteSpecial (DOM)', () => {
     comp = mount(SvSheetPasteSpecial, { target: host!, props: { open: true, hasClipboard: false, onPaste: vi.fn() } })
     flushSync()
     expect(button('OK').disabled).toBe(true)
-    expect(q('.sv-modal .status')?.textContent).toMatch(/Copy a range first/)
+    expect(q('.sv-modal .status')?.textContent).toMatch(/Nothing to paste yet/)
   })
 })
 
