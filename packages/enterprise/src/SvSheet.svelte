@@ -1804,13 +1804,23 @@
       }
       return
     }
-    const cmd = cmdOf()
-    const rects = selectedRects(cmd).map(normalRect)
-    const last = rects[rects.length - 1]
-    const region = cmd ? currentRegion(gridOf(cmd), { row: active.rowIndex, col: active.colIndex }) : null
-    const block: Rect | null = last && (last[0] !== last[2] || last[1] !== last[3]) ? last : region ?? last ?? null
+    const block = blockAround(cmdOf())
     if (!block || block[0] === block[2]) { say(t('selectBlockToTable')); return }
     tableSetup = { range: block, name: nextTableName(), headers: true, totals: false, style: DEFAULT_TABLE_STYLE, existing: null }
+  }
+
+  /**
+   * The block a table, a chart or a pivot is made of: the selection when
+   * it spans more than one cell, otherwise the region of data around the
+   * active cell, which is what Excel takes from a single cell inside a
+   * block so a chart or a PivotTable does not need the block selected first.
+   */
+  function blockAround(cmd: GridCommandContext | null): Rect | null {
+    const rects = selectedRects(cmd).map(normalRect)
+    const last = rects[rects.length - 1]
+    if (last && (last[0] !== last[2] || last[1] !== last[3])) return last
+    const region = cmd ? currentRegion(gridOf(cmd), { row: active.rowIndex, col: active.colIndex }) : null
+    return region ?? last ?? null
   }
 
   /** OK in the dialog: the table defined, and the filter arrows over it. */
@@ -1823,13 +1833,21 @@
     if (clash) { say(t('tableNameTaken', { name: next.name })); return }
     // Without a header row the table still needs one to name its columns,
     // so the first row becomes it, as Excel does when the box is unticked.
+    // A table that already has a totals row was opened with it inside the
+    // range; a table asked for one now gets it ADDED under the data, as
+    // Excel's Total Row does, rather than having its last row of data
+    // taken for it. The row below is used when it is empty across the
+    // table's columns, and pushed down otherwise.
+    const hadTotals = existing ? tablesNow().find((t) => t.name === existing)?.hasTotals ?? false : false
+    const lastRow = hadTotals ? r2 - 1 : r2
+    const addingTotals = next.totals && !hadTotals
     const table: TableRegion = {
       name: next.name,
       sheet: wb.active,
       headerRow: r1,
       firstCol: c1,
       lastCol: c2,
-      lastRow: next.totals ? r2 - 1 : r2,
+      lastRow,
       hasTotals: next.totals,
       style: next.style,
     }
@@ -1842,14 +1860,30 @@
         doc.shift(wb.active, { kind: 'insertRows', at: r1, count: 1 })
         for (let c = c1; c <= c2; c += 1) cmd.setCellValue(r1, c, `Column${c - c1 + 1}`)
       }
-      applyAutoFilter({ range: [r1, c1, next.totals ? r2 - 1 : r2, c2] as unknown as Rect, filters: {} }, cmd)
+      if (addingTotals) {
+        const totalsRow = lastRow + 1
+        let taken = false
+        for (let c = c1; c <= c2 && !taken; c += 1) taken = wb.getRaw(wb.active, totalsRow, c).trim() !== ''
+        if (taken) {
+          wb.applyStructuralEdit(wb.active, { kind: 'insertRows', at: totalsRow, count: 1 })
+          doc.shift(wb.active, { kind: 'insertRows', at: totalsRow, count: 1 })
+        }
+        // Excel's Total Row: the word in the first column, a SUBTOTAL over
+        // the last one, which leaves out the rows a filter folds.
+        cmd.setCellValue(totalsRow, c1, t('table.totalLabel'))
+        if (c2 > c1) cmd.setCellValue(totalsRow, c2, `=SUBTOTAL(109,[${wb.getRaw(wb.active, r1, c2).trim() || `Column${c2 - c1 + 1}`}])`)
+      } else if (!next.totals && hadTotals) {
+        // Total Row unticked: the row goes, as Excel takes it away.
+        for (let c = c1; c <= c2; c += 1) if (wb.getRaw(wb.active, r2, c) !== '') cmd.setCellValue(r2, c, '')
+      }
+      applyAutoFilter({ range: [r1, c1, lastRow, c2] as unknown as Rect, filters: {} }, cmd)
     })
     bump()
     // The dialog both makes a table and edits one, and the two are not the
     // same news: saying "Orders covers A1:E13" after a style was picked
     // reports something that did not happen. An edit names the look it now
     // wears, which is what was just chosen.
-    const range = `${colToLetters(c1)}${r1 + 1}:${colToLetters(c2)}${r2 + 1}`
+    const range = `${colToLetters(c1)}${r1 + 1}:${colToLetters(c2)}${(next.totals ? lastRow + 1 : lastRow) + 1}`
     const look = findTableStyle(next.style)
     say(existing
       ? t('tableUpdated', { name: next.name, range, style: look ? tableStyleLabel(look) : t('table.styleNoneShort') })
@@ -2121,8 +2155,7 @@
       pivotSetup = { pivot: here, fields: pivotFields(here.source, cellTextAt), existing: true }
       return
     }
-    const rects = selectedRects().map(normalRect)
-    const rect = rects[rects.length - 1]
+    const rect = blockAround(cmdOf())
     if (!rect || rect[0] === rect[2] || rect[1] === rect[3]) { say(t('selectBlockToPivot')); return }
     const fields = pivotFields(rect, cellTextAt)
     pivotSetup = { pivot: pivotFromRange(rect, fields), fields, existing: false }
@@ -2353,8 +2386,7 @@
   /** Insert > Chart: a chart of the selected block, anchored under it. */
   function insertChart(cmd: GridCommandContext) {
     if (protectedNow()) { refuse(); return }
-    const rects = selectedRects(cmd).map(normalRect)
-    const rect = rects[rects.length - 1]
+    const rect = blockAround(cmd)
     if (!rect || (rect[0] === rect[2] && rect[1] === rect[3])) { say(t('selectBlockToChart')); return }
     addObject(chartFromRange(rect, (r, c) => wb.getValue(wb.active, r, c)))
   }
@@ -4231,9 +4263,18 @@
    * wrapped cell no longer needs the extra height gives it back, and a row
    * the user dragged is left alone.
    */
+  /**
+   * The rows whose height this fitted, per sheet, as against one the user
+   * dragged: Excel keeps a row on "auto" until it is sized by hand, so a
+   * row that grew for wrapped text shrinks back when Wrap Text goes off or
+   * the text gets shorter, while a hand-sized row stays where it was put.
+   */
+  const autoFitRows = new Map<string, Set<number>>()
+  const autoFitOn = (sheet: string) => { let set = autoFitRows.get(sheet); if (!set) { set = new Set(); autoFitRows.set(sheet, set) } return set }
   function fitWrappedRows() {
     void tick().then(() => {
       if (!api || !root) return
+      const auto = autoFitOn(wb.active)
       const tallest = new Map<number, number>()
       for (const span of root.querySelectorAll<HTMLElement>('.sheet-cell.wrap')) {
         const td = span.closest<HTMLElement>('td')
@@ -4244,7 +4285,16 @@
       }
       for (const [r, needed] of tallest) {
         const current = api.getRowHeight(r)
-        if (needed > current) api.setRowHeight(r, needed)
+        if (needed > current) { api.setRowHeight(r, needed); auto.add(r) }
+      }
+      // A row this fitted before, rendered now and needing less: back down
+      // to what it needs, or to the default when nothing wraps in it.
+      for (const r of [...auto]) {
+        if (tallest.has(r) && tallest.get(r)! >= api.getRowHeight(r)) continue
+        if (!root.querySelector(`td[data-svgrid-row="${r}"]`)) continue
+        const needed = tallest.get(r)
+        if (needed !== undefined && needed > rowHeight) api.setRowHeight(r, needed)
+        else { api.setRowHeight(r, null); auto.delete(r) }
       }
     })
   }
@@ -4638,6 +4688,8 @@
     }
     const before = read()
     put(targets.map((i) => [i, px] as const))
+    // A height typed into the dialog is the user's, like a dragged one.
+    if (kind === 'rows') for (const r of targets) autoFitOn(wb.active).delete(r)
     const after = read()
     const c = cmdOf()
     c?.recordUndo(() => put(before), () => put(after))
@@ -5838,7 +5890,14 @@
     }}
     onCellValueChange={onCellWritten}
     onColumnResize={() => { stashWidths(); changed({ kind: 'sizes' }) }}
-    onRowResize={(e) => { if (e.height === null) fitWrappedRows(); stashHeights(); changed({ kind: 'sizes' }) }}
+    onRowResize={(e) => {
+      // A height dragged by hand is the user's: the wrap fitting leaves
+      // the row alone from now on. A double-click on the edge asks for auto.
+      if (e.height === null) fitWrappedRows()
+      else autoFitOn(wb.active).delete(e.rowIndex)
+      stashHeights()
+      changed({ kind: 'sizes' })
+    }}
     processCellForFill={({ value, delta }) =>
       typeof value === 'string' && value.startsWith('=') ? translateFormula(value, delta.rows, delta.cols) : undefined}
     processCellForClipboard={toClipboard}

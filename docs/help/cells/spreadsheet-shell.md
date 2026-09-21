@@ -91,7 +91,10 @@ the wiring BETWEEN the parts, done once:
 - Enter after an in-cell edit commits and moves down, Shift+Enter up, Tab
   right, as in Excel. Alt+Enter is a line break: the cell turns on Wrap
   Text and its row grows to show every line, as a wrapped row does after
-  Wrap Text on the ribbon or in Format Cells. F4 while editing turns the
+  Wrap Text on the ribbon or in Format Cells; a row the fitting grew is
+  back to its height once the wrap goes or the text gets shorter, while a
+  row sized by hand, dragged or typed into Row Height..., stays as the
+  user left it, which is Excel's auto-height rule. F4 while editing turns the
   reference at the caret through `$A$1`, `A$1`, `$A1` and back.
 - AutoComplete, as Excel's: while a cell is typed into, the text entries in
   the same column that run without a blank above and below it are matched
@@ -884,7 +887,7 @@ the cell menu is a button that does nothing:
 | Insert Function | the `fx` button. Search or pick a category, read the signature and what the function does; OK starts the cell on `=NAME(` with the caret inside. |
 | Name Manager | Formulas > Name Manager, `Ctrl+F3`. Every defined name with what it refers to and its value; edit, delete, add. |
 | Goal Seek | Data > Goal Seek. Set a formula cell to a value by changing one input; the status page shows the answer and OK keeps it as one undo. |
-| Create Table | Insert > Table, `Ctrl+T`, and again on a cell inside a table, which is how one is renamed, resized or restyled. The range, the name its columns are read by, whether the first row is the header, a totals row, and the styles gallery. Insert > Table Styles opens the same dialog on the table the cursor is in. |
+| Create Table | Insert > Table, `Ctrl+T`, and again on a cell inside a table, which is how one is renamed, resized or restyled. The range (the selection, or the region around the active cell), the name its columns are read by, whether the first row is the header, a totals row, and the styles gallery. A totals row asked for is ADDED under the data, as Excel's Total Row is, with Total in the first column and `=SUBTOTAL(109,[Last column])` in the last; unticked, it goes. A structured reference is a range to SUBTOTAL, so a totals row's formulas skip the rows a filter folds. Insert > Table Styles opens the same dialog on the table the cursor is in. |
 | Evaluate Formula | Formulas > Evaluate Formula. The active cell's formula with the next part underlined; Evaluate replaces it with its value, Step Back and Restart walk it again. |
 | Error Checking | Formulas > Error Checking. Every cell on the sheet that reports an error, and every formula that breaks its column's pattern, walked with Previous and Next; Show Calculation Steps opens Evaluate Formula on the cell. |
 | Calculation Options | Formulas > Calculation Options. Excel's Enable iterative calculation, with the maximum passes and the smallest change worth another one; OK recalculates, so a circular reference goes from #CYCLE! to its fixed point, or back. See Iterative calculation below. |
@@ -1066,7 +1069,8 @@ source in the sheet without storing it. Raised as `data-validation` and
 
 ### Objects: charts and pictures
 
-Insert > Chart charts the selected block: the first row and column are
+Insert > Chart charts the selected block, or the region of data around
+a single selected cell, as Excel starts one: the first row and column are
 read as the labels when they look like labels, each column of the block
 is a series, and the chart is anchored just under the block. It reads the
 **range**, not a copy of the numbers, so editing a cell redraws it.
@@ -1190,8 +1194,9 @@ file saved with iteration on opens with it on. Raised as `calc-options`.
 
 ### PivotTable from a range
 
-Insert > PivotTable summarises the selected block on the same pivot engine
-the grid uses for its own pivot mode. The dialog takes the source block
+Insert > PivotTable summarises the selected block, or the region around
+a single selected cell, on the same pivot engine the grid uses for its own
+pivot mode. The dialog takes the source block
 (its first row the field names), where the result goes, and which field is
 a row, a column or a measure, with Sum, Average, Count, Distinct count,
 Min and Max to summarise by.

@@ -251,6 +251,15 @@ describe('evaluating structured references', () => {
     expect(run('=[@Qty]*[@Amount]', { row: 1, col: 1 })).toBe(20)
   })
 
+  it('SUBTOTAL reads a structured reference as the rectangle it is, from the totals row too', () => {
+    // The totals row of Excel's Total Row holds =SUBTOTAL(109,[Amount]);
+    // read as a scalar it was the column's first cell.
+    const withTotals: TableRegion = { ...orders, hasTotals: true }
+    expect(run('=SUBTOTAL(109,[Amount])', { row: 4, col: 2 }, [withTotals])).toBe(60)
+    expect(run('=SUBTOTAL(9,Orders[Qty])', { row: 9, col: 9 }, [withTotals])).toBe(10)
+    expect(run('=SUBTOTAL(103,[Item])', { row: 4, col: 0 }, [withTotals])).toBe(3)
+  })
+
   it('returns #REF! for the unqualified form outside any table', () => {
     expect(run('=[@Amount]', { row: 9, col: 9 })).toEqual({ error: '#REF!' })
   })

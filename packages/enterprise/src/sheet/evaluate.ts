@@ -183,6 +183,13 @@ function referenceOf(node: Node, ctx: EvalContext): RefRect | null {
     }
     case 'fn':
       return REFERENCE_FUNCTIONS.has(node.name) ? referenceCall(node, ctx) : null
+    case 'table': {
+      // A structured reference is a rectangle too, so SUBTOTAL(109,[Qty])
+      // in a totals row skips the rows a filter folds, as Excel's does,
+      // rather than reading the column's first cell as a scalar.
+      const rect = tableRectOf(node, ctx)
+      return rect ? { sheet: rect.sheet, r1: rect.firstRow, c1: rect.firstCol, r2: rect.lastRow, c2: rect.lastCol } : null
+    }
     default:
       return null
   }
