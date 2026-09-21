@@ -43,6 +43,22 @@ const SLASH_DATE = /^(\d{1,2})\/(\d{1,2})(?:\/(\d{2}|\d{4}))?$/
 const CLOCK = /^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([AaPp])\.?[Mm]?\.?)?$/
 const pad2 = (n: number): string => String(n).padStart(2, '0')
 
+/** English month names to a 1-12 number: `jan`/`january` alike. */
+const MONTH_NUMBER: Record<string, number> = (() => {
+  const full = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
+  const out: Record<string, number> = {}
+  full.forEach((name, i) => { out[name] = i + 1; out[name.slice(0, 3)] = i + 1 })
+  out.sept = 9
+  return out
+})()
+// A day and a month name in either order, with an optional year:
+// 4-Mar-2026, 4 Mar 26, Mar 4, March 4, 2026. The separator is a space,
+// a hyphen or (for the day-first form) a slash; a comma may follow the day.
+const DAY_MONTH = /^(\d{1,2})[\s\-/]+([A-Za-z]{3,9})(?:,?[\s\-/]+(\d{2}|\d{4}))?$/
+const MONTH_DAY = /^([A-Za-z]{3,9})[\s\-/]+(\d{1,2})(?:,?[\s\-/]+(\d{2}|\d{4}))?$/
+const yearOf = (raw: string | undefined): number =>
+  raw === undefined ? new Date().getFullYear() : raw.length === 2 ? (Number(raw) < 30 ? 2000 : 1900) + Number(raw) : Number(raw)
+
 /**
  * Excel's AutoComplete for a column of text.
  *
@@ -117,12 +133,29 @@ export function parseEntry(text: string): ParsedEntry | null {
   m = SLASH_DATE.exec(t)
   if (m) {
     const month = Number(m[1]), day = Number(m[2]), year = m[3]
-    const y = year === undefined ? new Date().getFullYear() : year.length === 2 ? (Number(year) < 30 ? 2000 : 1900) + Number(year) : Number(year)
+    const y = yearOf(year)
     if (month >= 1 && month <= 12 && day >= 1 && day <= new Date(Date.UTC(y, month, 0)).getUTCDate()) {
       return { value: `${y}-${pad2(month)}-${pad2(day)}`, numFmt: 'yyyy-mm-dd' }
     }
     return null
   }
+
+  // A date written with the month spelled out, as Excel reads one:
+  // 4-Mar-2026, 4 Mar 26, March 4, 2026, Mar 4. English month names only,
+  // the language the shell speaks; stored the same yyyy-mm-dd as a slash
+  // date. Either order, so both 4-Mar and Mar-4 are the fourth of March.
+  const monthDate = (dayText: string, monthName: string, yearText: string | undefined): ParsedEntry | null => {
+    const month = MONTH_NUMBER[monthName.toLowerCase()]
+    if (month === undefined) return null
+    const day = Number(dayText)
+    const y = yearOf(yearText)
+    if (day < 1 || day > new Date(Date.UTC(y, month, 0)).getUTCDate()) return null
+    return { value: `${y}-${pad2(month)}-${pad2(day)}`, numFmt: 'd-mmm-yyyy' }
+  }
+  m = DAY_MONTH.exec(t)
+  if (m) return monthDate(m[1]!, m[2]!, m[3])
+  m = MONTH_DAY.exec(t)
+  if (m) return monthDate(m[2]!, m[1]!, m[3])
 
   // A clock time is the fraction of the day it is, 10:30 being 0.4375, under
   // the time format that shows it back, so times add up and =A1*2 over one

@@ -439,6 +439,16 @@ export type SvGridApi<
   getData(): ReadonlyArray<TData>
 
   /**
+   * The stable id the grid keys a row by: what the `getRowId` prop
+   * computed, or the row's position when no `getRowId` is set. Pass a
+   * display index (the space `getActiveCell`, `scrollToRow` and the cell
+   * methods use) or a row object; returns null for an unknown index or a
+   * row that is not in the data. Pair with `selectRows`, `toggleRowSelected`
+   * or an `applyTransaction` remove, all of which take these ids.
+   */
+  getRowId(row: number | TData): string | null
+
+  /**
    * Snapshot of every column the grid currently knows about, in visual
    * order, with the human-readable header label. Use this when exporting
    * or building a column-picker UI - the data is read once, no

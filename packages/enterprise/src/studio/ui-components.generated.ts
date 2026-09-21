@@ -7494,7 +7494,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "cellSelectionChange",
         "label": "Cell Selection Change",
         "prop": "onCellSelectionChange",
-        "description": "Fires whenever the cell-selection rectangle changes (mouse, keyboard, or `api.selectCells()`). `ranges` matches `api.getSelected()` - `[rowStart, colStart, rowEnd, colEnd]` rectangles in grid coords. Empty array when the user clears the selection."
+        "description": "Fires whenever the cell selection changes (mouse, keyboard, or `api.selectCells()`). `ranges` is every selected rectangle, matching `api.getSelected()`: the ones a Ctrl+click committed and the active one last, each `[rowStart, colStart, rowEnd, colEnd]` in grid coords. Empty array when the user clears the selection."
       },
       {
         "key": "sortingChange",

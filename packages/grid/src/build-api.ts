@@ -511,6 +511,28 @@ export function createGridApi<
       getData() {
         return ctx.internalData;
       },
+      getRowId(row) {
+        // The stable id the grid keys a row by: what `getRowId` computed,
+        // or the row's position when no `getRowId` prop is set. A number is
+        // a DISPLAY index into the rendered rows, the space getActiveCell,
+        // scrollToRow and the cell methods work in; a row object is looked
+        // up wherever it sits. Null when the index or the object is unknown,
+        // so a caller can tell "no such row" from a real id.
+        if (typeof row === "number") {
+          const found = ctx.allRows[row];
+          return found && !isGroupRow(found) ? (found.id as string) : null;
+        }
+        const inRows = ctx.allRows.find(
+          (r: { original?: unknown; id: string }) => r.original === row,
+        );
+        if (inRows) return inRows.id as string;
+        const getId = ctx.props.getRowId as
+          | ((r: TData, index: number) => string)
+          | undefined;
+        const index = ctx.internalData.indexOf(row as TData);
+        if (index < 0) return null;
+        return getId ? getId(row as TData, index) : String(index);
+      },
       getColumns() {
         // Snapshot every column with its human-readable label and
         // visibility flag. Used by external code (exporters, column

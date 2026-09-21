@@ -49,6 +49,20 @@ describe('parseEntry', () => {
     expect(parseEntry('13/1/2026')).toBeNull()
   })
 
+  it('reads a month-name date in either order, as Excel reads one', () => {
+    const y = new Date().getFullYear()
+    expect(parseEntry('4-Mar-2026')).toEqual({ value: '2026-03-04', numFmt: 'd-mmm-yyyy' })
+    expect(parseEntry('4 Mar 26')).toEqual({ value: '2026-03-04', numFmt: 'd-mmm-yyyy' })
+    expect(parseEntry('March 4, 2026')).toEqual({ value: '2026-03-04', numFmt: 'd-mmm-yyyy' })
+    expect(parseEntry('Mar 4 2026')).toEqual({ value: '2026-03-04', numFmt: 'd-mmm-yyyy' })
+    expect(parseEntry('Sept 4 2026')).toEqual({ value: '2026-09-04', numFmt: 'd-mmm-yyyy' })
+    expect(parseEntry('Mar 4')).toEqual({ value: `${y}-03-04`, numFmt: 'd-mmm-yyyy' })
+    // A name that is not a month, or a day out of range, is left as text.
+    expect(parseEntry('4-Foo-2026')).toBeNull()
+    expect(parseEntry('Feb 30 2026')).toBeNull()
+    expect(parseEntry('hello world')).toBeNull()
+  })
+
   it('reads a clock time as the fraction of a day under a time format', () => {
     expect(parseEntry('10:30')).toEqual({ value: '0.4375', numFmt: 'h:mm' })
     expect(parseEntry('0:00')).toEqual({ value: '0', numFmt: 'h:mm' })

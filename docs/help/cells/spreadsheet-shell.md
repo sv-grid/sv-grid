@@ -137,8 +137,10 @@ the wiring BETWEEN the parts, done once:
   typed into a cell that already shows percentages is that percentage, so
   `5` in a `0%` cell is 5% rather than 500%, as Excel's automatic percent
   entry has it; `(5)` is -5, the way a statement writes a negative.
-- A date typed the American way, `3/4/2026`, `3/4/26` or `3/4`, is the
-  sheet's `2026-03-04` under a date format, and a clock time, `10:30`,
+- A date typed the American way, `3/4/2026`, `3/4/26` or `3/4`, or with
+  the month spelled out, `4-Mar-2026`, `4 Mar 26`, `March 4, 2026` or
+  `Mar 4` (English month names, in either order), is the sheet's
+  `2026-03-04` under a date format, and a clock time, `10:30`,
   `6:00:00` or `10:30 PM`, is the fraction of a day it is under a time
   format, so the times add up. In arithmetic a date written as text is its
   day number, as a date cell is in Excel: `=A1+1` under a date is the next
@@ -178,7 +180,7 @@ the wiring BETWEEN the parts, done once:
 - A copy leaves out the rows a filter folded away, and the block closes up
   around them, so filtering a log and copying the block gives the rows that
   matched with nothing between them. A row hidden by hand with Hide Rows
-  IS copied, as Excel copies one (the grid's `copyCollapsedRows` prop is
+  IS copied, as Excel copies one (the grid's `includeCollapsedRows` prop is
   how the shell tells the two apart); a hidden column is left out. The
   merges inside the block travel with a paste of everything or of the
   formats, laid over the landing from its corner, and a merged cell copied

@@ -1985,17 +1985,16 @@ export function createSvGridController<
   // so consumers don't see spurious callbacks during re-renders.
   let lastCellRangeSerialized = "";
   $effect(() => {
-    const a = selectionRange.anchor;
-    const f = selectionRange.focus;
-    const ranges: Array<[number, number, number, number]> =
-      a && f
-        ? [[
-            Math.min(a.rowIndex, f.rowIndex),
-            Math.min(a.colIndex, f.colIndex),
-            Math.max(a.rowIndex, f.rowIndex),
-            Math.max(a.colIndex, f.colIndex),
-          ]]
-        : [];
+    // Every rectangle, the committed ones a Ctrl+click added and the
+    // active one last, the order getSelectionRects gives: a consumer's
+    // status bar and shading cover the whole selection, not only its last
+    // range. Depend on selectionRanges so a change to the committed set
+    // re-runs this too.
+    void selectionRanges;
+    const ranges: Array<[number, number, number, number]> = getSelectionRects().map(
+      (r: { minRow: number; minCol: number; maxRow: number; maxCol: number }) =>
+        [r.minRow, r.minCol, r.maxRow, r.maxCol] as [number, number, number, number],
+    );
     const serialized = JSON.stringify(ranges);
     if (serialized === lastCellRangeSerialized) return;
     lastCellRangeSerialized = serialized;

@@ -104,6 +104,27 @@ describe('SvGridApi - getData / getDisplayedRows', () => {
     }
   })
 
+  it('getRowId resolves a display index and a row object, and returns null for the unknown', async () => {
+    const { api, destroy } = await mountGrid()
+    try {
+      // No getRowId prop: the id is the row's index as a string.
+      expect(api.getRowId(0)).toBe('0')
+      expect(api.getRowId(4)).toBe('4')
+      expect(api.getRowId(99)).toBeNull()
+      const third = api.getData()[2]!
+      expect(api.getRowId(third)).toBe('2')
+      expect(api.getRowId({ id: 999, name: 'x', team: 'x', salary: 0 })).toBeNull()
+      // After a sort the display index follows the new order.
+      api.setSort('salary', 'desc')
+      await Promise.resolve()
+      const topId = api.getRowId(0)
+      expect(topId).not.toBeNull()
+      expect(api.getData()[Number(topId)]!.salary).toBe(Math.max(...sampleRows.map((r) => r.salary)))
+    } finally {
+      destroy()
+    }
+  })
+
   it('getDisplayedRows returns the post-pipeline visible rows', async () => {
     const { api, destroy } = await mountGrid()
     try {

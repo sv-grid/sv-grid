@@ -55,6 +55,14 @@ displayed index.
 
 ## Reading by row id
 
+`api.getRowId(rowIndex | row)` gives a row's stable id: the value your
+`getRowId` prop computed, or the row's position when you set no `getRowId`.
+Pass a display index (the space `getActiveCell`, `scrollToRow` and the cell
+methods use) or a row object; it returns `null` for an index or object that
+is not in the grid. The id is what `selectRows`, `toggleRowSelected` and an
+`applyTransaction` remove all take, so this is how you go from "the active
+cell" or "this row object" to an operation keyed by id.
+
 There is no `api.getCellValueByRowId(rowId, columnId)` helper today. If you
 need that, walk `api.getData()`:
 
