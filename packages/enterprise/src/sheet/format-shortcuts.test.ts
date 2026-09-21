@@ -21,7 +21,9 @@ function fakeCmd(cells: unknown[][], active = { row: 0, col: 0 }, ranges: any[] 
     setCellValue: (r: number, c: number, v: unknown) => { cells[r]![c] = v },
     setActiveCell: vi.fn(), setSelection: vi.fn(),
     extendSelection: vi.fn(), scrollIntoView: vi.fn(),
-    startEditing: vi.fn(() => true),
+    // The editor, as far as these tests can see it: a seed is what Enter
+    // would then take, so AutoSum's proposal lands like a write.
+    startEditing: vi.fn((r: number, c: number, seed?: string) => { if (seed !== undefined) cells[r]![c] = seed; return true }),
     batch: <T,>(fn: () => T) => fn(),
     recordUndo: () => {},
   } as unknown as GridCommandContext
@@ -36,7 +38,7 @@ beforeEach(() => {
 })
 
 describe('AutoSum', () => {
-  it('inserts SUM over the run above', () => {
+  it('proposes SUM over the run above in the editor', () => {
     const cells: unknown[][] = [[1], [2], [3], ['']]
     const cmd = fakeCmd(cells, { row: 3, col: 0 })
     expect(handleSheetKey(key({ key: '=', altKey: true }), cmd)).toBe(true)
@@ -158,7 +160,7 @@ describe('formatting shortcuts with a store', () => {
       ['2', 'h:mm AM/PM'],
       ['3', 'yyyy-mm-dd'],
       ['4', '$#,##0.00;($#,##0.00)'],
-      ['5', '0.00%'],
+      ['5', '0%'],
       ['6', '0.00E+00'],
     ]
     for (const [k, expected] of cases) {
@@ -192,7 +194,7 @@ describe('formatting shortcuts with a store', () => {
     handleSheetKey(key({ key: '5', ctrlKey: true }), cmd)
     expect(store.get('r0', 'c0')).toEqual({ strike: true })
     handleSheetKey(key({ key: '5', ctrlKey: true, shiftKey: true }), cmd)
-    expect(store.get('r0', 'c0')?.numFmt).toBe('0.00%')
+    expect(store.get('r0', 'c0')?.numFmt).toBe('0%')
   })
 })
 

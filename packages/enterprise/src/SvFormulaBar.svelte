@@ -384,16 +384,18 @@
          typed with Alt+Enter holds, and would commit "twolines" for a cell
          showing two lines. One row until there are breaks to show. -->
     {#if runs.length > 0}
-      <div class="formula mirror" bind:this={mirror} style:padding-right={gutter ? `${6 + gutter}px` : undefined} aria-hidden="true">{#each runs as run, i (i)}{#if run.colour}<span style:color={run.colour}>{run.text}</span>{:else}{run.text}{/if}{/each}</div>
+      <div class="formula mirror" class:line={!expanded} bind:this={mirror} style:padding-right={gutter ? `${6 + gutter}px` : undefined} aria-hidden="true">{#each runs as run, i (i)}{#if run.colour}<span style:color={run.colour}>{run.text}</span>{:else}{run.text}{/if}{/each}</div>
     {/if}
     <textarea
       bind:this={input}
       class="formula"
       class:coloured={runs.length > 0}
       class:tall={expanded}
+      class:line={!expanded}
       aria-label={t('formula')}
       autocomplete="off"
       spellcheck="false"
+      wrap={expanded ? 'soft' : 'off'}
       {rows}
       value={draft}
       disabled={disabled || active === null}
@@ -406,7 +408,7 @@
       }}
       onkeyup={syncCaret}
       onclick={syncCaret}
-      onscroll={(e) => { if (mirror) mirror.scrollTop = e.currentTarget.scrollTop }}
+      onscroll={(e) => { if (mirror) { mirror.scrollTop = e.currentTarget.scrollTop; mirror.scrollLeft = e.currentTarget.scrollLeft } }}
       onfocus={startEditing}
       onblur={() => { if (editing) commit('blur') }}
       onkeydown={onKeyDown}
@@ -579,6 +581,11 @@
      Excel's does; the mirror follows the scroll from the textarea's
      onscroll. Collapsed, it stays one line with no scrollbar of its own. */
   .formula.tall { overflow-y: auto; }
+  /* Collapsed, the line does not wrap: Excel's one-line bar is cut off at
+     the right and scrolls sideways with the caret, rather than folding a
+     long entry onto a second row that the one-row box then hides. The
+     mirror follows the scroll the same way. */
+  .formula.line { white-space: pre; overflow-x: hidden; }
   .formula:focus-visible {
     outline: 2px solid var(--sg-focus-ring, var(--sg-accent, #107c41));
     outline-offset: -2px;

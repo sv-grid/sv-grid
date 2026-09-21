@@ -172,3 +172,32 @@ test('a plain number typed into a percent cell is that percentage', async ({ pag
   await typeInto(page, 0, 0, '=0.5')
   expect(await shown(page, 0, 0)).toBe('50%')
 })
+
+test('Alt+= proposes the SUM in the cell, and Enter takes it', async ({ page }) => {
+  await open(page)
+  await typeInto(page, 0, 0, '1')
+  await typeInto(page, 1, 0, '2')
+  await typeInto(page, 2, 0, '3')
+  await cell(page, 3, 0).click()
+  await page.keyboard.press('Alt+=')
+  expect(await editorValue(page)).toBe('=SUM(A1:A3)')
+  await page.keyboard.press('Enter')
+  await page.waitForTimeout(200)
+  expect(await shown(page, 3, 0)).toBe('6')
+  // Ctrl+Shift+% is Excel's Percent Style: no decimals.
+  await typeInto(page, 4, 0, '0.425')
+  await cell(page, 4, 0).click()
+  await page.keyboard.press('Control+Shift+5')
+  await page.waitForTimeout(150)
+  expect(await shown(page, 4, 0)).toBe('43%')
+})
+
+test('the collapsed formula bar keeps a long entry on one line', async ({ page }) => {
+  await open(page)
+  await typeInto(page, 0, 0, 'A title long enough to fold onto a second line of the formula bar, which the one-row box would then hide. '.repeat(4).trim())
+  await cell(page, 0, 0).click()
+  const bar = page.locator('.sv-sheet textarea.formula').first()
+  await expect(bar).toHaveAttribute('wrap', 'off')
+  // No hidden second line: the text's height is the box's.
+  expect(await bar.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1)
+})

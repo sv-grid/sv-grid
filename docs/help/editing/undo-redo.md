@@ -112,6 +112,18 @@ cleanly is on the [gap list](../missing-features.md).
 
 `api.undo()` / `api.redo()` + Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z. 200-step bounded history; clearHistory after a successful save resets the baseline.
 
+A grid that shows one of several data sets in turn (a workbook's sheets, a
+list of records opened one at a time) has a question the history cannot
+answer on its own: which data set does the next Ctrl+Z belong to? The rows
+of the second set carry the same ids as the first, so a step recorded on
+one would land on the other. `api.setHistoryTag(tag)` marks every step
+recorded from then on with a value of the consumer's choosing, kept as
+given, and `api.peekUndo()` / `api.peekRedo()` report the tag of the step
+the next undo or redo would take (or `null` when there is none). The
+spreadsheet shell tags steps with the sheet, and when the tag is not the
+sheet showing it switches first, then lets the grid apply the step, which
+is what Excel does.
+
 <div data-docs-demo="86-undo-redo" data-height="460"></div>
 
 ## Try it

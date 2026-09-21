@@ -297,18 +297,30 @@ describe('the buttons drive the real actions', () => {
     expect(item('fmt-percent').isOn!(cmd)).toBe(false)
   })
 
-  it('AutoSum writes a SUM over the run above', () => {
+  it('AutoSum opens the editor on a SUM over the run above, as Excel proposes it', () => {
     const cmd = makeCmd({
       activeCell: { rowIndex: 3, colIndex: 0, columnId: 'a' },
       ranges: [],
       getCellValue: (r: number) => (r < 3 ? 10 : undefined),
     })
     const written: unknown[] = []
+    const startEditing = vi.fn(() => true)
     const spy = makeCmd({
       ...cmd,
+      startEditing,
       setCellValue: (_r: number, _c: number, v: unknown) => { written.push(v) },
     } as never)
     expect(item('autosum').run!(spy)).toBe(true)
+    expect(startEditing).toHaveBeenCalledWith(3, 0, '=SUM(A1:A3)')
+    expect(written).toEqual([])
+    // A selection wider than one cell has the sum written outright.
+    const wide = makeCmd({
+      ...cmd,
+      ranges: [[0, 0, 3, 0]],
+      startEditing,
+      setCellValue: (_r: number, _c: number, v: unknown) => { written.push(v) },
+    } as never)
+    expect(item('autosum').run!(wide)).toBe(true)
     expect(written[0]).toBe('=SUM(A1:A3)')
   })
 

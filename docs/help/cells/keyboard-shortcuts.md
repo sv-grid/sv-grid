@@ -63,7 +63,7 @@ the bottom of the sheet when it grows sideways.
 | Ctrl/Cmd + Shift + ; | Stamp the current time. |
 | Ctrl/Cmd + ' | Copy the cell above, unchanged. |
 | Ctrl/Cmd + Shift + " | Copy the value of the cell above: what a formula there shows, as a number or text. |
-| Alt + = | AutoSum the run above, or to the left. |
+| Alt + = | AutoSum the run above, or to the left. With one cell selected the `=SUM(...)` is proposed in the cell's editor, as Excel's is, so the range can be corrected before Enter takes it; a wider selection has it written outright. |
 | F4 (while editing) | Turn the reference at the caret through `$A$1`, `A$1`, `$A1`, `A1`; a range turns both ends. Also in the formula bar. |
 | Alt + Enter (while editing) | A line break in the cell, which turns on Wrap Text. |
 | Enter after a run of Tabs | Down a row and back to the column the run began in. |

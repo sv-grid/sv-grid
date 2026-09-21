@@ -312,7 +312,7 @@ describe('the presets behind Ctrl+Shift+1..6', () => {
     expect(f(1234.5, FORMAT_PRESETS.number)).toBe('1,234.50')
     expect(f(1234.5, FORMAT_PRESETS.currency)).toBe('$1,234.50')
     expect(f(-1234.5, FORMAT_PRESETS.currency)).toBe('($1,234.50)')
-    expect(f(0.425, FORMAT_PRESETS.percent)).toBe('42.50%')
+    expect(f(0.425, FORMAT_PRESETS.percent)).toBe('43%')
     expect(f(12345, FORMAT_PRESETS.scientific)).toBe('1.23E+04')
     expect(f(42, FORMAT_PRESETS.general)).toBe('42')
   })

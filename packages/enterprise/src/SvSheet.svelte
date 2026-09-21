@@ -558,7 +558,10 @@
       defaultWidth: columnWidth,
       heights: state.heights,
       defaultHeight: rowHeight,
-      hidden: state.hidden,
+      // The rows the AutoFilter folds away are as hidden as the ones hidden by
+      // hand: Excel prints what the sheet shows, and a filtered list printed
+      // with its folded rows back in is not the list on screen.
+      hidden: { rows: new Set([...state.hidden.rows, ...state.filterHidden]), cols: state.hidden.cols },
       merges: state.merges,
       setup: state.pageSetup,
       objects: printObjects(name),
@@ -2311,8 +2314,14 @@
     const object = objectsNow().find((o) => o.id === drag.id)
     const box = objectBoxes[drag.id]
     if (!object || !box) return
+    // A click that selects the object is not a move: nothing goes into the
+    // history, or the next Ctrl+Z would seem to do nothing.
+    if (event.clientX === drag.x && event.clientY === drag.y) return
     if (drag.kind === 'resize') {
-      replaceObject({ ...copyObject(object), anchor: { ...object.anchor, width: Math.round(box.width), height: Math.round(box.height) } })
+      const width = Math.round(box.width)
+      const height = Math.round(box.height)
+      if (width === object.anchor.width && height === object.anchor.height) return
+      replaceObject({ ...copyObject(object), anchor: { ...object.anchor, width, height } })
       return
     }
     // Moved: the cell now under the object's corner becomes its anchor, and
@@ -2334,6 +2343,8 @@
     } else {
       anchor.dx = Math.round(anchor.dx + (box.left - (objectBoxes[drag.id]?.left ?? box.left)))
     }
+    const o = object.anchor
+    if (anchor.row === o.row && anchor.col === o.col && anchor.dx === o.dx && anchor.dy === o.dy) return
     replaceObject({ ...copyObject(object), anchor })
   }
 
@@ -2615,6 +2626,10 @@
       if (cmd) applyFreeze(cmd, doc.get(wb.active).freeze)
     }
     targetsBoundTo = wb.active
+    // Every step recorded from here on is marked with the sheet it is made
+    // on (its document entry, which survives a rename), so Ctrl+Z can go
+    // back to that sheet before the grid applies it. See undoRedo.
+    api?.setHistoryTag(doc.get(wb.active))
     const store = storeFor()
     setFormatTarget({
       store, lookup,
@@ -3061,6 +3076,48 @@
     return api ? api.getCommandContext() : null
   }
 
+  // --- undo across sheets -----------------------------------------------------
+  /** The sheet a history step was made on, from the tag it carries. */
+  function sheetOfTag(tag: unknown): string | null {
+    if (!tag) return null
+    return wb.sheets.find((name) => doc.get(name) === tag) ?? null
+  }
+  /**
+   * Whether the next Ctrl+Z (or Ctrl+Y) belongs to a sheet other than the
+   * one showing. The grid's history knows rows and columns, not sheets:
+   * applied as it stands, a step made on Orders would land on the same cell
+   * of Summary, since both sheets' rows carry the same ids.
+   */
+  function historyIsElsewhere(direction: 'undo' | 'redo'): boolean {
+    const next = direction === 'undo' ? api?.peekUndo() : api?.peekRedo()
+    if (!next) return false
+    const sheet = sheetOfTag(next.tag)
+    return sheet !== null && sheet.toLowerCase() !== wb.active.toLowerCase()
+  }
+  /**
+   * Excel's Ctrl+Z: a change made on another sheet is undone THERE. The
+   * sheet it was made on comes up first, then the grid, now showing that
+   * sheet's rows, applies the step, so the user sees the cell change back.
+   * A step on the sheet showing takes the grid's own path.
+   */
+  async function undoRedo(direction: 'undo' | 'redo'): Promise<boolean> {
+    const a = api
+    if (!a) return false
+    const next = direction === 'undo' ? a.peekUndo() : a.peekRedo()
+    if (!next) return false
+    const sheet = sheetOfTag(next.tag)
+    if (sheet !== null && sheet.toLowerCase() !== wb.active.toLowerCase()) {
+      // As a tab click switches: the workbook, then the repaint that
+      // rebinds the per-sheet targets and hands the grid that sheet's rows.
+      wb.setActive(sheet)
+      bump()
+      await tick()
+    }
+    const done = direction === 'undo' ? a.undo() : a.redo()
+    cmdOf()?.focus()
+    return done
+  }
+
   /** Ribbon actions this shell can answer without a dialog. */
   function handleAction(action: RibbonActionId, context: GridCommandContext) {
     switch (action) {
@@ -3385,6 +3442,8 @@
   function delegate(action: RibbonActionId, context: GridCommandContext) {
     if (onAction?.(action, context) === true) return
     switch (action) {
+      case 'undo': void undoRedo('undo'); return
+      case 'redo': void undoRedo('redo'); return
       case 'find-replace': findOpen = true; return
       case 'paste-special': void openPasteSpecial(); return
       case 'format-cells': formatCellsOpen = true; return
@@ -3941,6 +4000,19 @@
         event.preventDefault()
         event.stopPropagation()
         cutSelection(cmd)
+        return
+      }
+    }
+    // Ctrl+Z and Ctrl+Y for a step made on another sheet: the grid would
+    // apply it to this sheet's cells, so the sheet takes the key and goes
+    // there first. A step on this sheet is left to the grid, as before.
+    if ((event.ctrlKey || event.metaKey) && !event.altKey && !editorOf(event.target)) {
+      const key = event.key.toLowerCase()
+      const direction = key === 'z' ? (event.shiftKey ? 'redo' : 'undo') : key === 'y' && !event.shiftKey ? 'redo' : null
+      if (direction && historyIsElsewhere(direction)) {
+        event.preventDefault()
+        event.stopPropagation()
+        void undoRedo(direction)
         return
       }
     }
@@ -5629,6 +5701,7 @@
     editOnSecondClick={false}
     onApiReady={(next: SheetApi) => {
       api = next
+      next.setHistoryTag(doc.get(wb.active))
       // A document the consumer built (createSheetDocument({ state }), or
       // one seeded with widths, hidden lines, a filter, frozen panes) shows
       // its state from the first paint: the grid has just come up, so its
@@ -5680,7 +5753,18 @@
         targetsBoundTo = to
         registerSheetTargets()
       }}
-      onRemove={(name) => doc.remove(name)}
+      onRemove={(name) => {
+        doc.remove(name)
+        // Excel's Delete Sheet empties the undo list: the steps made on
+        // the sheet have nowhere to go back to.
+        api?.clearHistory()
+      }}
+      onReturnFocus={() => {
+        // A tab or a button of the strip has the focus now; Excel's cursor
+        // stays on the cells, so the arrow keys, Shift+F11 and Ctrl+Z work
+        // on the sheet that just came up.
+        void tick().then(() => cmdOf()?.focus())
+      }}
       hidden={hiddenSheets}
       onHide={hideSheet}
       onUnhide={unhideSheet}

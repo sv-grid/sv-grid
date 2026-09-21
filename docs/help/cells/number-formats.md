@@ -218,7 +218,11 @@ formatWithPattern(0.000123, '##0.0E+0')// '123.0E-6'
 
 `FORMAT_PRESETS` holds what `Ctrl+Shift+1` through `6` apply: `number`, `time`,
 `date`, `currency`, `percent`, `scientific`, plus `general` and `accounting`,
-which the ribbon's `$` button applies, as Excel's does.
+which the ribbon's `$` button applies, as Excel's does. `percent` is `0%`,
+Excel's Percent Style: `Ctrl+Shift+%` and the `%` button show 0.425 as
+`43%`. The ribbon's Number Format combo is the one place that differs, as it
+does in Excel: its Percentage entry applies `0.00%`, from
+`FORMAT_CATEGORY_PATTERNS`.
 
 `accountingPattern(symbol, decimals)` spells an accounting pattern for any
 symbol (an empty one is Excel's "None"), and `accountingParts` reads one

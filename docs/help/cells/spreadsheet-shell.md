@@ -59,7 +59,22 @@ the wiring BETWEEN the parts, done once:
 - The tab strip is told when a shortcut moved the active sheet, so
   `Ctrl+PageUp` and the tabs cannot disagree.
 - AutoSum measures its run against evaluated values, so a column of subtotals
-  counts as numbers rather than as `"=SUM(...)"` strings.
+  counts as numbers rather than as `"=SUM(...)"` strings. With one cell
+  selected it proposes the `=SUM(...)` in the cell's editor, as Excel's
+  does, so a guess that stopped a row short is corrected before Enter takes
+  it; a wider selection has the sum written outright.
+- Ctrl+Z and Ctrl+Y, and the ribbon's Undo and Redo, go to the sheet the
+  change was made on: a step made on Orders and undone from Summary brings
+  Orders up and changes the cell back there, as Excel does, rather than
+  landing on Summary's cell of the same address. Every step the grid
+  records is marked with its sheet for this (`api.setHistoryTag` and
+  `api.peekUndo` on the grid), the mark follows a rename, and Delete
+  Sheet empties the undo list, as Excel's does. A click that selects a
+  chart or a picture is not a step; a drag that moves one is.
+- A click on a sheet tab, on the strip's add button or on an entry of the
+  tab menu leaves the keyboard on the cells, so the arrow keys, Ctrl+Z and
+  Shift+F11 work on the sheet that just came up. The arrow keys inside the
+  strip keep the focus on the tabs, as a tablist's do.
 - Formats are kept per sheet, as they are in Excel. Bold on Summary!C5 says
   nothing about Orders!C5, and the store follows a sheet through a rename.
 - The Name Box lists the workbook's defined names. Pick one and the shell
@@ -530,7 +545,8 @@ and Print Headings. Each change is one undo and reports
 File > Print (Ctrl+P) lays the sheet out as one HTML document and hands it
 to the browser's own print engine, so fonts, CJK and RTL come out right
 and nothing is bundled: the print area or the used range, column widths
-and row heights as the sheet shows them, hidden lines left out, merges as
+and row heights as the sheet shows them, hidden lines and the rows a filter
+folds away left out, merges as
 spans, every cell as it shows with its format and its conditional style,
 the title rows repeated on each page, the sparklines drawn in their cells
 and the charts and pictures hung from theirs, a table's header and banding
@@ -1509,8 +1525,10 @@ leftwards. The arrow keys follow the reading order with it, so on a
 right-to-left ribbon ArrowLeft is the next tab.
 
 The two bands that cannot fit a phone pan with a finger rather than
-clipping: the ribbon scrolls sideways over its groups, and the cells pan
-in both axes. A tap picks a cell, a second tap on the same cell opens its
+clipping: the ribbon scrolls sideways over its groups and over its tab
+labels, and the cells pan in both axes. The formula bar keeps a long entry
+on one line, cut off at the right and scrolling with the caret, until the
+chevron expands it; a one-row box that wrapped would only hide the rest. A tap picks a cell, a second tap on the same cell opens its
 editor, and the formula bar is where the address and the formula are read
 and typed.
 

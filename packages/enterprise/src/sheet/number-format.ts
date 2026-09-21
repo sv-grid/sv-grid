@@ -744,7 +744,8 @@ export function formatWithPattern(value: unknown, pattern: string): string {
   return compileNumberFormat(pattern).format(value).text
 }
 
-/** The presets behind Ctrl+Shift+1 through 6. */
+/** The presets behind Ctrl+Shift+1 through 6 and the ribbon's $ % , buttons.
+ *  Percent is Excel's Percent Style, no decimals: 0.425 reads 43%. */
 export const FORMAT_PRESETS = {
   general: 'General',
   number: '#,##0.00',
@@ -752,9 +753,17 @@ export const FORMAT_PRESETS = {
   date: 'yyyy-mm-dd',
   currency: '$#,##0.00;($#,##0.00)',
   accounting: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)',
-  percent: '0.00%',
+  percent: '0%',
   scientific: '0.00E+00',
 } as const
+
+/** What the ribbon's Number Format combo applies for a category. Excel's
+ *  "Percentage" there carries two decimals where its % button carries none;
+ *  the other entries are the presets. */
+export const FORMAT_CATEGORY_PATTERNS: Record<keyof typeof FORMAT_PRESETS, string> = {
+  ...FORMAT_PRESETS,
+  percent: '0.00%',
+}
 
 /** Excel's Special category: fixed-shape numbers laid into a mask. */
 export const SPECIAL_FORMATS = {
@@ -789,7 +798,7 @@ export type FormatPresetName = keyof typeof FORMAT_PRESETS
 /**
  * Which of Excel's categories a pattern belongs to, with the decimals and
  * separator it carries, so the ribbon's combo can say "Percentage" for a
- * cell holding `0%` (a typed 12%) as well as for the preset's `0.00%`, and
+ * cell holding `0%` (a typed 12%) as well as for the combo's `0.00%`, and
  * Format Cells can open on the right category. A pattern that is none of
  * them is 'custom'.
  */

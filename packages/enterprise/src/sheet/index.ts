@@ -169,7 +169,7 @@ export {
 } from './shortcuts'
 
 export {
-  compileNumberFormat, formatWithPattern, FORMAT_PRESETS, SPECIAL_FORMATS, formatCategory,
+  compileNumberFormat, formatWithPattern, FORMAT_PRESETS, FORMAT_CATEGORY_PATTERNS, SPECIAL_FORMATS, formatCategory,
   accountingPattern, accountingParts,
   type CompiledFormat, type FormatPresetName, type SpecialFormatName,
 } from './number-format'

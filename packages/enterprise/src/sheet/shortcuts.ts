@@ -550,7 +550,13 @@ export function preset(name: FormatPresetName): SheetCommand {
   return (cmd) => applyFormat(cmd, { numFmt: FORMAT_PRESETS[name] })
 }
 
-/** Alt+=. Inserts =SUM(range) over the run Excel would guess. */
+/**
+ * Alt+=. Proposes =SUM(range) over the run Excel would guess. With one cell
+ * selected the formula is opened in the cell's editor rather than written,
+ * as Excel's AutoSum does: the guess is often a row short, and the editor is
+ * where it gets corrected before Enter takes it. A wider selection has the
+ * sum written into the active cell outright.
+ */
 export const autoSum: SheetCommand = (cmd) => {
   const active = cmd.activeCell
   if (!active) return false
@@ -560,11 +566,11 @@ export const autoSum: SheetCommand = (cmd) => {
   const [minRow, minCol, maxRow, maxCol] = range
   const ref = (r: number, c: number) =>
     formatA1({ col: c, colAbs: false, row: r, rowAbs: false, sheet: null })
-  cmd.setCellValue(
-    active.rowIndex,
-    active.colIndex,
-    `=SUM(${ref(minRow, minCol)}:${ref(maxRow, maxCol)})`,
-  )
+  const formula = `=SUM(${ref(minRow, minCol)}:${ref(maxRow, maxCol)})`
+  const last = cmd.ranges[cmd.ranges.length - 1]
+  const oneCell = !last || (last[0] === last[2] && last[1] === last[3])
+  if (oneCell && cmd.startEditing(active.rowIndex, active.colIndex, formula)) return true
+  cmd.setCellValue(active.rowIndex, active.colIndex, formula)
   return true
 }
 

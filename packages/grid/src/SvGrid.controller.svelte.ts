@@ -515,7 +515,11 @@ export function createSvGridController<
   // previously declared it twice and open-coded the push in three places.
   type HistoryStep = SharedHistoryStep
   const UNDO_LIMIT = 200
-  let history    = $state<HistoryStep[]>([])
+  // Raw: pushHistory always assigns a fresh array and nothing renders from a
+  // step, so deep proxies would cost 200 wrapped objects for nothing. It also
+  // keeps a consumer's `tag` the object it passed, which a proxy would not be:
+  // the sheet shell compares tags by identity.
+  let history    = $state.raw<HistoryStep[]>([])
   /** Index in `history` of the LAST applied step. -1 means "nothing applied".
    *  undo() decrements; redo() increments. New edits truncate everything
    *  past the pointer (the classic "you can't redo after editing" rule). */
@@ -528,6 +532,9 @@ export function createSvGridController<
    *  $state: it is written and read synchronously inside a single call and
    *  nothing renders from it. */
   let historyGroupId: string | undefined = undefined
+  /** The consumer's mark for the steps recorded from now on (`api.setHistoryTag`);
+   *  not $state for the same reason. */
+  let historyTag: unknown = undefined
 
   // ---- Hover tooltip (custom popover, not native title=) ---------------
   // Triggered by per-column `tooltip` field OR per-cell `notes` prop.
@@ -4437,6 +4444,8 @@ export function createSvGridController<
     set historyPtr(v) { historyPtr = v as never; },
     get historyGroupId() { return historyGroupId; },
     set historyGroupId(v) { historyGroupId = v as never; },
+    get historyTag() { return historyTag; },
+    set historyTag(v) { historyTag = v; },
     get historyVersion() { return historyVersion; },
     set historyVersion(v) { historyVersion = v as never; },
     get tooltip() { return tooltip; },

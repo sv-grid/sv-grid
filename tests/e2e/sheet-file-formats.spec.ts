@@ -132,4 +132,29 @@ test.describe('a filtered sheet in a file', () => {
     }
   })
 }
+
+  test('a filtered sheet prints without the rows the filter folds away', async ({ page }) => {
+    await open(page, '464-ticket-log-autofilter')
+    await expect(page.locator('.sv-sheet .status')).toContainText('34 of 40 records found')
+    // File > Print writes the page into a window it opens; a stand-in
+    // collects the markup instead of printing it.
+    await page.evaluate(() => {
+      const w = window as unknown as { __printed: string; open: () => unknown }
+      w.__printed = ''
+      w.open = () => ({
+        document: { open() {}, write(html: string) { w.__printed += html }, close() {} },
+        focus() {}, print() {}, close() {}, addEventListener() {},
+      })
+    })
+    await page.locator('.sv-ribbon .tabs button[role="tab"]', { hasText: 'File' }).first().click()
+    await page.waitForTimeout(300)
+    await page.locator('.sv-ribbon .band:not(.measure) button[title^="Print"]').first().click()
+    await page.waitForTimeout(800)
+    const html = await page.evaluate(() => (window as unknown as { __printed: string }).__printed)
+    // 34 tickets under one header row; the six Closed ones stay out, so
+    // the only "Closed" on the page is the legend's label under the log.
+    expect((html.match(/<tr\b/g) ?? []).length).toBeLessThanOrEqual(40)
+    expect((html.match(/>Closed</g) ?? []).length).toBe(1)
+    expect(html).toContain('>Open<')
+  })
 })

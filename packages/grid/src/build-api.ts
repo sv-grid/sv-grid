@@ -26,7 +26,7 @@ import {
   columnDefMatchesId,
 } from "./cell-values";
 import { hasAdvancedFilterEngine } from "./advanced-filter.svelte";
-import { undoHistory, redoHistory } from "./history";
+import { undoHistory, redoHistory, peekUndoHistory, peekRedoHistory } from "./history";
 import { buildCommandContext } from "./command-context";
 
 type OrientedRange = {
@@ -709,6 +709,9 @@ export function createGridApi<
       canUndo() { void ctx.historyVersion; return ctx.historyPtr >= 0 },
       canRedo() { void ctx.historyVersion; return ctx.historyPtr < ctx.history.length - 1 },
       clearHistory() { ctx.history = []; ctx.historyPtr = -1; ctx.historyVersion += 1 },
+      setHistoryTag(tag) { ctx.historyTag = tag },
+      peekUndo() { void ctx.historyVersion; return peekUndoHistory(ctx) },
+      peekRedo() { void ctx.historyVersion; return peekRedoHistory(ctx) },
       // ---- Find
       openFind()  { ctx.findOpen = true },
       closeFind() { ctx.findOpen = false; ctx.findQuery = '' },

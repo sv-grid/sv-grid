@@ -5,6 +5,8 @@ import {
   pushHistory,
   runHistoryGroup,
   nextGroupId,
+  peekUndoHistory,
+  peekRedoHistory,
   type HistoryStep,
 } from './history'
 
@@ -192,5 +194,36 @@ describe('runHistoryGroup', () => {
   it('returns the body result', () => {
     const { ctx } = makeCtx()
     expect(runHistoryGroup(ctx, () => 42)).toBe(42)
+  })
+})
+
+describe('tags', () => {
+  it('stamps the ambient tag on every step recorded while it is set, grouped or not', () => {
+    const { ctx } = makeCtx()
+    const sheet = { name: 'Orders' }
+    pushHistory(ctx, [step(1)])
+    ;(ctx as { historyTag?: unknown }).historyTag = sheet
+    pushHistory(ctx, [step(2)])
+    runHistoryGroup(ctx, () => { pushHistory(ctx, [step(3)]); pushHistory(ctx, [step(4)]) })
+    ;(ctx as { historyTag?: unknown }).historyTag = undefined
+    pushHistory(ctx, [step(5)])
+    expect(ctx.history.map((s) => s.tag)).toEqual([undefined, sheet, sheet, sheet, undefined])
+    expect(ctx.history[2]!.groupId).toBe(ctx.history[3]!.groupId)
+  })
+
+  it('peeks at the step the next undo or redo would take', () => {
+    const { ctx } = makeCtx()
+    ;(ctx as { historyTag?: unknown }).historyTag = 'Summary'
+    pushHistory(ctx, [step(1)])
+    ;(ctx as { historyTag?: unknown }).historyTag = 'Orders'
+    runHistoryGroup(ctx, () => { pushHistory(ctx, [step(2)]); pushHistory(ctx, [step(3)]) })
+    expect(peekUndoHistory(ctx)).toEqual({ tag: 'Orders' })
+    expect(peekRedoHistory(ctx)).toBeNull()
+    undoHistory(ctx)
+    expect(peekUndoHistory(ctx)).toEqual({ tag: 'Summary' })
+    expect(peekRedoHistory(ctx)).toEqual({ tag: 'Orders' })
+    undoHistory(ctx)
+    expect(peekUndoHistory(ctx)).toBeNull()
+    expect(peekRedoHistory(ctx)).toEqual({ tag: 'Summary' })
   })
 })

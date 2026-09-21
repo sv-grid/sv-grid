@@ -35,7 +35,7 @@ export { FONT_SIZES, applyBorders, type BorderPreset } from './shortcuts'
 import { insertRows, deleteRows, getStructureTarget } from './structure'
 import { fillDown, fillRight, targetRect } from './commands'
 import type { Rect } from './navigate'
-import { FORMAT_PRESETS, formatCategory, accountingParts, accountingPattern, type FormatPresetName } from './number-format'
+import { FORMAT_PRESETS, FORMAT_CATEGORY_PATTERNS, formatCategory, accountingParts, accountingPattern, type FormatPresetName } from './number-format'
 import type { CellFormatEntry } from './format-store'
 import type { RibbonIconName } from './ribbon-icons'
 import { ALL_COLOURS } from './palette'
@@ -166,6 +166,8 @@ export type RibbonActionId =
   | 'print-headings'
   | 'paste-special'
   | 'cut'
+  | 'undo'
+  | 'redo'
   | 'format-cells'
   | 'find-replace'
   | 'insert-function'
@@ -783,7 +785,7 @@ const HOME: RibbonTab = {
             return category === 'custom' || category === 'special' ? fmt ?? 'general' : category
           },
           run: (cmd, value) =>
-            applyFormat(cmd, { numFmt: FORMAT_PRESETS[value as FormatPresetName] }),
+            applyFormat(cmd, { numFmt: FORMAT_CATEGORY_PATTERNS[value as FormatPresetName] }),
         }),
         // Excel's $ button applies Accounting; Ctrl+Shift+4 is Currency.
         small(2, presetItem('fmt-currency', '$', 'Accounting Number Format', 'accounting')),
@@ -891,15 +893,17 @@ const HOME: RibbonTab = {
         // Undo and Redo open the group as a column of two small icons, the
         // way Cut and Copy stand beside Paste; the owner wanted them here
         // rather than in a group of their own.
+        // Raised rather than run: a step made on another sheet is undone
+        // THERE, which means switching sheets first, and only the shell can.
         small(1, {
           id: 'undo', label: 'Undo', title: 'Undo', keys: 'Ctrl+Z', icon: 'undo', kind: 'button',
           isEnabled: (cmd) => cmd.api.canUndo(),
-          run: (cmd) => cmd.api.undo(),
+          emits: 'undo',
         }),
         small(2, {
           id: 'redo', label: 'Redo', title: 'Redo', keys: 'Ctrl+Y', icon: 'redo', kind: 'button',
           isEnabled: (cmd) => cmd.api.canRedo(),
-          run: (cmd) => cmd.api.redo(),
+          emits: 'redo',
         }),
         small(1, {
           id: 'autosum', label: 'AutoSum', title: 'AutoSum', keys: 'Alt+=',

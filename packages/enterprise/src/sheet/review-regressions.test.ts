@@ -85,7 +85,7 @@ describe('shifted bindings match the key that is actually pressed', () => {
     const store = createFormatStore()
     setFormatTarget({ store, lookup: at })
     expect(handleSheetKey(realShiftEvent('%', 'Digit5'), cmd())).toBe(true)
-    expect(store.get('r0', 'c0')?.numFmt).toBe('0.00%')
+    expect(store.get('r0', 'c0')?.numFmt).toBe('0%')
   })
 
   it('fires each of Ctrl+Shift+1 through 6', () => {
@@ -94,7 +94,7 @@ describe('shifted bindings match the key that is actually pressed', () => {
       ['@', 'Digit2', 'h:mm AM/PM'],
       ['#', 'Digit3', 'yyyy-mm-dd'],
       ['$', 'Digit4', '$#,##0.00;($#,##0.00)'],
-      ['%', 'Digit5', '0.00%'],
+      ['%', 'Digit5', '0%'],
       ['^', 'Digit6', '0.00E+00'],
     ]
     for (const [key, code, expected] of pairs) {
