@@ -55,6 +55,7 @@ function render(node: Node): string {
     case 'bool': return node.v ? 'TRUE' : 'FALSE'
     case 'err': return node.v
     case 'ref': return node.ref.col < 0 || (node.ref.row ?? 0) < 0 ? '#REF!' : formatA1(node.ref)
+    case 'spill': return node.ref.col < 0 || (node.ref.row ?? 0) < 0 ? '#REF!' : `${formatA1(node.ref)}#`
     case 'range': {
       if (isBroken(node.from) || isBroken(node.to)) return '#REF!'
       // A whole-column range prints as A:C, not A1:C.
@@ -127,6 +128,7 @@ export function translateFormula(text: unknown, dRow: number, dCol: number): unk
   }
   const moved = mapNode(ast, (n) => {
     if (n.k === 'ref') return { ...n, ref: translateRef(n.ref, dRow, dCol) }
+    if (n.k === 'spill') return { ...n, ref: translateRef(n.ref, dRow, dCol) }
     if (n.k === 'range') {
       return { ...n, from: translateRef(n.from, dRow, dCol), to: translateRef(n.to, dRow, dCol) }
     }
@@ -169,6 +171,7 @@ export function transposeFormula(
   }
   const moved = mapNode(ast, (n) => {
     if (n.k === 'ref') return { ...n, ref: turn(n.ref) }
+    if (n.k === 'spill') return { ...n, ref: turn(n.ref) }
     if (n.k === 'range') {
       // A turned range may come out with its corners swapped; a range is
       // spelled top-left to bottom-right, so put them back in order.
@@ -243,6 +246,10 @@ export function repointReferences(text: unknown, move: CellMove, self: string | 
   })
   const moved = mapNode(ast, (n) => {
     if (n.k === 'ref') {
+      if (!names(n.ref.sheet) || !inside(move, n.ref.row, n.ref.col)) return n
+      return { ...n, ref: landed(n.ref) }
+    }
+    if (n.k === 'spill') {
       if (!names(n.ref.sheet) || !inside(move, n.ref.row, n.ref.col)) return n
       return { ...n, ref: landed(n.ref) }
     }
@@ -324,6 +331,7 @@ export function renameSheetReferences(text: unknown, from: string, to: string): 
   }
   const moved = mapNode(ast, (n) => {
     if (n.k === 'ref') return { ...n, ref: swap(n.ref) }
+    if (n.k === 'spill') return { ...n, ref: swap(n.ref) }
     if (n.k === 'range') return { ...n, from: swap(n.from), to: swap(n.to) }
     return n
   })
@@ -405,6 +413,13 @@ export function fixupReferences(text: unknown, edit: StructuralEdit, scope?: Edi
 
   const moved = mapNode(ast, (n) => {
     if (n.k === 'ref') {
+      if (!touched(n.ref.sheet)) return n
+      const next = fixRef(n.ref, edit)
+      return next === null ? { k: 'ref' as const, ref: broken } : { ...n, ref: next }
+    }
+    if (n.k === 'spill') {
+      // The anchor moving carries the spill with it; the anchor being
+      // deleted takes the whole array reference to #REF!.
       if (!touched(n.ref.sheet)) return n
       const next = fixRef(n.ref, edit)
       return next === null ? { k: 'ref' as const, ref: broken } : { ...n, ref: next }

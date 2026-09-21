@@ -62,6 +62,14 @@ export type Node =
   /** A single cell. `ref.row` is never null here; a column-only reference
    *  parses as a range instead. */
   | { k: 'ref'; ref: CellRef }
+  /**
+   * The spilled-range operator, `A1#`: the rectangle a dynamic array
+   * anchored at `ref` currently spills into. Like a table reference, it is
+   * NOT resolved to a range here - the rectangle depends on how far the
+   * array spills right now, which changes as the array grows, so it is
+   * resolved against the workbook at evaluation. `ref.row` is never null.
+   */
+  | { k: 'spill'; ref: CellRef }
   /** A rectangle. Either end's row may be null, meaning a whole-column ref
    *  that runs to the last used row of the sheet. */
   | { k: 'range'; from: CellRef; to: CellRef }

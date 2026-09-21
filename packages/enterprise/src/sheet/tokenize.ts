@@ -28,6 +28,8 @@ export type Token =
   | { t: 'bool'; v: boolean }
   | { t: 'err'; v: SheetError }
   | { t: 'ref'; ref: CellRef }
+  /** The spilled-range operator `A1#`: the anchor a spill is read from. */
+  | { t: 'spill'; ref: CellRef }
   | { t: 'range'; from: CellRef; to: CellRef }
   | { t: 'name'; v: string }
   | { t: 'fn'; v: string }
@@ -182,6 +184,11 @@ export function tokenize(src: string): Token[] {
       out.push({ t: 'name', v: word })
       return
     }
+    // `A1#` is the spilled-range operator: the `#` binds to the reference
+    // right before it, with no space between, and names the whole array the
+    // cell anchors. A `#` that starts an error literal is handled elsewhere;
+    // one sitting immediately after a cell is only ever this.
+    if (src[i] === '#') { i += 1; out.push({ t: 'spill', ref: left }); return }
     out.push({ t: 'ref', ref: left })
   }
 

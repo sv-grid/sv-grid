@@ -384,6 +384,16 @@ export function createWorkbook(
         return compute(name, row, col)
       },
       lastRow: (sheet) => Math.max(rowCount(resolveSheetName(sheet, self)) - 1, 0),
+      spillRect: (sheet, row, col) => {
+        // The array anchored here, computed first so a formula that reads
+        // `A1#` sees the spill even on the pass that establishes it. Only an
+        // anchor has an entry; a covered cell or a plain value gives null,
+        // which the operator reads as #REF!.
+        const name = resolveSheetName(sheet, self)
+        compute(name, row, col)
+        const rect = spills.get(cellKey(name, row, col))
+        return rect ? [rect.r1, rect.c1, rect.r2, rect.c2] as const : null
+      },
       resolveNameNode: (name) => names.resolve(name),
       findTable: (name) => rawTables.get(name),
       tableAt: (sheet, row, col) => rawTables.at(resolveSheetName(sheet, self), row, col),
@@ -705,6 +715,15 @@ export function createWorkbook(
             } catch {
               return null
             }
+          },
+          // The cells a spilled-range operator covers right now. The anchor
+          // has just been computed by this same pass, so its rectangle is on
+          // record; reading it here (rather than recomputing) keeps the
+          // dependency extraction free of side effects.
+          (node) => {
+            const name = resolveSheetName(node.ref.sheet, sheet)
+            const rect = spills.get(cellKey(name, node.ref.row ?? 0, node.ref.col))
+            return rect ? { sheet: name, r1: rect.r1, c1: rect.c1, r2: rect.r2, c2: rect.c2 } : null
           },
         ))
       } else {

@@ -121,3 +121,21 @@ test('the ribbon\'s Insert arrow inserts a column from a cell, and the cell menu
   await page.waitForTimeout(300)
   await expect(cell(page, 4, 0).locator('.sheet-cell.linked')).toHaveCount(0)
 })
+
+test('the spilled-range operator sums a dynamic array and follows it as it grows', async ({ page }) => {
+  // =SUM(E1#) reads the whole array E1 spills, the way Excel's does, and
+  // grows with it because the anchor is always a precedent. On 2026-09-21
+  // the operator would not parse: =SUM(E1#) was #PARSE!.
+  await open(page)
+  await typeInto(page, 0, 4, '=SEQUENCE(3)')     // E1 spills 1,2,3 down E1:E3
+  expect(await shown(page, 2, 4)).toBe('3')
+  await typeInto(page, 0, 6, '=SUM(E1#)')        // G1
+  expect(await shown(page, 0, 6)).toBe('6')
+  await typeInto(page, 0, 4, '=SEQUENCE(5)')     // grow the array
+  expect(await shown(page, 0, 6)).toBe('15')
+  await typeInto(page, 0, 4, '=SEQUENCE(2)')     // shrink it
+  expect(await shown(page, 0, 6)).toBe('3')
+  // A cell that anchors no array is #REF!, not a silent wrong answer.
+  await typeInto(page, 0, 7, '=SUM(H10#)')       // H1 reads empty H10
+  expect(await shown(page, 0, 7)).toBe('#REF!')
+})

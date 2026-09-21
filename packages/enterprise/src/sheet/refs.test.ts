@@ -170,6 +170,29 @@ describe('translateFormula', () => {
   })
 })
 
+describe('the spilled-range operator survives rewriting', () => {
+  it('round-trips through the AST', () => {
+    expect(formatFormula(parseFormula('=SUM(A1#)'))).toBe('=SUM(A1#)')
+    expect(formatFormula(parseFormula('=A1#'))).toBe('=A1#')
+    expect(formatFormula(parseFormula('=$A$1#'))).toBe('=$A$1#')
+    expect(formatFormula(parseFormula('=Orders!B2#'))).toBe('=Orders!B2#')
+  })
+
+  it('shifts the anchor on a fill, keeping the operator', () => {
+    expect(t('=SUM(A1#)', 1, 0)).toBe('=SUM(A2#)')
+    expect(t('=A1#*2', 0, 3)).toBe('=D1#*2')
+    // An absolute anchor stays put.
+    expect(t('=$A$1#', 5, 5)).toBe('=$A$1#')
+  })
+
+  it('moves with an insert and breaks when the anchor is deleted', () => {
+    const insert = (at: number, count = 1) => ({ kind: 'insertRows' as const, at, count })
+    const remove = (at: number, count = 1) => ({ kind: 'deleteRows' as const, at, count })
+    expect(fixupReferences('=SUM(A5#)', insert(2))).toBe('=SUM(A6#)')
+    expect(fixupReferences('=SUM(A5#)', remove(4))).toBe('=SUM(#REF!)')
+  })
+})
+
 describe('fixupReferences on rows', () => {
   const insert = (at: number, count = 1) => ({ kind: 'insertRows' as const, at, count })
   const remove = (at: number, count = 1) => ({ kind: 'deleteRows' as const, at, count })

@@ -96,16 +96,49 @@ describe('spills in a workbook', () => {
   })
 })
 
-describe('what Excel writes that this does not read', () => {
-  it('says so rather than guessing: the spill operator and array constants', () => {
-    // Both are Excel's, both are documented as absent, and both have to
-    // fail loudly: a formula that quietly means something else is worse
-    // than one that will not parse.
+describe('the spilled-range operator A1#', () => {
+  it('reads the whole array an anchor spills, and grows and shrinks with it', () => {
+    // The fixture's SORT at A6 spills [5,0,7,1]: Bolt/7, Widget/5, Gadget/2.
     const wb = createWorkbook([{ name: 'S', cells: cells.map((r) => [...r]) }])
-    wb.setRaw('S', 6, 0, '=SUM(D2#)')
+    wb.setRaw('S', 0, 4, '=SUM(A6#)')      // whole 3x2 rect; text ignored -> 14
+    wb.setRaw('S', 1, 4, '=COUNTA(A6#)')   // six cells
+    wb.recalculate()
+    expect(wb.getValue('S', 0, 4)).toBe(14)
+    expect(wb.getValue('S', 1, 4)).toBe(6)
+    // A dynamic column that grows: the reader follows the new extent because
+    // the anchor is always a precedent, so changing it re-derives the rect.
+    wb.setRaw('S', 0, 6, '=SEQUENCE(3)')
+    wb.setRaw('S', 0, 7, '=SUM(G1#)')
+    wb.recalculate()
+    expect(wb.getValue('S', 0, 7)).toBe(6)
+    wb.setRaw('S', 0, 6, '=SEQUENCE(5)')
+    wb.recalculate()
+    expect(wb.getValue('S', 0, 7)).toBe(15)
+    wb.setRaw('S', 0, 6, '=SEQUENCE(2)')
+    wb.recalculate()
+    expect(wb.getValue('S', 0, 7)).toBe(3)
+  })
+
+  it('is #REF! on a cell that anchors no array, and spills a copy on its own', () => {
+    const wb = createWorkbook([{ name: 'S', cells: cells.map((r) => [...r]) }])
+    wb.setRaw('S', 0, 4, '=SUM(B1#)')   // B1 is a header, not an anchor
+    wb.setRaw('S', 0, 5, '=A6#')        // on its own, re-spills the array
+    wb.recalculate()
+    expect(wb.getValue('S', 0, 4)).toEqual({ error: '#REF!' })
+    expect(wb.getValue('S', 0, 5)).toBe('Bolt')
+    expect(wb.getValue('S', 1, 5)).toBe('Widget')
+    expect(wb.getValue('S', 2, 6)).toBe(2)
+  })
+})
+
+describe('what Excel writes that this does not read', () => {
+  it('says so rather than guessing: an array constant', () => {
+    // An array constant is Excel's, documented as absent, and has to fail
+    // loudly: a formula that quietly means something else is worse than one
+    // that will not parse.
+    const wb = createWorkbook([{ name: 'S', cells: cells.map((r) => [...r]) }])
     wb.setRaw('S', 7, 0, '={1;2;3}')
     wb.recalculate()
-    expect(wb.getValue('S', 6, 0)).toEqual({ error: '#PARSE!' })
     expect(wb.getValue('S', 7, 0)).toEqual({ error: '#PARSE!' })
   })
 })
