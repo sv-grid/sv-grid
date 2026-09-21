@@ -72,7 +72,7 @@
       copyHeadersToClipboard: { type: 'Boolean', attribute: 'copy-headers-to-clipboard' },
       processCellForFill: { type: 'Object' },
       processCellForClipboard: { type: 'Object' },
-      copyCollapsedRows: { type: 'Object' },
+      includeCollapsedRows: { type: 'Object' },
       clipboardHtml: { type: 'Object' },
       processCellFromClipboard: { type: 'Object' },
       enableInlineEditing: { type: 'Boolean', attribute: 'enable-inline-editing' },

@@ -73,7 +73,7 @@
   import { applyBorders, type BorderPreset } from './sheet/ribbon'
   import { RIBBON_ICONS, type RibbonIconName } from './sheet/ribbon-icons'
   import {
-    planPaste, resolvePasteCell, buildClipboardPayload, parseClipboard, parseClipboardHtml, readClipboardOrigin, anchorForeignFormulas,
+    planPaste, resolvePasteCell, buildClipboardPayload, parseClipboard, parseClipboardText, parseClipboardHtml, readClipboardOrigin, anchorForeignFormulas,
     type ClipboardGrid, type PasteSpecialOptions, type PasteWhat,
   } from './sheet/paste-special'
   import { setStructureTarget, insertRows, insertColumns, deleteRows, deleteColumns, axisForSelection } from './sheet/structure'
@@ -87,7 +87,8 @@
   import { referenceSpans, type ReferenceSpan } from './sheet/refs'
   import { balanceParens, suggestFunctions, applySuggestion, type FunctionSuggestion } from './sheet/autocomplete'
   import { parseEntry, completeEntry } from './sheet/entry'
-  import { isError, type CellValue } from './sheet/ast'
+  import { isError, type CellValue, type Node } from './sheet/ast'
+  import { parseFormula } from './sheet/parse'
   import { isLocked, cellLocked, rectsHaveLocked, rectsMixLocked, rangeText, type ProtectionAllow, type ProtectionPermission, type EditRange } from './sheet/protection'
   import SvSheetProtectSheet from './SvSheetProtectSheet.svelte'
   import SvSheetEditRanges from './SvSheetEditRanges.svelte'
@@ -2952,7 +2953,23 @@
 
   async function jumpToName(name: string) {
     const node = wb.names.resolve(name)
-    if (!node) return
+    if (node) await selectNode(node)
+  }
+
+  /**
+   * The Name Box given a range or a sheet-qualified address, `B2:D4` or
+   * `Orders!C3`: Excel selects it, switching sheets first. False when the
+   * text is not a reference, so the bar can define it as a name instead.
+   */
+  function jumpToReference(text: string): boolean {
+    let node: Node
+    try { node = parseFormula(`=${text}`) } catch { return false }
+    if (node.k !== 'ref' && node.k !== 'range') return false
+    void selectNode(node)
+    return true
+  }
+
+  async function selectNode(node: Node) {
     const from = node.k === 'ref' ? node.ref : node.k === 'range' ? node.from : null
     const to = node.k === 'range' ? node.to : from
     if (!from || from.row === null) return
@@ -3353,12 +3370,17 @@
     if (!cmd || !cmd.activeCell) return null
     const last = selection[selection.length - 1]
     const isRange = last && (last[0] !== last[2] || last[1] !== last[3])
-    const rect = over ? over.rect : isRange ? last : currentRegion(gridOf(cmd), { row: active.rowIndex, col: active.colIndex })
-    const top = rect[0]
-    const left = rect[1]
-    const bottom = Math.min(rect[2], Math.max(wb.rowCount(wb.active) - 1, top))
-    const right = Math.min(rect[3], Math.max(wb.colCount(wb.active) - 1, left))
-    return { top, left, bottom, right }
+    const chosen = over ? over.rect : isRange ? last : currentRegion(gridOf(cmd), { row: active.rowIndex, col: active.colIndex })
+    // A merged cell selected is the whole merge to Excel, so a selection
+    // that runs down the first column of merged rows sorts the rows whole
+    // rather than being refused for cutting through their merges.
+    const top = chosen[0]
+    const left = chosen[1]
+    const bottom = Math.min(chosen[2], Math.max(wb.rowCount(wb.active) - 1, top))
+    const right = Math.min(chosen[3], Math.max(wb.colCount(wb.active) - 1, left))
+    if (over) return { top, left, bottom, right }
+    const rect = expandToMerges(mergesNow(), [top, left, bottom, right])
+    return { top: rect[0], left: rect[1], bottom: rect[2], right: rect[3] }
   }
 
   /** Sort A to Z / Z to A on the active cell's column, or a filter's. */
@@ -3403,6 +3425,13 @@
       raw: Array.from({ length: c2 - c1 + 1 }, (_, i) => wb.getRaw(wb.active, r, c1 + i)),
       formats: Array.from({ length: c2 - c1 + 1 }, (_, i) => store.get(`r${r}`, colToLetters(c1 + i))),
     }]))
+    const sheet = wb.active
+    // The rows written straight into the workbook, one recalculation after,
+    // rather than one cmd.setCellValue per cell: each of those copies the
+    // whole data array, so a sort of a few thousand rows was tens of
+    // thousands of array copies and took the better part of a minute. The
+    // value undo is one step recorded here; the formats keep their own.
+    const valueBefore = rows.map((row) => Array.from({ length: c2 - c1 + 1 }, (_, k) => wb.getRaw(sheet, row, c1 + k)))
     cmd.batch(() => {
       withFormatUndo(cmd, target, [[start, c1, r2, c2]], () => {
         order.forEach((source, i) => {
@@ -3415,13 +3444,21 @@
             // absolute ones left alone: `=SUM(B5:E5)` on a row that lands
             // in row 2 reads B2:E2, as it does in Excel. Written verbatim,
             // the row's own total read the row that took its place.
-            cmd.setCellValue(row, c, translateFormula(from.raw[k], row - source, 0))
+            wb.setRaw(sheet, row, c, String(translateFormula(from.raw[k], row - source, 0) ?? ''))
             const one = [[row, c, row, c] as const]
             store.clear(one, target.lookup)
             if (from.formats[k]) store.set(one, from.formats[k]!, target.lookup)
           }
         })
       })
+      wb.recalculate()
+      const valueAfter = rows.map((row) => Array.from({ length: c2 - c1 + 1 }, (_, k) => wb.getRaw(sheet, row, c1 + k)))
+      const putValues = (grid: string[][]) => {
+        rows.forEach((row, i) => grid[i]!.forEach((text, k) => wb.setRaw(sheet, row, c1 + k, text)))
+        wb.recalculate(); bump(); changed({ kind: 'cells' })
+      }
+      cmd.recordUndo(() => putValues(valueBefore), () => putValues(valueAfter))
+      changed({ kind: 'cells' })
       // A one-row merge in the region rides with its row.
       if (mergesIn(mergesNow(), [[start, c1, r2, c2]]).length) {
         const rowFor = (oldRow: number) => { const i = order.indexOf(oldRow); return i < 0 ? oldRow : rows[i]! }
@@ -3731,9 +3768,14 @@
     const fill = last
       ? { rows: Math.abs(last[2] - last[0]) + 1, cols: Math.abs(last[3] - last[1]) + 1 }
       : undefined
+    // Nothing is cut off at the grid's edge: a block taller than the rows
+    // the grid shows grows the sheet, as Excel's does. The cells past the
+    // edge are written into the workbook directly, since the grid has no
+    // row to write them through until it repaints, and recorded as one
+    // step of their own inside the paste's group.
     const plan = planPaste(grid, dest, opts, origin, fill)
-      .filter((entry) => entry.row < rowCount && entry.col < colCount)
     if (!plan.length) return false
+    const beyond = (entry: { row: number; col: number }) => entry.row >= rowCount || entry.col >= colCount
     // A protected sheet refuses the whole paste when it reaches a locked
     // cell, as Excel does; handled, so the grid does not paste the text.
     if (protectedNow() && plan.some((entry) => locked(entry.row, entry.col))) { refuse(); return true }
@@ -3768,19 +3810,40 @@
           if (moving) for (const m of moving.merges) gone.add(mergesNow().find((own) => own[0] === m[0] && own[1] === m[1] && own[2] === m[2] && own[3] === m[3]) ?? m)
           setMerges([...mergesNow().filter((m) => !gone.has(m)), ...laying])
         }
+        const sheet = wb.active
+        // A block that reaches past the rows or columns the grid holds is
+        // written into the workbook straight, every value, not just the ones
+        // over the edge: mixing cmd.setCellValue for the cells the grid has
+        // with wb.setRaw for the rest dropped a cell at the seam, because the
+        // grid's writer grows its row model underneath the loop. One path
+        // for the whole block avoids the seam; its own undo restores it.
+        const bulk = landing.some(beyond)
+        const direct: Array<{ row: number; col: number; before: string; after: string }> = []
         withFormatUndo(cmd, target, rects, () => {
           for (const entry of landing) {
             const at = { row: entry.row, col: entry.col }
             const decision = resolvePasteCell(entry.source, wb.getValue(wb.active, entry.row, entry.col), opts, entry.offset, at, entry.turn)
             if (decision.kind === 'skip') continue
             const one = [[entry.row, entry.col, entry.row, entry.col] as const]
-            if (decision.kind === 'value' || decision.kind === 'both') cmd.setCellValue(entry.row, entry.col, decision.value)
+            if (decision.kind === 'value' || decision.kind === 'both') {
+              if (bulk) {
+                const before = wb.getRaw(sheet, entry.row, entry.col)
+                const after = String(decision.value ?? '')
+                if (before !== after) { wb.setRaw(sheet, entry.row, entry.col, after); direct.push({ row: entry.row, col: entry.col, before, after }) }
+              } else cmd.setCellValue(entry.row, entry.col, decision.value)
+            }
             if (decision.kind === 'format' || decision.kind === 'both') {
               if (decision.format) target.store.set(one, decision.format, target.lookup)
               else target.store.clear(one, target.lookup)
             }
           }
         })
+        if (direct.length) {
+          wb.recalculate()
+          const put = (which: 'before' | 'after') => { for (const d of direct) wb.setRaw(sheet, d.row, d.col, d[which]); wb.recalculate(); bump(); changed({ kind: 'cells' }) }
+          cmd.recordUndo(() => put('before'), () => put('after'))
+          changed({ kind: 'cells' })
+        }
       })
     } finally {
       pasting = false
@@ -4324,7 +4387,7 @@
      * folded away is not copied at all, so the block CLOSES UP around it the
      * way Excel's does: filter, copy, paste gives the rows that matched, next
      * to each other, rather than a block with holes in it. A row hidden by
-     * hand IS copied, as Excel copies one (copyCollapsedRows on the grid).
+     * hand IS copied, as Excel copies one (includeCollapsedRows on the grid).
      */
     rowAt: Map<number, number>
     colAt: Map<number, number>
@@ -4514,7 +4577,16 @@
       return pasteBlock(copiedGrid(block, 'plain'), block.cut ? null : block.origin, { what: 'all' }, blockMerges(block))
     }
     const grid = payload.html ? parseClipboardHtml(payload.html) : null
-    if (!grid) return undefined
+    if (!grid) {
+      // Plain text is the grid's to land, except a block that reaches past
+      // the rows or columns the grid has: the grid stops at its edge, and a
+      // 5,000-line paste into a fresh sheet landed 49 of them. Such a block
+      // goes through the sheet's own paste, which grows the sheet.
+      const lines = parseClipboardText(text)
+      const width = lines.reduce((max, line) => Math.max(max, line.length), 0)
+      const past = lines.length + active.rowIndex > rowCount || width + active.colIndex > colCount
+      return past ? pasteBlock(lines, null, { what: 'all' }) : undefined
+    }
     const origin = readClipboardOrigin(payload.html!)
     // Our own marker says where the block came from; a foreign block's
     // formulas are kept only where they can be placed (see the helper).
@@ -5634,6 +5706,7 @@
       onCommit={commit}
       onNavigate={goTo}
       onSelectName={jumpToName}
+      onSelectReference={jumpToReference}
       onDefineName={defineNameHere}
       onInsertFunction={() => { const c = cmdOf(); if (c) delegate('insert-function', c) }}
       onDraft={(text) => { formulaDraft = text; barDraft = text }}
@@ -5901,7 +5974,7 @@
     processCellForFill={({ value, delta }) =>
       typeof value === 'string' && value.startsWith('=') ? translateFormula(value, delta.rows, delta.cols) : undefined}
     processCellForClipboard={toClipboard}
-    copyCollapsedRows={(r: number) => !doc.get(wb.active).filterHidden.has(r)}
+    includeCollapsedRows={(r: number) => !doc.get(wb.active).filterHidden.has(r)}
     clipboardHtml={copiedHtml}
     onPasteClipboard={pasteFromSystem}
     onCellSelectionChange={(ranges: Array<[number, number, number, number]>) => {

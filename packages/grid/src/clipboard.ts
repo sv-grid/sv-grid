@@ -117,7 +117,7 @@ export function createClipboard<
     pattern: unknown[],
     i: number,
     sourceStart: number,
-    targetStart: number,
+    at: number,
     step: 1 | -1,
     axis: "rows" | "cols",
     rowIndex: number,
@@ -126,7 +126,10 @@ export function createClipboard<
     const hook = ctx.props.processCellForFill;
     if (hook && sources.length) {
       const k = i % sources.length;
-      const distance = (targetStart + step * i) - (sourceStart + step * k);
+      // The real distance to the cell being filled, which is not i when a
+      // row the fill skips lies between: a formula moves by the rows it
+      // actually travelled.
+      const distance = at - (sourceStart + step * k);
       const delta = axis === "rows" ? { rows: distance, cols: 0 } : { rows: 0, cols: distance };
       const decided = hook({ value: sources[k], delta, rowIndex, columnId });
       if (decided !== undefined) return decided;
@@ -179,6 +182,8 @@ export function createClipboard<
 
   function applyFillCells(steps: HistoryStep[], toggled = false) {
     const pattern = (sources: unknown[], count: number) => (toggled ? toggledPattern(sources, count) : buildFillPattern(sources, count));
+    const includeCollapsed = ctx.props.includeCollapsedRows as ((rowIndex: number) => boolean) | undefined;
+    const skipsRow = (r: number) => ctx.isRowCollapsed?.(r) === true && !(includeCollapsed?.(r) ?? false);
     const d = ctx.fillDrag;
     if (!d) return;
     // Clear fillDrag FIRST so a thrown error doesn't leave the grid
@@ -206,27 +211,30 @@ export function createClipboard<
         for (let r = d.sourceMinRow; r <= d.sourceMaxRow; r += 1) {
           sourceColValues.push(readCellRaw(r, column.id));
         }
+        // A collapsed row the consumer does not count (a filtered row in a
+        // spreadsheet) is neither written nor a step of the series: the
+        // pattern runs over the rows that are there, as Excel's does.
         if (newMaxRow > d.sourceMaxRow) {
-          const targetRows = newMaxRow - d.sourceMaxRow;
-          const fills = pattern(sourceColValues, targetRows);
-          for (let i = 0; i < targetRows; i += 1) {
-            const targetRow = d.sourceMaxRow + 1 + i;
+          const targets: number[] = [];
+          for (let r = d.sourceMaxRow + 1; r <= newMaxRow; r += 1) if (!skipsRow(r)) targets.push(r);
+          const fills = pattern(sourceColValues, targets.length);
+          targets.forEach((targetRow, i) => {
             if (ctx.isCellEditableAt(targetRow, c))
               writeFilled(steps, targetRow, column.id,
-                filledValue(sourceColValues, fills, i, d.sourceMinRow, d.sourceMaxRow + 1, 1, "rows", targetRow, column.id));
-          }
+                filledValue(sourceColValues, fills, i, d.sourceMinRow, targetRow, 1, "rows", targetRow, column.id));
+          });
         }
         if (newMinRow < d.sourceMinRow) {
           // Filling upward - reverse-extrapolate.
           const reversed = sourceColValues.slice().reverse();
-          const targetRows = d.sourceMinRow - newMinRow;
-          const fills = pattern(reversed, targetRows);
-          for (let i = 0; i < targetRows; i += 1) {
-            const targetRow = d.sourceMinRow - 1 - i;
+          const targets: number[] = [];
+          for (let r = d.sourceMinRow - 1; r >= newMinRow; r -= 1) if (!skipsRow(r)) targets.push(r);
+          const fills = pattern(reversed, targets.length);
+          targets.forEach((targetRow, i) => {
             if (ctx.isCellEditableAt(targetRow, c))
               writeFilled(steps, targetRow, column.id,
-                filledValue(reversed, fills, i, d.sourceMaxRow, d.sourceMinRow - 1, -1, "rows", targetRow, column.id));
-          }
+                filledValue(reversed, fills, i, d.sourceMaxRow, targetRow, -1, "rows", targetRow, column.id));
+          });
         }
       }
     } else if (horizontalExtension) {
@@ -247,7 +255,7 @@ export function createClipboard<
             const col = ctx.allColumns[targetCol];
             if (col && ctx.isCellEditableAt(r, targetCol))
               writeFilled(steps, r, col.id,
-                filledValue(sourceRowValues, fills, i, d.sourceMinCol, d.sourceMaxCol + 1, 1, "cols", r, col.id));
+                filledValue(sourceRowValues, fills, i, d.sourceMinCol, targetCol, 1, "cols", r, col.id));
           }
         }
         if (newMinCol < d.sourceMinCol) {
@@ -259,7 +267,7 @@ export function createClipboard<
             const col = ctx.allColumns[targetCol];
             if (col && ctx.isCellEditableAt(r, targetCol))
               writeFilled(steps, r, col.id,
-                filledValue(reversed, fills, i, d.sourceMaxCol, d.sourceMinCol - 1, -1, "cols", r, col.id));
+                filledValue(reversed, fills, i, d.sourceMaxCol, targetCol, -1, "cols", r, col.id));
           }
         }
       }
@@ -854,7 +862,7 @@ export function createClipboard<
     const processCell = ctx.props.processCellForClipboard as
       | ((params: { value: unknown; column: unknown; row: unknown; rowIndex: number; columnId: string }) => unknown)
       | undefined;
-    const copyCollapsed = ctx.props.copyCollapsedRows as ((rowIndex: number) => boolean) | undefined;
+    const copyCollapsed = ctx.props.includeCollapsedRows as ((rowIndex: number) => boolean) | undefined;
     const blocks: Array<string> = [];
     for (const rect of rects) {
       const lines: Array<string> = [];
@@ -874,7 +882,7 @@ export function createClipboard<
         // the keyboard walks past it, so a copy leaves it out too. That is
         // what a spreadsheet does with a filtered row, and it is what makes
         // "filter, copy, paste" carry the rows that matched. A consumer that
-        // tells hidden from filtered answers per row (`copyCollapsedRows`):
+        // tells hidden from filtered answers per row (`includeCollapsedRows`):
         // Excel copies a row hidden by hand.
         if (ctx.isRowCollapsed?.(r) && !copyCollapsed?.(r)) continue;
         const cells: Array<string> = [];

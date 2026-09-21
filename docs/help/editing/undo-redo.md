@@ -110,7 +110,7 @@ cleanly is on the [gap list](../missing-features.md).
 
 ### Undo / redo (Ctrl+Z)
 
-`api.undo()` / `api.redo()` + Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z. 200-step bounded history; clearHistory after a successful save resets the baseline.
+`api.undo()` / `api.redo()` + Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z. 200-action bounded history (an action is one Ctrl+Z, however many cells it wrote, so a paste or a sort of thousands of cells stays whole); clearHistory after a successful save resets the baseline.
 
 A grid that shows one of several data sets in turn (a workbook's sheets, a
 list of records opened one at a time) has a question the history cannot

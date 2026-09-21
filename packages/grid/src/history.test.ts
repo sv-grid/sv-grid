@@ -164,7 +164,7 @@ describe('runHistoryGroup', () => {
     // This is why the group id is ambient rather than stamped afterwards: the
     // cap drops entries from the front, so any index captured before the call
     // would point at the wrong steps by the end of it.
-    const { ctx } = makeCtx([step(0)], 3)
+    const { ctx } = makeCtx([step(0)], 1)
     runHistoryGroup(ctx, () => {
       pushHistory(ctx, [step(1)])
       pushHistory(ctx, [step(2)])
@@ -172,6 +172,21 @@ describe('runHistoryGroup', () => {
     })
     expect(ctx.history.map((s) => s.rowId)).toEqual(['r1', 'r2', 'r3'])
     expect(new Set(ctx.history.map((s) => s.groupId)).size).toBe(1)
+  })
+
+  it('caps by actions, so a group larger than the buffer stays whole', () => {
+    // A sort of 5,000 rows is one Ctrl+Z of 20,000 steps; a cap that
+    // counted steps cut it to its tail and undid a fifth of it.
+    const { ctx } = makeCtx([step(0)], 2)
+    runHistoryGroup(ctx, () => { for (let i = 1; i <= 5; i += 1) pushHistory(ctx, [step(i)]) })
+    expect(ctx.history.map((s) => s.rowId)).toEqual(['r0', 'r1', 'r2', 'r3', 'r4', 'r5'])
+    pushHistory(ctx, [step(9)])
+    // Three actions now; the oldest one goes and the group survives whole.
+    expect(ctx.history.map((s) => s.rowId)).toEqual(['r1', 'r2', 'r3', 'r4', 'r5', 'r9'])
+    expect(ctx.historyPtr).toBe(5)
+    undoHistory(ctx)
+    undoHistory(ctx)
+    expect(ctx.historyPtr).toBe(-1)
   })
 
   it('nests into the outer group so one action is one undo', () => {

@@ -396,7 +396,7 @@ export const ELEMENT_PROPS = [
     "ts": "(params: { value: unknown; column: unknown; row: TData; rowIndex: number; columnId: string; }) => unknown"
   },
   {
-    "name": "copyCollapsedRows",
+    "name": "includeCollapsedRows",
     "type": "Object",
     "attribute": null,
     "ts": "(rowIndex: number) => boolean"

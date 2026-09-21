@@ -82,6 +82,23 @@ function groupEnd(history: ReadonlyArray<HistoryStep>, start: number): number {
   return i
 }
 
+/**
+ * The last `limit` ACTIONS of a history, whole groups kept. The cap used
+ * to count steps, and a sort of 5,000 rows is 20,000 steps in one group:
+ * it cut the group to its last 200 cells, so Ctrl+Z put a fifth of a
+ * column back and left the rest sorted. An action is one press of Ctrl+Z,
+ * so that is what the buffer counts; the steps inside are the cost of it.
+ */
+function lastActions(history: HistoryStep[], limit: number): HistoryStep[] {
+  let i = history.length
+  let actions = 0
+  while (i > 0 && actions < limit) {
+    i = groupStart(history, i - 1)
+    actions += 1
+  }
+  return i === 0 ? history : history.slice(i)
+}
+
 /** What the next undo would apply: the tag of the step Ctrl+Z takes next
  *  (a group carries one tag, so its last step's is the group's). Null when
  *  there is nothing to undo. */
@@ -154,7 +171,7 @@ export function pushHistory(
     const stamped = tag === undefined ? step : { ...step, tag }
     next.push(id ? { ...stamped, groupId: id } : stamped)
   }
-  if (next.length > ctx.UNDO_LIMIT) next = next.slice(next.length - ctx.UNDO_LIMIT)
+  next = lastActions(next, ctx.UNDO_LIMIT)
   ctx.history = next
   ctx.historyPtr = ctx.history.length - 1
   ctx.historyVersion += 1

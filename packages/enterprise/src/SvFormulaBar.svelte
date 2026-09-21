@@ -49,6 +49,10 @@
     /** A name typed that is neither an address nor a name yet: Excel defines
      *  it for the selection. Without a handler the entry is dropped. */
     onDefineName?: (name: string) => void
+    /** A range or a sheet-qualified address typed into the Name Box, B2:D4 or
+     *  Orders!C3: the consumer selects it and answers true, or false when the
+     *  text is not a reference, which the bar then defines as a name. */
+    onSelectReference?: (text: string) => boolean
     /** The fx button: Excel's Insert Function. Without a handler the button
      *  is not drawn, since a button that does nothing is worse than none. */
     onInsertFunction?: () => void
@@ -77,6 +81,7 @@
     label = null,
     onSelectName,
     onDefineName,
+    onSelectReference,
     onInsertFunction,
     onDraft,
     highlight,
@@ -282,6 +287,11 @@
     const typed = nameBoxText.trim()
     if (names.some((n) => n.name.toUpperCase() === typed.toUpperCase())) {
       onSelectName?.(typed)
+      nameBoxText = ''
+      return
+    }
+    // A range, or an address on another sheet, is a place to go.
+    if (typed && onSelectReference?.(typed)) {
       nameBoxText = ''
       return
     }
