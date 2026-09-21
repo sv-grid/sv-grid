@@ -18,7 +18,7 @@ We tell you when **not** to switch at the bottom.
 
 | | AG Grid Community | AG Grid Enterprise | SvGrid Community | @svgrid/enterprise |
 | --- | --- | --- | --- | --- |
-| **Licence** | MIT | Commercial, per developer (the price is in the facts box above) | **MIT** | $599/dev/yr (single app) or $999/dev/yr (multi app) |
+| **Licence** | MIT | Commercial, per developer (the price is in the facts box above) | **MIT** | $599/dev/yr (grid) or $999/dev/yr (grid + spreadsheet + Studio) |
 | **Svelte 5 native** | No (community-built integration) | No (community-built integration) | Yes | Yes |
 | **Bundle (gzipped)** | measured, in the facts box above | not measured (licence) | measured, in the facts box above | lazy-loaded subpaths |
 | **Sorting / filtering** | Yes | Yes | Yes | (in Community) |
@@ -497,7 +497,8 @@ not a rewrite.
 
 `@svgrid/enterprise`. It adds Excel/PDF/styled-HTML export (CSV, TSV and JSON export are already free in the grid), a printable view, pivot
 tables and data import. The in-grid AI helpers are free in `@svgrid/grid`.
-It is licensed per developer ($599 single-app / $999 multi-app), and the
+It is licensed per developer ($599 for the grid, $999 with the spreadsheet
+and Studio, both covering unlimited apps), and the
 Community package is MIT-licensed and free for commercial use.
 
 ### Does SvGrid use Svelte 5 runes, or is it a wrapper?

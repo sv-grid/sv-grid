@@ -9,7 +9,7 @@
  *     await auth.signIn(email, password)
  *     // ... auth.signOut(); auth.dispose() on unmount
  */
-import { nudgeEnterprise } from '../license'
+import { nudgeEnterpriseFor } from '../license'
 
 export type AuthUser = { id: string; email?: string }
 
@@ -54,7 +54,7 @@ const userOf = (session: Session): AuthUser | null =>
   session?.user ? { id: session.user.id, email: session.user.email } : null
 
 export function createSupabaseAuth(config: SupabaseAuthConfig): SupabaseAuthController {
-  nudgeEnterprise('Studio') // soft-gate; never blocks
+  nudgeEnterpriseFor('studio', 'Studio') // soft-gate; never blocks
   let state: AuthState = { user: null, loading: true, error: null }
   const emit = () => config.onChange({ ...state })
   const set = (patch: Partial<AuthState>) => {

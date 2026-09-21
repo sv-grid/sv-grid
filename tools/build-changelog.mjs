@@ -18,6 +18,7 @@
 import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
+import { guardGenerator } from './lib/generator-guard.mjs'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -26,6 +27,10 @@ const TAG_PREFIX = 'grid-v'
 const CHECK = process.argv.includes('--check')
 
 const git = (args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' }).trim()
+
+// Every release entry is derived from a tag range, so a clone without the tags
+// regenerates the file down to whatever it can still see.
+guardGenerator({ root: ROOT, name: 'build-changelog', needs: ['tags', 'fullHistory'], tagPrefix: TAG_PREFIX })
 
 /** Commit subjects that carry no information for a reader of the changelog. */
 const NOISE = [

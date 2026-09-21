@@ -804,7 +804,7 @@
       "section": "enterprise",
       "pillar": "company",
       "tier": "enterprise",
-      "words": 929,
+      "words": 965,
       "lastUpdated": "2026-09-03",
       "demoIds": []
     },
@@ -828,7 +828,7 @@
       "section": "enterprise",
       "pillar": "company",
       "tier": "enterprise",
-      "words": 993,
+      "words": 1382,
       "lastUpdated": "2026-08-18",
       "demoIds": []
     },
@@ -3029,7 +3029,7 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 3367,
+      "words": 3378,
       "lastUpdated": "2026-09-20",
       "demoIds": [
         "139-migration-from-ag-grid"
@@ -3118,7 +3118,7 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1625,
+      "words": 1634,
       "lastUpdated": "2026-09-17",
       "demoIds": [
         "148-server-row-model",

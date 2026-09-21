@@ -11,8 +11,16 @@ export {
   // lapses; these are for hosts that would rather render their own banner.
   isLicenseExpired,
   getLicenseExpiry,
+  // Editions. `licenseCovers` is the one most apps want: hide a Suite-only
+  // entry point rather than let it nudge.
+  licenseCovers,
+  getLicenseEdition,
+  nudgeEnterpriseFor,
+  editionCovers,
   type LicenseInfo,
   type LicenseStatus,
+  type LicenseEdition,
+  type LicensedProduct,
 } from './license'
 
 export { parseLicenseExpiry } from './license-core'

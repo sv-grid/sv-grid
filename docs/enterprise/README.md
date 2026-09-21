@@ -137,7 +137,15 @@ setLicenseKey('SVENTERPRISE-XXXX-XXXX-XXXX')
 For dev builds, the demos use `setLicenseKey('SVENTERPRISE-DEV-DEMO')` to
 suppress the watermark in screenshots.
 
-Pricing + multi-app licensing: <https://svgrid.com/pricing/>.
+The pack comes in two editions, both covering unlimited production apps.
+**Grid** is everything on this page except the spreadsheet and Studio;
+**Suite** is all of it. A key names its edition, and a key that predates
+editions reads as Suite. A Grid key that opens `<SvSheet>` is treated the
+same way as an unlicensed build: the feature runs, with the watermark and a
+console notice naming the edition that covers it.
+
+Pricing and the OEM tier for redistribution: <https://svgrid.com/pricing/>.
+See also [licensing](./licensing.md).
 
 ## How Enterprise integrates
 

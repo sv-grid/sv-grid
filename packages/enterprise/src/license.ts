@@ -18,12 +18,30 @@
 //                                        + the upgrade card. Stays a soft gate
 //                                        so a trial ending cannot break a build.
 //   any other "SVENTERPRISE-..."             -> works silently (paid production)
+//
+// Editions cut across that matrix. A paid key names GRID or SUITE (and a key
+// issued before editions existed reads as SUITE). `nudgeEnterpriseFor` is the
+// gate for a surface a GRID key does not reach: same soft-gate contract, with
+// its own console notice saying which edition covers it.
 
-import { checkLicenseKey, VALID_PREFIX, type LicenseInfo } from './license-core'
+import {
+  checkLicenseKey,
+  editionCovers,
+  VALID_PREFIX,
+  type LicenseInfo,
+  type LicensedProduct,
+} from './license-core'
 import { emitUnlicensedNudge } from './watermark'
 import { showUpgradePrompt, type EnterpriseFeatureLabel } from './upgrade-prompt'
 
-export { checkLicenseKey, type LicenseInfo, type LicenseStatus } from './license-core'
+export {
+  checkLicenseKey,
+  editionCovers,
+  type LicenseInfo,
+  type LicenseStatus,
+  type LicenseEdition,
+  type LicensedProduct,
+} from './license-core'
 // The nudge the key silences, on the same subpath as the key: an app that only
 // wants to set its licence imports `@svgrid/enterprise/license` and never
 // pulls the component barrel (the package has no `sideEffects` flag, so a
@@ -33,6 +51,9 @@ export { dismissUnlicensedNudge } from './watermark'
 let currentKey: string | null = null
 let noticedDev = false
 let noticedExpired = false
+/** One notice per product, not per call site: reaching four Studio seams on a
+ *  Grid key is one licensing fact, not four. */
+const noticedEdition = new Set<LicensedProduct>()
 
 /** One-time console notice for a trial that has run out. Separate from the
  *  dev/eval notice: that one says "not for production", this one says the
@@ -56,12 +77,14 @@ export function setLicenseKey(key: string): void {
   currentKey = key
   noticedDev = false
   noticedExpired = false
+  noticedEdition.clear()
 }
 
 export function clearLicenseKey(): void {
   currentKey = null
   noticedDev = false
   noticedExpired = false
+  noticedEdition.clear()
 }
 
 export function getLicenseKey(): string | null {
@@ -115,6 +138,67 @@ export function nudgeEnterprise(feature?: EnterpriseFeatureLabel): void {
   emitUnlicensedNudge()
   if (lapsedTrial) noticeExpired(info)
   showUpgradePrompt(feature, { expired: lapsedTrial })
+}
+
+/** Human name for a product, for the console notice. */
+const PRODUCT_LABEL: Record<LicensedProduct, string> = {
+  grid: 'the enterprise grid',
+  spreadsheet: 'the spreadsheet',
+  studio: 'the Studio',
+}
+
+/** One-time console notice for a feature the current edition does not cover.
+ *  Distinct from the unlicensed nudge: the key is real and paid, it just does
+ *  not reach this far, so the actionable part is which edition to move to. */
+function noticeEdition(product: LicensedProduct): void {
+  if (noticedEdition.has(product)) return
+  noticedEdition.add(product)
+  // eslint-disable-next-line no-console
+  console.info(
+    `@svgrid/enterprise: your Grid license does not cover ${PRODUCT_LABEL[product]}. ` +
+      'Everything still works, but the watermark and upgrade notice stay until the ' +
+      'license is upgraded to Suite. Contact sales@jqwidgets.com or see ' +
+      'https://svgrid.com/pricing',
+  )
+}
+
+/**
+ * True when the current key covers `product`. Use it to hide a Suite-only entry
+ * point in your own UI instead of letting it nudge. An unlicensed app returns
+ * false for everything, which keeps "no key" and "wrong edition" on the same
+ * side of the branch for UI purposes.
+ */
+export function licenseCovers(product: LicensedProduct): boolean {
+  const info = checkLicenseKey(currentKey)
+  return info.valid && editionCovers(info.edition, product)
+}
+
+/** The edition the current key names, or null when no usable key is set. */
+export function getLicenseEdition(): LicenseInfo['edition'] | null {
+  const info = checkLicenseKey(currentKey)
+  return info.valid ? info.edition : null
+}
+
+/**
+ * Soft-gate a surface that an edition can exclude. Same contract as
+ * {@link nudgeEnterprise} - never throws, never blocks, safe on the server -
+ * but it also nudges a valid key that simply does not reach this product.
+ */
+export function nudgeEnterpriseFor(
+  product: LicensedProduct,
+  feature?: EnterpriseFeatureLabel,
+): void {
+  const info = checkLicenseKey(currentKey)
+  const covered = info.valid && editionCovers(info.edition, product)
+  if (covered && !info.expired) return
+  // A key that is valid, unexpired and merely out of edition is a different
+  // message from an unlicensed or lapsed one, so it gets its own notice. The
+  // watermark and the card are the same either way.
+  const outOfEdition = info.valid && info.expired !== true && !covered
+  emitUnlicensedNudge()
+  if (outOfEdition) noticeEdition(product)
+  else if (info.valid && info.expired === true) noticeExpired(info)
+  showUpgradePrompt(feature, { expired: info.valid && info.expired === true })
 }
 
 export function assertEnterpriseLicensed(feature?: EnterpriseFeatureLabel): void {

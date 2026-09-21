@@ -54,9 +54,10 @@ unit-test your own reporting rules against it.
 
 ## Licensing
 
-`SvPivotDesigner` is part of `@svgrid/enterprise`, which is commercial. The app
-runs unlicensed - it just nudges - so you can evaluate it before buying. Replace
-the key in `src/routes/+page.svelte`:
+`SvPivotDesigner` is part of `@svgrid/enterprise`, which is commercial. Pivot is
+in the Grid edition, so the cheaper key covers this app. The app runs unlicensed
+too - it just nudges - so you can evaluate it before buying. Replace the key in
+`src/routes/+page.svelte`:
 
 ```ts
 setLicenseKey('SVENTERPRISE-DEV-DEMO')

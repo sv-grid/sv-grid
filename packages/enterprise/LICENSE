@@ -30,23 +30,74 @@ non-exclusive, non-transferable, non-sublicensable license to:
       that all copyright notices and license terms are preserved;
   (c) distribute the Software bundled inside the Subscriber's own
       application, provided the Software is not the primary product
-      distributed and remains under this License.
+      distributed, that it remains under this License, and that the
+      distribution is not one of the cases in Section 1A.
 
-Deployment scope is set by the Subscriber's order:
+License scope is set by the Subscriber's order:
 
-  - Single Application Developer License: one (1) deployed production
-    application, plus unlimited internal dev / staging environments.
-  - Multiple Application Developer License: unlimited deployed
-    production applications within the Subscriber's organization.
+  - Grid Developer License: the Software excluding the Spreadsheet
+    Module and the Studio, on unlimited deployed production
+    applications within the Subscriber's organization, plus unlimited
+    internal dev / staging environments.
+  - Suite Developer License: the Software in full, including the
+    Spreadsheet Module and the Studio, on the same unlimited scope.
   - Enterprise / Custom (Site or Org-wide): scope per the negotiated
     order or master agreement.
+  - OEM License: the redistribution cases in Section 1A.
+
+The "Spreadsheet Module" is the workbook, formula engine and
+spreadsheet file-format features: <SvSheet>, the <sv-sheet> element,
+the formula evaluator, and the .xlsx / .xls / .ods / .csv readers and
+writers. The "Studio" is the designer, the code generator and the SQL
+data sources.
+
+Using the Spreadsheet Module or the Studio under a Grid Developer
+License is outside the licensed scope. The Software does not block it:
+it stays soft-gated and shows the unlicensed watermark and notice until
+the license is upgraded to Suite.
+
+------------------------------------------------------------------------
+1A. OEM AND REDISTRIBUTION
+------------------------------------------------------------------------
+
+Section 1(c) covers the ordinary case, in which the Subscriber ships
+its own application and the Software is one component inside it. An OEM
+License, negotiated separately with the Author, is required where:
+
+  (a) the Subscriber distributes the Software, or any part of it, to
+      third parties as a component, library, SDK, template, or building
+      block those third parties use to build their own applications;
+  (b) the Subscriber's product is a platform, application builder,
+      low-code or no-code tool, or development environment in which the
+      Subscriber's own customers author applications, reports, or
+      workbooks that render through the Software;
+  (c) the Subscriber sublicenses, resells, or white-labels the Software
+      under another name;
+  (d) the Subscriber deploys the Software in a multi-tenant hosted
+      product in which the Spreadsheet Module or the Studio is a
+      material part of what the Subscriber's customers pay for.
+
+An OEM License is priced separately from developer seats, is granted
+for a defined term and a defined product, and may carry a
+redistribution volume or royalty basis recorded in the order. Developer
+seats do not convey these rights, however many are purchased.
+
+For the avoidance of doubt, ordinary business software sold to
+customers is covered by Section 1(c). A SaaS application whose users
+view, edit and export their own data in a grid or a workbook is the
+Subscriber's own application, not redistribution. The test is whether
+third parties receive the Software as something they build with, not
+whether the Subscriber charges for its product.
+
+Requests: sales@jqwidgets.com.
 
 ------------------------------------------------------------------------
 2. SEATS
 ------------------------------------------------------------------------
 
-The Software is licensed per developer. The number of seats is set by
-the Subscriber's order. A "developer" is any individual who writes or
+The Software is licensed per developer. The number of seats and the
+edition, Grid or Suite, are set by the Subscriber's order. All seats on
+one order share one edition. A "developer" is any individual who writes or
 modifies source code that imports `@svgrid/enterprise`. Read-only users
 and end users do not count toward seats and are unlimited. One license
 key activates every grid instance in scope; there is no per-page or
@@ -102,16 +153,20 @@ The Subscriber may NOT:
   (b) sublicense, rent, lease, or sell the Software to third parties;
   (c) remove, obscure, or disable the license-key check or any
       copyright or proprietary notices;
-  (d) use the Software to develop a data-grid or table component product
-      that competes with the Software for distribution to third parties;
+  (d) use the Software to develop a data-grid, table, or spreadsheet
+      component product that competes with the Software for
+      distribution to third parties;
   (e) share license keys outside of the developer seats covered by the
-      Subscriber's order.
+      Subscriber's order;
+  (f) ship to production a use of the Spreadsheet Module or the Studio
+      that the Subscriber's edition does not cover, or a
+      redistribution described in Section 1A without an OEM License.
 
 ------------------------------------------------------------------------
 6. TERMINATION
 ------------------------------------------------------------------------
 
-On material breach of Sections 1, 2, or 5, the license terminates
+On material breach of Sections 1, 1A, 2, or 5, the license terminates
 automatically and the Subscriber must cease all use of the Software,
 remove it from development environments, and stop deploying new versions
 of any application that depends on it. Existing deployed copies in
