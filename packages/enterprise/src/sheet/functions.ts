@@ -92,6 +92,25 @@ function startPosition(a: FnArgs): number {
   return given < 1 ? -1 : given - 1
 }
 
+/** The index of the `instance`-th `delim` in `s`, counted from the start for
+ *  a positive instance and from the end for a negative one, or null when
+ *  there are fewer than that many. Backs TEXTBEFORE and TEXTAFTER. */
+function nthDelimiter(s: string, delim: string, instance: number): number | null {
+  const positions: number[] = []
+  for (let from = 0; ; ) {
+    const at = s.indexOf(delim, from)
+    if (at < 0) break
+    positions.push(at)
+    from = at + delim.length
+  }
+  if (instance > 0) return instance <= positions.length ? positions[instance - 1]! : null
+  if (instance < 0) {
+    const k = positions.length + instance
+    return k >= 0 ? positions[k]! : null
+  }
+  return null
+}
+
 
 /** Where a wildcard pattern starts inside a text, or -1. Excel reports the
  *  earliest position a match can begin at, so the search walks forward and
@@ -253,12 +272,47 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
     const rest = a.args.slice(2).flat()
     return rest.filter((v) => !skipEmpty || !isBlank(v)).map((v) => toText(v)).join(sep)
   },
+  // SUBSTITUTE(text, old, new, [instance]): every occurrence by default, or
+  // just the instance-th one when the fourth argument names it, the way Excel
+  // rewrites the second slash of a date and leaves the first.
   SUBSTITUTE: (a) => {
     const s = toText(nth(a, 0))
     const find = toText(nth(a, 1))
     const replace = toText(nth(a, 2))
     if (find === '') return s
-    return s.split(find).join(replace)
+    if (a.args[3] === undefined) return s.split(find).join(replace)
+    const instance = Math.trunc(toNumber(nth(a, 3)))
+    if (instance < 1) return err('#VALUE!')
+    let count = 0
+    let from = 0
+    for (;;) {
+      const at = s.indexOf(find, from)
+      // Fewer than `instance` occurrences: Excel leaves the text as it is.
+      if (at < 0) return s
+      count += 1
+      if (count === instance) return s.slice(0, at) + replace + s.slice(at + find.length)
+      from = at + find.length
+    }
+  },
+  // TEXTBEFORE / TEXTAFTER(text, delimiter, [instance]): the part before or
+  // after the instance-th delimiter, counted from the end when instance is
+  // negative. The delimiter that is not there is #N/A, unless a sixth
+  // `if_not_found` is given.
+  TEXTBEFORE: (a) => {
+    const s = toText(nth(a, 0))
+    const delim = toText(nth(a, 1))
+    const instance = a.args[2] !== undefined ? Math.trunc(toNumber(nth(a, 2))) : 1
+    if (delim === '') return ''
+    const at = nthDelimiter(s, delim, instance)
+    return at === null ? (a.args[5] !== undefined ? nth(a, 5) : err('#N/A')) : s.slice(0, at)
+  },
+  TEXTAFTER: (a) => {
+    const s = toText(nth(a, 0))
+    const delim = toText(nth(a, 1))
+    const instance = a.args[2] !== undefined ? Math.trunc(toNumber(nth(a, 2))) : 1
+    if (delim === '') return s
+    const at = nthDelimiter(s, delim, instance)
+    return at === null ? (a.args[5] !== undefined ? nth(a, 5) : err('#N/A')) : s.slice(at + delim.length)
   },
   // FIND(find, within, [start]): case sensitive, 1-based, #VALUE! when the
   // text is not there. The third argument is where the search BEGINS, and

@@ -360,7 +360,24 @@ describe('the function library', () => {
     expect(run('=TRIM("  a   b  ")')).toBe('a b')
     expect(run('=CONCAT("a", 1, TRUE)')).toBe('a1TRUE')
     expect(run('=SUBSTITUTE("a-b-c", "-", "+")')).toBe('a+b+c')
+    // A fourth argument replaces only that occurrence, as Excel does.
+    expect(run('=SUBSTITUTE("a-b-a-b", "a", "X", 2)')).toBe('a-b-X-b')
+    expect(run('=SUBSTITUTE("a-b-a-b", "a", "X", 9)')).toBe('a-b-a-b')
+    expect(run('=SUBSTITUTE("a", "a", "X", 0)')).toEqual({ error: '#VALUE!' })
     expect(run('=TEXTJOIN(", ", TRUE, A1:A3)', [['a'], [''], ['c']])).toBe('a, c')
+  })
+
+  it('splits text before and after a delimiter', () => {
+    expect(run('=TEXTBEFORE("a-b-c", "-")')).toBe('a')
+    expect(run('=TEXTAFTER("a-b-c", "-")')).toBe('b-c')
+    expect(run('=TEXTAFTER("a-b-c", "-", 2)')).toBe('c')
+    expect(run('=TEXTBEFORE("a-b-c", "-", 2)')).toBe('a-b')
+    // A negative instance counts the delimiters from the end.
+    expect(run('=TEXTBEFORE("a-b-c", "-", -1)')).toBe('a-b')
+    expect(run('=TEXTAFTER("a-b-c", "-", -1)')).toBe('c')
+    // The delimiter that is not there is #N/A, or the given fallback.
+    expect(run('=TEXTBEFORE("abc", "-")')).toEqual({ error: '#N/A' })
+    expect(run('=TEXTAFTER("abc", "-", 1, 0, 0, "none")')).toBe('none')
   })
 
   it('finds case sensitively and searches case insensitively', () => {

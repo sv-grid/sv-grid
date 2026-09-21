@@ -205,3 +205,15 @@ test('DATEDIF reads the part-units for an age (ym, md, yd), not just d/m/y', asy
   await typeInto(page, 2, 0, '=DATEDIF(DATE(2000,3,15),DATE(2026,9,21),"md")')
   expect(await shown(page, 2, 0)).toBe('6')
 })
+
+test('SUBSTITUTE takes an instance, and TEXTBEFORE/TEXTAFTER split on a delimiter', async ({ page }) => {
+  // SUBSTITUTE's fourth argument was ignored on 2026-09-21 (it replaced every
+  // occurrence); TEXTBEFORE and TEXTAFTER read #NAME?.
+  await open(page)
+  await typeInto(page, 0, 0, '=SUBSTITUTE("a-b-a-b","a","X",2)')
+  expect(await shown(page, 0, 0)).toBe('a-b-X-b')
+  await typeInto(page, 1, 0, '=TEXTBEFORE("path/to/file","/",-1)')
+  expect(await shown(page, 1, 0)).toBe('path/to')
+  await typeInto(page, 2, 0, '=TEXTAFTER("path/to/file","/",-1)')
+  expect(await shown(page, 2, 0)).toBe('file')
+})
