@@ -189,6 +189,16 @@ nothing above it declines, and the key falls through to the grid.
 While a cell editor is open, every shortcut here declines, so nothing swallows
 a keystroke you meant for the editor.
 
+## Escape closes what is open
+
+Escape backs out of whatever is in front, the way Excel's does: the marching
+ants after a copy, an open right-click menu, or a dialog. A right-click menu
+closes on Escape as well as on a click away, so a keyboard user who opened it
+is never trapped under it. A dialog opens with focus on its first control -
+the active tab or the first field - never the header close button, so Enter
+runs the dialog's primary action rather than dismissing it the instant it
+opens; Escape closes it and hands focus back to the cells.
+
 ## Binding your own
 
 The registry the sheet keymap uses is public and free, in `@svgrid/grid`:

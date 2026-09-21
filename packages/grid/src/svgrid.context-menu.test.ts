@@ -137,6 +137,18 @@ describe('SvGrid context menu', () => {
     destroy()
   })
 
+  it('closes on Escape, so a keyboard user is not trapped under it', async () => {
+    const { target, destroy } = await mountGrid(true)
+    await tick()
+    await openContextMenu(target)
+    expect(target.querySelector('.sv-grid-context-menu')).not.toBeNull()
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await vi.waitFor(() => {
+      expect(target.querySelector('.sv-grid-context-menu')).toBeNull()
+    })
+    destroy()
+  })
+
   it('does not open when contextMenu is omitted (native menu shows)', async () => {
     const { target, destroy } = await mountGrid(undefined)
     await tick()

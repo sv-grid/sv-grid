@@ -4,7 +4,7 @@
  * SvDrawer shares), plus the modal's title wiring and closeOnEsc opt-out.
  */
 import { describe, expect, it } from 'vitest'
-import { mount, unmount, flushSync } from 'svelte'
+import { mount, unmount, flushSync, createRawSnippet } from 'svelte'
 import SvModal from './SvModal.svelte'
 
 function mountModal(props: Record<string, unknown>) {
@@ -76,6 +76,35 @@ describe('SvModal', () => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
       flushSync()
       expect(dialog()).not.toBeNull()
+    } finally { destroy() }
+  })
+
+  it('focuses the first body control on open, not the header Close (x)', async () => {
+    // The close x is the first focusable in DOM order; the trap's plain "first
+    // focusable" sent focus there, so Enter dismissed the dialog at once and
+    // the focus ring pointed at "close". Focus must land on the content.
+    // (The trap focuses on the next microtask, so let it run.)
+    const body = createRawSnippet(() => ({
+      render: () => `<button type="button" class="probe-ok">OK</button>`,
+    }))
+    const { destroy } = mountModal({ open: true, title: 'Edit row', children: body })
+    try {
+      flushSync()
+      await new Promise((r) => setTimeout(r, 0))
+      const active = document.activeElement as HTMLElement
+      expect(active?.classList.contains('sv-modal__x')).toBe(false)
+      expect(active?.classList.contains('probe-ok')).toBe(true)
+    } finally { destroy() }
+  })
+
+  it('falls back to the panel, still not the Close (x), when the body has no control', async () => {
+    const { destroy } = mountModal({ open: true, title: 'Empty' })
+    try {
+      flushSync()
+      await new Promise((r) => setTimeout(r, 0))
+      const active = document.activeElement as HTMLElement
+      expect(active?.classList.contains('sv-modal__x')).toBe(false)
+      expect(active?.classList.contains('sv-modal')).toBe(true)
     } finally { destroy() }
   })
 
