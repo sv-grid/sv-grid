@@ -141,4 +141,4 @@ re-derives on every change.
 - [Features reference](./features.md) - what each feature contributes
 - [Architecture overview](../help/architecture.md) - why headless first
 - [Build your own feature plugin recipe](../recipes/build-a-feature-plugin.md)
-- [Bundle size reference](./bundle-size.md) - what you save by skipping the renderer
+- [Bundle size reference](../help/bundle-size.md) - what you save by skipping the renderer
