@@ -139,3 +139,28 @@ test('the spilled-range operator sums a dynamic array and follows it as it grows
   await typeInto(page, 0, 7, '=SUM(H10#)')       // H1 reads empty H10
   expect(await shown(page, 0, 7)).toBe('#REF!')
 })
+
+test('Increase/Decrease Decimal on a General number moves from what it shows', async ({ page }) => {
+  // On 2026-09-21 these treated a General cell as zero decimals, so Increase
+  // Decimal on 3.14159 dropped it to 3.1 and Decrease Decimal did nothing.
+  // Excel moves from the decimals the value already shows.
+  await open(page)
+  const band = (title: string) =>
+    page.locator(`.sv-ribbon .band:not(.measure) button[title^="${title}"]`).first()
+  await typeInto(page, 0, 0, '3.14159')
+  await cell(page, 0, 0).click()
+  await band('Increase Decimal').click()
+  await page.waitForTimeout(150)
+  expect(await shown(page, 0, 0)).toBe('3.141590')
+  await band('Decrease Decimal').click()
+  await band('Decrease Decimal').click()
+  await band('Decrease Decimal').click()
+  await page.waitForTimeout(150)
+  expect(await shown(page, 0, 0)).toBe('3.142')
+  // A whole number still starts at zero decimals: Increase gives one place.
+  await typeInto(page, 1, 0, '5')
+  await cell(page, 1, 0).click()
+  await band('Increase Decimal').click()
+  await page.waitForTimeout(150)
+  expect(await shown(page, 1, 0)).toBe('5.0')
+})

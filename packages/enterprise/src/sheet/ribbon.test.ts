@@ -98,6 +98,22 @@ describe('the model is well-formed', () => {
     ])
   })
 
+  it('files each Conditional Formatting command under its own heading', () => {
+    // The Clear and New Rule headings were once swapped with their items, so
+    // two headings rendered back-to-back (an empty section) and the clear
+    // commands sat under "New Rule". Every heading must own the items below it.
+    const home = RIBBON_TABS.find((t) => t.id === 'home')!
+    const cf = home.groups.flatMap((g) => g.items).find((i) => i.id === 'conditional-formatting')!
+    const opts = cf.options!
+    opts.forEach((o, i) => {
+      if (o.heading) expect(opts[i + 1]?.heading, `"${o.label}" heading has no items`).toBeFalsy()
+    })
+    const at = (label: string) => opts.findIndex((o) => o.label === label)
+    expect(at('Use a Formula...')).toBe(at('New Rule') + 1)
+    expect(at('Clear Rules from Selected Cells')).toBe(at('Clear Rules') + 1)
+    expect(at('Clear Rules from Entire Sheet')).toBe(at('Clear Rules') + 2)
+  })
+
   it('Freeze Panes lives on View > Window as Excel\'s dropdown, and Home > Cells is one column', () => {
     const view = RIBBON_TABS.find((t) => t.id === 'view')!
     const freeze = view.groups.find((g) => g.id === 'window')!.items[0]!

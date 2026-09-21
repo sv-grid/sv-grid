@@ -35,7 +35,7 @@ export { FONT_SIZES, applyBorders, type BorderPreset } from './shortcuts'
 import { insertRows, deleteRows, insertColumns, deleteColumns, getStructureTarget } from './structure'
 import { fillDown, fillRight, targetRect } from './commands'
 import type { Rect } from './navigate'
-import { FORMAT_PRESETS, FORMAT_CATEGORY_PATTERNS, formatCategory, accountingParts, accountingPattern, type FormatPresetName } from './number-format'
+import { FORMAT_PRESETS, FORMAT_CATEGORY_PATTERNS, formatCategory, accountingParts, accountingPattern, formatWithPattern, type FormatPresetName } from './number-format'
 import type { CellFormatEntry } from './format-store'
 import type { RibbonIconName } from './ribbon-icons'
 import { ALL_COLOURS } from './palette'
@@ -386,7 +386,10 @@ function fromCommand(command: SheetCommand): (cmd: GridCommandContext) => boolea
  *
  * Reads the active cell's current pattern rather than assuming one, so
  * pressing it on a currency cell keeps the currency and only moves the point.
- * A cell with no pattern starts from General, which Excel treats as 0 decimals.
+ * A cell with no pattern is General, and Excel moves from the decimals the
+ * value SHOWS there, not from zero: Increase on 3.14159 goes to six places,
+ * not down to one, and Decrease actually trims a place. Only when the cell is
+ * empty, or its value is not a number, does General behave like `0`.
  */
 function nudgeDecimals(delta: number): (cmd: GridCommandContext) => boolean {
   return (cmd) => {
@@ -398,9 +401,28 @@ function nudgeDecimals(delta: number): (cmd: GridCommandContext) => boolean {
     const current = rowId != null && columnId != null
       ? target.store.get(rowId, columnId)?.numFmt
       : undefined
-    const next = withDecimals(current ?? '0', delta)
+    let next: string | null
+    if (current) {
+      next = withDecimals(current, delta)
+    } else {
+      // General: start from what the value displays, so the point moves the
+      // way Excel's does rather than resetting to a single place.
+      const count = generalDecimals(active.rowIndex, active.colIndex) + delta
+      next = count < 0 || count > 30 ? null : count === 0 ? '0' : `0.${'0'.repeat(count)}`
+    }
     return next === null ? false : applyFormat(cmd, { numFmt: next })
   }
+}
+
+/** The decimals a General cell currently shows, so Increase/Decrease Decimal
+ *  moves from there. Zero for a blank cell or a non-numeric value. */
+function generalDecimals(row: number, col: number): number {
+  const wb = getWorkbook()
+  if (!wb) return 0
+  const value = wb.getValue(wb.active, row, col)
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0
+  const dot = formatWithPattern(value, 'General').indexOf('.')
+  return dot < 0 ? 0 : formatWithPattern(value, 'General').length - dot - 1
 }
 
 /**
@@ -894,9 +916,9 @@ const HOME: RibbonTab = {
             { value: 'cf-color-scale-3', label: 'Green - Yellow - Red Color Scale', icon: 'cf-scale', emits: 'cf-color-scale-3' },
             { value: 'cf-color-scale-2', label: 'Green - White Color Scale', icon: 'cf-scale', emits: 'cf-color-scale-2' },
             { value: 'cf-icon-set', label: 'Icon Set (3 Arrows)', icon: 'cf-icons', emits: 'cf-icon-set' },
-            { value: 'c', label: 'Clear Rules', heading: true },
             { value: 'n', label: 'New Rule', heading: true },
             { value: 'cf-formula', label: 'Use a Formula...', icon: 'cf-formula', emits: 'cf-formula' },
+            { value: 'c', label: 'Clear Rules', heading: true },
             { value: 'cf-clear-selection', label: 'Clear Rules from Selected Cells', emits: 'cf-clear-selection' },
             { value: 'cf-clear-sheet', label: 'Clear Rules from Entire Sheet', emits: 'cf-clear-sheet' },
             { value: 'm', label: 'Manage', heading: true },
