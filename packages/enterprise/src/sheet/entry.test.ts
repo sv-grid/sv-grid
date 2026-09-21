@@ -4,10 +4,17 @@ import { compileNumberFormat } from './number-format'
 
 const shown = (text: string): string => {
   const parsed = parseEntry(text)!
-  return compileNumberFormat(parsed.numFmt).format(Number(parsed.value)).text
+  return compileNumberFormat(parsed.numFmt ?? 'General').format(Number(parsed.value)).text
 }
 
 describe('parseEntry', () => {
+  it('reads a statement-style (5) as -5 with no format of its own', () => {
+    expect(parseEntry('(5)')).toEqual({ value: '-5' })
+    expect(parseEntry('(1,250.50)')).toEqual({ value: '-1250.5' })
+    // Not a number in the brackets: text, as it is.
+    expect(parseEntry('(note)')).toBeNull()
+  })
+
   it('reads a percentage as a fraction with a percent format', () => {
     expect(parseEntry('12%')).toEqual({ value: '0.12', numFmt: '0%' })
     expect(parseEntry('12.5%')).toEqual({ value: '0.125', numFmt: '0.0%' })

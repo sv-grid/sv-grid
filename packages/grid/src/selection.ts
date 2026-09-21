@@ -548,7 +548,7 @@ export function createSelection<
     ctx.stopEdgeScroll();
     // Also commit a fill-handle drag if one was in progress - the user
     // released the mouse, time to apply the pattern.
-    if (ctx.fillDrag) ctx.onFillPointerUp();
+    if (ctx.fillDrag) ctx.onFillPointerUp(event);
     if (ctx.moveDrag) ctx.onMovePointerUp(event);
   }
 

@@ -100,9 +100,9 @@ export function createClipboard<
     if (before !== value) steps.push({ rowId: row.id, columnId, field, before, after: value });
   }
 
-  function applyFillPattern() {
+  function applyFillPattern(toggled = false) {
     const steps: HistoryStep[] = [];
-    runHistoryGroup(ctx, () => applyFillCells(steps));
+    runHistoryGroup(ctx, () => applyFillCells(steps, toggled));
     if (steps.length) pushHistory(ctx, steps, nextGroupId());
   }
 
@@ -169,7 +169,16 @@ export function createClipboard<
     applyFillPattern();
   }
 
-  function applyFillCells(steps: HistoryStep[]) {
+  /** The fill's values the other way round from the pattern's default. */
+  function toggledPattern(sources: unknown[], count: number): unknown[] {
+    if (sources.length === 1 && typeof sources[0] === 'number' && Number.isFinite(sources[0])) {
+      return Array.from({ length: count }, (_, i) => (sources[0] as number) + i + 1);
+    }
+    return Array.from({ length: count }, (_, i) => sources[i % sources.length]);
+  }
+
+  function applyFillCells(steps: HistoryStep[], toggled = false) {
+    const pattern = (sources: unknown[], count: number) => (toggled ? toggledPattern(sources, count) : buildFillPattern(sources, count));
     const d = ctx.fillDrag;
     if (!d) return;
     // Clear fillDrag FIRST so a thrown error doesn't leave the grid
@@ -199,7 +208,7 @@ export function createClipboard<
         }
         if (newMaxRow > d.sourceMaxRow) {
           const targetRows = newMaxRow - d.sourceMaxRow;
-          const fills = buildFillPattern(sourceColValues, targetRows);
+          const fills = pattern(sourceColValues, targetRows);
           for (let i = 0; i < targetRows; i += 1) {
             const targetRow = d.sourceMaxRow + 1 + i;
             if (ctx.isCellEditableAt(targetRow, c))
@@ -211,7 +220,7 @@ export function createClipboard<
           // Filling upward - reverse-extrapolate.
           const reversed = sourceColValues.slice().reverse();
           const targetRows = d.sourceMinRow - newMinRow;
-          const fills = buildFillPattern(reversed, targetRows);
+          const fills = pattern(reversed, targetRows);
           for (let i = 0; i < targetRows; i += 1) {
             const targetRow = d.sourceMinRow - 1 - i;
             if (ctx.isCellEditableAt(targetRow, c))
@@ -232,7 +241,7 @@ export function createClipboard<
         }
         if (newMaxCol > d.sourceMaxCol) {
           const targetCols = newMaxCol - d.sourceMaxCol;
-          const fills = buildFillPattern(sourceRowValues, targetCols);
+          const fills = pattern(sourceRowValues, targetCols);
           for (let i = 0; i < targetCols; i += 1) {
             const targetCol = d.sourceMaxCol + 1 + i;
             const col = ctx.allColumns[targetCol];
@@ -244,7 +253,7 @@ export function createClipboard<
         if (newMinCol < d.sourceMinCol) {
           const reversed = sourceRowValues.slice().reverse();
           const targetCols = d.sourceMinCol - newMinCol;
-          const fills = buildFillPattern(reversed, targetCols);
+          const fills = pattern(reversed, targetCols);
           for (let i = 0; i < targetCols; i += 1) {
             const targetCol = d.sourceMinCol - 1 - i;
             const col = ctx.allColumns[targetCol];
@@ -450,9 +459,15 @@ export function createClipboard<
     ctx.fillDrag = { ...ctx.fillDrag, targetRow: hit.row, targetCol: hit.col };
   }
 
-  function onFillPointerUp() {
+  /**
+   * The release. Excel's Ctrl turns the fill the other way: a series
+   * becomes a copy of the block, and one number, which copies on its own,
+   * becomes a series stepping by one. The modifier is read here, at the
+   * release, so holding Ctrl only at the end still counts, as in Excel.
+   */
+  function onFillPointerUp(event?: PointerEvent) {
     if (!ctx.fillDrag) return;
-    applyFillPattern();
+    applyFillPattern(!!(event && (event.ctrlKey || event.metaKey)));
   }
 
   // ---- Range move / copy (drag the selection border) --------------------

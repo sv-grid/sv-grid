@@ -46,6 +46,9 @@
      */
     label?: string | null
     onSelectName?: (name: string) => void
+    /** A name typed that is neither an address nor a name yet: Excel defines
+     *  it for the selection. Without a handler the entry is dropped. */
+    onDefineName?: (name: string) => void
     /** The fx button: Excel's Insert Function. Without a handler the button
      *  is not drawn, since a button that does nothing is worse than none. */
     onInsertFunction?: () => void
@@ -73,6 +76,7 @@
     names = [],
     label = null,
     onSelectName,
+    onDefineName,
     onInsertFunction,
     onDraft,
     highlight,
@@ -275,8 +279,15 @@
       nameBoxText = ''
       return
     }
-    if (names.some((n) => n.name.toUpperCase() === nameBoxText.trim().toUpperCase())) {
-      onSelectName?.(nameBoxText.trim())
+    const typed = nameBoxText.trim()
+    if (names.some((n) => n.name.toUpperCase() === typed.toUpperCase())) {
+      onSelectName?.(typed)
+      nameBoxText = ''
+      return
+    }
+    // Neither an address nor a name: Excel defines it for the selection.
+    if (typed) {
+      onDefineName?.(typed)
       nameBoxText = ''
     }
   }

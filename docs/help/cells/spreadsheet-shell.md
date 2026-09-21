@@ -64,7 +64,9 @@ the wiring BETWEEN the parts, done once:
   nothing about Orders!C5, and the store follows a sheet through a rename.
 - The Name Box lists the workbook's defined names. Pick one and the shell
   selects what it refers to, switching sheets first when it lives elsewhere;
-  type an address and press Enter to go there. Either way focus comes back
+  type an address and press Enter to go there; type a name that is not one
+  yet and it is defined for the selection, sheet-qualified and absolute as
+  the Name Manager writes one, one undo. Either way focus comes back
   to the sheet, so the next keystroke edits the cell just reached. Beside it
   sit Excel's three: Cancel and Enter while a formula is being typed, and
   fx, which raises `insert-function`.
@@ -85,6 +87,15 @@ the wiring BETWEEN the parts, done once:
   offered, and two entries that both fit ("Apple", "Apricot" for "Ap")
   offer nothing until the typing tells them apart. `completeEntry(typed,
   entries)` is the rule on its own.
+- Formulas are typed the way Excel's are. Pointing: a click on a cell while
+  a formula is being typed, in the cell or in the bar, puts that cell's
+  address in at the caret rather than ending the edit, a drag puts a range,
+  and a second click replaces what the last one put there; typing goes on
+  from there. Formula AutoComplete: the function names a typed prefix could
+  be are listed under the cell, Up and Down walk them, Tab or Enter takes
+  one with the caret inside its brackets, Escape closes the list. Backspace
+  on a cell opens the editor empty, so Escape gives the value back where
+  Delete would have blanked it.
 - Data entry steps the way Excel's does: the Enter that ends a run of Tabs
   goes down from the column the run began in, and inside a selected block
   Enter and Tab walk the block and wrap at its edges while the block stays
@@ -102,7 +113,10 @@ the wiring BETWEEN the parts, done once:
 - A typed `12%` is the number 0.12 shown as a percentage, `$1,200` is 1200
   shown as currency, `1,234.5` keeps its separator: the entry names a value
   and a format, and the cell takes both unless it already has a number
-  format of its own. `=A1*2` over a `12%` cell is 0.24.
+  format of its own. `=A1*2` over a `12%` cell is 0.24. A plain number
+  typed into a cell that already shows percentages is that percentage, so
+  `5` in a `0%` cell is 5% rather than 500%, as Excel's automatic percent
+  entry has it; `(5)` is -5, the way a statement writes a negative.
 - File > Open reads what the other spreadsheets write, not only what this
   one wrote: a sheet's own `<cols>` or a table's filter, a row height
   LibreOffice left unflagged, `General` as the absence of a format, a row
@@ -153,8 +167,9 @@ the wiring BETWEEN the parts, done once:
   .xlsx as text keeps its prefix, so a part number survives the round trip.
 - The fill handle fills the way Excel's does: a lone value repeats, `1, 2`
   continues, `Jan` runs on to `Feb`, and a formula moves every relative
-  reference by the distance dragged. Double-click it to fill down as far as
-  the column beside the selection has data. A number too wide for its
+  reference by the distance dragged. Ctrl held at the release turns it the
+  other way, a series into a copy and one number into a series. Double-click
+  it to fill down as far as the column beside the selection has data. A number too wide for its
   column reads as `####` until the column fits it; `TRUE` and `FALSE`
   typed into a cell are booleans, centred.
 - Freeze Panes freezes everything above and left of the active cell, both
@@ -823,7 +838,7 @@ the cell menu is a button that does nothing:
 
 | Dialog | Opens from |
 | ------ | ---------- |
-| Find and Replace | `Ctrl+H`, Find & Select on the ribbon. Find Next, Find All, Replace, Replace All; match case, whole cell, look in values or formulas. Replace All is one undo. |
+| Find and Replace | `Ctrl+F` or `Ctrl+H`, Find & Select on the ribbon. Find Next, Find All, Replace, Replace All; match case, whole cell, look in values or formulas. Replace All is one undo. |
 | Paste Special | `Ctrl+Shift+V`, the Clipboard group's launcher, the last entry under the Paste arrow, the cell menu. All / Formulas / Values / Formats, Add / Subtract / Multiply / Divide, Skip blanks, Transpose. Works on what Ctrl+C took from the sheet. |
 | Chart | A double-click on a chart, or Insert > Setup while one is selected. Type (Column, Line, Area, Pie, Scatter), title, series in columns or rows, whether the first row and column are labels, stacking, a trendline over every series and one series on a secondary axis; Delete removes the chart. |
 | Page Setup | Page Layout > Print Titles, the Page Setup group's launcher. Orientation, paper, margins, scale, print area, rows to repeat at top, gridlines and headings; Print... applies and prints. |

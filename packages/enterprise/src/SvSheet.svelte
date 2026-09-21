@@ -81,10 +81,11 @@
   import { setFillTranslator, setSheetValueProbe } from './sheet/commands'
   import { translateFormula, type CellMove } from './sheet/refs'
   import { entryToStyle, type SheetFormatStore, type CellFormatEntry } from './sheet/format-store'
-  import { compileNumberFormat } from './sheet/number-format'
-  import { colToLetters, lettersToCol, parseA1 } from './sheet/address'
+  import { compileNumberFormat, formatCategory } from './sheet/number-format'
+  import { colToLetters, lettersToCol, parseA1, quoteSheet } from './sheet/address'
+  import { isValidName } from './sheet/names'
   import { referenceSpans, type ReferenceSpan } from './sheet/refs'
-  import { balanceParens } from './sheet/autocomplete'
+  import { balanceParens, suggestFunctions, applySuggestion, type FunctionSuggestion } from './sheet/autocomplete'
   import { parseEntry, completeEntry } from './sheet/entry'
   import { isError, type CellValue } from './sheet/ast'
   import { isLocked, cellLocked, rectsHaveLocked, rectsMixLocked, rangeText, type ProtectionAllow, type ProtectionPermission, type EditRange } from './sheet/protection'
@@ -2873,6 +2874,33 @@
    * name that only worked on the sheet it was defined on would not be worth
    * listing.
    */
+  /**
+   * A name typed into the Name Box: Excel's quickest way to define one,
+   * for the selection, sheet-qualified and absolute the way the Name
+   * Manager writes it. One undo. Typed over the sheet's own address
+   * grammar it is an address and moves the cursor instead (see the bar).
+   */
+  function defineNameHere(name: string) {
+    if (!isValidName(name)) { say(t('nameBoxBadName', { name })); cmdOf()?.focus(); return }
+    const rects = selectedRects().map(normalRect)
+    const [r1, c1, r2, c2] = rects[rects.length - 1] ?? [active.rowIndex, active.colIndex, active.rowIndex, active.colIndex]
+    const cellRef = (r: number, c: number) => `$${colToLetters(c)}$${r + 1}`
+    const refersTo = `${quoteSheet(wb.active)}!${cellRef(r1, c1)}${r1 === r2 && c1 === c2 ? '' : `:${cellRef(r2, c2)}`}`
+    const put = (value: string | null) => {
+      if (value === null) wb.names.remove(name); else wb.names.define(name, value)
+      wb.recalculate()
+      doc.changed({ kind: 'workbook' })
+      bump()
+    }
+    put(refersTo)
+    const cmd = cmdOf()
+    cmd?.recordUndo(() => put(null), () => put(refersTo))
+    say(t('nameDefined', { name, refersTo: refersTo.replace(/^.*!/, '') }))
+    // The sheet takes the focus back, as after an address: the next Ctrl+Z
+    // is the sheet's, not the Name Box's own text undo.
+    cmd?.focus()
+  }
+
   async function jumpToName(name: string) {
     const node = wb.names.resolve(name)
     if (!node) return
@@ -3870,6 +3898,7 @@
   }
   /** The brush lands on the release of the selecting click or drag. */
   function onSheetPointerUp(event: PointerEvent) {
+    pointDrag = null
     // Excel's rule for a linked cell: a click follows the link, and a drag
     // of more than a few pixels was a selection and follows nothing.
     const press = linkPress
@@ -3886,6 +3915,7 @@
     setTimeout(paintFormats, 0)
   }
   function onSheetKeyDownCapture(event: KeyboardEvent) {
+    if (functionListKey(event)) return
     acceptSuggestion(event)
     // A selected object takes Delete and Escape before the cells do, the
     // way Excel's does: the cells under a chart are not what Delete means
@@ -3915,6 +3945,18 @@
       }
     }
     if (protectedNow() && !editorOf(event.target) && wouldEdit(event) && locked(active.rowIndex, active.colIndex)) refuse()
+    // Excel's Backspace on a cell opens the editor empty, so Escape gives
+    // the value back and Enter blanks it; the grid's own Backspace blanks
+    // the selection at once, like Delete, which is right for a data grid.
+    if (event.key === 'Backspace' && !event.ctrlKey && !event.metaKey && !event.altKey && !editorOf(event.target) && !selectedObject && !painter) {
+      const cmd = cmdOf()
+      if (cmd && !(protectedNow() && locked(active.rowIndex, active.colIndex))) {
+        event.preventDefault()
+        event.stopPropagation()
+        cmd.startEditing(active.rowIndex, active.colIndex, '')
+        return
+      }
+    }
     if (event.key === 'Escape' && marquee && !editorOf(event.target)) marquee = null
     // Excel's Enter while the ants are up: paste the block once, here, and
     // leave copy mode. Ctrl+V pastes and keeps the ants for the next paste;
@@ -3971,7 +4013,15 @@
     const parsed = parseEntry(text)
     if (parsed) {
       stored = parsed.value
-      if (!entry?.numFmt) patch.numFmt = parsed.numFmt
+      if (!entry?.numFmt && parsed.numFmt) patch.numFmt = parsed.numFmt
+    }
+    // Excel's automatic percent entry: a plain number typed into a cell that
+    // already shows percentages is the percentage it reads as, so 5 in a
+    // cell formatted 0% is 5%, not 500%. A number with its own % sign, or
+    // a formula, is left to say what it says.
+    if (!parsed && !text.startsWith('=') && entry?.numFmt && formatCategory(entry.numFmt).category === 'percent') {
+      const plain = text.trim()
+      if (/^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(plain)) stored = String(Number(plain) / 100)
     }
     if (text.includes('\n') && !entry?.wrap) patch.wrap = true
     if (Object.keys(patch).length && target && cmd) {
@@ -4672,6 +4722,100 @@
     resizeGuide = null
   }
 
+  // --- Excel's point mode -----------------------------------------------------
+  /**
+   * A click on a cell while a formula is being typed puts that cell's
+   * address into the formula rather than ending the edit, and a drag puts
+   * a range: how most formulas get written. The editor may be the cell's
+   * or the formula bar's. The click is taken in the capture phase, so the
+   * grid never sees a press that would commit the edit and move the
+   * cursor; the pointed reference is remembered so a second click, or the
+   * drag that follows the press, replaces it rather than adding another.
+   */
+  let pointed: { editor: Editor; start: number; end: number } | null = null
+  let pointDrag: { editor: Editor; row: number; col: number } | null = null
+  /** A pointing press whose click has not landed yet: that click is the grid's
+   *  "select and focus", which would end the edit, so it is swallowed. */
+  let pointedPress = false
+
+  /** The formula editor that has the focus, if it holds a formula. */
+  function formulaEditor(): Editor | null {
+    const el = document.activeElement
+    if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return null
+    if (!el.classList.contains('sv-grid-cell-editor') && !(el.classList.contains('formula') && el.closest('.sv-formula-bar'))) return null
+    return el.value.startsWith('=') ? el : null
+  }
+
+  /** Whether a reference can go in at the caret: after an operator, a bracket,
+   *  a comma or the leading =, or over the reference the last click put there. */
+  function wantsReference(editor: Editor): boolean {
+    const caret = editor.selectionStart ?? editor.value.length
+    if (pointed && pointed.editor === editor && pointed.end === caret) return true
+    if (editor.selectionEnd !== caret) return false
+    const before = editor.value.slice(0, caret).replace(/\s+$/, '')
+    return /[=(,;+\-*/^&<>:]$/.test(before)
+  }
+
+  function insertPointedReference(editor: Editor, r1: number, c1: number, r2: number, c2: number) {
+    const top = Math.min(r1, r2), left = Math.min(c1, c2), bottom = Math.max(r1, r2), right = Math.max(c1, c2)
+    const one = `${colToLetters(left)}${top + 1}`
+    const text = top === bottom && left === right ? one : `${one}:${colToLetters(right)}${bottom + 1}`
+    const caret = editor.selectionStart ?? editor.value.length
+    const replacing = pointed && pointed.editor === editor && pointed.end === caret
+    const start = replacing ? pointed!.start : caret
+    const end = replacing ? pointed!.end : caret
+    editor.value = editor.value.slice(0, start) + text + editor.value.slice(end)
+    const after = start + text.length
+    editor.setSelectionRange(after, after)
+    pointed = { editor, start, end: after }
+    // The grid and the bar keep their own drafts and read them from input events.
+    editor.dispatchEvent(new Event('input', { bubbles: true }))
+  }
+
+  /** A press on a cell while pointing: true when it was taken. */
+  function pointAt(event: PointerEvent, target: HTMLElement | null): boolean {
+    const editor = formulaEditor()
+    if (!editor || editorOf(target)) return false
+    const td = target?.closest<HTMLElement>('td[data-svgrid-row][data-svgrid-col]')
+    if (!td || td.contains(editor) || !wantsReference(editor)) return false
+    // Stopped here so the grid never sees the press; the focus it would
+    // move is a default of the MOUSE event, which Chromium fires whether
+    // or not pointerdown is cancelled, so that one is cancelled below.
+    event.stopPropagation()
+    const row = Number(td.dataset.svgridRow)
+    const col = Number(td.dataset.svgridCol)
+    insertPointedReference(editor, row, col, row, col)
+    pointDrag = { editor, row, col }
+    pointedPress = true
+    return true
+  }
+
+  /** The mouse events behind a pointing press: cancelled, so the editor keeps
+   *  the focus and the grid's click never selects the pointed cell. */
+  function onSheetMouseDown(event: MouseEvent) {
+    if (!pointDrag) return
+    event.preventDefault()
+    event.stopPropagation()
+  }
+  function onSheetClickCapture(event: MouseEvent) {
+    if (!pointedPress) return
+    pointedPress = false
+    event.preventDefault()
+    event.stopPropagation()
+  }
+
+  function pointDragTo(event: PointerEvent) {
+    const drag = pointDrag
+    if (!drag || document.activeElement !== drag.editor) return
+    const td = (document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null)?.closest<HTMLElement>('td[data-svgrid-row][data-svgrid-col]')
+    if (!td) return
+    const row = Number(td.dataset.svgridRow)
+    const col = Number(td.dataset.svgridCol)
+    // The reference under the caret is the one this press put there.
+    if (pointed && pointed.editor === drag.editor) drag.editor.setSelectionRange(pointed.end, pointed.end)
+    insertPointedReference(drag.editor, drag.row, drag.col, row, col)
+  }
+
   /** A press on a linked cell, waiting to see whether it becomes a drag. */
   let linkPress: { link: SheetLink; x: number; y: number } | null = null
 
@@ -4683,6 +4827,7 @@
     // A press on the cells puts an object down; the object's own handler
     // stops the event before this sees it.
     if (selectedObject && !target?.closest('.sheet-object')) selectedObject = null
+    if (pointAt(event, target)) return
     const handle = target?.closest<HTMLElement>('.sv-grid-resize-handle, .sv-grid-row-resize-handle')
     if (handle) { startResizeTip(handle, event); return }
     if (target?.closest('.sv-grid-fill-handle')) {
@@ -4731,6 +4876,7 @@
     cmd.focus()
   }
   function onSheetPointerMove(event: PointerEvent) {
+    if (pointDrag) { pointDragTo(event); return }
     if (fillDrag) { placeFillTip(event); return }
     if (resizing) { placeResizeTip(event); return }
     const drag = headerDrag
@@ -4841,6 +4987,7 @@
     growEditor(input)
     editingText = input.value
     formulaDraft = input.value.startsWith('=') ? input.value : null
+    offerFunctions(input)
   }
 
   /**
@@ -4905,9 +5052,59 @@
 
   function onEditorFocusOut(event: FocusEvent) {
     if (!editorOf(event.target)) return
+    pointed = null
+    fnSuggest = null
     formulaDraft = null
     editingText = null
   }
+
+  // --- function names offered in the cell -----------------------------------
+  /**
+   * Excel's Formula AutoComplete in the cell: as a function name is typed
+   * after = or an operator, the names it could be are listed under the
+   * cell, Up and Down walk them, Tab or Enter takes one and lands the caret
+   * inside its brackets, Escape closes the list. The formula bar has had
+   * this since the start; a formula typed in the cell, which is where most
+   * are typed, had nothing.
+   */
+  let fnSuggest = $state<{ items: FunctionSuggestion[]; index: number; left: number; top: number } | null>(null)
+  function offerFunctions(input: Editor) {
+    const host = gridHost
+    const td = input.closest<HTMLElement>('td')
+    if (!host || !td || !input.value.startsWith('=')) { fnSuggest = null; return }
+    const items = suggestFunctions(input.value, input.selectionStart ?? input.value.length)
+    if (!items.length) { fnSuggest = null; return }
+    const a = td.getBoundingClientRect()
+    const b = host.getBoundingClientRect()
+    fnSuggest = { items, index: 0, left: a.left - b.left, top: a.bottom - b.top }
+  }
+  function takeFunction(input: Editor, suggestion: FunctionSuggestion) {
+    const next = applySuggestion(input.value, suggestion)
+    input.value = next.text
+    input.setSelectionRange(next.caret, next.caret)
+    fnSuggest = null
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  }
+  /** The keys the list takes while it is up; true when one was taken. */
+  function functionListKey(event: KeyboardEvent): boolean {
+    const list = fnSuggest
+    const input = editorOf(event.target)
+    if (!list || !input) return false
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      const step = event.key === 'ArrowDown' ? 1 : -1
+      fnSuggest = { ...list, index: (list.index + step + list.items.length) % list.items.length }
+    } else if (event.key === 'Tab' || event.key === 'Enter') {
+      takeFunction(input, list.items[list.index]!)
+    } else if (event.key === 'Escape') {
+      fnSuggest = null
+    } else {
+      return false
+    }
+    event.preventDefault()
+    event.stopPropagation()
+    return true
+  }
+
 
   // --- Excel's reference colours -------------------------------------------
   /**
@@ -5198,6 +5395,7 @@
       onCommit={commit}
       onNavigate={goTo}
       onSelectName={jumpToName}
+      onDefineName={defineNameHere}
       onInsertFunction={() => { const c = cmdOf(); if (c) delegate('insert-function', c) }}
       onDraft={(text) => { formulaDraft = text; barDraft = text }}
       label={dragLabel}
@@ -5230,6 +5428,8 @@
     class:fill={height === '100%'}
     bind:this={gridHost}
     onpointerdowncapture={onSheetPointerDown}
+    onmousedowncapture={onSheetMouseDown}
+    onclickcapture={onSheetClickCapture}
     oncontextmenucapture={onSheetContextMenu}
     onfocusin={onEditorFocusIn}
     onfocusout={onEditorFocusOut}
@@ -5336,6 +5536,18 @@
         {/if}
       {/each}
     </div>
+  {/if}
+  {#if fnSuggest}
+    <!-- Formula AutoComplete under the cell being edited: mousedown rather
+         than click, and prevented, so the editor keeps the focus and the
+         edit goes on with the name in place. -->
+    <ul class="sheet-fn-suggest" role="listbox" aria-label={t('functionSuggestions')} style:left="{fnSuggest.left}px" style:top="{fnSuggest.top}px">
+      {#each fnSuggest.items as item, i (item.name)}
+        <li role="option" aria-selected={i === fnSuggest.index}>
+          <button type="button" class:active={i === fnSuggest.index} tabindex="-1" onmousedown={(e) => { e.preventDefault(); const input = editorOf(document.activeElement); if (input) takeFunction(input, item) }}>{item.name}</button>
+        </li>
+      {/each}
+    </ul>
   {/if}
   {#if inputMessage && messageRect}
     <!-- Excel's Input Message: a small box under the selected cell, the
@@ -5964,6 +6176,37 @@
     white-space: pre-wrap;
   }
   .sheet-input-message .title { font-weight: 700; }
+  /* Formula AutoComplete under the cell, styled as the formula bar's list. */
+  .sheet-fn-suggest {
+    position: absolute;
+    z-index: 40;
+    margin: 0;
+    padding: 2px;
+    list-style: none;
+    min-width: 180px;
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid var(--sg-border, #d1d1d1);
+    border-radius: 4px;
+    background: var(--sg-bg, #fff);
+    color: var(--sg-fg, #242424);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.14);
+    font-size: 12px;
+  }
+  .sheet-fn-suggest button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .sheet-fn-suggest button.active,
+  .sheet-fn-suggest button:hover { background: var(--sg-row-hover-bg, #f0f0f0); }
   /* The in-cell dropdown arrow: a small button at the cell's right edge,
      above the cell text like the note corner. */
   .sheet-dropdown-arrow {

@@ -11,8 +11,9 @@
 export type ParsedEntry = {
   /** The number, as text the workbook stores. */
   value: string
-  /** The Excel format string the entry implies. */
-  numFmt: string
+  /** The Excel format string the entry implies; none for a bare number
+   *  read out of an accountant's parentheses, which Excel shows as General. */
+  numFmt?: string
 }
 
 const zeros = (n: number): string => (n > 0 ? '.' + '0'.repeat(n) : '')
@@ -34,6 +35,8 @@ const PERCENT = new RegExp(String.raw`^(-?)(${GROUPED})\s?%$`)
 const CURRENCY = new RegExp(String.raw`^(-?)\$\s?(${GROUPED})$`)
 const CURRENCY_PAREN = new RegExp(String.raw`^\(\$\s?(${GROUPED})\)$`)
 const THOUSANDS = new RegExp(String.raw`^(-?)(\d{1,3}(?:,\d{3})+(?:\.\d+)?)$`)
+/** (5): a negative the way a statement writes one, which Excel reads as -5. */
+const PAREN = new RegExp(String.raw`^\((${GROUPED})\)$`)
 
 /**
  * Excel's AutoComplete for a column of text.
@@ -92,6 +95,12 @@ export function parseEntry(text: string): ParsedEntry | null {
     if (n === null) return null
     const places = decimalsOf(m[2]!)
     return { value: String(m[1] ? -n : n), numFmt: `#,##0${zeros(places)}` }
+  }
+
+  m = PAREN.exec(t)
+  if (m) {
+    const n = numberOf(m[1]!)
+    return n === null ? null : { value: String(-n) }
   }
 
   return null

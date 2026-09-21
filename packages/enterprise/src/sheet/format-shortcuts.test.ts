@@ -224,7 +224,8 @@ describe('the extended binding table', () => {
   })
 
   it('still leaves the grid its own keys', () => {
-    const reserved = ['c', 'x', 'v', 'z', 'y', 'f']
+    // Ctrl+F is the sheet's since its Find dialog took it, as Ctrl+H before.
+    const reserved = ['c', 'x', 'v', 'z', 'y']
     for (const b of SHEET_BINDINGS) {
       if (b.mod && !b.shift && !b.alt) expect(reserved).not.toContain(b.key.toLowerCase())
     }

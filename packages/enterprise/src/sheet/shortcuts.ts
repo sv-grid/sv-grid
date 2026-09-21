@@ -653,11 +653,20 @@ export const SHEET_BINDINGS: ReadonlyArray<SheetBinding> = [
   { key: '0', code: 'Digit0', mod: true, run: raise('hide-columns'), label: 'Hide the selected columns' },
   { key: '(', code: 'Digit9', mod: true, shift: true, run: raise('unhide-rows'), label: 'Unhide rows in the selection' },
   { key: ')', code: 'Digit0', mod: true, shift: true, run: raise('unhide-columns'), label: 'Unhide columns in the selection' },
+  // Ctrl+H is Excel's Replace and Ctrl+F its Find; the shell has one dialog
+  // for both, so both open it. Ctrl+F is the browser's find otherwise, and a
+  // spreadsheet user who presses it wants the cells searched, as in Excel
+  // and Sheets; the browser's is a keystroke away with the sheet unfocused.
   { key: 'h', mod: true, run: (cmd) => {
     if (!onFindReplace || !getFindTarget()) return false
     onFindReplace(cmd)
     return true
   }, label: 'Find and Replace' },
+  { key: 'f', mod: true, run: (cmd) => {
+    if (!onFindReplace || !getFindTarget()) return false
+    onFindReplace(cmd)
+    return true
+  }, label: 'Find' },
   { key: 'v', mod: true, shift: true, run: (cmd) => {
     if (!onPasteSpecial) return false
     onPasteSpecial(cmd)

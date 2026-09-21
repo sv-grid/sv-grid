@@ -441,6 +441,25 @@ describe('onFillPointerUp / applyFillPattern', () => {
     expect(ctx.selectionRange.focus).toEqual({ rowIndex: 3, colIndex: 0 })
   })
 
+  it('turns the fill the other way when the release holds Ctrl, as Excel does', () => {
+    // A series becomes a copy of the block...
+    const ctx = makeCtx({
+      columns: [{ id: 'a', field: 'a', editable: true, editorType: 'number' }],
+      data: [{ a: 1 }, { a: 2 }, { a: 0 }, { a: 0 }, { a: 0 }],
+    })
+    ctx.fillDrag = { sourceMinRow: 0, sourceMaxRow: 1, sourceMinCol: 0, sourceMaxCol: 0, targetRow: 4, targetCol: 0 }
+    createClipboard(ctx).onFillPointerUp({ ctrlKey: true } as PointerEvent)
+    expect([ctx.internalData[2].a, ctx.internalData[3].a, ctx.internalData[4].a]).toEqual([1, 2, 1])
+    // ...and one number, which copies on its own, becomes a series.
+    const one = makeCtx({
+      columns: [{ id: 'a', field: 'a', editable: true, editorType: 'number' }],
+      data: [{ a: 7 }, { a: 0 }, { a: 0 }],
+    })
+    one.fillDrag = { sourceMinRow: 0, sourceMaxRow: 0, sourceMinCol: 0, sourceMaxCol: 0, targetRow: 2, targetCol: 0 }
+    createClipboard(one).onFillPointerUp({ ctrlKey: true } as PointerEvent)
+    expect([one.internalData[1].a, one.internalData[2].a]).toEqual([8, 9])
+  })
+
   it('records the drag as one grouped history entry, so Ctrl+Z takes it all back', () => {
     // The fill used to write through writeCellRaw and push nothing: a drag
     // over twenty rows was invisible to undo.

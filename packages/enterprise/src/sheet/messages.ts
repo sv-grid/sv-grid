@@ -164,6 +164,9 @@ export type SheetTextMessages = {
   selectChartFirst: string
   couldNotReadPicture: string
   nothingToPaste: string
+  /** "{name} defined for {refersTo}" */
+  nameDefined: string
+  nameBoxBadName: string
   /** "{count} {unit} left out of the file: a web address, or a type the file cannot hold" */
   picturesNotSaved: string
   unitPicture: string
@@ -931,6 +934,8 @@ export const defaultSheetTextMessages: SheetTextMessages = {
   selectChartFirst: 'Select a chart first.',
   couldNotReadPicture: 'Could not read the picture.',
   nothingToPaste: 'Nothing to paste. Copy cells first, or press Ctrl+V.',
+  nameDefined: '{name} now refers to {refersTo}',
+  nameBoxBadName: '"{name}" is not a valid name: letters, digits and underscores, and not a cell address',
   picturesNotSaved: '{count} {unit} left out of the file: a web address, or a type the file cannot hold',
   unitPicture: 'picture',
   unitPictures: 'pictures',
