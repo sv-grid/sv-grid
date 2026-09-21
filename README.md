@@ -125,7 +125,10 @@ The MIT package has no license key, no watermark, and no row-count cap.
 - **Filtering.** Excel-style filter menu, inline filter row, set filter, between operator on numbers and dates, locale-aware text matching.
 - **Editing.** 18 built-in `editorType`s from text and number to date/time pickers, rich-select with typeahead, autocomplete, chips, color, and rating, plus a `cellEditor` snippet for anything else.
 - **Selection.** Cell ranges by drag or Shift+arrows, TSV copy/paste, an Excel-style fill handle, drag a range to move it.
-- **Views.** Row grouping with aggregation, tree data, master/detail, spreadsheet mode with formulas.
+- **Views.** Row grouping with aggregation, tree data, master/detail, and a spreadsheet layout mode
+  (merged cells and per-cell borders). Formula cells in the free core go through an adapter seam you
+  point at your own `hyperformula` install; the built-in formula engine and `<SvSheet>` are in the
+  Suite edition of `@svgrid/enterprise`.
 - **Layout.** Row and column pinning, sticky header, drag-to-reorder, resizable rows and columns, a responsive mode for phones.
 - **Operations.** Find in grid (Ctrl+F), undo/redo, a transaction API, optimistic updates, server-side sort/filter/paging and infinite scroll.
 - **Charts.** A chart panel on the grid's rows and a standalone `SvChart`: 29 SVG chart types, zoom, drilldown, technical indicators, export. No charting library.
@@ -205,15 +208,22 @@ Guides: [Migrating from AG Grid](https://svgrid.com/docs/help/migrating-from-ag-
 | You want to | Install | License |
 |---|---|---|
 | A data grid in a Svelte 5 / SvelteKit app | `@svgrid/grid` | MIT |
-| Excel / PDF export, import, pivot tables, print, advanced filter builder, alert rules, Kanban + scheduler + Gantt renderers, server-side row model | `+ @svgrid/enterprise` | Commercial |
+| Excel / PDF export, import, pivot tables, print, advanced filter builder, alert rules, Kanban + scheduler + Gantt renderers, server-side row model | `+ @svgrid/enterprise` | Commercial, Grid |
+| A real spreadsheet: `<SvSheet>`, the built-in formula engine, `.xlsx` / `.xls` / `.ods` / `.csv` read and write | `+ @svgrid/enterprise` | Commercial, Suite |
 | The grid in React, Vue, Angular, or plain HTML | `@svgrid/grid-wc` | MIT |
 | Accurate SvGrid answers from Claude / Cursor / Zed | `@svgrid/mcp` | MIT |
 | To copy one UI component into your app, shadcn-style | `npx @svgrid/ui add <name>` | MIT |
 | To port an existing `svelte-headless-table` app | `npx @svgrid/migrate` | MIT |
-| A generated CRUD app from your database schema | `@svgrid/studio` | Commercial |
+| A generated CRUD app from your database schema | `@svgrid/studio` | Commercial, Suite |
 
-Open-source projects under an [OSI-approved license](https://opensource.org/licenses) get the
-Enterprise pack free. See [Pricing](https://svgrid.com/pricing/).
+`@svgrid/enterprise` sells in two editions, both covering unlimited production apps.
+**Grid** is the enterprise grid. **Suite** adds the spreadsheet and Studio. Shipping SvGrid to
+third parties as a component, an SDK, or an app builder they build with needs an OEM license,
+which is separate from developer seats. See [Pricing](https://svgrid.com/pricing/) and
+Section 4A of the [EULA](docs/legal/EULA.md).
+
+Open-source projects under an [OSI-approved license](https://opensource.org/licenses) get a
+Suite key free. See [Pricing](https://svgrid.com/pricing/).
 
 ## FAQ
 

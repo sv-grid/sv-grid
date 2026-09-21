@@ -125,6 +125,9 @@ sv-grid {
 ## Pro
 
 This element ships the free MIT `@svgrid/grid` core. For export, import,
-print, pivot, and AI, see [@svgrid/enterprise](https://svgrid.com/pricing/).
+print and pivot, see [@svgrid/enterprise](https://svgrid.com/pricing/). Its
+Suite edition also ships `<sv-sheet>`, the spreadsheet as a custom element,
+with the same formula engine and `.xlsx` / `.xls` / `.ods` support. The AI
+helpers need neither: they are free in `@svgrid/grid`.
 
 SvGrid(TM) is a trademark of jQWidgets Ltd. This package is MIT-licensed.
