@@ -316,18 +316,41 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
   },
   // DAYS(end, start): whole days, negative when the end comes first.
   DAYS: (a) => Math.round((toDate(nth(a, 0)).getTime() - toDate(nth(a, 1)).getTime()) / 86400000),
-  // DATEDIF(start, end, unit): Excel's "d", "m" and "y", completed units
-  // only, and #NUM! when the start comes after the end, as Excel gives.
+  // DATEDIF(start, end, unit): Excel's six units - "d", "m", "y" for the
+  // whole difference, and "md", "ym", "yd" for the part left when the higher
+  // units are set aside, which is how an age reads "y years, m months, d
+  // days". #NUM! when the start comes after the end, as Excel gives.
   DATEDIF: (a) => {
     const start = toDate(nth(a, 0))
     const end = toDate(nth(a, 1))
     if (end.getTime() < start.getTime()) return err('#NUM!')
     const unit = toText(nth(a, 2)).toUpperCase()
-    if (unit === 'D') return Math.floor((end.getTime() - start.getTime()) / 86400000)
+    const day = 86400000
+    if (unit === 'D') return Math.floor((end.getTime() - start.getTime()) / day)
     let months = (end.getUTCFullYear() - start.getUTCFullYear()) * 12 + (end.getUTCMonth() - start.getUTCMonth())
     if (end.getUTCDate() < start.getUTCDate()) months -= 1
     if (unit === 'M') return months
     if (unit === 'Y') return Math.floor(months / 12)
+    // Months ignoring years: the month part of the whole difference.
+    if (unit === 'YM') return months % 12
+    // Days ignoring months and years: the days past the last whole month.
+    // Anchoring `months` months onto the start, its day clamped to that
+    // month's length, keeps the count from going negative on the awkward
+    // month-end cases Excel itself is inconsistent about (Jan 31 -> Mar 1).
+    if (unit === 'MD') {
+      const anchorMonth = start.getUTCMonth() + months
+      const lastDay = new Date(Date.UTC(start.getUTCFullYear(), anchorMonth + 1, 0)).getUTCDate()
+      const anchorDay = Math.min(start.getUTCDate(), lastDay)
+      const anchor = Date.UTC(start.getUTCFullYear(), anchorMonth, anchorDay)
+      return Math.floor((end.getTime() - anchor) / day)
+    }
+    // Days ignoring years: the days between, with the start moved to end's
+    // year (or the year before, when that would overshoot the end).
+    if (unit === 'YD') {
+      let anchor = Date.UTC(end.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate())
+      if (anchor > end.getTime()) anchor = Date.UTC(end.getUTCFullYear() - 1, start.getUTCMonth(), start.getUTCDate())
+      return Math.floor((end.getTime() - anchor) / day)
+    }
     return err('#NUM!')
   },
 

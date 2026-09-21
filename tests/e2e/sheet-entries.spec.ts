@@ -193,3 +193,15 @@ test('LOOKUP and XMATCH complete the lookup family in the browser', async ({ pag
   await typeInto(page, 2, 3, '=INDEX(B1:B5,XMATCH(8,A1:A5))')
   expect(await shown(page, 2, 3)).toBe('40')
 })
+
+test('DATEDIF reads the part-units for an age (ym, md, yd), not just d/m/y', async ({ page }) => {
+  // "md", "ym" and "yd" returned #NUM! on 2026-09-21; they are how an age
+  // reads "y years, m months, d days".
+  await open(page)
+  await typeInto(page, 0, 0, '=DATEDIF(DATE(2000,3,15),DATE(2026,9,21),"y")')
+  expect(await shown(page, 0, 0)).toBe('26')
+  await typeInto(page, 1, 0, '=DATEDIF(DATE(2000,3,15),DATE(2026,9,21),"ym")')
+  expect(await shown(page, 1, 0)).toBe('6')
+  await typeInto(page, 2, 0, '=DATEDIF(DATE(2000,3,15),DATE(2026,9,21),"md")')
+  expect(await shown(page, 2, 0)).toBe('6')
+})

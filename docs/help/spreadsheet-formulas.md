@@ -255,6 +255,9 @@ instead.
 Dates are `yyyy-mm-dd` text, and the date functions hand back the same;
 `DATEVALUE` and `VALUE` turn one into Excel's serial number, `TIME` and
 `TIMEVALUE` give a fraction of a day that the `h:mm` formats show.
+`DATEDIF` carries Excel's six units - `"d"`, `"m"` and `"y"` for the whole
+difference, and `"md"`, `"ym"` and `"yd"` for the part left when the higher
+ones are set aside, which is how an age reads as years, months and days.
 `NUMBERVALUE(text, decimal, group)` is `VALUE` for a number written the way
 another country writes one: the separators are given rather than guessed,
 because `1.234,56` is a thousand in Germany and one point two in

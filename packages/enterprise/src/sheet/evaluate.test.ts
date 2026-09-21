@@ -419,6 +419,13 @@ describe('the function library', () => {
     expect(run('=DATEDIF("2026-01-31", "2026-03-30", "m")')).toBe(1)
     expect(run('=DATEDIF("2024-02-29", "2026-02-28", "y")')).toBe(1)
     expect(run('=DATEDIF("2026-09-19", "2026-09-15", "d")')).toEqual({ error: '#NUM!' })
+    // The part-units for an age like "y years, m months, d days".
+    expect(run('=DATEDIF("2026-01-15", "2026-03-20", "ym")')).toBe(2)
+    expect(run('=DATEDIF("2026-01-15", "2026-03-20", "md")')).toBe(5)
+    expect(run('=DATEDIF("2026-01-15", "2026-03-20", "yd")')).toBe(64)
+    // The month-end case Excel is inconsistent about stays non-negative.
+    expect(run('=DATEDIF("2026-01-31", "2026-03-01", "md")')).toBe(1)
+    expect(run('=DATEDIF("2000-03-15", "2026-09-21", "ym")')).toBe(6)
   })
 
   it('does the lookups', () => {
