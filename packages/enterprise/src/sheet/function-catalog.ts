@@ -101,6 +101,8 @@ const CATALOG: Record<string, { group: FunctionGroup; description: string; signa
   XLOOKUP: { group: 'Lookup & Reference', description: 'Searches a range for a match and returns the corresponding item from a second range.' },
   INDEX: { group: 'Lookup & Reference', description: 'Returns a value from a range at the intersection of a given row and column.' },
   MATCH: { group: 'Lookup & Reference', description: 'Returns the relative position of an item in a range that matches a specified value.' },
+  XMATCH: { group: 'Lookup & Reference', description: 'Returns the relative position of an item in an array, with a choice of exact, next-smaller, next-larger or wildcard match.', signature: 'XMATCH(lookup_value, lookup_array, [match_mode], [search_mode])' },
+  LOOKUP: { group: 'Lookup & Reference', description: 'Looks up a value in a one-row or one-column range and returns the matching value from a second range.', signature: 'LOOKUP(lookup_value, lookup_vector, [result_vector])' },
 
   PMT: { group: 'Financial', description: 'Calculates the payment for a loan based on constant payments and a constant interest rate.', signature: 'PMT(rate, nper, pv, [fv], [type])' },
   IPMT: { group: 'Financial', description: 'Returns the interest payment for a given period of an investment, based on periodic, constant payments and a constant interest rate.', signature: 'IPMT(rate, per, nper, pv, [fv], [type])' },

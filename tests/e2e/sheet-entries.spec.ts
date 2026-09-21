@@ -179,3 +179,17 @@ test('a mixed fraction typed into a cell is a number, shown back as a fraction',
   await typeInto(page, 3, 0, '1/2')
   expect(await shown(page, 3, 0)).toMatch(/^\d{4}-01-02$/)
 })
+
+test('LOOKUP and XMATCH complete the lookup family in the browser', async ({ page }) => {
+  // Both returned #NAME? on 2026-09-21 though the sheet has VLOOKUP, XLOOKUP,
+  // MATCH and INDEX. LOOKUP takes the largest item not past its value; XMATCH
+  // is MATCH's modern twin with next-smaller and next-larger modes.
+  await open(page)
+  for (let i = 0; i < 5; i += 1) { await typeInto(page, i, 0, String((i + 1) * 2)); await typeInto(page, i, 1, String((i + 1) * 10)) }
+  await typeInto(page, 0, 3, '=LOOKUP(6,A1:A5,B1:B5)')
+  expect(await shown(page, 0, 3)).toBe('30')
+  await typeInto(page, 1, 3, '=XMATCH(8,A1:A5)')
+  expect(await shown(page, 1, 3)).toBe('4')
+  await typeInto(page, 2, 3, '=INDEX(B1:B5,XMATCH(8,A1:A5))')
+  expect(await shown(page, 2, 3)).toBe('40')
+})

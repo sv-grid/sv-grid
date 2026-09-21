@@ -431,6 +431,23 @@ describe('the function library', () => {
     expect(run('=XLOOKUP("z", A1:A3, B1:B3, "missing")', table)).toBe('missing')
   })
 
+  it('does LOOKUP and XMATCH', () => {
+    const nums: CellValue[][] = [[2, 10], [4, 20], [6, 30], [8, 40], [10, 50]]
+    // LOOKUP takes the largest item not past the value, sorted ascending.
+    expect(run('=LOOKUP(6, A1:A5, B1:B5)', nums)).toBe(30)
+    expect(run('=LOOKUP(7, A1:A5, B1:B5)', nums)).toBe(30)
+    expect(run('=LOOKUP(1, A1:A5, B1:B5)', nums)).toEqual({ error: '#N/A' })
+    expect(run('=LOOKUP(6, A1:A5)', nums)).toBe(6)
+    // XMATCH: exact by default, and the modes for the next smaller or larger.
+    expect(run('=XMATCH(8, A1:A5)', nums)).toBe(4)
+    expect(run('=XMATCH(7, A1:A5, -1)', nums)).toBe(3)
+    expect(run('=XMATCH(7, A1:A5, 1)', nums)).toBe(4)
+    expect(run('=XMATCH(99, A1:A5)', nums)).toEqual({ error: '#N/A' })
+    // A negative search mode finds the last of several matches.
+    const dup: CellValue[][] = [['x'], ['y'], ['x']]
+    expect(run('=XMATCH("x", A1:A3, 0, -1)', dup)).toBe(3)
+  })
+
   it('does HLOOKUP across the header row', () => {
     const table: CellValue[][] = [['a', 'b'], [1, 2]]
     expect(run('=HLOOKUP("b", A1:B2, 2)', table)).toBe(2)
