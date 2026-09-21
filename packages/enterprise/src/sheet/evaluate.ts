@@ -637,8 +637,9 @@ function evalCall(
   const { perArg, grids } = collectArgs(args, ctx)
   const flat = perArg.flat()
   // An error anywhere in the arguments propagates, except for the counting
-  // functions, which Excel lets see errors in their range.
-  if (name !== 'COUNTA' && name !== 'COUNTBLANK') {
+  // functions, which Excel lets see errors in their range, and TYPE, whose
+  // whole job is to report that an error IS one (it answers 16).
+  if (name !== 'COUNTA' && name !== 'COUNTBLANK' && name !== 'TYPE') {
     for (const v of flat) if (isError(v)) return v
   }
 

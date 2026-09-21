@@ -314,6 +314,55 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
     const at = nthDelimiter(s, delim, instance)
     return at === null ? (a.args[5] !== undefined ? nth(a, 5) : err('#N/A')) : s.slice(at + delim.length)
   },
+  // DOLLAR / FIXED(number, [decimals], [no_commas]): a number as the text of
+  // a currency or a fixed-decimal figure, grouped in thousands. DOLLAR wraps
+  // a negative in parentheses; a negative decimals rounds to the left of the
+  // point, so DOLLAR(1234.5, -2) is "$1,200".
+  DOLLAR: (a) => {
+    const decimals = a.args[1] !== undefined ? Math.trunc(toNumber(nth(a, 1))) : 2
+    const rounded = roundTo(toNumber(nth(a, 0)), decimals)
+    const places = Math.max(decimals, 0)
+    const body = `$${Math.abs(rounded).toLocaleString('en-US', { minimumFractionDigits: places, maximumFractionDigits: places })}`
+    return rounded < 0 ? `(${body})` : body
+  },
+  FIXED: (a) => {
+    const decimals = a.args[1] !== undefined ? Math.trunc(toNumber(nth(a, 1))) : 2
+    const noCommas = a.args[2] !== undefined && toBool(nth(a, 2))
+    const rounded = roundTo(toNumber(nth(a, 0)), decimals)
+    const places = Math.max(decimals, 0)
+    return noCommas
+      ? rounded.toFixed(places)
+      : rounded.toLocaleString('en-US', { minimumFractionDigits: places, maximumFractionDigits: places })
+  },
+  // COMBIN / PERMUT(n, k): the ways to choose k of n, unordered and ordered.
+  // The product form keeps the intermediate values small, so a big n does not
+  // overflow the way n! would.
+  COMBIN: (a) => {
+    const n = Math.trunc(toNumber(nth(a, 0)))
+    const k = Math.trunc(toNumber(nth(a, 1)))
+    if (n < 0 || k < 0 || k > n) return err('#NUM!')
+    let result = 1
+    for (let i = 0; i < k; i += 1) result = (result * (n - i)) / (i + 1)
+    return Math.round(result)
+  },
+  PERMUT: (a) => {
+    const n = Math.trunc(toNumber(nth(a, 0)))
+    const k = Math.trunc(toNumber(nth(a, 1)))
+    if (n < 0 || k < 0 || k > n) return err('#NUM!')
+    let result = 1
+    for (let i = 0; i < k; i += 1) result *= n - i
+    return result
+  },
+  // TYPE(value): 1 a number, 2 text, 4 a logical, 16 an error, 64 an array.
+  TYPE: (a) => {
+    const grid = a.grids[0]
+    if (grid && (grid.length > 1 || (grid[0]?.length ?? 0) > 1)) return 64
+    const v = nth(a, 0)
+    if (isError(v)) return 16
+    if (typeof v === 'number') return 1
+    if (typeof v === 'boolean') return 4
+    return 2
+  },
   // FIND(find, within, [start]): case sensitive, 1-based, #VALUE! when the
   // text is not there. The third argument is where the search BEGINS, and
   // the answer is still counted from the start of the text, which is what

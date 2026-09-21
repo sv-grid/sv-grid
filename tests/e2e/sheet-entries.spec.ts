@@ -217,3 +217,18 @@ test('SUBSTITUTE takes an instance, and TEXTBEFORE/TEXTAFTER split on a delimite
   await typeInto(page, 2, 0, '=TEXTAFTER("path/to/file","/",-1)')
   expect(await shown(page, 2, 0)).toBe('file')
 })
+
+test('DOLLAR, FIXED, COMBIN, PERMUT and TYPE fill the remaining common functions', async ({ page }) => {
+  // All read #NAME? on 2026-09-21.
+  await open(page)
+  await typeInto(page, 0, 0, '=DOLLAR(1234.5,2)')
+  expect(await shown(page, 0, 0)).toBe('$1,234.50')
+  await typeInto(page, 1, 0, '=FIXED(1234.567,1)')
+  expect(await shown(page, 1, 0)).toBe('1,234.6')
+  await typeInto(page, 2, 0, '=COMBIN(5,2)')
+  expect(await shown(page, 2, 0)).toBe('10')
+  await typeInto(page, 3, 0, '=PERMUT(5,2)')
+  expect(await shown(page, 3, 0)).toBe('20')
+  await typeInto(page, 4, 0, '=TYPE("x")')
+  expect(await shown(page, 4, 0)).toBe('2')
+})

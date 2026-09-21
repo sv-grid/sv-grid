@@ -380,6 +380,27 @@ describe('the function library', () => {
     expect(run('=TEXTAFTER("abc", "-", 1, 0, 0, "none")')).toBe('none')
   })
 
+  it('formats a number as DOLLAR and FIXED text', () => {
+    expect(run('=DOLLAR(1234.5, 2)')).toBe('$1,234.50')
+    expect(run('=DOLLAR(-1234.5, 2)')).toBe('($1,234.50)')
+    expect(run('=DOLLAR(1234.5, -2)')).toBe('$1,200')
+    expect(run('=FIXED(1234.567, 1)')).toBe('1,234.6')
+    expect(run('=FIXED(1234.567, 1, TRUE)')).toBe('1234.6')
+    expect(run('=FIXED(-9.876, 2)')).toBe('-9.88')
+  })
+
+  it('counts combinations and permutations, and names a type', () => {
+    expect(run('=COMBIN(5, 2)')).toBe(10)
+    expect(run('=COMBIN(10, 3)')).toBe(120)
+    expect(run('=PERMUT(5, 2)')).toBe(20)
+    expect(run('=COMBIN(5, 7)')).toEqual({ error: '#NUM!' })
+    expect(run('=TYPE(5)')).toBe(1)
+    expect(run('=TYPE("x")')).toBe(2)
+    expect(run('=TYPE(TRUE)')).toBe(4)
+    expect(run('=TYPE(1/0)')).toBe(16)
+    expect(run('=TYPE(A1:A3)', [[1], [2], [3]])).toBe(64)
+  })
+
   it('finds case sensitively and searches case insensitively', () => {
     expect(run('=FIND("B", "aBc")')).toBe(2)
     expect(run('=FIND("b", "aBc")')).toEqual({ error: '#VALUE!' })
