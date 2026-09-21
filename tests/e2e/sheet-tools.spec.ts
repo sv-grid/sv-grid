@@ -105,3 +105,27 @@ test('Wrap Text off gives a row its height back; a hand-sized row keeps its size
   await page.waitForTimeout(400)
   expect(Math.abs((await cell(page, 2, 0).boundingBox())!.height - 120)).toBeLessThan(2)
 })
+
+test('Format Cells sets a cell\'s vertical alignment, top and bottom', async ({ page }) => {
+  // Vertical-align is one of the most-used cell settings and the Alignment
+  // tab had no control for it on 2026-09-21; the cell span is a grid box, so
+  // top and bottom move its anchor.
+  await open(page)
+  await typeInto(page, 0, 0, 'anchor')
+  const alignItems = () => cell(page, 0, 0).evaluate((el) => getComputedStyle(el.querySelector('.sheet-cell') ?? el).alignItems)
+  expect(await alignItems()).toBe('center')
+  async function setVertical(v: string) {
+    await cell(page, 0, 0).click()
+    await page.keyboard.press('Control+1')
+    await modal(page).waitFor()
+    await modal(page).locator('button', { hasText: /^\s*Alignment\s*$/ }).first().click()
+    await page.waitForTimeout(200)
+    await modal(page).locator('select').nth(1).selectOption(v)
+    await modal(page).locator('button.btn.primary', { hasText: /^OK$/i }).first().click()
+    await page.waitForTimeout(300)
+  }
+  await setVertical('top')
+  expect(await alignItems()).toBe('start')
+  await setVertical('bottom')
+  expect(await alignItems()).toBe('end')
+})

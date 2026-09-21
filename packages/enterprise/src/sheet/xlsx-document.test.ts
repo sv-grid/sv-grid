@@ -24,10 +24,10 @@ function fullDocument() {
   wb.setRaw('Orders', 0, 5, '=SEQUENCE(2, 1, 7)')
   wb.setActive('Price list')
   const orders = doc.get('Orders')
-  orders.formats.set([[0, 0, 0, 4]], { bold: true, fill: '#e2e8f0', color: '#0f172a', align: 'center' }, lookup)
+  orders.formats.set([[0, 0, 0, 4]], { bold: true, fill: '#e2e8f0', color: '#0f172a', align: 'center', valign: 'top' }, lookup)
   orders.formats.set([[1, 2, 3, 3]], { numFmt: '$#,##0.00;($#,##0.00)' }, lookup)
   orders.formats.set([[1, 4, 2, 4]], { numFmt: 'yyyy-mm-dd' }, lookup)
-  orders.formats.set([[3, 3, 3, 3]], { border: { top: { width: 1 }, bottom: { style: 'double', color: '#000000' } }, locked: false, wrap: true, indent: 1, italic: true, underline: true, strike: true, fontSize: 16, fontFamily: 'Arial' }, lookup)
+  orders.formats.set([[3, 3, 3, 3]], { border: { top: { width: 1 }, bottom: { style: 'double', color: '#000000' } }, locked: false, wrap: true, indent: 1, italic: true, underline: true, strike: true, fontSize: 16, fontFamily: 'Arial', valign: 'bottom' }, lookup)
   orders.widths.A = 140
   orders.widths.E = 91
   orders.heights.set(0, 32)
@@ -150,13 +150,13 @@ describe('the round trip', () => {
     expect(again.workbook.getValue('Price list', 3, 1)).toEqual({ error: '#DIV/0!' })
 
     const o = again.get('Orders')
-    expect(o.formats.get('r0', 'A')).toEqual({ bold: true, fill: '#e2e8f0', color: '#0f172a', align: 'center' })
+    expect(o.formats.get('r0', 'A')).toEqual({ bold: true, fill: '#e2e8f0', color: '#0f172a', align: 'center', valign: 'top' })
     expect(o.formats.get('r1', 'C')).toEqual({ numFmt: '$#,##0.00;($#,##0.00)' })
     expect(o.formats.get('r1', 'E')).toEqual({ numFmt: 'yyyy-mm-dd' })
     expect(o.formats.get('r3', 'D')).toEqual({
       numFmt: '$#,##0.00;($#,##0.00)',
       border: { top: { width: 1 }, bottom: { style: 'double', width: 1, color: '#000000' } },
-      locked: false, wrap: true, indent: 1, italic: true, underline: true, strike: true, fontSize: 16, fontFamily: 'Arial',
+      locked: false, wrap: true, indent: 1, italic: true, underline: true, strike: true, fontSize: 16, fontFamily: 'Arial', valign: 'bottom',
     })
     expect(o.widths).toEqual({ A: 140, E: 91 })
     expect(o.heights.get(0)).toBe(32)

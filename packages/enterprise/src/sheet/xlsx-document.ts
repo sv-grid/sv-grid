@@ -223,6 +223,7 @@ function styleRegistry() {
     const border = intern(borders, borderIds, borderXml(e.border))
     const alignParts: string[] = []
     if (e.align) alignParts.push(`horizontal="${e.align}"`)
+    if (e.valign) alignParts.push(`vertical="${e.valign}"`)
     if (e.wrap) alignParts.push('wrapText="1"')
     if (e.indent) alignParts.push(`indent="${e.indent}"`)
     const align = alignParts.length ? `<alignment ${alignParts.join(' ')}/>` : ''
@@ -996,6 +997,9 @@ function readStyles(xml: string | undefined): StyleTable {
     const align = kid(xf, 'alignment')
     const horizontal = attr(align, 'horizontal')
     if (horizontal === 'left' || horizontal === 'center' || horizontal === 'right') entry.align = horizontal
+    const vertical = attr(align, 'vertical')
+    // The middle is the sheet's default, so only top and bottom are kept.
+    if (vertical === 'top' || vertical === 'bottom') entry.valign = vertical
     if (flag(align, 'wrapText')) entry.wrap = true
     const indent = num(align, 'indent')
     if (indent) entry.indent = indent

@@ -78,6 +78,7 @@
   let custom = $state('')
   // Alignment
   let align = $state<'' | 'left' | 'center' | 'right'>('')
+  let valign = $state<'top' | 'center' | 'bottom'>('center')
   let wrap = $state(false)
   let indent = $state(0)
   // Font
@@ -141,6 +142,7 @@
     special = SPECIALS.find((id) => SPECIAL_FORMATS[id].pattern === initial.numFmt) ?? 'zip'
     custom = initial.numFmt ?? ''
     align = initial.align ?? ''
+    valign = initial.valign ?? 'center'
     wrap = initial.wrap ?? false
     indent = initial.indent ?? 0
     fontFamily = initial.fontFamily ?? ''
@@ -165,6 +167,9 @@
     }
     set('numFmt', pattern)
     set('align', align || undefined)
+    // Middle is the default the sheet already draws, so only top and bottom
+    // are stored, the way an unset field means "as it was".
+    set('valign', valign === 'center' ? undefined : valign)
     set('wrap', wrap || undefined)
     set('indent', indent > 0 ? indent : undefined)
     set('fontFamily', fontFamily || undefined)
@@ -279,6 +284,14 @@
             <option value="left">{t('formatCells.align.left')}</option>
             <option value="center">{t('formatCells.align.center')}</option>
             <option value="right">{t('formatCells.align.right')}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>{t('formatCells.vertical')}</span>
+          <select bind:value={valign}>
+            <option value="top">{t('formatCells.valign.top')}</option>
+            <option value="center">{t('formatCells.valign.center')}</option>
+            <option value="bottom">{t('formatCells.valign.bottom')}</option>
           </select>
         </label>
         <label class="field">
