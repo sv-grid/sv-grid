@@ -359,6 +359,23 @@ function alignItem(align: 'left' | 'center' | 'right', title: string): RibbonIte
   }
 }
 
+/** Excel's Top / Middle / Bottom Align. The middle is the sheet's default,
+ *  so its button clears the field rather than storing it, and reads as on
+ *  for a cell that has no vertical alignment of its own. */
+function valignItem(valign: 'top' | 'center' | 'bottom', title: string): RibbonItem {
+  return {
+    id: `valign-${valign}`,
+    label: '≡',
+    icon: `valign-${valign}` as RibbonIconName,
+    title,
+    kind: 'toggle',
+    run: (cmd) => applyFormat(cmd, { valign: valign === 'center' ? undefined : valign }),
+    isOn: (cmd) => everyCellHas(cmd, (entry) =>
+      valign === 'center' ? entry?.valign === undefined || entry?.valign === 'center' : entry?.valign === valign),
+    isEnabled: canFormat,
+  }
+}
+
 function presetItem(
   id: string, label: string, title: string, name: FormatPresetName, keys?: string,
 ): RibbonItem {
@@ -762,6 +779,9 @@ const HOME: RibbonTab = {
       layout: 'flow',
       launcher: 'format-cells',
       items: [
+        small(1, valignItem('top', 'Top Align')),
+        small(1, valignItem('center', 'Middle Align')),
+        small(1, valignItem('bottom', 'Bottom Align')),
         small(1, {
           id: 'wrap', label: 'Wrap Text', title: 'Wrap Text', icon: 'wrap', kind: 'toggle', wide: true,
           run: (cmd) => toggleWrap(cmd),

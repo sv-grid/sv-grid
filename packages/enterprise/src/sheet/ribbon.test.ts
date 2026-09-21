@@ -98,6 +98,16 @@ describe('the model is well-formed', () => {
     ])
   })
 
+  it('carries Excel\'s Top/Middle/Bottom Align toggles on Home > Alignment', () => {
+    const home = RIBBON_TABS.find((t) => t.id === 'home')!
+    const alignment = home.groups.find((g) => g.id === 'alignment')!
+    const ids = alignment.items.map((i) => i.id)
+    expect(ids).toEqual(expect.arrayContaining(['valign-top', 'valign-center', 'valign-bottom']))
+    for (const id of ['valign-top', 'valign-center', 'valign-bottom']) {
+      expect(alignment.items.find((i) => i.id === id)!.kind).toBe('toggle')
+    }
+  })
+
   it('files each Conditional Formatting command under its own heading', () => {
     // The Clear and New Rule headings were once swapped with their items, so
     // two headings rendered back-to-back (an empty section) and the clear

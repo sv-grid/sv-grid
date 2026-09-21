@@ -129,3 +129,22 @@ test('Format Cells sets a cell\'s vertical alignment, top and bottom', async ({ 
   await setVertical('bottom')
   expect(await alignItems()).toBe('end')
 })
+
+test('the Home ribbon Top/Middle/Bottom Align buttons set a cell\'s vertical alignment', async ({ page }) => {
+  // Excel's Alignment group; the shell had only horizontal align buttons on
+  // 2026-09-21. Middle is the default, so its button reads as on to start.
+  await open(page)
+  await typeInto(page, 0, 0, 'x')
+  const alignItems = () => cell(page, 0, 0).evaluate((el) => getComputedStyle(el.querySelector('.sheet-cell') ?? el).alignItems)
+  expect(await alignItems()).toBe('center')
+  await cell(page, 0, 0).click()
+  await button(page, 'Top Align').click()
+  await page.waitForTimeout(200)
+  expect(await alignItems()).toBe('start')
+  await button(page, 'Bottom Align').click()
+  await page.waitForTimeout(200)
+  expect(await alignItems()).toBe('end')
+  await button(page, 'Middle Align').click()
+  await page.waitForTimeout(200)
+  expect(await alignItems()).toBe('center')
+})
