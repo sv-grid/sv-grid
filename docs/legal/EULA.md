@@ -1,6 +1,6 @@
 # SVGRID END USER LICENSE AGREEMENT
 
-Version 1.0
+Version 1.1
 
 This End User License Agreement ("EULA") governs your use of SvGrid. Please read
 it carefully before downloading, installing, or using any portion of the
@@ -10,20 +10,36 @@ permitted to use the Software or any portion of it.
 
 SvGrid is distributed in two editions under two different sets of terms:
 
-- The **Community Edition** (`@svgrid/grid` and `@svgrid/mcp`) is free and open
-  source under the **MIT License**. Sections 2 and 3 apply to it.
-- The **Enterprise Package** (`@svgrid/enterprise`) is commercial software
-  licensed, not sold, under the terms in Sections 4 through 12.
+- The **Community Edition** (`@svgrid/grid`, `@svgrid/grid-wc`, `@svgrid/ui`,
+  `@svgrid/mcp`, `@svgrid/migrate`, `@svgrid/create` and `@svgrid/create-studio`)
+  is free and open source under the **MIT License**. Sections 2 and 3 apply to
+  it.
+- The **Commercial Packages** (`@svgrid/enterprise` and `@svgrid/studio`) are
+  commercial software, licensed and not sold, under the terms in Sections 4
+  through 12.
 
 ## 1. DEFINITIONS
 
 - **"Software"** means SvGrid, including its modules, components, program files,
   source code, examples, media, and documentation, as well as any portion of
   them.
-- **"Community Edition"** means the `@svgrid/grid` and `@svgrid/mcp` packages and
-  any other SvGrid package published under the MIT License.
+- **"Community Edition"** means the `@svgrid/grid`, `@svgrid/grid-wc`,
+  `@svgrid/ui`, `@svgrid/mcp`, `@svgrid/migrate`, `@svgrid/create` and
+  `@svgrid/create-studio` packages, and any other SvGrid package published
+  under the MIT License.
 - **"Enterprise Package"** means the `@svgrid/enterprise` package and any other
   SvGrid package published under this commercial license.
+- **"Spreadsheet Module"** means the workbook, formula engine, and spreadsheet
+  file-format features of the Enterprise Package, including `<SvSheet>`, the
+  `<sv-sheet>` custom element, the formula evaluator, and the readers and
+  writers for the `.xlsx`, `.xls`, `.ods` and `.csv` formats.
+- **"Studio"** means the `@svgrid/studio` package together with the Studio
+  designer, code generator, and SQL data sources shipped in the Enterprise
+  Package.
+- **"Grid Edition"** means an Enterprise license whose scope excludes the
+  Spreadsheet Module and Studio.
+- **"Suite Edition"** means an Enterprise license whose scope includes the
+  Enterprise Package in full, the Spreadsheet Module, and Studio.
 - **"Author"** means jQWidgets Ltd.
 - **"Subscriber"** means the individual or organization that has obtained a valid
   Enterprise license.
@@ -31,8 +47,10 @@ SvGrid is distributed in two editions under two different sets of terms:
   imports the Enterprise Package. Read-only users and end users are not
   Developers.
 - **"License Key"** means a key issued by the Author that activates the
-  Enterprise Package for the number of Developer seats covered by the
-  Subscriber's order.
+  Enterprise Package for the edition and the number of Developer seats covered
+  by the Subscriber's order.
+- **"OEM License"** means a separately negotiated license, described in
+  Section 4A, that permits redistribution beyond the grant in Section 4(c).
 
 ## 2. COMMUNITY EDITION - MIT LICENSE
 
@@ -63,22 +81,66 @@ non-sublicensable license to:
       that all copyright notices and license terms are preserved;
   (c) distribute the Enterprise Package bundled inside the Subscriber's own
       application, provided that the Enterprise Package is not the primary product
-      distributed and remains under this EULA.
+      distributed, that it remains under this EULA, and that the distribution is
+      not one of the cases listed in Section 4A, which require an OEM License.
 
-The scope of deployment is determined by the Subscriber's order:
+The scope of the license is determined by the Subscriber's order:
 
-- A **Single Application Developer License** covers one (1) deployed production
-  application, plus any number of internal development and staging environments.
-- A **Multiple Application Developer License** covers an unlimited number of
-  deployed production applications within the Subscriber's organization,
-  including subsidiaries and sister products.
+- A **Grid Developer License** covers the Enterprise Package excluding the
+  Spreadsheet Module and Studio, on an unlimited number of deployed production
+  applications within the Subscriber's organization, including subsidiaries and
+  sister products, plus any number of internal development and staging
+  environments.
+- A **Suite Developer License** covers the Enterprise Package in full, including
+  the Spreadsheet Module and Studio, on the same unlimited application scope.
 - An **Enterprise / Custom (Site or Organization-wide) License** covers the scope
   defined in the separately negotiated order or master agreement.
+- An **OEM License** covers the redistribution cases in Section 4A.
+
+Use of the Spreadsheet Module or Studio under a Grid Developer License is outside
+the licensed scope. Consistent with Section 7, the Software does not block such
+use: it stays soft-gated and shows the unlicensed watermark and notice. Bringing
+that use into scope requires a Suite Developer License.
+
+## 4A. OEM AND REDISTRIBUTION LICENSE
+
+Section 4(c) covers the ordinary case, in which the Subscriber ships its own
+application and the Enterprise Package is one component inside it. An **OEM
+License**, negotiated separately with the Author, is required where any of the
+following applies:
+
+  (a) the Subscriber distributes the Enterprise Package, or any part of it, to
+      third parties as a component, library, SDK, template, or building block
+      that those third parties use to build their own applications;
+  (b) the Subscriber's product is a platform, application builder, low-code or
+      no-code tool, or development environment in which the Subscriber's own
+      customers author applications, reports, or workbooks that render through
+      the Enterprise Package;
+  (c) the Subscriber sublicenses, resells, or white-labels the Enterprise
+      Package under another name;
+  (d) the Subscriber deploys the Enterprise Package in a multi-tenant hosted
+      product in which the Spreadsheet Module or Studio is a material part of
+      what the Subscriber's customers are paying for.
+
+An OEM License is priced separately from Developer seats, is granted for a
+defined term and a defined product, and may carry a redistribution volume or
+royalty basis recorded in the order. Developer seats under Sections 4 and 5 do
+not convey the rights in this Section, however many seats are purchased.
+
+For the avoidance of doubt, ordinary business software that is sold to customers
+is covered by Section 4(c) and does not require an OEM License. A SaaS
+application whose users view, edit, and export their own data in a grid or a
+workbook is the Subscriber's own application, not redistribution. The test in
+this Section is whether third parties receive the Enterprise Package as
+something they build with, not whether the Subscriber charges for its product.
+
+Requests: sales@jqwidgets.com.
 
 ## 5. ENTERPRISE LICENSE - SEATS
 
 The Enterprise Package is licensed per Developer. The number of Developer seats
-is determined by the Subscriber's order. Production seats and end users are
+and the edition, Grid or Suite, are determined by the Subscriber's order. All
+seats on one order share one edition. Production seats and end users are
 unlimited and are not counted. One License Key activates every grid instance in
 scope; there is no per-page or per-component accounting. A seat is tied to a role,
 not to a named individual: if a Developer leaves and is replaced, the seat
@@ -104,11 +166,19 @@ Subscriber.
 
 ## 7. ENTERPRISE LICENSE - EVALUATION AND SOFT-GATE
 
-The Enterprise Package is soft-gated. All Enterprise features are fully functional
-without a License Key for the purpose of evaluation. While unlicensed, the grid
-displays a small "Unlicensed @svgrid/enterprise" watermark and emits a one-time
-console notice. There is no time limit and no disabled functionality during
-evaluation. Setting a valid License Key removes the watermark and the notice.
+The Enterprise Package is soft-gated. All Enterprise features, including the
+Spreadsheet Module and Studio, are fully functional without a License Key for the
+purpose of evaluation. While unlicensed, the grid and the spreadsheet display a
+small "Unlicensed @svgrid/enterprise" watermark and emit a one-time console
+notice. There is no time limit and no disabled functionality during evaluation.
+Setting a valid License Key that covers the feature in use removes the watermark
+and the notice.
+
+The same applies to a feature outside a Subscriber's edition. A Grid Developer
+License that reaches the Spreadsheet Module or Studio is treated as unlicensed
+for that feature: the feature runs, and the watermark and notice stay until the
+license is upgraded. The Author does not disable a feature that is already
+running in a Subscriber's application.
 On request, the Author issues a time-limited evaluation key that removes the
 watermark during evaluation. Any sentinel or development key published by the
 Author for local development and testing must not be used in production.
@@ -117,18 +187,31 @@ Author for local development and testing must not be used in production.
 
 The Author issues a free Enterprise License Key for projects that are open source
 under an OSI-approved license, hosted in a public repository, and are not a paid
-product. Such keys provide the full Enterprise feature set with no watermark and
-are renewable annually for as long as the project remains open source. Requests
+product. Such keys are issued at the Suite Edition, provide the full Enterprise
+feature set with no watermark, and are renewable annually for as long as the
+project remains open source. Requests
 are made to the Author with the repository URL.
 
 ## 9. ENTERPRISE LICENSE - LICENSE KEY AND VALIDATION
 
-License Key validation is performed entirely client-side, signed against the
-Author's public key. No network call is made to validate a License Key, and no
-telemetry is sent. Air-gapped deployments are supported. Each License Key embeds
-a stable identifier used only to cross-reference the Subscriber's order during
-support. The Subscriber must not remove, obscure, or disable the License Key
-check.
+License Key validation is performed entirely client-side. No network call is made
+to validate a License Key, and no telemetry is sent. Air-gapped deployments are
+supported.
+
+The check is deliberately not a cryptographic one. The Software classifies the
+key string: whether it carries the Author's prefix, which edition it names,
+whether it appears on the Author's revoked list, whether it is a development or
+evaluation sentinel, and any expiry date the key encodes. It does nothing more.
+A key can be read out of a deployed bundle by anyone with developer tools, and an
+unlicensed or out-of-edition build still runs. This is stated plainly because the
+license is a legal agreement and not a technical lock, and the Author would
+rather describe the mechanism accurately than imply protection that is not there.
+Keys are revocable: a key the Author revokes stops being accepted in later
+releases.
+
+Each License Key embeds a stable identifier used only to cross-reference the
+Subscriber's order during support. The Subscriber must not remove, obscure, or
+disable the License Key check, the watermark, or the console notice.
 
 ## 10. ENTERPRISE LICENSE - RESTRICTIONS
 
@@ -139,10 +222,14 @@ The Subscriber may NOT:
   (b) sublicense, rent, lease, or sell the Enterprise Package to third parties;
   (c) remove, obscure, or disable the License Key check or any copyright or
       proprietary notices;
-  (d) use the Enterprise Package to develop a data-grid or table component
-      product that competes with the Software for distribution to third parties;
+  (d) use the Enterprise Package to develop a data-grid, table, or spreadsheet
+      component product that competes with the Software for distribution to
+      third parties;
   (e) share License Keys outside of the Developer seats covered by the
-      Subscriber's order.
+      Subscriber's order;
+  (f) ship to production a use of the Spreadsheet Module or Studio that the
+      Subscriber's edition does not cover, or a redistribution described in
+      Section 4A without an OEM License.
 
 ## 11. INTELLECTUAL PROPERTY
 
@@ -187,7 +274,7 @@ EXTENT ALLOWED BY APPLICABLE LAW.
 ## 15. TERMINATION
 
 This EULA, with respect to the Enterprise Package, terminates automatically upon
-the Subscriber's material breach of Sections 4, 5, 10, or 11. On termination for
+the Subscriber's material breach of Sections 4, 4A, 5, 10, or 11. On termination for
 breach, the Subscriber must cease all use of the Enterprise Package, remove it
 from development environments, and stop deploying new versions of any application
 that depends on it. Existing copies already deployed to production may continue to

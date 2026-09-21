@@ -29,6 +29,7 @@ import { isReleased } from './lib/releases.mjs'
 import { loadComparisons, loadLedger, loadSvgridSize } from './lib/compare-data.mjs'
 import { comparePageModel, renderCompareMarkdown } from './lib/compare-page.mjs'
 import { compareSeo, compareKeywords } from './lib/compare-meta.mjs'
+import { guardGenerator } from './lib/generator-guard.mjs'
 import { clampDescription } from './lib/seo-text.mjs'
 import { parseDemoRegistry } from './lib/demo-registry.mjs'
 import { tutorialIdsIn } from './lib/tutorial-media.mjs'
@@ -245,6 +246,11 @@ function sectionOf(relPath) {
 }
 
 async function main() {
+  // The served copies go into website/public and the blog index is read from
+  // the submodule, so without it this writes a docs.json built from less than
+  // the whole picture over one that was built from all of it.
+  guardGenerator({ root: ROOT, name: 'build-docs-index', needs: ['website'] })
+
   const docs = []
   // Unrouted pages that still belong in the LLM bundle - the full API
   // reference. Kept in its own list so it can never leak into docs.json,

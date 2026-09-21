@@ -10,6 +10,22 @@ import { REVOKED_KEYS } from './revoked.js'
 
 export const VALID_PREFIX = 'SVENTERPRISE-'
 
+/**
+ * What an order bought. `grid` is the enterprise grid on its own; `suite` adds
+ * the spreadsheet and the Studio. Keys issued before editions existed carry no
+ * edition segment and read as `suite`, so nothing an existing customer already
+ * ships changes when this lands.
+ */
+export type LicenseEdition = 'grid' | 'suite'
+
+/** The three things an edition can gate. */
+export type LicensedProduct = 'grid' | 'spreadsheet' | 'studio'
+
+/** Does `edition` cover `product`? Pure, and the only place the answer lives. */
+export function editionCovers(edition: LicenseEdition, product: LicensedProduct): boolean {
+  return edition === 'suite' || product === 'grid'
+}
+
 export type LicenseStatus =
   | 'unset' // no key provided
   | 'invalid' // present but wrong prefix (usually a typo)
@@ -22,6 +38,11 @@ export type LicenseInfo = {
   status: LicenseStatus
   /** True when the key permits use (dev / eval / licensed). */
   valid: boolean
+  /**
+   * What the key covers. Always `suite` for dev and eval keys, so a trial sees
+   * everything, and for any key that names no edition.
+   */
+  edition: LicenseEdition
   /** Expiry encoded in the key, when it carries one. Undefined otherwise. */
   expiresAt?: Date
   /**
@@ -88,9 +109,12 @@ export function checkLicenseKey(
   key: string | null | undefined,
   now: Date = new Date(),
 ): LicenseInfo {
-  if (key == null || key === '') return { status: 'unset', valid: false }
-  if (!key.startsWith(VALID_PREFIX)) return { status: 'invalid', valid: false }
-  if (REVOKED_KEYS.has(key)) return { status: 'revoked', valid: false }
+  // An unusable key reports `suite` rather than a narrower edition on purpose:
+  // callers branch on `valid` first, and an edition on a rejected key would
+  // read as though something had been granted.
+  if (key == null || key === '') return { status: 'unset', valid: false, edition: 'suite' }
+  if (!key.startsWith(VALID_PREFIX)) return { status: 'invalid', valid: false, edition: 'suite' }
+  if (REVOKED_KEYS.has(key)) return { status: 'revoked', valid: false, edition: 'suite' }
 
   const expiresAt = parseLicenseExpiry(key) ?? undefined
   // Left undefined rather than false when the key encodes no date, so callers
@@ -103,5 +127,11 @@ export function checkLicenseKey(
       ? 'eval'
       : 'licensed'
 
-  return { status, valid: true, expiresAt, expired }
+  // Only a paid key can be narrowed: a trial evaluates the whole product, and
+  // `SVENTERPRISE-GRID` is an edition marker rather than a kind, so it lands in
+  // the same segment DEV and EVAL use.
+  const edition: LicenseEdition =
+    status === 'licensed' && key.startsWith(`${VALID_PREFIX}GRID-`) ? 'grid' : 'suite'
+
+  return { status, valid: true, edition, expiresAt, expired }
 }

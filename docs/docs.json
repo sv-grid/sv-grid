@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-21T08:58:33.054Z",
+  "generatedAt": "2026-09-21T17:31:19.731Z",
   "counts": {
     "pages": 387,
     "enterprise": 60,
@@ -806,8 +806,8 @@
       "section": "enterprise",
       "pillar": "company",
       "tier": "enterprise",
-      "words": 929,
-      "lastUpdated": "2026-09-03",
+      "words": 965,
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -830,8 +830,8 @@
       "section": "enterprise",
       "pillar": "company",
       "tier": "enterprise",
-      "words": 993,
-      "lastUpdated": "2026-08-18",
+      "words": 1382,
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -1699,7 +1699,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1320,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -1711,7 +1711,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 4724,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "06-large-dataset"
       ],
@@ -1740,7 +1740,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 774,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -1826,8 +1826,8 @@
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
-      "words": 749,
-      "lastUpdated": "2026-09-03",
+      "words": 835,
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "04-selection-copy-paste"
       ]
@@ -1854,7 +1854,7 @@
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
-      "words": 1931,
+      "words": 2077,
       "lastUpdated": "2026-09-21",
       "demoIds": [
         "452-excel-shortcuts"
@@ -1924,7 +1924,7 @@
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
-      "words": 17322,
+      "words": 17933,
       "lastUpdated": "2026-09-21",
       "demoIds": [
         "27-spreadsheet-ribbon",
@@ -2116,7 +2116,7 @@
       "tier": "community",
       "group": "Depth",
       "words": 1690,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "432-chart-candlestick",
         "437-chart-financial-workbench",
@@ -2455,7 +2455,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 3832,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "139-migration-from-ag-grid",
         "186-headless-table"
@@ -2605,7 +2605,7 @@
       "section": "help/editing",
       "pillar": "grid",
       "tier": "community",
-      "words": 807,
+      "words": 829,
       "lastUpdated": "2026-09-21",
       "demoIds": [
         "55-state-maintenance",
@@ -2884,7 +2884,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1071,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "186-headless-table"
       ]
@@ -2898,7 +2898,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 977,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "189-headless-shared-state"
       ]
@@ -2912,7 +2912,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1176,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "186-headless-table"
       ]
@@ -2926,7 +2926,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1177,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "190-headless-row-models"
       ]
@@ -2940,7 +2940,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1038,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "191-headless-server-side",
         "19-ssr"
@@ -2955,7 +2955,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2074,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "188-headless-styled"
       ]
@@ -2969,7 +2969,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 811,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "187-headless-virtual"
       ]
@@ -3052,8 +3052,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 3367,
-      "lastUpdated": "2026-09-20",
+      "words": 3378,
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "139-migration-from-ag-grid"
       ]
@@ -3067,7 +3067,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 830,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -3079,7 +3079,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1307,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -3091,7 +3091,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 755,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -3103,7 +3103,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2117,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "208-freeze-panes",
         "207-blank-sheet"
@@ -3118,7 +3118,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 939,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -3130,7 +3130,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 864,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -3141,8 +3141,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1625,
-      "lastUpdated": "2026-09-20",
+      "words": 1634,
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "148-server-row-model",
         "467-server-row-model-1m"
@@ -3157,7 +3157,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 932,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -3169,7 +3169,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 809,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -3181,7 +3181,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1783,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -3193,7 +3193,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1081,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "77-smart-chart"
       ]
@@ -3207,7 +3207,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1623,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "07-grouping-aggregation",
         "181-master-detail-grid"
@@ -3222,7 +3222,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1898,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "186-headless-table"
       ]
@@ -3236,7 +3236,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 834,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -3248,7 +3248,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 825,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -3260,7 +3260,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1603,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "148-server-row-model",
         "186-headless-table"
@@ -3275,7 +3275,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1046,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -3287,7 +3287,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 980,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -3670,7 +3670,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1057,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "145-transaction-api"
       ]
@@ -4002,8 +4002,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 4665,
-      "lastUpdated": "2026-09-20",
+      "words": 4850,
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "83-spreadsheet-formulas",
         "173-hyperformula",
@@ -4086,7 +4086,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 989,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "10-custom-cells-and-themes"
       ]
@@ -5667,7 +5667,7 @@
       "tier": "community",
       "group": "Reference",
       "words": 554,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "10-custom-cells-and-themes",
         "113-cursor-pagination"
@@ -5731,7 +5731,7 @@
       "tier": "community",
       "group": "Start here",
       "words": 838,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "435-chart-type-gallery",
         "436-chart-sync-zoom",
@@ -5747,8 +5747,8 @@
       "pillar": "grid",
       "tier": "community",
       "group": "Start here",
-      "words": 1565,
-      "lastUpdated": "2026-09-20",
+      "words": 1573,
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "07-grouping-aggregation",
         "90-selection-api"
@@ -5833,7 +5833,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1318,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "06-large-dataset"
       ]
@@ -6170,7 +6170,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 711,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -6367,7 +6367,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 999,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "186-headless-table"
       ]

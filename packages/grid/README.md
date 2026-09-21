@@ -90,7 +90,10 @@ all wire up the moment you turn on the matching prop.
 - **Filtering** - Excel-style filter menu, inline filter row, set / value-list filter, locale-aware matching, between operators.
 - **Editing** - 15 built-in `editorType`s (text, number, date, datetime, time, select, rich-select with typeahead, autocomplete, textarea, color, checkbox, list, chips, rating, password), plus `date-native` / `datetime-native` / `time-native` to opt out of the rich pickers, and a `cellEditor` snippet slot for anything custom.
 - **Selection** - cell-range click+drag and Shift+arrows, copy/paste as TSV, Excel-style fill handle, row selection.
-- **Views** - row grouping with aggregation, tree data, master/detail, full-width detail rows, spreadsheet mode with formulas.
+- **Views** - row grouping with aggregation, tree data, master/detail, full-width detail rows, and a
+  spreadsheet layout mode (merged cells, per-cell borders). Formula cells here go through an adapter
+  seam you point at your own `hyperformula` install; the built-in formula engine and `<SvSheet>` are
+  in the Suite edition of `@svgrid/enterprise`.
 - **Layout** - row + column pinning, sticky header + first column, header drag-to-reorder, autosize, keyboard-accessible column sizing, zebra rows, responsive mode.
 - **Data operations** - find in grid (Ctrl+F), undo / redo, transaction API, optimistic updates, server-side data with sort / filter / paging / infinite-scroll pushdown (lazy grouping, tree, pivot and transactions on the server are in `@svgrid/enterprise`).
 - **AI helpers, free** - natural-language filter, smart fill, summarize, classify, anomaly detection, and "chart this". Model-agnostic: register one provider, nothing is bundled.
@@ -158,12 +161,30 @@ editing, virtualization, **server-side data** (paging, infinite block scroll, so
 **AI helpers** all ship in the free package. The optional [`@svgrid/enterprise`](https://www.npmjs.com/package/@svgrid/enterprise) pack layers
 on the export- and analytics-heavy features teams tend to need last:
 
+The pack sells in two editions, both covering unlimited production apps.
+
+**Grid edition:**
+
 - **Excel / PDF / CSV / TSV / HTML export** plus paginated print.
 - **Excel / CSV / TSV / JSON import** with auto-mapping and per-row validation.
 - **Pivot tables** with a drag-and-drop pivot Designer.
 - **Kanban board, scheduler / calendar and Gantt renderers** for the `board`, `scheduler` and `gantt` props.
+- **Server-side row model** for lazy grouping, tree, pivot and transactions.
 
-OSS projects receive an Enterprise key free. See [Pricing](https://svgrid.com/pricing/).
+**Suite edition** adds everything above plus:
+
+- **A real spreadsheet.** `<SvSheet>` and the `<sv-sheet>` element over a built-in formula engine
+  with cross-sheet references, named ranges, dynamic arrays and spill, iterative calculation, and
+  dependency-graph recalculation. No `hyperformula` needed, and no runtime dependency.
+- **Spreadsheet file formats.** Read and write `.xlsx`, `.xls`, `.ods` and `.csv`, with formulas,
+  merges, frozen panes, named ranges and charts surviving the round trip.
+- **SvGrid Studio.** The designer, the code generator and the SQL data sources.
+
+Both editions are soft-gated: every feature runs without a key, and under a key that does not cover
+it, with a watermark and a one-time console notice. `licenseCovers('spreadsheet')` tells you which
+side of the line the current key is on, if you would rather hide an entry point than let it nudge.
+
+OSS projects receive a Suite key free. See [Pricing](https://svgrid.com/pricing/).
 
 ## Also in the box
 

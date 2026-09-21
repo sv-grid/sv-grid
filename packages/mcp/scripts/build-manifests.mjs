@@ -34,18 +34,50 @@ const demosDir = join(repoRoot, 'examples', 'src', 'demos')
 const docsDir = join(repoRoot, 'docs')
 
 // Gallery categories, so `list_examples` can be filtered instead of returning
-// all 373 demos. The registry lives in the PRIVATE website submodule, which an
-// outside contributor will not have checked out, so a missing registry costs
-// the categories and nothing else.
+// all 373 demos. The registry lives in the PRIVATE website submodule.
+//
+// Without it this used to warn and write "Other" for every example. That is
+// wrong for a file that is committed with the real categories already in it:
+// the rebuild reported success and silently replaced 423 of them, and the
+// CI smoke build (`pnpm --filter @svgrid/mcp build`, no submodule) does
+// exactly that on every push. So fall back to the categories the committed
+// data.ts already carries, and only lose them when there is nothing to keep.
 const categoryById = await (async () => {
   try {
     const entries = await parseDemoRegistry(repoRoot)
     return new Map(entries.map((e) => [e.id, e.category]))
   } catch {
+    const kept = previousCategories()
+    if (kept.size > 0) {
+      console.warn(
+        `build-manifests: demo registry unreadable, keeping the ${kept.size} categories ` +
+          'already in src/data.ts',
+      )
+      return kept
+    }
     console.warn('build-manifests: demo registry unreadable, examples will have no category')
     return new Map()
   }
 })()
+
+/** Read the categories out of the previously generated src/data.ts.
+ *  Parsed off the emitted JSON rather than imported: this script runs before
+ *  build:ts, so there is no compiled module to load, and a half-written file
+ *  should degrade to "no categories" rather than throw. */
+function previousCategories() {
+  const out = new Map()
+  try {
+    const prev = readFileSync(join(pkgRoot, 'src', 'data.ts'), 'utf8')
+    // Entries emit "id" and "category" as sibling keys; pair them positionally
+    // within each object rather than assuming a global ordering.
+    for (const block of prev.split('{')) {
+      const id = block.match(/"id":\s*"([^"]+)"/)
+      const category = block.match(/"category":\s*"([^"]+)"/)
+      if (id && category) out.set(id[1], category[1])
+    }
+  } catch { /* no previous build, or unreadable: fall through to empty */ }
+  return out
+}
 
 // A feature that has not reached its release date is not in the manifests:
 // the server would otherwise answer with demos and docs the site does not show.

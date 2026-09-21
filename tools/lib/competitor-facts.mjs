@@ -30,10 +30,12 @@
  * @typedef {{ measuredAt: string, version: string, entries: Record<string, { baseGzipKb: number, cssGzipKb: number, lazyGzipKb: number }> }} SvgridSize
  */
 
-/** SvGrid's own prices, mirrored by website/src/routes/Pricing.svelte and seo.ts. */
+/** SvGrid's own prices, mirrored by website/src/routes/Pricing.svelte and seo.ts.
+ *  Both editions cover unlimited apps; the line between them is the feature
+ *  set. `grid` is the enterprise grid, `suite` adds the spreadsheet and Studio. */
 export const SVGRID_PRICING = Object.freeze({
-  singleApp: 599,
-  multiApp: 999,
+  grid: 599,
+  suite: 999,
   unit: 'per developer per year',
   url: 'https://svgrid.com/pricing/',
   summary: 'MIT core; @svgrid/enterprise from $599 per developer per year',
@@ -296,7 +298,7 @@ export function factTokens({ ledger, size }) {
       add(formatKb(e.baseGzipKb)); add(formatKb(e.cssGzipKb)); add(formatKb(e.lazyGzipKb))
     }
   }
-  add(`$${SVGRID_PRICING.singleApp}`); add(`$${SVGRID_PRICING.multiApp}`)
-  add(String(SVGRID_PRICING.singleApp)); add(String(SVGRID_PRICING.multiApp))
+  add(`$${SVGRID_PRICING.grid}`); add(`$${SVGRID_PRICING.suite}`)
+  add(String(SVGRID_PRICING.grid)); add(String(SVGRID_PRICING.suite))
   return out
 }

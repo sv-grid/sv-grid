@@ -1888,12 +1888,14 @@ ensure you only pay for what you use.
 
 ## Step 6: Decide
 
-- Shipping one production app? **Single Application Developer License**
-  ($599 per developer).
-- Shipping multiple apps across your org? **Multiple Application
-  Developer License** ($999 per developer).
+- Using the enterprise grid, without the spreadsheet or Studio? **Grid
+  Developer License** ($599 per developer, unlimited apps).
+- Using `<SvSheet>`, the formula engine, the spreadsheet file formats, or
+  Studio? **Suite Developer License** ($999 per developer, unlimited apps).
 - Large team (5+), multi-year, NDA, or PO? **Enterprise / volume**
   (contact sales).
+- Shipping SvGrid to third parties as a component, SDK, or app builder?
+  **OEM / redistribution** (contact sales; see Section 4A of the EULA).
 
 Each is a perpetual license + 1 year of updates and support that renews
 automatically; cancel anytime.
@@ -2207,11 +2209,25 @@ updates and support**. The price shown **renews automatically each year**
 to keep updates and support active; **cancel anytime** and you keep every
 version released during your paid term.
 
-| License                                    | Apps covered                        | Price (per developer) | Support                                   |
-| ------------------------------------------ | ----------------------------------- | --------------------- | ----------------------------------------- |
-| **Single Application Developer License**   | One deployed production app         | **$599**              | Email (next business day) + private Slack |
-| **Multiple Application Developer License** | Unlimited apps in your organisation | **$999**              | Email (next business day) + private Slack |
-| **Enterprise / volume**                    | Unlimited                           | Custom quote          | Priority + named contact, NDA / PO        |
+| License                            | What it covers                                                     | Price (per developer) | Support                                   |
+| ---------------------------------- | ------------------------------------------------------------------ | --------------------- | ----------------------------------------- |
+| **Grid Developer License**         | Enterprise grid features. No spreadsheet, no Studio                 | **$599**              | Email (next business day) + private Slack |
+| **Suite Developer License**        | Everything in Grid, plus the spreadsheet and Studio                 | **$999**              | Email (next business day) + private Slack |
+| **Enterprise / volume**            | Suite, site or organisation-wide                                    | Custom quote          | Priority + named contact, NDA / PO        |
+| **OEM / redistribution**           | Shipping SvGrid to third parties as a component or app builder      | Custom quote          | Priority + named contact, NDA / PO        |
+
+Both developer licenses cover an **unlimited number of production apps** in your
+organisation. The line between them is the feature set, not the app count.
+
+**Grid ($599)** is the enterprise grid: server-side row model, grouping and tree
+data, pivot, export and import, print, the advanced filter, alerts, the selection
+bar, and the Kanban, scheduler and Gantt renderers.
+
+**Suite ($999)** adds the two things that are their own products:
+
+- the **spreadsheet**: `<SvSheet>`, the `<sv-sheet>` element, the formula engine,
+  and the `.xlsx` / `.xls` / `.ods` / `.csv` readers and writers;
+- **Studio**: the designer, the code generator, and the SQL data sources.
 
 > Priced **per developer** - engineers who write or modify code that imports
 > `@svgrid/enterprise`. Production seats / end users are unlimited. One license key
@@ -2219,20 +2235,35 @@ version released during your paid term.
 > Teams of 5+ and multi-year terms get volume discounts; email
 > `sales@jqwidgets.com`.
 
+### When you need an OEM license
+
+A developer seat covers your own application, including a SaaS product your
+customers pay for. It does not cover handing SvGrid to third parties as
+something they build with: shipping it as a component or SDK, embedding it in an
+app builder or low-code platform where your customers author their own screens,
+or reselling it white-labelled. Those need an OEM license, priced separately from
+seats. Section 4A of the [EULA](/docs/legal/EULA) has the exact test. If you are
+not sure which side of the line you are on, email `sales@jqwidgets.com` and
+describe the product; the answer is usually one message.
+
 ## License key format
 
 ```
-SVENTERPRISE-IXIX-XXXX-XXXX-XXXX-XXXX
-│
+SVENTERPRISE-SUITE-XXXX-XXXX-XXXX-XXXX
+│            │
+│            └── edition: GRID or SUITE
 └── prefix the runtime recognises; the rest identifies your license
 ```
+
+A key issued before editions existed carries no edition segment. Those keys read
+as Suite, so nothing an existing customer already ships changes.
 
 The check is purely client-side and **no network call** is ever made to
 validate, so air-gapped deployments work out of the box.
 
 It is also deliberately not cryptography. The runtime classifies the key
-string - prefix recognised, on the revoked list, a `DEV` / `EVAL` sentinel, or
-a paid key - and nothing more (`checkLicenseKey` in
+string - prefix recognised, which edition it names, on the revoked list, a
+`DEV` / `EVAL` sentinel, or a paid key - and nothing more (`checkLicenseKey` in
 `packages/enterprise/src/license-core.ts`). Anyone with devtools can read a key
 out of a deployed bundle, and an unlicensed build still runs; it just shows a
 watermark and logs a one-time notice. The license is a legal agreement, not a
@@ -2284,6 +2315,23 @@ revoked in any production-domain validation pipeline.
 
 Nothing is "trial mode" - the soft-gate is meant for evaluation. Once
 you're sold, drop in a key.
+
+## A Grid key on a Suite feature
+
+The same soft gate, for the same reason. A Grid Developer License that opens
+`<SvSheet>`, calls the formula engine, or reaches a Studio data source gets the
+watermark and a one-time console notice naming the feature. Nothing stops
+working and nothing is hidden, so a Grid-tier team can try the spreadsheet in
+their own app before deciding to upgrade, exactly as an unlicensed team can.
+
+```ts
+import { licenseCovers } from '@svgrid/enterprise'
+
+licenseCovers('spreadsheet') // false on a GRID key, true on SUITE
+```
+
+Use `licenseCovers` if you want to hide a Suite-only entry point in your own UI
+rather than let it nudge.
 
 ## Studio (data-app generator)
 
@@ -17461,6 +17509,14 @@ displayed index.
 
 ## Reading by row id
 
+`api.getRowId(rowIndex | row)` gives a row's stable id: the value your
+`getRowId` prop computed, or the row's position when you set no `getRowId`.
+Pass a display index (the space `getActiveCell`, `scrollToRow` and the cell
+methods use) or a row object; it returns `null` for an index or object that
+is not in the grid. The id is what `selectRows`, `toggleRowSelected` and an
+`applyTransaction` remove all take, so this is how you go from "the active
+cell" or "this row object" to an operation keyed by id.
+
 There is no `api.getCellValueByRowId(rowId, columnId)` helper today. If you
 need that, walk `api.getData()`:
 
@@ -17907,8 +17963,11 @@ on a plain grid, `setRibbonActionHandler` decides what answers.
 A command that needs the clipboard calls `cmd.copy()`, `cmd.cut()` or
 `cmd.paste()` on its `GridCommandContext`: the selection copy, cut and
 paste that Ctrl+C, Ctrl+X and Ctrl+V run, cell by cell through
-`processCellForClipboard`. The api's `copyToClipboard` is something else,
-the export of the displayed rows with their headers.
+`processCellForClipboard`. A collapsed row is left out of a copy and a fill unless
+the grid's `includeCollapsedRows` says otherwise for it, which is how a
+spreadsheet copies a row hidden by hand and skips one a filter folded, and fills the same way. The
+api's `copyToClipboard` is something else, the export of the displayed
+rows with their headers.
 
 ### Workbook
 
@@ -17974,6 +18033,16 @@ nothing above it declines, and the key falls through to the grid.
 
 While a cell editor is open, every shortcut here declines, so nothing swallows
 a keystroke you meant for the editor.
+
+## Escape closes what is open
+
+Escape backs out of whatever is in front, the way Excel's does: the marching
+ants after a copy, an open right-click menu, or a dialog. A right-click menu
+closes on Escape as well as on a click away, so a keyboard user who opened it
+is never trapped under it. A dialog opens with focus on its first control -
+the active tab or the first field - never the header close button, so Enter
+runs the dialog's primary action rather than dismissing it the instant it
+opens; Escape closes it and hands focus back to the cells.
 
 ## Binding your own
 
@@ -19066,7 +19135,10 @@ the wiring BETWEEN the parts, done once:
 - Enter after an in-cell edit commits and moves down, Shift+Enter up, Tab
   right, as in Excel. Alt+Enter is a line break: the cell turns on Wrap
   Text and its row grows to show every line, as a wrapped row does after
-  Wrap Text on the ribbon or in Format Cells. F4 while editing turns the
+  Wrap Text on the ribbon or in Format Cells; a row the fitting grew is
+  back to its height once the wrap goes or the text gets shorter, while a
+  row sized by hand, dragged or typed into Row Height..., stays as the
+  user left it, which is Excel's auto-height rule. F4 while editing turns the
   reference at the caret through `$A$1`, `A$1`, `$A1` and back.
 - AutoComplete, as Excel's: while a cell is typed into, the text entries in
   the same column that run without a blank above and below it are matched
@@ -19103,10 +19175,31 @@ the wiring BETWEEN the parts, done once:
 - A typed `12%` is the number 0.12 shown as a percentage, `$1,200` is 1200
   shown as currency, `1,234.5` keeps its separator: the entry names a value
   and a format, and the cell takes both unless it already has a number
-  format of its own. `=A1*2` over a `12%` cell is 0.24. A plain number
+  format of the same kind (a time typed into a currency cell makes it a
+  time cell, as it does in Excel; `5%` typed into a `0.0%` cell keeps the
+  cell's decimals). `=A1*2` over a `12%` cell is 0.24. A plain number
   typed into a cell that already shows percentages is that percentage, so
   `5` in a `0%` cell is 5% rather than 500%, as Excel's automatic percent
-  entry has it; `(5)` is -5, the way a statement writes a negative.
+  entry has it; `(5)` is -5, the way a statement writes a negative. A mixed
+  fraction with a whole part, `3 1/2`, is 3.5 shown back as a fraction, and
+  `0 1/2` is how you enter a bare half without `1/2` becoming the second of
+  January; `=A1*2` over `3 1/2` is 7.
+- A date typed the American way, `3/4/2026`, `3/4/26` or `3/4`, or with
+  the month spelled out, `4-Mar-2026`, `4 Mar 26`, `March 4, 2026` or
+  `Mar 4` (English month names, in either order), is the sheet's
+  `2026-03-04` under a date format, and a clock time, `10:30`,
+  `6:00:00` or `10:30 PM`, is the fraction of a day it is under a time
+  format, so the times add up. In arithmetic a date written as text is its
+  day number, as a date cell is in Excel: `=A1+1` under a date is the next
+  day rather than `#VALUE!`, and `=B1-A1` over two dates is the days
+  between them.
+- A formula typed into a cell with no format takes the number format of
+  the first cell it reads, as Excel's does: `=A1*2` under `$5.00` is
+  `$10.00`, `=SUM(B2:B9)` over currency is currency, `=A1+1` under a date
+  is a date and `=TODAY()+7` is a day. A formula whose function returns a
+  count or a part (COUNT, LEN, YEAR and the rest) stays General, and so
+  does one date taken from another, which is a number of days, the one
+  exception Excel makes too.
 - File > Open reads what the other spreadsheets write, not only what this
   one wrote: a sheet's own `<cols>` or a table's filter, a row height
   LibreOffice left unflagged, `General` as the absence of a format, a row
@@ -19131,10 +19224,14 @@ the wiring BETWEEN the parts, done once:
   reading over a filtered block. Delete and Clear Contents leave such a row
   as it is, so clearing a filtered selection cannot wipe what the filter
   hid.
-- A copy carries only the cells you can see: a row a filter or Hide Rows
-  folded away is left out, and the block closes up around it, so filtering
-  a log and copying the block gives the rows that matched with nothing
-  between them. A hidden column goes the same way.
+- A copy leaves out the rows a filter folded away, and the block closes up
+  around them, so filtering a log and copying the block gives the rows that
+  matched with nothing between them. A row hidden by hand with Hide Rows
+  IS copied, as Excel copies one (the grid's `includeCollapsedRows` prop is
+  how the shell tells the two apart); a hidden column is left out. The
+  merges inside the block travel with a paste of everything or of the
+  formats, laid over the landing from its corner, and a merged cell copied
+  on its own is the whole merge, as it is in Excel.
 - Ctrl+X marks the block rather than emptying it, as Excel's cut does: the
   cells stay where they are until the paste lands, Escape leaves the sheet
   as it was, and one Ctrl+Z puts a whole move back. The ribbon's Cut and
@@ -19835,19 +19932,30 @@ the cell menu is a button that does nothing:
 | Page Setup | Page Layout > Print Titles, the Page Setup group's launcher. Orientation, paper, margins, scale, print area, rows to repeat at top, gridlines and headings; Print... applies and prints. |
 | Protect Sheet | Review > Protect Sheet. Excel's "allow all users of this worksheet to" list; OK protects with what is ticked. |
 | Allow Edit Ranges | Review > Allow Edit Ranges. Titled blocks that take an edit on a protected sheet; New over the selection, Modify, Delete, Protect Sheet... |
-| Format Cells | `Ctrl+1`, the launchers on the Font, Alignment and Number groups, the cell menu, and the end of Home > Cells > Format. Number (category, decimals, separator, the Accounting symbol, the Special type, custom code, live sample), Alignment, Font, Border presets, Fill, Protection. Opens on the active cell's format and applies only what was changed to the whole selection, as one undo. |
+| Format Cells | `Ctrl+1`, the launchers on the Font, Alignment and Number groups, the cell menu, and the end of Home > Cells > Format. Number (category, decimals, separator, the Accounting symbol, the Special type, custom code, live sample), Alignment (horizontal, vertical top/middle/bottom, wrap, indent), Font, Border presets, Fill, Protection. Opens on the active cell's format and applies only what was changed to the whole selection, as one undo. |
 | Insert Function | the `fx` button. Search or pick a category, read the signature and what the function does; OK starts the cell on `=NAME(` with the caret inside. |
 | Name Manager | Formulas > Name Manager, `Ctrl+F3`. Every defined name with what it refers to and its value; edit, delete, add. |
 | Goal Seek | Data > Goal Seek. Set a formula cell to a value by changing one input; the status page shows the answer and OK keeps it as one undo. |
-| Create Table | Insert > Table, `Ctrl+T`, and again on a cell inside a table, which is how one is renamed, resized or restyled. The range, the name its columns are read by, whether the first row is the header, a totals row, and the styles gallery. Insert > Table Styles opens the same dialog on the table the cursor is in. |
+| Create Table | Insert > Table, `Ctrl+T`, and again on a cell inside a table, which is how one is renamed, resized or restyled. The range (the selection, or the region around the active cell), the name its columns are read by, whether the first row is the header, a totals row, and the styles gallery. A totals row asked for is ADDED under the data, as Excel's Total Row is, with Total in the first column and `=SUBTOTAL(109,[Last column])` in the last; unticked, it goes. A structured reference is a range to SUBTOTAL, so a totals row's formulas skip the rows a filter folds. Insert > Table Styles opens the same dialog on the table the cursor is in. |
 | Evaluate Formula | Formulas > Evaluate Formula. The active cell's formula with the next part underlined; Evaluate replaces it with its value, Step Back and Restart walk it again. |
 | Error Checking | Formulas > Error Checking. Every cell on the sheet that reports an error, and every formula that breaks its column's pattern, walked with Previous and Next; Show Calculation Steps opens Evaluate Formula on the cell. |
 | Calculation Options | Formulas > Calculation Options. Excel's Enable iterative calculation, with the maximum passes and the smallest change worth another one; OK recalculates, so a circular reference goes from #CYCLE! to its fixed point, or back. See Iterative calculation below. |
-| Sort | Data > Sort. A level per key, each a column (named from the header row when "My data has headers" is on, as Excel guesses it), what to sort on and an order; Add Level and Delete Level; the block is the selection or the region around the active cell. Numbers sort before text, blanks go last, ties keep their order, formats and one-row merges ride with their rows, and it is one undo. A level can sort on the cell colour or the font colour instead of the value: the list offers the colours that column carries, and the one picked goes On Top or On Bottom while every other row keeps its order, which is Excel's model, because two colours are not greater or lesser than one another. Sort A to Z and Z to A beside it sort on the active cell's column. |
+| Sort | Data > Sort. A level per key, each a column (named from the header row when "My data has headers" is on; the guess looks across every column of the block, so a Name column over names still reads as a header when the Pay column beside it is text over numbers, as Excel guesses it), what to sort on and an order; Add Level and Delete Level; the block is the selection or the region around the active cell. Numbers sort before text, blanks go last, ties keep their order, formats and one-row merges ride with their rows, and it is one undo. A level can sort on the cell colour or the font colour instead of the value: the list offers the colours that column carries, and the one picked goes On Top or On Bottom while every other row keeps its order, which is Excel's model, because two colours are not greater or lesser than one another. Sort A to Z and Z to A beside it sort on the active cell's column. |
 | Text to Columns | Data > Text to Columns. The delimiter is guessed from the column, the preview shows the split, Finish writes it as one undo. |
 | Remove Duplicates | Data > Remove Duplicates. Tick the columns that decide a duplicate, say whether the first row is headers; the count goes to the status bar. |
 | Data Validation | Data > Data Validation. Settings (Allow, Data, the bounds or the source, Ignore blank, In-cell dropdown) and Error Alert (Style, Title, Message); OK puts one rule over the selection, Clear All removes it. See Data validation below. |
 | Conditional formatting | Home > Styles > Conditional Formatting: Greater Than..., Less Than..., Between..., Equal To..., Text that Contains..., Duplicate Values..., Top 10 Items..., Bottom 10 Items..., Above Average..., Below Average... and New Rule > Use a Formula... each open the small dialog (the value or values, or the formula, and the "with" style); Manage Rules... opens the Rules Manager. See Conditional formatting below. |
+
+Home > Cells > Insert and Delete are Excel's split buttons. The face takes
+the selection's axis: a whole column selected inserts or deletes columns,
+anything else rows, which is what Excel does with a cell selected. The
+arrow spells the axis out, so a column goes in from a cell without
+selecting the column first: Insert Sheet Rows, Insert Sheet Columns and
+Insert Sheet (Shift+F11); Delete Sheet Rows, Delete Sheet Columns and
+Delete Sheet, which asks the tab menu's question first when the sheet
+holds anything (raised as `delete-sheet`). The cell menu and the column
+and row header menus offer the same Insert and Delete for their axis, and
+Ctrl+Shift++ and Ctrl+- take a whole row or column selection.
 
 Home > Cells > Format is Excel's menu: Row Height..., AutoFit Row Height,
 Column Width... and AutoFit Column Width for the rows and columns the
@@ -20010,7 +20118,8 @@ source in the sheet without storing it. Raised as `data-validation` and
 
 ### Objects: charts and pictures
 
-Insert > Chart charts the selected block: the first row and column are
+Insert > Chart charts the selected block, or the region of data around
+a single selected cell, as Excel starts one: the first row and column are
 read as the labels when they look like labels, each column of the block
 is a series, and the chart is anchored just under the block. It reads the
 **range**, not a copy of the numbers, so editing a cell redraws it.
@@ -20075,7 +20184,9 @@ Two ways to put a link in a cell, both Excel's.
 text to display, and a ScreenTip. The cell keeps whatever it says and the
 link is kept beside it, so editing the text keeps the link, a format
 change keeps it, and clearing the cell takes it away. Insert > Remove
-takes the links off the selection. Each is one undo.
+takes the links off the selection. The cell menu has Excel's entries too:
+Link... on a plain cell; Edit Link..., Open Link and Remove Link on one
+that carries a link. Each is one undo.
 
 **`=HYPERLINK(link, [friendly])`** puts one in a formula, showing the
 friendly name. A cell holding that formula is clickable too, and its
@@ -20132,8 +20243,9 @@ file saved with iteration on opens with it on. Raised as `calc-options`.
 
 ### PivotTable from a range
 
-Insert > PivotTable summarises the selected block on the same pivot engine
-the grid uses for its own pivot mode. The dialog takes the source block
+Insert > PivotTable summarises the selected block, or the region around
+a single selected cell, on the same pivot engine the grid uses for its own
+pivot mode. The dialog takes the source block
 (its first row the field names), where the result goes, and which field is
 a row, a column or a measure, with Sum, Average, Count, Distinct count,
 Min and Max to summarise by.
@@ -31611,7 +31723,7 @@ cleanly is on the [gap list](../missing-features.md).
 
 ### Undo / redo (Ctrl+Z)
 
-`api.undo()` / `api.redo()` + Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z. 200-step bounded history; clearHistory after a successful save resets the baseline.
+`api.undo()` / `api.redo()` + Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z. 200-action bounded history (an action is one Ctrl+Z, however many cells it wrote, so a paste or a sort of thousands of cells stays whole); clearHistory after a successful save resets the baseline.
 
 A grid that shows one of several data sets in turn (a workbook's sheets, a
 list of records opened one at a time) has a question the history cannot
@@ -39563,7 +39675,7 @@ We tell you when **not** to switch at the bottom.
 
 | | AG Grid Community | AG Grid Enterprise | SvGrid Community | @svgrid/enterprise |
 | --- | --- | --- | --- | --- |
-| **Licence** | MIT | Commercial, per developer (the price is in the facts box above) | **MIT** | $599/dev/yr (single app) or $999/dev/yr (multi app) |
+| **Licence** | MIT | Commercial, per developer (the price is in the facts box above) | **MIT** | $599/dev/yr (grid) or $999/dev/yr (grid + spreadsheet + Studio) |
 | **Svelte 5 native** | No (community-built integration) | No (community-built integration) | Yes | Yes |
 | **Bundle (gzipped)** | measured, in the facts box above | not measured (licence) | measured, in the facts box above | lazy-loaded subpaths |
 | **Sorting / filtering** | Yes | Yes | Yes | (in Community) |
@@ -40042,7 +40154,8 @@ not a rewrite.
 
 `@svgrid/enterprise`. It adds Excel/PDF/styled-HTML export (CSV, TSV and JSON export are already free in the grid), a printable view, pivot
 tables and data import. The in-grid AI helpers are free in `@svgrid/grid`.
-It is licensed per developer ($599 single-app / $999 multi-app), and the
+It is licensed per developer ($599 for the grid, $999 with the spreadsheet
+and Studio, both covering unlimited apps), and the
 Community package is MIT-licensed and free for commercial use.
 
 ### Does SvGrid use Svelte 5 runes, or is it a wrapper?
@@ -41438,7 +41551,8 @@ bind your own MUI inputs inside custom cell components.
 ### Is SvGrid cheaper than MUI X Pro/Premium?
 
 SvGrid's Community tier is MIT and free for commercial use, and `@svgrid/enterprise`
-is priced per developer ($599 single-app / $999 multi-app). MUI X Pro and
+is priced per developer ($599 for the grid, $999 with the spreadsheet and
+Studio, both covering unlimited apps). MUI X Pro and
 Premium are also per developer per year; the prices mui.com listed on the
 date we read it are in the facts box at the top of this page. The difference
 is what the free tier holds: most of what MUI X sells in Pro and Premium is
@@ -55609,7 +55723,7 @@ postfix `%` is tighter still, so `=-2%` is -0.02.
 | Information | `ISNUMBER` `ISTEXT` `ISNONTEXT` `ISLOGICAL` `ISBLANK` `ISERROR` `ISERR` `ISNA` `ISEVEN` `ISODD` `N` `T` `NA` |
 | Text | `LEN` `LEFT` `RIGHT` `MID` `UPPER` `LOWER` `PROPER` `TRIM` `CLEAN` `CONCAT` `CONCATENATE` `TEXTJOIN` `SUBSTITUTE` `REPLACE` `REPT` `FIND` `SEARCH` `EXACT` `TEXT` `VALUE` `NUMBERVALUE` `CHAR` `CODE` `UNICHAR` `UNICODE` |
 | Date | `TODAY` `NOW` `YEAR` `MONTH` `DAY` `DATE` `EOMONTH` `EDATE` `DAYS` `DAYS360` `DATEDIF` `YEARFRAC` `WEEKDAY` `WEEKNUM` `NETWORKDAYS` `WORKDAY` `HOUR` `MINUTE` `SECOND` `TIME` `DATEVALUE` `TIMEVALUE` |
-| Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `INDEX` `MATCH` `CHOOSE` `ROWS` `COLUMNS` `ROW` `COLUMN` `ADDRESS` `OFFSET` `INDIRECT` `HYPERLINK` `IMAGE` |
+| Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `LOOKUP` `INDEX` `MATCH` `XMATCH` `CHOOSE` `ROWS` `COLUMNS` `ROW` `COLUMN` `ADDRESS` `OFFSET` `INDIRECT` `HYPERLINK` `IMAGE` |
 | Dynamic arrays | `FILTER` `UNIQUE` `SORT` `SORTBY` `SEQUENCE` `TRANSPOSE` `TEXTSPLIT` |
 | Names and lambdas | `LET` `LAMBDA` `MAP` `BYROW` `BYCOL` `REDUCE` `SCAN` `MAKEARRAY` `HYPERLINK` |
 
@@ -55668,6 +55782,9 @@ default) down an ascending range, `-1` down a descending one, `0` exact.
 `XLOOKUP` is exact by default, and takes a match mode of `-1` to fall back to
 the next smaller item or `1` to the next larger one, plus a search mode of `-1`
 to read the range from the end and so return the last of several matches.
+`XMATCH` is `MATCH`'s modern twin and takes the same modes, returning the
+position; `LOOKUP` is the old approximate lookup, taking the largest item not
+past the value from a sorted vector and the matching cell of a second one.
 Only cells of the same type as the value looked up take part in an approximate
 match, so a text header above a column of numbers is never the answer.
 
@@ -55679,6 +55796,14 @@ are: a workbook recomputes a cell holding one on every write, since the
 dependency graph cannot see what text it will point at next. `ROW()` and
 `COLUMN()` without an argument need to know the cell they sit in, which a
 `Workbook` supplies as `currentCell`.
+
+A 3D reference reads the same cell or rectangle on a range of sheets:
+`=SUM(Sheet1:Sheet3!A1)` adds A1 down the tabs from Sheet1 to Sheet3, and
+`=AVERAGE(Jan:Dec!B5:B10)` averages the block on each month between. The
+sheets are taken in tab order, so a tab inserted between the two joins the
+sum, and renaming an endpoint follows it. The sheet names go unquoted, the
+common case; a name that needs quotes (`'Q1 2026':'Q4 2026'!B5`) is not
+read yet, and a 3D reference exports to xlsx but not to ODF.
 
 ### LET and LAMBDA
 
@@ -55752,10 +55877,16 @@ dynamic-array metadata, so Excel opens them as spills rather than as
 `@`-prefixed legacy formulas. `LET`, `LAMBDA` and the six helpers go into
 the file the same way, under the `_xlfn.` prefix Excel spells them with.
 
-Two of Excel's array conveniences are not here: the spill operator
-(`=SUM(D2#)`, which names the whole block a spill covers) and array
-constants written in braces (`={1;2;3}`). Both read as `#PARSE!`; name the
-spilled range or put the values in cells instead.
+The spilled-range operator names the whole block a spill covers by its
+anchor: `=SUM(E1#)` adds every cell `=SEQUENCE(3)` in E1 reaches, `=A6#`
+on its own spills a copy, and the reference grows and shrinks with the
+array because the anchor is always one of its precedents. A `#` on a cell
+that anchors no array is `#REF!`. It fills, transposes and moves like any
+reference, and a delete that removes the anchor takes it to `#REF!`.
+
+The one array convenience still absent is array constants written in
+braces (`={1;2;3}`), which read as `#PARSE!`; put the values in cells
+instead.
 
 Dates are `yyyy-mm-dd` text, and the date functions hand back the same;
 `DATEVALUE` and `VALUE` turn one into Excel's serial number, `TIME` and
@@ -78183,7 +78314,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `aligned-grid-group` | `alignedGridGroup` | `string` |
 | `filter-locale` | `filterLocale` | `string \| ReadonlyArray<string>` |
 
-### Properties only (37)
+### Properties only (38)
 
 Arrays, objects and functions. An HTML attribute is a string, so these can
 only be assigned in script: `el.columns = [...]`.
@@ -78206,6 +78337,7 @@ only be assigned in script: `el.columns = [...]`.
 | `initialColumnPinning` | `{ ... }` |
 | `processCellForFill` | `(params: { value: unknown; delta: { rows: number; cols: number }; rowIndex: number; col...` |
 | `processCellForClipboard` | `(params: { ... }) => unknown` |
+| `includeCollapsedRows` | `(rowIndex: number) => boolean` |
 | `clipboardHtml` | `(params: { rects: ReadonlyArray<{ ... }>; text: string; }) => string \| null \| undefined` |
 | `processCellFromClipboard` | `(params: { ... }) => unknown` |
 | `initialSorting` | `Array<{ id: string; desc: boolean }>` |
@@ -107922,6 +108054,16 @@ export type SvGridApi<
 
   /** Snapshot of the current data array (pre-pipeline). */
   getData(): ReadonlyArray<TData>
+
+  /**
+   * The stable id the grid keys a row by: what the `getRowId` prop
+   * computed, or the row's position when no `getRowId` is set. Pass a
+   * display index (the space `getActiveCell`, `scrollToRow` and the cell
+   * methods use) or a row object; returns null for an unknown index or a
+   * row that is not in the data. Pair with `selectRows`, `toggleRowSelected`
+   * or an `applyTransaction` remove, all of which take these ids.
+   */
+  getRowId(row: number | TData): string | null
 
   /**
    * Snapshot of every column the grid currently knows about, in visual

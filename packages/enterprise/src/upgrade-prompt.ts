@@ -33,6 +33,7 @@ export type EnterpriseFeatureLabel =
   | 'AI assistant'
   | 'Pivot'
   | 'Server-side row model'
+  | 'Spreadsheet'
   | 'Studio'
 
 /**

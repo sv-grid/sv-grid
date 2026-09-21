@@ -254,7 +254,8 @@ bind your own MUI inputs inside custom cell components.
 ### Is SvGrid cheaper than MUI X Pro/Premium?
 
 SvGrid's Community tier is MIT and free for commercial use, and `@svgrid/enterprise`
-is priced per developer ($599 single-app / $999 multi-app). MUI X Pro and
+is priced per developer ($599 for the grid, $999 with the spreadsheet and
+Studio, both covering unlimited apps). MUI X Pro and
 Premium are also per developer per year; the prices mui.com listed on the
 date we read it are in the facts box at the top of this page. The difference
 is what the free tier holds: most of what MUI X sells in Pro and Premium is

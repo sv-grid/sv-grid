@@ -158,12 +158,14 @@ ensure you only pay for what you use.
 
 ## Step 6: Decide
 
-- Shipping one production app? **Single Application Developer License**
-  ($599 per developer).
-- Shipping multiple apps across your org? **Multiple Application
-  Developer License** ($999 per developer).
+- Using the enterprise grid, without the spreadsheet or Studio? **Grid
+  Developer License** ($599 per developer, unlimited apps).
+- Using `<SvSheet>`, the formula engine, the spreadsheet file formats, or
+  Studio? **Suite Developer License** ($999 per developer, unlimited apps).
 - Large team (5+), multi-year, NDA, or PO? **Enterprise / volume**
   (contact sales).
+- Shipping SvGrid to third parties as a component, SDK, or app builder?
+  **OEM / redistribution** (contact sales; see Section 4A of the EULA).
 
 Each is a perpetual license + 1 year of updates and support that renews
 automatically; cancel anytime.

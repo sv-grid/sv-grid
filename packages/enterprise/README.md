@@ -33,7 +33,9 @@
 - **Scheduler / calendar view** - a Month/Week/Day/Agenda calendar rendered as a view of the grid: `enableSchedulerView()` lets `<SvGrid scheduler={...}>` show events with resources, recurrence, and drag/resize.
 - **Staged editing** - collect edits into a reviewable change set before committing.
 - **Scheduling automation** - a client-side cron / one-off scheduler (`createScheduler`, `parseCron`, `CRON_PRESETS`) to drive recurring exports and alerts with no backend.
-- **SvGrid Studio** - a schema-driven data-app layer: `EntitySchema`, memory / SQL / Supabase / REST data sources, a SvelteKit adapter, edit panels, master/detail, schema charts + KPI dashboards, and the project model + codegen behind the visual designer. See [`@svgrid/studio`](https://www.npmjs.com/package/@svgrid/studio).
+- **Spreadsheet** (Suite) - `<SvSheet>` and the `<sv-sheet>` custom element over a built-in formula engine: around 185 functions, cross-sheet references, named ranges, absolute and relative refs, dynamic arrays with spill, iterative calculation with convergence, circular-reference detection, volatile-function tracking, and dependency-graph recalculation. In-house, with no runtime dependency.
+- **Spreadsheet file formats** (Suite) - read and write `.xlsx`, `.xls` (BIFF8) and `.ods`, plus `.csv`. Formulas, tables, named ranges, merges, frozen panes, sparklines, charts and images survive an `.xlsx` round trip. Pivot tables round-trip as their computed cells, not as live PivotTable parts, and `.xls` keeps the BIFF8 row and column ceilings.
+- **SvGrid Studio** (Suite) - a schema-driven data-app layer: `EntitySchema`, memory / SQL / Supabase / REST data sources, a SvelteKit adapter, edit panels, master/detail, schema charts + KPI dashboards, and the project model + codegen behind the visual designer. See [`@svgrid/studio`](https://www.npmjs.com/package/@svgrid/studio).
 
 ## Install
 
@@ -82,9 +84,37 @@ AI-planned exports write through.
 
 ## Licensing
 
-Commercial. A valid Enterprise key is required at runtime; calls throw without one. Purchase a key at [svgrid.com/pricing](https://svgrid.com/pricing/).
+Commercial, in two editions, both covering unlimited production apps:
 
-OSS projects under an [OSI-approved license](https://opensource.org/licenses) qualify for a **free Enterprise key**.
+| Edition   | Covers                                                            |
+| --------- | ----------------------------------------------------------------- |
+| **Grid**  | Everything above except the spreadsheet, the file formats and Studio |
+| **Suite** | All of it                                                         |
+
+Purchase a key at [svgrid.com/pricing](https://svgrid.com/pricing/).
+
+**The gate is soft.** Every feature runs without a key, and under a key whose edition does not cover
+it. You get a small watermark on the grid and a one-time console notice; nothing throws and nothing
+is disabled, so you can evaluate any of this in your own app before buying. A key is only rejected
+when it is malformed or revoked.
+
+```ts
+import { setLicenseKey, licenseCovers } from '@svgrid/enterprise'
+
+setLicenseKey(import.meta.env.VITE_SVPRO_KEY)
+licenseCovers('spreadsheet') // false on a Grid key, true on Suite
+```
+
+Keys carry their edition: `SVENTERPRISE-GRID-...` or `SVENTERPRISE-SUITE-...`. A key issued before
+editions existed carries neither and reads as Suite, so nothing you already ship changes.
+
+**OEM and redistribution.** A developer seat covers your own application, including a SaaS product
+your customers pay for. It does not cover shipping this package to third parties as a component, an
+SDK, or an app builder they build with. That needs an OEM license, priced separately from seats.
+Section 4A of the [EULA](https://github.com/sv-grid/sv-grid/blob/main/docs/legal/EULA.md) has the
+exact test; `sales@jqwidgets.com` will tell you which side you are on.
+
+OSS projects under an [OSI-approved license](https://opensource.org/licenses) qualify for a **free Suite key**.
 
 The source in this package is published for evaluation and for paying customers; visibility does not grant a license. See [LICENSE](./LICENSE).
 

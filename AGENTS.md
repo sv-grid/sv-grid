@@ -111,9 +111,19 @@ pnpm demos:count        # re-count live demos (fails if registry and files disag
 
 ### Licensing
 
-Only `packages/grid`, `packages/grid-wc`, `packages/svgrid-ui`, and the two
-`create-*` packages are MIT. The Enterprise pack, Studio, the MCP server,
-and the website are commercial. Do not move code from a commercial package
-into an MIT one.
+MIT: `packages/grid`, `packages/grid-wc`, `packages/svgrid-ui`,
+`packages/mcp`, `packages/migrate`, `packages/svgrid-sv`, and the two
+`create-*` packages. Commercial: the Enterprise pack, Studio, and the website.
+Do not move code from a commercial package into an MIT one.
+
+The MCP server is MIT, but the Studio generator it exposes reads
+`SVGRID_LICENSE_KEY` and nudges without one. The package being MIT and the
+feature needing an Enterprise key are separate facts; do not collapse them.
+
+`@svgrid/enterprise` sells in two editions. Grid covers the enterprise grid;
+Suite adds the spreadsheet (`src/sheet`, `<SvSheet>`, `<sv-sheet>`) and the
+Studio. Gate a new Suite-only surface with `nudgeEnterpriseFor(product,
+feature)`, never with a hard block: an out-of-edition key watermarks and
+nudges, and the feature still runs.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contributor guide.

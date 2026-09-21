@@ -23,7 +23,7 @@
  */
 import type { RowData, ServerRequest, ServerResult } from '@svgrid/grid'
 import { resolveIdField, type EntitySchema } from '../schema'
-import { nudgeEnterprise } from '../license'
+import { nudgeEnterpriseFor } from '../license'
 import { planQuery } from './query-plan'
 import { planToSql, type SqlDialect } from './sql'
 import type { WritableDataSource } from './types'
@@ -79,7 +79,7 @@ const squish = (sql: string) => sql.replace(/\s+/g, ' ').trim()
 export function createSqlDataSource<TData extends RowData>(
   config: SqlDataSourceConfig<TData>,
 ): WritableDataSource<TData> & AggregateSource {
-  nudgeEnterprise('Studio') // soft-gate; never blocks, safe on the server
+  nudgeEnterpriseFor('studio', 'Studio') // soft-gate; never blocks, safe on the server
   const { schema, execute } = config
   const dialect = config.dialect ?? {}
   const returning = config.returning ?? true

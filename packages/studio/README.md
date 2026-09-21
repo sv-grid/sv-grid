@@ -119,5 +119,8 @@ edits outside those markers are preserved.
 ## Requires
 
 `@svgrid/grid` and `@svgrid/enterprise` in your project. The Studio is part of the
-**Enterprise** license (soft-gate: it works unlicensed, with a nudge). See
-[licensing](https://svgrid.com/pricing/).
+**Suite** edition of the Enterprise license; a Grid-edition key does not cover it.
+
+The gate is soft either way: it works unlicensed, and under a Grid key, with a
+watermark and a one-time console notice. Nothing is disabled, so you can build a
+whole app with it before buying. See [licensing](https://svgrid.com/pricing/).
