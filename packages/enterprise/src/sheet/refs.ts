@@ -70,6 +70,15 @@ function render(node: Node): string {
       const to = formatA1({ ...node.to, sheet: null })
       return `${from}:${to}`
     }
+    case 'ref3d': {
+      if (isBroken(node.from) || isBroken(node.to)) return '#REF!'
+      const q = (s: string) => (/^[A-Za-z_][A-Za-z0-9_.]*$/.test(s) ? s : `'${s.replace(/'/g, "''")}'`)
+      const cell = formatA1({ ...node.from, sheet: null })
+      const to = node.from.row === node.to.row && node.from.col === node.to.col
+        ? ''
+        : `:${formatA1({ ...node.to, sheet: null })}`
+      return `${q(node.sheetFrom)}:${q(node.sheetTo)}!${cell}${to}`
+    }
     case 'name': return node.name
     case 'table': {
       // Re-serialised, never translated: the whole point of a structured
@@ -130,6 +139,9 @@ export function translateFormula(text: unknown, dRow: number, dCol: number): unk
     if (n.k === 'ref') return { ...n, ref: translateRef(n.ref, dRow, dCol) }
     if (n.k === 'spill') return { ...n, ref: translateRef(n.ref, dRow, dCol) }
     if (n.k === 'range') {
+      return { ...n, from: translateRef(n.from, dRow, dCol), to: translateRef(n.to, dRow, dCol) }
+    }
+    if (n.k === 'ref3d') {
       return { ...n, from: translateRef(n.from, dRow, dCol), to: translateRef(n.to, dRow, dCol) }
     }
     return n
@@ -329,10 +341,17 @@ export function renameSheetReferences(text: unknown, from: string, to: string): 
     changed = true
     return { ...ref, sheet: to }
   }
+  const swapName = (name: string): string => {
+    if (name.toLowerCase() !== wanted) return name
+    changed = true
+    return to
+  }
   const moved = mapNode(ast, (n) => {
     if (n.k === 'ref') return { ...n, ref: swap(n.ref) }
     if (n.k === 'spill') return { ...n, ref: swap(n.ref) }
     if (n.k === 'range') return { ...n, from: swap(n.from), to: swap(n.to) }
+    // A 3D reference names its sheets by string, either end of the tab range.
+    if (n.k === 'ref3d') return { ...n, sheetFrom: swapName(n.sheetFrom), sheetTo: swapName(n.sheetTo) }
     return n
   })
   return changed ? formatFormula(moved) : text

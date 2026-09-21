@@ -135,3 +135,23 @@ test('a click on a chart is not an undo step', async ({ page }) => {
   expect(Math.abs((await y()) - before)).toBeLessThan(2)
   expect(await shown(page, 0, 0)).toBe('Region')
 })
+
+test('a 3D reference sums a cell across a range of sheet tabs, and recalculates', async ({ page }) => {
+  // Sheet1:Sheet3!A1 read #PARSE! on 2026-09-21; Excel sums the cell down the
+  // tabs, and a tab added between the two joins the total.
+  await open(page, '207-blank-sheet')
+  await cell(page, 0, 0).click()
+  await typeInto(page, 0, 0, '10')
+  await page.keyboard.press('Shift+F11'); await page.waitForTimeout(400)
+  await typeInto(page, 0, 0, '20')
+  await page.keyboard.press('Shift+F11'); await page.waitForTimeout(400)
+  await typeInto(page, 0, 0, '30')
+  await sheetTab(page, /^Sheet1$/).click(); await page.waitForTimeout(300)
+  await typeInto(page, 2, 0, '=SUM(Sheet1:Sheet3!A1)')
+  expect(await shown(page, 2, 0)).toBe('60')
+  // Change a spanned cell and the sum follows.
+  await sheetTab(page, /^Sheet2$/).click(); await page.waitForTimeout(300)
+  await typeInto(page, 0, 0, '200')
+  await sheetTab(page, /^Sheet1$/).click(); await page.waitForTimeout(300)
+  expect(await shown(page, 2, 0)).toBe('240')
+})

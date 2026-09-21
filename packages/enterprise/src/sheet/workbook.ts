@@ -361,6 +361,16 @@ export function createWorkbook(
     return sheet ?? self
   }
 
+  /** The sheets from `from` to `to` in tab order, inclusive, for a 3D
+   *  reference; null when either name is not a sheet. */
+  function sheetsInRange(from: string, to: string): string[] | null {
+    const lower = order.map((n) => n.toLowerCase())
+    const i = lower.indexOf(from.toLowerCase())
+    const j = lower.indexOf(to.toLowerCase())
+    if (i < 0 || j < 0) return null
+    return i <= j ? order.slice(i, j + 1) : order.slice(j, i + 1)
+  }
+
   function parseCached(text: string): Node | null {
     if (astCache.has(text)) return astCache.get(text) ?? null
     let ast: Node | null
@@ -394,6 +404,7 @@ export function createWorkbook(
         const rect = spills.get(cellKey(name, row, col))
         return rect ? [rect.r1, rect.c1, rect.r2, rect.c2] as const : null
       },
+      sheetsBetween: (from, to) => sheetsInRange(from, to),
       resolveNameNode: (name) => names.resolve(name),
       findTable: (name) => rawTables.get(name),
       tableAt: (sheet, row, col) => rawTables.at(resolveSheetName(sheet, self), row, col),
@@ -725,6 +736,9 @@ export function createWorkbook(
             const rect = spills.get(cellKey(name, node.ref.row ?? 0, node.ref.col))
             return rect ? { sheet: name, r1: rect.r1, c1: rect.c1, r2: rect.r2, c2: rect.c2 } : null
           },
+          // The sheets a 3D reference spans, so it recalculates when the cell
+          // on any of them is typed into.
+          (from, to) => sheetsInRange(from, to),
         ))
       } else {
         graph.setPrecedents(key, null)

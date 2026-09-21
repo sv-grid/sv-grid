@@ -40,6 +40,12 @@ export type EvalContext = {
    */
   spillRect?(sheet: string | null, row: number, col: number): readonly [number, number, number, number] | null
   /**
+   * The sheets from `from` to `to` in tab order, inclusive, or null when
+   * either name is unknown. Backs a 3D reference (`Sheet1:Sheet3!A1`), which
+   * reads its cell on each of them.
+   */
+  sheetsBetween?(from: string, to: string): string[] | null
+  /**
    * Resolve a defined name to the reference it stands for, or null when
    * there is no such name. The node is evaluated in place of the name, so a
    * name that refers to a range behaves as that range: `=SUM(Sales)` adds
@@ -215,6 +221,28 @@ function spillRectOf(node: Extract<Node, { k: 'spill' }>, ctx: EvalContext): Ref
   return rect ? { sheet: node.ref.sheet, r1: rect[0], c1: rect[1], r2: rect[2], c2: rect[3] } : null
 }
 
+/**
+ * Every value a 3D reference reads: the cell or rectangle on each sheet in
+ * the tab range, in sheet order. Null when a sheet name is unknown, which the
+ * callers turn into #REF!. Aggregates take the flat list, so a nested
+ * rectangle spans sheet by sheet.
+ */
+function values3d(node: Extract<Node, { k: 'ref3d' }>, ctx: EvalContext): CellValue[] | null {
+  const sheets = ctx.sheetsBetween?.(node.sheetFrom, node.sheetTo)
+  if (!sheets) return null
+  const r1 = Math.min(node.from.row ?? 0, node.to.row ?? 0)
+  const r2 = Math.max(node.from.row ?? 0, node.to.row ?? 0)
+  const c1 = Math.min(node.from.col, node.to.col)
+  const c2 = Math.max(node.from.col, node.to.col)
+  const out: CellValue[] = []
+  for (const s of sheets) {
+    for (let r = r1; r <= r2; r += 1) {
+      for (let c = c1; c <= c2; c += 1) out.push(ctx.resolve(s, r, c))
+    }
+  }
+  return out
+}
+
 function rectGrid(rect: RefRect, ctx: EvalContext): CellValue[][] {
   return rangeGrid(
     { sheet: rect.sheet, row: rect.r1, col: rect.c1, rowAbs: false, colAbs: false },
@@ -309,6 +337,14 @@ function evalNode(node: Node, ctx: EvalContext): CellValue {
       // own value; a cell that anchors no array is #REF!.
       const rect = spillRectOf(node, ctx)
       return rect ? ctx.resolve(rect.sheet, rect.r1, rect.c1) : err('#REF!')
+    }
+
+    case 'ref3d': {
+      // In scalar position a 3D reference reads the cell on the first sheet
+      // of the range, the way an ordinary range collapses to its top-left.
+      const vals = values3d(node, ctx)
+      if (!vals) return err('#REF!')
+      return vals[0] ?? ''
     }
 
     case 'name': {
@@ -918,6 +954,12 @@ function collectArgs(args: ReadonlyArray<Node>, ctx: EvalContext): { perArg: Cel
         grids.push(grid)
         perArg.push(grid.flat())
       }
+    } else if (arg.k === 'ref3d') {
+      // A 3D reference hands over its cell on every sheet in the range, so
+      // =SUM(Sheet1:Sheet3!A1) adds the same cell down the tabs.
+      const vals = values3d(arg, ctx)
+      grids.push(null)
+      perArg.push(vals ?? [err('#REF!')])
     } else if (arg.k === 'fn' && ARRAY_FUNCTIONS[arg.name]) {
       // An array function nested in another hands over its grid, so
       // =SORT(FILTER(...)) and =SUM(SEQUENCE(10)) work.

@@ -22,6 +22,11 @@ function ctxOf(
     },
     lastRow: (s) => Math.max(pick(s).length - 1, 0),
     resolveName: (n) => names[n],
+    sheetsBetween: (from, to) => {
+      const order = Object.keys(sheets)
+      const i = order.indexOf(from), j = order.indexOf(to)
+      return i < 0 || j < 0 ? null : i <= j ? order.slice(i, j + 1) : order.slice(j, i + 1)
+    },
     functions: withCustomFunctions(undefined),
   }
 }
@@ -451,6 +456,22 @@ describe('the function library', () => {
   it('does HLOOKUP across the header row', () => {
     const table: CellValue[][] = [['a', 'b'], [1, 2]]
     expect(run('=HLOOKUP("b", A1:B2, 2)', table)).toBe(2)
+  })
+
+  it('reads a 3D reference across a sheet range', () => {
+    const sheets = { Jan: [[10, 1]], Feb: [[20, 2]], Mar: [[30, 3]] }
+    // The same cell down the tabs, and a rectangle on each of them.
+    expect(run('=SUM(Jan:Mar!A1)', [], sheets)).toBe(60)
+    expect(run('=AVERAGE(Jan:Mar!A1)', [], sheets)).toBe(20)
+    expect(run('=SUM(Jan:Mar!A1:B1)', [], sheets)).toBe(66)
+    expect(run('=COUNT(Jan:Mar!A1)', [], sheets)).toBe(3)
+    expect(run('=MAX(Jan:Mar!A1)', [], sheets)).toBe(30)
+    // In scalar position it reads the first sheet's cell.
+    expect(run('=Jan:Mar!A1', [], sheets)).toBe(10)
+    // A range given the other way round still covers the tabs between.
+    expect(run('=SUM(Mar:Jan!A1)', [], sheets)).toBe(60)
+    // An unknown sheet name is #REF!.
+    expect(run('=SUM(Jan:Nope!A1)', [], sheets)).toEqual({ error: '#REF!' })
   })
 
   // A QA pass read these against Excel. The lookup family's approximate match

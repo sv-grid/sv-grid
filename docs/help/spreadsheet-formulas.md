@@ -161,6 +161,14 @@ dependency graph cannot see what text it will point at next. `ROW()` and
 `COLUMN()` without an argument need to know the cell they sit in, which a
 `Workbook` supplies as `currentCell`.
 
+A 3D reference reads the same cell or rectangle on a range of sheets:
+`=SUM(Sheet1:Sheet3!A1)` adds A1 down the tabs from Sheet1 to Sheet3, and
+`=AVERAGE(Jan:Dec!B5:B10)` averages the block on each month between. The
+sheets are taken in tab order, so a tab inserted between the two joins the
+sum, and renaming an endpoint follows it. The sheet names go unquoted, the
+common case; a name that needs quotes (`'Q1 2026':'Q4 2026'!B5`) is not
+read yet, and a 3D reference exports to xlsx but not to ODF.
+
 ### LET and LAMBDA
 
 `LET` names a value inside the formula, so it is written once and read by

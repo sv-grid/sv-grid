@@ -73,6 +73,13 @@ export type Node =
   /** A rectangle. Either end's row may be null, meaning a whole-column ref
    *  that runs to the last used row of the sheet. */
   | { k: 'range'; from: CellRef; to: CellRef }
+  /**
+   * A 3D reference: `Sheet1:Sheet3!A1` or `Jan:Dec!B5:B10`. The same cell or
+   * rectangle on every sheet from `sheetFrom` to `sheetTo` in tab order,
+   * inclusive. `from`/`to` carry no sheet of their own (the sheets are the
+   * range); resolved against the workbook's sheet order at evaluation, so a
+   * tab inserted between the two joins the sum, as Excel's does. */
+  | { k: 'ref3d'; sheetFrom: string; sheetTo: string; from: CellRef; to: CellRef }
   /** A defined name (`=Tax`), resolved against the workbook at evaluation. */
   | { k: 'name'; name: string }
   /**

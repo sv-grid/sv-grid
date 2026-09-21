@@ -114,6 +114,20 @@ describe('renameSheetReferences', () => {
     expect(renameSheetReferences('Data!A1', 'Data', 'X')).toBe('Data!A1')
     expect(renameSheetReferences(7, 'Data', 'X')).toBe(7)
   })
+
+  it('renames an endpoint of a 3D reference', () => {
+    expect(renameSheetReferences('=SUM(Jan:Dec!B5)', 'Dec', 'December')).toBe('=SUM(Jan:December!B5)')
+    expect(renameSheetReferences('=SUM(Jan:Dec!B5)', 'Jan', 'Q1 Start')).toBe("=SUM('Q1 Start':Dec!B5)")
+  })
+})
+
+describe('a 3D reference through the rewriters', () => {
+  it('round-trips and shifts its cell on a fill', () => {
+    expect(formatFormula(parseFormula('=SUM(Sheet1:Sheet3!A1)'))).toBe('=SUM(Sheet1:Sheet3!A1)')
+    // Filling a 3D formula down moves the cell it reads, the sheets untouched.
+    expect(t('=SUM(Sheet1:Sheet3!A1)', 2, 0)).toBe('=SUM(Sheet1:Sheet3!A3)')
+    expect(t('=SUM(Jan:Dec!$B$5)', 3, 3)).toBe('=SUM(Jan:Dec!$B$5)')
+  })
 })
 
 describe('translateFormula', () => {
