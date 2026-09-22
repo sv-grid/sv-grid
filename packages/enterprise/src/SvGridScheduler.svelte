@@ -1959,6 +1959,9 @@
     e.preventDefault();
     const s = new Date(ev.start.getTime() + dDay * 86400000 + dMin * 60000);
     const en = new Date(ev.end.getTime() + dDay * 86400000 + dMin * 60000);
+    // The same booking rules as a drag: an arrow key must not land an event
+    // on another one, outside the working hours or on a blocked day.
+    if (bookingBlocked(s, en, ev.resourceId, ev.rowKey, ev.row)) return;
     startOfE[ev.rowKey] = s;
     endOfE[ev.rowKey] = en;
     emitMove({ row: ev.row, start: s, end: en, allDay: ev.allDay, toResource: ev.resourceId });

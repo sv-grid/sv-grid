@@ -219,9 +219,9 @@ Handsontable's grid needs a commercial licence for commercial use; its free
 Hobby licence is for personal, exploratory projects, as its pricing page
 states (the wording and the date are in the facts box at the top of this
 page). Sv-grid's `@svgrid/grid` is MIT with no licence key, and the
-[Enterprise tier](../enterprise/licensing.md) is soft-gated: it works without
-a key and shows a watermark until you add one, so there is no cutoff to plan
-around.
+[Enterprise tier](../enterprise/licensing.md) comes with a 30-day evaluation
+period: it works without a key and displays a watermark and a console
+message until you add one, so there is no cutoff to plan around.
 
 ## What you get for free vs Handsontable
 

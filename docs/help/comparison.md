@@ -344,8 +344,9 @@ leaves to you. The example runs against these rows:
 
 SvGrid Community is MIT - free for commercial use, no attribution
 required at runtime. SvGrid Enterprise is a per-developer licence: $599
-per developer per year for a single application or $999 for multiple
-applications; see <https://svgrid.com/pricing/> for what the pack adds.
+per developer per year for the enterprise grid or $999 with the
+spreadsheet and Studio, both for unlimited applications; see
+<https://svgrid.com/pricing/> for what each tier adds.
 
 AG Grid Community is MIT. AG Grid Enterprise is priced per developer with
 one year of updates; the figure ag-grid.com listed on the date we read it

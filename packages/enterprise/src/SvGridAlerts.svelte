@@ -24,6 +24,7 @@
   import { applyAlertEvents, type FlashTarget } from './alerts/alert-engine-attach'
   import { rulesToConditionalFormats } from './alerts/alert-formats'
   import { alertStore } from './alerts/alert-store.svelte'
+  import { createScheduler, type Schedule } from './scheduling'
   import {
     createAlertRules,
     localStorageAlertRules,
@@ -100,19 +101,37 @@
     onJump,
   }: Props = $props()
 
-  const manager: AlertRulesManager = createAlertRules(
-    storageKey ? localStorageAlertRules(storageKey) : memoryAlertRules(),
+  // The store is chosen and seeded once, from the props' first values: a
+  // storage key does not move at runtime and the seed is only for an empty
+  // store.
+  const manager: AlertRulesManager = untrack(() =>
+    createAlertRules(storageKey ? localStorageAlertRules(storageKey) : memoryAlertRules()),
   )
-  // Seed once if the store is empty.
-  if (initialRules.length && manager.list().length === 0) {
-    for (const r of initialRules) manager.save(r)
-  }
+  untrack(() => {
+    if (initialRules.length && manager.list().length === 0) {
+      for (const r of initialRules) manager.save(r)
+    }
+  })
 
   let rules = $state<AlertRule[]>(manager.list())
   let rulesVersion = $state(0)
-  let flashFormats = $state<ConditionalFormat<TRow>[]>([])
+  // Raw on purpose: a flash is removed by identity 900 ms later, and a deep
+  // proxy never equals the object that was pushed, so the flashes never went.
+  let flashFormats = $state.raw<ConditionalFormat<TRow>[]>([])
 
-  const engine = createAlertEngine<TRow>({ rules, getRowId, getValue, locale })
+  // The engine and the observer are built once; `getRowId`, `getValue` and
+  // `locale` are props that may change after mount, so they go in as
+  // closures and getters that read the current value rather than a copy of
+  // the first one.
+  const rowIdOf = (row: TRow) => getRowId(row)
+  const engine = createAlertEngine<TRow>({
+    // The first list; later lists reach the observer through the
+    // rulesVersion effect below.
+    rules: untrack(() => rules),
+    getRowId: rowIdOf,
+    get getValue() { return getValue },
+    get locale() { return locale },
+  })
 
   // The observer owns all scheduling + change tracking. It runs evaluation on a
   // post-paint frame (never inside the grid's render flush) and only clones prev
@@ -132,7 +151,7 @@
 
   const observer = createAlertObserver<TRow>({
     engine,
-    getRowId,
+    getRowId: rowIdOf,
     schedule: 'raf',
     onEvents: (events) => {
       const { flashes } = applyAlertEvents(events, getRowId, { shouldToast: allowToast })
@@ -141,6 +160,27 @@
   })
 
   let seededVersion = -1
+
+  // A `scheduled` rule is re-checked on its cron by the enterprise scheduler
+  // rather than on a data change: on each fire the pass lists every row the
+  // predicate matches at that moment, whether or not anything moved. The
+  // scheduler is rebuilt when the rules change, and stopped with the overlay.
+  $effect(() => {
+    void rulesVersion
+    const scheduled = rules.filter((r): r is AlertRule & { trigger: { type: 'scheduled'; schedule: Schedule } } => r.enabled && r.trigger.type === 'scheduled')
+    if (scheduled.length === 0) return
+    const scheduler = createScheduler({
+      schedules: scheduled.map((r) => ({ ...r.trigger.schedule, id: r.id })),
+      onFire: (schedule) => {
+        const events = engine.evaluateScheduled(schedule.id, untrack(() => data))
+        if (events.length === 0) return
+        const { flashes } = applyAlertEvents(events, getRowId, { shouldToast: allowToast })
+        for (const f of flashes) addFlash(f)
+      },
+    })
+    scheduler.start()
+    return () => scheduler.stop()
+  })
 
   function addFlash(target: FlashTarget) {
     const fmt: ConditionalFormat<TRow> = {

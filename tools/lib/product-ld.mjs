@@ -53,14 +53,19 @@ export const PRODUCT_KEYWORDS = [
 
 /** The views the paid pack adds, as the calendar has them today. */
 const VIEWS = isReleased('gantt') ? 'Scheduler, Gantt and Spreadsheet' : 'Scheduler and Spreadsheet'
+// The Grid tier's renderers: the Spreadsheet is a Suite feature, so it is
+// not in this list.
+const GRID_VIEWS = isReleased('gantt') ? 'Kanban board, Scheduler and Gantt views' : 'Kanban board and Scheduler views'
 
 export const PRODUCT_DESCRIPTION =
   `SvGrid is a Svelte data grid built for Svelte 5: a headless engine (createSvGrid) plus a drop-in <SvGrid> render component. Row and column virtualization, Excel-style filters, sorting, grouping with aggregation, tree data, master/detail, inline editing, cell-range selection with clipboard, WAI-ARIA and keyboard navigation, 20 themes. MIT-licensed core; @svgrid/enterprise adds the Kanban board, ${VIEWS} views, the Server-Side Row Model, Excel / PDF export, import, print, pivot tables and SvGrid Studio.`
 
-/** What the paid pack adds, in one sentence, for the Enterprise offers. Keep
- *  in step with the pricing matrix (website/src/routes/Pricing.svelte). */
+/** What the $599 Grid Developer License adds, in one sentence, for the
+ *  Enterprise offer. The Spreadsheet and Studio are the Suite tier's and are
+ *  named in that offer instead. Keep in step with the pricing matrix
+ *  (website/src/routes/Pricing.svelte). */
 export const ENTERPRISE_PACK =
-  `the Kanban board, ${VIEWS} views, the Server-Side Row Model with SQL / REST / Supabase sources, Excel / PDF / CSV / HTML export + Print, Excel import, pivot tables + Pivot Designer, no-code alert rules, staged batch editing and SvGrid Studio`
+  `the ${GRID_VIEWS}, the Server-Side Row Model, Excel / PDF / CSV / HTML export + Print, Excel import, pivot tables + Pivot Designer, no-code alert rules and staged batch editing`
 
 export const FEATURE_LIST = [
   'Headless engine (createSvGrid) plus a drop-in <SvGrid> render component',
@@ -135,17 +140,17 @@ export function softwareApplicationLd({ homepage, version, reviews = [] }) {
       },
       {
         '@type': 'Offer',
-        name: 'Enterprise - Single Application Developer License',
+        name: 'Enterprise - Grid Developer License',
         price: '599',
         priceCurrency: 'USD',
-        description: `Per developer. Buy once, keep forever - optional yearly renewal for new updates and support, cancel anytime. Covers one deployed production application. Adds ${ENTERPRISE_PACK}, plus email support and a private Slack channel.`,
+        description: `Per developer. Buy once, keep forever - optional yearly renewal for new updates and support, cancel anytime. Covers unlimited deployed production applications in your organisation. Adds ${ENTERPRISE_PACK}, plus email support and a private Slack channel. No spreadsheet, no Studio.`,
       },
       {
         '@type': 'Offer',
-        name: 'Enterprise - Multiple Application Developer License',
+        name: 'Enterprise Suite - Suite Developer License',
         price: '999',
         priceCurrency: 'USD',
-        description: 'Per developer. Buy once, keep forever - optional yearly renewal for new updates and support, cancel anytime. Covers unlimited deployed production applications in your organisation. Everything in Enterprise - Single App plus volume / multi-year discounts.',
+        description: 'Per developer. Buy once, keep forever - optional yearly renewal for new updates and support, cancel anytime. Covers unlimited deployed production applications in your organisation. Everything in Enterprise plus the Excel-style Spreadsheet (SvSheet, formula engine, xlsx / xls / ods files) and SvGrid Studio (visual designer, SvelteKit code generator, SQL / REST / Supabase data sources).',
       },
       {
         '@type': 'Offer',

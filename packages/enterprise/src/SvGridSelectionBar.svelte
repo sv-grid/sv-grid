@@ -144,6 +144,7 @@
   class="sv-selbar"
   data-position={position}
   role="toolbar"
+  tabindex="-1"
   aria-label={messages.selectionBarLabel}
   aria-orientation="horizontal"
   onkeydown={onKeydown}

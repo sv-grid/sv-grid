@@ -95,7 +95,7 @@ describe('Enterprise upsell notes', () => {
         })
 
         const note = target.querySelector(LICENSE)!
-        // Soft-gated: the feature runs without a key and the grid watermarks.
+        // The feature runs without a key and the grid watermarks.
         // The wording must not imply it is inert, because it is not.
         expect(note.textContent, name).toContain('license key')
         expect(note.textContent, name).toContain('watermark')

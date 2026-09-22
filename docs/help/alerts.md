@@ -5,6 +5,8 @@ it automatically: raise a toast, tint the row, flash the cell, block the edit,
 or just log it. Rules are authored at runtime in a no-code builder, persisted,
 and shareable as JSON. No redeploy to add an alert.
 
+For the rules built up on a grid that moves, with a live example under most steps, see [Alerts: rules over live data](./alerts/start.md); this page is the reference.
+
 Alerts ship in the paid `@svgrid/enterprise` package. They build on the grid's
 own engines: predicates reuse the same operators as the filter row
 (`applyExcelFilter`), styling paints through the conditional-format pipeline,
@@ -79,8 +81,10 @@ An `AlertRule` has four moving parts:
   matching; it re-arms once the row stops matching.
 - **`relativeChange`** - fires when a value *moves*: an absolute delta, a percent
   change, or crossing a threshold. Uses the previous snapshot of the row.
-- **`validation`** - evaluated on edit; with a `preventEdit` action it can veto
-  the change.
+- **`validation`** - evaluated on edit; with a `preventEdit` action the engine's
+  `validateEdit` answers `vetoed`, which a column with `validate` and
+  `rejectInvalid: true` turns into a refused write (`validate` alone only
+  flags the cell).
 - **`scheduled`** - re-checked on a cron schedule (reuses the enterprise
   scheduler), surfacing rows that currently match.
 
@@ -90,9 +94,9 @@ An `AlertRule` has four moving parts:
 | --- | --- |
 | `toast` | A toast in the rule's severity colour. |
 | `highlight` | Tints matching rows/cells (persists while they match). |
-| `badge` | Colours the targeted cells. |
+| `badge` | Colours the targeted cells and draws its `icon` before the value. |
 | `cellFlash` | A brief flash on the cell that fired. |
-| `preventEdit` | Vetoes the edit (validation trigger). |
+| `preventEdit` | Marks a validation rule as a veto; a column with `rejectInvalid` refuses the write. |
 | `log` | Records the firing in the alert log only. |
 
 Every firing is recorded in the log regardless of action, so the bell badge and
@@ -247,7 +251,7 @@ Alerts that watch a whole-table total, not just a row. An aggregate-scope rule f
 
 ### Validation guardrails
 
-A validation-trigger alert is evaluated on edit and can veto the change. A budget sheet is editable, and two guardrail rules block bad edits: a negative amount, or an amount over that line's budget. The pure engine is wired into the grid's per-column validate hook - the blessed integration point for prevent-edit. Toggle a guardrail off to allow the edit through.
+A validation-trigger alert is evaluated on edit; through the column's `validate` hook and `rejectInvalid` it refuses the change. A budget sheet is editable, and two guardrail rules block bad edits: a negative amount, or an amount over that line's budget. The pure engine is wired into the grid's per-column validate hook - the blessed integration point for prevent-edit. Toggle a guardrail off to allow the edit through.
 
 <div data-docs-demo="402-alert-validation-guardrails" data-height="520"></div>
 

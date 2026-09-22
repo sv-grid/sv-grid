@@ -1,114 +1,103 @@
 # Validation
 
-There is no `validate(value)` callback on `ColumnDef` today. Validation
-happens by intercepting committed edits and either accepting or reverting
-them.
+A column's `validate` hook flags a bad value: the cell turns red and the
+message becomes its tooltip. On its own it does not refuse anything, so
+a form can be filled in any order and fixed afterwards; `rejectInvalid`
+on the same column turns the flag into a refusal, and an edit the rule
+fails against is never written. Rules that need more than one row, or
+that should be logged, run in `onCellValueChange` instead.
 
-Live demo - per-column rules with rollback + a recent-rejections panel:
+## Flag with `validate`
 
-<div data-docs-demo="24-validation" data-height="500"></div>
+`validate` runs for every rendered cell, not only on edit, so bad data
+already in the source is red on load, and it re-runs as the user types.
+It receives `{ value, row, rowIndex, column }` and returns `null`,
+`undefined` or `true` for a valid value, `false` for invalid without a
+message, or a string that becomes the tooltip. Salary, email and age
+below each carry a rule; try a salary of 500 or an age of 12.
 
-## Built-in soft validation
-
-`parseEditorValue` already does light validation:
-
-- `number`: rejects non-finite results → returns `null`
-- `date` / `datetime`: rejects unparseable strings → returns `null`
-
-The grid writes `null` into the cell when this happens. That is "soft"
-validation - the user sees the cell go blank rather than seeing their
-input rejected with an explanation.
-
-## Hard validation (reject + revert)
-
-To bounce the user back to the previous value with an explanation,
-maintain your own snapshot and revert after the commit:
+<div data-docs-demo="206-cell-validation" data-height="460"></div>
 
 ```svelte
-<script lang="ts">
-  let api: SvGridApi<typeof features, Person> | null = $state(null)
-  let initial = $state<Person[]>([])
-  let error = $state<{ row: number; col: string; msg: string } | null>(null)
-
-  function validateRow(row: Person): string | null {
-    if (row.age < 0 || row.age > 130) return 'Age must be between 0 and 130.'
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(row.email)) return 'Invalid email.'
-    return null
-  }
-
-  $effect(() => {
-    if (!api) return
-    const snap = api.getData()
-    for (let i = 0; i < snap.length; i++) {
-      const msg = validateRow(snap[i]!)
-      if (msg) {
-        // revert by writing back the original
-        const original = initial[i]
-        if (original) {
-          for (const key of Object.keys(original) as Array<keyof Person>) {
-            if ((snap[i] as any)[key] !== (original as any)[key]) {
-              api!.setCellValue(i, key as string, (original as any)[key])
-            }
-          }
-        }
-        error = { row: i, col: '*', msg }
-        return
-      }
-    }
-    error = null
-    initial = snap.map((r) => ({ ...r }))
-  })
-</script>
-
-{#if error}
-  <p class="text-rose-600">Row {error.row + 1}: {error.msg}</p>
-{/if}
-
-<SvGrid {data} {columns} features={features} enableInlineEditing
-  onApiReady={(next) => (api = next)} />
+const columns: GridColumns<Person> = [
+  { field: 'salary', header: 'Salary', editorType: 'number',
+    validate: ({ value }) => (Number(value) < 1000 ? 'Salary must be at least $1,000' : null) },
+  { field: 'email', header: 'Email', editorType: 'text',
+    validate: ({ value }) => (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value)) ? null : 'Not a valid email address') },
+]
 ```
 
-This polling-based validator works but has obvious limits:
+A rule can read the row, so a column can be checked against another:
+`({ value, row }) => (value > row.budget ? 'Over budget' : null)`.
 
-- The validator runs on every reactive tick, not strictly on commit.
-- The user briefly sees the invalid value before it reverts.
+## Refuse with `rejectInvalid`
 
-A per-column `validate(value, row, column)` returning `string | true` is
-on the [gap list](../missing-features.md).
-
-## Inline error UI
-
-Render an asterisk / red border via a custom cell renderer that reads
-your validation state map. See [Highlighting changes](../cells/highlighting-changes.md)
-for the same pattern with a "dirty" indicator - substitute "invalid" for
-"dirty".
-
-## Reverting a bad edit
-
-There is no `validate` hook on a column, so validation happens where the edit
-lands: check the committed value and put the old one back if it fails. Try an
-age of 200 or an email without an at-sign.
+`rejectInvalid: true` makes the same rule a veto. The value is checked
+after `valueParser` has run, so the rule sees what would be stored; when
+it fails, the editor closes, the cell keeps its old value, no undo step
+is recorded and `onCellValueChange` does not fire. The red highlight
+still shows while the value is typed, so the user sees why before Enter
+puts the old value back. Type an age of 200 or an email without an
+at-sign:
 
 ```svelte {runnable}
 <script lang="ts">
-  import { SvGrid, type GridColumns, type SvGridApi } from '@svgrid/grid'
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
 
-  type Person = {
-    id: number
-    name: string
-    email: string
-    city: string
-    age: number
-    salary: number
-  }
+  type Person = { id: number; name: string; email: string; age: number }
 
-  const seed: Person[] = [
-    { id: 1, name: 'Ada Lovelace',   email: 'ada@example.com',   city: 'London',   age: 36, salary: 142000 },
-    { id: 2, name: 'Grace Hopper',   email: 'grace@example.com', city: 'New York', age: 45, salary: 168000 },
-    { id: 3, name: 'Linus Torvalds', email: 'linus@example.com', city: 'Portland', age: 54, salary: 155000 },
+  let rows = $state<Person[]>([
+    { id: 1, name: 'Ada Lovelace',   email: 'ada@example.com',   age: 36 },
+    { id: 2, name: 'Grace Hopper',   email: 'grace@example.com', age: 45 },
+    { id: 3, name: 'Linus Torvalds', email: 'linus@example.com', age: 54 },
+  ])
+
+  const columns: GridColumns<Person> = [
+    { field: 'name',  header: 'Name',  width: 170, editorType: 'text' },
+    { field: 'email', header: 'Email', width: 210, editorType: 'text', rejectInvalid: true,
+      validate: ({ value }) => (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value)) ? null : 'That is not an email address') },
+    { field: 'age',   header: 'Age',   width: 90,  editorType: 'number', rejectInvalid: true,
+      validate: ({ value }) => (Number(value) < 16 || Number(value) > 100 ? 'Age must be between 16 and 100' : null) },
   ]
+</script>
 
-  let rows = $state<Person[]>(seed.map((p) => ({ ...p })))
+<SvGrid data={rows} {columns} editable containerHeight={200} />
+```
+
+The inline editor, a commit to a selected range and a full-row edit all
+go through the check. Paste does not open an editor and is not checked;
+a pasted block that must be clean is checked in `onCellValueChange`, as
+below.
+
+## Built-in soft validation
+
+`parseEditorValue` already does light validation before either hook runs:
+
+- `number`: rejects non-finite results and stores `null`
+- `date` / `datetime`: rejects unparseable strings and stores `null`
+
+The cell goes blank rather than red. A `validate` rule that treats `null`
+as invalid turns that into a message.
+
+## Rules over the whole row, and a log of rejections
+
+When the rule needs to see the row after the edit, or the app wants a
+record of what was refused, check the committed value in
+`onCellValueChange` and put the old one back. The event carries the row
+object, so the revert is one assignment. Try an age of 200 or an email
+without an at-sign:
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+
+  type Person = { id: number; name: string; email: string; age: number }
+
+  let rows = $state<Person[]>([
+    { id: 1, name: 'Ada Lovelace',   email: 'ada@example.com',   age: 36 },
+    { id: 2, name: 'Grace Hopper',   email: 'grace@example.com', age: 45 },
+    { id: 3, name: 'Linus Torvalds', email: 'linus@example.com', age: 54 },
+  ])
   let rejected = $state<string[]>([])
 
   function check(row: Person): string | null {
@@ -131,7 +120,6 @@ age of 200 or an email without an at-sign.
   onCellValueChange={(e) => {
     const problem = check(e.row)
     if (!problem) return
-    // Put it back. The event carries the row object, so this is one assignment.
     (e.row as Record<string, unknown>)[e.columnId] = e.oldValue
     rejected = [problem, ...rejected].slice(0, 4)
   }}
@@ -141,6 +129,11 @@ age of 200 or an email without an at-sign.
   {#each rejected as r}<li>{r}</li>{/each}
 </ul>
 ```
+
+The same pattern with a rollback through `api.setCellValue`, a red flash
+and a "Recent rejections" panel:
+
+<div data-docs-demo="24-validation" data-height="500"></div>
 
 ## Marking the row instead of reverting
 

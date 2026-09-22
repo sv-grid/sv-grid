@@ -41,6 +41,7 @@ export function rulesToConditionalFormats<TData = Record<string, unknown>>(
           evaluatePredicate(rule.predicate, { row, getValue: ctx.getValue, locale: ctx.locale }),
         ...(style.background ? { background: style.background } : {}),
         ...(style.color ? { color: style.color } : {}),
+        ...(style.icon ? { icon: style.icon } : {}),
       })
     }
   }
@@ -70,6 +71,7 @@ export function toConditionalFormats<TData = Record<string, unknown>>(
         when: ({ row }: { value: unknown; row: TData }) => getRowId(row) === rowId,
         ...(style.background ? { background: style.background } : {}),
         ...(style.color ? { color: style.color } : {}),
+        ...(style.icon ? { icon: style.icon } : {}),
       })
     }
   }

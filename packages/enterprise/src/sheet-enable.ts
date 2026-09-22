@@ -5,7 +5,7 @@
  * muscle memory works on any `<SvGrid>` with cell selection on.
  *
  * The grid ships the `registerGridShortcuts` seam for free and interprets a key
- * itself only when nothing claims it; the commands are here. Soft-gated like
+ * itself only when nothing claims it; the commands are here. Evaluated like
  * the rest of Enterprise, and part of the Suite edition: it works without a
  * license key, and under a Grid-edition key, but the grid shows the unlicensed
  * watermark and a one-time console nudge in both cases.

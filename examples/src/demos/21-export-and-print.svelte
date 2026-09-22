@@ -29,7 +29,7 @@
 
   // Development license. In production, customers set their own SVENTERPRISE-...
   // key once at app startup (e.g. in main.ts). Toggle below to see the
-  // unlicensed soft-gate (watermark in the grid + console.log nudge).
+  // unlicensed evaluation state (watermark in the grid + console.log nudge).
   let licensed = $state(true)
   $effect(() => {
     if (licensed) {

@@ -14,7 +14,7 @@
  */
 import type { RowData, ServerRequest, ServerResult } from '@svgrid/grid'
 import { resolveIdField, type EntitySchema } from '../schema'
-import { nudgeEnterprise } from '../license'
+import { nudgeEnterpriseFor } from '../license'
 import type { WritableDataSource } from '../sveltekit/types'
 import { normalizeFilters } from './filters'
 
@@ -50,7 +50,7 @@ const sanitize = (term: string) => term.replace(/[%,()]/g, '')
 export function createSupabaseDataSource<TData extends RowData>(
   config: SupabaseDataSourceConfig<TData>,
 ): WritableDataSource<TData> {
-  nudgeEnterprise('Studio') // soft-gate; never blocks
+  nudgeEnterpriseFor('studio', 'Studio') // evaluation nudge; never blocks
   const { client, table, schema } = config
   const idField = resolveIdField(schema)
   const searchColumns =

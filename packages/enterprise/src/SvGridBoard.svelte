@@ -12,7 +12,7 @@
   //     as a per-row overlay keyed by row id, so consumers write no move code;
   //     `onCardMove` fires purely as a notification for persistence / mirroring
   // Themes entirely from the grid's `--sg-*` tokens.
-  import { tick } from "svelte";
+  import { tick, untrack } from "svelte";
   import type {
     ColumnDef,
     RowData,
@@ -165,10 +165,11 @@
       collapsedSwim: { ...collapsedSwim },
     };
   }
-  // Restore once at init (before first paint).
-  if (board.persistKey && getRowId && typeof localStorage !== "undefined") {
+  // Restore once at init (before first paint), from the first persistKey.
+  const persistKey = untrack(() => (getRowId ? board.persistKey : undefined));
+  if (persistKey && typeof localStorage !== "undefined") {
     try {
-      const raw = localStorage.getItem(board.persistKey);
+      const raw = localStorage.getItem(persistKey);
       if (raw) {
         const s = JSON.parse(raw);
         laneOf = s.laneOf ?? {};
@@ -1264,6 +1265,8 @@
     style={lane.color ? `--sv-board-accent: ${lane.color};` : undefined}
     aria-label={laneTitle(lane)}
   >
+    <!-- A reorderable lane header is a keyboard handle (Ctrl+arrows move the lane). -->
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <header
       class="sv-board-lane-head"
@@ -1344,7 +1347,9 @@
       <div
         class="sv-board-lane-body"
         class:is-virtual={virtualized}
-        role="list"
+        role="listbox"
+        tabindex="-1"
+        aria-multiselectable={board.selectable ? true : undefined}
         class:is-dropover={overLane === lane.id && overSwim === swimId}
         use:trackLane={cellKey(lane.id, swimId)}
         ondragover={(e) => onLaneDragOver(e, lane.id, swimId)}
@@ -1359,7 +1364,7 @@
             <div class="sv-board-drop-marker" aria-hidden="true"></div>
           {/if}
           {@const isEditing = editingKey === key(row)}
-          <article
+          <div
             class="sv-board-card"
             class:is-dragging={dragRow === row}
             class:is-grabbed={grabbed === row}
@@ -1367,7 +1372,7 @@
             class:is-flagged={isFlagged(row)}
             class:is-locked={!movable(row)}
             class:is-selected={board.selectable && selected[key(row)]}
-            role="listitem"
+            role="option"
             tabindex="0"
             data-card-key={key(row)}
             aria-roledescription="Draggable card"
@@ -1531,7 +1536,7 @@
                 {@render commentThread(row)}
               </div>
             {/if}
-          </article>
+          </div>
         {/each}
         {#if win.bottom > 0}
           <div style={`height:${win.bottom}px`} aria-hidden="true"></div>

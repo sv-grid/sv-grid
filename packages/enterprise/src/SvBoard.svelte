@@ -116,7 +116,8 @@
       </header>
       <div class="sv-board__cards">
         {#each cards as r (String(r[idField]))}
-          <!-- svelte-ignore a11y_no_static_element_interactions a11y_no_noninteractive_tabindex -->
+          <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
           <article
             class="sv-board__card"
             class:is-dragging={dragId === String(r[idField])}

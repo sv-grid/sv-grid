@@ -6,7 +6,7 @@
 //
 //   currentKey state                  -> result
 //   ────────────────────────────────────────────────────────────────────
-//   null (no key set)                 -> soft-gate: watermark + console.log,
+//   null (no key set)                 -> evaluation: watermark + console.log,
 //                                        feature still runs
 //   does not start with "SVENTERPRISE-"      -> throws (programmer error)
 //   in REVOKED_KEYS                   -> throws (revoked / leaked / expired)
@@ -15,13 +15,13 @@
 //   an EXPIRED dev/eval key            -> still works, but stops looking
 //                                        licensed: watermark + a one-time
 //                                        console notice naming the expiry date
-//                                        + the upgrade card. Stays a soft gate
+//                                        + the upgrade card. Never blocks,
 //                                        so a trial ending cannot break a build.
 //   any other "SVENTERPRISE-..."             -> works silently (paid production)
 //
 // Editions cut across that matrix. A paid key names GRID or SUITE (and a key
 // issued before editions existed reads as SUITE). `nudgeEnterpriseFor` is the
-// gate for a surface a GRID key does not reach: same soft-gate contract, with
+// gate for a surface a GRID key does not reach: same never-blocks contract, with
 // its own console notice saying which edition covers it.
 
 import {
@@ -120,7 +120,7 @@ export function getLicenseExpiry(): Date | null {
 }
 
 /**
- * Soft-gate a Pro surface: if the current key isn't valid, nudge (watermark +
+ * Gate a Pro surface: if the current key isn't valid, nudge (watermark +
  * one-time console log + a moment-of-intent upgrade card naming `feature`) and
  * return. NEVER throws and NEVER blocks - the feature always runs. This is the
  * gate the Studio uses, and it's safe to call on the server (the nudges no-op
@@ -180,7 +180,7 @@ export function getLicenseEdition(): LicenseInfo['edition'] | null {
 }
 
 /**
- * Soft-gate a surface that an edition can exclude. Same contract as
+ * Gate a surface that an edition can exclude. Same contract as
  * {@link nudgeEnterprise} - never throws, never blocks, safe on the server -
  * but it also nudges a valid key that simply does not reach this product.
  */
@@ -205,7 +205,7 @@ export function assertEnterpriseLicensed(feature?: EnterpriseFeatureLabel): void
   const info: LicenseInfo = checkLicenseKey(currentKey)
   switch (info.status) {
     case 'unset':
-      // Soft-gate: the feature still runs, but the user gets a watermark +
+      // Evaluation: the feature still runs, but the user gets a watermark +
       // a one-time console.log nudge directing them to pricing, plus a
       // contextual moment-of-intent upgrade card naming the feature they
       // just reached for.

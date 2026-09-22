@@ -791,9 +791,9 @@
   than four copies: four gates worded four ways is how a product ends up
   explaining its own licensing inconsistently.
 
-  Enterprise is SOFT-gated - the feature runs without a key and the grid shows
-  an unlicensed watermark - so this says exactly that rather than implying the
-  feature is inert without one.
+  Enterprise runs without a key during the evaluation and the grid shows the
+  watermark and a console notice, so this says exactly that rather than
+  implying the feature is inert without one.
 -->
 {#snippet enterpriseLicenseNote()}
   <p class="sv-grid-upsell-license">

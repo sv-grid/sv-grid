@@ -78,7 +78,7 @@ designer can work on one project interchangeably.
 | **Code-behind** | A user-owned `handlers.ts` next to a generated screen for typed event handlers; created once, never overwritten. [Code-behind](./code-behind.md) |
 | **Scaffold** | The codegen step: schema in, SvelteKit files out. Shared by the CLI, the designer, and the AI path. [CLI](./cli.md) |
 | **Introspection** | Reading an existing source (database table, Drizzle / Prisma schema, OpenAPI spec, CSV) to produce an `EntitySchema`. [Databases](./databases.md) |
-| **Soft gate** | Enterprise licensing without a hard stop: unlicensed use shows a watermark and a console notice, nothing breaks. [Licensing](../licensing.md) |
+| **Evaluation period** | Enterprise licensing without a hard stop: 30 days on an evaluation key, and without a key a watermark and a console message about the Enterprise package when the module loads, nothing breaks. [Licensing](../licensing.md) |
 
 ## Which tool when
 

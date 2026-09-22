@@ -26,6 +26,14 @@ real-world scale:
 - [Glossary](./glossary.md) - terminology used across the docs (accessor, snippet, row model, ...)
 - [Tailwind integration](./tailwind.md) - re-theming the grid via `--sg-*` tokens, dark-mode wiring, what *not* to do
 - [**Enterprise feature pack**](../enterprise/README.md) - landing page for the paid add-on; what's in it + how to license it
+- **Enterprise tutorials** - one build per module, a live example under each step:
+  [Server-Side Row Model: a walkthrough](./server/row-model-walkthrough.md) ·
+  [Export: a report to Excel and PDF](./export/report.md) ·
+  [Import: a spreadsheet into the grid](./export/import-spreadsheet.md) ·
+  [Pivot: from rows to a pivot table](./pivot/start.md) ·
+  [Build a sprint board](./kanban/sprint-board.md) ·
+  [Build a booking calendar](./scheduler/booking-calendar.md) ·
+  [Alerts: rules over live data](./alerts/start.md)
 - [Data export and printing - Enterprise](./export.md) - Excel, PDF, CSV, TSV, HTML, and Print
 - [Data import - Enterprise](./import.md) - Excel, CSV, TSV, and JSON import with column mapping + validation
 - [**AI Toolkit**](./ai-toolkit.md) - the hub for every AI feature: in-grid helpers, agents, MCP server, and LLM grounding, all model-agnostic
@@ -160,7 +168,20 @@ and body and ranks matches by where they hit.
 
 ### Spreadsheet
 
-- [The spreadsheet shell](./cells/spreadsheet-shell.md) - `<SvSheet />`: ribbon, formula bar, gutter, sheet tabs, status bar
+Tutorials, in reading order:
+
+- [Getting started](./sheet/start.md) - `<SvSheet />`, seed data, a formula across sheets, the document underneath
+- [Formulas](./sheet/formulas.md) - references, spills, names, LET and LAMBDA, your own functions, auditing
+- [Formatting](./sheet/formatting.md) - number formats, styles, sizes, merged headers, conditional formatting rules
+- [Data validation](./sheet/validation.md) - dropdown lists, bounds, a formula rule, input messages
+- [Files](./sheet/files.md) - `getState`, autosave, `.xlsx` / `.ods` / `.xls` / `.csv`, paste from Excel
+- [Data tools](./sheet/data-tools.md) - AutoFilter, sort, Text to Columns, Remove Duplicates, Goal Seek, PivotTable
+- [Charts, sparklines and pictures](./sheet/charts-and-objects.md) - objects over the sheet and `=IMAGE` in a cell
+- [Review and share](./sheet/review.md) - comments, protection, two people on one sheet
+
+Reference:
+
+- [The spreadsheet shell](./cells/spreadsheet-shell.md) - `<SvSheet />`: every prop, every dialog, the file formats, the limits
 - [Formulas](./spreadsheet-formulas.md) - the engine, the function library and the dependency graph
 - [Excel keyboard shortcuts](./cells/keyboard-shortcuts.md)
 - [Number formats](./cells/number-formats.md)

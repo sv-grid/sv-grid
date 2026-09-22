@@ -180,8 +180,8 @@ The pack sells in two editions, both covering unlimited production apps.
   merges, frozen panes, named ranges and charts surviving the round trip.
 - **SvGrid Studio.** The designer, the code generator and the SQL data sources.
 
-Both editions are soft-gated: every feature runs without a key, and under a key that does not cover
-it, with a watermark and a one-time console notice. `licenseCovers('spreadsheet')` tells you which
+Both editions come with a 30-day evaluation period: every feature runs without a key, and under a
+key that does not cover it, with a watermark and a console message about the Enterprise package. `licenseCovers('spreadsheet')` tells you which
 side of the line the current key is on, if you would rather hide an entry point than let it nudge.
 
 OSS projects receive a Suite key free. See [Pricing](https://svgrid.com/pricing/).

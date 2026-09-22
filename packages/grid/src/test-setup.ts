@@ -59,4 +59,16 @@ if (typeof Element !== 'undefined' && !Element.prototype.animate) {
   }
 }
 
+// jsdom has no canvas: getContext() returns null and prints "Not implemented:
+// HTMLCanvasElement's getContext() method" through its virtual console on
+// every call, hundreds of lines per run that bury the real warnings. The
+// callers (the sheet's text measuring, the picture rasteriser) already treat a
+// null context as "no canvas", so answering null quietly changes nothing a
+// test can see; a test that needs a context still spies on the prototype.
+if (typeof HTMLCanvasElement !== 'undefined') {
+  ;(HTMLCanvasElement.prototype as any).getContext = function () {
+    return null
+  }
+}
+
 export {}

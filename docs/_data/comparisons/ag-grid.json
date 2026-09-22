@@ -44,7 +44,7 @@
     "Set-style Excel filters, cell-range selection with clipboard, master/detail, tree data, row grouping with aggregation, integrated charts, the column tool panel and the context menu are in the MIT core. AG Grid lists each of these under Enterprise. Flat server-side data (paging, infinite block scroll) is free in both; the server-side row model with lazy grouping, tree, pivot, transactions and selection across unloaded rows is a paid module in both.",
     "In-grid AI helpers (natural-language filter, smart fill, summarise, classify, anomalies) ship free in @svgrid/grid with your own model provider.",
     "@svgrid/mcp validates props and imports against the real API surface and scaffolds a project, on top of docs and examples.",
-    "@svgrid/enterprise costs $599 per developer per year for one application; AG Grid Enterprise's per-developer price is in the pricing line above."
+    "@svgrid/enterprise costs $599 per developer per year for the enterprise grid, unlimited applications; AG Grid Enterprise's per-developer price is in the pricing line above."
   ],
   "competitorAdvantages": [
     "A longer production record across very large enterprise deployments, and the largest body of third-party examples and answers of any grid.",
@@ -389,7 +389,7 @@
     },
     {
       "question": "How much does AG Grid Enterprise cost compared with SvGrid?",
-      "answer": "AG Grid Enterprise is sold per developer with one year of updates; the price as ag-grid.com listed it on the date we read it is in the pricing line at the top of this page. SvGrid's core is MIT and @svgrid/enterprise is $599 per developer per year for a single application or $999 for multiple applications. Compare what each paid tier adds before comparing prices: most of what AG Grid sells as Enterprise is in SvGrid's free core."
+      "answer": "AG Grid Enterprise is sold per developer with one year of updates; the price as ag-grid.com listed it on the date we read it is in the pricing line at the top of this page. SvGrid's core is MIT and @svgrid/enterprise is $599 per developer per year for the enterprise grid or $999 with the spreadsheet and Studio, both for unlimited applications. Compare what each paid tier adds before comparing prices: most of what AG Grid sells as Enterprise is in SvGrid's free core."
     },
     {
       "question": "How long does a migration from AG Grid to SvGrid take?",

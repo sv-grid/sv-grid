@@ -32,7 +32,7 @@
     "19-ssr"
   ],
   "docs/help/server/server-row-model.md": [
-    "344-server-grouping-model",
+    "496-server-grouping-model",
     "33-server-infinite",
     "114-server-grouping",
     "09-server-side",
@@ -40,10 +40,10 @@
   ],
   "docs/help/server/server-sorting.md": [
     "148-server-row-model",
-    "344-server-grouping-model"
+    "496-server-grouping-model"
   ],
   "docs/help/server/server-tree-data.md": [
-    "344-server-grouping-model"
+    "496-server-grouping-model"
   ],
   "docs/help/ui-components/date-time.md": [
     "278-headless-datetimepicker"

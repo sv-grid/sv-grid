@@ -54,7 +54,7 @@ const userOf = (session: Session): AuthUser | null =>
   session?.user ? { id: session.user.id, email: session.user.email } : null
 
 export function createSupabaseAuth(config: SupabaseAuthConfig): SupabaseAuthController {
-  nudgeEnterpriseFor('studio', 'Studio') // soft-gate; never blocks
+  nudgeEnterpriseFor('studio', 'Studio') // evaluation nudge; never blocks
   let state: AuthState = { user: null, loading: true, error: null }
   const emit = () => config.onChange({ ...state })
   const set = (patch: Partial<AuthState>) => {

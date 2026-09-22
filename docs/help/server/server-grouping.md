@@ -16,7 +16,7 @@ per route - and the grid mounts it through one `rowModel` prop.
 
 <img src="/docs-media/server-grouping.svg" alt="Server grouping flow: the backend runs GROUP BY and returns one pre-aggregated row per group instead of the raw table; the grid renders those group rows; expanding one group drills into the next level for that group only." width="100%" />
 
-<div data-docs-demo="344-server-grouping-model" data-height="480"></div>
+<div data-docs-demo="496-server-grouping-model" data-height="480"></div>
 
 ## The contract
 

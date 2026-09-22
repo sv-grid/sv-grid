@@ -19,6 +19,15 @@ Everything between the ribbon and the sheet tabs, as one component.
 That is the whole required API. `<SvSheet />` with no props at all opens an
 empty single-sheet workbook, which is what "open a spreadsheet" means.
 
+This page is the reference: every prop, every dialog, the file formats
+and the limits. The tutorials walk through the same ground a task at a
+time, with a live sheet under each step: [Getting started](../sheet/start.md),
+[Formulas](../sheet/formulas.md), [Formatting](../sheet/formatting.md),
+[Data validation](../sheet/validation.md), [Files](../sheet/files.md),
+[Data tools](../sheet/data-tools.md),
+[Charts, sparklines and pictures](../sheet/charts-and-objects.md) and
+[Review and share](../sheet/review.md).
+
 <!-- tutorial:install-spreadsheet -->
 <figure class="docs-tutorial" id="tutorial-install-spreadsheet" data-docs-tutorial="install-spreadsheet">
 <video class="docs-tutorial-video" src="/tutorials/install-spreadsheet.mp4" poster="/tutorials/install-spreadsheet.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Install the SvGrid spreadsheet, 56 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/install-spreadsheet.vtt" default>Your browser does not play embedded video. <a href="/tutorials/install-spreadsheet.mp4">Download the MP4</a>.</video>
@@ -518,8 +527,10 @@ looks, column widths and row heights, merges, hidden rows and columns, the
 filter with its values and conditions (a date period or a colour has no ODF
 spelling, so its rows go out hidden instead), hyperlinks, notes, defined
 names and sheet protection. Charts,
-images, sparklines, pivots, validation, conditional formatting and frozen
-panes travel in the .xlsx and not yet in the .ods.
+images, sparklines, validation, conditional formatting and frozen
+panes travel in the .xlsx and not yet in the .ods. A PivotTable travels
+in every format as the cells it wrote, never as a definition: the .xlsx
+has no pivot part, so Excel sees the block, not a pivot to refresh.
 
 The .xls is the oldest of the three and carries the least. Cells and their
 formulas travel, with the formulas as the RPN tokens Excel 97 stored rather
@@ -530,7 +541,7 @@ round - Excel writes `_xlfn.XLOOKUP` as a defined name and calls it, and
 that name turns back into the function here. Number formats, fonts, colours,
 fills, borders, alignment, column widths, row heights, hidden rows, columns
 and sheets, merges, frozen panes, sheet protection and defined names travel;
-charts, pictures, sparklines, pivots, validation, conditional formatting and
+charts, pictures, sparklines, validation, conditional formatting and
 comments do not, since the format kept them somewhere this reader does not
 go. A filter goes out as the rows it folds, hidden, and nothing else: the
 file shows the same rows, and the arrows do not come back from it. The sheet is 65,536 rows by 256 columns, and anything past that edge is
@@ -1628,9 +1639,9 @@ button that does nothing.
   is what a sheet's region holds.
 - **Files** carry what each format has a place for, so the three are not
   equals: the .xlsx carries the most, the .ods has no charts, pictures,
-  pivots, validation, conditional formatting or frozen panes, and the .xls
+  validation, conditional formatting or frozen panes, and the .xls
   is the oldest and carries the least, with no charts, pictures,
-  sparklines, pivots, validation, conditional formatting or comments, a
+  sparklines, validation, conditional formatting or comments, a
   sheet of 65,536 rows by 256 columns, and a formula using a function Excel
   97 never had saved as the value it worked out.
 

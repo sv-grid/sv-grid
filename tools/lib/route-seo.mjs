@@ -111,8 +111,8 @@ export const ROUTE_SEO = {
     // Kept as the prerendered wording: this is the title Google has indexed.
     title: 'Pricing - SvGrid Community (Free) + @svgrid/enterprise',
     description:
-      `SvGrid Community is free under the MIT License for commercial use. The Enterprise pack (@svgrid/enterprise) is paid, per developer: Enterprise - Single App ($599) or Enterprise - Multi App ($999) - buy once, keep forever, with an optional yearly renewal for new updates and support (cancel anytime). Enterprise - Custom is a tailored contract for 50+ seats, MSA / NDA, source escrow, named support, on-prem docs, and multi-year terms. Adds the Kanban board, ${GANTT ? 'Scheduler, Gantt and Spreadsheet' : 'Scheduler and Spreadsheet'} views, the Server-Side Row Model, Excel, PDF, CSV, TSV, HTML export and Print, pivot tables, plus direct support. AI helpers are built into the free @svgrid/grid.`,
-    keywords: ['svelte grid pricing', 'sv-grid license', '@svgrid/enterprise license', 'enterprise single app developer license', 'enterprise multi app developer license', 'enterprise custom svelte grid', 'svelte table commercial license'],
+      `SvGrid Community is free under the MIT License for commercial use. The Enterprise pack (@svgrid/enterprise) is paid, per developer, unlimited apps: Enterprise ($599) is the enterprise grid - the Kanban board and ${GANTT ? 'Scheduler and Gantt' : 'Scheduler'} views, the Server-Side Row Model, Excel, PDF, CSV, TSV, HTML export and Print, pivot tables, plus direct support; Enterprise Suite ($999) adds the Excel-style Spreadsheet and SvGrid Studio. Buy once, keep forever, with an optional yearly renewal for new updates and support (cancel anytime). Enterprise - Custom is a tailored contract for 50+ seats, MSA / NDA, source escrow, named support, on-prem docs, and multi-year terms. AI helpers are built into the free @svgrid/grid.`,
+    keywords: ['svelte grid pricing', 'sv-grid license', '@svgrid/enterprise license', 'grid developer license', 'suite developer license', 'svgrid enterprise suite', 'enterprise custom svelte grid', 'svelte table commercial license'],
     path: '/pricing',
   },
   blog: {

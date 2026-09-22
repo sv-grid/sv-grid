@@ -1,7 +1,7 @@
 <!-- Documented in: docs/help/server/server-grouping.md -->
 <script lang="ts">
   /**
-   * 344. Server grouping (row model)
+   * 496. Server grouping (row model)
    * --------------------------------
    * Server-side grouping through ONE getRows contract. The
    * request carries groupBy + groupKeys; createServerRowModel owns the group

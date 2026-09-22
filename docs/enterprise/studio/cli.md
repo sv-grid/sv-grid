@@ -171,7 +171,8 @@ npx svelte-check
 
 `@svgrid/grid` and `@svgrid/enterprise` in your project, plus the driver for your
 database (`pg` / `mysql2` / `mssql` / `better-sqlite3`) when using `--db`. Studio
-is part of the [Enterprise license](../licensing.md) (soft-gate).
+is part of the [Enterprise license](../licensing.md), with its 30-day
+evaluation period.
 
 ## See also
 

@@ -15,7 +15,7 @@ export type ImportFormat = 'xlsx' | 'csv' | 'tsv' | 'json' | 'auto'
 Maps a source header to the row field it populates, for files whose columns do not match your data.
 
 ```ts
-export type ImportColumnMap = Record<string, string>
+export type ImportColumnMap = Record<string, string | null>
 ```
 
 ### `type ImportFieldType`

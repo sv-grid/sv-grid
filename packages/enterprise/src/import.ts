@@ -20,7 +20,7 @@
  *
  *        await api.importData({ file, format: 'auto', commit: true })
  *
- * Both go through the same polite license soft-gate as `exportData` and
+ * Both go through the same polite license check as `exportData` and
  * `print`, so unlicensed evaluation works but emits a one-time nudge.
  */
 
@@ -35,7 +35,7 @@ import { assertEnterpriseLicensed } from './license'
 export type ImportFormat = 'xlsx' | 'csv' | 'tsv' | 'json' | 'auto'
 
 /** Maps a source header to the row field it populates, for files whose columns do not match your data. */
-export type ImportColumnMap = Record<string, string>
+export type ImportColumnMap = Record<string, string | null>
 
 /**
  * Declared data type per target field. When `columnTypes` is set on

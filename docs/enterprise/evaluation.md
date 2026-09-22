@@ -1,10 +1,13 @@
 # Enterprise evaluation
 
-The `@svgrid/enterprise` package is soft-gated; you can evaluate every
-feature in production-equivalent code paths without contacting
-sales. This page is the playbook.
+`@svgrid/enterprise` comes with a 30-day evaluation period, and you can
+evaluate every feature in production-equivalent code paths without
+contacting sales: loaded without a license key, the Enterprise module
+displays a watermark and a console message about the Enterprise package,
+and an evaluation key removes them for 30 days. This page is the
+playbook.
 
-![Soft-gated evaluation: install, try every feature while a watermark shows, then set a license key when ready, with no gated-off code paths.](/docs-media/enterprise-evaluation.svg)
+![The evaluation: install, try every feature while the watermark and the console message show, then set a license key when ready, with no gated-off code paths.](/docs-media/enterprise-evaluation.svg)
 
 ## Step 1: Install
 
@@ -84,20 +87,23 @@ The evaluation key is a real key with a 30-day expiry. Behaves
 identically to a paid license; lets you ship internal staging /
 demo deployments to evaluators without the watermark.
 
-### What unlicensed looks like
+### What the evaluation looks like without a key
 
-With no key set, Enterprise stays fully functional but nudges you:
+With no key set, Enterprise stays fully functional and displays three
+things:
 
 - A small **"www.svgrid.com" watermark** in the corner of each grid
   (fades after 5 seconds).
+- A **console message about the Enterprise package**, logged once per
+  page load when the module is loaded.
 - The first time you actually invoke a Enterprise feature (export, import,
   print, AI), a one-time **upgrade card** appears in the bottom-right
   naming that feature, with a one-click link to start a free trial. It
   shows at most once per session.
 
-Both are pure DOM - **no network calls, no cookies, no web storage**
-(see [security](../help/security.md)). `setLicenseKey()` with any
-valid key suppresses them before they appear. To remove the upgrade
+All three are pure DOM or console output - **no network calls, no
+cookies, no web storage** (see [security](../help/security.md)).
+`setLicenseKey()` with any valid key suppresses them before they appear. To remove the upgrade
 card programmatically (e.g. you render your own upgrade UI), call:
 
 ```ts

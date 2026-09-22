@@ -181,9 +181,11 @@ grid as the render template format for cells, headers, and editors.
 `renderSnippet(Foo, props)` is the wrapper the column passes to
 `cell`.
 
-**Soft-gate.** The unlicensed Enterprise behaviour: features still run; a
-small watermark + one-time console message appear. Removed by
-`setLicenseKey('SVENTERPRISE-...')`.
+**Evaluation period.** The Enterprise package without a license key:
+every feature still runs, and loading the module displays a small
+watermark and a console message about the Enterprise package. A 30-day
+evaluation key removes them while you evaluate; a license key removes
+them for good (`setLicenseKey('SVENTERPRISE-...')`).
 
 ## T
 

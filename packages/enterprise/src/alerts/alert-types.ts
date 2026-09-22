@@ -45,7 +45,7 @@ export type AlertActionKind =
 export type AlertActionStyle = {
   background?: string
   color?: string
-  /** A short glyph/emoji shown as a badge. */
+  /** A short glyph/emoji drawn before the cell value while the rule matches. */
   icon?: string
 }
 

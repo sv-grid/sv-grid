@@ -124,10 +124,11 @@ same grid is in progress and due on 1 November 2026.
 
 ## Licensing
 
-The pack is **soft-gated**. Until a valid license key is set,
-everything still functions but the grid shows a small "unlicensed"
-watermark + a one-time console nudge. Set a key once at app startup
-and the watermark disappears:
+The pack comes with a **30-day evaluation period**. Until a valid
+license key is set, everything still functions, and loading the
+Enterprise module displays a watermark on the grid and a console message
+about the Enterprise package. Set a key once at app startup and both
+disappear:
 
 ```ts
 import { setLicenseKey } from '@svgrid/enterprise'

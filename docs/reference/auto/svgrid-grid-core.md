@@ -490,8 +490,9 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    *   - `false`                       → invalid, no message
    *   - a non-empty `string`          → invalid, string is the tooltip
    *
-   * The value keeps rendering as-is (the grid does NOT roll it back); pair
-   * with `onCellValueChange` if you also want to reject the commit.
+   * On its own `validate` flags: the value keeps rendering as-is and an
+   * edit that fails it still lands. Set `rejectInvalid` to refuse such an
+   * edit instead.
    */
   validate?: (params: {
     value: unknown
@@ -499,6 +500,16 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
     rowIndex: number
     column: Column<TData>
   }) => string | boolean | null | undefined
+  /**
+   * Refuse an edit that `validate` flags. When true, a committed value that
+   * makes `validate` return `false` or a message is not written: the cell
+   * keeps its old value, no history step is recorded and
+   * `onCellValueChange` does not fire. The value is checked after
+   * `valueParser` has run, so the rule sees what would be stored. Applies to
+   * the inline editor, a commit to a selection and a full-row edit; paste
+   * does not go through the editor and is not checked.
+   */
+  rejectInvalid?: boolean
   /**
    * Gate editing per column or per cell.
    *
@@ -1369,7 +1380,12 @@ export function replacedRowsOf(table: SvGrid<any>): ReadonlyMap<Row<any>, Row<an
 
 ### `function createSortedRowModel`
 
-_No JSDoc yet._
+The sorting stage of the row pipeline: orders the rows by the grid's
+`sorting` state with the built-in comparators (or the `localSortFns` map
+handed in), stable, equal keys keeping their data order. A tick that
+replaces a few rows out of many is repaired incrementally rather than
+re-sorted (see the note inside). Registered by `rowSortingFeature`; an app
+only calls this to install its own comparator set.
 
 ```ts
 export function createSortedRowModel<TData extends RowData>(

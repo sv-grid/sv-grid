@@ -1,5 +1,5 @@
 SVGRID ENTERPRISE COMMERCIAL LICENSE
-Version 1.0
+Version 1.1
 
 Copyright (c) 2011-2026 jQWidgets Ltd.
 Author contact: Boyko Markov <boikom@jqwidgets.com>
@@ -13,7 +13,7 @@ This file is a summary of the commercial terms. The full, authoritative
 agreement is the SvGrid End User License Agreement (EULA). In case of any
 conflict, the EULA governs.
 
-  EULA: https://svgrid.com/eula  (also docs/legal/EULA.md in the repo)
+  EULA: https://svgrid.com/docs/legal/EULA/  (also docs/legal/EULA.md in the repo)
 
 ------------------------------------------------------------------------
 1. GRANT (with valid license key)
@@ -53,8 +53,8 @@ data sources.
 
 Using the Spreadsheet Module or the Studio under a Grid Developer
 License is outside the licensed scope. The Software does not block it:
-it stays soft-gated and shows the unlicensed watermark and notice until
-the license is upgraded to Suite.
+the feature runs, and the watermark and the console notice described in
+Section 4 show until the license is upgraded to Suite.
 
 ------------------------------------------------------------------------
 1A. OEM AND REDISTRIBUTION
@@ -88,6 +88,12 @@ view, edit and export their own data in a grid or a workbook is the
 Subscriber's own application, not redistribution. The test is whether
 third parties receive the Software as something they build with, not
 whether the Subscriber charges for its product.
+
+The evaluation in Section 4 does not pass through an OEM product to its
+users: a product that needs an OEM License may not rely on the
+unlicensed state, an evaluation key or a development key for what it
+delivers to third parties, and only the key an OEM License names may be
+embedded in it.
 
 Requests: sales@jqwidgets.com.
 
@@ -124,23 +130,32 @@ The Author will not disable working features of a paying or previously
 paying Subscriber.
 
 ------------------------------------------------------------------------
-4. EVALUATION, SOFT-GATE, AND OPEN SOURCE
+4. EVALUATION AND OPEN SOURCE
 ------------------------------------------------------------------------
 
-The Software is soft-gated. Every feature is fully functional without a
-license key for evaluation. While unlicensed, the grid shows a small
-"Unlicensed @svgrid/enterprise" watermark and emits a one-time console
-notice; setting a valid key removes both. There is no time limit and no
-disabled functionality during evaluation. Time-limited evaluation keys
-that remove the watermark are available on request.
+The Author grants a 30-day evaluation period. During it every feature,
+the Spreadsheet Module and the Studio included, may be used without a
+license key to decide whether to buy, on workstations and in internal
+development, staging and demonstration environments; production use
+needs a license key. Without a key the grid and the spreadsheet show a
+small watermark and the Software emits a console notice about the
+Enterprise package; nothing is disabled and nothing stops after the 30
+days, the watermark and the notice stay until a key is set. On request
+the Author issues an evaluation key with a 30-day expiry that removes
+both for staging and demonstration deployments; when it expires the
+Software keeps running, the watermark returns and a console notice names
+the date. Evaluation and development keys are not for production and
+must not be shared or embedded in a product distributed to third
+parties.
 
 Projects that are open source under an OSI-approved license, hosted in a
 public repository, and not a paid product qualify for a free Enterprise
 key with the full feature set and no watermark, renewable annually.
 
-License key validation is performed entirely client-side, signed against
-the Author's public key. No network call is made to validate, and no
-telemetry is sent. Air-gapped deployments are supported.
+License key validation is performed entirely client-side and is not a
+cryptographic check: the Software classifies the key string and nothing
+more. No network call is made to validate, and no telemetry is sent.
+Air-gapped deployments are supported.
 
 ------------------------------------------------------------------------
 5. RESTRICTIONS

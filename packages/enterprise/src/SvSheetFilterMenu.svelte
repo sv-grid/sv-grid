@@ -154,7 +154,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="sv-sheet-filter-menu" role="dialog" aria-label={t('filter.label', { header })} onkeydown={onKeyDown}>
+<div class="sv-sheet-filter-menu" role="dialog" tabindex="-1" aria-label={t('filter.label', { header })} onkeydown={onKeyDown}>
   <button type="button" class="row" onclick={() => onSort('asc')}>{t(numeric ? 'filter.sortSmallest' : 'filter.sortAsc')}</button>
   <button type="button" class="row" onclick={() => onSort('desc')}>{t(numeric ? 'filter.sortLargest' : 'filter.sortDesc')}</button>
   <hr />

@@ -14,6 +14,8 @@ interface ColSpec {
   editable?: boolean | ((cellCtx: any) => boolean)
   editorType?: string
   editorMultiple?: boolean
+  validate?: (p: { value: unknown; row: any }) => string | boolean | null | undefined
+  rejectInvalid?: boolean
 }
 
 interface FakeOptions {
@@ -40,6 +42,8 @@ function makeCtx(opts: FakeOptions = {}) {
       editable: c.editable,
       editorType: c.editorType,
       editorMultiple: c.editorMultiple,
+      validate: c.validate,
+      rejectInvalid: c.rejectInvalid,
     },
   }))
 
@@ -379,6 +383,54 @@ describe('saveEditingCell', () => {
     }
     ed.saveEditingCell()
     expect(ctx.internalData[0].a).toEqual(['x', 'y'])
+  })
+
+  it('refuses a value the column validates against when rejectInvalid is set', () => {
+    const onCellValueChange = vi.fn()
+    const { ctx, ed } = editingFor({
+      columns: [{
+        id: 'b', field: 'b', editorType: 'number', rejectInvalid: true,
+        validate: ({ value }) => (Number(value) < 0 ? 'Amount must be positive' : null),
+      }],
+      data: [{ b: 5 }],
+    })
+    ctx.props.onCellValueChange = onCellValueChange
+    ctx.editingCell = { rowId: '0', columnId: 'b', editorType: 'number', value: '-5' }
+    ed.saveEditingCell()
+    // The row, the overlay, the history and the consumer are untouched; the
+    // editor closes.
+    expect(ctx.internalData[0].b).toBe(5)
+    expect('0:b' in ctx.editedCellValues).toBe(false)
+    expect(ctx.history).toHaveLength(0)
+    expect(onCellValueChange).not.toHaveBeenCalled()
+    expect(ctx.editingCell).toBeNull()
+
+    // A value the rule accepts still lands.
+    ctx.editingCell = { rowId: '0', columnId: 'b', editorType: 'number', value: '7' }
+    ed.saveEditingCell()
+    expect(ctx.internalData[0].b).toBe(7)
+    expect(onCellValueChange).toHaveBeenCalledTimes(1)
+  })
+
+  it('without rejectInvalid a flagged value lands, as before', () => {
+    const { ctx, ed } = editingFor({
+      columns: [{ id: 'b', field: 'b', editorType: 'number', validate: () => 'always wrong' }],
+      data: [{ b: 5 }],
+    })
+    ctx.editingCell = { rowId: '0', columnId: 'b', editorType: 'number', value: '-5' }
+    ed.saveEditingCell()
+    expect(ctx.internalData[0].b).toBe(-5)
+  })
+
+  it('checks the value after valueParser, so the rule sees what would be stored', () => {
+    const { ctx, ed } = editingFor({
+      columns: [{ id: 'b', field: 'b', editorType: 'number', rejectInvalid: true, validate: ({ value }) => (Number(value) > 100 ? false : null) }],
+      data: [{ b: 5 }],
+    })
+    ;(ctx.allColumns[0].columnDef as any).valueParser = ({ newValue }: { newValue: number }) => newValue * 100
+    ctx.editingCell = { rowId: '0', columnId: 'b', editorType: 'number', value: '2' }
+    ed.saveEditingCell()
+    expect(ctx.internalData[0].b).toBe(5) // 200 after the parser, refused
   })
 
   it('pushes a history step and bumps the version on a real change', () => {

@@ -60,13 +60,13 @@
   // The conversion itself lives in expressions/builder-tree.ts, so the round
   // trip can be tested without mounting this component.
 
-  const initial = toBuilderTree(value, columns)
-  let root = $state<BuilderGroup>(initial ?? freshGroup(columns))
+  const initial = untrack(() => toBuilderTree(value, columns))
+  let root = $state<BuilderGroup>(initial ?? untrack(() => freshGroup(columns)))
   // If the incoming value cannot be shown as a tree, start in text mode so
   // nothing is lost.
   if (!initial && mode === 'builder') mode = 'text'
 
-  let text = $state(stringifyPredicate(value, columns))
+  let text = $state(untrack(() => stringifyPredicate(value, columns)))
   let textError = $state<string | null>(null)
 
   /**

@@ -117,7 +117,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="sv-sheet-comment" class:threaded={!!thread} role="dialog" aria-label={t('commentOn', { address })} onkeydown={onKeyDown}>
+<div class="sv-sheet-comment" class:threaded={!!thread} role="dialog" tabindex="-1" aria-label={t('commentOn', { address })} onkeydown={onKeyDown}>
   <div class="head">
     <span>{address}</span>
     {#if thread}

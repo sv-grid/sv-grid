@@ -5,8 +5,10 @@
    * A validation-trigger alert is evaluated ON EDIT and can VETO the change.
    * A budget sheet is editable, and two guardrail rules block bad edits: a
    * negative amount, or an amount over that line's budget. The pure engine is
-   * wired into the grid's per-column `validate` hook - the blessed integration
-   * point for prevent-edit. Toggle a guardrail off to allow the edit through.
+   * wired into the column's `validate` hook, which paints the cell red with
+   * the rule's message, and `rejectInvalid` turns that flag into a refusal:
+   * a vetoed value never lands and the cell keeps what it had. Toggle a
+   * guardrail off to allow the edit through.
    *
    * Engine: @svgrid/enterprise.
    */
@@ -86,7 +88,9 @@
   const columns: ColumnDef<any, Expense>[] = [
     { id: 'item', header: 'Item', field: 'item', width: 180 },
     { id: 'category', header: 'Category', field: 'category', width: 120 },
-    { id: 'amount', header: 'Amount', field: 'amount', editorType: 'number', editable: true, width: 150, format: { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } }, validate: ({ value, row }) => validateAmount(value, row) },
+    { id: 'amount', header: 'Amount', field: 'amount', editorType: 'number', editable: true, width: 150, format: { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } }, validate: ({ value, row }) => validateAmount(value, row),
+      // The veto: a vetoed value never lands, and the cell keeps what it had.
+      rejectInvalid: true },
     { id: 'budget', header: 'Budget', field: 'budget', editorType: 'number', width: 120, format: { type: 'currency', currency: 'USD', options: { maximumFractionDigits: 0 } } },
     { id: 'used', header: 'Used', field: 'amount', width: 100, cell: (ctx) => renderSnippet(UsedCell, { row: ctx.row.original }) },
   ]

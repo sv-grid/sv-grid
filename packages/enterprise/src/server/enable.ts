@@ -8,10 +8,10 @@
  * Unlike the scheduler and board there is no renderer to register with the
  * grid - the model hands the grid ordinary rows - so this module exists to
  * give Enterprise one uniform `enableX()` entry point and to raise the
- * soft-gate nudge at install time rather than at first expand.
+ * unlicensed nudge at install time rather than at first expand.
  *
- * Soft-gated like the rest of Enterprise: it works without a license key but
- * the grid shows the unlicensed watermark + a one-time console nudge.
+ * Like the rest of Enterprise it runs without a license key during the
+ * evaluation; the grid shows the watermark and a one-time console notice.
  *
  * ```ts
  * import { setLicenseKey, createServerRowModel } from '@svgrid/enterprise'
@@ -39,7 +39,7 @@ export function enableServerRowModel(): void {
 }
 
 /**
- * Raise the soft gate from a model factory. Shares the `enabled` latch with
+ * Raise the unlicensed nudge from a model factory. Shares the `enabled` latch with
  * {@link enableServerRowModel} so an app that calls both (or constructs many
  * models) still gets exactly one nudge.
  *

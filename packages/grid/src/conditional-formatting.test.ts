@@ -83,6 +83,14 @@ describe('resolveCellFormat', () => {
     expect(resolveCellFormat(1, {}, 'c', fmts, null).background).toBeUndefined()
   })
 
+  it('rule carries its icon while it matches', () => {
+    const fmts: ConditionalFormat[] = [
+      { type: 'rule', when: ({ value }) => Number(value) > 100, background: '#dbeafe', icon: '!' },
+    ]
+    expect(resolveCellFormat(150, {}, 'c', fmts, null).icon).toBe('!')
+    expect(resolveCellFormat(50, {}, 'c', fmts, null).icon).toBeUndefined()
+  })
+
   it('respects the columns scope', () => {
     const fmts: ConditionalFormat[] = [
       { type: 'colorScale', min: '#000000', max: '#ffffff', columns: ['other'] },

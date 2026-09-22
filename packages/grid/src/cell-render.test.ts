@@ -141,6 +141,26 @@ describe('createCellRender / computeCellValidity', () => {
       message: 'Salary must be at least $1,000',
     })
   })
+
+  it('judges the open editor draft, parsed as a commit would parse it', () => {
+    // With rejectInvalid a refused value never lands, so the red flag while
+    // the value is typed is the only feedback the user gets.
+    const col = makeColumn('salary', { validate: validateSalary, editorType: 'number' })
+    const typing = createCellRender(makeCtx({
+      editedCellValues: {},
+      editingCell: { rowId: 'r1', columnId: 'salary', editorType: 'number', value: '5' },
+    }))
+    expect(typing.computeCellValidity(makeRow('r1', { salary: 85000 }), col)).toEqual({
+      invalid: true,
+      message: 'Salary must be at least $1,000',
+    })
+    // Another cell's editor does not bleed into this one.
+    const elsewhere = createCellRender(makeCtx({
+      editedCellValues: {},
+      editingCell: { rowId: 'r2', columnId: 'salary', editorType: 'number', value: '5' },
+    }))
+    expect(elsewhere.computeCellValidity(makeRow('r1', { salary: 85000 }), col)).toEqual({ invalid: false, message: null })
+  })
 })
 
 describe('createCellRender / computeRowClass', () => {

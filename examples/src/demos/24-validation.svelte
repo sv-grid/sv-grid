@@ -8,11 +8,11 @@
    * cell flashes red briefly, and the rejection is logged in the
    * "Recent rejections" panel.
    *
-   * SvGrid v1.0 does not yet have a per-column `validate()` hook (it's on
-   * the missing-features list). The pattern below - validate in
-   * onCellValueChange + roll back via setCellValue - is the production
-   * workaround. The same shape will adapt cleanly when the built-in hook
-   * lands.
+   * A column's `validate` hook flags a bad value and `rejectInvalid`
+   * refuses it (demo 206 shows both). The pattern here - validate in
+   * onCellValueChange + roll back via setCellValue - is for rules that read
+   * the whole row after the edit, or an app that wants a log of what was
+   * refused.
    */
   import {
     SvGrid,

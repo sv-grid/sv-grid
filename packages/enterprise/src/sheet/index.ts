@@ -88,7 +88,8 @@ export {
 export { sortOrder, guessHeaderRow, type SortKey, type SortDirection } from './sort'
 export { documentToXlsxParts, documentFromXlsxParts, documentToXlsx, documentFromXlsx } from './xlsx-document'
 export { csvText, csvRows, guessCsvSeparator, sheetStateFromCsv } from './csv'
-export { sheetStateFromOds, documentFromOds, formulaFromOdf, formulaToOdf } from './ods-document'
+export { sheetStateFromOds, documentFromOds, documentToOds, documentToOdsParts, formulaFromOdf, formulaToOdf } from './ods-document'
+export { sheetStateFromXls, documentFromXls, documentToXls, isXlsFile } from './xls-document'
 export { documentFromFile, readSpreadsheetFile, type OpenedFile } from './open-file'
 export {
   defaultPageSetup, copyPageSetup, marginPresetOf, shiftPageSetup, marginsCss, MARGIN_PRESETS, PAPER_SIZES,

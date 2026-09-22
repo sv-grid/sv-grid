@@ -17,7 +17,7 @@
  * coalesce bursts into a single refetch. For per-row effects (e.g. flashing a
  * changed row) read the normalized event passed to `onChange`.
  */
-import { nudgeEnterprise } from '../license'
+import { nudgeEnterpriseFor } from '../license'
 
 /** A normalized change event. `new` is the row after the change (INSERT/UPDATE); `old` its prior identity (UPDATE/DELETE). */
 export type RealtimeChange<TData> = {
@@ -61,7 +61,7 @@ export type SupabaseRealtimeHandle = { unsubscribe(): void }
 export function createSupabaseRealtime<TData = Record<string, unknown>>(
   config: SupabaseRealtimeConfig<TData>,
 ): SupabaseRealtimeHandle {
-  nudgeEnterprise('Studio') // soft-gate; never blocks
+  nudgeEnterpriseFor('studio', 'Studio') // evaluation nudge; never blocks
   const schema = config.schema ?? 'public'
   const channelName = config.channelName ?? `svgrid:${schema}:${config.table}`
 

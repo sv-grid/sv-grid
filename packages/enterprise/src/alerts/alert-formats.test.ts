@@ -80,6 +80,14 @@ describe('rulesToConditionalFormats', () => {
     }
   })
 
+  it('carries a badge icon into the format', () => {
+    const formats = rulesToConditionalFormats<Row>([rule({ actions: [{ kind: 'badge', style: { background: '#dbeafe', icon: '!' } }] })])
+    const f = formats[0]!
+    expect(f.type === 'rule' && f.icon).toBe('!')
+    const fired = toConditionalFormats([event({ actions: [{ kind: 'badge', style: { icon: '!' } }] })], getRowId)
+    expect(fired[0]!.type === 'rule' && fired[0]!.icon).toBe('!')
+  })
+
   it('ignores disabled rules and non-styling rules', () => {
     expect(rulesToConditionalFormats<Row>([rule({ enabled: false })])).toHaveLength(0)
     expect(rulesToConditionalFormats<Row>([rule({ actions: [{ kind: 'toast' }] })])).toHaveLength(0)

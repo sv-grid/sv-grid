@@ -143,7 +143,7 @@ export function createServerGroupModel<TData>(
   source: ServerDataSource<TData>,
   options: ServerGroupControllerOptions<TData>,
 ): ServerGroupController<TData> {
-  // Soft gate: works unlicensed, shows the watermark + one console nudge.
+  // Runs without a key; shows the watermark + one console notice.
   nudgeServerRowModel()
   let groupBy = [...(options.groupBy ?? [])]
   const aggregations = options.aggregations ?? []

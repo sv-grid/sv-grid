@@ -5,6 +5,7 @@
    * Operates through an AlertRulesManager (persistence) and emits the updated
    * list so the running engine can re-sync.
    */
+  import { untrack } from 'svelte'
   import { SvModal, SvSwitchButton, toast } from '@svgrid/grid'
   import SvAlertRuleEditor from './SvAlertRuleEditor.svelte'
   import { stringifyPredicate } from './expressions/parse'
@@ -23,7 +24,7 @@
 
   let { open = $bindable(false), manager, columns, rows = [], onChange, onClose }: Props = $props()
 
-  let rules = $state<AlertRule[]>(manager.list())
+  let rules = $state<AlertRule[]>(untrack(() => manager.list()))
   let editing = $state<AlertRule | null>(null)
   let editorOpen = $state(false)
   let fileInput = $state<HTMLInputElement | null>(null)

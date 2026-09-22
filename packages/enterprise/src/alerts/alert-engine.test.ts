@@ -133,3 +133,25 @@ describe('renderTemplate', () => {
     ).toBe('High price: EU = 120')
   })
 })
+
+describe('scheduled pass', () => {
+  // A schedule lists what matches at that moment, every time it fires: no
+  // edge memory, or a standing condition would be reported once and then
+  // never again on the Friday review.
+  const scheduled = (): AlertRule =>
+    rule({ id: 'friday', trigger: { type: 'scheduled', schedule: { id: 'friday', name: 'Friday', cron: '30 17 * * 5' } } })
+
+  it('lists every matching row on each fire', () => {
+    const e = engine([scheduled()])
+    const rows: Row[] = [{ id: 'a', price: 800, region: 'EU', status: 'open' }, { id: 'b', price: 50, region: 'US', status: 'open' }, { id: 'c', price: 900, region: 'EU', status: 'open' }]
+    expect(e.evaluateScheduled('friday', rows).map((ev) => ev.rowId)).toEqual(['a', 'c'])
+    expect(e.evaluateScheduled('friday', rows).map((ev) => ev.rowId)).toEqual(['a', 'c'])
+    expect(e.evaluateScheduled('friday', rows)[0]!.triggerType).toBe('scheduled')
+  })
+
+  it('answers nothing for an unknown or disabled rule', () => {
+    const e = engine([scheduled(), rule({ id: 'off', enabled: false, trigger: { type: 'scheduled', schedule: { id: 'off', name: 'x', cron: '* * * * *' } } })])
+    expect(e.evaluateScheduled('nope', [{ id: 'a', price: 800, region: 'EU', status: 'open' }])).toEqual([])
+    expect(e.evaluateScheduled('off', [{ id: 'a', price: 800, region: 'EU', status: 'open' }])).toEqual([])
+  })
+})

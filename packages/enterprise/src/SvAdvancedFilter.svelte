@@ -72,7 +72,7 @@
     (untrack(() => api.getAdvancedFilter()) as PredicateExpr | null) ?? null,
   )
   /** What the editor is editing. Not pushed until Apply. */
-  let draft = $state<PredicateExpr>(applied ?? EMPTY)
+  let draft = $state<PredicateExpr>(untrack(() => applied ?? EMPTY))
 
   const isDirty = $derived(JSON.stringify(draft) !== JSON.stringify(applied ?? EMPTY))
   const canClear = $derived(applied != null)

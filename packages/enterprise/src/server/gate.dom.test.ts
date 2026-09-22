@@ -1,5 +1,5 @@
 /**
- * The Server-Side Row Model is soft-gated like the rest of Enterprise: it
+ * The Server-Side Row Model runs without a key like the rest of Enterprise: it
  * works without a license key, and says so with the watermark + a one-time
  * console notice.
  *
@@ -48,7 +48,7 @@ async function freshGraph() {
   return { create: createServerGroupModel, ...license }
 }
 
-describe('server row model soft gate', () => {
+describe('server row model unlicensed nudge', () => {
   beforeEach(() => {
     vi.useFakeTimers()
   })

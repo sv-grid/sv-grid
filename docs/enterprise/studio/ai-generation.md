@@ -166,9 +166,10 @@ introspection + scaffolding + verification tools that the host agent drives.
 
 ## Licensing
 
-Generation is soft-gated: it runs unlicensed and prepends a one-line commercial
-notice, and the generated app carries the usual watermark until you call
-`setLicenseKey()`. Set `SVGRID_LICENSE_KEY` in the MCP config to license it. See
+Generation is part of the 30-day evaluation period: without a key it runs
+and prepends a one-line commercial notice, and the generated app displays
+the watermark and the console message about the Enterprise package until
+you call `setLicenseKey()`. Set `SVGRID_LICENSE_KEY` in the MCP config to license it. See
 [licensing](../licensing.md#studio-data-app-generator).
 
 ## See also

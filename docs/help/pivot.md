@@ -1,8 +1,13 @@
+---
+keywords: svelte pivot table, pivot chart, pivot grid, pivot designer, PivotConfig, pivot totals and subtotals, drill-through
+---
 # Pivot tables - Enterprise
 
 A built-in pivot model that turns a flat data set into a row-axis tree,
 a nested column-axis header, and one aggregated cell per
 `(row-path × col-path × measure)` triple. Ships in **`@svgrid/enterprise`**.
+
+For the pivot built up from one prop to a designer and a chart, see [Pivot: from rows to a pivot table](./pivot/start.md); this page is the reference.
 
 ![Flat rows folded into a pivot with row dimensions down the left, column dimensions across the top, and aggregated measures in the matrix cells.](/docs-media/grid-pivot.svg)
 

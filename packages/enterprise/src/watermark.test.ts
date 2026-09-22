@@ -1,5 +1,5 @@
 /**
- * Tests for the unlicensed soft-gate watermark + console nudge.
+ * Tests for the unlicensed watermark + console nudge.
  *   - The watermark reads "www.svgrid.com" and sits in the bottom-right of the
  *     grid root.
  *   - It fades out and is removed after 5 seconds.

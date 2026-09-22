@@ -1,7 +1,7 @@
 /**
  * Advanced Filter (Pro): register the expression compiler with the grid.
  *
- * Same shape as `pivot-enable.ts` - idempotent flag, register, soft-gate nudge.
+ * Same shape as `pivot-enable.ts` - idempotent flag, register, unlicensed nudge.
  * The grid owns the filter state and the pipeline slot; this supplies the
  * compiler that turns an expression into a row predicate.
  */

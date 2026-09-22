@@ -3,8 +3,8 @@
 The spreadsheet shell of `@svgrid/enterprise`, ribbon and formula engine
 included, as one custom element for a page or a host with no Svelte in its
 build: React, Vue, Angular, or a plain `<script>` tag. It is part of the
-paid pack and runs unlicensed with the pack's watermark, as every entry
-does.
+paid pack, with its 30-day evaluation period: without a key it runs and
+displays the pack's watermark and console message, as every entry does.
 
 **The reference below is generated** from `<SvSheet>`'s own `Props` type by
 `packages/enterprise/scripts/generate-sheet-surface.mjs`, the same way the

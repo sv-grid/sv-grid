@@ -30,6 +30,7 @@ import {
 import {
   getPinnedCellValue,
 } from "./cell-values";
+import { parseEditorValue } from "./editors/cell-editors";
 
 export function createCellRender<
   TFeatures extends TableFeatures = TableFeatures,
@@ -131,11 +132,22 @@ export function createCellRender<
     // cache, so `getCellValueByColumnId` would return the stale pre-edit value
     // and validation would never re-run after an edit. Consult the overlay
     // first - same rule the display path (getCellDisplayValue) and summaries
-    // use - so a cell re-validates live as the user types.
+    // use. While this cell's editor is open the draft is what the rule sees,
+    // parsed the way a commit would parse it, so the red highlight and the
+    // message show as the user types - which, with `rejectInvalid`, is the
+    // only time a refused value is ever visible.
     const edited = ctx.editedCellValues ?? {}
     const key = getCellKey(row.id, column.id)
+    const editing = ctx.editingCell
     const value =
-      key in edited ? edited[key] : row.getCellValueByColumnId(column.id)
+      editing && editing.rowId === row.id && editing.columnId === column.id
+        ? parseEditorValue(editing.editorType, editing.value, {
+            multiple: column.columnDef.editorMultiple === true,
+            dateOnly: column.columnDef.cellDataType === "dateString",
+          })
+        : key in edited
+          ? edited[key]
+          : row.getCellValueByColumnId(column.id)
     const out = rule({
       value,
       row: row.original as TData,

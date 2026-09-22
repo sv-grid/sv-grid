@@ -1,12 +1,18 @@
-# SVGRID END USER LICENSE AGREEMENT
+---
+seoTitle: SvGrid End User License Agreement (EULA) - Enterprise
+seoDescription: The End User License Agreement for @svgrid/enterprise - grant and editions, OEM redistribution, seats, the 30-day evaluation, license keys, restrictions, warranty and liability.
+keywords: svgrid eula, svgrid enterprise license agreement, svgrid license terms, svgrid oem license
+---
 
-Version 1.1
+# SVGRID END USER LICENSE AGREEMENT
 
 This End User License Agreement ("EULA") governs your use of SvGrid. Please read
 it carefully before downloading, installing, or using any portion of the
 Software. By downloading, installing, or using the Software you agree to be bound
 by the terms and conditions of this EULA. If you do not agree, you are not
 permitted to use the Software or any portion of it.
+
+Version 1.2. A PDF copy: [SvGrid-EULA.pdf](/legal/SvGrid-EULA.pdf).
 
 SvGrid is distributed in two editions under two different sets of terms:
 
@@ -49,6 +55,9 @@ SvGrid is distributed in two editions under two different sets of terms:
 - **"License Key"** means a key issued by the Author that activates the
   Enterprise Package for the edition and the number of Developer seats covered
   by the Subscriber's order.
+- **"Evaluation Key"** means a time-limited key issued by the Author under
+  Section 7 for the sole purpose of evaluating the Enterprise Package. An
+  Evaluation Key is not a License Key.
 - **"OEM License"** means a separately negotiated license, described in
   Section 4A, that permits redistribution beyond the grant in Section 4(c).
 
@@ -99,8 +108,9 @@ The scope of the license is determined by the Subscriber's order:
 
 Use of the Spreadsheet Module or Studio under a Grid Developer License is outside
 the licensed scope. Consistent with Section 7, the Software does not block such
-use: it stays soft-gated and shows the unlicensed watermark and notice. Bringing
-that use into scope requires a Suite Developer License.
+use: the feature runs, and the watermark and the console notice described in
+Section 7 are displayed for it. Bringing that use into scope requires a Suite
+Developer License.
 
 ## 4A. OEM AND REDISTRIBUTION LICENSE
 
@@ -134,6 +144,18 @@ workbook is the Subscriber's own application, not redistribution. The test in
 this Section is whether third parties receive the Enterprise Package as
 something they build with, not whether the Subscriber charges for its product.
 
+The evaluation in Section 7 is granted to the party deciding whether to license
+the Enterprise Package for itself. It does not extend through a Subscriber to
+the Subscriber's own customers: a product described in (a) to (d) may not rely
+on the unlicensed state of the Enterprise Package, on an Evaluation Key, or on
+a development key as the licensing basis for what it delivers to third parties,
+and the watermark and console notice appearing in a third party's application
+do not make that application an evaluation under Section 7. An OEM License
+names the License Key that may be embedded in the redistributed product so
+that its users see neither; a Developer License Key, an Evaluation Key, or a
+development key must not be embedded in or distributed with a product that
+requires an OEM License.
+
 Requests: sales@jqwidgets.com.
 
 ## 5. ENTERPRISE LICENSE - SEATS
@@ -164,24 +186,40 @@ updates-and-support term:
 The Author will not disable working features of a paying or previously paying
 Subscriber.
 
-## 7. ENTERPRISE LICENSE - EVALUATION AND SOFT-GATE
+## 7. ENTERPRISE LICENSE - EVALUATION
 
-The Enterprise Package is soft-gated. All Enterprise features, including the
-Spreadsheet Module and Studio, are fully functional without a License Key for the
-purpose of evaluation. While unlicensed, the grid and the spreadsheet display a
-small "Unlicensed @svgrid/enterprise" watermark and emit a one-time console
-notice. There is no time limit and no disabled functionality during evaluation.
-Setting a valid License Key that covers the feature in use removes the watermark
-and the notice.
+The Author grants a 30-day evaluation period for the Enterprise Package. During
+the evaluation, the Enterprise Package in full, including the Spreadsheet Module
+and Studio, may be installed and used without a License Key for the sole purpose
+of deciding whether to obtain an Enterprise license, on developer workstations
+and in internal development, staging and demonstration environments. Production
+use requires a License Key.
 
-The same applies to a feature outside a Subscriber's edition. A Grid Developer
-License that reaches the Spreadsheet Module or Studio is treated as unlicensed
-for that feature: the feature runs, and the watermark and notice stay until the
-license is upgraded. The Author does not disable a feature that is already
-running in a Subscriber's application.
-On request, the Author issues a time-limited evaluation key that removes the
-watermark during evaluation. Any sentinel or development key published by the
-Author for local development and testing must not be used in production.
+While the Enterprise Package is loaded without a License Key, the grid and the
+spreadsheet display a small watermark and the Software emits a console notice
+about the Enterprise Package, and the first use of an Enterprise feature may
+show a one-time upgrade card naming that feature. No functionality is disabled,
+and the Software does not stop working when the 30 days have passed: the
+watermark and the notice stay until a License Key is set. Continued use after
+the evaluation period, or any production use, without a License Key is outside
+this EULA.
+
+On request, the Author issues an Evaluation Key with a 30-day expiry that runs
+the Enterprise Package in full without the watermark and the notice, so that
+staging and demonstration deployments can be shown to evaluators as they would
+ship. When the Evaluation Key expires the Software keeps running, displays the
+watermark again, and emits a console notice naming the expiry date; nothing in a
+deployed application breaks. An Evaluation Key must not be used in production,
+shared outside the evaluating organization, or embedded in a product
+distributed to third parties. Any development key published by the Author for
+local development and testing is subject to the same limits.
+
+The same mechanism applies to a feature outside a Subscriber's edition. A Grid
+Developer License that reaches the Spreadsheet Module or Studio is treated as
+unlicensed for that feature: the feature runs, and the watermark and a console
+notice naming the covering edition stay until the license is upgraded. The
+Author does not disable a feature that is already running in a Subscriber's
+application.
 
 ## 8. ENTERPRISE LICENSE - OPEN SOURCE PROJECTS
 

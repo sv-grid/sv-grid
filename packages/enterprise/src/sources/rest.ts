@@ -141,7 +141,7 @@ function defaultParse<TData>(body: unknown, response: Response, request: ServerR
 export function createRestDataSource<TData extends RowData>(
   config: RestDataSourceConfig<TData>,
 ): WritableDataSource<TData> {
-  nudgeEnterpriseFor('studio', 'Studio') // soft-gate; never blocks
+  nudgeEnterpriseFor('studio', 'Studio') // evaluation nudge; never blocks
   const doFetch = config.fetch ?? globalThis.fetch
   const idField = config.idField ?? (config.schema ? resolveIdField(config.schema) : 'id')
   const base = config.url.replace(/\/+$/, '')

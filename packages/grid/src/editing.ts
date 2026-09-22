@@ -158,6 +158,24 @@ export function createEditing<
     runHistoryGroup(ctx, () => commitEditingCell());
   }
 
+  /**
+   * True when a column with `rejectInvalid` refuses `value`: its `validate`
+   * hook returns `false` or a message. Without the flag nothing is refused.
+   */
+  function editRejected(column: any, value: unknown, rowData: unknown): boolean {
+    const def = column?.columnDef as
+      | { rejectInvalid?: boolean; validate?: (p: unknown) => string | boolean | null | undefined }
+      | undefined;
+    if (!def?.rejectInvalid || typeof def.validate !== "function") return false;
+    const verdict = def.validate({
+      value,
+      row: rowData,
+      rowIndex: ctx.internalData.indexOf(rowData as TData),
+      column,
+    });
+    return verdict === false || (typeof verdict === "string" && verdict.length > 0);
+  }
+
   function commitEditingCell() {
     if (!ctx.editingCell) return;
     const editing = ctx.editingCell;
@@ -199,6 +217,12 @@ export function createEditing<
           data: rowData,
           columnId: ctx.editingCell.columnId,
         });
+      }
+      // A refused edit closes the editor and leaves the row, the overlay,
+      // the history and the consumer untouched.
+      if (editRejected(column, finalValue, rowData)) {
+        ctx.editingCell = null;
+        return;
       }
       rowData[column.columnDef.field] = finalValue;
     }
@@ -778,6 +802,7 @@ export function createEditing<
             columnId: column.id,
           })
         : parsed;
+      if (editRejected(column, finalValue, row.original)) continue;
       if (oldValue !== finalValue) {
         (row.original as Record<string, unknown>)[field] = finalValue;
         const key = getCellKey(fr.rowId, column.id);

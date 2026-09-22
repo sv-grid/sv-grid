@@ -577,7 +577,7 @@ export function createServerRowModel<TData>(
   source: ServerDataSource<TData>,
   options: ServerRowModelOptions<TData>,
 ): ServerRowModel<TData> {
-  // Soft gate: works unlicensed, shows the watermark + one console nudge.
+  // Runs without a key; shows the watermark + one console notice.
   nudgeServerRowModel()
 
   let groupBy = [...(options.groupBy ?? [])]

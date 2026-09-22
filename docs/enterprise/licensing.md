@@ -1,11 +1,13 @@
 # Enterprise licensing
 
-The `@svgrid/enterprise` package is **soft-gated**: every feature runs
-without a key, with a small unlicensed-build watermark in the
-bottom-right corner of the grid + a one-time console nudge. Set a
-key once at app startup and both disappear.
+`@svgrid/enterprise` comes with a **30-day evaluation period**: an
+evaluation key, issued on request, runs the full package without the
+watermark for 30 days. Loaded without a license key, the Enterprise
+module displays a watermark in the bottom-right corner of the grid and a
+console message about the Enterprise package; every feature still works.
+Set a key once at app startup and both disappear.
 
-![The soft-gate model: without a key the grid runs fully with a small watermark and a one-time console nudge; calling setLicenseKey once clears both, and every feature runs either way.](/docs-media/enterprise-licensing.svg)
+![The evaluation model: without a key the grid runs fully with a small watermark and a console message about the Enterprise package; calling setLicenseKey once clears both, and every feature runs either way.](/docs-media/enterprise-licensing.svg)
 
 ## Setting the key
 
@@ -127,15 +129,16 @@ revoked in any production-domain validation pipeline.
 | Studio: designer / panels   | Works.                                                     |
 | Studio: `createSqlDataSource` | Works.                                                   |
 | Studio: MCP generator       | Works; output carries a one-line notice.                   |
-| Unlicensed watermark        | Visible on every grid instance.                            |
-| Console nudge               | Logged once per page load.                                  |
+| Watermark                   | Visible on every grid instance.                            |
+| Console message             | About the Enterprise package, logged once per page load.   |
 
-Nothing is "trial mode" - the soft-gate is meant for evaluation. Once
-you're sold, drop in a key.
+That is the evaluation period: every feature, with the watermark and the
+console message until a key is set, and a 30-day evaluation key that
+removes them while you decide. Once you're sold, drop in a key.
 
 ## A Grid key on a Suite feature
 
-The same soft gate, for the same reason. A Grid Developer License that opens
+The same rule, for the same reason. A Grid Developer License that opens
 `<SvSheet>`, calls the formula engine, or reaches a Studio data source gets the
 watermark and a one-time console notice naming the feature. Nothing stops
 working and nothing is hidden, so a Grid-tier team can try the spreadsheet in
@@ -152,11 +155,14 @@ rather than let it nudge.
 
 ## Studio (data-app generator)
 
-The Studio - the schema designer, edit panel, master-detail, SQL data
-source, and the AI generator - is part of the **same** Enterprise
-license. One key covers everything; there's no separate Studio tier or
-per-feature entitlement. It's **soft-gate only**: every Studio surface
-runs unlicensed, it just nudges.
+The Studio - the schema designer, edit panel, master-detail, the SQL,
+REST and Supabase data sources, and the AI generator - is covered by the
+**Suite Developer License**. There is no Studio-only key and no
+per-feature entitlement inside it: a Suite key covers the whole Studio
+together with the spreadsheet and the grid. Loaded without a Suite key,
+every Studio surface still works and displays the watermark and the
+console message about the Enterprise package, as the rest of the package
+does.
 
 It has two places you set the key, because it runs in two places:
 

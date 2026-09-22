@@ -11,7 +11,17 @@
 import { clampDescription } from './seo-text.mjs'
 
 /**
- * Display title: the first `# ...` line, else the fallback.
+ * A heading as plain text: the inline code marks come off (`<sv-sheet>`
+ * reads as <sv-sheet> in the sidebar, the tab title and llms.txt, where a
+ * backtick is a literal character), and so do bold / italic marks.
+ * @param {string} text
+ */
+export function plainTitle(text) {
+  return text.replace(/`([^`]*)`/g, '$1').replace(/\*\*([^*]+)\*\*/g, '$1').replace(/(^|\s)_([^_]+)_(?=\s|$)/g, '$1$2').trim()
+}
+
+/**
+ * Display title: the first `# ...` line as plain text, else the fallback.
  * @param {string} md
  * @param {string} fallback
  */
@@ -19,7 +29,7 @@ export function titleFromMarkdown(md, fallback) {
   const cleaned = md.replace(/^﻿/, '')
   const m = cleaned.match(/^#\s+(.+?)\s*$/m)
   if (!m) return fallback
-  return m[1].trim()
+  return plainTitle(m[1])
 }
 
 /**

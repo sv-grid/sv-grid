@@ -20,7 +20,7 @@ fit together.
 Create a SvelteKit app and install the packages:
 
 ```bash
-npm create svelte@latest crm && cd crm
+npx sv create crm && cd crm      # pick "SvelteKit minimal", TypeScript: yes
 npm i @svgrid/grid @svgrid/enterprise
 ```
 

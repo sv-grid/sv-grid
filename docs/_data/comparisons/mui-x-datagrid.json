@@ -138,7 +138,7 @@
     },
     {
       "question": "Is SvGrid cheaper than MUI X Pro or Premium?",
-      "answer": "The prices mui.com listed on the date we read them are in the pricing line at the top of this page, per developer per year for Pro and Premium. SvGrid's core is MIT and @svgrid/enterprise is $599 per developer per year for a single application or $999 for multiple applications. The difference is what the free tier holds: most features MUI X sells in Pro and Premium are in SvGrid's MIT core, so many teams never need the paid pack."
+      "answer": "The prices mui.com listed on the date we read them are in the pricing line at the top of this page, per developer per year for Pro and Premium. SvGrid's core is MIT and @svgrid/enterprise is $599 per developer per year for the enterprise grid or $999 with the spreadsheet and Studio, both for unlimited applications. The difference is what the free tier holds: most features MUI X sells in Pro and Premium are in SvGrid's MIT core, so many teams never need the paid pack."
     },
     {
       "question": "How long does a MUI X to SvGrid migration take?",

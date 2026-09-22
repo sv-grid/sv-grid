@@ -386,7 +386,7 @@ groups with their children, or of the flattened rows with
 `paginateChildRows`. The demo switches between scroll, "load more" and
 paged for the same tree:
 
-<div data-docs-demo="344-server-grouping-model" data-height="560"></div>
+<div data-docs-demo="496-server-grouping-model" data-height="560"></div>
 
 ## See also
 

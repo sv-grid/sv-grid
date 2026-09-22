@@ -67,7 +67,7 @@
   import { createSheetDocument, type SheetDocument, type SheetState, type SheetChangeReason } from './sheet/document'
   import {
     setWorkbook, setFormatTarget, setFindReplaceHandler, setFormatDialogHandler, setPasteSpecialHandler,
-    setRibbonActionHandler,
+    setRibbonActionHandler, setShortcutOwner, getShortcutOwner,
     getFormatTarget, withFormatUndo, applyFormat, clearFormats,
   } from './sheet/shortcuts'
   import { applyBorders, type BorderPreset } from './sheet/ribbon'
@@ -333,19 +333,61 @@
   const wb: Workbook = doc.workbook
 
   /** Report a change to the document; the `onChange` prop hears it once per tick. */
-  const changed = (reason: SheetChangeReason) => doc.changed(reason)
+  // What the shell itself reported this tick, by kind, so the subscriber
+  // below can tell its own changes (already on the grid) from an outside
+  // one that still has to be put there.
+  const selfReported = new Set<SheetChangeReason['kind']>()
+  const changed = (reason: SheetChangeReason) => {
+    selfReported.add(reason.kind)
+    doc.changed(reason)
+  }
+  /** Set by the component's own setState, whose restore is already applied. */
+  let restoringSelf = false
   /**
    * The shell follows its document. A change the shell itself made has
    * already bumped, and one more is cheap; a change from OUTSIDE - a
    * collaborator's delta applied through `applySheetDelta`, a host calling
-   * `doc.patch` - would otherwise sit in the document unpainted, which is
-   * what `refresh()` used to be for. That stays, for a write made straight
-   * to the workbook, which the document never hears about.
+   * `doc.patch` or `doc.setState` - would otherwise sit in the document
+   * unpainted, which is what `refresh()` used to be for. Cells and formats
+   * repaint on the bump alone; the parts the grid holds live (widths,
+   * heights, hidden lines, frozen panes) and a whole restore have to be put
+   * on the grid, which is what an outside `sizes`, `hidden`, `freeze` or
+   * `restore` does here. `refresh()` stays, for a write made straight to the
+   * workbook, which the document never hears about.
    */
   $effect(() => doc.subscribe((reasons) => {
+    const outside = reasons.filter((r) => !selfReported.has(r.kind))
+    selfReported.clear()
+    const restored = outside.some((r) => r.kind === 'restore')
+    if (restored && !restoringSelf) {
+      afterRestore()
+    } else if (outside.some((r) => r.kind === 'sheets')) {
+      registerSheetTargets()
+    } else if (outside.some((r) => r.kind === 'sizes' || r.kind === 'hidden' || r.kind === 'freeze')) {
+      applyLive(wb.active)
+      const cmd = cmdOf()
+      if (cmd) applyFreeze(cmd, doc.get(wb.active).freeze)
+    }
+    if (restored) restoringSelf = false
     bump()
     onChange?.(reasons)
   }))
+
+  /**
+   * What a restored document needs on the grid: the targets rebound to the
+   * active sheet without a swap (the document already holds every sheet's
+   * parts), its live sizes and frozen panes applied, the history cleared
+   * since none of it describes the sheet any more, the active cell home.
+   */
+  function afterRestore() {
+    targetsBoundTo = wb.active
+    registerSheetTargets()
+    applyLive(wb.active)
+    const cmd = cmdOf()
+    if (cmd) applyFreeze(cmd, doc.get(wb.active).freeze)
+    api?.clearHistory()
+    active = { rowIndex: 0, colIndex: 0 }
+  }
 
   /**
    * The document as it stands, for saving: every sheet's cells and names
@@ -364,16 +406,9 @@
    * describes the sheet any more.
    */
   export function setState(state: SheetState): void {
+    restoringSelf = true
     doc.setState(state)
-    // The active sheet may have changed with the state; the targets rebind
-    // to it without a swap (the document already holds every sheet's parts).
-    targetsBoundTo = wb.active
-    registerSheetTargets()
-    applyLive(wb.active)
-    const cmd = cmdOf()
-    if (cmd) applyFreeze(cmd, doc.get(wb.active).freeze)
-    api?.clearHistory()
-    active = { rowIndex: 0, colIndex: 0 }
+    afterRestore()
     bump()
   }
 
@@ -1458,11 +1493,33 @@
     return true
   }
 
+  /** A plain number as typed, the shape Excel's automatic percent entry rescales. */
+  const PLAIN_NUMBER = /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i
+  /**
+   * The text an entry lands as in (r, c), as `onCellWritten` will store it:
+   * a typed `12%` is `0.12`, a plain `5` in a cell formatted `0%` is `0.05`.
+   * A rule has to judge that text, not the typed one: checking `0.35`
+   * against a 0 to 0.2 bound refused an entry that was about to land as
+   * 0.0035, and let `0.15` through to land as 0.0015.
+   */
+  function storedTextFor(r: number, c: number, text: string): string {
+    const parsed = parseEntry(text)
+    if (parsed) return parsed.value
+    if (text.startsWith('=')) return text
+    const entry = storeFor().get(`r${r}`, colToLetters(c))
+    if (entry?.numFmt && formatCategory(entry.numFmt).category === 'percent' && PLAIN_NUMBER.test(text.trim())) {
+      return String(Number(text.trim()) / 100)
+    }
+    return text
+  }
+
   /** Whether `text` may land in (r, c); sets the alert when it may not. */
   function admits(r: number, c: number, text: string): boolean {
     const rule = ruleAt(rulesNow(), r, c)
     if (!rule) return true
-    const verdict = checkEntry(rule, text, { row: r, col: c }, validationCtx)
+    // A list is matched on the words typed; every other rule reads the value.
+    const judged = rule.allow === 'list' ? text : storedTextFor(r, c, text)
+    const verdict = checkEntry(rule, judged, { row: r, col: c }, validationCtx)
     if (verdict.ok) return true
     pendingAlert = { r, c, text, verdict }
     // The grid's Enter has already moved the cursor on by the time the
@@ -2721,7 +2778,30 @@
     })
   }
 
-  $effect(() => {
+  // The keyboard, the ribbon and the dialogs reach this sheet through the
+  // module-level targets in sheet/shortcuts.ts. They are claimed on mount
+  // and again whenever the pointer or the focus lands in this sheet, since
+  // another sheet on the page may have claimed them since.
+  const me = {}
+  function ensureShortcuts() {
+    if (getShortcutOwner() !== me) claimShortcuts()
+  }
+  function releaseShortcuts() {
+    if (getShortcutOwner() !== me) return
+    setShortcutOwner(null)
+    setWorkbook(null)
+    setFormatTarget(null)
+    setStructureTarget(null)
+    setFindTarget(null)
+    setFillTranslator(null)
+    setSheetValueProbe(null)
+    setFindReplaceHandler(null)
+    setFormatDialogHandler(null)
+    setPasteSpecialHandler(null)
+    setRibbonActionHandler(null)
+  }
+  function claimShortcuts() {
+    setShortcutOwner(me)
     setWorkbook(wb, () => {
       // A sheet switch moves the whole viewport, so the active cell goes home
       // rather than pointing at a cell that may not exist on the new sheet.
@@ -2762,18 +2842,12 @@
     // So AutoSum measures its run against evaluated values: a column of
     // subtotals is a column of numbers, not a column of "=SUM(...)" strings.
     setSheetValueProbe((r, c) => wb.getValue(wb.active, r, c))
-    return () => {
-      setWorkbook(null)
-      setFormatTarget(null)
-      setStructureTarget(null)
-      setFindTarget(null)
-      setFillTranslator(null)
-      setSheetValueProbe(null)
-      setFindReplaceHandler(null)
-      setFormatDialogHandler(null)
-      setPasteSpecialHandler(null)
-      setRibbonActionHandler(null)
-    }
+  }
+
+  $effect(() => {
+    void wb
+    claimShortcuts()
+    return releaseShortcuts
   })
 
   // --- reading a cell -------------------------------------------------------
@@ -4263,7 +4337,7 @@
     // a formula, is left to say what it says.
     if (!parsed && !text.startsWith('=') && entry?.numFmt && formatCategory(entry.numFmt).category === 'percent') {
       const plain = text.trim()
-      if (/^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(plain)) stored = String(Number(plain) / 100)
+      if (PLAIN_NUMBER.test(plain)) stored = String(Number(plain) / 100)
     }
     if (text.includes('\n') && !entry?.wrap) patch.wrap = true
     if (Object.keys(patch).length && target && cmd) {
@@ -5687,7 +5761,7 @@
   <span class="corner" aria-hidden="true"></span>
 {/snippet}
 
-<div class="sv-sheet" class:fill={height === '100%'} class:look-excel={look === 'excel'} class:no-gridlines={!gridlinesOn} class:no-headings={!headingsOn} bind:this={root}>
+<div class="sv-sheet" class:fill={height === '100%'} class:look-excel={look === 'excel'} class:no-gridlines={!gridlinesOn} class:no-headings={!headingsOn} bind:this={root} onfocusin={ensureShortcuts} onpointerdowncapture={ensureShortcuts}>
   {#if showRibbon}
     <SvSheetRibbon
       cmd={cmdOf}

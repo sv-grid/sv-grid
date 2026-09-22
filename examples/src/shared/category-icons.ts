@@ -55,6 +55,21 @@ export const CATEGORY_ICON_PATHS: Record<string, string> = {
 /** The plain grid: what a category without a glyph of its own shows. */
 export const CATEGORY_ICON_FALLBACK = 'M3 4h18v16H3z M3 10h18 M9 4v16'
 
+/**
+ * One glyph per product of the switcher the demos gallery and the docs share
+ * (SvGrid / SvGrid UI / Enterprise / Spreadsheet / Studio), same pen as the
+ * category glyphs: a header-row table for the grid, a 2x2 of tiles for the
+ * component kit, a stack of layers for the modules on top of the grid, and
+ * the Spreadsheet and Studio categories' own glyphs for the two views.
+ */
+export const PRODUCT_ICON_PATHS = {
+  grid: 'M3 4h18v16H3z M3 10h18 M3 15h18 M10 10v10',
+  ui: 'M4 4h7v7H4z M13 4h7v7h-7z M4 13h7v7H4z M13 13h7v7h-7z',
+  enterprise: 'M12 4.5 3 9.5l9 5 9-5-9-5z M3 14.5l9 5 9-5',
+  sheet: CATEGORY_ICON_PATHS['Spreadsheet']!,
+  studio: CATEGORY_ICON_PATHS['Studio']!,
+} as const
+
 /** The 24x24 stroke path for a category's glyph. */
 export function categoryIcon(category: string): string {
   return CATEGORY_ICON_PATHS[category] ?? CATEGORY_ICON_FALLBACK

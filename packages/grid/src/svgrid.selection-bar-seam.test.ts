@@ -87,7 +87,7 @@ describe('selectionBar - without the Enterprise renderer', () => {
   it('says a license is needed, and links to it', async () => {
     // Naming the package is what unblocks a developer trying it; saying a key
     // is needed is what they have to know before shipping. Enterprise is
-    // SOFT-gated, so the wording must not imply the feature is inert without
+    // runs without a key, so the wording must not imply the feature is inert without
     // one - it says "watermark", which is what actually happens.
     const { api, target, destroy } = await mountGrid(true)
     await tick()

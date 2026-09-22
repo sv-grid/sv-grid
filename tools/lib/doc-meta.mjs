@@ -26,7 +26,13 @@ export const HIDDEN_SLUGS = new Set([
 // page is the real one), and the non-developer legal / brand / schema trees.
 export const HIDDEN_PREFIXES = ['_internal/', 'reference/', 'legal/', 'brand/', 'schemas/']
 
+// Pages inside a hidden tree that do have a route: the EULA is the one legal
+// text a customer must be able to read on the site (the shipped LICENSE and
+// the licensing page both point at it).
+export const ROUTED_IN_HIDDEN_TREES = new Set(['legal/EULA'])
+
 export function isHiddenDoc(slug) {
+  if (ROUTED_IN_HIDDEN_TREES.has(slug)) return isPendingDoc(slug)
   return HIDDEN_SLUGS.has(slug) || HIDDEN_PREFIXES.some((p) => slug.startsWith(p)) || isPendingDoc(slug)
 }
 
@@ -65,6 +71,12 @@ export const SECTION_TITLES = {
   'help/server': 'Server data',
   'help/state': 'State & views',
   'help/charts': 'Charts',
+  'help/sheet': 'Spreadsheet',
+  'help/export': 'Import & export',
+  'help/pivot': 'Pivot grid',
+  'help/kanban': 'Kanban',
+  'help/scheduler': 'Scheduler',
+  'help/alerts': 'Alerts & scheduling',
   'help/ui-components': 'UI components',
   recipes: 'Recipes',
   reference: 'API reference',
@@ -75,9 +87,34 @@ export const SECTION_TITLES = {
   brand: 'Brand',
 }
 
+/**
+ * Pages whose section is not their folder's. The paid pages of the mixed
+ * folders (help/rows holds the Kanban page beside free row docs) and the
+ * spreadsheet's reference pages join the section their tutorials live in, so
+ * docs.json, llms.txt and the MCP bundle group them the way the site's
+ * sidebar does (CATEGORY_OVERRIDE in website/src/lib/docs.ts routes the same
+ * slugs). Keyed by slug, no extension.
+ */
+export const SECTION_OVERRIDE = {
+  'help/export': 'help/export',
+  'help/import': 'help/export',
+  'help/pivot': 'help/pivot',
+  'help/rows/kanban-board': 'help/kanban',
+  'help/rows/scheduler': 'help/scheduler',
+  'help/alerts': 'help/alerts',
+  'help/scheduling': 'help/alerts',
+  'help/cells/spreadsheet-shell': 'help/sheet',
+  'help/spreadsheet-formulas': 'help/sheet',
+  'help/cells/workbooks': 'help/sheet',
+  'help/cells/tables': 'help/sheet',
+  'help/web-components/sv-sheet': 'help/sheet',
+}
+
 /** Section id for a doc path relative to docs/ (either slash style). */
 export function sectionOf(rel) {
-  const parts = rel.replace(/\\/g, '/').replace(/\.md$/, '').split('/')
+  const slug = rel.replace(/\\/g, '/').replace(/\.md$/, '')
+  if (SECTION_OVERRIDE[slug]) return SECTION_OVERRIDE[slug]
+  const parts = slug.split('/')
   if (parts.length === 1) return ''
   // Studio is its own section (and pillar), split out of the broad enterprise
   // bucket so its pages do not share a sidebar with licensing and support.

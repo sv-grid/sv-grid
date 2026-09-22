@@ -105,8 +105,10 @@ first (above) avoids that step.
 ## The pivot dashboard starter
 
 `pivot-dashboard` is the one template built on `@svgrid/enterprise` rather than the
-free package, because the pivot designer is a paid feature. It runs unlicensed
-(it nudges rather than stopping), so you can evaluate it before buying.
+free package, because the pivot designer is a paid feature. It comes with
+the 30-day evaluation period: without a key it runs and displays the
+watermark and the console message about the Enterprise package, so you
+can evaluate it before buying.
 
 It puts three panes over a single fact table:
 

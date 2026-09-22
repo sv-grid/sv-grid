@@ -6,6 +6,7 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'n
 import { join, dirname, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseDocFrontmatter, sectionOf, SECTION_TITLES } from '../../../tools/lib/doc-meta.mjs'
+import { plainTitle } from '../../../tools/lib/docs-page.mjs'
 import { isPendingDoc, pendingDemoIds } from '../../../tools/lib/releases.mjs'
 import { parseDemoRegistry } from '../../../tools/lib/demo-registry.mjs'
 import { buildApiSurface } from './api-surface.mjs'
@@ -121,7 +122,7 @@ const routedDocs = readAll(docsDir, '.md')
     return {
       slug,
       path: 'docs/' + slug + '.md',
-      title: titleMatch ? titleMatch[1].trim() : slug,
+      title: titleMatch ? plainTitle(titleMatch[1]) : slug,
       // Readable group name, so `list_docs` can be browsed a section at a time
       // rather than dumping all 370 pages.
       section: SECTION_TITLES[section] ?? (section || 'Overview'),

@@ -4,7 +4,7 @@
 // "what a valid key is," so the two contexts can never drift.
 //
 // This is deliberately NOT crypto (see license.ts). It classifies a key string;
-// callers decide what to do with the result. The Studio is soft-gate only:
+// callers decide what to do with the result. The Studio never blocks:
 // unlicensed use still works, it just nudges.
 import { REVOKED_KEYS } from './revoked.js'
 
@@ -49,7 +49,7 @@ export type LicenseInfo = {
    * True once `expiresAt` has passed. Deliberately does NOT clear `valid`:
    * an expired trial keeps working and the callers nudge instead. Turning a
    * lapsed key into a hard stop would break a running app on a date boundary,
-   * which is exactly what a soft gate exists to avoid.
+   * which is exactly what the evaluation model exists to avoid.
    */
   expired?: boolean
 }

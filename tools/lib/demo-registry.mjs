@@ -30,6 +30,22 @@ function unesc(s) {
  */
 import { pendingDemoIds } from './releases.mjs'
 
+/**
+ * Demos renumbered after they shipped, old id -> current id, read from the
+ * `RENAMED_DEMOS` table in demos.ts so the prerender writes a redirect stub
+ * at each old URL.
+ */
+export async function parseRenamedDemos(root) {
+  const src = await readFile(join(root, 'website', 'src', 'lib', 'demos.ts'), 'utf-8')
+  const block = /RENAMED_DEMOS[^=]*=\s*\{([\s\S]*?)\}/.exec(src)
+  const out = {}
+  if (!block) return out
+  const re = /'([^']+)'\s*:\s*'([^']+)'/g
+  let m
+  while ((m = re.exec(block[1]))) out[m[1]] = m[2]
+  return out
+}
+
 export async function parseDemoRegistry(root) {
   const src = await readFile(join(root, 'website', 'src', 'lib', 'demos.ts'), 'utf-8')
   // Demos of a feature whose release date has not come are not in the gallery

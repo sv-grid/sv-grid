@@ -6,8 +6,8 @@
  * prop + config types for free and looks the engine up through the
  * `registerPivotEngine` seam.
  *
- * Soft-gated like the rest of Enterprise: it works without a license key but the
- * grid shows the unlicensed watermark + a one-time console nudge.
+ * Like the rest of Enterprise it runs without a license key during the
+ * evaluation; the grid shows the watermark and a one-time console notice.
  *
  * ```ts
  * import { setLicenseKey, enablePivot } from '@svgrid/enterprise'

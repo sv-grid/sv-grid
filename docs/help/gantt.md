@@ -16,7 +16,7 @@ only through callbacks - it never mutates your data.
 >
 > ```ts
 > import { setLicenseKey, enableGanttView } from '@svgrid/enterprise'
-> setLicenseKey('YOUR-KEY')   // omit to run soft-gated with a watermark
+> setLicenseKey('YOUR-KEY')   // omit to evaluate, with the watermark and console message
 > enableGanttView()
 > ```
 >

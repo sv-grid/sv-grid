@@ -8,9 +8,9 @@ escalate.
 | Tier                  | Channel                  | First response | Resolution target | Hours of cover   |
 | --------------------- | ------------------------ | -------------- | ----------------- | ---------------- |
 | Community (free)      | GitHub issues            | best-effort    | best-effort       | community-driven |
-| Single Application    | Email + private Slack    | next business day | 5 business days | 9-5 ET, M-F      |
-| Multiple Application  | Email + private Slack    | next business day | 5 business days | 9-5 ET, M-F      |
-| Enterprise            | Named contact + Slack    | 4h business hours, **1h for sev-1** | per contract | 9-7 ET, M-F (+ on-call sev-1) |
+| Enterprise (Grid)     | Email + private Slack    | next business day | 5 business days | 9-5 ET, M-F      |
+| Enterprise Suite      | Email + private Slack    | next business day | 5 business days | 9-5 ET, M-F      |
+| Enterprise - Custom   | Named contact + Slack    | 4h business hours, **1h for sev-1** | per contract | 9-7 ET, M-F (+ on-call sev-1) |
 
 "Sev-1" = production outage caused by sv-grid; "sev-2" = major
 feature broken; "sev-3" = bug; "sev-4" = question.
@@ -42,11 +42,11 @@ feature broken; "sev-3" = bug; "sev-4" = question.
 
 ## Escalation
 
-For Team and above, replying to the ticket with `[escalate]` in the
+For Enterprise and above, replying to the ticket with `[escalate]` in the
 subject moves it to the on-call engineer regardless of business hours.
 Use for production outages only.
 
-Enterprise customers get a Slack Connect channel; ping `@oncall` for
+Enterprise - Custom customers get a Slack Connect channel; ping `@oncall` for
 sev-1.
 
 ## Security disclosures
@@ -62,8 +62,8 @@ disclosure policy.
 ## Roadmap visibility
 
 - Community: public roadmap at [svgrid.com/roadmap](https://svgrid.com/roadmap/)
-- Single / Multiple Application: quarterly roadmap email + invite to monthly office hours
-- Enterprise: named PM, monthly roadmap call, ability to sponsor features
+- Enterprise and Enterprise Suite: quarterly roadmap email + invite to monthly office hours
+- Enterprise - Custom: named PM, monthly roadmap call, ability to sponsor features
 
 ## Documentation feedback
 

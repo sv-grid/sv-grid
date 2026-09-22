@@ -38,7 +38,10 @@ describe('docs corpus (llms-full.txt) round-trips every routed page', () => {
       const body = corpus.get(p.slug) ?? ''
       if (body.length < p.min) problems.push(`${p.slug}: body ${body.length} chars`)
       if (body.includes('<!-- =')) problems.push(`${p.slug}: separator leaked into body`)
-      if (!body.includes(p.title.split(' ')[0]!)) problems.push(`${p.slug}: title word "${p.title.split(' ')[0]}" not in body`)
+      // The index holds the title as plain text; the body keeps the H1's
+      // inline code marks, so compare without them.
+      const titleWord = p.title.split(' ')[0]!
+      if (!body.replace(/`/g, '').includes(titleWord)) problems.push(`${p.slug}: title word "${titleWord}" not in body`)
     }
     expect(problems).toEqual([])
   })

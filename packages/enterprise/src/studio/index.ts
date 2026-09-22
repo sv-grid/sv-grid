@@ -395,6 +395,6 @@ export {
   type EntityFieldType,
 } from '../schema.js'
 
-// Pure license classification, so the Node/MCP generator can soft-gate with the
+// Pure license classification, so the Node/MCP generator can nudge with the
 // same rules as the browser (see license-core.ts). No DOM, safe in Node.
 export { checkLicenseKey, type LicenseInfo, type LicenseStatus } from '../license-core.js'

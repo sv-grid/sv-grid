@@ -102,6 +102,8 @@ export type RuleFormat<TData = unknown> = {
   background?: string
   color?: string
   fontWeight?: string | number
+  /** A short glyph drawn before the value while the rule matches. */
+  icon?: string
 }
 
 export type ConditionalFormatSpec<TData = unknown> =
@@ -323,6 +325,7 @@ export function resolveCellFormat<TData = unknown>(
         }
         if (fmt.color) out.color = fmt.color
         if (fmt.fontWeight != null) out.fontWeight = fmt.fontWeight
+        if (fmt.icon) out.icon = fmt.icon
       }
       continue
     }

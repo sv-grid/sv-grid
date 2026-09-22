@@ -311,7 +311,7 @@ the rows.
 
 Server-side grouping through one getRows contract: the request carries groupBy + groupKeys, and createServerRowModel owns the group tree - a block cache per level, lazy expand, per-group sums and a subtotal footer, race-safety - mounted through the one rowModel prop. Leaves arrive by scroll, behind a Load N more row, or paged across the whole tree, and the group panel regroups on the fly. Here a 63,000-row in-memory server behind 200ms latency; the grid holds only the groups you expand. The row model ships in @svgrid/enterprise.
 
-<div data-docs-demo="344-server-grouping-model" data-height="560"></div>
+<div data-docs-demo="496-server-grouping-model" data-height="560"></div>
 
 ## Try it
 

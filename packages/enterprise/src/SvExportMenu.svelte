@@ -12,6 +12,8 @@
    *
    * Minimal, unopinionated styling via a few overridable classes / CSS vars.
    */
+  import { untrack } from 'svelte'
+
   import type { RowData, TableFeatures } from '@svgrid/grid'
   import type { ConditionalFormat } from '@svgrid/grid/format'
   import type { EnterpriseGridApi } from './install'
@@ -77,7 +79,7 @@
   ]
 
   let open = $state(false)
-  let currentScope = $state<Extract<ExportRowSource<TData>, string>>(scope)
+  let currentScope = $state<Extract<ExportRowSource<TData>, string>>(untrack(() => scope))
   let busy = $state(false)
   let progress = $state(0)
   let error = $state<string | null>(null)
@@ -265,6 +267,7 @@
     <div
       class="sv-export-menu"
       role="menu"
+      tabindex="-1"
       aria-label="Export options"
       bind:this={menuEl}
       onkeydown={onMenuKeydown}

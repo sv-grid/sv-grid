@@ -19,6 +19,8 @@
    *
    *   SvPivotDesigner {data} {fields} bind:layout
    */
+  import { untrack } from 'svelte'
+
   import {
     SvGrid,
     SvGridChart,
@@ -636,7 +638,7 @@
   })
 
   // ---- Table <-> Chart view (the same layout as a live pivot chart) ----
-  let view = $state<'table' | 'chart'>(defaultView === 'chart' && chartable ? 'chart' : 'table')
+  let view = $state<'table' | 'chart'>(untrack(() => (defaultView === 'chart' && chartable ? 'chart' : 'table')))
   let chartType = $state<ChartType>('bar')
   let chartStacked = $state(false)
   let chartStacked100 = $state(false)
@@ -1228,17 +1230,17 @@
 {#snippet wellsBlock()}
   <!-- Filters -->
   {#if filtersWell}
-    <div class="pvd-well" data-well="filters"
+    <div class="pvd-well" data-well="filters" role="group" aria-label="Filters"
       class:drag-over={dragOver === 'filters'}
       ondragover={(e) => onDragOver(e, 'filters')}
       ondragleave={onDragLeave}
       ondrop={(e) => onDrop(e, 'filters')}
       oncontextmenu={(e) => openCtx(e, wellMenu('filters'))}>
       <div class="pvd-well-head">{@render ic('filter')} Filters</div>
-      <div class="pvd-well-body">
+      <div class="pvd-well-body" role="list">
         {#each layout.filters as f (f.field)}
           {@const fd = fieldsByName.get(f.field)}
-          <div class="pvd-chip" draggable="true" ondragstart={(e) => onDragStart(e, f.field, 'filters')} oncontextmenu={(e) => openCtx(e, chipMenu('filters', f.field))}>
+          <div class="pvd-chip" role="listitem" draggable="true" ondragstart={(e) => onDragStart(e, f.field, 'filters')} oncontextmenu={(e) => openCtx(e, chipMenu('filters', f.field))}>
             <span class="pvd-chip-grip" aria-hidden="true">{@render ic('grip')}</span>
             <button type="button" class="pvd-chip-label" title="Choose which values pass" onclick={() => toggleFilterMenu(f.field)}>
               {fd?.label ?? f.field}{f.allowed ? `: ${f.allowed.length}` : ''} <span class="pvd-chip-caret">▾</span>
@@ -1275,17 +1277,17 @@
   {/if}
 
   <!-- Columns -->
-  <div class="pvd-well" data-well="cols"
+  <div class="pvd-well" data-well="cols" role="group" aria-label="Cols"
     class:drag-over={dragOver === 'cols'}
     ondragover={(e) => onDragOver(e, 'cols')}
     ondragleave={onDragLeave}
     ondrop={(e) => onDrop(e, 'cols')}
     oncontextmenu={(e) => openCtx(e, wellMenu('cols'))}>
     <div class="pvd-well-head">{@render ic('columns')} Columns</div>
-    <div class="pvd-well-body">
+    <div class="pvd-well-body" role="list">
       {#each layout.cols as field (field)}
         {@const fd = fieldsByName.get(field)}
-        <div class="pvd-chip" draggable="true" ondragstart={(e) => onDragStart(e, field, 'cols')} oncontextmenu={(e) => openCtx(e, chipMenu('cols', field))}>
+        <div class="pvd-chip" role="listitem" draggable="true" ondragstart={(e) => onDragStart(e, field, 'cols')} oncontextmenu={(e) => openCtx(e, chipMenu('cols', field))}>
           <span class="pvd-chip-grip" aria-hidden="true">{@render ic('grip')}</span>
           <span class="pvd-chip-label">{fd?.label ?? field}</span>
           <button type="button" class="pvd-chip-x" onclick={() => removeFromWell(field, 'cols')} aria-label="Remove">×</button>
@@ -1296,17 +1298,17 @@
   </div>
 
   <!-- Rows -->
-  <div class="pvd-well" data-well="rows"
+  <div class="pvd-well" data-well="rows" role="group" aria-label="Rows"
     class:drag-over={dragOver === 'rows'}
     ondragover={(e) => onDragOver(e, 'rows')}
     ondragleave={onDragLeave}
     ondrop={(e) => onDrop(e, 'rows')}
     oncontextmenu={(e) => openCtx(e, wellMenu('rows'))}>
     <div class="pvd-well-head">{@render ic('rows')} Rows</div>
-    <div class="pvd-well-body">
+    <div class="pvd-well-body" role="list">
       {#each layout.rows as field (field)}
         {@const fd = fieldsByName.get(field)}
-        <div class="pvd-chip" draggable="true" ondragstart={(e) => onDragStart(e, field, 'rows')} oncontextmenu={(e) => openCtx(e, chipMenu('rows', field))}>
+        <div class="pvd-chip" role="listitem" draggable="true" ondragstart={(e) => onDragStart(e, field, 'rows')} oncontextmenu={(e) => openCtx(e, chipMenu('rows', field))}>
           <span class="pvd-chip-grip" aria-hidden="true">{@render ic('grip')}</span>
           <span class="pvd-chip-label">{fd?.label ?? field}</span>
           <button type="button" class="pvd-chip-x" onclick={() => removeFromWell(field, 'rows')} aria-label="Remove">×</button>
@@ -1317,17 +1319,17 @@
   </div>
 
   <!-- Values -->
-  <div class="pvd-well" data-well="values"
+  <div class="pvd-well" data-well="values" role="group" aria-label="Values"
     class:drag-over={dragOver === 'values'}
     ondragover={(e) => onDragOver(e, 'values')}
     ondragleave={onDragLeave}
     ondrop={(e) => onDrop(e, 'values')}
     oncontextmenu={(e) => openCtx(e, wellMenu('values'))}>
     <div class="pvd-well-head">{@render ic('sigma')} Values</div>
-    <div class="pvd-well-body">
+    <div class="pvd-well-body" role="list">
       {#each layout.values as v, vi (v.field + '|' + v.agg + '|' + vi)}
         {@const fd = fieldsByName.get(v.field)}
-        <div class="pvd-chip pvd-chip-value" draggable="true" ondragstart={(e) => onDragStart(e, v.field, 'values', vi)} oncontextmenu={(e) => openCtx(e, chipMenu('values', v.field, vi))}>
+        <div class="pvd-chip pvd-chip-value" role="listitem" draggable="true" ondragstart={(e) => onDragStart(e, v.field, 'values', vi)} oncontextmenu={(e) => openCtx(e, chipMenu('values', v.field, vi))}>
           <span class="pvd-chip-grip" aria-hidden="true">{@render ic('grip')}</span>
           <button type="button" class="pvd-chip-label" onclick={() => toggleAggMenu(vi)}>
             <span class="pvd-chip-agg">{AGG_LABEL[v.agg]}</span>
@@ -1426,7 +1428,7 @@
 
 {#snippet gridBlock()}
   {#if embedGrid}
-    <div class="pvd-grid" style={`height:${typeof gridHeight === 'number' ? gridHeight + 'px' : gridHeight}`} oncontextmenu={(e) => openCtx(e, gridMenu())}>
+    <div class="pvd-grid" role="region" aria-label="Pivot" style={`height:${typeof gridHeight === 'number' ? gridHeight + 'px' : gridHeight}`} oncontextmenu={(e) => openCtx(e, gridMenu())}>
       {#if server}
         <SvGrid
           rowModel={server}

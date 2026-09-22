@@ -148,9 +148,9 @@ if (import.meta.env.VITE_SVPRO_KEY) {
 }
 ```
 
-Enterprise is **soft-gated** - it works unlicensed, but renders a small
-watermark + a one-time console nudge. Set the key once at app
-startup; both disappear.
+Enterprise comes with a **30-day evaluation period**. Loaded without a
+key it works, and displays a small watermark and a console message about
+the Enterprise package. Set the key once at app startup; both disappear.
 
 Don't commit the key to source control. Inject via env (Vite reads
 `VITE_*` variables at build time; SvelteKit reads `$env/static/public`).

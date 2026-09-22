@@ -31,6 +31,12 @@ export type AlertEngine<TData> = {
   evaluate(rows: ReadonlyArray<TData>): AlertEvent[]
   /** Prev -> next pass: fires `relativeChange` plus `dataChange` edges. */
   evaluateTransition(prev: ReadonlyArray<TData>, next: ReadonlyArray<TData>): AlertEvent[]
+  /**
+   * Scheduled pass for one rule: every row matching its predicate now, with
+   * no edge memory, since the point of a schedule is the standing list at
+   * that moment. Aggregate rules answer with one event or none.
+   */
+  evaluateScheduled(ruleId: string, rows: ReadonlyArray<TData>): AlertEvent[]
   /** Would editing `(row, columnId) -> nextValue` trip a validation rule? */
   validateEdit(row: TData, columnId: string, nextValue: unknown): ValidateEditResult
   /**
@@ -74,24 +80,26 @@ export function createAlertEngine<TData = Record<string, unknown>>(
   options: AlertEngineOptions<TData>,
 ): AlertEngine<TData> {
   let rules = options.rules
-  const getValue = options.getValue
   const now = options.now ?? (() => Date.now())
   // Edge memory: keys currently satisfying a `dataChange`/aggregate predicate.
   const active = new Set<string>()
 
+  // Read off `options` at use, not once here: the overlay hands in getters
+  // for its `getValue` and `locale` props so a change after mount reaches
+  // the next evaluation.
   const ctxFor = (row: TData, rows?: ReadonlyArray<TData>, prev?: TData): EvalContext<TData> => ({
     row,
     prev,
     rows,
-    getValue,
+    getValue: options.getValue,
     locale: options.locale,
   })
 
   const val = (row: TData, columnId?: string): unknown =>
     columnId == null
       ? undefined
-      : getValue
-        ? getValue(row, columnId)
+      : options.getValue
+        ? options.getValue(row, columnId)
         : (row as Record<string, unknown>)?.[columnId]
 
   // A representative column for the message `{value}`/`{column}` tokens: the
@@ -233,6 +241,19 @@ export function createAlertEngine<TData = Record<string, unknown>>(
             events.push(...evaluateDataChangeRow(rule, row, next))
           }
         }
+      }
+      return events
+    },
+
+    evaluateScheduled(ruleId, rows) {
+      const rule = activeRules().find((r) => r.id === ruleId)
+      if (!rule) return []
+      if (rule.scope === 'aggregate') return evaluateAggregate(rule, rows)
+      const events: AlertEvent[] = []
+      for (const row of rows) {
+        if (!evaluatePredicate(rule.predicate, ctxFor(row, rows))) continue
+        const source = primaryColumn(rule)
+        events.push(buildEvent(rule, { row, rowId: options.getRowId(row), columnId: rule.scope === 'cell' ? source : undefined, value: val(row, source) }))
       }
       return events
     },

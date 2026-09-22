@@ -1,7 +1,7 @@
 {
   "/": {
-    "hash": "b5b685e71bb9",
-    "date": "2026-09-19"
+    "hash": "fd2f4f6fa03a",
+    "date": "2026-09-21"
   },
   "/about/": {
     "hash": "79398a92c875",
@@ -820,8 +820,8 @@
     "date": "2026-09-12"
   },
   "/blog/whats-new-svgrid-enterprise/": {
-    "hash": "65664695846f",
-    "date": "2026-09-12"
+    "hash": "9443d43c7ab8",
+    "date": "2026-09-21"
   },
   "/blog/why-the-world-needed-another-grid/": {
     "hash": "afb04899939e",
@@ -840,8 +840,8 @@
     "date": "2026-09-12"
   },
   "/compare/ag-grid/": {
-    "hash": "2fb98e6739df",
-    "date": "2026-09-20"
+    "hash": "8655e8c73e36",
+    "date": "2026-09-21"
   },
   "/compare/devextreme-datagrid/": {
     "hash": "002fbb823fc4",
@@ -868,8 +868,8 @@
     "date": "2026-09-12"
   },
   "/compare/mui-x-datagrid/": {
-    "hash": "a62a7ba81569",
-    "date": "2026-09-20"
+    "hash": "9bad6bf81117",
+    "date": "2026-09-21"
   },
   "/compare/primevue-datatable/": {
     "hash": "d8c704f6c598",
@@ -884,12 +884,12 @@
     "date": "2026-09-12"
   },
   "/compare/svar-svelte-datagrid/": {
-    "hash": "2723b472ed74",
-    "date": "2026-09-20"
+    "hash": "d51d2a62ec0e",
+    "date": "2026-09-21"
   },
   "/compare/svelte-headless-table/": {
-    "hash": "656dd7bdc66b",
-    "date": "2026-09-20"
+    "hash": "0e7e0df5691c",
+    "date": "2026-09-21"
   },
   "/compare/svelte-ui-kit-tables/": {
     "hash": "7cadc287a903",
@@ -904,20 +904,20 @@
     "date": "2026-09-20"
   },
   "/compare/tanstack-table/": {
-    "hash": "ba4b9213cdca",
-    "date": "2026-09-20"
+    "hash": "8f419d330f2a",
+    "date": "2026-09-21"
   },
   "/compare/vincjo-datatables/": {
-    "hash": "9e080b938826",
-    "date": "2026-09-20"
+    "hash": "25432cae1638",
+    "date": "2026-09-21"
   },
   "/contact/": {
     "hash": "733ecdf58b59",
     "date": "2026-09-03"
   },
   "/demos/": {
-    "hash": "e20c41536016",
-    "date": "2026-09-20"
+    "hash": "8369bfd1af18",
+    "date": "2026-09-22"
   },
   "/demos/00-trading-desk/": {
     "hash": "42bf6d0ba9c5",
@@ -1000,8 +1000,8 @@
     "date": "2026-09-15"
   },
   "/demos/11-stock-market/": {
-    "hash": "3d04d2485f96",
-    "date": "2026-09-15"
+    "hash": "07e3b205bcb8",
+    "date": "2026-09-21"
   },
   "/demos/110-locale-aware-filter/": {
     "hash": "84e21770f2da",
@@ -1080,8 +1080,8 @@
     "date": "2026-09-15"
   },
   "/demos/127-export-pivot-grid/": {
-    "hash": "ad628a566b64",
-    "date": "2026-09-15"
+    "hash": "0ab8685454fc",
+    "date": "2026-09-22"
   },
   "/demos/13-finances/": {
     "hash": "fea85c4c1814",
@@ -1096,8 +1096,8 @@
     "date": "2026-09-12"
   },
   "/demos/14-industrial/": {
-    "hash": "1bbb948d4acc",
-    "date": "2026-09-20"
+    "hash": "214cc0006aae",
+    "date": "2026-09-21"
   },
   "/demos/140-sparkline-cells/": {
     "hash": "dd4e04f008a8",
@@ -1120,8 +1120,8 @@
     "date": "2026-09-15"
   },
   "/demos/145-transaction-api/": {
-    "hash": "21830e7f7eae",
-    "date": "2026-09-20"
+    "hash": "8681336b0ccb",
+    "date": "2026-09-21"
   },
   "/demos/146-tool-panel/": {
     "hash": "8c71f0ea05cf",
@@ -1136,8 +1136,8 @@
     "date": "2026-09-20"
   },
   "/demos/149-realtime-collaboration/": {
-    "hash": "9b0075aefc82",
-    "date": "2026-09-20"
+    "hash": "82a4269dea77",
+    "date": "2026-09-21"
   },
   "/demos/15-localization/": {
     "hash": "4ef242488058",
@@ -1356,8 +1356,8 @@
     "date": "2026-09-20"
   },
   "/demos/20-industrial-dashboard/": {
-    "hash": "1ca3b8e045f4",
-    "date": "2026-09-20"
+    "hash": "6fbb3567f269",
+    "date": "2026-09-21"
   },
   "/demos/200-studio-dashboard/": {
     "hash": "97e8ccdbf5d1",
@@ -1368,44 +1368,44 @@
     "date": "2026-09-15"
   },
   "/demos/202-export-pdf-grouped-and-print/": {
-    "hash": "6b897e9fa4d2",
-    "date": "2026-09-10"
+    "hash": "441fe8d77d3f",
+    "date": "2026-09-22"
   },
   "/demos/203-ai-export-and-anomalies/": {
     "hash": "f94ebe13d06e",
     "date": "2026-09-15"
   },
   "/demos/204-import-dialog/": {
-    "hash": "cb222ae92c75",
-    "date": "2026-09-15"
+    "hash": "ef53b78ec7af",
+    "date": "2026-09-22"
   },
   "/demos/205-project-management/": {
     "hash": "1b8e57fd2e3d",
     "date": "2026-09-15"
   },
   "/demos/206-cell-validation/": {
-    "hash": "aaed24179167",
-    "date": "2026-09-15"
+    "hash": "9eea268e69cc",
+    "date": "2026-09-22"
   },
   "/demos/207-blank-sheet/": {
-    "hash": "6325a09115a8",
-    "date": "2026-09-15"
+    "hash": "977b7da94950",
+    "date": "2026-09-22"
   },
   "/demos/208-freeze-panes/": {
     "hash": "92e8300da08f",
     "date": "2026-09-15"
   },
   "/demos/209-data-validation/": {
-    "hash": "83668778a591",
-    "date": "2026-09-15"
+    "hash": "ef5fcb61d3c4",
+    "date": "2026-09-22"
   },
   "/demos/21-export-and-print/": {
-    "hash": "54cbab6a76f1",
-    "date": "2026-09-10"
+    "hash": "dae1fbdabb1c",
+    "date": "2026-09-22"
   },
   "/demos/210-format-cells/": {
-    "hash": "766530447715",
-    "date": "2026-09-15"
+    "hash": "d021cf2321a9",
+    "date": "2026-09-22"
   },
   "/demos/211-financial-model/": {
     "hash": "2bad4ef3f193",
@@ -1424,8 +1424,8 @@
     "date": "2026-09-15"
   },
   "/demos/24-validation/": {
-    "hash": "bcd76c6ac75c",
-    "date": "2026-09-15"
+    "hash": "9e4cc9f119a8",
+    "date": "2026-09-22"
   },
   "/demos/25-column-pinning/": {
     "hash": "449827eea9b6",
@@ -1520,8 +1520,8 @@
     "date": "2026-09-20"
   },
   "/demos/27-spreadsheet-ribbon/": {
-    "hash": "1583fa4b4a76",
-    "date": "2026-09-15"
+    "hash": "5611f26aadee",
+    "date": "2026-09-22"
   },
   "/demos/270-headless-passwordinput/": {
     "hash": "2826ccc7182b",
@@ -1807,10 +1807,6 @@
     "hash": "3b872880d9ad",
     "date": "2026-09-10"
   },
-  "/demos/337-live-rest-dummyjson/": {
-    "hash": "49bc7c11d14e",
-    "date": "2026-09-20"
-  },
   "/demos/338-event-calendar/": {
     "hash": "0de059106d35",
     "date": "2026-09-20"
@@ -1824,8 +1820,8 @@
     "date": "2026-09-10"
   },
   "/demos/34-realtime-orders/": {
-    "hash": "bbe643c1a321",
-    "date": "2026-09-15"
+    "hash": "d8a5702c6c9d",
+    "date": "2026-09-21"
   },
   "/demos/340-command-palette/": {
     "hash": "4f6603c13c38",
@@ -1848,12 +1844,8 @@
     "date": "2026-09-15"
   },
   "/demos/344-kanban-sprint/": {
-    "hash": "f498b6a35504",
-    "date": "2026-09-15"
-  },
-  "/demos/344-server-grouping-model/": {
-    "hash": "f6ae88212d49",
-    "date": "2026-09-20"
+    "hash": "5654c5dcc691",
+    "date": "2026-09-22"
   },
   "/demos/345-kanban-pipeline/": {
     "hash": "1ac9ec77cc3c",
@@ -1876,8 +1868,8 @@
     "date": "2026-09-15"
   },
   "/demos/349-kanban-subtasks/": {
-    "hash": "8cbe303cb722",
-    "date": "2026-09-15"
+    "hash": "5eb75a9f8fd4",
+    "date": "2026-09-22"
   },
   "/demos/35-permissions-audit/": {
     "hash": "7c606cb77145",
@@ -1920,16 +1912,16 @@
     "date": "2026-09-18"
   },
   "/demos/359-pivot-chart/": {
-    "hash": "c804095ab706",
-    "date": "2026-09-18"
+    "hash": "5221137ecae7",
+    "date": "2026-09-22"
   },
   "/demos/36-reporting-workspace/": {
     "hash": "91c507fe84a9",
     "date": "2026-09-15"
   },
   "/demos/360-pivot-mode-grid/": {
-    "hash": "a9c749218357",
-    "date": "2026-09-18"
+    "hash": "5ed83e79a0ed",
+    "date": "2026-09-22"
   },
   "/demos/361-dock-layout/": {
     "hash": "75e1c93cd1eb",
@@ -1984,8 +1976,8 @@
     "date": "2026-09-10"
   },
   "/demos/382-scheduler-app-clinic/": {
-    "hash": "754c970b302e",
-    "date": "2026-09-15"
+    "hash": "28266623fe62",
+    "date": "2026-09-22"
   },
   "/demos/383-scheduler-app-dispatch/": {
     "hash": "65e2b29bffd6",
@@ -2056,8 +2048,8 @@
     "date": "2026-09-20"
   },
   "/demos/399-alert-rules-engine/": {
-    "hash": "2cf14a9edd61",
-    "date": "2026-09-15"
+    "hash": "6186ccb8eead",
+    "date": "2026-09-22"
   },
   "/demos/399-scheduler-clinic-console/": {
     "hash": "3f44205c3d43",
@@ -2072,12 +2064,12 @@
     "date": "2026-09-10"
   },
   "/demos/401-alert-aggregate-kpi/": {
-    "hash": "78ca34fb2d36",
-    "date": "2026-09-10"
+    "hash": "0d0bf464e8e2",
+    "date": "2026-09-22"
   },
   "/demos/402-alert-validation-guardrails/": {
-    "hash": "e102976235e1",
-    "date": "2026-09-15"
+    "hash": "fb94bb4b3646",
+    "date": "2026-09-22"
   },
   "/demos/403-alert-console-navpane/": {
     "hash": "f056200088c7",
@@ -2284,112 +2276,112 @@
     "date": "2026-09-14"
   },
   "/demos/457-goal-seek/": {
-    "hash": "5cb464f8cf6c",
-    "date": "2026-09-14"
+    "hash": "10ba90033952",
+    "date": "2026-09-22"
   },
   "/demos/458-data-cleanup/": {
-    "hash": "016dcf934e4f",
-    "date": "2026-09-14"
+    "hash": "a5c88f3de8ba",
+    "date": "2026-09-22"
   },
   "/demos/459-named-ranges-forecast/": {
-    "hash": "2ebb4461ee03",
-    "date": "2026-09-14"
+    "hash": "acd055df39c3",
+    "date": "2026-09-22"
   },
   "/demos/46-scheduler/": {
     "hash": "c246aa9b7d50",
     "date": "2026-09-15"
   },
   "/demos/460-review-comments-protection/": {
-    "hash": "49ebf7872c62",
-    "date": "2026-09-20"
+    "hash": "85757d1637e4",
+    "date": "2026-09-22"
   },
   "/demos/461-order-intake-validation/": {
-    "hash": "3baad7963032",
-    "date": "2026-09-15"
+    "hash": "865b9904cbab",
+    "date": "2026-09-22"
   },
   "/demos/462-regional-scorecard-cf/": {
-    "hash": "e578cb07bb58",
-    "date": "2026-09-15"
+    "hash": "83c4ebc43f23",
+    "date": "2026-09-22"
   },
   "/demos/463-merged-report-headers/": {
-    "hash": "f5650e92c584",
-    "date": "2026-09-15"
+    "hash": "82948f9046bf",
+    "date": "2026-09-22"
   },
   "/demos/464-ticket-log-autofilter/": {
-    "hash": "c86d347012f5",
-    "date": "2026-09-15"
+    "hash": "dfd3fff1afd3",
+    "date": "2026-09-22"
   },
   "/demos/465-autosave-document/": {
-    "hash": "d5a73ec0c09b",
-    "date": "2026-09-15"
+    "hash": "a96d300c5bec",
+    "date": "2026-09-22"
   },
   "/demos/466-paste-from-excel/": {
-    "hash": "2941153dd01e",
-    "date": "2026-09-15"
+    "hash": "53092caae5d2",
+    "date": "2026-09-22"
   },
   "/demos/467-server-row-model-1m/": {
-    "hash": "226307e1e4ef",
-    "date": "2026-09-20"
+    "hash": "52ded83b5c6a",
+    "date": "2026-09-22"
   },
   "/demos/468-server-pivot/": {
-    "hash": "a48abda80eee",
-    "date": "2026-09-20"
+    "hash": "6a51d1657dd1",
+    "date": "2026-09-22"
   },
   "/demos/469-server-tree-data/": {
-    "hash": "e0edb39007cd",
-    "date": "2026-09-20"
+    "hash": "1632baf2f7c6",
+    "date": "2026-09-22"
   },
   "/demos/47-trash-truck-timeline/": {
     "hash": "b0df97f55a3e",
     "date": "2026-09-15"
   },
   "/demos/470-server-transactions/": {
-    "hash": "1e01fef88456",
-    "date": "2026-09-20"
+    "hash": "3e64fbd6182f",
+    "date": "2026-09-22"
   },
   "/demos/471-server-selection/": {
-    "hash": "49e0fbcaacaa",
-    "date": "2026-09-20"
+    "hash": "0d8eb22ff8fb",
+    "date": "2026-09-22"
   },
   "/demos/472-server-sql-planner/": {
-    "hash": "ec8fb14d14f6",
-    "date": "2026-09-20"
+    "hash": "620050f13907",
+    "date": "2026-09-22"
   },
   "/demos/473-server-grouping-rules/": {
-    "hash": "43e3641b0c51",
-    "date": "2026-09-20"
+    "hash": "7f6e7d35d4d5",
+    "date": "2026-09-22"
   },
   "/demos/48-crm-sales-pipeline/": {
     "hash": "cb8122f75269",
     "date": "2026-09-15"
   },
   "/demos/482-server-crud/": {
-    "hash": "11034dd07b3c",
-    "date": "2026-09-20"
+    "hash": "e70cebbad795",
+    "date": "2026-09-22"
   },
   "/demos/483-server-master-detail/": {
-    "hash": "27e62c7b21bc",
-    "date": "2026-09-20"
+    "hash": "c10de08b3441",
+    "date": "2026-09-22"
   },
   "/demos/484-loan-model-files/": {
-    "hash": "7ba76a54d753",
-    "date": "2026-09-20"
+    "hash": "6375eb7a000f",
+    "date": "2026-09-22"
   },
   "/demos/485-sheet-charts-objects/": {
-    "hash": "c0c1ab3a53ef",
-    "date": "2026-09-20"
+    "hash": "78905d21c979",
+    "date": "2026-09-22"
   },
   "/demos/486-sheet-sparklines/": {
-    "hash": "ee0ff80f8088",
-    "date": "2026-09-20"
+    "hash": "40d472682b65",
+    "date": "2026-09-22"
   },
   "/demos/487-sheet-pivot-range/": {
-    "hash": "3b313d35ae24",
-    "date": "2026-09-20"
+    "hash": "430cd11ea725",
+    "date": "2026-09-22"
   },
   "/demos/488-sheet-collaboration/": {
-    "hash": "c96f8e5650ba",
-    "date": "2026-09-20"
+    "hash": "d4d204d71214",
+    "date": "2026-09-22"
   },
   "/demos/489-sheet-hyperlinks/": {
     "hash": "99d68a76b279",
@@ -2400,24 +2392,36 @@
     "date": "2026-09-15"
   },
   "/demos/490-sheet-let-lambda/": {
-    "hash": "43f9e5d8f08e",
-    "date": "2026-09-20"
+    "hash": "dafd33faa09d",
+    "date": "2026-09-22"
   },
   "/demos/491-sheet-tables/": {
     "hash": "bde01d992ebc",
     "date": "2026-09-20"
   },
   "/demos/492-sheet-iterative/": {
-    "hash": "6600e4c4e0d5",
-    "date": "2026-09-20"
+    "hash": "31b1752b61a7",
+    "date": "2026-09-22"
   },
   "/demos/493-sheet-auditing/": {
-    "hash": "c085424eaf84",
-    "date": "2026-09-20"
+    "hash": "16b4452bc4c1",
+    "date": "2026-09-22"
   },
   "/demos/494-sheet-cell-images/": {
-    "hash": "3c60fe35ccf9",
-    "date": "2026-09-20"
+    "hash": "6f15d165ed24",
+    "date": "2026-09-22"
+  },
+  "/demos/495-market-blotter-100k/": {
+    "hash": "cd222bdcd59a",
+    "date": "2026-09-21"
+  },
+  "/demos/496-server-grouping-model/": {
+    "hash": "ad12e0214b48",
+    "date": "2026-09-22"
+  },
+  "/demos/497-live-rest-dummyjson/": {
+    "hash": "9ac1749ccd9f",
+    "date": "2026-09-22"
   },
   "/demos/50-seller-panel/": {
     "hash": "66d55c632965",
@@ -2432,8 +2436,8 @@
     "date": "2026-09-15"
   },
   "/demos/53-excel-import/": {
-    "hash": "2898a97f74fd",
-    "date": "2026-09-10"
+    "hash": "cdf186ad080d",
+    "date": "2026-09-22"
   },
   "/demos/54-columns-hierarchy/": {
     "hash": "e7f6d275dc05",
@@ -2460,8 +2464,8 @@
     "date": "2026-09-15"
   },
   "/demos/60-pivot-expandable/": {
-    "hash": "924a1b15d403",
-    "date": "2026-09-15"
+    "hash": "0dfe1d865093",
+    "date": "2026-09-22"
   },
   "/demos/62-conditional-styling/": {
     "hash": "299ce7ad2f4f",
@@ -2508,8 +2512,8 @@
     "date": "2026-09-20"
   },
   "/demos/73-chartjs-sync/": {
-    "hash": "81e06761521d",
-    "date": "2026-09-20"
+    "hash": "9b255e65070f",
+    "date": "2026-09-21"
   },
   "/demos/74-theme-integrations/": {
     "hash": "3376bab298d4",
@@ -2544,8 +2548,8 @@
     "date": "2026-09-15"
   },
   "/demos/83-spreadsheet-formulas/": {
-    "hash": "ccc1687587c0",
-    "date": "2026-09-15"
+    "hash": "777851002239",
+    "date": "2026-09-22"
   },
   "/demos/84-editor-types/": {
     "hash": "8dff87eaf747",
@@ -2612,8 +2616,8 @@
     "date": "2026-09-10"
   },
   "/docs/": {
-    "hash": "db05922a339b",
-    "date": "2026-09-20"
+    "hash": "b6dc251bba85",
+    "date": "2026-09-22"
   },
   "/docs/changelog/": {
     "hash": "4f7fd90c38b0",
@@ -2640,20 +2644,20 @@
     "date": "2026-08-24"
   },
   "/docs/enterprise/evaluation/": {
-    "hash": "958ac11de5ef",
-    "date": "2026-09-03"
+    "hash": "1614f7657248",
+    "date": "2026-09-22"
   },
   "/docs/enterprise/getting-started/": {
-    "hash": "822c6ff16ddb",
-    "date": "2026-08-22"
+    "hash": "3c5e5d67684e",
+    "date": "2026-09-22"
   },
   "/docs/enterprise/licensing/": {
-    "hash": "43b274ba62a1",
-    "date": "2026-08-18"
+    "hash": "5dcb9bafcc5c",
+    "date": "2026-09-22"
   },
   "/docs/enterprise/studio/": {
-    "hash": "b9b7cbc4104c",
-    "date": "2026-08-15"
+    "hash": "b4e842a228a2",
+    "date": "2026-09-22"
   },
   "/docs/enterprise/studio/access-control/": {
     "hash": "a6dfb32224b3",
@@ -2664,8 +2668,8 @@
     "date": "2026-08-15"
   },
   "/docs/enterprise/studio/ai-generation/": {
-    "hash": "b967b45ca09d",
-    "date": "2026-09-10"
+    "hash": "67c2c125ca3d",
+    "date": "2026-09-22"
   },
   "/docs/enterprise/studio/api/": {
     "hash": "ed04302940a0",
@@ -2688,8 +2692,8 @@
     "date": "2026-08-18"
   },
   "/docs/enterprise/studio/cli/": {
-    "hash": "0f86ac7a940f",
-    "date": "2026-08-27"
+    "hash": "b4a5e3e7b635",
+    "date": "2026-09-22"
   },
   "/docs/enterprise/studio/code-behind/": {
     "hash": "1938a6761a8c",
@@ -2700,8 +2704,8 @@
     "date": "2026-08-22"
   },
   "/docs/enterprise/studio/concepts/": {
-    "hash": "c0e050ba908f",
-    "date": "2026-08-22"
+    "hash": "922dd1d97531",
+    "date": "2026-09-22"
   },
   "/docs/enterprise/studio/dashboards/": {
     "hash": "fa7beb8c0249",
@@ -2736,8 +2740,8 @@
     "date": "2026-08-23"
   },
   "/docs/enterprise/studio/getting-started/": {
-    "hash": "3a508fe1861c",
-    "date": "2026-09-20"
+    "hash": "1ab87343f138",
+    "date": "2026-09-22"
   },
   "/docs/enterprise/studio/i18n/": {
     "hash": "362003cdbe9c",
@@ -2784,8 +2788,8 @@
     "date": "2026-08-15"
   },
   "/docs/enterprise/studio/rest-api/": {
-    "hash": "a6ee7685ac99",
-    "date": "2026-09-18"
+    "hash": "1ad766a6813a",
+    "date": "2026-09-22"
   },
   "/docs/enterprise/studio/rest-grid/": {
     "hash": "0a8529382f73",
@@ -2828,16 +2832,16 @@
     "date": "2026-09-10"
   },
   "/docs/enterprise/studio/troubleshooting/": {
-    "hash": "eb13df2f7e49",
-    "date": "2026-08-31"
+    "hash": "e525ed241890",
+    "date": "2026-09-22"
   },
   "/docs/enterprise/studio/tutorial-crm/": {
-    "hash": "b52b883c286d",
-    "date": "2026-09-20"
+    "hash": "5ada63c1d539",
+    "date": "2026-09-22"
   },
   "/docs/enterprise/support/": {
-    "hash": "70a7f44a88e2",
-    "date": "2026-08-15"
+    "hash": "da39f343d83a",
+    "date": "2026-09-21"
   },
   "/docs/getting-started-full/": {
     "hash": "de7ba13ff551",
@@ -2872,8 +2876,8 @@
     "date": "2026-09-03"
   },
   "/docs/getting-started/starters/": {
-    "hash": "a17279bed648",
-    "date": "2026-09-06"
+    "hash": "0b5a12232646",
+    "date": "2026-09-22"
   },
   "/docs/getting-started/sveltekit/": {
     "hash": "d3b3ce2512ac",
@@ -2900,8 +2904,12 @@
     "date": "2026-09-15"
   },
   "/docs/help/alerts/": {
-    "hash": "61f02a6c273a",
-    "date": "2026-09-03"
+    "hash": "c4155f369a0c",
+    "date": "2026-09-22"
+  },
+  "/docs/help/alerts/start/": {
+    "hash": "a5442fd61805",
+    "date": "2026-09-22"
   },
   "/docs/help/api-stability/": {
     "hash": "71d1b82b71b1",
@@ -2912,8 +2920,8 @@
     "date": "2026-09-20"
   },
   "/docs/help/benchmarks/": {
-    "hash": "7360c1f6c107",
-    "date": "2026-09-20"
+    "hash": "fd79d55c208d",
+    "date": "2026-09-21"
   },
   "/docs/help/browser-support/": {
     "hash": "3e83fa8e3e1c",
@@ -2944,20 +2952,20 @@
     "date": "2026-09-03"
   },
   "/docs/help/cells/getting-values/": {
-    "hash": "9fb18d39623d",
-    "date": "2026-09-03"
+    "hash": "8807fc1d1e38",
+    "date": "2026-09-21"
   },
   "/docs/help/cells/highlighting-changes/": {
     "hash": "ac2e7e316a7b",
     "date": "2026-09-15"
   },
   "/docs/help/cells/keyboard-shortcuts/": {
-    "hash": "e0cd841480d4",
-    "date": "2026-09-20"
+    "hash": "1cd7fd810237",
+    "date": "2026-09-21"
   },
   "/docs/help/cells/number-formats/": {
-    "hash": "95ab223ae47a",
-    "date": "2026-09-20"
+    "hash": "f3567ed92672",
+    "date": "2026-09-21"
   },
   "/docs/help/cells/paste-find-structure/": {
     "hash": "9e9eadd3e973",
@@ -2972,8 +2980,8 @@
     "date": "2026-09-03"
   },
   "/docs/help/cells/spreadsheet-shell/": {
-    "hash": "31beeadc1871",
-    "date": "2026-09-20"
+    "hash": "1669f14c46c7",
+    "date": "2026-09-22"
   },
   "/docs/help/cells/styling-cells/": {
     "hash": "625d0d58aa78",
@@ -3016,8 +3024,8 @@
     "date": "2026-09-13"
   },
   "/docs/help/charts/financial/": {
-    "hash": "5039a1703beb",
-    "date": "2026-09-20"
+    "hash": "493028bf6906",
+    "date": "2026-09-21"
   },
   "/docs/help/charts/from-the-grid/": {
     "hash": "e838821899d6",
@@ -3100,8 +3108,8 @@
     "date": "2026-09-03"
   },
   "/docs/help/comparison/": {
-    "hash": "daf93a18778a",
-    "date": "2026-09-20"
+    "hash": "388c3b64501f",
+    "date": "2026-09-21"
   },
   "/docs/help/conditional-form-schema/": {
     "hash": "f5e745ac37f1",
@@ -3140,20 +3148,28 @@
     "date": "2026-09-03"
   },
   "/docs/help/editing/undo-redo/": {
-    "hash": "322374cb4bc9",
-    "date": "2026-09-03"
+    "hash": "e7bfbc06c433",
+    "date": "2026-09-21"
   },
   "/docs/help/editing/validation/": {
-    "hash": "2f12233fb7de",
-    "date": "2026-09-03"
+    "hash": "2abd1cddb5b0",
+    "date": "2026-09-22"
   },
   "/docs/help/errors/": {
     "hash": "eb572a139e8d",
     "date": "2026-09-03"
   },
   "/docs/help/export/": {
-    "hash": "b91eab7c475c",
-    "date": "2026-09-20"
+    "hash": "7a137280aa2d",
+    "date": "2026-09-22"
+  },
+  "/docs/help/export/import-spreadsheet/": {
+    "hash": "d3d6a7da2fe7",
+    "date": "2026-09-22"
+  },
+  "/docs/help/export/report/": {
+    "hash": "27f55acf717d",
+    "date": "2026-09-22"
   },
   "/docs/help/expressions-query/": {
     "hash": "5d004d39ac60",
@@ -3204,8 +3220,8 @@
     "date": "2026-09-10"
   },
   "/docs/help/glossary/": {
-    "hash": "c7d62c8be618",
-    "date": "2026-09-03"
+    "hash": "8ba4978a3b80",
+    "date": "2026-09-22"
   },
   "/docs/help/grouping-aggregation/": {
     "hash": "0ac849e8cdc5",
@@ -3252,20 +3268,24 @@
     "date": "2026-09-18"
   },
   "/docs/help/import/": {
-    "hash": "c57641125c2a",
-    "date": "2026-09-03"
+    "hash": "e512f7804c90",
+    "date": "2026-09-22"
+  },
+  "/docs/help/kanban/sprint-board/": {
+    "hash": "fe60320ba2f0",
+    "date": "2026-09-22"
   },
   "/docs/help/llm-grounding/": {
     "hash": "522b03543d21",
     "date": "2026-09-10"
   },
   "/docs/help/mcp-server/": {
-    "hash": "ea0130993c94",
-    "date": "2026-09-15"
+    "hash": "64daf13d9910",
+    "date": "2026-09-22"
   },
   "/docs/help/migrating-from-ag-grid/": {
-    "hash": "6c14764fa5ed",
-    "date": "2026-09-20"
+    "hash": "c10fb1f7e256",
+    "date": "2026-09-21"
   },
   "/docs/help/migrating-from-devextreme/": {
     "hash": "ce48c3ae249f",
@@ -3280,8 +3300,8 @@
     "date": "2026-09-20"
   },
   "/docs/help/migrating-from-handsontable/": {
-    "hash": "bd5882988b00",
-    "date": "2026-09-20"
+    "hash": "4c1c4609fcaa",
+    "date": "2026-09-22"
   },
   "/docs/help/migrating-from-jqxgrid/": {
     "hash": "e2174e92f6f8",
@@ -3292,8 +3312,8 @@
     "date": "2026-09-20"
   },
   "/docs/help/migrating-from-mui-x/": {
-    "hash": "79c911effc08",
-    "date": "2026-09-20"
+    "hash": "8f2876b56ef2",
+    "date": "2026-09-21"
   },
   "/docs/help/migrating-from-primevue-datatable/": {
     "hash": "8ec7285a3a1f",
@@ -3352,16 +3372,20 @@
     "date": "2026-09-03"
   },
   "/docs/help/pivot/": {
-    "hash": "902751976c46",
-    "date": "2026-09-20"
+    "hash": "642edc948e14",
+    "date": "2026-09-22"
+  },
+  "/docs/help/pivot/start/": {
+    "hash": "e8dc91c37cfe",
+    "date": "2026-09-22"
   },
   "/docs/help/production/": {
-    "hash": "1012a84a5654",
-    "date": "2026-09-03"
+    "hash": "2fb083e06bbd",
+    "date": "2026-09-22"
   },
   "/docs/help/real-time/": {
-    "hash": "ed119e4e5a60",
-    "date": "2026-09-20"
+    "hash": "f28b9c75549d",
+    "date": "2026-09-21"
   },
   "/docs/help/recipes/": {
     "hash": "e2b2e0c17c0b",
@@ -3380,8 +3404,8 @@
     "date": "2026-09-19"
   },
   "/docs/help/rows/kanban-board/": {
-    "hash": "1e0fb324ebe6",
-    "date": "2026-09-20"
+    "hash": "f6a952064ae6",
+    "date": "2026-09-22"
   },
   "/docs/help/rows/master-detail/": {
     "hash": "a90379684c21",
@@ -3416,20 +3440,20 @@
     "date": "2026-09-03"
   },
   "/docs/help/rows/scheduler/": {
-    "hash": "24094db4381a",
-    "date": "2026-09-19"
+    "hash": "90a3141accbd",
+    "date": "2026-09-22"
   },
   "/docs/help/rows/selection-bar/": {
-    "hash": "32921d191fec",
-    "date": "2026-09-18"
+    "hash": "f701a9d0536a",
+    "date": "2026-09-22"
   },
   "/docs/help/rows/styling-rows/": {
     "hash": "e8fb58323b59",
     "date": "2026-09-03"
   },
   "/docs/help/rows/transactions/": {
-    "hash": "b4b1b6432abc",
-    "date": "2026-09-03"
+    "hash": "f17ecdfa5897",
+    "date": "2026-09-21"
   },
   "/docs/help/rows/tree-data/": {
     "hash": "8ea429354d80",
@@ -3443,6 +3467,10 @@
     "hash": "2791b51f0a2e",
     "date": "2026-09-10"
   },
+  "/docs/help/scheduler/booking-calendar/": {
+    "hash": "5839a377f07f",
+    "date": "2026-09-22"
+  },
   "/docs/help/scheduling/": {
     "hash": "328833c87fcf",
     "date": "2026-09-03"
@@ -3455,6 +3483,10 @@
     "hash": "1043aa478864",
     "date": "2026-09-18"
   },
+  "/docs/help/server/row-model-walkthrough/": {
+    "hash": "a221fde900c5",
+    "date": "2026-09-22"
+  },
   "/docs/help/server/server-editing/": {
     "hash": "4f8e661aad05",
     "date": "2026-09-20"
@@ -3464,52 +3496,84 @@
     "date": "2026-09-20"
   },
   "/docs/help/server/server-grouping/": {
-    "hash": "28e79ca90bf5",
-    "date": "2026-09-20"
+    "hash": "dda720b463b1",
+    "date": "2026-09-22"
   },
   "/docs/help/server/server-infinite-scroll/": {
     "hash": "30dfb399f5f9",
     "date": "2026-09-20"
   },
   "/docs/help/server/server-paging/": {
-    "hash": "674c020c3419",
-    "date": "2026-09-20"
+    "hash": "deb8349d8e08",
+    "date": "2026-09-22"
   },
   "/docs/help/server/server-pivot/": {
     "hash": "33ac283e9292",
     "date": "2026-09-20"
   },
   "/docs/help/server/server-row-model/": {
-    "hash": "f7b95e100f37",
-    "date": "2026-09-20"
+    "hash": "8163e684574e",
+    "date": "2026-09-22"
   },
   "/docs/help/server/server-selection/": {
     "hash": "a233bb2ca49b",
     "date": "2026-09-20"
   },
   "/docs/help/server/server-sorting/": {
-    "hash": "4030a8b726d6",
-    "date": "2026-09-20"
+    "hash": "70fb1c9b2240",
+    "date": "2026-09-22"
   },
   "/docs/help/server/server-transactions/": {
     "hash": "1a87a77d0ed3",
     "date": "2026-09-20"
   },
   "/docs/help/server/server-tree-data/": {
-    "hash": "cea2d1e20797",
-    "date": "2026-09-20"
+    "hash": "1f5156f973ef",
+    "date": "2026-09-22"
   },
   "/docs/help/shadcn/": {
     "hash": "a6ffd925255f",
     "date": "2026-09-03"
+  },
+  "/docs/help/sheet/charts-and-objects/": {
+    "hash": "c0f084aed2ff",
+    "date": "2026-09-21"
+  },
+  "/docs/help/sheet/data-tools/": {
+    "hash": "04039f43cb0d",
+    "date": "2026-09-22"
+  },
+  "/docs/help/sheet/files/": {
+    "hash": "c5bdb32d0ea8",
+    "date": "2026-09-21"
+  },
+  "/docs/help/sheet/formatting/": {
+    "hash": "e745646cc2a6",
+    "date": "2026-09-21"
+  },
+  "/docs/help/sheet/formulas/": {
+    "hash": "929066ae30aa",
+    "date": "2026-09-21"
+  },
+  "/docs/help/sheet/review/": {
+    "hash": "cfc42c00b933",
+    "date": "2026-09-21"
+  },
+  "/docs/help/sheet/start/": {
+    "hash": "bcfd0c6cf909",
+    "date": "2026-09-21"
+  },
+  "/docs/help/sheet/validation/": {
+    "hash": "9735f8bbdd35",
+    "date": "2026-09-21"
   },
   "/docs/help/skill/": {
     "hash": "22ad764d7bb5",
     "date": "2026-09-10"
   },
   "/docs/help/spreadsheet-formulas/": {
-    "hash": "9cfb2c33eac9",
-    "date": "2026-09-20"
+    "hash": "f01d160bd9ae",
+    "date": "2026-09-21"
   },
   "/docs/help/state-maintenance/": {
     "hash": "1fe8fa93b76c",
@@ -3544,8 +3608,8 @@
     "date": "2026-09-15"
   },
   "/docs/help/troubleshooting/": {
-    "hash": "175c0f6beb73",
-    "date": "2026-09-11"
+    "hash": "efe4894c9df1",
+    "date": "2026-09-22"
   },
   "/docs/help/ui-components/buttons/": {
     "hash": "5608becb3466",
@@ -3984,12 +4048,12 @@
     "date": "2026-09-18"
   },
   "/docs/help/web-components/sv-grid/": {
-    "hash": "ed07032abe99",
-    "date": "2026-09-20"
+    "hash": "8fa8fbf881f8",
+    "date": "2026-09-21"
   },
   "/docs/help/web-components/sv-sheet/": {
-    "hash": "97ce67a85754",
-    "date": "2026-09-20"
+    "hash": "898f37c4329d",
+    "date": "2026-09-22"
   },
   "/docs/help/web-components/typescript/": {
     "hash": "c6233e47944c",
@@ -3998,6 +4062,10 @@
   "/docs/help/web-components/vue/": {
     "hash": "d74edbea6b15",
     "date": "2026-09-20"
+  },
+  "/docs/legal/EULA/": {
+    "hash": "de79383d643c",
+    "date": "2026-09-22"
   },
   "/docs/recipes/autosave-with-debounce/": {
     "hash": "ed95b7b0ef3d",
@@ -4164,16 +4232,16 @@
     "date": "2026-09-20"
   },
   "/faq/": {
-    "hash": "6a696b6ccc60",
-    "date": "2026-09-03"
+    "hash": "e803314fd7cc",
+    "date": "2026-09-21"
   },
   "/mcp/": {
     "hash": "6ec31c12119d",
     "date": "2026-09-03"
   },
   "/pricing/": {
-    "hash": "6f49c2d5198b",
-    "date": "2026-09-19"
+    "hash": "1644ff38d85f",
+    "date": "2026-09-21"
   },
   "/roadmap/": {
     "hash": "d3db64f6857b",
@@ -4184,8 +4252,8 @@
     "date": "2026-09-03"
   },
   "/svelte/": {
-    "hash": "17f02aec1065",
-    "date": "2026-09-20"
+    "hash": "1003a75f149e",
+    "date": "2026-09-21"
   },
   "/svelte/admin-dashboard/": {
     "hash": "15710b02cd0b",
@@ -4208,8 +4276,8 @@
     "date": "2026-09-03"
   },
   "/svelte/editable-table/": {
-    "hash": "818bb806f109",
-    "date": "2026-09-03"
+    "hash": "12daf62cbaea",
+    "date": "2026-09-22"
   },
   "/svelte/gantt-chart/": {
     "hash": "7f2bb7b8b4e4",
@@ -4242,6 +4310,10 @@
   "/svelte/spreadsheet/": {
     "hash": "b9a951f3dd41",
     "date": "2026-09-15"
+  },
+  "/svelte/trading-grid/": {
+    "hash": "26b3f36ba493",
+    "date": "2026-09-21"
   },
   "/svelte/tree-grid/": {
     "hash": "89f943be1e8f",

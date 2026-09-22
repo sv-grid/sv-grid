@@ -22,9 +22,10 @@
  * clone without `pnpm install`.
  */
 import { readdir, readFile, writeFile, stat, mkdir } from 'node:fs/promises'
-import { join, relative, sep, dirname } from 'node:path'
+import { join, relative, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { isHiddenDoc, isLlmOnlyDoc, parseDocFrontmatter } from './lib/doc-meta.mjs'
+import { isHiddenDoc, isLlmOnlyDoc, parseDocFrontmatter, sectionOf } from './lib/doc-meta.mjs'
+import { plainTitle } from './lib/docs-page.mjs'
 import { isReleased } from './lib/releases.mjs'
 import { loadComparisons, loadLedger, loadSvgridSize } from './lib/compare-data.mjs'
 import { comparePageModel, renderCompareMarkdown } from './lib/compare-page.mjs'
@@ -56,6 +57,12 @@ const SECTION_TITLES = {
   'help/state':        'State & views',
   'help/charts':       'Charts',
   'help/gantt':        'Gantt',
+  'help/sheet':        'Spreadsheet',
+  'help/export':       'Import & export',
+  'help/pivot':        'Pivot grid',
+  'help/kanban':       'Kanban',
+  'help/scheduler':    'Scheduler',
+  'help/alerts':       'Alerts & scheduling',
   'help/ui-components':'UI components',
   'help/web-components':'Web components',
   'recipes':           'Recipes / cookbook',
@@ -68,13 +75,15 @@ const SECTION_TITLES = {
 }
 
 // Product pillars — the top-level split a developer picks first, rendered as a
-// header dropdown on the site (mirrors the demos dropdown). Order here is the
-// dropdown order.
+// header dropdown on the site (the demos gallery's product switcher: the free
+// grid and its UI kit, then the three Enterprise products). Order here is the
+// dropdown order. Mirrors PILLARS in website/src/lib/docs.ts.
 const PILLARS = [
-  { id: 'grid',    title: 'SvGrid',        blurb: 'The Svelte 5 data grid.' },
-  { id: 'studio',  title: 'SvGrid Studio', blurb: 'Turn a database or schema into a CRUD data-app.' },
-  { id: 'ui',      title: 'SvGrid UI',     blurb: 'The Svelte component suite.' },
-  { id: 'company', title: 'Enterprise & company', blurb: 'Licensing, support, compliance, legal.' },
+  { id: 'grid',       title: 'SvGrid',             blurb: 'The Svelte 5 data grid.' },
+  { id: 'ui',         title: 'SvGrid UI',          blurb: 'The Svelte component suite.' },
+  { id: 'enterprise', title: 'SvGrid Enterprise',  blurb: 'The paid modules on the grid; licensing, support, compliance, legal.' },
+  { id: 'sheet',      title: 'SvGrid Spreadsheet', blurb: 'The grid as an Excel-like spreadsheet.' },
+  { id: 'studio',     title: 'SvGrid Studio',      blurb: 'Turn a database or schema into a CRUD data-app.' },
 ]
 
 // Which pillar each section belongs to. Sections not listed default to 'grid'.
@@ -92,17 +101,55 @@ const SECTION_PILLAR = {
   'help/server':       'grid',
   'help/state':        'grid',
   'help/charts':       'grid',
-  'help/gantt':        'grid',
+  'help/gantt':        'enterprise',
+  'help/sheet':        'sheet',
+  'help/export':       'enterprise',
+  'help/pivot':        'enterprise',
+  'help/kanban':       'enterprise',
+  'help/scheduler':    'enterprise',
+  'help/alerts':       'enterprise',
   'recipes':           'grid',
   'reference':         'grid',
   'enterprise/studio': 'studio',
   'help/ui-components':'ui',
   'help/web-components':'grid',
-  'enterprise':        'company',
-  'compliance':        'company',
-  'legal':             'company',
-  'brand':             'company',
+  'enterprise':        'enterprise',
+  'compliance':        'enterprise',
+  'legal':             'enterprise',
+  'brand':             'enterprise',
 }
+
+// Pages whose pillar is not their folder's: the paid pages of the mixed
+// folders (help/rows holds the Kanban page beside free row docs) and the
+// spreadsheet's pages under help/cells and help/. Mirrors CATEGORY_OVERRIDE in
+// website/src/lib/docs.ts, which routes the same slugs on the site.
+const PAGE_PILLAR = {
+  // Server-Side Row Model: the hub and the five Enterprise deep dives; the
+  // createServerDataSource pages (infinite scroll, paging, sorting, filtering,
+  // editing) stay with the free grid.
+  'help/server/row-model-walkthrough': 'enterprise',
+  'help/server/server-row-model':   'enterprise',
+  'help/server/server-grouping':    'enterprise',
+  'help/server/server-tree-data':   'enterprise',
+  'help/server/server-pivot':       'enterprise',
+  'help/server/server-transactions':'enterprise',
+  'help/server/server-selection':   'enterprise',
+  'help/export':                    'enterprise',
+  'help/import':                    'enterprise',
+  'help/pivot':                     'enterprise',
+  'help/rows/kanban-board':         'enterprise',
+  'help/rows/scheduler':            'enterprise',
+  'help/rows/gantt':                'enterprise',
+  'help/gantt':                     'enterprise',
+  'help/alerts':                    'enterprise',
+  'help/scheduling':                'enterprise',
+  'help/cells/spreadsheet-shell':   'sheet',
+  'help/spreadsheet-formulas':      'sheet',
+  'help/cells/workbooks':           'sheet',
+  'help/cells/tables':              'sheet',
+  'help/web-components/sv-sheet':   'sheet',
+}
+const pillarOf = (slug, section) => PAGE_PILLAR[slug] ?? SECTION_PILLAR[section] ?? 'grid'
 
 // Curated sidebar order within a pillar (index = position; unknown → end).
 // Replaces the old alphabetical sort that buried Getting started behind Brand.
@@ -110,7 +157,8 @@ const SECTION_ORDER = [
   '', 'getting-started', 'help',
   'help/cells', 'help/columns', 'help/rows',
   'help/editing', 'help/filtering', 'help/grouping',
-  'help/headless', 'help/server', 'help/state', 'help/charts', 'help/gantt',
+  'help/headless', 'help/server', 'help/state', 'help/charts', 'help/gantt', 'help/sheet',
+  'help/export', 'help/pivot', 'help/kanban', 'help/scheduler', 'help/alerts',
   // Before recipes, matching CATEGORY_ORDER in website/src/lib/docs.ts - this
   // list drives docs.json and llms.txt, that one drives the visible sidebar,
   // and a reader following the topic map should meet them in the same order.
@@ -138,6 +186,28 @@ const PAGE_GROUPS = {
   // The Gantt guide: the hub, then the basics in the order a plan grows
   // (rows, phases, links, edits, the axis), then the planning layer, then the
   // pages that look outward. Mirrors PAGE_ORDER in website/src/lib/docs.ts.
+  // Spreadsheet: the tutorials in reading order. The reference pages live in
+  // other folders and sort into the site's sidebar by slug (docs.ts).
+  'help/sheet': [
+    { label: 'Start here', pages: ['start', 'formulas', 'formatting', 'validation'] },
+    { label: 'Beyond the cells', pages: ['files', 'data-tools', 'charts-and-objects', 'review'] },
+    { label: 'Reference', pages: ['help/cells/spreadsheet-shell.md', 'help/spreadsheet-formulas.md', 'help/cells/workbooks.md', 'help/cells/tables.md', 'help/web-components/sv-sheet.md'] },
+  ],
+  // The other Enterprise modules: the tutorial(s) first, then the reference
+  // pages routed in from their own folders (SECTION_OVERRIDE in doc-meta.mjs).
+  'help/export': [
+    { label: 'Tutorials', pages: ['report', 'import-spreadsheet'] },
+    { label: 'Reference', pages: ['help/export.md', 'help/import.md'] },
+  ],
+  'help/pivot': [{ label: '', pages: ['start', 'help/pivot.md'] }],
+  'help/kanban': [{ label: '', pages: ['sprint-board', 'help/rows/kanban-board.md'] }],
+  'help/scheduler': [{ label: '', pages: ['booking-calendar', 'help/rows/scheduler.md'] }],
+  'help/alerts': [{ label: '', pages: ['start', 'help/alerts.md', 'help/scheduling.md'] }],
+  // The row model: the walkthrough, the hub, the free controller pages, then
+  // the Enterprise deep dives, the order the sidebar and the hub use.
+  'help/server': [
+    { label: '', pages: ['row-model-walkthrough', 'server-row-model', 'server-infinite-scroll', 'server-paging', 'server-sorting', 'server-filtering', 'server-editing', 'server-grouping', 'server-tree-data', 'server-pivot', 'server-transactions', 'server-selection'] },
+  ],
   'help/gantt': [
     { label: '', pages: ['help/gantt.md'] },
     { label: 'Start here', pages: ['start', 'work-breakdown', 'dependencies', 'editing', 'axis-and-working-time'] },
@@ -183,7 +253,8 @@ for (const [sectionId, groups] of Object.entries(PAGE_GROUPS)) {
 }
 
 // Whole sections that are part of the commercial tier regardless of page title.
-const ENTERPRISE_SECTIONS = new Set(['enterprise', 'enterprise/studio'])
+const ENTERPRISE_SECTIONS = new Set([
+  'legal', 'enterprise', 'enterprise/studio', 'help/sheet', 'help/export', 'help/pivot', 'help/kanban', 'help/scheduler', 'help/alerts'])
 
 /** Walk a directory recursively, yielding absolute file paths. */
 async function* walk(dir) {
@@ -213,7 +284,7 @@ function extract(md) {
     // Track fenced code so a leading ```svelte block is never mistaken for prose.
     if (t.startsWith('```')) { inFence = !inFence; continue }
     if (inFence) continue
-    if (!title && l.startsWith('# ')) { title = l.slice(2).trim(); continue }
+    if (!title && l.startsWith('# ')) { title = plainTitle(l.slice(2)); continue }
     if (title && !summary && isProse(t)) {
       // Collect the paragraph, stopping at a blank line or any non-prose block
       // (HTML/demo embed, table, code fence) so markup never leaks into snippets.
@@ -234,16 +305,8 @@ function extract(md) {
   return { title, summary }
 }
 
-/** Group docs by their parent folder. */
-function sectionOf(relPath) {
-  const parts = relPath.split(sep)
-  if (parts.length === 1) return ''
-  // Studio is its own section (and pillar), split out of the broad `enterprise`
-  // bucket so its ~40 pages don't share a sidebar with licensing/support.
-  if (parts[0] === 'enterprise' && parts[1] && parts[1].startsWith('studio')) return 'enterprise/studio'
-  if (parts[0] === 'help' && parts.length > 2) return `help/${parts[1]}`
-  return parts[0]
-}
+// Sections come from tools/lib/doc-meta.mjs: the folder, with the per-slug
+// overrides (SECTION_OVERRIDE), the one copy the MCP bundle reads too.
 
 async function main() {
   // The served copies go into website/public and the blog index is read from
@@ -276,7 +339,7 @@ async function main() {
     const { title, summary } = extract(body)
     if (!title) continue
     const s = await stat(file)
-    const section = sectionOf(rel.replaceAll('/', sep))
+    const section = sectionOf(rel)
     docs.push({
       path:        rel,
       // Must match the prerendered route shape (/docs/<slug>/, trailing slash)
@@ -289,8 +352,9 @@ async function main() {
       ...(meta.keywords?.length ? { keywords: meta.keywords } : {}),
       ...(meta.noindex ? { noindex: true } : {}),
       section,
-      pillar:      SECTION_PILLAR[section] ?? 'grid',
-      tier:        ENTERPRISE_SECTIONS.has(section) || /\bEnterprise\b/.test(title) ? 'enterprise' : 'community',
+      pillar:      pillarOf(slug, section),
+      // Paid when its section is, when PAGE_PILLAR routes it into a paid pillar, or when its title says so.
+      tier:        ENTERPRISE_SECTIONS.has(section) || PAGE_PILLAR[slug] !== undefined || /\bEnterprise\b/.test(title) ? 'enterprise' : 'community',
       ...(pageGroupLabel.has(rel) ? { group: pageGroupLabel.get(rel) } : {}),
       words:       body.split(/\s+/).filter(Boolean).length,
       lastUpdated: s.mtime.toISOString().slice(0, 10),
@@ -385,12 +449,15 @@ async function main() {
       enterprise: docs.filter((d) => d.tier === 'enterprise').length,
       withDemo: docs.filter((d) => d.demoIds.length > 0).length,
     },
-    // Product pillars — the top-level split, rendered as a header dropdown.
+    // Product pillars — the top-level split, rendered as a header dropdown. A
+    // section is listed under every pillar one of its pages belongs to (the
+    // page's own `pillar` says which), so help/rows shows under the grid and,
+    // for its Kanban and Scheduler pages, under Enterprise.
     pillars: PILLARS.map((p) => ({
       id:       p.id,
       title:    p.title,
       blurb:    p.blurb,
-      sections: sections.filter((s) => s.pillar === p.id).map((s) => s.id),
+      sections: sections.filter((s) => docs.some((d) => d.section === s.id && d.pillar === p.id)).map((s) => s.id),
     })),
     sections,
     pages: docs,
@@ -417,10 +484,13 @@ async function main() {
   llmsLines.push('For the full text of every doc page concatenated: see [llms-full.txt](/llms-full.txt).')
   llmsLines.push('For a machine-readable manifest: see [docs.json](/docs.json).')
   llmsLines.push('')
+  // Each page is listed once, under its own pillar; a section whose pages
+  // straddle two pillars (help/rows, help/server) appears under both with
+  // only that pillar's pages.
   for (const pillar of manifest.pillars) {
-    const pillarSections = manifest.sections.filter(
-      (s) => s.pillar === pillar.id && s.pages.length > 0,
-    )
+    const pillarSections = manifest.sections
+      .map((s) => ({ ...s, pages: s.pages.filter((p) => docs.find((x) => x.path === p)?.pillar === pillar.id) }))
+      .filter((s) => s.pages.length > 0)
     if (pillarSections.length === 0) continue
     llmsLines.push(`## ${pillar.title}`)
     llmsLines.push('')
@@ -429,7 +499,8 @@ async function main() {
       llmsLines.push('')
       for (const p of pages) {
         const d = docs.find((x) => x.path === p)
-        const trimmedSummary = d.summary.length > 200 ? d.summary.slice(0, 197) + '…' : d.summary
+        // Cut on a sentence or word boundary: a summary ending "an edit th..." reads worse than a shorter one.
+        const trimmedSummary = clampDescription(d.summary, 200)
         llmsLines.push(`- [${d.title}](${SITE}${d.url}): ${trimmedSummary || '(no summary yet)'}`)
       }
       llmsLines.push('')

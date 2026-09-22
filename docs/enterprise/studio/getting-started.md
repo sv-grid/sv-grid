@@ -170,8 +170,9 @@ npm i @svgrid/grid @svgrid/enterprise
 
 - `@svgrid/grid` is the grid itself.
 - `@svgrid/enterprise` adds Studio: the schema, the edit form, and the data-source
-  helpers. It is **soft-gate only** - everything runs unlicensed, it just nudges.
-  See [licensing](../licensing.md).
+  helpers. It comes with a 30-day evaluation period; loaded without a key
+  it displays a watermark and a console message about the Enterprise
+  package, and everything still runs. See [licensing](../licensing.md).
 
 ---
 

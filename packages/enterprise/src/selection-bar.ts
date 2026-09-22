@@ -9,8 +9,8 @@
  * `registerSelectionBarView` seam. Without it the grid shows a short upsell
  * note where the bar would be.
  *
- * Soft-gated like the rest of Enterprise: it works without a license key but
- * the grid shows the "unlicensed" watermark + a one-time console nudge.
+ * Like the rest of Enterprise it runs without a license key during the
+ * evaluation; the grid shows the watermark and a one-time console notice.
  *
  * ```ts
  * import { setLicenseKey, enableSelectionBar } from '@svgrid/enterprise'

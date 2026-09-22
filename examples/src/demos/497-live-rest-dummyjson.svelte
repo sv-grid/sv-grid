@@ -1,7 +1,7 @@
 <!-- Documented in: docs/help/server/server-row-model.md -->
 <script lang="ts">
   /**
-   * 337. Live data from a public REST API (DummyJSON)
+   * 497. Live data from a public REST API (DummyJSON)
    * -------------------------------------------------
    * Real rows over the network - no mock, no seeded array. The grid talks to
    * https://dummyjson.com/products through the enterprise `createRestDataSource`,

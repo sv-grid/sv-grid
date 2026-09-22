@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-21T17:31:19.731Z",
+  "generatedAt": "2026-09-22T08:21:53.001Z",
   "counts": {
-    "pages": 387,
-    "enterprise": 60,
-    "withDemo": 271
+    "pages": 403,
+    "enterprise": 87,
+    "withDemo": 286
   },
   "pillars": [
     {
@@ -31,14 +31,6 @@
       ]
     },
     {
-      "id": "studio",
-      "title": "SvGrid Studio",
-      "blurb": "Turn a database or schema into a CRUD data-app.",
-      "sections": [
-        "enterprise/studio"
-      ]
-    },
-    {
       "id": "ui",
       "title": "SvGrid UI",
       "blurb": "The Svelte component suite.",
@@ -47,12 +39,36 @@
       ]
     },
     {
-      "id": "company",
-      "title": "Enterprise & company",
-      "blurb": "Licensing, support, compliance, legal.",
+      "id": "enterprise",
+      "title": "SvGrid Enterprise",
+      "blurb": "The paid modules on the grid; licensing, support, compliance, legal.",
       "sections": [
+        "help/rows",
+        "help/server",
+        "help/export",
+        "help/pivot",
+        "help/kanban",
+        "help/scheduler",
+        "help/alerts",
         "enterprise",
-        "compliance"
+        "compliance",
+        "legal"
+      ]
+    },
+    {
+      "id": "sheet",
+      "title": "SvGrid Spreadsheet",
+      "blurb": "The grid as an Excel-like spreadsheet.",
+      "sections": [
+        "help/sheet"
+      ]
+    },
+    {
+      "id": "studio",
+      "title": "SvGrid Studio",
+      "blurb": "Turn a database or schema into a CRUD data-app.",
+      "sections": [
+        "enterprise/studio"
       ]
     }
   ],
@@ -95,7 +111,6 @@
         "help/ai-smart-paste.md",
         "help/ai-toolkit.md",
         "help/ai.md",
-        "help/alerts.md",
         "help/api-stability.md",
         "help/architecture.md",
         "help/benchmarks.md",
@@ -106,13 +121,11 @@
         "help/comparison.md",
         "help/conditional-form-schema.md",
         "help/errors.md",
-        "help/export.md",
         "help/expressions-query.md",
         "help/glossary.md",
         "help/grouping-aggregation.md",
         "help/i18n-rtl.md",
         "help/icons.md",
-        "help/import.md",
         "help/llm-grounding.md",
         "help/mcp-server.md",
         "help/migrating-from-ag-grid.md",
@@ -137,17 +150,14 @@
         "help/missing-features.md",
         "help/mobile-card-view.md",
         "help/observability.md",
-        "help/pivot.md",
         "help/production.md",
         "help/real-time.md",
         "help/recipes.md",
         "help/saved-views.md",
-        "help/scheduling.md",
         "help/security.md",
         "help/server-side-data.md",
         "help/shadcn.md",
         "help/skill.md",
-        "help/spreadsheet-formulas.md",
         "help/state-maintenance.md",
         "help/status-bar.md",
         "help/svelte-5-upgrade-data-tables.md",
@@ -176,13 +186,10 @@
         "help/cells/paste-find-structure.md",
         "help/cells/rich-text-cells.md",
         "help/cells/sparklines.md",
-        "help/cells/spreadsheet-shell.md",
         "help/cells/styling-cells.md",
-        "help/cells/tables.md",
         "help/cells/text-formatting.md",
         "help/cells/tooltips.md",
-        "help/cells/view-refresh.md",
-        "help/cells/workbooks.md"
+        "help/cells/view-refresh.md"
       ]
     },
     {
@@ -213,7 +220,6 @@
         "help/rows/accessing-rows.md",
         "help/rows/full-width-rows.md",
         "help/rows/gantt.md",
-        "help/rows/kanban-board.md",
         "help/rows/master-detail.md",
         "help/rows/row-data.md",
         "help/rows/row-dragging.md",
@@ -222,7 +228,6 @@
         "help/rows/row-pinning.md",
         "help/rows/row-sorting.md",
         "help/rows/row-spanning.md",
-        "help/rows/scheduler.md",
         "help/rows/selection-bar.md",
         "help/rows/styling-rows.md",
         "help/rows/transactions.md",
@@ -292,18 +297,20 @@
       "title": "Server data",
       "pillar": "grid",
       "pages": [
-        "help/server/server-editing.md",
-        "help/server/server-filtering.md",
-        "help/server/server-grouping.md",
+        "help/server/row-model-walkthrough.md",
+        "help/server/server-row-model.md",
         "help/server/server-infinite-scroll.md",
         "help/server/server-paging.md",
-        "help/server/server-pivot.md",
-        "help/server/server-row-model.md",
-        "help/server/server-selection.md",
         "help/server/server-sorting.md",
+        "help/server/server-filtering.md",
+        "help/server/server-editing.md",
+        "help/server/server-grouping.md",
+        "help/server/server-tree-data.md",
+        "help/server/server-pivot.md",
         "help/server/server-transactions.md",
-        "help/server/server-tree-data.md"
-      ]
+        "help/server/server-selection.md"
+      ],
+      "groups": []
     },
     {
       "id": "help/state",
@@ -356,6 +363,124 @@
       ]
     },
     {
+      "id": "help/sheet",
+      "title": "Spreadsheet",
+      "pillar": "sheet",
+      "pages": [
+        "help/sheet/start.md",
+        "help/sheet/formulas.md",
+        "help/sheet/formatting.md",
+        "help/sheet/validation.md",
+        "help/sheet/files.md",
+        "help/sheet/data-tools.md",
+        "help/web-components/sv-sheet.md",
+        "help/sheet/charts-and-objects.md",
+        "help/sheet/review.md",
+        "help/cells/spreadsheet-shell.md",
+        "help/spreadsheet-formulas.md",
+        "help/cells/workbooks.md",
+        "help/cells/tables.md"
+      ],
+      "groups": [
+        {
+          "label": "Start here",
+          "pages": [
+            "help/sheet/start.md",
+            "help/sheet/formulas.md",
+            "help/sheet/formatting.md",
+            "help/sheet/validation.md"
+          ]
+        },
+        {
+          "label": "Beyond the cells",
+          "pages": [
+            "help/sheet/files.md",
+            "help/sheet/data-tools.md",
+            "help/sheet/charts-and-objects.md",
+            "help/sheet/review.md"
+          ]
+        },
+        {
+          "label": "Reference",
+          "pages": [
+            "help/cells/spreadsheet-shell.md",
+            "help/spreadsheet-formulas.md",
+            "help/cells/workbooks.md",
+            "help/cells/tables.md",
+            "help/web-components/sv-sheet.md"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "help/export",
+      "title": "Import & export",
+      "pillar": "enterprise",
+      "pages": [
+        "help/export/report.md",
+        "help/export/import-spreadsheet.md",
+        "help/export.md",
+        "help/import.md"
+      ],
+      "groups": [
+        {
+          "label": "Tutorials",
+          "pages": [
+            "help/export/report.md",
+            "help/export/import-spreadsheet.md"
+          ]
+        },
+        {
+          "label": "Reference",
+          "pages": [
+            "help/export.md",
+            "help/import.md"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "help/pivot",
+      "title": "Pivot grid",
+      "pillar": "enterprise",
+      "pages": [
+        "help/pivot/start.md",
+        "help/pivot.md"
+      ],
+      "groups": []
+    },
+    {
+      "id": "help/kanban",
+      "title": "Kanban",
+      "pillar": "enterprise",
+      "pages": [
+        "help/kanban/sprint-board.md",
+        "help/rows/kanban-board.md"
+      ],
+      "groups": []
+    },
+    {
+      "id": "help/scheduler",
+      "title": "Scheduler",
+      "pillar": "enterprise",
+      "pages": [
+        "help/scheduler/booking-calendar.md",
+        "help/rows/scheduler.md"
+      ],
+      "groups": []
+    },
+    {
+      "id": "help/alerts",
+      "title": "Alerts & scheduling",
+      "pillar": "enterprise",
+      "pages": [
+        "help/alerts/start.md",
+        "help/alerts.md",
+        "help/scheduling.md"
+      ],
+      "groups": []
+    },
+    {
       "id": "help/web-components",
       "title": "Web components",
       "pillar": "grid",
@@ -364,7 +489,6 @@
         "help/web-components/quick-start.md",
         "help/web-components/sv-grid.md",
         "help/web-components/sv-chart.md",
-        "help/web-components/sv-sheet.md",
         "help/web-components/shadow-dom.md",
         "help/web-components/react.md",
         "help/web-components/vue.md",
@@ -704,7 +828,7 @@
     {
       "id": "enterprise",
       "title": "Enterprise tier",
-      "pillar": "company",
+      "pillar": "enterprise",
       "pages": [
         "enterprise/evaluation.md",
         "enterprise/getting-started.md",
@@ -715,13 +839,21 @@
     {
       "id": "compliance",
       "title": "Compliance",
-      "pillar": "company",
+      "pillar": "enterprise",
       "pages": [
         "compliance/audit-log.md",
         "compliance/gdpr.md",
         "compliance/hipaa.md",
         "compliance/soc2.md",
         "compliance/vpat.md"
+      ]
+    },
+    {
+      "id": "legal",
+      "title": "Legal",
+      "pillar": "enterprise",
+      "pages": [
+        "legal/EULA.md"
       ]
     }
   ],
@@ -744,7 +876,7 @@
       "title": "Audit log integration",
       "summary": "A typed, tamper-evident audit trail of every user action in the grid, in under 50 lines. Pattern works for any backend - your existing audit table, Datadog logs, an immutable ledger (DynamoDB with conditional writes, AWS QLDB, Kafka), or a write-once S3 bucket.",
       "section": "compliance",
-      "pillar": "company",
+      "pillar": "enterprise",
       "tier": "community",
       "words": 661,
       "lastUpdated": "2026-09-03",
@@ -756,7 +888,7 @@
       "title": "GDPR + data residency",
       "summary": "sv-grid is **GDPR-neutral**: the library never transmits personal data, never stores it server-side, and never logs it. If your app is GDPR-compliant before adding sv-grid, adding sv-grid does not break that compliance.",
       "section": "compliance",
-      "pillar": "company",
+      "pillar": "enterprise",
       "tier": "community",
       "words": 615,
       "lastUpdated": "2026-06-12",
@@ -768,7 +900,7 @@
       "title": "HIPAA posture",
       "summary": "sv-grid is **HIPAA-neutral**: the library does not transmit, store, or process PHI on its own. If your app is HIPAA-compliant before adding sv-grid, adding sv-grid does not break that compliance.",
       "section": "compliance",
-      "pillar": "company",
+      "pillar": "enterprise",
       "tier": "community",
       "words": 647,
       "lastUpdated": "2026-08-19",
@@ -780,7 +912,7 @@
       "title": "SOC 2 posture",
       "summary": "sv-grid is a UI library, not a service - so it cannot itself hold a SOC 2 report. But it can sit inside a SOC 2-audited application, and the controls below describe the line where the library's responsibility ends and yours begins.",
       "section": "compliance",
-      "pillar": "company",
+      "pillar": "enterprise",
       "tier": "community",
       "words": 687,
       "lastUpdated": "2026-08-23",
@@ -792,7 +924,7 @@
       "title": "Accessibility Conformance Report (VPAT 2.5Rev, INT)",
       "summary": "**Product:** SvGrid (@svgrid/grid, @svgrid/enterprise) **Report version:** 1.0 **Report date:** 2026-08-24 **Contact:** support@jqwidgets.com",
       "section": "compliance",
-      "pillar": "company",
+      "pillar": "enterprise",
       "tier": "community",
       "words": 1970,
       "lastUpdated": "2026-08-24",
@@ -802,11 +934,11 @@
       "path": "enterprise/evaluation.md",
       "url": "/docs/enterprise/evaluation/",
       "title": "Enterprise evaluation",
-      "summary": "The @svgrid/enterprise package is soft-gated; you can evaluate every feature in production-equivalent code paths without contacting sales. This page is the playbook.",
+      "summary": "@svgrid/enterprise comes with a 30-day evaluation period, and you can evaluate every feature in production-equivalent code paths without contacting sales: loaded without a license key, the Enterprise module displays a watermark and a console message about the Enterprise package, and an evaluation key removes them for 30 days. This page is the playbook.",
       "section": "enterprise",
-      "pillar": "company",
+      "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 965,
+      "words": 1027,
       "lastUpdated": "2026-09-21",
       "demoIds": []
     },
@@ -816,21 +948,21 @@
       "title": "Enterprise getting started: a complete example",
       "summary": "One page, one file, from an empty folder to a working grid with Excel, PDF and CSV export. Nothing is elided - every command and every line below was run end to end against the published packages.",
       "section": "enterprise",
-      "pillar": "company",
+      "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 1271,
-      "lastUpdated": "2026-08-22",
+      "words": 1275,
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
       "path": "enterprise/licensing.md",
       "url": "/docs/enterprise/licensing/",
       "title": "Enterprise licensing",
-      "summary": "The @svgrid/enterprise package is **soft-gated**: every feature runs without a key, with a small unlicensed-build watermark in the bottom-right corner of the grid + a one-time console nudge. Set a key once at app startup and both disappear.",
+      "summary": "@svgrid/enterprise comes with a **30-day evaluation period**: an evaluation key, issued on request, runs the full package without the watermark for 30 days. Loaded without a license key, the Enterprise module displays a watermark in the bottom-right corner of the grid and a console message about the Enterprise package; every feature still works. Set a key once at app startup and both disappear.",
       "section": "enterprise",
-      "pillar": "company",
+      "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 1382,
+      "words": 1466,
       "lastUpdated": "2026-09-21",
       "demoIds": []
     },
@@ -842,8 +974,8 @@
       "section": "enterprise/studio",
       "pillar": "studio",
       "tier": "enterprise",
-      "words": 2040,
-      "lastUpdated": "2026-08-15",
+      "words": 2053,
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -881,8 +1013,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Three ways to build",
-      "words": 1193,
-      "lastUpdated": "2026-09-07",
+      "words": 1207,
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -959,8 +1091,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Three ways to build",
-      "words": 1229,
-      "lastUpdated": "2026-08-27",
+      "words": 1233,
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -998,8 +1130,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Start here",
-      "words": 956,
-      "lastUpdated": "2026-08-22",
+      "words": 971,
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -1117,7 +1249,7 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Start here",
-      "words": 2939,
+      "words": 2955,
       "lastUpdated": "2026-09-21",
       "demoIds": [],
       "tutorialIds": [
@@ -1277,7 +1409,7 @@
       "tier": "enterprise",
       "group": "Connect to data",
       "words": 1236,
-      "lastUpdated": "2026-08-15",
+      "lastUpdated": "2026-09-22",
       "demoIds": []
     },
     {
@@ -1427,8 +1559,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Reference & help",
-      "words": 809,
-      "lastUpdated": "2026-08-31",
+      "words": 835,
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -1440,8 +1572,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Start here",
-      "words": 738,
-      "lastUpdated": "2026-07-15",
+      "words": 744,
+      "lastUpdated": "2026-09-22",
       "demoIds": []
     },
     {
@@ -1450,10 +1582,10 @@
       "title": "Enterprise support",
       "summary": "What you get on each tier, what response time to expect, how to escalate.",
       "section": "enterprise",
-      "pillar": "company",
+      "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 499,
-      "lastUpdated": "2026-08-15",
+      "words": 505,
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -1571,8 +1703,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 1234,
-      "lastUpdated": "2026-09-06",
+      "words": 1250,
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -1665,17 +1797,42 @@
       "url": "/docs/help/alerts/",
       "title": "Alerts - Enterprise",
       "summary": "Alert rules let your users say \"tell me when the data does X\" - and then act on it automatically: raise a toast, tint the row, flash the cell, block the edit, or just log it. Rules are authored at runtime in a no-code builder, persisted, and shareable as JSON. No redeploy to add an alert.",
-      "section": "help",
-      "pillar": "grid",
+      "section": "help/alerts",
+      "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 1606,
-      "lastUpdated": "2026-09-13",
+      "words": 1675,
+      "lastUpdated": "2026-09-22",
       "demoIds": [
         "399-alert-rules-engine",
         "400-alert-styling-rules",
         "401-alert-aggregate-kpi",
         "402-alert-validation-guardrails",
         "403-alert-console-navpane"
+      ]
+    },
+    {
+      "path": "help/alerts/start.md",
+      "url": "/docs/help/alerts/start/",
+      "title": "Alerts: rules over live data",
+      "summary": "A rule the user writes, or you ship, that watches the rows and does something when one crosses a line: a toast, a highlight, a badge, a vetoed edit, a line in a log. This page builds the pieces up over one grid of prices that moves when you tell it to: one rule, the three ways a rule fires, what it does when it does, a guardrail on an edit, the bell and its log, saving the rules, a feed that pushes its own changes, and a rule on a clock. Alerts is the reference behind it; Scheduling the clock.",
+      "seoTitle": "Svelte grid alerts - rules on live data, guardrails, a schedule",
+      "seoDescription": "Alert rules on a Svelte data grid: a rule on a crossed line, one that watches a move, a KPI, a guardrail that vetoes an edit, the log, a feed, a schedule.",
+      "keywords": [
+        "svelte grid alerts",
+        "alert rules data grid",
+        "threshold alert svelte",
+        "validation guardrail grid",
+        "streaming grid alerts"
+      ],
+      "section": "help/alerts",
+      "pillar": "enterprise",
+      "tier": "enterprise",
+      "words": 2924,
+      "lastUpdated": "2026-09-22",
+      "demoIds": [
+        "402-alert-validation-guardrails",
+        "399-alert-rules-engine",
+        "401-alert-aggregate-kpi"
       ]
     },
     {
@@ -1921,10 +2078,11 @@
       "url": "/docs/help/cells/spreadsheet-shell/",
       "title": "The spreadsheet shell",
       "summary": "Everything between the ribbon and the sheet tabs, as one component.",
-      "section": "help/cells",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 17933,
+      "section": "help/sheet",
+      "pillar": "sheet",
+      "tier": "enterprise",
+      "group": "Reference",
+      "words": 18011,
       "lastUpdated": "2026-09-21",
       "demoIds": [
         "27-spreadsheet-ribbon",
@@ -1971,9 +2129,10 @@
       "url": "/docs/help/cells/tables/",
       "title": "Tables and structured references",
       "summary": "A table is a named region with a header row, so a formula can say Orders[Amount] instead of D2:D57.",
-      "section": "help/cells",
-      "pillar": "grid",
-      "tier": "community",
+      "section": "help/sheet",
+      "pillar": "sheet",
+      "tier": "enterprise",
+      "group": "Reference",
       "words": 1061,
       "lastUpdated": "2026-09-20",
       "demoIds": [
@@ -2025,9 +2184,10 @@
       "url": "/docs/help/cells/workbooks/",
       "title": "Workbooks: several sheets that read each other",
       "summary": "The formula engine parsed Orders!A1 and 'Price list'!A1:C9 from the day it was promoted. This is the model those references point at.",
-      "section": "help/cells",
-      "pillar": "grid",
-      "tier": "community",
+      "section": "help/sheet",
+      "pillar": "sheet",
+      "tier": "enterprise",
+      "group": "Reference",
       "words": 1611,
       "lastUpdated": "2026-09-20",
       "demoIds": [
@@ -2454,7 +2614,7 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 3832,
+      "words": 3838,
       "lastUpdated": "2026-09-21",
       "demoIds": [
         "139-migration-from-ag-grid",
@@ -2616,13 +2776,14 @@
       "path": "help/editing/validation.md",
       "url": "/docs/help/editing/validation/",
       "title": "Validation",
-      "summary": "There is no validate(value) callback on ColumnDef today. Validation happens by intercepting committed edits and either accepting or reverting them.",
+      "summary": "A column's validate hook flags a bad value: the cell turns red and the message becomes its tooltip. On its own it does not refuse anything, so a form can be filled in any order and fixed afterwards; rejectInvalid on the same column turns the flag into a refusal, and an edit the rule fails against is never written. Rules that need more than one row, or that should be logged, run in onCellValueChange instead.",
       "section": "help/editing",
       "pillar": "grid",
       "tier": "community",
-      "words": 875,
-      "lastUpdated": "2026-09-03",
+      "words": 1064,
+      "lastUpdated": "2026-09-22",
       "demoIds": [
+        "206-cell-validation",
         "24-validation"
       ]
     },
@@ -2643,11 +2804,12 @@
       "url": "/docs/help/export/",
       "title": "Data export and printing",
       "summary": "**CSV / TSV / JSON export and copy-to-clipboard are free** in the community **@svgrid/grid** - the commodity \"data out\" every grid needs. The richer formats - **Excel (xlsx)**, **legacy Excel (xls)**, **PDF**, styled **HTML**, **XML**, **Markdown**, multi-sheet workbooks, password protection, conditional-format export, and the drop-in export menu - ship in the paid **@svgrid/enterprise** add-on, which reuses the exact same serializers so the two tiers feel like one product.",
-      "section": "help",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 4946,
-      "lastUpdated": "2026-09-20",
+      "section": "help/export",
+      "pillar": "enterprise",
+      "tier": "enterprise",
+      "group": "Reference",
+      "words": 4975,
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "21-export-and-print",
         "93-password-protected-export",
@@ -2656,6 +2818,56 @@
         "127-export-pivot-grid",
         "201-export-formatting-and-xls",
         "202-export-pdf-grouped-and-print"
+      ]
+    },
+    {
+      "path": "help/export/import-spreadsheet.md",
+      "url": "/docs/help/export/import-spreadsheet/",
+      "title": "Import: a spreadsheet into the grid",
+      "summary": "The other direction: a file someone was handed, into the grid, with the columns lined up, the numbers as numbers and the bad rows flagged before anything lands. This page does it a step at a time on inline text first, so every example runs without a file picker, and then with a real file through the dialog. Data import is the reference behind it.",
+      "seoTitle": "Import a spreadsheet into a Svelte grid - mapping, validation",
+      "seoDescription": "A CSV or .xlsx into a Svelte data grid: the import call, mapping the headers, type coercion, a validator, preview then commit, the dialog, guard-rails.",
+      "keywords": [
+        "svelte import csv grid",
+        "import xlsx svelte",
+        "column mapping import",
+        "import dialog svelte",
+        "csv upload validation"
+      ],
+      "section": "help/export",
+      "pillar": "enterprise",
+      "tier": "enterprise",
+      "group": "Tutorials",
+      "words": 1626,
+      "lastUpdated": "2026-09-22",
+      "demoIds": [
+        "204-import-dialog",
+        "53-excel-import"
+      ]
+    },
+    {
+      "path": "help/export/report.md",
+      "url": "/docs/help/export/report/",
+      "title": "Export: a report to Excel and PDF",
+      "summary": "A grid on screen is not the report someone asked for; the file is. This page builds that file from one grid of orders, a step at a time: the call, what goes in it, numbers Excel can add up, a header and a footer, the grid's colours carried across, an Excel Table with totals, several sheets in one workbook, the same report as a PDF, the print route, the menu that puts all of it on a button, and the version that sends itself every Friday. Data export and printing is the reference behind it.",
+      "seoTitle": "Export a Svelte grid to Excel and PDF - a report step by step",
+      "seoDescription": "One report from a Svelte data grid: typed Excel cells, a header and footer, conditional formats, an Excel Table, several sheets, a PDF with KPIs, print.",
+      "keywords": [
+        "svelte export excel",
+        "export grid to xlsx",
+        "svelte pdf export",
+        "styled excel export",
+        "export menu svelte"
+      ],
+      "section": "help/export",
+      "pillar": "enterprise",
+      "tier": "enterprise",
+      "group": "Tutorials",
+      "words": 2321,
+      "lastUpdated": "2026-09-22",
+      "demoIds": [
+        "202-export-pdf-grouped-and-print",
+        "21-export-and-print"
       ]
     },
     {
@@ -2841,8 +3053,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1229,
-      "lastUpdated": "2026-09-03",
+      "words": 1256,
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -3010,14 +3222,39 @@
       "url": "/docs/help/import/",
       "title": "Data import - Enterprise",
       "summary": "The sister to data export and printing. Read an Excel file, CSV/TSV blob, or JSON array in the browser and produce a typed preview of every parsed row - including per-cell validation errors - before any data lands in the grid. Ships in the paid **@svgrid/enterprise** add-on.",
-      "section": "help",
-      "pillar": "grid",
+      "section": "help/export",
+      "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 2701,
-      "lastUpdated": "2026-09-03",
+      "group": "Reference",
+      "words": 2727,
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "53-excel-import",
         "204-import-dialog"
+      ]
+    },
+    {
+      "path": "help/kanban/sprint-board.md",
+      "url": "/docs/help/kanban/sprint-board/",
+      "title": "Build a sprint board",
+      "summary": "One board prop turns the grid into a Kanban board, and the Kanban reference lists what the prop can say. This page builds a sprint board the way a team would want it, one option at a time on the same rows: lanes in the right order with a limit on work in progress, story points rolled up per lane, a swimlane per person, cards that open an editor, a way to add one and a menu on each, blocked cards that stay put, the layout saved across reloads, and the Table button that shows the same rows as a grid.",
+      "seoTitle": "Build a sprint board in Svelte - Kanban on the data grid",
+      "seoDescription": "A sprint board on a Svelte data grid: lanes and a WIP limit, points per lane, swimlanes, a card editor, a composer and a menu, blocked cards, saved layout.",
+      "keywords": [
+        "svelte kanban board",
+        "sprint board svelte",
+        "kanban swimlanes",
+        "kanban wip limit",
+        "board table toggle grid"
+      ],
+      "section": "help/kanban",
+      "pillar": "enterprise",
+      "tier": "enterprise",
+      "words": 1836,
+      "lastUpdated": "2026-09-22",
+      "demoIds": [
+        "344-kanban-sprint",
+        "349-kanban-subtasks"
       ]
     },
     {
@@ -3040,8 +3277,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 3204,
-      "lastUpdated": "2026-09-13",
+      "words": 3211,
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -3102,7 +3339,7 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2117,
+      "words": 2125,
       "lastUpdated": "2026-09-21",
       "demoIds": [
         "208-freeze-panes",
@@ -3333,11 +3570,20 @@
       "url": "/docs/help/pivot/",
       "title": "Pivot tables - Enterprise",
       "summary": "A built-in pivot model that turns a flat data set into a row-axis tree, a nested column-axis header, and one aggregated cell per (row-path × col-path × measure) triple. Ships in **@svgrid/enterprise**.",
-      "section": "help",
-      "pillar": "grid",
+      "keywords": [
+        "svelte pivot table",
+        "pivot chart",
+        "pivot grid",
+        "pivot designer",
+        "PivotConfig",
+        "pivot totals and subtotals",
+        "drill-through"
+      ],
+      "section": "help/pivot",
+      "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 2821,
-      "lastUpdated": "2026-09-20",
+      "words": 2848,
+      "lastUpdated": "2026-09-22",
       "demoIds": [
         "52-pivot-table",
         "360-pivot-mode-grid",
@@ -3355,6 +3601,33 @@
       ]
     },
     {
+      "path": "help/pivot/start.md",
+      "url": "/docs/help/pivot/start/",
+      "title": "Pivot: from rows to a pivot table",
+      "summary": "A pivot turns a list of rows into a table of sums: regions down the side, quarters across the top, revenue in the cells. This page builds one up on a grid of orders: a single prop first, then the measures and their formats, the totals, the rows behind the view when you need to touch them, a designer the user re-pivots with, a chart of the same layout, and what changes when the rows live on a server. Pivot tables is the reference behind it.",
+      "seoTitle": "Svelte pivot table tutorial - one prop, a designer, a chart",
+      "seoDescription": "Flat rows to a pivot on a Svelte data grid: the pivot prop, measures and totals, the rows behind the view, a drag-and-drop designer, a chart, the server.",
+      "keywords": [
+        "svelte pivot table",
+        "pivot grid svelte",
+        "pivot designer svelte",
+        "aggregate rows columns",
+        "chart from pivot"
+      ],
+      "section": "help/pivot",
+      "pillar": "enterprise",
+      "tier": "enterprise",
+      "words": 1509,
+      "lastUpdated": "2026-09-22",
+      "demoIds": [
+        "60-pivot-expandable",
+        "360-pivot-mode-grid",
+        "359-pivot-chart",
+        "127-export-pivot-grid",
+        "468-server-pivot"
+      ]
+    },
+    {
       "path": "help/production.md",
       "url": "/docs/help/production/",
       "title": "Production deployment",
@@ -3362,8 +3635,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1525,
-      "lastUpdated": "2026-09-03",
+      "words": 1534,
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "22-admin-template"
       ]
@@ -3454,8 +3727,8 @@
       "summary": "The Gantt view of the grid is in progress and due on **1 November 2026**. It is on the roadmap as an in-progress item, and this page becomes its guide on that date.",
       "seoDescription": "The Gantt view of the Svelte data grid is in progress and due on 1 November 2026. What it will do, and what to use for a project timeline until then.",
       "section": "help/rows",
-      "pillar": "grid",
-      "tier": "community",
+      "pillar": "enterprise",
+      "tier": "enterprise",
       "words": 245,
       "lastUpdated": "2026-09-20",
       "demoIds": [
@@ -3467,11 +3740,11 @@
       "url": "/docs/help/rows/kanban-board/",
       "title": "Kanban board mode",
       "summary": "Set one board prop and the grid renders its rows as **cards in horizontal lanes** instead of a table. It is the same <SvGrid>, the same data and columns - only the presentation changes. Lanes are bucketed by a field; dragging a card to another lane tells you to reassign that field on your own data.",
-      "section": "help/rows",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 4340,
-      "lastUpdated": "2026-09-20",
+      "section": "help/kanban",
+      "pillar": "enterprise",
+      "tier": "enterprise",
+      "words": 4368,
+      "lastUpdated": "2026-09-22",
       "demoIds": [
         "343-kanban-board",
         "344-kanban-sprint",
@@ -3609,11 +3882,11 @@
       "url": "/docs/help/rows/scheduler/",
       "title": "Scheduler / calendar mode",
       "summary": "Set one scheduler prop and the grid renders its rows as **events on a calendar** instead of a table. It is the same <SvGrid>, the same data and columns - only the presentation changes. Events are placed by time across four views (Month, Week, Day, Agenda); dragging an event to a new day or time tells you to reassign its start/end on your own data.",
-      "section": "help/rows",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 7520,
-      "lastUpdated": "2026-09-20",
+      "section": "help/scheduler",
+      "pillar": "enterprise",
+      "tier": "enterprise",
+      "words": 7547,
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "363-scheduler-intro",
         "382-scheduler-app-clinic",
@@ -3640,8 +3913,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 1610,
-      "lastUpdated": "2026-09-17",
+      "words": 1624,
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "430-selection-bar"
       ]
@@ -3724,13 +3997,36 @@
       ]
     },
     {
+      "path": "help/scheduler/booking-calendar.md",
+      "url": "/docs/help/scheduler/booking-calendar/",
+      "title": "Build a booking calendar",
+      "summary": "One scheduler prop turns the grid's rows into events on a calendar, and the Scheduler reference lists everything the prop can say. This page builds a clinic's front-desk calendar, one option at a time on the same rows: appointments from two date fields, a column per provider, each provider's own hours with a hard rule against booking over them or over each other, a drawer that adds, edits and deletes, a slot that repeats every week, the day as a timeline, a colour per visit type, and the Table button that shows the same rows as a grid.",
+      "seoTitle": "Build a booking calendar in Svelte - the scheduler view",
+      "seoDescription": "A clinic calendar on a Svelte data grid: a column per provider, working hours and no double-booking, a drawer to add and edit, a weekly slot, a timeline.",
+      "keywords": [
+        "svelte scheduler",
+        "booking calendar svelte",
+        "resource scheduler svelte",
+        "appointment calendar grid",
+        "no double booking calendar"
+      ],
+      "section": "help/scheduler",
+      "pillar": "enterprise",
+      "tier": "enterprise",
+      "words": 2140,
+      "lastUpdated": "2026-09-22",
+      "demoIds": [
+        "382-scheduler-app-clinic"
+      ]
+    },
+    {
       "path": "help/scheduling.md",
       "url": "/docs/help/scheduling/",
       "title": "Scheduling: automate exports and reminders",
       "summary": "Two jobs turn up in almost every data app the moment it goes into daily use: *\"email me this report every weekday at 17:30\"* and *\"remind the desk at 09:00 to reconcile.\"* The reflex is to stand up a backend job runner. But in a long-lived data app - a dashboard that stays open on a wall screen, an ops console a team lives in all day - a schedule is just **a timer plus an action you already have**: an export or a toast alert.",
-      "section": "help",
-      "pillar": "grid",
-      "tier": "community",
+      "section": "help/alerts",
+      "pillar": "enterprise",
+      "tier": "enterprise",
       "words": 2496,
       "lastUpdated": "2026-09-03",
       "demoIds": [
@@ -3778,6 +4074,30 @@
       ]
     },
     {
+      "path": "help/server/row-model-walkthrough.md",
+      "url": "/docs/help/server/row-model-walkthrough/",
+      "title": "Server-Side Row Model: a walkthrough",
+      "summary": "One grid and one getRows, and the rows stay on the server: a page at a time first, then infinite scroll, then grouped with subtotals and a grand total, then a panel the user groups with, an edit that becomes a transaction, and a selection that is a rule rather than a list. Each step is a change to the same setup, and every example runs against a server written on this page, so the request and the answer are in front of you. The row model hub is the contract in full; the deep dives (grouping, tree data, pivot, transactions, selection) go further on each part.",
+      "seoTitle": "Svelte server-side row model - paging to grouping in one grid",
+      "seoDescription": "One grid, one getRows, a server on the page: a page at a time, infinite scroll, grouping with totals, a group panel, an edit as a transaction, a rule.",
+      "keywords": [
+        "svelte server side row model",
+        "server grouping svelte",
+        "infinite scroll server svelte",
+        "lazy loading grid",
+        "server side pagination svelte"
+      ],
+      "section": "help/server",
+      "pillar": "enterprise",
+      "tier": "enterprise",
+      "words": 2794,
+      "lastUpdated": "2026-09-22",
+      "demoIds": [
+        "496-server-grouping-model",
+        "467-server-row-model-1m"
+      ]
+    },
+    {
       "path": "help/server/server-editing.md",
       "url": "/docs/help/server/server-editing/",
       "title": "Server editing",
@@ -3817,12 +4137,12 @@
       "title": "Server grouping - Enterprise",
       "summary": "Grouping a hundred thousand rows in the browser means shipping all hundred thousand rows first. Server grouping flips that: the backend runs the GROUP BY, and the grid receives **one pre-aggregated row per group** - a key plus its subtotals. Expanding a group then lazily drills into the next level (or the raw rows) for **that group only**, so the network never carries the full table.",
       "section": "help/server",
-      "pillar": "grid",
+      "pillar": "enterprise",
       "tier": "enterprise",
       "words": 3463,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-22",
       "demoIds": [
-        "344-server-grouping-model",
+        "496-server-grouping-model",
         "467-server-row-model-1m",
         "473-server-grouping-rules",
         "472-server-sql-planner",
@@ -3855,10 +4175,10 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1943,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-22",
       "demoIds": [
         "148-server-row-model",
-        "344-server-grouping-model"
+        "496-server-grouping-model"
       ]
     },
     {
@@ -3867,7 +4187,7 @@
       "title": "Server pivot - Enterprise",
       "summary": "A pivot over a million rows cannot happen in the browser. The server-side row model sends the pivot to the backend and builds its columns from the answer: with pivotMode on, each request carries pivotBy, every group row comes back with one value per (pivot key x aggregation), and the response lists those fields. The grid shows them in place of columns for as long as pivot mode lasts.",
       "section": "help/server",
-      "pillar": "grid",
+      "pillar": "enterprise",
       "tier": "enterprise",
       "words": 1118,
       "lastUpdated": "2026-09-20",
@@ -3883,10 +4203,10 @@
       "title": "Server-Side Row Model (SSRM)",
       "summary": "When the data lives on the server - millions of rows in a database - the grid should hold only the page on screen and push sorting, filtering, and paging to the backend. SvGrid packages this as **one datasource contract**: you implement a single async getRows, and createServerDataSource owns the request lifecycle (paging, sort, filter, race-safety, writes).",
       "section": "help/server",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 2307,
-      "lastUpdated": "2026-09-20",
+      "pillar": "enterprise",
+      "tier": "enterprise",
+      "words": 2338,
+      "lastUpdated": "2026-09-22",
       "demoIds": [
         "148-server-row-model",
         "467-server-row-model-1m",
@@ -3898,7 +4218,7 @@
         "473-server-grouping-rules",
         "482-server-crud",
         "483-server-master-detail",
-        "344-server-grouping-model",
+        "496-server-grouping-model",
         "33-server-infinite",
         "114-server-grouping",
         "09-server-side",
@@ -3911,7 +4231,7 @@
       "title": "Server selection - Enterprise",
       "summary": "A grid that keeps a list of selected ids is right until the rows it has seen are a window onto a million on a server. Then \"select all\" has to mean a million, the header checkbox has to say so, and a bulk edit has to reach rows that never came down the wire. None of that fits a list of ids. It fits a **rule** - \"everything, except these\" - which is what the server-side row model keeps when you turn selection on. The demo shows the rule as getSelectionState() reports it, flat and per group, with a bulk edit the server applies by rule.",
       "section": "help/server",
-      "pillar": "grid",
+      "pillar": "enterprise",
       "tier": "enterprise",
       "words": 849,
       "lastUpdated": "2026-09-20",
@@ -3931,10 +4251,10 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1554,
-      "lastUpdated": "2026-09-17",
+      "lastUpdated": "2026-09-22",
       "demoIds": [
         "148-server-row-model",
-        "344-server-grouping-model"
+        "496-server-grouping-model"
       ]
     },
     {
@@ -3943,7 +4263,7 @@
       "title": "Server transactions - Enterprise",
       "summary": "A row was added on the server and the grid should show it now, not after a refetch. A socket said a price moved. A row was deleted and its group should lose it. Transactions apply those changes to the rows the server-side row model already holds, in place, with no request: the block cache of the level named by route is patched, the row count follows, and the display list is rebuilt. A refresh is still the way to bring in what the server knows and the grid does not; a transaction is for what the app already knows. The demo below is a feed of changes the server already made: price ticks patch loaded rows in place, new and shipped orders arrive as batched transactions at their warehouse, and the log shows the status of each.",
       "section": "help/server",
-      "pillar": "grid",
+      "pillar": "enterprise",
       "tier": "enterprise",
       "words": 955,
       "lastUpdated": "2026-09-20",
@@ -3960,14 +4280,14 @@
       "title": "Server tree data (load on demand) - Enterprise",
       "summary": "When a hierarchy is too large to ship up front - a file system, an org chart with tens of thousands of people, a geographic drill-down - you do not want to fetch every node before the grid renders. The answer is to **seed only the roots**, then fetch each node's children the first time the user expands it.",
       "section": "help/server",
-      "pillar": "grid",
+      "pillar": "enterprise",
       "tier": "enterprise",
       "words": 2236,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-22",
       "demoIds": [
         "469-server-tree-data",
         "31-lazy-tree-load",
-        "344-server-grouping-model"
+        "496-server-grouping-model"
       ]
     },
     {
@@ -3981,6 +4301,216 @@
       "words": 1513,
       "lastUpdated": "2026-09-03",
       "demoIds": []
+    },
+    {
+      "path": "help/sheet/charts-and-objects.md",
+      "url": "/docs/help/sheet/charts-and-objects/",
+      "title": "Charts, sparklines and pictures",
+      "summary": "Four things a sheet draws beyond its cells: a chart over a range, which floats above the sheet and redraws when a number changes; a sparkline, which is a chart inside one cell; a picture from a file; and a cell that is a picture because its formula says so. Each is inserted from the ribbon, kept in the document, and carried in the .xlsx. Getting started shows the document.",
+      "seoTitle": "Charts, sparklines and pictures on a Svelte spreadsheet",
+      "seoDescription": "Charts over a range of the SvSheet spreadsheet, sparklines inside cells, pictures over the sheet and the IMAGE function, in the document and the .xlsx.",
+      "keywords": [
+        "spreadsheet chart svelte",
+        "sparklines svelte",
+        "insert picture spreadsheet",
+        "IMAGE function",
+        "chart from range"
+      ],
+      "section": "help/sheet",
+      "pillar": "sheet",
+      "tier": "enterprise",
+      "group": "Beyond the cells",
+      "words": 1597,
+      "lastUpdated": "2026-09-21",
+      "demoIds": [
+        "485-sheet-charts-objects",
+        "486-sheet-sparklines",
+        "494-sheet-cell-images"
+      ]
+    },
+    {
+      "path": "help/sheet/data-tools.md",
+      "url": "/docs/help/sheet/data-tools/",
+      "title": "Data tools: filter, sort, clean up, solve, pivot",
+      "summary": "What the Data tab does to a block of rows and what Insert > PivotTable makes of one: the filter and its menu, a sort with levels, the two clean-up wizards an export needs, the solver, and a pivot written as cells. Each one is a dialog the shell carries, a definition the document keeps, and a function you can call without the shell. Getting started shows the document; Formulas the engine these read.",
+      "seoTitle": "Svelte spreadsheet data tools - filter, Goal Seek, PivotTable",
+      "seoDescription": "The Data and Insert tabs of the SvSheet spreadsheet: AutoFilter, sort, Text to Columns, Remove Duplicates, Goal Seek, a PivotTable written from a range.",
+      "keywords": [
+        "spreadsheet autofilter svelte",
+        "goal seek svelte",
+        "pivot table spreadsheet svelte",
+        "remove duplicates",
+        "text to columns",
+        "text to columns spreadsheet",
+        "split a column by delimiter"
+      ],
+      "section": "help/sheet",
+      "pillar": "sheet",
+      "tier": "enterprise",
+      "group": "Beyond the cells",
+      "words": 1605,
+      "lastUpdated": "2026-09-22",
+      "demoIds": [
+        "464-ticket-log-autofilter",
+        "458-data-cleanup",
+        "457-goal-seek",
+        "487-sheet-pivot-range"
+      ]
+    },
+    {
+      "path": "help/sheet/files.md",
+      "url": "/docs/help/sheet/files/",
+      "title": "Files: save, restore, autosave and Excel",
+      "summary": "A spreadsheet is a document, and a document has to come back the way it was left: the formulas, the formats, the frozen rows, the comments, the rules. This page is the document as plain data, an autosave that costs one handler, the File tab and the four file formats behind it, the same conversions with no browser, and what a paste from Excel carries. Getting started shows how a document is built.",
+      "seoTitle": "Svelte spreadsheet files - .xlsx, .ods, .xls, .csv and autosave",
+      "seoDescription": "Saving an SvSheet document: getState and setState, an autosave on onChange, the File tab, .xlsx, .ods, .xls and .csv in and out, and paste from Excel.",
+      "keywords": [
+        "svelte xlsx export",
+        "open xlsx svelte",
+        "spreadsheet autosave",
+        "save spreadsheet localStorage",
+        "paste from excel svelte"
+      ],
+      "section": "help/sheet",
+      "pillar": "sheet",
+      "tier": "enterprise",
+      "group": "Beyond the cells",
+      "words": 1828,
+      "lastUpdated": "2026-09-21",
+      "demoIds": [
+        "484-loan-model-files",
+        "466-paste-from-excel",
+        "465-autosave-document"
+      ]
+    },
+    {
+      "path": "help/sheet/formatting.md",
+      "url": "/docs/help/sheet/formatting/",
+      "title": "Formatting: numbers, styles, merged headers and rules",
+      "summary": "How a cell gets its look: a number format that changes what a value shows and nothing else, the styles the Home tab applies, borders, the sizes of rows and columns, cells merged into a header, and rules that format a cell by what it holds. Getting started shows where formats live; this page is what they can say.",
+      "seoTitle": "Svelte spreadsheet formatting - numbers, borders, merges, rules",
+      "seoDescription": "Formatting an SvSheet spreadsheet: per-cell number formats, styles and borders, widths and heights, merged headers, and conditional formatting rules.",
+      "keywords": [
+        "spreadsheet number format svelte",
+        "conditional formatting svelte",
+        "merge cells spreadsheet",
+        "format cells dialog",
+        "data bars color scale"
+      ],
+      "section": "help/sheet",
+      "pillar": "sheet",
+      "tier": "enterprise",
+      "group": "Start here",
+      "words": 1652,
+      "lastUpdated": "2026-09-21",
+      "demoIds": [
+        "210-format-cells",
+        "463-merged-report-headers",
+        "462-regional-scorecard-cf"
+      ]
+    },
+    {
+      "path": "help/sheet/formulas.md",
+      "url": "/docs/help/sheet/formulas/",
+      "title": "Formulas: from =SUM to LAMBDA",
+      "summary": "What a cell can say and how the sheet works it out: the formula bar, references that move and references that stay put, arrays that spill, names instead of addresses, LET and LAMBDA, a function of your own, a loop that is meant, and the two tools that explain a result you did not expect. Getting started comes first; this page is about the formulas themselves.",
+      "seoTitle": "Svelte spreadsheet formulas - names, LET, LAMBDA, auditing",
+      "seoDescription": "Formulas in the SvSheet spreadsheet: references, spilled arrays, defined names, LET and LAMBDA, custom functions, iterative calculation, auditing.",
+      "keywords": [
+        "svelte spreadsheet formulas",
+        "LAMBDA svelte",
+        "defined names spreadsheet",
+        "evaluate formula",
+        "custom spreadsheet function"
+      ],
+      "section": "help/sheet",
+      "pillar": "sheet",
+      "tier": "enterprise",
+      "group": "Start here",
+      "words": 1728,
+      "lastUpdated": "2026-09-21",
+      "demoIds": [
+        "83-spreadsheet-formulas",
+        "459-named-ranges-forecast",
+        "490-sheet-let-lambda",
+        "492-sheet-iterative",
+        "493-sheet-auditing"
+      ]
+    },
+    {
+      "path": "help/sheet/review.md",
+      "url": "/docs/help/sheet/review/",
+      "title": "Review and share: comments, protection, two people",
+      "summary": "A sheet that leaves one person's hands: a note on a cell and a thread of replies under it, cells that refuse a change while the sheet is protected, and a second person editing the same document at the same time with their cursor in view. Getting started shows the document these live in; Files how one person's document is saved.",
+      "seoTitle": "Svelte spreadsheet review - comments, protection, two people",
+      "seoDescription": "Reviewing an SvSheet spreadsheet: notes and threaded comments, a protected sheet with unlocked cells, and two people on one document over a delta stream.",
+      "keywords": [
+        "spreadsheet comments svelte",
+        "protect sheet svelte",
+        "collaborative spreadsheet svelte",
+        "delta stream",
+        "presence cursors"
+      ],
+      "section": "help/sheet",
+      "pillar": "sheet",
+      "tier": "enterprise",
+      "group": "Beyond the cells",
+      "words": 1811,
+      "lastUpdated": "2026-09-21",
+      "demoIds": [
+        "460-review-comments-protection",
+        "488-sheet-collaboration"
+      ]
+    },
+    {
+      "path": "help/sheet/start.md",
+      "url": "/docs/help/sheet/start/",
+      "title": "Spreadsheet: getting started",
+      "summary": "The one component a spreadsheet needs, how it takes data, how a formula reaches another sheet, and the document underneath that a save and a reload go through. The other spreadsheet tutorials assume this one, and The spreadsheet shell is the reference behind all of them: every prop, every dialog, the file formats, the limits.",
+      "seoTitle": "Svelte spreadsheet component - getting started with SvSheet",
+      "seoDescription": "Put an Excel-like spreadsheet in a Svelte 5 app with SvSheet: a blank sheet, seed data, a formula across sheets, a shipped look, the document underneath.",
+      "keywords": [
+        "svelte spreadsheet",
+        "svelte excel component",
+        "SvSheet",
+        "spreadsheet svelte 5",
+        "formulas svelte"
+      ],
+      "section": "help/sheet",
+      "pillar": "sheet",
+      "tier": "enterprise",
+      "group": "Start here",
+      "words": 1536,
+      "lastUpdated": "2026-09-21",
+      "demoIds": [
+        "207-blank-sheet",
+        "27-spreadsheet-ribbon"
+      ]
+    },
+    {
+      "path": "help/sheet/validation.md",
+      "url": "/docs/help/sheet/validation/",
+      "title": "Data validation: lists, bounds and messages",
+      "summary": "A rule that keeps a bad entry out at the keyboard: a dropdown of the allowed values, a number between two bounds, a date that has to follow another cell, a formula of your own. What the rule says, what the user sees when it is broken, and how to ship a sheet with the rules in place. Getting started shows the document a rule lives in.",
+      "seoTitle": "Svelte spreadsheet data validation - dropdowns, bounds, messages",
+      "seoDescription": "Data validation on the SvSheet spreadsheet: dropdown lists, number and date bounds, a formula rule, Stop or Warning, input messages, Circle Invalid Data.",
+      "keywords": [
+        "spreadsheet dropdown svelte",
+        "data validation svelte",
+        "in-cell dropdown",
+        "validation rule spreadsheet",
+        "circle invalid data"
+      ],
+      "section": "help/sheet",
+      "pillar": "sheet",
+      "tier": "enterprise",
+      "group": "Start here",
+      "words": 1531,
+      "lastUpdated": "2026-09-21",
+      "demoIds": [
+        "461-order-intake-validation",
+        "209-data-validation"
+      ]
     },
     {
       "path": "help/skill.md",
@@ -3999,10 +4529,11 @@
       "url": "/docs/help/spreadsheet-formulas/",
       "title": "Spreadsheet formulas",
       "summary": "An Excel-style formula engine that runs in the browser with no dependencies. Cells hold either a literal value or a formula starting with =. The engine parses it, resolves references against the sheet, and returns a computed value or one of Excel's error codes.",
-      "section": "help",
-      "pillar": "grid",
-      "tier": "community",
-      "words": 4850,
+      "section": "help/sheet",
+      "pillar": "sheet",
+      "tier": "enterprise",
+      "group": "Reference",
+      "words": 4898,
       "lastUpdated": "2026-09-21",
       "demoIds": [
         "83-spreadsheet-formulas",
@@ -4074,7 +4605,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2400,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -4141,8 +4672,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1503,
-      "lastUpdated": "2026-09-11",
+      "words": 1520,
+      "lastUpdated": "2026-09-21",
       "demoIds": [
         "79-loading-from-rest"
       ]
@@ -5708,7 +6239,7 @@
     {
       "path": "help/web-components/shadow-dom.md",
       "url": "/docs/help/web-components/shadow-dom/",
-      "title": "Shadow DOM: `<sv-grid-shadow>`",
+      "title": "Shadow DOM: <sv-grid-shadow>",
       "summary": "Two elements ship, and which one you want is a styling decision:",
       "section": "help/web-components",
       "pillar": "grid",
@@ -5724,7 +6255,7 @@
     {
       "path": "help/web-components/sv-chart.md",
       "url": "/docs/help/web-components/sv-chart/",
-      "title": "`<sv-chart>` reference",
+      "title": "<sv-chart> reference",
       "summary": "Every property, attribute and event of the chart custom element.",
       "section": "help/web-components",
       "pillar": "grid",
@@ -5741,7 +6272,7 @@
     {
       "path": "help/web-components/sv-grid.md",
       "url": "/docs/help/web-components/sv-grid/",
-      "title": "`<sv-grid>` reference",
+      "title": "<sv-grid> reference",
       "summary": "Every property, attribute and event of the custom element.",
       "section": "help/web-components",
       "pillar": "grid",
@@ -5757,14 +6288,14 @@
     {
       "path": "help/web-components/sv-sheet.md",
       "url": "/docs/help/web-components/sv-sheet/",
-      "title": "`<sv-sheet>`: the spreadsheet as a custom element",
-      "summary": "The spreadsheet shell of @svgrid/enterprise, ribbon and formula engine included, as one custom element for a page or a host with no Svelte in its build: React, Vue, Angular, or a plain <script> tag. It is part of the paid pack and runs unlicensed with the pack's watermark, as every entry does.",
-      "section": "help/web-components",
-      "pillar": "grid",
-      "tier": "community",
+      "title": "<sv-sheet>: the spreadsheet as a custom element",
+      "summary": "The spreadsheet shell of @svgrid/enterprise, ribbon and formula engine included, as one custom element for a page or a host with no Svelte in its build: React, Vue, Angular, or a plain <script> tag. It is part of the paid pack, with its 30-day evaluation period: without a key it runs and displays the pack's watermark and console message, as every entry does.",
+      "section": "help/sheet",
+      "pillar": "sheet",
+      "tier": "enterprise",
       "group": "Start here",
-      "words": 1152,
-      "lastUpdated": "2026-09-20",
+      "words": 1163,
+      "lastUpdated": "2026-09-21",
       "demoIds": []
     },
     {
@@ -5797,6 +6328,26 @@
       "demoIds": [
         "02-sort-filter-paginate"
       ]
+    },
+    {
+      "path": "legal/EULA.md",
+      "url": "/docs/legal/EULA/",
+      "title": "SVGRID END USER LICENSE AGREEMENT",
+      "summary": "This End User License Agreement (\"EULA\") governs your use of SvGrid. Please read it carefully before downloading, installing, or using any portion of the Software. By downloading, installing, or using the Software you agree to be bound by the terms and conditions of this EULA. If you do not agree, you are not permitted to use the Software or any portion of it.",
+      "seoTitle": "SvGrid End User License Agreement (EULA) - Enterprise",
+      "seoDescription": "The End User License Agreement for @svgrid/enterprise - grant and editions, OEM redistribution, seats, the 30-day evaluation, license keys, restrictions, warranty and liability.",
+      "keywords": [
+        "svgrid eula",
+        "svgrid enterprise license agreement",
+        "svgrid license terms",
+        "svgrid oem license"
+      ],
+      "section": "legal",
+      "pillar": "enterprise",
+      "tier": "enterprise",
+      "words": 2786,
+      "lastUpdated": "2026-09-22",
+      "demoIds": []
     },
     {
       "path": "recipes/autosave-with-debounce.md",
@@ -6033,7 +6584,7 @@
     {
       "path": "recipes/kanban-from-grid-data.md",
       "url": "/docs/recipes/kanban-from-grid-data/",
-      "title": "Kanban board over the same `$state`",
+      "title": "Kanban board over the same $state",
       "summary": "You want a Kanban board backed by the same rows your grid already shows - one source of truth, switchable between a table and a board.",
       "section": "recipes",
       "pillar": "grid",

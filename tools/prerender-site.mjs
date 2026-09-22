@@ -26,7 +26,7 @@ import { createHash } from 'node:crypto'
 import { blogCardSvg, rasterizePng } from './blog-card.mjs'
 import { clampDescription, firstSentence } from './lib/seo-text.mjs'
 import { demoAboutModel, renderDemoAboutHtml } from './lib/demo-page.mjs'
-import { parseDemoRegistry, readDemoSource, readDemoMeta, EDITOR_CATEGORIES } from './lib/demo-registry.mjs'
+import { parseDemoRegistry, parseRenamedDemos, readDemoSource, readDemoMeta, EDITOR_CATEGORIES } from './lib/demo-registry.mjs'
 import { isHiddenDoc, parseDocFrontmatter, docSeoTitle, sectionOf, SECTION_TITLES } from './lib/doc-meta.mjs'
 import { isReleased, resolveSolution } from './lib/releases.mjs'
 import { compareSeo, compareKeywords, compareJsonLd, COMPARE_HUB } from './lib/compare-meta.mjs'
@@ -180,6 +180,19 @@ async function fileDate(path) {
 }
 
 /** Hash the page, then write it. Every prerendered page goes through here. */
+/** A page at `fromRoute` that sends the reader (and a crawler) on to
+ *  `toRoute`: meta refresh, the canonical of the target and noindex, and no
+ *  sitemap entry. GitHub Pages has no server-side redirects. */
+async function writeRedirectStub(fromRoute, toRoute) {
+  const to = `${CANON}/${toRoute}/`
+  const stub = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Moved: ${escapeAttr(toRoute)}</title>` +
+    `<meta name="robots" content="noindex,follow"><link rel="canonical" href="${to}">` +
+    `<meta http-equiv="refresh" content="0; url=${to}"></head>` +
+    `<body><p>This page moved to <a href="${to}">${to}</a>.</p></body></html>`
+  await mkdir(join(DIST, ...fromRoute.split('/')), { recursive: true })
+  await writeFile(join(DIST, ...fromRoute.split('/'), 'index.html'), stub, 'utf-8')
+}
+
 async function writePage(outDir, html, loc, body, seed) {
   recordLastmod(loc, html, body, seed)
   await mkdir(outDir, { recursive: true })
@@ -574,7 +587,7 @@ function homeCrawlBody(faq) {
   html += '<p>Sorting, Excel-style filtering, grouping, virtualization, inline editing and accessibility ship free under the MIT License, with 400+ production-quality examples. The paid <code>@svgrid/enterprise</code> pack adds the Kanban board, ' + (isReleased('gantt') ? 'Scheduler, Gantt and Spreadsheet' : 'Scheduler and Spreadsheet') + ' views of the same grid, the Server-Side Row Model, Excel / PDF export, import, print, pivot tables and SvGrid Studio.</p>'
   html += `<h2>What the free Svelte data grid includes</h2><ul>${li(free)}</ul>`
   html += `<h2>What @svgrid/enterprise adds</h2><ul>${li(enterprise)}</ul>`
-  html += `<h2>Two packages</h2><p><code>npm install @svgrid/grid</code> is the full data grid under the MIT License, including commercial use, with no license key and no row-count cap. <code>npm install @svgrid/enterprise</code> plugs into it: Enterprise - Single App is $599 per developer and Enterprise - Multi App $999 per developer, a perpetual license with one year of updates and support. <a href="${BASE}pricing/">Pricing and the full feature matrix</a>.</p>`
+  html += `<h2>Two packages</h2><p><code>npm install @svgrid/grid</code> is the full data grid under the MIT License, including commercial use, with no license key and no row-count cap. <code>npm install @svgrid/enterprise</code> plugs into it: Enterprise is $599 per developer for the enterprise grid and Enterprise Suite $999 per developer with the Spreadsheet and SvGrid Studio on top, both for unlimited apps, as a perpetual license with one year of updates and support. <a href="${BASE}pricing/">Pricing and the full feature matrix</a>.</p>`
   html += `<h2>How SvGrid compares</h2><ul>${cmp.map(([s, l]) => `<li><a href="${BASE}compare/${s}/">SvGrid vs ${escapeAttr(l)}</a></li>`).join('')}</ul>`
   html += `<h2>Guides</h2><ul>${HOME_GUIDES.map((g) => `<li><a href="${BASE}blog/${g.slug}/">${escapeAttr(g.title)}</a></li>`).join('')}</ul>`
   html += `<p><a href="${BASE}docs/getting-started/">Get started</a> &middot; <a href="${BASE}demos/">Browse 400+ demos</a> &middot; <a href="${BASE}docs/">Documentation</a> &middot; <a href="${BASE}compare/">All comparisons</a> &middot; <a href="${BASE}blog/">Blog</a> &middot; <a href="${BASE}pricing/">Pricing</a></p>`
@@ -824,8 +837,8 @@ function faqIndexBody(items) {
 // The three pricing tiers - kept in step with website/src/routes/Pricing.svelte.
 const PRICING_TIERS = [
   { name: 'Community', price: '0', cadence: 'forever', desc: 'The full data grid, MIT-licensed and free for commercial use. No license key, no row-count cap. Sorting, Excel-style filters, grouping, virtualization, inline editing, master/detail, tree, server-side data, and WAI-ARIA.' },
-  { name: 'Enterprise - Single Application Developer License', price: '599', cadence: 'per developer', desc: 'For one deployed production application. A perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime, keep your paid-term versions). Adds the @svgrid/enterprise feature pack: Excel/PDF/CSV/TSV/HTML export, import, print, pivot tables with the drag-and-drop Pivot Designer, the Kanban board view, the scheduler / calendar view, ' + (isReleased('gantt') ? 'the Gantt view, ' : '') + 'no-code alert rules, and staged batch editing, plus email support within one business day, a private Slack channel, and prioritized bug fixes.' },
-  { name: 'Enterprise - Multiple Application Developer License', price: '999', cadence: 'per developer', desc: 'For an unlimited number of deployed applications under your organisation. A perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime). Everything in Single Application plus volume / multi-year discounts.' },
+  { name: 'Enterprise - Grid Developer License', price: '599', cadence: 'per developer', desc: 'The enterprise grid, for an unlimited number of deployed production applications under your organisation. A perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime, keep your paid-term versions). Adds the Server-Side Row Model, Excel/PDF/CSV/TSV/HTML export, import, print, pivot tables with the drag-and-drop Pivot Designer, the Kanban board view, the scheduler / calendar view, ' + (isReleased('gantt') ? 'the Gantt view, ' : '') + 'no-code alert rules, and staged batch editing, plus email support within one business day, a private Slack channel, and prioritized bug fixes. No spreadsheet, no Studio.' },
+  { name: 'Enterprise Suite - Suite Developer License', price: '999', cadence: 'per developer', desc: 'Everything in Enterprise plus the Excel-style Spreadsheet (SvSheet, the formula engine, xlsx / xls / ods files) and SvGrid Studio (the visual designer, the SvelteKit code generator, the SQL / REST / Supabase data sources). Unlimited deployed applications. A perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime).' },
 ]
 
 // The MCP page's audience is largely AI assistants reading the site, so it gets
@@ -1401,6 +1414,15 @@ async function main() {
   const demoRelatedJson = JSON.stringify(demoRelated)
   await writeFile(join(DIST, 'demo-related.json'), demoRelatedJson, 'utf-8')
   await writeFile(join(PUBLIC, 'demo-related.json'), demoRelatedJson, 'utf-8').catch(() => {})
+
+  // 4d-bis. A demo renumbered after it shipped keeps its old URL as a stub
+  // that sends the reader (and a crawler) on to the current page: GitHub
+  // Pages has no server-side redirects, so the stub carries a meta refresh,
+  // the canonical of the new page and noindex, and stays out of the sitemap.
+  const renamed = await parseRenamedDemos(ROOT)
+  for (const [oldId, newId] of Object.entries(renamed)) await writeRedirectStub(`demos/${oldId}`, `demos/${newId}`)
+  // The short EULA address the shipped LICENSE files have carried.
+  await writeRedirectStub('eula', 'docs/legal/EULA')
 
   // 4e. Prerender each solution page (/svelte/<slug>) - one landing page per
   // thing people search for by name, linking down into the demos and docs that

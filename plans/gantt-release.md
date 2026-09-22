@@ -38,9 +38,10 @@ cd website && git apply ../plans/gantt-release-website.patch && cd ..
 ```
 
 They add the Gantt to the pricing matrix and FAQs, the home page card and
-FAQ, both npm READMEs and the docs pack overview, the SVAR comparison, two
-blog posts, the changelog's two entries, the See-also lines, and move the
-roadmap item from in progress to shipped. Then:
+FAQ, the Enterprise row of the demos product switcher, both npm READMEs and
+the docs pack overview, the SVAR comparison, two blog posts, the changelog's
+two entries, the See-also lines, and move the roadmap item from in progress
+to shipped. Then:
 
 1. Delete `docs/help/rows/gantt.md` and the `gantt` record in
    `tools/lib/releases.mjs` (the date has passed; the record only adds noise).

@@ -15,5 +15,9 @@
     "src/**/*.d.ts",
     "src/**/*.svelte",
     "../vite-env.d.ts"
-  ]
+  ],
+  // Local-only bench adapters (gitignored, see src/bench/adapters.ts) import
+  // packages that are not in this manifest; they are loaded through
+  // import.meta.glob, so leaving them out of the check loses nothing.
+  "exclude": ["src/bench/*.local.ts"]
 }

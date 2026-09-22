@@ -4,9 +4,11 @@ Common issues and answers when building with SvGrid Studio.
 
 ## Troubleshooting
 
-### The unlicensed watermark or "Unlock Pro" nudge shows
+### The watermark or the "Unlock Pro" card shows
 
-Studio is soft-gated. Set your license key once at app startup to remove both:
+Studio is loaded without a license key, so it displays the watermark and the
+console message about the Enterprise package. Set your license key once at
+app startup to remove them:
 
 ```ts
 import { setLicenseKey } from '@svgrid/enterprise'
@@ -134,8 +136,9 @@ postgres.js, better-sqlite3, mysql2, Kysely, and others all work.
 
 ### Is Studio free?
 
-It is part of the Enterprise license and is soft-gated - it runs unlicensed with
-a watermark for evaluation. See [pricing](https://svgrid.com/pricing/).
+It is part of the Enterprise license, with its 30-day evaluation period:
+without a key it runs with the watermark and the console message about the
+Enterprise package. See [pricing](https://svgrid.com/pricing/).
 
 ## See also
 

@@ -77,7 +77,7 @@ const PACKAGES = [
   },
   {
     dir: 'enterprise',
-    watch: ['packages/enterprise/src', 'packages/enterprise/scripts', 'packages/enterprise/package.json'],
+    watch: ['packages/enterprise/src', 'packages/enterprise/scripts', 'packages/enterprise/package.json', 'packages/enterprise/LICENSE', 'packages/enterprise/README.md'],
   },
   {
     dir: 'grid-wc',

@@ -6,6 +6,8 @@ the backend. SvGrid packages this as **one datasource contract**: you implement
 a single async `getRows`, and `createServerDataSource` owns the request
 lifecycle (paging, sort, filter, race-safety, writes).
 
+New to the model? [Server-Side Row Model: a walkthrough](./row-model-walkthrough.md) builds it up one step at a time against a server written on the page; this page is the contract in full.
+
 ![The createServerDataSource request lifecycle: setSort, setFilter, and setPage trigger a fetch that tags each getRows call with a monotonic request id, and only the latest request lands as a ServerState of rows, total, loading, saving, and error that the grid renders from.](/docs-media/server-controller-state.svg)
 
 <div data-docs-demo="148-server-row-model" data-height="480"></div>
@@ -361,7 +363,7 @@ A detail panel under any order of the grouped, virtualized tree, fetched from it
 
 Server-side grouping through one getRows contract: the request carries groupBy + groupKeys, and createServerRowModel owns the group tree - a block cache per level, lazy expand, per-group sums and a subtotal footer, race-safety - mounted through the one rowModel prop. Leaves arrive by scroll, behind a Load N more row, or paged across the whole tree, and the group panel regroups on the fly. Here a 63,000-row in-memory server behind 200ms latency; the grid holds only the groups you expand. The row model ships in @svgrid/enterprise.
 
-<div data-docs-demo="344-server-grouping-model" data-height="560"></div>
+<div data-docs-demo="496-server-grouping-model" data-height="560"></div>
 
 ### Server-side infinite scroll
 

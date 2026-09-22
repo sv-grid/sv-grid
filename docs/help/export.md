@@ -9,6 +9,8 @@ export menu - ship in the paid
 **[@svgrid/enterprise](https://www.npmjs.com/package/@svgrid/enterprise)** add-on,
 which reuses the exact same serializers so the two tiers feel like one product.
 
+For the report built step by step, with a live grid under most steps, see [Export: a report to Excel and PDF](./export/report.md); this page is the reference.
+
 ![Pick a row scope, then serialize the grid to Excel, CSV, TSV, HTML, PDF, or Print.](/docs-media/grid-export.svg)
 
 | Capability | Package |
@@ -220,7 +222,7 @@ Stores the key in module state. Call once at app startup (e.g. in
 Programmatic helpers. `hasValidLicense()` is useful when you want UI to
 branch on license status. `dismissUnlicensedNudge()` removes the
 watermark and stops the MutationObserver - call it after setting a
-valid key if you toggled the soft-gate during testing.
+valid key if you loaded the module without one during testing.
 
 ### `installEnterprise(api): EnterpriseGridApi`
 

@@ -111,3 +111,4 @@ describe('SvAlertsManager (DOM)', () => {
     expect(document.body.textContent).toContain('High price')
   })
 })
+

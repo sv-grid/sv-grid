@@ -1019,3 +1019,82 @@ describe('SvSheet PivotTable report filter', () => {
     expect(totalRow('North')).toBe('250')
   })
 })
+
+describe('SvSheet follows outside changes to the parts the grid holds live', () => {
+  it('a patched width and a hidden row from outside land on the grid without refresh()', async () => {
+    // A collaborator's `state` delta and a host's doc.patch both arrive this
+    // way. Cells repainted on the bump alone; a width or a hidden line sat in
+    // the document while the grid kept showing the old one.
+    const doc = createSheetDocument({ sheets: [{ name: 'Log', cells: [['a'], ['b'], ['c']] }] })
+    const { api } = await mountSheet({ data: undefined, document: doc, rows: 5, columns: 2 })
+    flushSync()
+    const grid = api as unknown as { isRowCollapsed(i: number): boolean; getColumnWidths(): Record<string, number> }
+    doc.patch('Log', { columnWidths: { A: 240 } })
+    await tick()
+    flushSync()
+    expect(grid.getColumnWidths().A).toBe(240)
+    doc.patch('Log', { hidden: { rows: [1], cols: [] } })
+    await tick()
+    flushSync()
+    expect(grid.isRowCollapsed(1)).toBe(true)
+    expect(grid.isRowCollapsed(2)).toBe(false)
+  })
+
+  it('a restore through the document clears the undo history, as the component setState does', async () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'Log', cells: [['a']] }] })
+    const { api } = await mountSheet({ data: undefined, document: doc, rows: 4, columns: 2 })
+    const saved = doc.getState()
+    api.getCommandContext().setCellValue(1, 0, 'typed')
+    flushSync()
+    doc.setState(saved)
+    await tick()
+    flushSync()
+    expect(doc.workbook.getRaw('Log', 1, 0)).toBe('')
+    expect((api as unknown as { canUndo(): boolean }).canUndo()).toBe(false)
+  })
+})
+
+describe('SvSheet validation judges the value an entry lands as', () => {
+  // A cell formatted 0% rescales a plain number (5 is 5%), so the rule has
+  // to read 0.05, not 5. It read the typed text: 0.35 was refused against a
+  // 0 to 0.2 bound while about to land as 0.0035, and 0.15 sailed through
+  // to land as 0.0015.
+  async function sheetWithPercentRule() {
+    const doc = createSheetDocument({ sheets: [{ name: 'Sheet1', cells: [['x'], ['0.1']] }] })
+    doc.get('Sheet1').formats.set([[1, 0, 1, 0]], { numFmt: '0%' }, { rowIdAt: (i) => `r${i}`, columnIdAt: (i) => String.fromCharCode(65 + i) })
+    doc.get('Sheet1').validation = [{ id: 'd', rects: [[1, 0, 1, 0]], allow: 'decimal', operator: 'between', value1: '0', value2: '0.2', ignoreBlank: true, inCellDropdown: false, alert: { style: 'stop', title: 'Discount' } }]
+    const { api, sheet } = await mountSheet({ data: undefined, document: doc, rows: 3, columns: 2, showFormulaBar: true })
+    return { api, sheet, doc }
+  }
+  function typeInBar(text: string) {
+    const input = host!.querySelector<HTMLTextAreaElement>('textarea.formula')!
+    input.dispatchEvent(new FocusEvent('focus'))
+    input.value = text
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
+    flushSync()
+  }
+
+  it('a plain number in a percent cell is checked as the percentage it lands as', async () => {
+    const { api, doc } = await sheetWithPercentRule()
+    api.getCommandContext().setActiveCell(1, 0)
+    flushSync()
+    typeInBar('35')
+    await tick()
+    // 35 in a 0% cell is 35%, over the 20% bound: refused, the cell unchanged.
+    expect(doc.workbook.getRaw('Sheet1', 1, 0)).toBe('0.1')
+    // 15 is 15%, inside it: lands as 0.15. Judged on the typed 15 it was refused.
+    typeInBar('15')
+    await tick()
+    expect(doc.workbook.getRaw('Sheet1', 1, 0)).toBe('0.15')
+  })
+
+  it('a typed percentage is checked as its value', async () => {
+    const { api, doc } = await sheetWithPercentRule()
+    api.getCommandContext().setActiveCell(1, 0)
+    flushSync()
+    typeInBar('15%')
+    await tick()
+    expect(doc.workbook.getRaw('Sheet1', 1, 0)).toBe('0.15')
+  })
+})

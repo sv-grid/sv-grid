@@ -188,8 +188,10 @@ height.
 
 ## Enterprise features show a watermark
 
-`@svgrid/enterprise` runs every feature without a key and marks the grid
-with a watermark plus one console nudge per page load. Set the key once at
+`@svgrid/enterprise` comes with a 30-day evaluation period. Without a key
+it runs every feature and, when the module is loaded, displays a
+watermark on the grid and a console message about the Enterprise package
+once per page load. Set the key once at
 startup with `setLicenseKey(...)` from `@svgrid/enterprise` (the
 `@svgrid/enterprise/license` subpath exports the same function) -
 [Enterprise licensing](../enterprise/licensing.md#what-happens-without-a-key)

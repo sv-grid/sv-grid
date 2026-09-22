@@ -203,6 +203,25 @@ export function setFormatDialogHandler(fn: ((cmd: GridCommandContext) => void) |
   onFormatDialog = fn
 }
 
+/**
+ * Which component the targets above belong to. Every one of them is a
+ * module-level singleton, so with two sheets on a page (a collaboration
+ * demo, a docs page with an example per section) the keys, the ribbon's
+ * buttons and its pressed states all went to whichever sheet mounted last:
+ * Ctrl+B bolded a cell three examples down. A sheet claims the targets when
+ * the pointer or the focus lands in it, and on unmount lets go only of what
+ * is still its own, so tearing one sheet down cannot disarm another.
+ */
+let owner: object | null = null
+
+export function setShortcutOwner(token: object | null): void {
+  owner = token
+}
+
+export function getShortcutOwner(): object | null {
+  return owner
+}
+
 export type SheetBinding = {
   /** Matched case-insensitively against `event.key`. */
   key: string

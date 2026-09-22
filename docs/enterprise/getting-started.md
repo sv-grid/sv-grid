@@ -251,7 +251,7 @@ is the better fix.
 
 ## Next
 
-- [Evaluation playbook](./evaluation.md) - what unlicensed looks like, and how
+- [Evaluation playbook](./evaluation.md) - the 30-day evaluation, what shows without a key, and how
   to get an evaluation key.
 - [Licensing](./licensing.md) - key formats, seats, renewals.
 - [Data export](../help/export.md) - styles, headers, images, multi-sheet.

@@ -79,7 +79,7 @@ const squish = (sql: string) => sql.replace(/\s+/g, ' ').trim()
 export function createSqlDataSource<TData extends RowData>(
   config: SqlDataSourceConfig<TData>,
 ): WritableDataSource<TData> & AggregateSource {
-  nudgeEnterpriseFor('studio', 'Studio') // soft-gate; never blocks, safe on the server
+  nudgeEnterpriseFor('studio', 'Studio') // evaluation nudge; never blocks, safe on the server
   const { schema, execute } = config
   const dialect = config.dialect ?? {}
   const returning = config.returning ?? true

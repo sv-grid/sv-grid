@@ -12,6 +12,7 @@
       />
 -->
 <script lang="ts">
+  import { untrack } from 'svelte'
   import { GRID_ICON_GLYPHS, type GridIconName, type GridIcons } from '@svgrid/grid'
   import { fillMessage, resolveServerGroupMessages, type ServerGroupMessages } from './messages'
 
@@ -60,7 +61,7 @@
   // value, not by identity: a server row model hands out a fresh array on
   // every emit, and a block landing must not throw away un-applied chips.
   let pending = $state<string[] | null>(null)
-  let seen = JSON.stringify(groupBy)
+  let seen = untrack(() => JSON.stringify(groupBy))
   $effect(() => {
     const now = JSON.stringify(groupBy)
     if (now === seen) return

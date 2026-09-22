@@ -12,9 +12,11 @@ Every example below runs against this setup. The bar *renderer* ships in
 renderer the grid shows a note in the bar's place saying it is an Enterprise
 feature and pointing at [licensing](https://svgrid.com/pricing/).
 
-Like the rest of Enterprise this is **soft-gated**: with the package installed
-the bar works whether or not a license key is set, and an unlicensed grid
-renders a watermark. Set one with `setLicenseKey()` before shipping.
+Like the rest of Enterprise this comes with the 30-day evaluation period:
+with the package installed the bar works whether or not a license key is
+set, and without one the grid displays the watermark and the console
+message about the Enterprise package. Set a key with `setLicenseKey()`
+before shipping.
 
 ```svelte {preamble}
 <script lang="ts">
