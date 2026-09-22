@@ -870,16 +870,45 @@
     return monthWeekSegments(rowEvents, gridDays[0] ?? anchor);
   });
 
-  const monthWeeks = $derived(monthMatrix(anchor, weekStartsOn, 6));
+  // `monthMatrix` returns exactly the rows it is asked for, because the date
+  // picker wants a grid that keeps its height as you page through the months.
+  // A full-page calendar wants the opposite: September 2026 spans five weeks,
+  // and a sixth row of October dates only takes height away from the five that
+  // carry the month - enough, at this demo's size, to cost every cell a lane.
+  // So trailing rows that are entirely outside the month are dropped. Only
+  // trailing rows can be: the first row always holds the 1st.
+  const monthWeeks = $derived.by(() => {
+    const weeks = monthMatrix(anchor, weekStartsOn, 6);
+    let used = weeks.length;
+    while (used > 1 && weeks[used - 1]!.every((cell) => !cell.inMonth)) used--;
+    return used === weeks.length ? weeks : weeks.slice(0, used);
+  });
   const agenda = $derived(agendaGroups(viewEvents));
 
   // --- month spanning-bar layout ---
   const MONTH_DAYNUM_H = 22; // px reserved at the top of each cell for the date
   const MONTH_LANE_H = 20; // px per event-bar lane
   const MONTH_MORE_H = 16; // px reserved for the "+N more" row
+  // The floor a week row never shrinks past, fed to the CSS below so the two
+  // cannot drift apart. It is the sum above rather than a round number on
+  // purpose: it is exactly the height that still shows the date, one lane and
+  // the "+N more" that reaches the rest, so every event stays reachable at the
+  // floor. It used to be a flat 84, which is taller than six rows of a short
+  // body can be - so a month that needs six (August 2026, say) pushed its last
+  // row past the bottom of a `overflow: visible` box, and the 31st could not
+  // be seen or scrolled to. Rows shrink to fit now, and the body scrolls only
+  // if even the floor does not.
+  const MONTH_WEEK_MIN_H = MONTH_DAYNUM_H + MONTH_LANE_H + MONTH_MORE_H;
   let monthBodyH = $state(0);
   const visibleMonthLanes = $derived.by(() => {
-    const weekH = monthBodyH / Math.max(1, monthWeeks.length);
+    // A week row is `flex: 1 1 0` with that min-height, so its real height is
+    // the larger of the two - the rows only divide the body evenly while the
+    // body is tall enough for all of them. Dividing unconditionally
+    // under-counts the lanes and puts a "+N more" in cells with a whole lane
+    // of empty space below it. September 2026 did exactly that: 418px over
+    // six rows reads as 69px and one lane, while every row really was 84px
+    // and fit two.
+    const weekH = Math.max(MONTH_WEEK_MIN_H, monthBodyH / Math.max(1, monthWeeks.length));
     return Math.max(1, Math.floor((weekH - MONTH_DAYNUM_H - MONTH_MORE_H) / MONTH_LANE_H));
   });
   // Events hidden (beyond the visible lanes) that cover a given day column.
@@ -3257,7 +3286,7 @@
           <div class="sv-sched-dow">{wd(dowIdx)}</div>
         {/each}
       </div>
-      <div class="sv-sched-monthbody" bind:clientHeight={monthBodyH}>
+      <div class="sv-sched-monthbody" style={`--sv-sched-week-min-h:${MONTH_WEEK_MIN_H}px`} bind:clientHeight={monthBodyH}>
         {#each monthWeeks as week, wi (wi)}
           {@const weekStart = week[0]!.date}
           {@const seg = monthWeekSegments(viewEvents, weekStart)}
@@ -4263,8 +4292,16 @@
     border-bottom: 1px solid var(--sg-border, #e5e7eb);
     text-align: right;
   }
-  .sv-sched-monthbody { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-  .sv-sched-week { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); flex: 1 1 0; min-height: 84px; }
+  /* `auto`, not `visible`: the rows shrink to fit, so this only ever engages
+     when the body is shorter than the rows' own floor - and then a scrollbar
+     is the difference between a day you can reach and one that is simply
+     painted outside the box. */
+  .sv-sched-monthbody { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  /* min-height comes from MONTH_WEEK_MIN_H: the lane count reads the same
+     floor, so a change here that did not reach the script would put "+N more"
+     in cells that have room for the bar. The rows are `flex: 1 1 0`, so they
+     grow to fill a tall body and shrink to this floor in a short one. */
+  .sv-sched-week { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); flex: 1 1 0; min-height: var(--sv-sched-week-min-h, 58px); }
   .sv-sched-daycell {
     position: relative;
     border-right: 1px solid var(--sg-border, #e5e7eb);

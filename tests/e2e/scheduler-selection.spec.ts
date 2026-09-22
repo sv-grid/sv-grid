@@ -262,8 +262,18 @@ test.describe('scheduler selection (real browser)', () => {
     await page.locator('.sv-sched-month').waitFor()
     await page.waitForTimeout(300)
     const before = await page.locator('.sv-sched-bar').count()
-    // An empty later-month day cell (events sit only in the current week).
-    const cell = page.locator('.sv-sched-daycell').nth(22)
+    // The demo's four events are Mon-Thu of the CURRENT week, so which row of
+    // the month grid carries them moves with the date - find it by its bars
+    // rather than counting cells from the top of the grid. (Counting was
+    // written in a month where today fell in the first row, and broke the
+    // first time the current week landed on row four.)
+    //
+    // Tue/Wed/Thu each already hold an event, so the new three-day bar has to
+    // take a second lane. That is deliberate: it is the case that caught
+    // visibleMonthLanes dividing the body height by the row count, which put a
+    // "+1 more" in each of those cells instead of the bar.
+    const week = page.locator('.sv-sched-week').filter({ has: page.locator('.sv-sched-bar') }).first()
+    const cell = week.locator('.sv-sched-daycell').nth(1) // Tuesday (weekStartsOn: 1)
     const box = (await cell.boundingBox())!
     await page.mouse.click(box.x + box.width / 2, box.y + box.height * 0.7)
     await expect(page.locator('.sv-sched-select-cell')).toHaveCount(1)
@@ -274,6 +284,52 @@ test.describe('scheduler selection (real browser)', () => {
     await expect(page.locator('.sv-sched-select-cell')).toHaveCount(3)
     await page.keyboard.press('Enter')
     await expect.poll(() => page.locator('.sv-sched-bar').count()).toBe(before + 1)
+  })
+
+  test('Month: every week of every month is rendered and reachable', async ({ page }) => {
+    // Two things went wrong here and both are date-dependent, so this walks a
+    // whole year rather than trusting whichever month today happens to be in.
+    //
+    //  - A month that spans five weeks was drawn with six, the sixth being
+    //    nothing but next month's dates. It cost the five real rows a lane.
+    //  - A month that genuinely spans six (August 2026, with weekStartsOn: 1)
+    //    was drawn with rows whose min-height was taller than a sixth of the
+    //    body, so the last row was laid out past the bottom of a box with
+    //    `overflow: visible`. The 31st could not be seen, scrolled to or
+    //    clicked - it was simply painted outside.
+    await page.setViewportSize({ width: 1280, height: 950 })
+    await page.getByRole('button', { name: 'Month', exact: true }).click()
+    await page.locator('.sv-sched-month').waitFor()
+    await page.waitForTimeout(300)
+
+    const next = page.getByRole('button', { name: 'Next', exact: true })
+    for (let month = 0; month < 12; month++) {
+      const shape = await page.evaluate(() => {
+        const body = document.querySelector('.sv-sched-monthbody') as HTMLElement
+        const weeks = [...document.querySelectorAll('.sv-sched-week')] as HTMLElement[]
+        // Ask the body to scroll as far down as it can, then measure. NOT
+        // scrollHeight: that counts content an `overflow: visible` box paints
+        // outside itself and nobody can scroll to, so it called the bug clean.
+        // Whether the last row is inside the client box AFTER a scroll to the
+        // bottom is the thing a user actually experiences.
+        body.scrollTop = body.scrollHeight
+        const top = body.getBoundingClientRect().top
+        const hiddenPx = Math.round(weeks.at(-1)!.getBoundingClientRect().bottom - (top + body.clientHeight))
+        body.scrollTop = 0
+        return {
+          title: (document.querySelector('.sv-sched-title') as HTMLElement).innerText,
+          weeks: weeks.length,
+          hiddenPx,
+          // Rendered rows that hold no day of the displayed month at all.
+          emptyRows: weeks.filter((w) => w.querySelectorAll('.sv-sched-daycell:not(.sv-sched-daycell-out)').length === 0).length,
+        }
+      })
+      expect(shape.emptyRows, `${shape.title}: ${shape.emptyRows} week row(s) of adjacent-month days only`).toBe(0)
+      expect(shape.hiddenPx, `${shape.title}: the last week row is ${shape.hiddenPx}px below the bottom of the month body even scrolled all the way down`).toBeLessThanOrEqual(1)
+      expect(shape.weeks, `${shape.title}: week rows`).toBeGreaterThanOrEqual(4)
+      await next.click()
+      await page.waitForTimeout(120)
+    }
   })
 
   test('Month: Ctrl-click bars multi-selects', async ({ page }) => {
