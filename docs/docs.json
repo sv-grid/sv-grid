@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-22T08:21:53.001Z",
+  "generatedAt": "2026-09-22T19:30:51.187Z",
   "counts": {
     "pages": 403,
     "enterprise": 87,
@@ -1868,7 +1868,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 4724,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": [
         "06-large-dataset"
       ],
@@ -1897,7 +1897,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 774,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": []
     },
     {
@@ -2615,7 +2615,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 3838,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": [
         "139-migration-from-ag-grid",
         "186-headless-table"
@@ -3290,7 +3290,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 3378,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": [
         "139-migration-from-ag-grid"
       ]
@@ -3304,7 +3304,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 830,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": []
     },
     {
@@ -3316,7 +3316,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1307,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": []
     },
     {
@@ -3328,7 +3328,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 755,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": []
     },
     {
@@ -3340,7 +3340,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2125,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": [
         "208-freeze-panes",
         "207-blank-sheet"
@@ -3355,7 +3355,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 939,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": []
     },
     {
@@ -3367,7 +3367,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 864,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": []
     },
     {
@@ -3379,7 +3379,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1634,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": [
         "148-server-row-model",
         "467-server-row-model-1m"
@@ -3394,7 +3394,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 932,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": []
     },
     {
@@ -3406,7 +3406,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 809,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": []
     },
     {
@@ -3418,7 +3418,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1783,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": []
     },
     {
@@ -3430,7 +3430,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1081,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": [
         "77-smart-chart"
       ]
@@ -3444,7 +3444,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1623,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": [
         "07-grouping-aggregation",
         "181-master-detail-grid"
@@ -3459,7 +3459,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1898,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": [
         "186-headless-table"
       ]
@@ -3473,7 +3473,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 834,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": []
     },
     {
@@ -3485,7 +3485,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 825,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": []
     },
     {
@@ -3497,7 +3497,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1603,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": [
         "148-server-row-model",
         "186-headless-table"
@@ -3512,7 +3512,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1046,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": []
     },
     {
@@ -3524,7 +3524,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 980,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": []
     },
     {
@@ -4605,7 +4605,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2400,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-22",
       "demoIds": []
     },
     {
@@ -6144,7 +6144,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 725,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-22",
       "demoIds": []
     },
     {
@@ -6185,7 +6185,7 @@
       "tier": "community",
       "group": "Start here",
       "words": 788,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-22",
       "demoIds": []
     },
     {
@@ -6225,13 +6225,13 @@
       "path": "help/web-components/react.md",
       "url": "/docs/help/web-components/react/",
       "title": "SvGrid in React",
-      "summary": "That is the whole integration. The component is generated from <SvGrid>'s own types, so all 114 properties and 27 events are typed props, and it works the same on React 17, 18 and 19.",
+      "summary": "That is the whole integration. The component is generated from <SvGrid>'s own types, so all 115 properties and 27 events are typed props, and it works the same on React 17, 18 and 19.",
       "section": "help/web-components",
       "pillar": "grid",
       "tier": "community",
       "group": "Frameworks",
       "words": 2547,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-22",
       "demoIds": [
         "10-custom-cells-and-themes"
       ]
@@ -6246,7 +6246,7 @@
       "tier": "community",
       "group": "Start here",
       "words": 631,
-      "lastUpdated": "2026-09-20",
+      "lastUpdated": "2026-09-22",
       "demoIds": [
         "10-custom-cells-and-themes",
         "04-selection-copy-paste"

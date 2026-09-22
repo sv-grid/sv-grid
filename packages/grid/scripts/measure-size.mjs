@@ -6,6 +6,14 @@
  * Each is bundled in ISOLATION with Svelte kept external (it's a peer dep, so it
  * does NOT count toward what SvGrid adds to a consumer's bundle), minified, then
  * gzipped. This mirrors what a real app that imports only that symbol ships.
+ *
+ * RUN IT FROM THE REPO ROOT. `build()` gets no config file, so Vite's `root` is
+ * whatever cwd happens to be; with src outside that root the same source
+ * measures about 1 KB heavier, and the number is not comparable to anything.
+ * Diagnosed the hard way while ratcheting the budgets below off a git worktree:
+ * every reading was inflated, and "my machine reads higher than CI" looked for a
+ * while like a real platform difference. It is not - run from the root, on the
+ * lockfile's deps, and this reproduces CI's numbers exactly.
  */
 import { build } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
@@ -410,7 +418,29 @@ const BUDGET_KB = {
   // A system column cannot be lazy: it is part of every row. The demos had
   // each drawn their own chevron in a data column, which took the menu,
   // the resize handle and the active cell along with it.
-  'full render component (SvGrid)': 95.9,
+  //
+  // 95.9 -> 97.9 for the live-update round and the grid half of the
+  // spreadsheet branch (2026-09-22). Measured 97.6, up from 95.8 at 095514c,
+  // the last commit this gate passed on. attribute-size.mjs charges the 1.8
+  // to nine files that were already on the static path; nothing new entered
+  // the base graph, which is the thing this budget exists to catch:
+  //
+  //   - core.ts (+0.81 attributed): the tick repair. A feed that replaces a
+  //     few hundred rows out of 100k used to re-filter and re-sort all of
+  //     them; the filtered and sorted stages now keep their previous output
+  //     with its sort keys, drop the replaced rows and merge the
+  //     replacements back in one linear pass. It is the row pipeline, so
+  //     "make it lazy" is not a question that can be asked of it.
+  //   - build-api (+0.15), SvGrid.svelte (+0.10) and the controller (+0.07):
+  //     the wiring and the API surface for the above.
+  //   - clipboard.ts (+0.15): the copy walk asks `includeCollapsedRows` per
+  //     row, so a hand-hidden row is copied and a filtered one is not.
+  //   - editing.ts (+0.08): `rejectInvalid`, which refuses a commit that
+  //     `validate` flags instead of only marking it.
+  //   - history.ts (+0.09): the undo buffer caps on actions rather than
+  //     steps, so a 5,000-cell sort is not cut mid-group.
+  //   - cell-render / cell-formatting (+0.10).
+  'full render component (SvGrid)': 97.9,
   'headless core (createGrid)': 3.0,
   // 5.0 -> 5.3 for the specialised single-clause sort comparators. Most sorts
   // are one column, and that comparator runs O(n log n) times - 1.66M calls for
@@ -426,7 +456,17 @@ const BUDGET_KB = {
   // "import the engine alone" claim was not what the demo source did. This
   // row is the everything-imported ceiling; `createSvGrid` on its own is the
   // row above and did not move.
-  'headless subpath (@svgrid/grid/core)': 6.8,
+  //
+  // 6.8 -> 8.3 (measured 5.1 -> 8.0). That 6.8 was set from a reading taken
+  // before the rest of its own commit landed, so it only ever covered the
+  // virtualizers and the entry was over its budget the moment it was
+  // written. The three things in this entry that were not in the 5.1
+  // baseline, attributed: the virtualizers (+1.32), the ARIA attribute
+  // factories exported beside them (+0.23, a11y.ts - plain objects to
+  // spread onto your own markup, no DOM), and core.ts's tick repair
+  // (+0.87), which the full component pays for too and which the row above
+  // explains.
+  'headless subpath (@svgrid/grid/core)': 8.3,
   // Measured 26.3 KB: SvGridChart.svelte plus the chart.ts engine it statically
   // imports. Nobody pays this unless they chart - SvGrid reaches both through
   // `import()` - but it is the biggest deferred thing in the package and until

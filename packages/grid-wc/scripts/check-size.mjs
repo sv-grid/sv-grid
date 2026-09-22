@@ -205,10 +205,18 @@ const dist = join(here, '..', 'dist')
  * "Row number" text in the corner th (axe's empty-table-header), and the
  * clipboard leaves collapsed rows and columns out of a copy the way a
  * sheet leaves hidden rows out. No surface change.
+ *
+ * 111.0 -> 112.9 and 111.5 -> 113.5 for the live-update round (2026-09-22).
+ * Measured 112.6 / 113.2: the grid's base went 95.8 -> 97.6
+ * (measure-size.mjs, where the breakdown is - most of it is core.ts's tick
+ * repair, which merges a feed's replaced rows back into the previous
+ * filtered and sorted output instead of redoing both), reaching the
+ * elements at 1:1, plus one surface entry (114 -> 115 properties:
+ * includeCollapsedRows). The seventh time for the two-edit cost.
  */
 const BUDGET_KIB = {
-  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 111.0 },
-  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 111.5 },
+  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 112.9 },
+  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 113.5 },
   '<sv-chart>': { file: join(dist, 'chart', 'sv-chart-element.js'), budget: 68.6 },
 }
 

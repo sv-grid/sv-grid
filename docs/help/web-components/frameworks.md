@@ -17,7 +17,7 @@ local setup, nothing to configure.
 | Vue | `import { SvGrid } from '@svgrid/grid-wc/vue'` | `<SvGrid :data="rows" :columns="cols" sortable filterable />` |
 | Angular | `import { SvGridComponent } from '@svgrid/grid-wc/angular'` | `<sv-grid [data]="rows" [columns]="cols" [sortable]="true" />` |
 
-That is the whole integration. All 114 properties and 27 events of the grid are
+That is the whole integration. All 115 properties and 27 events of the grid are
 typed props on every one of them.
 
 **Or skip step 1** and open a working project right now:
