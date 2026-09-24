@@ -8,13 +8,14 @@ import { defineComponent, h, onMounted, ref } from 'vue'
 import type { PropType } from 'vue'
 import '@svgrid/enterprise/wc'
 
-const PROP_NAMES = ["document","workbook","data","rows","columns","height","columnWidth","rowHeight","look","columnWidths","formats","extras","localization","commentAuthor","showRibbon","showFormulaBar","showTabs","showStatusBar","presence"] as const
-const EVENT_NAMES = ["action","ready","change","presence"] as const
+const PROP_NAMES = ["document","workbook","data","gridSheets","rows","columns","height","columnWidth","rowHeight","look","columnWidths","formats","extras","localization","commentAuthor","showRibbon","showFormulaBar","showTabs","showStatusBar","presence"] as const
+const EVENT_NAMES = ["action","cellaction","ready","change","presence"] as const
 
 export type SvSheetProps = {
   document?: unknown
   workbook?: unknown
   data?: readonly unknown[]
+  gridSheets?: unknown
   rows?: number
   columns?: number
   height?: number | "100%"

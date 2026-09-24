@@ -234,3 +234,25 @@ export {
   setSheetValueProbe, getSheetValueProbe,
   type FillTranslator, type SheetValueProbe,
 } from './commands'
+
+export {
+  cultureFromLocale, formulaToCulture, formulaFromCulture, parseNumberInCulture,
+  formatNumberInCulture, slashDateParts, isInvariant, INVARIANT_CULTURE,
+  type SheetCulture,
+} from './culture'
+export {
+  emptyOutline, groupLines, ungroupLines, clearOutline, toggleCollapsed, showLevel,
+  hiddenByOutline, detailRange, shiftOutline, autoOutline, outlineLevel, isOutlined,
+  deepestLevel, MAX_OUTLINE_LEVEL,
+  type OutlineState, type OutlineSide,
+} from './outline'
+export {
+  cellTypeAt, isChecked, toggledValue, radioIndex, applyCellType, removeCellTypes,
+  shiftCellTypes, checkboxValues, newCellTypeId, copyCellType, CHECKED, UNCHECKED,
+  type CellTypeRegion, type CellTypeKind,
+} from './cell-types'
+export {
+  projectGridSheet, rowOfRecord, recordOfRow, isRecordRow, columnOfField,
+  copyGridSheet, coerceFieldValue, emptyGridSheet,
+  type SheetKind, type GridSheetSpec, type GridSheetField,
+} from './sheet-kinds'

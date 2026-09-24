@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-22T19:30:51.187Z",
+  "generatedAt": "2026-09-24T11:13:02.237Z",
   "counts": {
     "pages": 403,
     "enterprise": 87,
@@ -2082,8 +2082,8 @@
       "pillar": "sheet",
       "tier": "enterprise",
       "group": "Reference",
-      "words": 18011,
-      "lastUpdated": "2026-09-21",
+      "words": 19082,
+      "lastUpdated": "2026-09-24",
       "demoIds": [
         "27-spreadsheet-ribbon",
         "456-sales-report-workbook",
@@ -4533,8 +4533,8 @@
       "pillar": "sheet",
       "tier": "enterprise",
       "group": "Reference",
-      "words": 4898,
-      "lastUpdated": "2026-09-21",
+      "words": 5343,
+      "lastUpdated": "2026-09-24",
       "demoIds": [
         "83-spreadsheet-formulas",
         "173-hyperformula",
@@ -6294,8 +6294,8 @@
       "pillar": "sheet",
       "tier": "enterprise",
       "group": "Start here",
-      "words": 1163,
-      "lastUpdated": "2026-09-21",
+      "words": 1176,
+      "lastUpdated": "2026-09-24",
       "demoIds": []
     },
     {

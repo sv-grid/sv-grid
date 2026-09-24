@@ -7,6 +7,7 @@
       document: { type: 'Object' },
       workbook: { type: 'Object' },
       data: { type: 'Array' },
+      gridSheets: { type: 'Object' },
       rows: { type: 'Number', attribute: 'rows' },
       columns: { type: 'Number', attribute: 'columns' },
       height: { type: 'String', attribute: 'height' },

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { parseEntry, completeEntry } from './entry'
 import { compileNumberFormat } from './number-format'
+import { cultureFromLocale } from './culture'
 
 const shown = (text: string): string => {
   const parsed = parseEntry(text)!
@@ -119,5 +120,50 @@ describe('completeEntry', () => {
 
   it('treats the same entry seen twice as one', () => {
     expect(completeEntry('jo', ['John', 'John'])).toBe('John')
+  })
+})
+
+describe('parseEntry in another culture', () => {
+  const de = cultureFromLocale('de-DE')
+  const fr = cultureFromLocale('fr-FR')
+
+  it('reads the culture’s decimal and group marks', () => {
+    expect(parseEntry('1,5', de)).toEqual({ value: '1.5' })
+    expect(parseEntry('1.234,5', de)).toEqual({ value: '1234.5', numFmt: '#,##0.0' })
+    // The same text in the invariant culture is a different number.
+    expect(parseEntry('1.234,5')).toBeNull()
+  })
+
+  it('stores the invariant spelling whatever was typed', () => {
+    // The value the document keeps is always a plain number, so a file
+    // written here opens the same anywhere.
+    expect(parseEntry('1.234,56', de)!.value).toBe('1234.56')
+    expect(parseEntry('12,5 %', de)!.value).toBe('0.125')
+  })
+
+  it('keeps the Excel format string invariant too', () => {
+    // A format is written with `.` and `,` in every locale; it is the
+    // rendering that changes, not the pattern.
+    expect(parseEntry('1.234,5', de)!.numFmt).toBe('#,##0.0')
+    expect(parseEntry('12,5%', de)!.numFmt).toBe('0.0%')
+  })
+
+  it('takes a plain space where the locale groups with a narrow one', () => {
+    expect(parseEntry('1 234,5', fr)).toEqual({ value: '1234.5', numFmt: '#,##0.0' })
+  })
+
+  it('reads a slash date in the culture’s order', () => {
+    // The third of April where the day comes first, the fourth of March
+    // where the month does.
+    expect(parseEntry('3/4/2026', de)!.value).toBe('2026-04-03')
+    expect(parseEntry('3/4/2026')!.value).toBe('2026-03-04')
+    // A day-first culture accepts 31/12; a month-first one cannot.
+    expect(parseEntry('31/12/2026', de)!.value).toBe('2026-12-31')
+    expect(parseEntry('31/12/2026')).toBeNull()
+  })
+
+  it('still reads a percentage, a paren negative and a fraction', () => {
+    expect(parseEntry('(5)', de)).toEqual({ value: '-5' })
+    expect(parseEntry('3 1/2', de)).toEqual({ value: '3.5', numFmt: '# ?/?' })
   })
 })

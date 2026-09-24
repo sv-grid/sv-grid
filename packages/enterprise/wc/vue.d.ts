@@ -9,6 +9,7 @@ export type SvSheetProps = {
   document?: unknown
   workbook?: unknown
   data?: readonly unknown[]
+  gridSheets?: unknown
   rows?: number
   columns?: number
   height?: number | "100%"

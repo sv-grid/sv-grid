@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-09-22 from 403 pages, 18 comparison pages, plus 72 API reference pages.
+Generated 2026-09-24 from 403 pages, 18 comparison pages, plus 72 API reference pages.
 
 <!-- =================================================================
      /docs/changelog/  (community)
@@ -20883,6 +20883,97 @@ application can put its own Format Cells in place of this one:
 }} />
 ```
 
+## Grouping rows and columns
+
+Data > Group folds a block of rows or columns away behind a button, the way
+Excel's outline does. Group and Ungroup act on the selection, grouping an
+already grouped run nests it, and the numbered buttons at the corner of the
+bar show the whole sheet at one depth. Auto Outline groups the runs between
+the totals the sheet already has; Clear Outline removes the lot.
+
+The summary line is the one the button sits on, and it is the line AFTER
+the detail on both axes: the total row under its rows, the total column to
+the right of its columns. That is Excel's `summaryBelow` and `summaryRight`,
+and both round-trip through the .xlsx as `outlineLevel` and `collapsed`
+per line.
+
+A line a collapsed group folds is not a line you hid. The two are kept
+apart in the document on purpose: if folding recorded a hidden row, the row
+would stay invisible after its group reopened and there would be no button
+left to bring it back. Unhide leaves a folded row to its group, the way it
+already leaves a filtered row to its filter.
+
+## Cells drawn as a control
+
+Insert > Controls draws the selected cells as a checkbox or a button
+instead of as text, and `SvSheet`'s model has a radio group beside them.
+
+A control is a rendering and never a second source of truth. A checkbox is
+ticked because its cell reads `TRUE`, not because the checkbox remembers
+being clicked, so everything else keeps working over it:
+`=COUNTIF(A1:A9, TRUE)` counts the ticks, undo undoes one, a paste sets
+one, and the file carries an ordinary boolean. Excel's own cell checkbox
+works this way too, which is why the default pair is `TRUE` and `FALSE`.
+A sheet that wants `Yes` and `No` says so on the region.
+
+A button reports its press through `onCellAction`:
+
+```svelte
+<SvSheet {data}
+  onCellAction={(event) => {
+    // `event.action` is the region's own action name, so one column of
+    // buttons can be told from another.
+    if (event.action === 'approve') approve(event.row)
+  }} />
+```
+
+Clear Control puts the cells back to ordinary ones and leaves their values
+where they are.
+
+## A tab that is a table, not cells
+
+A workbook tab can be a bound table rather than a cell grid. Name it in
+`gridSheets` with its fields and its records and it renders as a `<SvGrid>`,
+with its own headers, sorting, filtering and inline editing, in the same
+workbook as the cell sheets beside it.
+
+```svelte
+<SvSheet
+  data={[{ name: 'Orders', cells: [] }, { name: 'Summary', cells: [] }]}
+  gridSheets={{
+    Orders: {
+      fields: [
+        { field: 'item', label: 'Item' },
+        { field: 'qty', label: 'Qty', type: 'number' },
+        { field: 'price', label: 'Price', type: 'number' },
+      ],
+      rows: orders,
+      editable: true,
+    },
+  }} />
+```
+
+The records are the truth, and after every change they are projected into
+the workbook's cells, header row included. That is what makes a bound tab
+more than an embedded widget: on the Summary tab,
+
+```
+=SUM(Orders!B2:B99)
+=VLOOKUP("Gadget", Orders!A2:C99, 2, FALSE)
+```
+
+both work, because the formula engine, the dependency graph, the file
+writers and the printer are never told that the Orders tab is different.
+The projection goes through the same write an ordinary edit uses, which
+ignores a write that changes nothing, so editing one field of one record
+rewrites one cell and recalculates only what read it.
+
+What a bound tab deliberately does not do is hold formulas of its own. Its
+cells are a rendering of its records, so anything typed into them would be
+overwritten by the next projection. A sheet that needs formulas beside the
+data is a cell sheet reading the bound one across, which is what the
+example above is.
+
 ## Localisation
 
 Every string the shell shows is English by default and lives in one flat
@@ -20931,8 +21022,38 @@ gives the merged map for an app that wants to read it.
 What stays English: the function names and error values (`SUM`,
 `#VALUE!`), which Excel keeps in every locale too, the rule descriptions
 the Conditional Formatting Rules Manager lists, and the font names.
-Formulas are typed with `,` between arguments and `.` as the decimal
-point whatever the locale.
+
+### How numbers and formulas are spelled
+
+`locale` also decides how a number and a formula are WRITTEN. Under
+`de-DE` a cell shows `1.234,5`, the formula bar shows `=ROUND(A1/3; 2)`,
+and `1,5` typed into a cell is the number rather than text. The marks come
+from `Intl`, so a locale nobody planned for still comes out right, and
+Excel's own rule decides the separator: wherever the decimal mark is a
+comma the argument separator is a semicolon, since the comma is busy.
+
+The document is unaffected, and that is the point. A formula is stored as
+`=SUM(1.5, A1)` whatever the locale, so a file written in Berlin opens in
+Boston and `getState()` means the same thing on every machine. The culture
+is put on when a formula is shown for editing and taken off when one is
+typed. A `,` typed where the separator is `;` is taken as a separator too,
+because a comma with no digit after it cannot be a decimal mark, so an
+English keyboard habit is not punished.
+
+A number FORMAT string stays invariant as well: `#,##0.00` is the pattern
+in every locale, and it is the rendering of that pattern that follows the
+culture.
+
+Override it where the locale is not the whole story:
+
+```svelte
+<!-- German strings, but the dot for decimals this team is used to. -->
+<SvSheet {data} localization={{ locale: 'de-DE', culture: { decimal: '.' } }} />
+
+<!-- German strings, invariant spelling: for a team sharing files with
+     English-speaking colleagues. -->
+<SvSheet {data} localization={{ locale: 'de-DE', culture: false }} />
+```
 
 ## Two people on one sheet
 
@@ -21105,6 +21226,23 @@ button that does nothing.
 - **Collaboration** is the delta stream and the presence overlay above and
   nothing more: no server, no operational transform, no follow-the-leader
   scrolling, and last writer wins per cell.
+- **The outline** groups, ungroups, collapses and shows a level, and it
+  round-trips. What it does not have is Excel's Data > Subtotal, the
+  command that inserts `SUBTOTAL` formulas at each break AND groups what
+  it just broke up; the grouping half is here, the formula-writing half is
+  not. `SUBTOTAL` itself works, so a sheet can write its own.
+- **A cell drawn as a control** carries its VALUE into a file and not its
+  control: a checkbox column saves as the `TRUE` and `FALSE` it means, and
+  reopens as ordinary cells. The controls live in `getState()`, so an app
+  that saves the document keeps them; an app that saves only .xlsx keeps
+  the data and loses the decoration.
+- **A bound tab** holds no formulas of its own, since its cells are made
+  from its records and would be overwritten. It is not written to the
+  .xlsx as an Excel table either: its projection goes out as ordinary
+  cells, which is what Excel would show anyway.
+- **The culture** changes how a number and a formula are spelled, not what
+  they are called: function names stay English, as they do in the file
+  format itself.
 - **Protection** takes no password, on the sheet or on an edit range: it
   guards against mistakes, not against the person at the keyboard.
 - **Validation** checks what is typed; pasted-over cells are left as they
@@ -60154,7 +60292,8 @@ postfix `%` is tighter still, so `=-2%` is -0.02.
 | Group | Functions |
 | ----- | --------- |
 | Financial | `PMT` `IPMT` `PPMT` `PV` `FV` `NPER` `RATE` `NPV` `IRR` `SLN` |
-| Math | `SUM` `ABS` `INT` `MOD` `POWER` `SQRT` `ROUND` `ROUNDUP` `ROUNDDOWN` `PRODUCT` `SUMSQ` `SUMPRODUCT` `CEILING` `CEILING.MATH` `FLOOR` `FLOOR.MATH` `MROUND` `TRUNC` `LOG` `LOG10` `LN` `EXP` `PI` `RAND` `RANDBETWEEN` `SIGN` `EVEN` `ODD` `QUOTIENT` `GCD` `LCM` `FACT` `COMBIN` `PERMUT` |
+| Math | `SUM` `ABS` `INT` `MOD` `POWER` `SQRT` `ROUND` `ROUNDUP` `ROUNDDOWN` `PRODUCT` `SUMSQ` `SUMPRODUCT` `CEILING` `CEILING.MATH` `FLOOR` `FLOOR.MATH` `MROUND` `TRUNC` `LOG` `LOG10` `LN` `EXP` `PI` `RAND` `RANDBETWEEN` `SIGN` `EVEN` `ODD` `QUOTIENT` `GCD` `LCM` `FACT` `COMBIN` `PERMUT` `MULTINOMIAL` |
+| Trigonometry | `SIN` `COS` `TAN` `COT` `SEC` `CSC` `ASIN` `ACOS` `ATAN` `ATAN2` `ACOT` `SINH` `COSH` `TANH` `COTH` `SECH` `CSCH` `ASINH` `ACOSH` `ATANH` `ACOTH` `DEGREES` `RADIANS` `SQRTPI` |
 | Statistics | `AVERAGE`/`AVG` `MIN` `MAX` `COUNT` `COUNTA` `COUNTBLANK` `MEDIAN` `STDEV` `STDEV.S` `STDEV.P` `STDEVP` `VAR` `VAR.S` `VAR.P` `VARP` `RANK` `LARGE` `SMALL` `PERCENTILE` `PERCENTILE.INC` `PERCENTILE.EXC` `QUARTILE` `QUARTILE.INC` `QUARTILE.EXC` `MODE` `MODE.SNGL` `GEOMEAN` `CORREL` `SLOPE` `INTERCEPT` `FORECAST` `FORECAST.LINEAR` |
 | Conditional | `SUMIF` `SUMIFS` `COUNTIF` `COUNTIFS` `AVERAGEIF` `AVERAGEIFS` `MAXIFS` `MINIFS` `SUBTOTAL` |
 | Logical | `IF` `IFS` `IFERROR` `IFNA` `SWITCH` `AND` `OR` `NOT` `XOR` `TRUE` `FALSE` |
@@ -60162,8 +60301,44 @@ postfix `%` is tighter still, so `=-2%` is -0.02.
 | Text | `LEN` `LEFT` `RIGHT` `MID` `UPPER` `LOWER` `PROPER` `TRIM` `CLEAN` `CONCAT` `CONCATENATE` `TEXTJOIN` `SUBSTITUTE` `REPLACE` `TEXTBEFORE` `TEXTAFTER` `REPT` `FIND` `SEARCH` `EXACT` `TEXT` `VALUE` `NUMBERVALUE` `CHAR` `CODE` `UNICHAR` `UNICODE` `DOLLAR` `FIXED` |
 | Date | `TODAY` `NOW` `YEAR` `MONTH` `DAY` `DATE` `EOMONTH` `EDATE` `DAYS` `DAYS360` `DATEDIF` `YEARFRAC` `WEEKDAY` `WEEKNUM` `NETWORKDAYS` `WORKDAY` `HOUR` `MINUTE` `SECOND` `TIME` `DATEVALUE` `TIMEVALUE` |
 | Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `LOOKUP` `INDEX` `MATCH` `XMATCH` `CHOOSE` `ROWS` `COLUMNS` `ROW` `COLUMN` `ADDRESS` `OFFSET` `INDIRECT` `HYPERLINK` `IMAGE` |
+| Engineering | `DEC2BIN` `DEC2OCT` `DEC2HEX` `BIN2DEC` `BIN2OCT` `BIN2HEX` `OCT2BIN` `OCT2DEC` `OCT2HEX` `HEX2BIN` `HEX2OCT` `HEX2DEC` `BITAND` `BITOR` `BITXOR` `BITLSHIFT` `BITRSHIFT` `DELTA` `GESTEP` `ERF` `ERF.PRECISE` `ERFC` `ERFC.PRECISE` `CONVERT` |
+| Database | `DSUM` `DPRODUCT` `DAVERAGE` `DMAX` `DMIN` `DCOUNT` `DCOUNTA` `DSTDEV` `DSTDEVP` `DVAR` `DVARP` `DGET` |
+| Distributions | `NORM.DIST` `NORM.INV` `NORM.S.DIST` `NORM.S.INV` `T.DIST` `T.DIST.RT` `T.DIST.2T` `T.INV` `T.INV.2T` `CHISQ.DIST` `CHISQ.DIST.RT` `CHISQ.INV` `CHISQ.INV.RT` `F.DIST` `F.DIST.RT` `F.INV` `F.INV.RT` `BINOM.DIST` `BINOM.INV` `NEGBINOM.DIST` `POISSON.DIST` `HYPGEOM.DIST` `EXPON.DIST` `LOGNORM.DIST` `LOGNORM.INV` `GAMMA` `GAMMA.DIST` `GAMMA.INV` `GAMMALN` `GAMMALN.PRECISE` `BETA.DIST` `BETA.INV` `WEIBULL.DIST` `CONFIDENCE.NORM` `CONFIDENCE.T` `STANDARDIZE` `PHI` `GAUSS` `FISHER` `FISHERINV` |
+| Tests and spread | `Z.TEST` `T.TEST` `F.TEST` `CHISQ.TEST` `AVEDEV` `DEVSQ` `SKEW` `SKEW.P` `KURT` `TRIMMEAN` `PERMUTATIONA` `AVERAGEA` `MAXA` `MINA` `STDEVA` `STDEVPA` `VARA` `VARPA` `COVARIANCE.P` `COVARIANCE.S` `PEARSON` `RSQ` `STEYX` `PROB` |
 | Dynamic arrays | `FILTER` `UNIQUE` `SORT` `SORTBY` `SEQUENCE` `TRANSPOSE` `TEXTSPLIT` |
 | Names and lambdas | `LET` `LAMBDA` `MAP` `BYROW` `BYCOL` `REDUCE` `SCAN` `MAKEARRAY` `HYPERLINK` |
+
+Excel renamed the statistical family in 2010 and kept the older names
+working; both spellings are here, and the three places they disagree are
+worth knowing because each one is silent:
+
+- `CHIDIST` is the RIGHT tail. `CHISQ.DIST` is the left. The old name is
+  not the new one with a dot in it.
+- `TDIST` takes a tail COUNT, 1 or 2, and refuses a negative x.
+  `T.DIST` takes a boolean and accepts any x.
+- `TINV` is the TWO-tailed inverse, so it matches `T.INV.2T` rather than
+  `T.INV`. `FDIST`, `FINV`, `CHIINV` and `NORMSDIST` are likewise the
+  right-tailed or cumulative-only forms of their dotted partners.
+
+`ATAN2` takes its arguments x first, y second, which is the opposite order
+from every C-family `atan2` and the one thing about the trigonometry pack
+that reads as a bug rather than a convention: `=ATAN2(-1, 1)` is three
+quarters of pi. A reciprocal at a pole (`=COT(0)`, `=CSC(0)`) is `#DIV/0!`
+rather than infinity.
+
+The base conversions write a negative as ten-digit two's complement, so
+`=DEC2BIN(-1)` is `1111111111` and not `-1`. That is where each function's
+range comes from: ten binary digits is ten bits, ten octal digits thirty,
+ten hex digits forty. `places` pads with leading zeros and is ignored for a
+negative, since the complement already fills the width, and too few places
+for the digits needed is `#NUM!` rather than a truncation.
+
+The database functions read Excel's criteria-block grammar: the block's
+first row is header names matched against the database's own, every row
+under it is one alternative, the conditions across a row are ANDed and the
+rows are ORed. A blank criteria cell places no condition, so a block that
+is nothing but headers matches every record. `DGET` wants exactly one
+match and says `#VALUE!` for none, `#NUM!` for more.
 
 `IF`, `IFS`, `IFERROR`, `IFNA` and `SWITCH` short-circuit: the branch not taken
 is never evaluated, so `=IF(A1=0, 0, 100/A1)` is safe when `A1` is zero.
@@ -83010,7 +83185,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `show-tabs` | `showTabs` | `boolean` |
 | `show-status-bar` | `showStatusBar` | `boolean` |
 
-### Properties only (8)
+### Properties only (9)
 
 Arrays, objects and functions. An HTML attribute is a string, so these can
 only be assigned in script: `el.document = doc`.
@@ -83020,13 +83195,14 @@ only be assigned in script: `el.document = doc`.
 | `document` | `SheetDocument` |
 | `workbook` | `Workbook` |
 | `data` | `ReadonlyArray<SheetData>` |
+| `gridSheets` | `Record<string, GridSheetSpec>` |
 | `columnWidths` | `Readonly<Record<string, number>>` |
 | `formats` | `Readonly<Record<string, CellFormatEntry>>` |
 | `extras` | `ReadonlyArray<'insert-table' \| 'insert-chart'>` |
 | `localization` | `SheetLocalization` |
 | `presence` | `ReadonlyArray<SheetPresence>` |
 
-### Events (4)
+### Events (5)
 
 `detail` is the callback's argument, or an object keyed by the parameter names
 when it takes more than one. `action` is cancelable: `event.preventDefault()`
@@ -83035,6 +83211,7 @@ takes the action over, as returning `true` from `onAction` does.
 | Event | From | `detail` |
 | --- | --- | --- |
 | `action` | `onAction` | `{ action, cmd }` |
+| `cellaction` | `onCellAction` | `event` |
 | `ready` | `onReady` | `{ api, document }` |
 | `change` | `onChange` | `reasons` |
 | `presence` | `onPresence` | `me` |
