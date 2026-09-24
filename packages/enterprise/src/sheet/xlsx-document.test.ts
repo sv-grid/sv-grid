@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import JSZip from 'jszip'
 import { createSheetDocument } from './document'
-import { documentToXlsxParts, documentFromXlsxParts, documentToXlsx, documentFromXlsx, xlsxFormula } from './xlsx-document'
+import { documentToXlsxParts, documentFromXlsxParts, documentToXlsx, documentFromXlsx, xlsxFormula, XLFN_FUNCTIONS, PRESERVED_ONLY } from './xlsx-document'
+import { FUNCTIONS } from './functions'
+import { ARRAY_FUNCTIONS } from './packs/array'
+import { EVALUATOR_NAMES } from './autocomplete'
 
 const lookup = { rowIdAt: (i: number) => `r${i}`, columnIdAt: (i: number) => String.fromCharCode(65 + i) }
 
@@ -374,6 +377,57 @@ describe('future functions', () => {
     expect(xlsxFormula('"SORT(x)" & MYSORT(1) & SORTED')).toBe('"SORT(x)" & MYSORT(1) & SORTED')
   })
 
+  it('prefixes a dotted name whole, rather than at the first dot', () => {
+    // The scanner takes the maximal word, so the three-part names are
+    // matched in full and the prefix lands once, at the front.
+    expect(xlsxFormula('CHISQ.DIST.RT(A1, 2)')).toBe('_xlfn.CHISQ.DIST.RT(A1, 2)')
+    expect(xlsxFormula('T.DIST.2T(A1, 5)')).toBe('_xlfn.T.DIST.2T(A1, 5)')
+    expect(xlsxFormula('NORM.S.INV(A1)')).toBe('_xlfn.NORM.S.INV(A1)')
+  })
+
+  it('leaves the pre-2010 spelling of a renamed function unprefixed', () => {
+    // NORMDIST and CHIDIST have been in the format since before the
+    // prefix existed; only the dotted names Microsoft added in 2010 carry
+    // it. Prefixing the old spelling would break a file Excel can read.
+    expect(xlsxFormula('NORMDIST(A1, 0, 1, TRUE)')).toBe('NORMDIST(A1, 0, 1, TRUE)')
+    expect(xlsxFormula('CHIDIST(A1, 2)')).toBe('CHIDIST(A1, 2)')
+    expect(xlsxFormula('TTEST(A1:A3, B1:B3, 2, 1)')).toBe('TTEST(A1:A3, B1:B3, 2, 1)')
+    expect(xlsxFormula('NORM.DIST(A1, 0, 1, TRUE)')).toBe('_xlfn.NORM.DIST(A1, 0, 1, TRUE)')
+  })
+
+  it('leaves the functions that predate the prefix alone', () => {
+    // Trigonometry, the Analysis ToolPak set that became built in, and the
+    // database aggregates are all older than the prefix.
+    for (const f of ['SIN(A1)', 'ATAN2(1, 1)', 'DEGREES(A1)', 'ERF(1)',
+      'CONVERT(1, "m", "ft")', 'DEC2BIN(9)', 'DSUM(A1:C9, "x", E1:E2)',
+      'DELTA(1, 2)', 'GESTEP(1)']) {
+      expect(xlsxFormula(f)).toBe(f)
+    }
+  })
+
+  it('prefixes every 2013 and 2010 name the engine implements', () => {
+    for (const f of ['COT(A1)', 'SEC(A1)', 'ACOT(A1)', 'BITAND(1, 2)',
+      'GAMMA(A1)', 'PHI(A1)', 'ERF.PRECISE(1)', 'STDEV.P(A1:A3)',
+      'TEXTBEFORE(A1, "-")', 'FLOOR.MATH(A1)', 'Z.TEST(A1:A3, 1)']) {
+      expect(xlsxFormula(f)).toBe(`_xlfn.${f}`)
+    }
+  })
+
+  it('names nothing the engine does not implement, bar the declared few', () => {
+    // A name in the set that the engine cannot evaluate is either rot or a
+    // deliberate pass-through. The deliberate ones are declared, so a new
+    // one has to be added on purpose rather than drifting in.
+    const known = new Set([...Object.keys(FUNCTIONS), ...Object.keys(ARRAY_FUNCTIONS), ...EVALUATOR_NAMES])
+    const orphans = [...XLFN_FUNCTIONS].filter((n) => !known.has(n))
+    expect(orphans.sort()).toEqual([...PRESERVED_ONLY].sort())
+  })
+
+  it('keeps the prefix on a function it cannot evaluate, so Excel still can', () => {
+    // RANDARRAY answers #NAME? here. Writing it plain would make it
+    // #NAME? in Excel too, which is a round trip that loses the formula.
+    expect(xlsxFormula('RANDARRAY(2, 2)')).toBe('_xlfn.RANDARRAY(2, 2)')
+  })
+
   it('round-trip through the file as the engine spells them', () => {
     const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['3'], ['=LET(n, A1, n * 2)'], ['=BYROW(A1:A2, LAMBDA(r, SUM(r)))']] }] })
     const parts = documentToXlsxParts(doc)
@@ -644,5 +698,48 @@ describe('iterative calculation', () => {
     const parts = documentToXlsxParts(doc)
     expect(parts['xl/workbook.xml']).not.toContain('calcPr')
     expect(documentFromXlsxParts(parts).workbook.iteration).toBeUndefined()
+  })
+})
+
+describe('outline', () => {
+  it('writes the level and the collapse flag, and reads them back', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['a'], ['b'], ['c'], ['d'], ['=SUM(A1:A4)']] }] })
+    const state = doc.get('S')
+    state.outline = {
+      rows: { levels: { 0: 1, 1: 1, 2: 1, 3: 1 }, collapsed: [4] },
+      cols: { levels: { 1: 1, 2: 1 }, collapsed: [3] },
+    }
+    const parts = documentToXlsxParts(doc)
+    const sheet = parts['xl/worksheets/sheet1.xml']!
+    // The grouped rows carry their level and go out hidden, since the
+    // summary under them is collapsed; the summary carries the flag.
+    expect(sheet).toContain('<row r="1" hidden="1" outlineLevel="1">')
+    expect(sheet).toContain('<row r="5" collapsed="1">')
+    expect(sheet).toContain('outlineLevel="1"')
+    expect(parts['xl/worksheets/sheet1.xml']).toContain('collapsed="1"')
+
+    const back = documentFromXlsxParts(parts)
+    const readOutline = back.sheets.S!.outline!
+    expect(readOutline.rows.levels).toEqual({ 0: 1, 1: 1, 2: 1, 3: 1 })
+    expect(readOutline.rows.collapsed).toEqual([4])
+    expect(readOutline.cols.levels).toEqual({ 1: 1, 2: 1 })
+    expect(readOutline.cols.collapsed).toEqual([3])
+  })
+
+  it('does not read a folded line back as a line the user hid', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['a'], ['b'], ['=SUM(A1:A2)']] }] })
+    doc.get('S').outline = { rows: { levels: { 0: 1, 1: 1 }, collapsed: [2] }, cols: { levels: {}, collapsed: [] } }
+    const back = documentFromXlsxParts(documentToXlsxParts(doc))
+    // Rows 0 and 1 went out hidden because the group is shut. They must
+    // come back as outline, not as hidden rows, or opening the group
+    // would leave them invisible.
+    expect(back.sheets.S!.hidden.rows).toEqual([])
+    expect(back.sheets.S!.outline!.rows.collapsed).toEqual([2])
+  })
+
+  it('carries no outline on a sheet that has none', () => {
+    const doc = createSheetDocument({ sheets: [{ name: 'S', cells: [['a']] }] })
+    const back = documentFromXlsxParts(documentToXlsxParts(doc))
+    expect(back.sheets.S!.outline).toBeUndefined()
   })
 })

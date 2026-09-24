@@ -54,7 +54,9 @@ describe('suggestFunctions', () => {
     // Alphabetical would offer SUBSTITUTE for "SU", which is backwards from
     // what someone typing two letters is reaching for.
     expect(names('=SU')[0]).toBe('SUM')
-    expect(names('=CO')[0]).toBe('CODE')
+    // COS is three letters where CODE is four, so the trigonometry pack
+    // took this spot from CODE when it landed. The rule is unchanged.
+    expect(names('=CO')[0]).toBe('COS')
     expect(names('=COU')[0]).toBe('COUNT')
   })
 
