@@ -9,6 +9,7 @@ export interface SvSheetProps {
   document?: unknown
   workbook?: unknown
   data?: readonly unknown[]
+  gridSheets?: unknown
   rows?: number
   columns?: number
   height?: number | "100%"
@@ -26,6 +27,7 @@ export interface SvSheetProps {
   showStatusBar?: boolean
   presence?: readonly unknown[]
   onAction?: (detail: { action: unknown; cmd: unknown }, event: CustomEvent) => void
+  onCellaction?: (detail: unknown, event: CustomEvent) => void
   onReady?: (detail: { api: unknown; document: unknown }, event: CustomEvent) => void
   onChange?: (detail: unknown, event: CustomEvent) => void
   onPresence?: (detail: unknown, event: CustomEvent) => void

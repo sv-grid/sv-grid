@@ -150,6 +150,14 @@ function scheduleFadeOut(el: HTMLElement): void {
     return
   }
   window.setTimeout(() => {
+    // Five seconds is a long time in a teardown. The environment can go
+    // away between these two timers - a jsdom test finishing, a page
+    // unloading - and reaching for `window` then throws where the guard
+    // above was put precisely to avoid it. Same check, second chance.
+    if (typeof window === 'undefined') {
+      el.remove()
+      return
+    }
     el.style.opacity = '0'
     window.setTimeout(() => el.remove(), FADE_MS)
   }, VISIBLE_MS)

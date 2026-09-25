@@ -1,0 +1,32 @@
+{
+  "description": "Trigonometry, engineering, database and statistical-distribution functions in a Svelte 5 spreadsheet, with a worked example of each: a bearing from ATAN2 and DEGREES, a register mask in binary and hex with BITAND, an orchard queried through Excel's criteria-block grammar with DSUM, DCOUNT, DAVERAGE and DGET, and NORM.DIST with its inverse, a confidence interval and the chi-squared and t tails. A locale picker switches how numbers and formulas are spelled while the document keeps the invariant spelling, and a column of checkbox cells is counted by an ordinary COUNTIF. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet trigonometry functions",
+    "svelte sheet DEC2BIN BITAND engineering",
+    "svelte spreadsheet DSUM database functions",
+    "svelte sheet NORM.DIST statistical distributions",
+    "svelte spreadsheet locale decimal separator"
+  ],
+  "faq": [
+    {
+      "question": "Why does ATAN2 take its arguments the other way round?",
+      "answer": "Because Excel does. Excel's ATAN2 is ATAN2(x_num, y_num), the opposite order from every C-family atan2, so =ATAN2(-1, 1) is three quarters of pi. Getting it wrong leaves the symmetric cases looking right and flips the rest, which is why it is worth knowing before a model depends on it."
+    },
+    {
+      "question": "What is the criteria block the database functions read?",
+      "answer": "Excel's advanced-filter grammar. The block's first row is header names matched against the database's own; every row under it is one alternative; the conditions across a row are ANDed and the rows are ORed. A blank criteria cell places no condition, so a block that is nothing but headers matches every record. DGET wants exactly one match and reports #VALUE! for none and #NUM! for more."
+    },
+    {
+      "question": "Does switching locale change what the file contains?",
+      "answer": "No, and that is the point. The document always stores the invariant spelling: =SUM(1.5, A1) and 1234.5, whatever the locale. The culture is put on when a formula is shown for editing and taken off when one is typed, so a file written under a German locale opens under an English one and means the same thing."
+    },
+    {
+      "question": "Can a formula see a checkbox cell?",
+      "answer": "Yes, because the tick is the cell. A checkbox is a rendering, not a second source of truth: it is ticked because its cell reads TRUE, so =COUNTIF(H4:H9, TRUE) counts the ticks, undo undoes one and the file carries an ordinary boolean. Excel's own cell checkbox works the same way."
+    },
+    {
+      "question": "Which old statistical names still work?",
+      "answer": "All of them, and three disagree with their modern partners in ways that are silent. CHIDIST is the right tail where CHISQ.DIST is the left; TDIST takes a tail count where T.DIST takes a flag; and TINV is two-tailed, so it matches T.INV.2T rather than T.INV. FDIST, FINV, CHIINV and NORMSDIST are likewise the right-tailed or cumulative-only forms."
+    }
+  ]
+}

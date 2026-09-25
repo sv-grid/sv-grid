@@ -15,6 +15,8 @@ export interface SvSheetProps {
   workbook?: unknown
   /** `property only` - ReadonlyArray<SheetData> */
   data?: readonly unknown[]
+  /** `property only` - Record<string, GridSheetSpec> */
+  gridSheets?: unknown
   /** `rows` - number */
   rows?: number
   /** `columns` - number */
@@ -50,6 +52,8 @@ export interface SvSheetProps {
 
   /** `action` - call event.preventDefault() to take the action over */
   onAction?: (detail: { action: unknown; cmd: unknown }, event: CustomEvent) => void
+  /** `cellaction` */
+  onCellaction?: (detail: unknown, event: CustomEvent) => void
   /** `ready` */
   onReady?: (detail: { api: unknown; document: unknown }, event: CustomEvent) => void
   /** `change` */
@@ -66,8 +70,8 @@ export interface SvSheetHandle {
   element: (HTMLElement & Record<string, unknown>) | null
 }
 
-const PROP_NAMES = ["document","workbook","data","rows","columns","height","columnWidth","rowHeight","look","columnWidths","formats","extras","localization","commentAuthor","showRibbon","showFormulaBar","showTabs","showStatusBar","presence"] as const
-const EVENTS: Array<[handler: string, event: string]> = [["onAction","action"],["onReady","ready"],["onChange","change"],["onPresence","presence"]]
+const PROP_NAMES = ["document","workbook","data","gridSheets","rows","columns","height","columnWidth","rowHeight","look","columnWidths","formats","extras","localization","commentAuthor","showRibbon","showFormulaBar","showTabs","showStatusBar","presence"] as const
+const EVENTS: Array<[handler: string, event: string]> = [["onAction","action"],["onCellaction","cellaction"],["onReady","ready"],["onChange","change"],["onPresence","presence"]]
 
 export const SvSheet = forwardRef(function SvSheet(props: SvSheetProps, ref: Ref<SvSheetHandle>) {
   const hostRef = useRef<HTMLElement | null>(null)

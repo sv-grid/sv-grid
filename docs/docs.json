@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-22T19:30:51.187Z",
+  "generatedAt": "2026-09-25T22:07:18.185Z",
   "counts": {
     "pages": 403,
     "enterprise": 87,
@@ -2082,13 +2082,15 @@
       "pillar": "sheet",
       "tier": "enterprise",
       "group": "Reference",
-      "words": 18011,
-      "lastUpdated": "2026-09-21",
+      "words": 19311,
+      "lastUpdated": "2026-09-25",
       "demoIds": [
         "27-spreadsheet-ribbon",
         "456-sales-report-workbook",
         "457-goal-seek",
         "458-data-cleanup",
+        "498-sheet-bound-tabs",
+        "499-sheet-engineering-stats",
         "460-review-comments-protection",
         "461-order-intake-validation",
         "462-regional-scorecard-cf",
@@ -4533,11 +4535,12 @@
       "pillar": "sheet",
       "tier": "enterprise",
       "group": "Reference",
-      "words": 4898,
-      "lastUpdated": "2026-09-21",
+      "words": 5453,
+      "lastUpdated": "2026-09-25",
       "demoIds": [
         "83-spreadsheet-formulas",
         "173-hyperformula",
+        "499-sheet-engineering-stats",
         "207-blank-sheet",
         "208-freeze-panes",
         "209-data-validation",
@@ -6294,8 +6297,8 @@
       "pillar": "sheet",
       "tier": "enterprise",
       "group": "Start here",
-      "words": 1163,
-      "lastUpdated": "2026-09-21",
+      "words": 1176,
+      "lastUpdated": "2026-09-24",
       "demoIds": []
     },
     {

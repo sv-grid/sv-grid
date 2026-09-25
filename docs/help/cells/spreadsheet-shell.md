@@ -1405,6 +1405,97 @@ application can put its own Format Cells in place of this one:
 }} />
 ```
 
+## Grouping rows and columns
+
+Data > Group folds a block of rows or columns away behind a button, the way
+Excel's outline does. Group and Ungroup act on the selection, grouping an
+already grouped run nests it, and the numbered buttons at the corner of the
+bar show the whole sheet at one depth. Auto Outline groups the runs between
+the totals the sheet already has; Clear Outline removes the lot.
+
+The summary line is the one the button sits on, and it is the line AFTER
+the detail on both axes: the total row under its rows, the total column to
+the right of its columns. That is Excel's `summaryBelow` and `summaryRight`,
+and both round-trip through the .xlsx as `outlineLevel` and `collapsed`
+per line.
+
+A line a collapsed group folds is not a line you hid. The two are kept
+apart in the document on purpose: if folding recorded a hidden row, the row
+would stay invisible after its group reopened and there would be no button
+left to bring it back. Unhide leaves a folded row to its group, the way it
+already leaves a filtered row to its filter.
+
+## Cells drawn as a control
+
+Insert > Controls draws the selected cells as a checkbox or a button
+instead of as text, and `SvSheet`'s model has a radio group beside them.
+
+A control is a rendering and never a second source of truth. A checkbox is
+ticked because its cell reads `TRUE`, not because the checkbox remembers
+being clicked, so everything else keeps working over it:
+`=COUNTIF(A1:A9, TRUE)` counts the ticks, undo undoes one, a paste sets
+one, and the file carries an ordinary boolean. Excel's own cell checkbox
+works this way too, which is why the default pair is `TRUE` and `FALSE`.
+A sheet that wants `Yes` and `No` says so on the region.
+
+A button reports its press through `onCellAction`:
+
+```svelte
+<SvSheet {data}
+  onCellAction={(event) => {
+    // `event.action` is the region's own action name, so one column of
+    // buttons can be told from another.
+    if (event.action === 'approve') approve(event.row)
+  }} />
+```
+
+Clear Control puts the cells back to ordinary ones and leaves their values
+where they are.
+
+## A tab that is a table, not cells
+
+A workbook tab can be a bound table rather than a cell grid. Name it in
+`gridSheets` with its fields and its records and it renders as a `<SvGrid>`,
+with its own headers, sorting, filtering and inline editing, in the same
+workbook as the cell sheets beside it.
+
+```svelte
+<SvSheet
+  data={[{ name: 'Orders', cells: [] }, { name: 'Summary', cells: [] }]}
+  gridSheets={{
+    Orders: {
+      fields: [
+        { field: 'item', label: 'Item' },
+        { field: 'qty', label: 'Qty', type: 'number' },
+        { field: 'price', label: 'Price', type: 'number' },
+      ],
+      rows: orders,
+      editable: true,
+    },
+  }} />
+```
+
+The records are the truth, and after every change they are projected into
+the workbook's cells, header row included. That is what makes a bound tab
+more than an embedded widget: on the Summary tab,
+
+```
+=SUM(Orders!B2:B99)
+=VLOOKUP("Gadget", Orders!A2:C99, 2, FALSE)
+```
+
+both work, because the formula engine, the dependency graph, the file
+writers and the printer are never told that the Orders tab is different.
+The projection goes through the same write an ordinary edit uses, which
+ignores a write that changes nothing, so editing one field of one record
+rewrites one cell and recalculates only what read it.
+
+What a bound tab deliberately does not do is hold formulas of its own. Its
+cells are a rendering of its records, so anything typed into them would be
+overwritten by the next projection. A sheet that needs formulas beside the
+data is a cell sheet reading the bound one across, which is what the
+example above is.
+
 ## Localisation
 
 Every string the shell shows is English by default and lives in one flat
@@ -1453,8 +1544,38 @@ gives the merged map for an app that wants to read it.
 What stays English: the function names and error values (`SUM`,
 `#VALUE!`), which Excel keeps in every locale too, the rule descriptions
 the Conditional Formatting Rules Manager lists, and the font names.
-Formulas are typed with `,` between arguments and `.` as the decimal
-point whatever the locale.
+
+### How numbers and formulas are spelled
+
+`locale` also decides how a number and a formula are WRITTEN. Under
+`de-DE` a cell shows `1.234,5`, the formula bar shows `=ROUND(A1/3; 2)`,
+and `1,5` typed into a cell is the number rather than text. The marks come
+from `Intl`, so a locale nobody planned for still comes out right, and
+Excel's own rule decides the separator: wherever the decimal mark is a
+comma the argument separator is a semicolon, since the comma is busy.
+
+The document is unaffected, and that is the point. A formula is stored as
+`=SUM(1.5, A1)` whatever the locale, so a file written in Berlin opens in
+Boston and `getState()` means the same thing on every machine. The culture
+is put on when a formula is shown for editing and taken off when one is
+typed. A `,` typed where the separator is `;` is taken as a separator too,
+because a comma with no digit after it cannot be a decimal mark, so an
+English keyboard habit is not punished.
+
+A number FORMAT string stays invariant as well: `#,##0.00` is the pattern
+in every locale, and it is the rendering of that pattern that follows the
+culture.
+
+Override it where the locale is not the whole story:
+
+```svelte
+<!-- German strings, but the dot for decimals this team is used to. -->
+<SvSheet {data} localization={{ locale: 'de-DE', culture: { decimal: '.' } }} />
+
+<!-- German strings, invariant spelling: for a team sharing files with
+     English-speaking colleagues. -->
+<SvSheet {data} localization={{ locale: 'de-DE', culture: false }} />
+```
 
 ## Two people on one sheet
 
@@ -1627,6 +1748,23 @@ button that does nothing.
 - **Collaboration** is the delta stream and the presence overlay above and
   nothing more: no server, no operational transform, no follow-the-leader
   scrolling, and last writer wins per cell.
+- **The outline** groups, ungroups, collapses and shows a level, and it
+  round-trips. What it does not have is Excel's Data > Subtotal, the
+  command that inserts `SUBTOTAL` formulas at each break AND groups what
+  it just broke up; the grouping half is here, the formula-writing half is
+  not. `SUBTOTAL` itself works, so a sheet can write its own.
+- **A cell drawn as a control** carries its VALUE into a file and not its
+  control: a checkbox column saves as the `TRUE` and `FALSE` it means, and
+  reopens as ordinary cells. The controls live in `getState()`, so an app
+  that saves the document keeps them; an app that saves only .xlsx keeps
+  the data and loses the decoration.
+- **A bound tab** holds no formulas of its own, since its cells are made
+  from its records and would be overwritten. It is not written to the
+  .xlsx as an Excel table either: its projection goes out as ordinary
+  cells, which is what Excel would show anyway.
+- **The culture** changes how a number and a formula are spelled, not what
+  they are called: function names stay English, as they do in the file
+  format itself.
 - **Protection** takes no password, on the sheet or on an edit range: it
   guards against mistakes, not against the person at the keyboard.
 - **Validation** checks what is typed; pasted-over cells are left as they
@@ -1646,6 +1784,19 @@ button that does nothing.
   97 never had saved as the value it worked out.
 
 ## More examples
+
+### A tab that is a table, and rows that fold away
+
+A workbook tab that holds RECORDS rather than cells: the Orders tab renders as the data grid, with its own headers, sorting, filtering and inline editing, beside ordinary cell sheets. Its records are projected into the workbook's cells, header row included, so the Summary tab reads it with plain formulas: SUM, SUMIF, SUMPRODUCT and VLOOKUP all reach across, because the formula engine is never told the tab is different. Summary also shows Data > Group, with three regional blocks folded under their subtotals and the numbered level buttons at the corner of the outline bar. Edit a Qty on Orders and every figure follows.
+
+<div data-docs-demo="498-sheet-bound-tabs" data-height="560"></div>
+
+### Engineering, statistics, and the locale you type in
+
+Four function families the engine gained at once, worked through a real example of each: a bearing from ATAN2 and DEGREES, a register mask in binary and hex with BITAND, an orchard queried through Excel's criteria-block grammar with DSUM, DCOUNT, DAVERAGE and DGET, and NORM.DIST with its inverse, a confidence interval and the chi-squared and t tails. The picker switches how numbers and formulas are SPELLED: German shows 1.234,5 and =ROUND(A1/3; 2) while the document still stores 1234.5 and a comma, so the file opens anywhere. Column H is drawn as checkboxes whose ticks an ordinary COUNTIF counts.
+
+<div data-docs-demo="499-sheet-engineering-stats" data-height="560"></div>
+
 
 ### Review workflow: comments + Protect Sheet
 

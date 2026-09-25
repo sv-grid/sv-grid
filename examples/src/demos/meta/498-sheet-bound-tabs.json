@@ -1,0 +1,28 @@
+{
+  "description": "A workbook tab bound to records rather than cells in a Svelte 5 spreadsheet: it renders as the data grid, with its own headers, sorting, filtering and inline editing, beside ordinary cell sheets. Its records are projected into the workbook's cells, so other tabs read it with plain formulas - SUM, SUMIF, SUMPRODUCT and VLOOKUP all reach across. The same sheet shows Excel-style row outlining: blocks grouped under their subtotals, a collapse button on each summary row and the numbered level buttons at the corner of the bar. Enterprise, in @svgrid/enterprise.",
+  "keywords": [
+    "svelte spreadsheet data bound tab",
+    "svelte workbook table sheet",
+    "svelte spreadsheet row grouping",
+    "svelte sheet outline collapse rows",
+    "svelte spreadsheet cross sheet formula"
+  ],
+  "faq": [
+    {
+      "question": "How is a bound tab different from putting a grid next to a sheet?",
+      "answer": "A grid beside a sheet is a separate thing that the formulas cannot see. A bound tab is part of the workbook: its records are projected into the workbook's cells, header row included, so =SUM(Orders!C2:C7) and =VLOOKUP(...) on any other tab read it exactly as they read a cell sheet. The formula engine, the dependency graph and the file writers are never told the tab is different."
+    },
+    {
+      "question": "Can I put a formula on a bound tab?",
+      "answer": "No, on purpose. A bound tab's cells are a rendering of its records, so anything typed into them would be overwritten by the next projection. A sheet that needs formulas beside the data is a cell sheet reading the bound one across, which is how the Summary tab in this demo works."
+    },
+    {
+      "question": "Is editing a record slow if the tab is large?",
+      "answer": "No. The projection goes through the same write an ordinary edit uses, which ignores a write that changes nothing, so editing one field of one record rewrites one cell and recalculates only what read it, rather than rebuilding the sheet."
+    },
+    {
+      "question": "Do the groups survive a save?",
+      "answer": "Yes. Row and column outlines are stored the way the file stores them, a level per line, so they go into the .xlsx as Excel's own outlineLevel and collapsed attributes and come back the same. A row a collapsed group folds is kept apart from a row you hid by hand, so opening the group brings it back."
+    }
+  ]
+}

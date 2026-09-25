@@ -62,6 +62,9 @@ export type RibbonIconName =
   | 'gridlines' | 'formula-bar' | 'headings'
   | 'font' | 'number'
   | 'clear-formats' | 'column-width' | 'row-height' | 'hide' | 'unhide'
+  | 'group-rows' | 'group-cols' | 'ungroup-rows' | 'ungroup-cols'
+  | 'show-detail' | 'hide-detail'
+  | 'checkbox' | 'cell-button'
 
 const SQUARE = 'M2.5 2.5h11v11h-11z'
 const CROSS = 'M2.5 8h11M8 2.5v11'
@@ -425,6 +428,53 @@ export const RIBBON_ICONS: Record<RibbonIconName, ReadonlyArray<IconPath>> = {
     { d: 'M2.5 3.5h11v9h-11z' },
     { d: 'M6.3 10.5V7a1.2 1.2 0 0 1 1.2-1.2M5.2 8h2.4', width: 1.4 },
     { d: 'M8.6 8l2.4 2.5M11 8l-2.4 2.5', width: 1.2 },
+  ],
+  /* Outlining. The bracket down the left is the outline bar Excel draws
+     beside the row numbers; the box at its end is the collapse button,
+     carrying a minus where the group is open and a plus where it is shut.
+     The column pair is the same glyph turned a quarter turn. */
+  'group-rows': [
+    { d: 'M4.5 3.5h7M4.5 6h7M4.5 8.5h7' },
+    { d: 'M2.5 3v6.5' },
+    { d: 'M2.5 12.5h3' },
+    { d: 'M1 11h3v3h-3z' },
+    { d: 'M1.8 12.5h1.4' },
+  ],
+  'group-cols': [
+    { d: 'M3.5 4.5v7M6 4.5v7M8.5 4.5v7' },
+    { d: 'M3 2.5h6.5' },
+    { d: 'M12.5 2.5v3' },
+    { d: 'M11 1h3v3h-3z' },
+    { d: 'M12.5 1.8v1.4' },
+  ],
+  'ungroup-rows': [
+    { d: 'M4.5 3.5h7M4.5 6h7M4.5 8.5h7' },
+    { d: 'M1 11h3v3h-3z', dash: DASHED },
+    { d: 'M2.5 3v6.5', dash: DASHED },
+  ],
+  'ungroup-cols': [
+    { d: 'M3.5 4.5v7M6 4.5v7M8.5 4.5v7' },
+    { d: 'M11 1h3v3h-3z', dash: DASHED },
+    { d: 'M12.5 2.5v3', dash: DASHED },
+  ],
+  /* Show Detail is a plus in a box, Hide Detail a minus: the two faces of
+     the same collapse button, which is what the commands do to it. */
+  'show-detail': [
+    { d: 'M2.5 2.5h11v11h-11z' },
+    { d: 'M5.5 8h5M8 5.5v5' },
+  ],
+  'hide-detail': [
+    { d: 'M2.5 2.5h11v11h-11z' },
+    { d: 'M5.5 8h5' },
+  ],
+  /* A ticked box, and a button with a rounded face. */
+  checkbox: [
+    { d: 'M2.5 2.5h11v11h-11z' },
+    { d: 'M5 8l2.2 2.4L11.5 5.5' },
+  ],
+  'cell-button': [
+    { d: 'M2 4.5h12a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5H2A1.5 1.5 0 0 1 .5 10V6A1.5 1.5 0 0 1 2 4.5z' },
+    { d: 'M4.5 8h7' },
   ],
   calculate: [
     { d: 'M4 1.5h8a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-11a1 1 0 0 1 1-1z' },

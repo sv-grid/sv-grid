@@ -17,6 +17,8 @@ export interface SvSheetElement extends HTMLElement {
   workbook: unknown
   /** property only - an attribute cannot hold this */
   data: readonly unknown[]
+  /** property only - an attribute cannot hold this */
+  gridSheets: unknown
   /** attribute `rows` */
   rows: number
   /** attribute `columns` */
@@ -82,6 +84,7 @@ export interface SvSheetElement extends HTMLElement {
 /** `detail` of each event. `action` is cancelable: `preventDefault()` takes the action over, as returning true from `onAction` does. */
 export interface SvSheetEventMap {
   action: CustomEvent<{ action: unknown; cmd: unknown }>
+  cellaction: CustomEvent<unknown>
   ready: CustomEvent<{ api: unknown; document: unknown }>
   change: CustomEvent<unknown>
   presence: CustomEvent<unknown>
