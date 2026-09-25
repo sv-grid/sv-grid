@@ -7120,12 +7120,18 @@
   }
   .sheet-cell-control.radio input { margin: 0; }
   /* Excel's outline bar, down the inline-start edge of the grid. Logical
-     insets rather than `left`, so it sits on the correct side in RTL. */
+     insets rather than `left`, so it sits on the correct side in RTL.
+
+     Its width is a variable because two rules have to agree on it: the
+     bar's own, and the inset that moves the grid out from under it. They
+     did not agree when the second rule aimed at the wrong class, and the
+     bar sat on top of the row numbers with nothing to say it had. */
+  .sheet-grid { --sheet-outline-width: 18px; }
   .sheet-outline-bar {
     position: absolute;
     inset-block: 0;
     inset-inline-start: 0;
-    width: 18px;
+    width: var(--sheet-outline-width);
     z-index: 7;
     pointer-events: none;
     background: var(--sg-header-bg, #f6f6f6);
@@ -7195,8 +7201,13 @@
     pointer-events: auto;
   }
   .sheet-outline-toggle:hover { background: var(--sg-row-hover-bg, #eaeaea); }
-  /* The grid gets out of the bar's way only while there is one to show. */
-  .sheet-grid:has(.sheet-outline-bar) :global(.sv-grid) { margin-inline-start: 18px; }
+  /* The grid gets out of the bar's way only while there is one to show.
+     The root's class is `sv-grid-root`; aiming this at `.sv-grid` matched
+     nothing, so the bar painted straight over the row numbers. */
+  .sheet-grid:has(> .sheet-outline-bar) > :global(.sv-grid-root) {
+    margin-inline-start: var(--sheet-outline-width);
+    width: calc(100% - var(--sheet-outline-width));
+  }
   /* Circle Invalid Data: a red oval on the cell's box, over its content. */
   .sheet-invalid-circle {
     position: absolute;
