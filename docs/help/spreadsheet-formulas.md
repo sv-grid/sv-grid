@@ -529,6 +529,13 @@ in `@svgrid/grid` is the older, row-shaped adapter, free and still there.
 
 ## More examples
 
+### Engineering, statistics, and the locale you type in
+
+Four function families the engine gained at once, worked through a real example of each: a bearing from ATAN2 and DEGREES, a register mask in binary and hex with BITAND, an orchard queried through Excel's criteria-block grammar with DSUM, DCOUNT, DAVERAGE and DGET, and NORM.DIST with its inverse, a confidence interval and the chi-squared and t tails. The picker switches how numbers and formulas are SPELLED: German shows 1.234,5 and =ROUND(A1/3; 2) while the document still stores 1234.5 and a comma, so the file opens anywhere. Column H is drawn as checkboxes whose ticks an ordinary COUNTIF counts.
+
+<div data-docs-demo="499-sheet-engineering-stats" data-height="560"></div>
+
+
 ### Blank sheet - just type
 
 An empty Excel-style sheet on a plain <SvGrid>: column-letter headers (A..Z), a built-in 1..N row gutter, a name box + formula bar with a browsable function picker, gridlines, range selection and a fill handle. A real HyperFormula engine underneath: type a literal or a formula like =SUM(B2:D2) / =IF(...) and every dependent cell recalculates live. Drag a row or column border to resize; right-click for Cut / Copy / Paste / Clear.

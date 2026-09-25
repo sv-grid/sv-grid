@@ -6478,11 +6478,18 @@
          them, so the formula engine on every other tab reads it as an
          ordinary sheet; see `sheet/sheet-kinds.ts`. The sheet chrome that
          has no meaning here (the fx bar's cell references, the cell
-         context menu) is simply not wired to it. -->
+         context menu) is simply not wired to it.
+
+         It selects the way the cell tabs do, `cell` rather than the grid's
+         default: left alone the grid puts a row-selection checkbox column
+         in front of the data, which is a control nobody asked this tab
+         for and which no other tab in the workbook has. -->
     <SvGrid
       data={activeGridSheet.rows}
       columns={gridSheetColumns}
       {features}
+      selectionMode="cell"
+      enableCellSelection={true}
       showRowNumbers={headingsOn}
       rowNumberWidth={40}
       {rowHeight}
@@ -7071,7 +7078,11 @@
     justify-content: center;
     gap: 6px;
     pointer-events: none;
-    background: var(--sg-surface, #fff);
+    /* The control covers the cell's own TRUE / FALSE, so it has to carry
+       the cell's background rather than a colour of its own. `inherit`
+       takes whatever the cell computed to, which is the only thing that
+       stays right across the themes and the banded rows. */
+    background: inherit;
   }
   .sheet-cell-control > *,
   .sheet-cell-control input,
@@ -7140,7 +7151,7 @@
     line-height: 1;
     border: 1px solid var(--sg-border, #b4b4b4);
     border-radius: 2px;
-    background: var(--sg-surface, #fff);
+    background: var(--sg-bg, #fff);
     color: inherit;
     cursor: pointer;
   }
@@ -7151,7 +7162,7 @@
     position: absolute;
     inset-inline-start: 8px;
     width: 1px;
-    background: var(--sg-muted-fg, #8a8a8a);
+    background: var(--sg-muted, #8a8a8a);
   }
   .sheet-outline-line::before,
   .sheet-outline-line::after {
@@ -7178,7 +7189,7 @@
     line-height: 1;
     border: 1px solid var(--sg-border, #8a8a8a);
     border-radius: 1px;
-    background: var(--sg-surface, #fff);
+    background: var(--sg-bg, #fff);
     color: inherit;
     cursor: pointer;
     pointer-events: auto;

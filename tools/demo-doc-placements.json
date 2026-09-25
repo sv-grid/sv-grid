@@ -229,7 +229,8 @@
     "356-spreadsheet-chart",
     "169-cell-borders",
     "456-sales-report-workbook",
-    "459-named-ranges-forecast"
+    "459-named-ranges-forecast",
+    "499-sheet-engineering-stats"
   ],
   "docs/help/server-side-data.md": [
     "79-loading-from-rest",
@@ -357,7 +358,9 @@
     "463-merged-report-headers",
     "464-ticket-log-autofilter",
     "465-autosave-document",
-    "466-paste-from-excel"
+    "466-paste-from-excel",
+    "498-sheet-bound-tabs",
+    "499-sheet-engineering-stats"
   ],
   "docs/help/cells/workbooks.md": [
     "455-workbook",

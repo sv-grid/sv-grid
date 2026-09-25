@@ -63,10 +63,23 @@
   const sheet = doc.get('Sheet1')
   const at = { rowIdAt: (i: number) => `r${i}`, columnIdAt: (i: number) => String.fromCharCode(65 + i) }
 
-  sheet.formats.set([[0, 0, 0, 7]], { bold: true, fill: '#e2e8f0', color: '#0f172a' }, at)
-  for (const r of [2, 6, 12]) sheet.formats.set([[r, 0, r, 7]], { bold: true, color: '#0f172a' }, at)
-  sheet.formats.set([[10, 0, 10, 1]], { bold: true, fill: '#f1f5f9' }, at)
-  sheet.formats.set([[17, 0, 17, 0]], { bold: true, fill: '#f1f5f9' }, at)
+  // A fill and a font colour the DOCUMENT sets are used as they stand on
+  // a dark theme, the way Excel uses them, so they go on in PAIRS. One
+  // without the other is what a dark theme catches out: a dark colour
+  // alone leaves the text on the sheet's own dark background, and a light
+  // fill alone leaves the theme's light text on a light band.
+  const HEADING = { bold: true, fill: '#e2e8f0', color: '#0f172a' } as const
+  const CRITERIA = { bold: true, fill: '#f1f5f9', color: '#0f172a' } as const
+  // Two tables sit side by side with an empty column E between them, so a
+  // heading is styled over ITS OWN block rather than across the row: row 7
+  // carries a section label on the right and orchard data on the left, and
+  // banding the whole row put a heading behind "Apple 14 10 75".
+  sheet.formats.set([[0, 0, 0, 3]], { ...HEADING }, at)
+  sheet.formats.set([[0, 5, 0, 7]], { ...HEADING }, at)
+  sheet.formats.set([[2, 0, 2, 3]], { ...HEADING }, at)
+  for (const r of [2, 6, 12]) sheet.formats.set([[r, 5, r, 7]], { ...HEADING }, at)
+  sheet.formats.set([[10, 0, 10, 1]], { ...CRITERIA }, at)
+  sheet.formats.set([[17, 0, 17, 0]], { ...CRITERIA }, at)
   sheet.formats.set([[13, 1, 16, 1]], { numFmt: '#,##0.00' }, at)
   sheet.formats.set([[13, 6, 15, 6]], { numFmt: '0.0000' }, at)
   sheet.formats.set([[16, 6, 18, 6]], { numFmt: '0.0000' }, at)

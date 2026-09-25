@@ -1785,6 +1785,19 @@ button that does nothing.
 
 ## More examples
 
+### A tab that is a table, and rows that fold away
+
+A workbook tab that holds RECORDS rather than cells: the Orders tab renders as the data grid, with its own headers, sorting, filtering and inline editing, beside ordinary cell sheets. Its records are projected into the workbook's cells, header row included, so the Summary tab reads it with plain formulas: SUM, SUMIF, SUMPRODUCT and VLOOKUP all reach across, because the formula engine is never told the tab is different. Summary also shows Data > Group, with three regional blocks folded under their subtotals and the numbered level buttons at the corner of the outline bar. Edit a Qty on Orders and every figure follows.
+
+<div data-docs-demo="498-sheet-bound-tabs" data-height="560"></div>
+
+### Engineering, statistics, and the locale you type in
+
+Four function families the engine gained at once, worked through a real example of each: a bearing from ATAN2 and DEGREES, a register mask in binary and hex with BITAND, an orchard queried through Excel's criteria-block grammar with DSUM, DCOUNT, DAVERAGE and DGET, and NORM.DIST with its inverse, a confidence interval and the chi-squared and t tails. The picker switches how numbers and formulas are SPELLED: German shows 1.234,5 and =ROUND(A1/3; 2) while the document still stores 1234.5 and a comma, so the file opens anywhere. Column H is drawn as checkboxes whose ticks an ordinary COUNTIF counts.
+
+<div data-docs-demo="499-sheet-engineering-stats" data-height="560"></div>
+
+
 ### Review workflow: comments + Protect Sheet
 
 An expense sheet under review on the Excel shell. It opens protected: every cell is locked except the reviewer's Receipt and Status columns, so a keystroke on an amount is refused and the status bar says why. Three reviewer notes sit on the cells they are about (Excel's red corner): hover, Shift+F2, Review > Next, Show All Comments. Status is a list, the totals by status are SUMIFs, and protection, notes and rules all ride in the document.
