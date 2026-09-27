@@ -157,12 +157,14 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # src/version.ts too: release-packages.mjs rewrites SVGRID_VERSION in
-          # step with the manifest, and the published tarballs carry the right
-          # value, but staging only the manifests left the constant behind in
-          # git. main then failed version.test.ts, which asserts the two agree,
-          # until someone hand-edited the file back into line.
-          git add packages/*/package.json packages/*/src/version.ts
+          # Stage exactly what the detect step rewrote, which it reports in the
+          # `files` output. A fixed `packages/*/package.json` glob missed every
+          # other file the release touches: SVGRID_VERSION in enterprise, and
+          # the two MCP pins (server.json, the preview's grid-wc version). The
+          # published tarballs were always right, but git kept the old values,
+          # so version.test.ts and two mcp-tools.test.ts cases went red on main
+          # after 3.0.2 and again after 3.0.3, each time repaired by hand.
+          git add -- ${{ steps.release.outputs.files }}
           git commit -m "release: ${{ steps.release.outputs.summary }} [skip ci]" || echo "nothing to commit"
           # main can gain commits while a release builds; rebase the bump on top
           # rather than failing the run after the packages are already on npm.

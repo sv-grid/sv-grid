@@ -199,10 +199,12 @@ function emit(lines) {
  */
 function syncVersionConstant(dir, version) {
   const file = join(ROOT, 'packages', dir, 'src', 'version.ts')
-  if (!existsSync(file)) return
+  if (!existsSync(file)) return []
   const text = readFileSync(file, 'utf8')
   const next = text.replace(/(export const SVGRID_VERSION = ')[^']*(')/, `$1${version}$2`)
-  if (next !== text) writeFileSync(file, next)
+  if (next === text) return []
+  writeFileSync(file, next)
+  return [`packages/${dir}/src/version.ts`]
 }
 
 /**
@@ -214,19 +216,25 @@ function syncVersionConstant(dir, version) {
  * behind.
  */
 function syncMcpPins(dir, version) {
+  const written = []
   if (dir === 'mcp') {
     const file = join(ROOT, 'packages', 'mcp', 'server.json')
     const server = JSON.parse(readFileSync(file, 'utf8'))
     server.version = version
     for (const p of server.packages ?? []) if (p.identifier === '@svgrid/mcp') p.version = version
     writeFileSync(file, JSON.stringify(server, null, 2) + '\n')
+    written.push('packages/mcp/server.json')
   }
   if (dir === 'grid-wc') {
     const file = join(ROOT, 'packages', 'mcp', 'src', 'preview.ts')
     const text = readFileSync(file, 'utf8')
     const next = text.replace(/(export const PREVIEW_GRID_WC_VERSION = ')[^']*(')/, `$1${version}$2`)
-    if (next !== text) writeFileSync(file, next)
+    if (next !== text) {
+      writeFileSync(file, next)
+      written.push('packages/mcp/src/preview.ts')
+    }
   }
+  return written
 }
 
 // True only when this exact name@version is already on the registry. `npm view`
@@ -313,6 +321,13 @@ function main() {
   const publish = [] // { dir, name, from, to, tag, reason }
   const baseline = [] // tags to lay down for never-released packages
   const bumped = new Set() // dirs decided to publish, for the BUNDLES cascade
+  // Every file this step rewrites, so the workflow can stage exactly these.
+  // It used to `git add packages/*/package.json` and nothing else, which left
+  // the version constant and both MCP pins behind on main after every release:
+  // 3.0.2 stranded the pins, the fix added syncMcpPins but not the staging, and
+  // 3.0.3 stranded them again along with SVGRID_VERSION. Three tests guard
+  // those files, so main went red each time and was repaired by hand.
+  const touched = []
 
   for (const pkg of selected) {
     const file = manifestPath(pkg.dir)
@@ -374,8 +389,9 @@ function main() {
     if (!CHECK_ONLY) {
       manifest.version = nextStr
       writeFileSync(file, JSON.stringify(manifest, null, 2) + '\n')
-      syncVersionConstant(pkg.dir, nextStr)
-      syncMcpPins(pkg.dir, nextStr)
+      touched.push(`packages/${pkg.dir}/package.json`)
+      touched.push(...syncVersionConstant(pkg.dir, nextStr))
+      touched.push(...syncMcpPins(pkg.dir, nextStr))
     }
     console.error(
       `- ${manifest.name}: ${reason}: ${fmtVer(current)} -> ${nextStr}${CHECK_ONLY ? ' (check only, not written)' : ''}.`,
@@ -392,6 +408,8 @@ function main() {
     ['packages_json', JSON.stringify(publish.map((p) => p.dir))],
     ['tags', publish.map((p) => p.tag).join(' ')],
     ['baseline', baseline.join(' ')],
+    // The exact paths to stage in the release commit. Empty under --check.
+    ['files', [...new Set(touched)].join(' ')],
     ['summary', publish.map((p) => `${p.name}@${p.to}`).join(', ')],
   ])
 }
