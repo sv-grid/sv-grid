@@ -95,3 +95,44 @@ describe('unlicensed watermark', () => {
     }
   })
 })
+
+describe('the fade survives its environment going away', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    document.body.innerHTML = ''
+    dismissUnlicensedNudge()
+  })
+
+  it('does not throw when `window` has gone between the two timers', async () => {
+    // Five seconds is a long time in a teardown: a jsdom test finishing or
+    // a page unloading can take `window` away after the fade was scheduled
+    // and before it runs. CI caught this as two unhandled
+    // `ReferenceError: window is not defined` out of a timer, which failed
+    // the whole run while every test passed.
+    const grid = makeGridRoot()
+    emitUnlicensedNudge()
+    await flushMicrotasks()
+    const mark = grid.querySelector(`[${WATERMARK_ATTR}]`) as HTMLElement
+    expect(mark).not.toBeNull()
+
+    const realWindow = globalThis.window
+    Reflect.deleteProperty(globalThis, 'window')
+    try {
+      vi.advanceTimersByTime(5000)
+      // The guard takes the same way out the one at the top of
+      // scheduleFadeOut takes: drop the node rather than reach for a
+      // `window` that is not there. Without it the fade runs on, sets the
+      // opacity and then throws out of the timer, which is what failed
+      // the CI run while every test in it passed.
+      expect(grid.querySelector(`[${WATERMARK_ATTR}]`)).toBeNull()
+      expect(mark.style.opacity).toBe('1')
+    } finally {
+      Object.defineProperty(globalThis, 'window', {
+        value: realWindow, writable: true, configurable: true, enumerable: false,
+      })
+    }
+  })
+})

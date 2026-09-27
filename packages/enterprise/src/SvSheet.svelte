@@ -122,6 +122,10 @@
   import { MARGIN_PRESETS, marginPresetOf, copyPageSetup, type PageSetup, type PaperSize } from './sheet/page-setup'
   import { sheetPrintHtml } from './sheet/print'
   import { resolveSheetMessages, type SheetLocalization } from './sheet/messages'
+  import { INVARIANT_CULTURE, cultureFromLocale, isInvariant, formulaToCulture, formulaFromCulture } from './sheet/culture'
+  import { groupLines, ungroupLines, clearOutline, autoOutline, toggleCollapsed, hiddenByOutline, detailRange, outlineLevel, isOutlined, deepestLevel, showLevel, type OutlineState } from './sheet/outline'
+  import { cellTypeAt, isChecked, toggledValue, radioIndex, applyCellType, removeCellTypes, newCellTypeId, type CellTypeRegion, type CellTypeKind } from './sheet/cell-types'
+  import { projectGridSheet, coerceFieldValue, type GridSheetSpec } from './sheet/sheet-kinds'
   import { provideSheetText, useSheetText } from './sheet-text'
   import { commentAt, withComment, withThread, threadAt, threadText, notesOf, nextComment, listComments, type CommentsMap, type CommentThread } from './sheet/comments'
   import type { NotesMap } from './sheet/rects'
@@ -164,6 +168,15 @@
     workbook?: Workbook
     /** Seed sheets, when not supplying a workbook. */
     data?: ReadonlyArray<SheetData>
+    /**
+     * Tabs that are a bound table rather than a cell grid, by name.
+     *
+     * Each one keeps records instead of cells and renders as a grid, and
+     * its records are projected into the workbook's cells, so
+     * `=SUM(Orders!D2:D99)` on a cell tab reads it like any other sheet.
+     * A name here that `data` does not list is added as a new tab.
+     */
+    gridSheets?: Record<string, GridSheetSpec>
     /** Minimum grid size, so a sparse sheet still looks like a sheet. */
     rows?: number
     columns?: number
@@ -248,6 +261,12 @@
      * stays closed, so an application can put its own in their place.
      */
     onAction?: (action: RibbonActionId, cmd: GridCommandContext) => void | boolean
+    /**
+     * A button drawn in a cell was pressed. `action` is the region's own
+     * `action`, or its id when it has none, so a sheet can tell one column
+     * of buttons from another.
+     */
+    onCellAction?: (event: { row: number; col: number; action: string; sheet: string }) => void
     onReady?: (api: SheetApi, document: SheetDocument) => void
     /**
      * Something the user did landed in the document: a cell, a format, a
@@ -308,7 +327,9 @@
     showFormulaBar = true,
     showTabs = true,
     showStatusBar = true,
+    gridSheets,
     onAction,
+    onCellAction,
     onReady,
     onChange,
     presence,
@@ -324,13 +345,78 @@
   const t = useSheetText()
   const gridLocalization = $derived(localization?.locale ? { locale: localization.locale } : undefined)
 
+  /**
+   * How this sheet SPELLS a number and a formula, read off the locale
+   * unless the consumer overrode it.
+   *
+   * The document is unaffected: everything below converts at the edge, so
+   * what lands in a cell is always the invariant spelling and a file
+   * written here opens anywhere. See `sheet/culture.ts`.
+   */
+  const culture = $derived.by(() => {
+    if (localization?.culture === false) return INVARIANT_CULTURE
+    const base = cultureFromLocale(localization?.locale ?? INVARIANT_CULTURE.locale)
+    return localization?.culture ? { ...base, ...localization.culture } : base
+  })
+  /**
+   * A stored formula or number as this culture writes it, for editing.
+   *
+   * Applied to what the DOCUMENT holds, never to what the user is part way
+   * through typing: that is already in their own spelling, and running it
+   * through here would translate it twice.
+   */
+  const toCulture = (text: string): string =>
+    (text.startsWith('=') ? formulaToCulture(text, culture) : numberToCulture(text))
+  /** What was typed, back to what the document stores. */
+  const fromCulture = (text: string): string =>
+    (text.startsWith('=') ? formulaFromCulture(text, culture) : text)
+  /** What a rendered number's `.` and `,` come out as. The PATTERN stays
+   *  invariant; only its marks follow the culture. */
+  const marks = $derived({ decimal: culture.decimal, group: culture.group })
+  /** A bare stored number shown with the culture's decimal mark. A cell
+   *  holding text is left exactly as it is. */
+  function numberToCulture(text: string): string {
+    if (isInvariant(culture) || text === '') return text
+    return /^[+-]?\d+\.\d+$/.test(text) ? text.replace('.', culture.decimal) : text
+  }
+
   // Read once, on purpose: the document IS what is being edited. Rebuilding
   // it when the prop identity changed would throw away every edit, so a
   // consumer that wants a different document mounts a different <SvSheet>.
   // svelte-ignore state_referenced_locally
   const doc: SheetDocument =
-    sheetDocument ?? createSheetDocument(workbook ? { workbook } : { sheets: data ? [...data] : [{ name: 'Sheet1', cells: [] }] })
+    sheetDocument ?? createSheetDocument(workbook
+      ? { workbook }
+      : {
+        sheets: data
+          ? [...data]
+          // A workbook given only bound tabs still needs the tabs to
+          // exist; their cells are filled by the projection below.
+          : gridSheets
+            ? Object.keys(gridSheets).map((name) => ({ name, cells: [] }))
+            : [{ name: 'Sheet1', cells: [] }],
+      })
   const wb: Workbook = doc.workbook
+
+  // Bound tabs named by the prop are marked as such before first paint, so
+  // the right surface is rendered rather than a cell grid that swaps.
+  // svelte-ignore state_referenced_locally
+  if (gridSheets) {
+    for (const [name, spec] of Object.entries(gridSheets)) {
+      // The WORKBOOK owns the tab list; the document only holds what sits
+      // beside a sheet's cells, so it is the workbook that is asked here.
+      const exists = wb.sheets.some((sheet) => sheet.toLowerCase() === name.toLowerCase())
+      if (!exists) wb.addSheet(name)
+      const state = doc.get(name)
+      state.kind = 'grid'
+      state.grid = spec
+    }
+    // Project once, here, rather than from an effect: the projection
+    // writes cells, writing cells bumps the version, and an effect that
+    // read the version to find the active tab would have re-run itself
+    // forever. Edits re-project explicitly instead.
+    for (const [name, spec] of Object.entries(gridSheets)) projectGridSheetInto(name, spec)
+  }
 
   /** Report a change to the document; the `onChange` prop hears it once per tick. */
   // What the shell itself reported this tick, by kind, so the subscriber
@@ -759,6 +845,61 @@
     traceLines = []
   }
 
+  /**
+   * Excel's outline bar: the numbered level buttons at the corner and a
+   * bracket per group down the inline-start edge, with the collapse button
+   * on the summary line.
+   *
+   * Measured against the rendered rows the way the auditing arrows are,
+   * rather than computed from row heights, so a row the user dragged
+   * taller, a frozen pane and a scrolled window all come out right without
+   * this having to know about any of them.
+   */
+  type OutlineBracket = { summary: number; top: number; bottom: number; buttonY: number; collapsed: boolean; level: number }
+  let outlineBrackets = $state<OutlineBracket[]>([])
+
+  function measureOutline() {
+    const host = gridHost
+    const state = doc.get(wb.active)
+    if (!host || !isOutlined(state.outline.rows)) { outlineBrackets = []; return }
+    const b = host.getBoundingClientRect()
+    const rowBox = (r: number) => host.querySelector<HTMLElement>(`td[data-svgrid-row="${r}"]`)?.getBoundingClientRect() ?? null
+    const out: OutlineBracket[] = []
+    const rows = state.outline.rows
+    const folded = hiddenByOutline(rows, { summaryBelow: true })
+    // Every line that owns a group gets a bracket, whether it is open or
+    // shut; a shut one has no visible detail, so the bracket collapses to
+    // the button alone.
+    for (let line = 0; line < rowCount; line += 1) {
+      const range = detailRange(rows, line, { summaryBelow: true })
+      if (!range) continue
+      const summaryBox = rowBox(line)
+      if (!summaryBox) continue
+      const collapsed = rows.collapsed.includes(line)
+      const buttonY = summaryBox.top - b.top + summaryBox.height / 2
+      let top = buttonY
+      let bottom = buttonY
+      if (!collapsed) {
+        for (let r = range.from; r <= range.to; r += 1) {
+          if (folded.has(r)) continue
+          const box = rowBox(r)
+          if (!box) continue
+          top = Math.min(top, box.top - b.top)
+          bottom = Math.max(bottom, box.bottom - b.top)
+        }
+      }
+      out.push({ summary: line, top, bottom, buttonY, collapsed, level: outlineLevel(rows, line) + 1 })
+    }
+    outlineBrackets = out
+  }
+
+  /** The level buttons the corner shows: one per depth, plus the top. */
+  const outlineLevels = $derived.by(() => {
+    void version
+    const rows = doc.get(wb.active).outline.rows
+    return isOutlined(rows) ? deepestLevel(rows) + 1 : 0
+  })
+
   function measureTraces() {
     const host = gridHost
     if (!host || !traces.length) { traceLines = []; return }
@@ -783,6 +924,15 @@
     if (!traces.length) return
     if (traceSheet && traceSheet.toLowerCase() !== wb.active.toLowerCase()) { removeArrows(); return }
     void tick().then(() => requestAnimationFrame(measureTraces))
+  })
+
+  // The outline bar is measured off the rendered rows, so it has to be
+  // taken again after anything that moves them: an edit, a sheet switch, a
+  // collapse, a resize.
+  $effect(() => {
+    void version
+    void outlineLevels
+    void tick().then(() => requestAnimationFrame(measureOutline))
   })
 
   // --- hidden and copied sheets -------------------------------------------
@@ -1327,7 +1477,7 @@
     const value = wb.getValue(name, r, c)
     if (isError(value)) return value.error
     const entry = doc.get(name).formats.get(`r${r}`, colToLetters(c))
-    if (entry?.numFmt) return compileNumberFormat(entry.numFmt).format(value).text
+    if (entry?.numFmt) return compileNumberFormat(entry.numFmt, marks).format(value).text
     if (value === '' || value == null) return ''
     if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE'
     return String(value)
@@ -1503,7 +1653,7 @@
    * 0.0035, and let `0.15` through to land as 0.0015.
    */
   function storedTextFor(r: number, c: number, text: string): string {
-    const parsed = parseEntry(text)
+    const parsed = parseEntry(text, culture)
     if (parsed) return parsed.value
     if (text.startsWith('=')) return text
     const entry = storeFor().get(`r${r}`, colToLetters(c))
@@ -2606,19 +2756,171 @@
    * is put away with Orders and moves with an insert or delete.
    */
   type Hidden = { rows: Set<number>; cols: Set<number> }
+  // --- bound (grid) sheets --------------------------------------------------
+  /** The active tab's records, when it is a bound tab rather than cells. */
+  const activeGridSheet = $derived.by(() => {
+    void version
+    const state = doc.get(wb.active)
+    return state.kind === 'grid' ? (state.grid ?? null) : null
+  })
+
+  /** A bound tab's columns, as the grid wants them. */
+  const gridSheetColumns = $derived.by(() => {
+    const spec = activeGridSheet
+    if (!spec) return []
+    return spec.fields.map((field) => ({
+      id: field.field,
+      field: field.field,
+      header: field.label ?? field.field,
+      ...(field.width !== undefined ? { width: field.width } : {}),
+      // A field is editable when the sheet is, unless it says otherwise.
+      editable: field.editable ?? spec.editable === true,
+      ...(field.type === 'number' ? { align: 'right' as const } : {}),
+    }))
+  })
+
+  /**
+   * Put a bound tab's records back into the workbook's cells.
+   *
+   * Run after every change to the records. `setRaw` ignores a write that
+   * changes nothing, so this costs one write per cell that actually moved
+   * and one incremental recalculation for what read it.
+   */
+  function projectGridSheetInto(name: string, spec: GridSheetSpec) {
+    const cells = projectGridSheet(spec)
+    for (let r = 0; r < cells.length; r += 1) {
+      const line = cells[r]!
+      for (let c = 0; c < line.length; c += 1) wb.setRaw(name, r, c, line[c]!)
+    }
+  }
+
+  function projectActiveGridSheet() {
+    const spec = activeGridSheet
+    if (spec) projectGridSheetInto(wb.active, spec)
+  }
+
+  /**
+   * A bound tab's grid is ready.
+   *
+   * Its api is NOT kept in `api`: that one drives the cell surface, and
+   * everything the shell does with it (the freeze panes, the hidden lines,
+   * the format store, the cell selection) means nothing on a tab made of
+   * records. Its rows are records rather than `SheetRow`s too, so the two
+   * are not the same type. `onReady` still fires, since a consumer asked
+   * to be told when the sheet came up.
+   */
+  function onBoundGridReady(next: unknown) {
+    onReady?.(next as SheetApi, doc)
+  }
+
+  /** A cell edited in a bound tab: narrow it, store it, re-project. */
+  function onGridSheetEdit(change: { rowIndex: number; columnId: string; newValue: unknown }) {
+    const spec = activeGridSheet
+    if (!spec) return
+    const record = spec.rows[change.rowIndex]
+    const field = spec.fields.find((f) => f.field === change.columnId)
+    if (!record || !field) return
+    record[field.field] = coerceFieldValue(field, change.newValue)
+    projectActiveGridSheet()
+    changed({ kind: 'cells' })
+    bump()
+  }
+
+  // --- cell types ----------------------------------------------------------
+  /** The control a cell is drawn as, or null. Read under `version` so a
+   *  region added at runtime repaints. */
+  function cellTypeHere(r: number, c: number): CellTypeRegion | null {
+    void version
+    return cellTypeAt(doc.get(wb.active).cellTypes, r, c)
+  }
+
+  /** Write a cell through the grid, so it is one undo step like any edit. */
+  function setCellText(r: number, c: number, text: string) {
+    if (locked(r, c)) { refuse(); return }
+    const cmd = cmdOf()
+    if (cmd) cmd.batch(() => cmd.setCellValue(r, c, text))
+    else { wb.setRaw(wb.active, r, c, text); bump() }
+  }
+
+  function toggleCheckbox(r: number, c: number) {
+    const region = cellTypeHere(r, c)
+    if (!region) return
+    setCellText(r, c, toggledValue(region, raw(r, c)))
+  }
+
+  function pressCellButton(r: number, c: number, region: CellTypeRegion) {
+    onCellAction?.({ row: r, col: c, action: region.action ?? region.id, sheet: wb.active })
+  }
+
+  /** A1 for a control's label, so a screen reader says which cell it is. */
+  const cellAddress = (r: number, c: number): string => `${colToLetters(c)}${r + 1}`
+
+  /** The rows or columns the selection covers, for Group and Ungroup. */
+  function selectedLines(axis: 'rows' | 'cols', cmd: GridCommandContext): { from: number; to: number } | null {
+    const rects = cmd.ranges.length
+      ? cmd.ranges
+      : cmd.activeCell ? [[cmd.activeCell.rowIndex, cmd.activeCell.colIndex, cmd.activeCell.rowIndex, cmd.activeCell.colIndex] as const] : []
+    if (!rects.length) return null
+    let from = Infinity
+    let to = -Infinity
+    for (const [r1, c1, r2, c2] of rects) {
+      from = Math.min(from, axis === 'rows' ? r1 : c1)
+      to = Math.max(to, axis === 'rows' ? r2 : c2)
+    }
+    return Number.isFinite(from) && to >= 0 ? { from, to } : null
+  }
+
+  /**
+   * The summary line of the group at `line`: the line itself when it owns
+   * a group, and otherwise the summary of the group it sits inside.
+   */
+  function summaryLineFor(state: OutlineState, line: number): number | null {
+    const side = { summaryBelow: true }
+    if (detailRange(state, line, side)) return line
+    // Walk out to the first line past the run this one belongs to.
+    const own = outlineLevel(state, line)
+    if (own === 0) return null
+    let at = line
+    while (outlineLevel(state, at + 1) >= own) at += 1
+    return detailRange(state, at + 1, side) ? at + 1 : null
+  }
+
+  /** Put a changed outline on the grid and tell the document. */
+  function afterOutlineChange() {
+    const state = doc.get(wb.active)
+    applyHidden(state.hidden, state.filterHidden)
+    changed({ kind: 'hidden' })
+    bump()
+  }
+
+  /** The lines a collapsed outline group folds away, per axis. */
+  function outlineHidden(name: string = wb.active): Hidden {
+    const state = doc.get(name)
+    return {
+      // Excel's defaults: the summary row is below its detail and the
+      // summary column is to its right, which is `summaryBelow` on both
+      // axes since the flag means "the summary comes after the detail".
+      rows: hiddenByOutline(state.outline.rows, { summaryBelow: true }),
+      cols: hiddenByOutline(state.outline.cols, { summaryBelow: true }),
+    }
+  }
   function ownHidden(): Hidden {
     const out: Hidden = { rows: new Set(), cols: new Set() }
     if (!api) return out
-    // The rows the AutoFilter folded are its own, not hidden lines.
+    // The rows the AutoFilter folded are its own, not hidden lines, and
+    // neither are the ones a collapsed group folded: reading either back
+    // as a hidden line would leave it hidden after the group reopened.
     const filtered = doc.get(wb.active).filterHidden
-    for (let r = 0; r < rowCount; r += 1) if (api.isRowCollapsed(r) && !filtered.has(r)) out.rows.add(r)
-    for (let c = 0; c < colCount; c += 1) if (api.isColumnCollapsed(colToLetters(c))) out.cols.add(c)
+    const outlined = outlineHidden()
+    for (let r = 0; r < rowCount; r += 1) if (api.isRowCollapsed(r) && !filtered.has(r) && !outlined.rows.has(r)) out.rows.add(r)
+    for (let c = 0; c < colCount; c += 1) if (api.isColumnCollapsed(colToLetters(c)) && !outlined.cols.has(c)) out.cols.add(c)
     return out
   }
   function applyHidden(hidden: Hidden, filtered: ReadonlySet<number> = new Set()) {
     if (!api) return
-    for (let r = 0; r < rowCount; r += 1) api.setRowCollapsed(r, hidden.rows.has(r) || filtered.has(r))
-    for (let c = 0; c < colCount; c += 1) api.setColumnCollapsed(colToLetters(c), hidden.cols.has(c))
+    const outlined = outlineHidden()
+    for (let r = 0; r < rowCount; r += 1) api.setRowCollapsed(r, hidden.rows.has(r) || filtered.has(r) || outlined.rows.has(r))
+    for (let c = 0; c < colCount; c += 1) api.setColumnCollapsed(colToLetters(c), hidden.cols.has(c) || outlined.cols.has(c))
   }
   function stashHidden(name: string = wb.active) {
     if (!api) return
@@ -2864,9 +3166,12 @@
     if (isError(value)) return { text: value.error, color: 'var(--sg-danger, #dc2626)' }
     const entry = storeFor().get(`r${r}`, colToLetters(c))
     const fmt = numFmt ?? entry?.numFmt
-    if (fmt) return compileNumberFormat(fmt).format(value)
+    if (fmt) return compileNumberFormat(fmt, marks).format(value)
     if (value === '' || value == null) return { text: '' }
     if (typeof value === 'boolean') return { text: value ? 'TRUE' : 'FALSE' }
+    // A General number still wears the culture's decimal mark, which is
+    // what Excel shows: only a cell holding text is left exactly as it is.
+    if (typeof value === 'number') return { text: numberToCulture(String(value)) }
     return { text: String(value) }
   }
 
@@ -2955,7 +3260,10 @@
    * workbook takes it. The bar names the cell the edit started in, which is
    * not the active cell once the user has clicked elsewhere to finish.
    */
-  function commit(text: string, cell: { rowIndex: number; colIndex: number }, via: 'enter' | 'blur' = 'enter') {
+  function commit(raw: string, cell: { rowIndex: number; colIndex: number }, via: 'enter' | 'blur' = 'enter') {
+    // The one door the formula bar writes through, so the culture comes
+    // off here and the document only ever sees the invariant spelling.
+    const text = fromCulture(raw)
     if (locked(cell.rowIndex, cell.colIndex)) { refuse(); return }
     if (!admits(cell.rowIndex, cell.colIndex, text)) return
     const cmd = cmdOf()
@@ -3384,6 +3692,88 @@
       case 'unhide-columns': {
         if (onAction?.(action, context) === true) return
         hideLines(action.endsWith('rows') ? 'rows' : 'cols', action.startsWith('hide'), context)
+        focusSheet(context)
+        return
+      }
+      case 'group-rows':
+      case 'group-cols':
+      case 'ungroup-rows':
+      case 'ungroup-cols': {
+        if (onAction?.(action, context) === true) return
+        const axis = action.endsWith('rows') ? 'rows' : 'cols'
+        const span = selectedLines(axis, context)
+        if (!span) { say(t('selectLinesToGroup')); return }
+        const state = doc.get(wb.active)
+        const change = action.startsWith('group') ? groupLines : ungroupLines
+        state.outline = axis === 'rows'
+          ? { rows: change(state.outline.rows, span.from, span.to), cols: state.outline.cols }
+          : { rows: state.outline.rows, cols: change(state.outline.cols, span.from, span.to) }
+        afterOutlineChange()
+        focusSheet(context)
+        return
+      }
+      case 'insert-checkbox':
+      case 'insert-cell-button':
+      case 'clear-cell-type': {
+        if (onAction?.(action, context) === true) return
+        const rects = context.ranges.length
+          ? context.ranges.map((r) => [...r] as unknown as Rect)
+          : context.activeCell
+            ? [[context.activeCell.rowIndex, context.activeCell.colIndex, context.activeCell.rowIndex, context.activeCell.colIndex] as unknown as Rect]
+            : []
+        if (!rects.length) { say(t('selectCellsForControl')); return }
+        const state = doc.get(wb.active)
+        if (action === 'clear-cell-type') {
+          state.cellTypes = removeCellTypes(state.cellTypes, rects)
+        } else {
+          const kind: CellTypeKind = action === 'insert-checkbox' ? 'checkbox' : 'button'
+          state.cellTypes = applyCellType(state.cellTypes, { id: newCellTypeId(), kind, rects })
+        }
+        changed({ kind: 'validation' })
+        bump()
+        focusSheet(context)
+        return
+      }
+      case 'clear-outline': {
+        if (onAction?.(action, context) === true) return
+        const state = doc.get(wb.active)
+        state.outline = { rows: clearOutline(), cols: clearOutline() }
+        afterOutlineChange()
+        focusSheet(context)
+        return
+      }
+      case 'auto-outline': {
+        if (onAction?.(action, context) === true) return
+        const state = doc.get(wb.active)
+        // A row is a summary when it holds a formula: that is what a total
+        // under a block looks like, and it is what Excel keys on too.
+        const isSummary = (r: number) => {
+          for (let c = 0; c < colCount; c += 1) if (raw(r, c).startsWith('=')) return true
+          return false
+        }
+        state.outline = {
+          rows: autoOutline(0, rowCount - 1, isSummary, { summaryBelow: true }),
+          cols: state.outline.cols,
+        }
+        afterOutlineChange()
+        focusSheet(context)
+        return
+      }
+      case 'show-detail':
+      case 'hide-detail': {
+        if (onAction?.(action, context) === true) return
+        const wanted = action === 'hide-detail'
+        const state = doc.get(wb.active)
+        const row = context.activeCell?.rowIndex ?? 0
+        // The button acts on the group whose summary the cursor is on, and
+        // failing that on the group the cursor sits inside.
+        const summary = summaryLineFor(state.outline.rows, row)
+        if (summary === null) { say(t('noGroupHere')); return }
+        const already = state.outline.rows.collapsed.includes(summary)
+        if (already !== wanted) {
+          state.outline = { rows: toggleCollapsed(state.outline.rows, summary), cols: state.outline.cols }
+          afterOutlineChange()
+        }
         focusSheet(context)
         return
       }
@@ -4295,7 +4685,9 @@
     if (change.oldValue !== undefined && change.oldValue === change.newValue) return
     const ref = parseA1(`${change.columnId}1`)
     if (!ref) return
-    const text = balanceParens(change.newValue == null ? '' : String(change.newValue))
+    // What the grid's editor hands back is what the user typed, so the
+    // culture comes off here too, exactly as it does in `commit`.
+    const text = balanceParens(fromCulture(change.newValue == null ? '' : String(change.newValue)))
     if (copied?.fresh && text === '' && !copied.cut) {
       const dr = change.rowIndex - copied.origin.row
       const dc = ref.col - copied.origin.col
@@ -4315,7 +4707,7 @@
     const cmd = cmdOf()
     const entry = storeFor().get(`r${r}`, colToLetters(c))
     const patch: CellFormatEntry = {}
-    const parsed = parseEntry(text)
+    const parsed = parseEntry(text, culture)
     if (parsed) {
       stored = parsed.value
       // The entry's format takes the cell when the cell has none, or one
@@ -5049,7 +5441,7 @@
     const n = typeof value === 'number' ? value : Number(value)
     if (typeof value !== 'boolean' && Number.isFinite(n) && String(value).trim() !== '') {
       const fmt = storeFor().get(`r${sr}`, colToLetters(sc))?.numFmt
-      return fmt ? compileNumberFormat(fmt).format(n).text : String(Number(n.toPrecision(10)))
+      return fmt ? compileNumberFormat(fmt, marks).format(n).text : String(Number(n.toPrecision(10)))
     }
     return String(value)
   }
@@ -5734,6 +6126,47 @@
       onclick={(event) => { event.stopPropagation(); openListPicker(props.r, props.c) }}
     ><svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
   {/if}
+  {#if cellTypeHere(props.r, props.c)}
+    {@const region = cellTypeHere(props.r, props.c)!}
+    {@const text = raw(props.r, props.c)}
+    <!-- A cell drawn as a control. The cell's value is still the truth:
+         each of these writes it and nothing else, so undo, the engine and
+         the file all keep working without knowing about this layer. -->
+    {#if region.kind === 'checkbox'}
+      <span class="sheet-cell-control checkbox">
+        <input
+          type="checkbox"
+          checked={isChecked(region, text)}
+          disabled={locked(props.r, props.c)}
+          aria-label={cellAddress(props.r, props.c)}
+          onpointerdown={(event) => event.stopPropagation()}
+          onclick={(event) => { event.stopPropagation(); toggleCheckbox(props.r, props.c) }}
+        />
+      </span>
+    {:else if region.kind === 'button'}
+      <button
+        type="button"
+        class="sheet-cell-control button"
+        disabled={locked(props.r, props.c)}
+        onpointerdown={(event) => event.stopPropagation()}
+        onclick={(event) => { event.stopPropagation(); pressCellButton(props.r, props.c, region) }}
+      >{region.label ?? text}</button>
+    {:else if region.kind === 'radio'}
+      <span class="sheet-cell-control radio" role="radiogroup" aria-label={cellAddress(props.r, props.c)}>
+        {#each region.choices ?? [] as choice, i (choice)}
+          <label>
+            <input
+              type="radio"
+              name={`sheet-radio-${region.id}-${props.r}-${props.c}`}
+              checked={radioIndex(region, text) === i}
+              disabled={locked(props.r, props.c)}
+              onpointerdown={(event) => event.stopPropagation()}
+              onclick={(event) => { event.stopPropagation(); setCellText(props.r, props.c, choice) }}
+            />{choice}</label>
+        {/each}
+      </span>
+    {/if}
+  {/if}
 {/snippet}
 
 <!-- Excel's icon sets, three glyphs each: the top, the middle, the bottom third. -->
@@ -5776,7 +6209,7 @@
   {#if showFormulaBar && formulaBarOn}
     <SvFormulaBar
       active={active}
-      value={editingText ?? activeRaw}
+      value={editingText ?? toCulture(activeRaw)}
       onCommit={commit}
       onNavigate={goTo}
       onSelectName={jumpToName}
@@ -5823,13 +6256,61 @@
     onkeydowncapture={onSheetKeyDownCapture}
     onpointerupcapture={onSheetPointerUp}
     class:painting={painter !== null}
-    onscrollcapture={() => { if (formulaDraft !== null) paintReferences(); if (cellPopover) measureAnchor(); if (inputMessage) measureMessage(); if (traces.length) measureTraces(); if (activeObjects.length) measureObjects() }}
+    onscrollcapture={() => { if (formulaDraft !== null) paintReferences(); if (cellPopover) measureAnchor(); if (inputMessage) measureMessage(); if (traces.length) measureTraces(); measureOutline(); if (activeObjects.length) measureObjects() }}
   >
   {#if resizeGuide}
     <div class="sheet-resize-guide" class:col={resizeGuide.axis === 'col'} class:row={resizeGuide.axis === 'row'} aria-hidden="true" style:left={resizeGuide.axis === 'col' ? `${resizeGuide.at}px` : '0'} style:top={resizeGuide.axis === 'row' ? `${resizeGuide.at}px` : '0'}></div>
   {/if}
   {#if resizeTip}
     <div class="sheet-resize-tip" role="status" style:left={`${resizeTip.x}px`} style:top={`${resizeTip.y}px`}>{resizeTip.text}</div>
+  {/if}
+  {#if outlineBrackets.length || outlineLevels > 1}
+    <!-- Excel's outline bar. The level buttons sit in the corner over the
+         column headings; each bracket runs down beside the rows it owns
+         with its collapse button on the summary row. -->
+    <div class="sheet-outline-bar" aria-label={t('outlineBar')}>
+      {#if outlineLevels > 1}
+        <div class="sheet-outline-levels" role="group" aria-label={t('outlineLevels')}>
+          {#each Array.from({ length: outlineLevels }, (_, i) => i + 1) as level (level)}
+            <button
+              type="button"
+              class="sheet-outline-level"
+              title={t('outlineShowLevel', { level: String(level) })}
+              aria-label={t('outlineShowLevel', { level: String(level) })}
+              onclick={() => {
+                const state = doc.get(wb.active)
+                state.outline = { rows: showLevel(state.outline.rows, level, { summaryBelow: true }), cols: state.outline.cols }
+                afterOutlineChange()
+              }}
+            >{level}</button>
+          {/each}
+        </div>
+      {/if}
+      {#each outlineBrackets as bracket (bracket.summary)}
+        {#if !bracket.collapsed}
+          <span
+            class="sheet-outline-line"
+            aria-hidden="true"
+            style:top="{bracket.top}px"
+            style:height="{Math.max(bracket.bottom - bracket.top, 0)}px"
+          ></span>
+        {/if}
+        <button
+          type="button"
+          class="sheet-outline-toggle"
+          class:collapsed={bracket.collapsed}
+          style:top="{bracket.buttonY}px"
+          aria-expanded={!bracket.collapsed}
+          title={t(bracket.collapsed ? 'outlineExpand' : 'outlineCollapse')}
+          aria-label={t(bracket.collapsed ? 'outlineExpand' : 'outlineCollapse')}
+          onclick={() => {
+            const state = doc.get(wb.active)
+            state.outline = { rows: toggleCollapsed(state.outline.rows, bracket.summary), cols: state.outline.cols }
+            afterOutlineChange()
+          }}
+        >{bracket.collapsed ? '+' : '−'}</button>
+      {/each}
+    </div>
   {/if}
   {#if traceLines.length}
     <!-- Excel's auditing arrows: a dot on the cell read, an arrowhead on
@@ -5992,6 +6473,34 @@
       </SvPopover>
     </div>
   {/if}
+  {#if activeGridSheet}
+    <!-- A bound tab. Its records are the truth and its cells are made from
+         them, so the formula engine on every other tab reads it as an
+         ordinary sheet; see `sheet/sheet-kinds.ts`. The sheet chrome that
+         has no meaning here (the fx bar's cell references, the cell
+         context menu) is simply not wired to it.
+
+         It selects the way the cell tabs do, `cell` rather than the grid's
+         default: left alone the grid puts a row-selection checkbox column
+         in front of the data, which is a control nobody asked this tab
+         for and which no other tab in the workbook has. -->
+    <SvGrid
+      data={activeGridSheet.rows}
+      columns={gridSheetColumns}
+      {features}
+      selectionMode="cell"
+      enableCellSelection={true}
+      showRowNumbers={headingsOn}
+      rowNumberWidth={40}
+      {rowHeight}
+      columnResize={true}
+      localization={gridLocalization}
+      containerHeight={height}
+      enableInlineEditing={activeGridSheet.editable === true}
+      onCellValueChange={onGridSheetEdit}
+      onApiReady={onBoundGridReady}
+    />
+  {:else}
   <SvGrid
     data={gridRows}
     {columns}
@@ -6061,6 +6570,7 @@
       reportPresence()
     }}
   />
+  {/if}
   </div>
 
   {#if showTabs}
@@ -6556,6 +7066,147 @@
     z-index: 6;
     pointer-events: none;
     overflow: visible;
+  }
+  /* A cell drawn as a control. It sits over the cell's own text rather
+     than replacing it, so the value stays visible to a screen reader and
+     to a column that is only partly controlled. */
+  .sheet-cell-control {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    pointer-events: none;
+    /* The control covers the cell's own TRUE / FALSE, so it has to carry
+       the cell's background rather than a colour of its own. `inherit`
+       takes whatever the cell computed to, which is the only thing that
+       stays right across the themes and the banded rows. */
+    background: inherit;
+  }
+  .sheet-cell-control > *,
+  .sheet-cell-control input,
+  .sheet-cell-control label { pointer-events: auto; }
+  .sheet-cell-control.checkbox input { margin: 0; cursor: pointer; }
+  .sheet-cell-control.button {
+    font: inherit;
+    font-size: 11px;
+    line-height: 1;
+    inset: 2px;
+    padding: 0 8px;
+    border: 1px solid var(--sg-border, #c4c4c4);
+    border-radius: 3px;
+    background: var(--sg-header-bg, #f3f3f3);
+    color: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sheet-cell-control.button:hover:not(:disabled) { background: var(--sg-row-hover-bg, #e8e8e8); }
+  .sheet-cell-control.button:disabled { cursor: default; opacity: 0.6; }
+  .sheet-cell-control.radio {
+    justify-content: flex-start;
+    padding-inline: 4px;
+    font-size: 11px;
+    overflow: hidden;
+  }
+  .sheet-cell-control.radio label {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .sheet-cell-control.radio input { margin: 0; }
+  /* Excel's outline bar, down the inline-start edge of the grid. Logical
+     insets rather than `left`, so it sits on the correct side in RTL.
+
+     Its width is a variable because two rules have to agree on it: the
+     bar's own, and the inset that moves the grid out from under it. They
+     did not agree when the second rule aimed at the wrong class, and the
+     bar sat on top of the row numbers with nothing to say it had. */
+  .sheet-grid { --sheet-outline-width: 18px; }
+  .sheet-outline-bar {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: var(--sheet-outline-width);
+    z-index: 7;
+    pointer-events: none;
+    background: var(--sg-header-bg, #f6f6f6);
+    border-inline-end: 1px solid var(--sg-border, #d4d4d4);
+  }
+  .sheet-outline-levels {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    padding-block-start: 2px;
+    pointer-events: auto;
+  }
+  .sheet-outline-level {
+    width: 13px;
+    height: 13px;
+    padding: 0;
+    font: inherit;
+    font-size: 9px;
+    line-height: 1;
+    border: 1px solid var(--sg-border, #b4b4b4);
+    border-radius: 2px;
+    background: var(--sg-bg, #fff);
+    color: inherit;
+    cursor: pointer;
+  }
+  .sheet-outline-level:hover { background: var(--sg-row-hover-bg, #eaeaea); }
+  /* The bracket: a line down the rows a group owns, with a foot at each
+     end, the way Excel draws one. */
+  .sheet-outline-line {
+    position: absolute;
+    inset-inline-start: 8px;
+    width: 1px;
+    background: var(--sg-muted, #8a8a8a);
+  }
+  .sheet-outline-line::before,
+  .sheet-outline-line::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    width: 4px;
+    height: 1px;
+    background: inherit;
+  }
+  .sheet-outline-line::before { top: 0; }
+  .sheet-outline-line::after { bottom: 0; }
+  .sheet-outline-toggle {
+    position: absolute;
+    inset-inline-start: 3px;
+    width: 11px;
+    height: 11px;
+    margin-block-start: -6px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    font: inherit;
+    font-size: 10px;
+    line-height: 1;
+    border: 1px solid var(--sg-border, #8a8a8a);
+    border-radius: 1px;
+    background: var(--sg-bg, #fff);
+    color: inherit;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+  .sheet-outline-toggle:hover { background: var(--sg-row-hover-bg, #eaeaea); }
+  /* The grid gets out of the bar's way only while there is one to show.
+     The root's class is `sv-grid-root`; aiming this at `.sv-grid` matched
+     nothing, so the bar painted straight over the row numbers. */
+  .sheet-grid:has(> .sheet-outline-bar) > :global(.sv-grid-root) {
+    margin-inline-start: var(--sheet-outline-width);
+    width: calc(100% - var(--sheet-outline-width));
   }
   /* Circle Invalid Data: a red oval on the cell's box, over its content. */
   .sheet-invalid-circle {

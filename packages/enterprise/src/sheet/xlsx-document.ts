@@ -28,6 +28,7 @@ import type { ValidationRule, ValidationAllow, ValidationOperator } from './vali
 import type { CfRule, CfStyle, CfOperator, CfTextMatch, CfIconSet } from './conditional-formats'
 import type { Rect } from './rects'
 import { colToLetters, lettersToCol, parseA1 } from './address'
+import { emptyOutline, hiddenByOutline, isOutlined, outlineLevel } from './outline'
 import { translateFormula } from './refs'
 import { isError, typedError, type CellValue } from './ast'
 import { listComments, isThreaded, type CommentThread, type CommentEntry } from './comments'
@@ -498,16 +499,25 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
     const widthCols = new Set<number>()
     for (const letter of Object.keys(state.widths)) { const c = lettersToCol(letter); if (c >= 0) widthCols.add(c) }
     for (const c of state.hidden.cols) widthCols.add(c)
+    const colOutline = state.outline?.cols ?? emptyOutline()
+    const colFolded = hiddenByOutline(colOutline, OUTLINE_SIDE)
+    for (const c of Object.keys(colOutline.levels)) widthCols.add(Number(c))
+    for (const c of colOutline.collapsed) widthCols.add(c)
+    for (const c of colFolded) widthCols.add(c)
     for (const c of [...widthCols].sort((a, b) => a - b)) {
       const px = state.widths[colToLetters(c)]
-      const hidden = state.hidden.cols.has(c)
-      colXml.push(`<col min="${c + 1}" max="${c + 1}"${px !== undefined ? ` width="${pxToWidth(px)}" customWidth="1"` : ' width="12.5"'}${hidden ? ' hidden="1"' : ''}/>`)
+      const hidden = state.hidden.cols.has(c) || colFolded.has(c)
+      const level = outlineLevel(colOutline, c)
+      const collapsed = colOutline.collapsed.includes(c)
+      colXml.push(`<col min="${c + 1}" max="${c + 1}"${px !== undefined ? ` width="${pxToWidth(px)}" customWidth="1"` : ' width="12.5"'}${hidden ? ' hidden="1"' : ''}${level > 0 ? ` outlineLevel="${level}"` : ''}${collapsed ? ' collapsed="1"' : ''}/>`)
     }
 
     // <sheetData>. The rows the AutoFilter folds away go out hidden, as
     // Excel writes them, so the file opens in the same view; the criteria
     // beside the region are what lets Clear Filter bring them back.
     const filtered = filteredRows(doc, name)
+    const rowOutline = state.outline?.rows ?? emptyOutline()
+    const rowFolded = hiddenByOutline(rowOutline, OUTLINE_SIDE)
     const rowXml: string[] = []
     for (let r = 0; r <= Math.max(maxRow, ...filtered); r += 1) {
       const cells: string[] = []
@@ -531,9 +541,11 @@ export function documentToXlsxParts(doc: SheetDocument): Record<string, string> 
         if (xml) cells.push(xml)
       }
       const height = state.heights.get(r)
-      const hidden = state.hidden.rows.has(r) || filtered.has(r)
-      if (!cells.length && height === undefined && !hidden) continue
-      rowXml.push(`<row r="${r + 1}"${height !== undefined ? ` ht="${pxToPt(height)}" customHeight="1"` : ''}${hidden ? ' hidden="1"' : ''}>${cells.join('')}</row>`)
+      const hidden = state.hidden.rows.has(r) || filtered.has(r) || rowFolded.has(r)
+      const level = outlineLevel(rowOutline, r)
+      const collapsed = rowOutline.collapsed.includes(r)
+      if (!cells.length && height === undefined && !hidden && level === 0 && !collapsed) continue
+      rowXml.push(`<row r="${r + 1}"${height !== undefined ? ` ht="${pxToPt(height)}" customHeight="1"` : ''}${hidden ? ' hidden="1"' : ''}${level > 0 ? ` outlineLevel="${level}"` : ''}${collapsed ? ' collapsed="1"' : ''}>${cells.join('')}</row>`)
     }
 
     // Frozen panes.
@@ -1027,6 +1039,10 @@ function readSharedStrings(xml: string | undefined): string[] {
 }
 
 /** A formula as the engine spells it: a leading `=`, no `_xlfn.` prefixes. */
+/** Excel's own defaults: the summary line comes after its detail on both
+ *  axes, which is `summaryBelow="1"` and `summaryRight="1"`. */
+const OUTLINE_SIDE = { summaryBelow: true }
+
 const engineFormula = (text: string): string => `=${text.replace(/_xlfn\./g, '').replace(/_xlws\./g, '')}`
 
 /**
@@ -1039,11 +1055,52 @@ const engineFormula = (text: string): string => `=${text.replace(/_xlfn\./g, '')
  * reader already strips the prefixes, and the writer has to put them back.
  */
 const XLWS_FUNCTIONS = new Set(['FILTER', 'SORT'])
+
+/**
+ * Future functions this engine does NOT evaluate but still spells the way
+ * the file wants.
+ *
+ * A cell this engine answers with `#NAME?` is one Excel can still work
+ * out, so dropping the prefix on the way back out would turn a formula
+ * that merely looks broken here into one that is broken there too. Keeping
+ * the name here costs nothing and makes the round trip lossless.
+ *
+ * Anything on this list is a candidate for implementing later; nothing
+ * should arrive here by accident, which is what the test that reads it
+ * guards.
+ */
+export const PRESERVED_ONLY = ['RANDARRAY'] as const
 export const XLFN_FUNCTIONS = new Set([
+  // Excel 365 and the dynamic arrays.
   'LET', 'LAMBDA', 'MAP', 'BYROW', 'BYCOL', 'REDUCE', 'SCAN', 'MAKEARRAY',
-  'UNIQUE', 'SEQUENCE', 'SORTBY', 'RANDARRAY', 'TEXTSPLIT',
-  'XLOOKUP', 'XMATCH', 'TEXTJOIN', 'CONCAT', 'IFS', 'SWITCH', 'MAXIFS', 'MINIFS',
-  'IMAGE', 'NUMBERVALUE',
+  'UNIQUE', 'SEQUENCE', 'SORTBY', 'TEXTSPLIT',
+  'TEXTBEFORE', 'TEXTAFTER',
+  'XLOOKUP', 'XMATCH', 'IMAGE',
+  // Excel 2016.
+  'TEXTJOIN', 'CONCAT', 'IFS', 'SWITCH', 'MAXIFS', 'MINIFS', 'FORECAST.LINEAR',
+  // Excel 2013: the reciprocal trigonometry, the bitwise set, and the
+  // handful of others that arrived with them.
+  'ACOT', 'ACOTH', 'COT', 'COTH', 'CSC', 'CSCH', 'SEC', 'SECH',
+  'BITAND', 'BITOR', 'BITXOR', 'BITLSHIFT', 'BITRSHIFT',
+  'CEILING.MATH', 'FLOOR.MATH', 'DAYS', 'XOR', 'NUMBERVALUE',
+  'GAMMA', 'GAUSS', 'PHI', 'PERMUTATIONA', 'SKEW.P', 'UNICHAR', 'UNICODE',
+  // Excel 2010: the statistical family Microsoft renamed with a dot. The
+  // OLD spelling of each (NORMDIST, CHIDIST, TTEST) is NOT a future
+  // function and must stay unprefixed, which is why only the dotted names
+  // are here.
+  'BETA.DIST', 'BETA.INV', 'BINOM.DIST', 'BINOM.INV',
+  'CHISQ.DIST', 'CHISQ.DIST.RT', 'CHISQ.INV', 'CHISQ.INV.RT', 'CHISQ.TEST',
+  'CONFIDENCE.NORM', 'CONFIDENCE.T', 'COVARIANCE.P', 'COVARIANCE.S',
+  'ERF.PRECISE', 'ERFC.PRECISE', 'EXPON.DIST',
+  'F.DIST', 'F.DIST.RT', 'F.INV', 'F.INV.RT', 'F.TEST',
+  'GAMMA.DIST', 'GAMMA.INV', 'GAMMALN.PRECISE', 'HYPGEOM.DIST',
+  'LOGNORM.DIST', 'LOGNORM.INV', 'MODE.SNGL', 'NEGBINOM.DIST',
+  'NORM.DIST', 'NORM.INV', 'NORM.S.DIST', 'NORM.S.INV',
+  'PERCENTILE.EXC', 'PERCENTILE.INC', 'POISSON.DIST',
+  'QUARTILE.EXC', 'QUARTILE.INC', 'STDEV.P', 'STDEV.S',
+  'T.DIST', 'T.DIST.2T', 'T.DIST.RT', 'T.INV', 'T.INV.2T', 'T.TEST',
+  'VAR.P', 'VAR.S', 'WEIBULL.DIST', 'Z.TEST',
+  ...PRESERVED_ONLY,
 ])
 
 /**
@@ -1183,6 +1240,10 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
       comments: {}, protected: false, sheetHidden: attr(sheetNode, 'state') === 'hidden' || attr(sheetNode, 'state') === 'veryHidden',
       merges: [], validation: [], conditionalFormats: [], autoFilter: null,
     }
+    // Filled from the rows' and columns' `outlineLevel` below, then hung on
+    // the entry once, so an unoutlined sheet carries no `outline` at all.
+    const outlineRows = emptyOutline()
+    const outlineCols = emptyOutline()
     if (xml) {
       const root = parseXml(xml, path).documentElement
       const put = (r: number, c: number, text: string) => {
@@ -1198,12 +1259,19 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
         if (min === null || max === null) continue
         const width = num(col, 'width')
         const hidden = flag(col, 'hidden')
+        const level = num(col, 'outlineLevel')
+        const collapsedCol = flag(col, 'collapsed')
         // A run over every column to the sheet's edge is Excel's default
         // width, not a setting on sixteen thousand columns.
         const last = Math.min(max, Math.max(min, 256))
         for (let c = min - 1; c <= last - 1; c += 1) {
           if (width !== null && flag(col, 'customWidth')) entry.columnWidths[colToLetters(c)] = widthToPx(width)
-          if (hidden) entry.hidden.cols.push(c)
+          if (level !== null && level > 0) outlineCols.levels[c] = level
+          if (collapsedCol) outlineCols.collapsed.push(c)
+          // A line a collapsed group folds is not a hidden line: it comes
+          // back when the group opens, so recording it as hidden as well
+          // would leave it behind when it did.
+          if (hidden && level === null) entry.hidden.cols.push(c)
         }
       }
 
@@ -1227,7 +1295,10 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
         const told = ht !== null
           && (flag(row, 'customHeight') || defaultHeight === null || Math.abs(ht - defaultHeight) > 0.01)
         if (told) entry.rowHeights.push([r, ptToPx(ht!)])
-        if (flag(row, 'hidden')) entry.hidden.rows.push(r)
+        const rowLevel = num(row, 'outlineLevel')
+        if (rowLevel !== null && rowLevel > 0) outlineRows.levels[r] = rowLevel
+        if (flag(row, 'collapsed')) outlineRows.collapsed.push(r)
+        if (flag(row, 'hidden') && rowLevel === null) entry.hidden.rows.push(r)
         let nextCol = 0
         for (const cell of kids(row, 'c')) {
           const at = attr(cell, 'r')
@@ -1564,6 +1635,9 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
           entry.comments[rowId] = { ...(entry.comments[rowId] ?? {}), [colToLetters(ref.col)]: text }
         }
       }
+    }
+    if (isOutlined(outlineRows) || isOutlined(outlineCols)) {
+      entry.outline = { rows: outlineRows, cols: outlineCols }
     }
     sheets.push({ name, cells })
     entries[name] = entry

@@ -13,6 +13,7 @@
  */
 import { RIBBON_TABS } from './ribbon'
 import { PROTECTED_MESSAGE } from './protection'
+import type { SheetCulture } from './culture'
 
 export type SheetTextMessages = {
   // Status bar
@@ -145,6 +146,15 @@ export type SheetTextMessages = {
   sheetUnprotected: string
   protectedCell: string
   nothingToHide: string
+  selectLinesToGroup: string
+  noGroupHere: string
+  outlineBar: string
+  outlineLevels: string
+  /** "Show level {level}" */
+  outlineShowLevel: string
+  outlineExpand: string
+  outlineCollapse: string
+  selectCellsForControl: string
   nothingHidden: string
   /** "{count} {unit} {state}" */
   linesToggled: string
@@ -790,10 +800,23 @@ export type SheetMessages = SheetTextMessages & SheetDialogMessages & Record<str
 
 export type SheetLocalization = {
   /** BCP-47 tag for the status bar's numbers; the grid's own formatting
-   *  follows it too. Defaults to the page's language. */
+   *  follows it too, and the culture below is read off it. Defaults to
+   *  the page's language. */
   locale?: string
   /** Any subset of the strings; unset keys stay English. */
   text?: Partial<SheetMessages>
+  /**
+   * How numbers and formulas are SPELLED, which `locale` already implies.
+   *
+   * Set a subset to override one mark without naming the rest, or `false`
+   * to keep the invariant spelling (`1.5`, `SUM(a, b)`) while still
+   * translating the strings. A sheet whose users share a file with an
+   * English-speaking team sometimes wants exactly that.
+   *
+   * The DOCUMENT is unaffected either way: it always stores the invariant
+   * spelling, so a file written under any culture opens under any other.
+   */
+  culture?: Partial<SheetCulture> | false
 }
 
 /** The ribbon's strings, read off the model so they are always complete. */
@@ -929,6 +952,14 @@ export const defaultSheetTextMessages: SheetTextMessages = {
   sheetUnprotected: 'Sheet unprotected.',
   protectedCell: PROTECTED_MESSAGE,
   nothingToHide: 'Nothing to hide',
+  selectLinesToGroup: 'Select the rows or columns to group first',
+  noGroupHere: 'No group at the selection',
+  outlineBar: 'Outline',
+  outlineLevels: 'Outline levels',
+  outlineShowLevel: 'Show level {level}',
+  outlineExpand: 'Expand the group',
+  outlineCollapse: 'Collapse the group',
+  selectCellsForControl: 'Select the cells to draw as a control first',
   nothingHidden: 'Nothing hidden in the selection',
   linesToggled: '{count} {unit} {state}',
   sortKeptHidden: '{count} hidden {unit} left in place',

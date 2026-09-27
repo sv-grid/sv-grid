@@ -522,11 +522,11 @@ function renderMask(mask: MaskToken[], digits: string): string {
   return digits.slice(0, at) + out
 }
 
-function group(intText: string): string {
-  return intText.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+function group(intText: string, mark: string): string {
+  return intText.replace(/\B(?=(\d{3})+(?!\d))/g, mark)
 }
 
-function renderNumeric(plan: NumericPlan, value: number): string {
+function renderNumeric(plan: NumericPlan, value: number, marks: NumberMarks): string {
   let n = value
   if (plan.percent) n *= 100
   if (plan.scale !== 1) n /= plan.scale
@@ -566,7 +566,7 @@ function renderNumeric(plan: NumericPlan, value: number): string {
   } else {
     if (intText.length < minInt) intText = intText.padStart(minInt, '0')
     if (minInt === 0 && intText === '0' && plan.intPlaceholders.length > 0) intText = ''
-    if (plan.useGrouping && intText !== '') intText = group(intText)
+    if (plan.useGrouping && intText !== '') intText = group(intText, marks.group)
   }
 
   // Trim optional decimals from the right: `0.0#` on 1.5 gives "1.5", not
@@ -580,7 +580,7 @@ function renderNumeric(plan: NumericPlan, value: number): string {
     fracText = kind === '?' ? `${fracText.slice(0, i)} ` : fracText.slice(0, i)
   }
 
-  const body = fracText === '' ? intText : `${intText}.${fracText}`
+  const body = fracText === '' ? intText : `${intText}${marks.decimal}${fracText}`
   // `#` on zero prints nothing, which is how "hide zeros" patterns work. The
   // fallback below is only for a pattern with no digit placeholders at all.
   return plan.prefix + body + plan.suffix
@@ -628,8 +628,22 @@ function general(value: unknown): string {
  */
 const cache = new Map<string, CompiledFormat>()
 
-export function compileNumberFormat(pattern: string): CompiledFormat {
-  const hit = cache.get(pattern)
+/**
+ * The marks a rendered number carries.
+ *
+ * The PATTERN is always written the invariant way, `#,##0.00`, whatever
+ * the locale: that is how Excel stores one and how the file carries it.
+ * These are what the pattern's `,` and `.` come out AS.
+ */
+export type NumberMarks = { decimal: string; group: string }
+
+export const INVARIANT_MARKS: NumberMarks = { decimal: '.', group: ',' }
+
+export function compileNumberFormat(pattern: string, marks: NumberMarks = INVARIANT_MARKS): CompiledFormat {
+  // The marks join the cache key, so a sheet showing one locale does not
+  // serve its rendered numbers to a sheet showing another.
+  const key = marks === INVARIANT_MARKS ? pattern : `${pattern}\u0000${marks.decimal}${marks.group}`
+  const hit = cache.get(key)
   if (hit) return hit
 
   const sections = splitSections(pattern).map(parseSection)
@@ -728,14 +742,14 @@ export function compileNumberFormat(pattern: string): CompiledFormat {
       // section supplies the sign, usually as parentheses or a literal minus.
       const usingNegativeSection = n < 0 && section === negative && !conditional
       const magnitude = usingNegativeSection ? Math.abs(n) : n
-      let out = renderNumeric(plan, magnitude)
+      let out = renderNumeric(plan, magnitude, marks)
       // With no negative section, put the sign back on.
       if (n < 0 && !usingNegativeSection && !out.startsWith('-')) out = `-${out}`
       return { text: out, color: section.color }
     },
   }
 
-  cache.set(pattern, compiled)
+  cache.set(key, compiled)
   return compiled
 }
 

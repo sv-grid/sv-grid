@@ -80,7 +80,8 @@ postfix `%` is tighter still, so `=-2%` is -0.02.
 | Group | Functions |
 | ----- | --------- |
 | Financial | `PMT` `IPMT` `PPMT` `PV` `FV` `NPER` `RATE` `NPV` `IRR` `SLN` |
-| Math | `SUM` `ABS` `INT` `MOD` `POWER` `SQRT` `ROUND` `ROUNDUP` `ROUNDDOWN` `PRODUCT` `SUMSQ` `SUMPRODUCT` `CEILING` `CEILING.MATH` `FLOOR` `FLOOR.MATH` `MROUND` `TRUNC` `LOG` `LOG10` `LN` `EXP` `PI` `RAND` `RANDBETWEEN` `SIGN` `EVEN` `ODD` `QUOTIENT` `GCD` `LCM` `FACT` `COMBIN` `PERMUT` |
+| Math | `SUM` `ABS` `INT` `MOD` `POWER` `SQRT` `ROUND` `ROUNDUP` `ROUNDDOWN` `PRODUCT` `SUMSQ` `SUMPRODUCT` `CEILING` `CEILING.MATH` `FLOOR` `FLOOR.MATH` `MROUND` `TRUNC` `LOG` `LOG10` `LN` `EXP` `PI` `RAND` `RANDBETWEEN` `SIGN` `EVEN` `ODD` `QUOTIENT` `GCD` `LCM` `FACT` `COMBIN` `PERMUT` `MULTINOMIAL` |
+| Trigonometry | `SIN` `COS` `TAN` `COT` `SEC` `CSC` `ASIN` `ACOS` `ATAN` `ATAN2` `ACOT` `SINH` `COSH` `TANH` `COTH` `SECH` `CSCH` `ASINH` `ACOSH` `ATANH` `ACOTH` `DEGREES` `RADIANS` `SQRTPI` |
 | Statistics | `AVERAGE`/`AVG` `MIN` `MAX` `COUNT` `COUNTA` `COUNTBLANK` `MEDIAN` `STDEV` `STDEV.S` `STDEV.P` `STDEVP` `VAR` `VAR.S` `VAR.P` `VARP` `RANK` `LARGE` `SMALL` `PERCENTILE` `PERCENTILE.INC` `PERCENTILE.EXC` `QUARTILE` `QUARTILE.INC` `QUARTILE.EXC` `MODE` `MODE.SNGL` `GEOMEAN` `CORREL` `SLOPE` `INTERCEPT` `FORECAST` `FORECAST.LINEAR` |
 | Conditional | `SUMIF` `SUMIFS` `COUNTIF` `COUNTIFS` `AVERAGEIF` `AVERAGEIFS` `MAXIFS` `MINIFS` `SUBTOTAL` |
 | Logical | `IF` `IFS` `IFERROR` `IFNA` `SWITCH` `AND` `OR` `NOT` `XOR` `TRUE` `FALSE` |
@@ -88,8 +89,44 @@ postfix `%` is tighter still, so `=-2%` is -0.02.
 | Text | `LEN` `LEFT` `RIGHT` `MID` `UPPER` `LOWER` `PROPER` `TRIM` `CLEAN` `CONCAT` `CONCATENATE` `TEXTJOIN` `SUBSTITUTE` `REPLACE` `TEXTBEFORE` `TEXTAFTER` `REPT` `FIND` `SEARCH` `EXACT` `TEXT` `VALUE` `NUMBERVALUE` `CHAR` `CODE` `UNICHAR` `UNICODE` `DOLLAR` `FIXED` |
 | Date | `TODAY` `NOW` `YEAR` `MONTH` `DAY` `DATE` `EOMONTH` `EDATE` `DAYS` `DAYS360` `DATEDIF` `YEARFRAC` `WEEKDAY` `WEEKNUM` `NETWORKDAYS` `WORKDAY` `HOUR` `MINUTE` `SECOND` `TIME` `DATEVALUE` `TIMEVALUE` |
 | Lookup | `VLOOKUP` `HLOOKUP` `XLOOKUP` `LOOKUP` `INDEX` `MATCH` `XMATCH` `CHOOSE` `ROWS` `COLUMNS` `ROW` `COLUMN` `ADDRESS` `OFFSET` `INDIRECT` `HYPERLINK` `IMAGE` |
+| Engineering | `DEC2BIN` `DEC2OCT` `DEC2HEX` `BIN2DEC` `BIN2OCT` `BIN2HEX` `OCT2BIN` `OCT2DEC` `OCT2HEX` `HEX2BIN` `HEX2OCT` `HEX2DEC` `BITAND` `BITOR` `BITXOR` `BITLSHIFT` `BITRSHIFT` `DELTA` `GESTEP` `ERF` `ERF.PRECISE` `ERFC` `ERFC.PRECISE` `CONVERT` |
+| Database | `DSUM` `DPRODUCT` `DAVERAGE` `DMAX` `DMIN` `DCOUNT` `DCOUNTA` `DSTDEV` `DSTDEVP` `DVAR` `DVARP` `DGET` |
+| Distributions | `NORM.DIST` `NORM.INV` `NORM.S.DIST` `NORM.S.INV` `T.DIST` `T.DIST.RT` `T.DIST.2T` `T.INV` `T.INV.2T` `CHISQ.DIST` `CHISQ.DIST.RT` `CHISQ.INV` `CHISQ.INV.RT` `F.DIST` `F.DIST.RT` `F.INV` `F.INV.RT` `BINOM.DIST` `BINOM.INV` `NEGBINOM.DIST` `POISSON.DIST` `HYPGEOM.DIST` `EXPON.DIST` `LOGNORM.DIST` `LOGNORM.INV` `GAMMA` `GAMMA.DIST` `GAMMA.INV` `GAMMALN` `GAMMALN.PRECISE` `BETA.DIST` `BETA.INV` `WEIBULL.DIST` `CONFIDENCE.NORM` `CONFIDENCE.T` `STANDARDIZE` `PHI` `GAUSS` `FISHER` `FISHERINV` |
+| Tests and spread | `Z.TEST` `T.TEST` `F.TEST` `CHISQ.TEST` `AVEDEV` `DEVSQ` `SKEW` `SKEW.P` `KURT` `TRIMMEAN` `PERMUTATIONA` `AVERAGEA` `MAXA` `MINA` `STDEVA` `STDEVPA` `VARA` `VARPA` `COVARIANCE.P` `COVARIANCE.S` `PEARSON` `RSQ` `STEYX` `PROB` |
 | Dynamic arrays | `FILTER` `UNIQUE` `SORT` `SORTBY` `SEQUENCE` `TRANSPOSE` `TEXTSPLIT` |
 | Names and lambdas | `LET` `LAMBDA` `MAP` `BYROW` `BYCOL` `REDUCE` `SCAN` `MAKEARRAY` `HYPERLINK` |
+
+Excel renamed the statistical family in 2010 and kept the older names
+working; both spellings are here, and the three places they disagree are
+worth knowing because each one is silent:
+
+- `CHIDIST` is the RIGHT tail. `CHISQ.DIST` is the left. The old name is
+  not the new one with a dot in it.
+- `TDIST` takes a tail COUNT, 1 or 2, and refuses a negative x.
+  `T.DIST` takes a boolean and accepts any x.
+- `TINV` is the TWO-tailed inverse, so it matches `T.INV.2T` rather than
+  `T.INV`. `FDIST`, `FINV`, `CHIINV` and `NORMSDIST` are likewise the
+  right-tailed or cumulative-only forms of their dotted partners.
+
+`ATAN2` takes its arguments x first, y second, which is the opposite order
+from every C-family `atan2` and the one thing about the trigonometry pack
+that reads as a bug rather than a convention: `=ATAN2(-1, 1)` is three
+quarters of pi. A reciprocal at a pole (`=COT(0)`, `=CSC(0)`) is `#DIV/0!`
+rather than infinity.
+
+The base conversions write a negative as ten-digit two's complement, so
+`=DEC2BIN(-1)` is `1111111111` and not `-1`. That is where each function's
+range comes from: ten binary digits is ten bits, ten octal digits thirty,
+ten hex digits forty. `places` pads with leading zeros and is ignored for a
+negative, since the complement already fills the width, and too few places
+for the digits needed is `#NUM!` rather than a truncation.
+
+The database functions read Excel's criteria-block grammar: the block's
+first row is header names matched against the database's own, every row
+under it is one alternative, the conditions across a row are ANDed and the
+rows are ORed. A blank criteria cell places no condition, so a block that
+is nothing but headers matches every record. `DGET` wants exactly one
+match and says `#VALUE!` for none, `#NUM!` for more.
 
 `IF`, `IFS`, `IFERROR`, `IFNA` and `SWITCH` short-circuit: the branch not taken
 is never evaluated, so `=IF(A1=0, 0, 100/A1)` is safe when `A1` is zero.
@@ -491,6 +528,13 @@ in `@svgrid/grid` is the older, row-shaped adapter, free and still there.
 <div data-docs-demo="173-hyperformula" data-height="520"></div>
 
 ## More examples
+
+### Engineering, statistics, and the locale you type in
+
+Four function families the engine gained at once, worked through a real example of each: a bearing from ATAN2 and DEGREES, a register mask in binary and hex with BITAND, an orchard queried through Excel's criteria-block grammar with DSUM, DCOUNT, DAVERAGE and DGET, and NORM.DIST with its inverse, a confidence interval and the chi-squared and t tails. The picker switches how numbers and formulas are SPELLED: German shows 1.234,5 and =ROUND(A1/3; 2) while the document still stores 1234.5 and a comma, so the file opens anywhere. Column H is drawn as checkboxes whose ticks an ordinary COUNTIF counts.
+
+<div data-docs-demo="499-sheet-engineering-stats" data-height="560"></div>
+
 
 ### Blank sheet - just type
 

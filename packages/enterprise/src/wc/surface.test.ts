@@ -62,7 +62,8 @@ describe('parity with <SvSheet>', () => {
     expect(byName.document).toMatchObject({ type: 'Object', attribute: null })
     expect(byName.data).toMatchObject({ type: 'Array', attribute: null })
     expect(ELEMENT_EVENTS.map((e) => [e.event, e.params])).toEqual([
-      ['action', ['action', 'cmd']], ['ready', ['api', 'document']], ['change', ['reasons']], ['presence', ['me']],
+      ['action', ['action', 'cmd']], ['cellaction', ['event']],
+      ['ready', ['api', 'document']], ['change', ['reasons']], ['presence', ['me']],
     ])
     expect(ELEMENT_METHODS).toEqual(['getState', 'setState', 'refresh', 'act', 'open', 'toXlsx', 'toOds', 'toXls', 'toCsv', 'newWorkbook', 'print', 'printHtml'])
   })

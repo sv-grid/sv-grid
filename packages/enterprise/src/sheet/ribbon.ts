@@ -194,6 +194,17 @@ export type RibbonActionId =
   | 'remove-link'
   | 'insert-table'
   | 'recalculate'
+  | 'insert-checkbox'
+  | 'insert-cell-button'
+  | 'clear-cell-type'
+  | 'group-rows'
+  | 'group-cols'
+  | 'auto-outline'
+  | 'ungroup-rows'
+  | 'ungroup-cols'
+  | 'clear-outline'
+  | 'show-detail'
+  | 'hide-detail'
   | 'calc-options'
   | 'evaluate-formula'
   | 'error-checking'
@@ -1060,6 +1071,19 @@ const INSERT: RibbonTab = {
       ],
     },
     {
+      // Excel's Insert > Checkbox, with the two other controls a data-entry
+      // sheet asks for beside it. Each draws the cell as a control; the
+      // cell's own value is still what it means.
+      id: 'controls',
+      icon: 'checkbox',
+      label: 'Controls',
+      items: [
+        { id: 'insert-checkbox', label: 'Checkbox', title: 'Draw the selected cells as checkboxes, over TRUE and FALSE', icon: 'checkbox', kind: 'button', size: 'large', emits: 'insert-checkbox' },
+        small(2, { id: 'insert-cell-button', label: 'Button', title: 'Draw the selected cells as buttons', icon: 'cell-button', kind: 'button', emits: 'insert-cell-button' }),
+        small(2, { id: 'clear-cell-type', label: 'Clear Control', title: 'Draw the selected cells as ordinary cells again', icon: 'clear-formats', kind: 'button', emits: 'clear-cell-type' }),
+      ],
+    },
+    {
       id: 'insert-cells',
       icon: 'insert-cells',
       label: 'Cells',
@@ -1193,6 +1217,36 @@ const DATA: RibbonTab = {
       label: 'Forecast',
       items: [
         { id: 'goal-seek', label: 'Goal Seek', title: 'Change one input until a formula hits a target', icon: 'goal-seek', kind: 'button', size: 'large', emits: 'goal-seek' },
+      ],
+    },
+    {
+      id: 'outline',
+      icon: 'group-rows',
+      label: 'Outline',
+      items: [
+        // Excel's Group and Ungroup are split buttons whose face acts on
+        // rows; the ribbon model forbids a dropdown that emits its own
+        // face, so each is a menu whose first entry is the face's action.
+        {
+          id: 'group', label: 'Group', title: 'Group the selected rows or columns',
+          icon: 'group-rows', kind: 'dropdown', size: 'large', wide: true,
+          options: [
+            { value: 'group-rows', label: 'Group Rows', keys: 'Alt+Shift+Right', emits: 'group-rows' },
+            { value: 'group-cols', label: 'Group Columns', emits: 'group-cols' },
+            { value: 'auto-outline', label: 'Auto Outline', emits: 'auto-outline' },
+          ],
+        },
+        {
+          id: 'ungroup', label: 'Ungroup', title: 'Ungroup the selected rows or columns',
+          icon: 'ungroup-rows', kind: 'dropdown', size: 'large', wide: true,
+          options: [
+            { value: 'ungroup-rows', label: 'Ungroup Rows', keys: 'Alt+Shift+Left', emits: 'ungroup-rows' },
+            { value: 'ungroup-cols', label: 'Ungroup Columns', emits: 'ungroup-cols' },
+            { value: 'clear-outline', label: 'Clear Outline', emits: 'clear-outline' },
+          ],
+        },
+        small(2, { id: 'show-detail', label: 'Show Detail', title: 'Expand the group at the selection', icon: 'show-detail', kind: 'button', emits: 'show-detail' }),
+        small(2, { id: 'hide-detail', label: 'Hide Detail', title: 'Collapse the group at the selection', icon: 'hide-detail', kind: 'button', emits: 'hide-detail' }),
       ],
     },
   ],

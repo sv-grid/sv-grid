@@ -3,8 +3,13 @@ name: Community demo guard
 # Outside contributions are accepted for community demos only. This check
 # enforces that on every pull request:
 #
-#   - A PR from an owner, org member or collaborator passes untouched. The
-#     Test workflow covers their code.
+#   - A PR from an owner, org member or collaborator, or from a branch on
+#     this repository rather than a fork, passes untouched. The Test
+#     workflow covers their code. The branch check is there because the
+#     event payload reports a maintainer with a PRIVATE org membership as
+#     CONTRIBUTOR, which failed this guard on every PR they opened; only
+#     someone with push access can put a branch here, so it is the
+#     stronger signal of the two.
 #   - A PR from anyone else must touch nothing but .svelte files under
 #     examples/src/demos/community/ (the template and README excluded). Each
 #     file needs the attribution header, may import only from @svgrid/grid
@@ -44,9 +49,17 @@ jobs:
 
             const pr = context.payload.pull_request
             const association = pr.author_association
-            core.info(`Author @${pr.user.login}, association ${association}`)
+            // A branch on THIS repository, as opposed to a fork. Only
+            // someone with push access can put one here, so it is a
+            // stronger signal of trust than the association, which the
+            // event payload reports as CONTRIBUTOR for a maintainer whose
+            // org membership is private - and which therefore failed this
+            // guard on every pull request the maintainers opened.
+            const sameRepo = pr.head.repo
+              && pr.head.repo.full_name === `${context.repo.owner}/${context.repo.repo}`
+            core.info(`Author @${pr.user.login}, association ${association}, from ${pr.head.repo ? pr.head.repo.full_name : 'a deleted fork'}`)
 
-            if (TRUSTED.has(association)) {
+            if (TRUSTED.has(association) || sameRepo) {
               core.info('Trusted author: the guard does not apply.')
               core.setOutput('files', '')
               return

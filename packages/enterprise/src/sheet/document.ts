@@ -34,6 +34,13 @@ import { colToLetters, lettersToCol } from './address'
 import { shiftValidation, type ValidationRule } from './validation'
 import { shiftCf, type CfRule } from './conditional-formats'
 import { shiftAutoFilter, type AutoFilterState } from './auto-filter'
+import { copyCellType, shiftCellTypes, type CellTypeRegion } from './cell-types'
+import { copyGridSheet, type GridSheetSpec, type SheetKind } from './sheet-kinds'
+import { emptyOutline, shiftOutline, type OutlineState } from './outline'
+
+/** A deep copy of one axis's outline, absent reading as an empty one. */
+const copyOutline = (o?: OutlineState): OutlineState =>
+  (o ? { levels: { ...o.levels }, collapsed: [...o.collapsed] } : emptyOutline())
 
 /** Why the document changed. A listener gets every reason since its last call. */
 export type SheetChangeReason =
@@ -73,6 +80,11 @@ export type PerSheetState = {
   /** Row heights in px by row index; a row absent here reads the default. */
   heights: Map<number, number>
   hidden: { rows: Set<number>; cols: Set<number> }
+  /** Data > Group: the outline level of each row and column, and which
+   *  summary lines are collapsed. Lines a collapsed group hides are kept
+   *  apart from `hidden`, so expanding a group does not un-hide a row the
+   *  user hid by hand. */
+  outline: { rows: OutlineState; cols: OutlineState }
   freeze: FreezeState
   /** Cell comments keyed like the grid's `notes`: `r4` -> `B` -> a note's text or a thread. */
   notes: CommentsMap
@@ -89,11 +101,24 @@ export type PerSheetState = {
   links: LinksMap
   /** Excel's Hide Sheet: the tab is not shown and the shortcuts skip it. */
   sheetHidden: boolean
+  /**
+   * What this tab is: a cell grid, or a table bound to records.
+   *
+   * A `grid` sheet keeps its records in `grid` and projects them into the
+   * workbook's cells, so a formula on any other sheet reads it the way it
+   * reads a cell sheet. See `sheet-kinds.ts`.
+   */
+  kind: SheetKind
+  /** The records and columns of a `grid` sheet; absent on a cell sheet. */
+  grid?: GridSheetSpec
   merges: Rect[]
   /** Data validation rules, in order; the last one covering a cell applies. */
   validation: ValidationRule[]
   /** Conditional formatting rules, in priority order: the first one decides. */
   conditionalFormats: CfRule[]
+  /** Cells drawn as a control rather than as text: a checkbox, a button,
+   *  a radio group. The cell's value stays the truth. */
+  cellTypes: CellTypeRegion[]
   /** Excel's AutoFilter over a region, or null when the arrows are off. */
   autoFilter: AutoFilterState | null
   /** The rows the AutoFilter hides right now; worked out, never saved. */
@@ -106,6 +131,8 @@ export type SheetStateEntry = {
   columnWidths: Record<string, number>
   rowHeights: Array<[row: number, px: number]>
   hidden: { rows: number[]; cols: number[] }
+  /** Absent in documents saved before outlining existed. */
+  outline?: { rows: OutlineState; cols: OutlineState }
   freeze: FreezeState
   /** `r4` -> `B` -> a note's text, or a thread with its author, replies and state. */
   comments: CommentsMap
@@ -124,9 +151,14 @@ export type SheetStateEntry = {
   links?: LinksMap
   /** Absent in documents saved before hidden sheets existed. */
   sheetHidden?: boolean
+  /** Absent in documents saved before sheet kinds existed; reads as 'cells'. */
+  kind?: SheetKind
+  grid?: GridSheetSpec
   merges: Array<[number, number, number, number]>
   validation: ValidationRule[]
   conditionalFormats: CfRule[]
+  /** Absent in documents saved before cell types existed. */
+  cellTypes?: CellTypeRegion[]
   autoFilter: AutoFilterState | null
 }
 
@@ -222,6 +254,7 @@ function emptySheetState(): PerSheetState {
     widths: {},
     heights: new Map(),
     hidden: { rows: new Set(), cols: new Set() },
+    outline: { rows: emptyOutline(), cols: emptyOutline() },
     freeze: { rows: 0, cols: 0 },
     notes: {},
     protected: false,
@@ -232,9 +265,11 @@ function emptySheetState(): PerSheetState {
     pivots: [],
     links: {},
     sheetHidden: false,
+    kind: 'cells',
     merges: [],
     validation: [],
     conditionalFormats: [],
+    cellTypes: [],
     autoFilter: null,
     filterHidden: new Set(),
   }
@@ -298,6 +333,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
       columnWidths: { ...state.widths },
       rowHeights: [...state.heights].map(([r, h]) => [r, h] as [number, number]),
       hidden: { rows: [...state.hidden.rows], cols: [...state.hidden.cols] },
+      outline: { rows: copyOutline(state.outline.rows), cols: copyOutline(state.outline.cols) },
       freeze: { ...state.freeze },
       comments: Object.fromEntries(Object.entries(state.notes).map(([r, line]) => [r, copyLine(line)])),
       protected: state.protected,
@@ -308,9 +344,12 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
       pivots: state.pivots.map(copyPivot),
       links: copyLinks(state.links),
       sheetHidden: state.sheetHidden,
+      kind: state.kind,
+      ...(state.grid ? { grid: copyGridSheet(state.grid) } : {}),
       merges: state.merges.map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as [number, number, number, number]),
       validation: state.validation.map((rule) => ({ ...rule, rects: rule.rects.map((r) => [...r] as unknown as Rect), alert: { ...rule.alert } })),
       conditionalFormats: state.conditionalFormats.map((rule) => ({ ...rule, rects: rule.rects.map((r) => [...r] as unknown as Rect) })),
+      cellTypes: state.cellTypes.map(copyCellType),
       autoFilter: state.autoFilter ? { range: [...state.autoFilter.range] as unknown as Rect, filters: { ...state.autoFilter.filters } } : null,
     }
   }
@@ -326,6 +365,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
     if (entry.columnWidths !== undefined) state.widths = { ...entry.columnWidths }
     if (entry.rowHeights !== undefined) state.heights = new Map(entry.rowHeights)
     if (entry.hidden !== undefined) state.hidden = { rows: new Set(entry.hidden.rows ?? []), cols: new Set(entry.hidden.cols ?? []) }
+    if (entry.outline !== undefined) state.outline = { rows: copyOutline(entry.outline.rows), cols: copyOutline(entry.outline.cols) }
     if (entry.freeze !== undefined) state.freeze = { rows: entry.freeze.rows ?? 0, cols: entry.freeze.cols ?? 0 }
     if (entry.comments !== undefined) state.notes = Object.fromEntries(Object.entries(entry.comments).map(([r, line]) => [r, copyLine(line)]))
     if (entry.protected !== undefined) state.protected = entry.protected
@@ -336,6 +376,8 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
     if (entry.pivots !== undefined) state.pivots = entry.pivots.map(copyPivot)
     if (entry.links !== undefined) state.links = copyLinks(entry.links)
     if (entry.sheetHidden !== undefined) state.sheetHidden = entry.sheetHidden
+    if (entry.kind !== undefined) state.kind = entry.kind
+    if (entry.grid !== undefined) state.grid = copyGridSheet(entry.grid)
     if (entry.merges !== undefined) state.merges = entry.merges.map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as const)
     if (entry.validation !== undefined) {
       state.validation = entry.validation.map((rule) => ({
@@ -350,6 +392,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
         rects: rule.rects.map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as const),
       }))
     }
+    if (entry.cellTypes !== undefined) state.cellTypes = entry.cellTypes.map(copyCellType)
     if (entry.autoFilter !== undefined) {
       const af = entry.autoFilter
       state.autoFilter = af ? { range: [af.range[0], af.range[1], af.range[2], af.range[3]] as const, filters: { ...af.filters } } : null
@@ -362,6 +405,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
     state.widths = { ...(entry.columnWidths ?? {}) }
     state.heights = new Map(entry.rowHeights ?? [])
     state.hidden = { rows: new Set(entry.hidden?.rows ?? []), cols: new Set(entry.hidden?.cols ?? []) }
+    state.outline = { rows: copyOutline(entry.outline?.rows), cols: copyOutline(entry.outline?.cols) }
     state.freeze = { rows: entry.freeze?.rows ?? 0, cols: entry.freeze?.cols ?? 0 }
     state.notes = Object.fromEntries(Object.entries(entry.comments ?? {}).map(([r, line]) => [r, copyLine(line)]))
     state.protected = entry.protected ?? false
@@ -372,6 +416,8 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
     state.pivots = (entry.pivots ?? []).map(copyPivot)
     state.links = copyLinks(entry.links ?? {})
     state.sheetHidden = entry.sheetHidden ?? false
+    state.kind = entry.kind ?? 'cells'
+    state.grid = entry.grid ? copyGridSheet(entry.grid) : undefined
     state.merges = (entry.merges ?? []).map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as const)
     state.validation = (entry.validation ?? []).map((rule) => ({
       ...rule,
@@ -382,6 +428,7 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
       ...rule,
       rects: rule.rects.map(([r1, c1, r2, c2]) => [r1, c1, r2, c2] as const),
     }))
+    state.cellTypes = (entry.cellTypes ?? []).map(copyCellType)
     const af = entry.autoFilter
     state.autoFilter = af ? { range: [af.range[0], af.range[1], af.range[2], af.range[3]] as const, filters: { ...af.filters } } : null
     state.filterHidden = new Set()
@@ -464,11 +511,13 @@ export function createSheetDocument(init: SheetDocumentInit = {}): SheetDocument
           if (next !== null) hiddenCols.add(next)
         }
         state.hidden = { rows: state.hidden.rows, cols: hiddenCols }
+        state.outline = { rows: state.outline.rows, cols: shiftOutline(state.outline.cols, edit.at, edit.count * (edit.kind === 'deleteCols' ? -1 : 1)) }
         state.notes = remapNotes(state.notes, 'cols', shift)
       }
       state.merges = state.merges.map((m) => shiftRect(m, edit)).filter((m): m is Rect => m !== null)
       state.validation = shiftValidation(state.validation, edit)
       state.conditionalFormats = shiftCf(state.conditionalFormats, edit)
+      state.cellTypes = shiftCellTypes(state.cellTypes, edit)
       state.autoFilter = shiftAutoFilter(state.autoFilter, edit)
       state.pageSetup = shiftPageSetup(state.pageSetup, edit)
       state.objects = shiftObjects(state.objects, edit)

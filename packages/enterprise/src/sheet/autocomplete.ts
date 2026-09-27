@@ -18,8 +18,15 @@ export type FunctionSuggestion = {
   end: number
 }
 
-/** The evaluator dispatches these itself, so they are not in the table. */
-const EVALUATOR_NAMES = ['IF', 'IFS', 'IFERROR', 'IFNA', 'SWITCH', 'ISERROR', 'ISERR', 'ISNA', 'ROW', 'COLUMN', 'ADDRESS', 'OFFSET', 'INDIRECT',
+/**
+ * The evaluator dispatches these itself, so they are not in the table.
+ *
+ * Exported because `function-catalog.ts` needs the same list: it kept a
+ * copy of its own, the copy fell behind this one, and Insert Function
+ * quietly stopped listing LET, LAMBDA, the lambda helpers and SUBTOTAL
+ * even though it carried written descriptions for them. One list now.
+ */
+export const EVALUATOR_NAMES = ['IF', 'IFS', 'IFERROR', 'IFNA', 'SWITCH', 'ISERROR', 'ISERR', 'ISNA', 'ROW', 'COLUMN', 'ADDRESS', 'OFFSET', 'INDIRECT', 'SUBTOTAL',
   // LET, LAMBDA and the helpers that take one: the evaluator answers these
   // itself, since a lambda is an AST rather than a value.
   'LET', 'LAMBDA', 'MAP', 'BYROW', 'BYCOL', 'REDUCE', 'SCAN', 'MAKEARRAY']

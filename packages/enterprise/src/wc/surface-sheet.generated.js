@@ -24,6 +24,12 @@ export const ELEMENT_PROPS = [
     "ts": "ReadonlyArray<SheetData>"
   },
   {
+    "name": "gridSheets",
+    "type": "Object",
+    "attribute": null,
+    "ts": "Record<string, GridSheetSpec>"
+  },
+  {
     "name": "rows",
     "type": "Number",
     "attribute": "rows",
@@ -130,6 +136,14 @@ export const ELEMENT_EVENTS = [
       "cmd"
     ],
     "ts": "(action: RibbonActionId, cmd: GridCommandContext) => void | boolean"
+  },
+  {
+    "callback": "onCellAction",
+    "event": "cellaction",
+    "params": [
+      "event"
+    ],
+    "ts": "(event: { row: number; col: number; action: string; sheet: string }) => void"
   },
   {
     "callback": "onReady",

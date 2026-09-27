@@ -25,6 +25,10 @@ import { formatWithPattern } from './number-format'
 import { FINANCIAL_FUNCTIONS } from './packs/financial'
 import { MATH_STATS_FUNCTIONS } from './packs/math-stats'
 import { TEXT_DATE_FUNCTIONS } from './packs/text-date'
+import { TRIG_FUNCTIONS } from './packs/trig'
+import { ENGINEERING_FUNCTIONS } from './packs/engineering'
+import { DATABASE_FUNCTIONS } from './packs/database'
+import { STATS_DIST_FUNCTIONS } from './packs/stats-dist'
 
 export type FnArgs = {
   flat: ReadonlyArray<CellValue>
@@ -596,6 +600,10 @@ export const FUNCTIONS: Record<string, SheetFunction> = {
   ...FINANCIAL_FUNCTIONS,
   ...MATH_STATS_FUNCTIONS,
   ...TEXT_DATE_FUNCTIONS,
+  ...TRIG_FUNCTIONS,
+  ...ENGINEERING_FUNCTIONS,
+  ...DATABASE_FUNCTIONS,
+  ...STATS_DIST_FUNCTIONS,
 }
 
 /** Merge caller-supplied functions over the built-ins. Keys are uppercased so
