@@ -102,6 +102,14 @@ async function main() {
         process.stdout.write(`  ??  ${id}  nothing drawn - check the thumbnail\n`)
       }
 
+      // The unlicensed upgrade card appears on a timer, so whether it
+      // lands in the shot is a race the 1400ms wait above does not settle.
+      // It is chrome about the licence rather than anything the demo does,
+      // so it comes out of every thumbnail rather than some of them.
+      await page.evaluate(() => {
+        document.querySelectorAll('[data-svgrid-enterprise-upgrade]').forEach((el) => el.remove())
+      })
+
       const box = await page.evaluate(() => {
         const main = document.querySelector('main')
         const header = main?.querySelector('header')
