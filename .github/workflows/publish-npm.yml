@@ -157,7 +157,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add packages/*/package.json
+          # src/version.ts too: release-packages.mjs rewrites SVGRID_VERSION in
+          # step with the manifest, and the published tarballs carry the right
+          # value, but staging only the manifests left the constant behind in
+          # git. main then failed version.test.ts, which asserts the two agree,
+          # until someone hand-edited the file back into line.
+          git add packages/*/package.json packages/*/src/version.ts
           git commit -m "release: ${{ steps.release.outputs.summary }} [skip ci]" || echo "nothing to commit"
           # main can gain commits while a release builds; rebase the bump on top
           # rather than failing the run after the packages are already on npm.
