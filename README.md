@@ -11,6 +11,7 @@
 [![TypeScript](https://img.shields.io/badge/types-included-blue.svg)](https://www.npmjs.com/package/@svgrid/grid)
 [![Svelte 5](https://img.shields.io/badge/svelte-5-ff3e00.svg)](https://svelte.dev)
 [![GitHub stars](https://img.shields.io/github/stars/sv-grid/sv-grid?style=social)](https://github.com/sv-grid/sv-grid/stargazers)
+[![MCP Queen operational grade](https://mcpqueen.com/badge/com.svgrid/svgrid.svg)](https://mcpqueen.com/s/com.svgrid/svgrid)
 
 > **The Svelte data grid. Headless-first. Render-ready.**
 
