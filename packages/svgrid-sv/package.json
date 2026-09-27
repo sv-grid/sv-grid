@@ -1,6 +1,6 @@
 {
   "name": "@svgrid/sv",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Svelte CLI add-on for SvGrid: npx sv add @svgrid",
   "type": "module",
   "license": "MIT",
@@ -11,13 +11,31 @@
     "url": "git+https://github.com/sv-grid/sv-grid.git",
     "directory": "packages/svgrid-sv"
   },
-  "keywords": ["sv-add", "svelte", "sveltekit", "data-grid", "datagrid", "table", "svgrid"],
+  "keywords": [
+    "sv-add",
+    "svelte",
+    "sveltekit",
+    "data-grid",
+    "datagrid",
+    "table",
+    "svgrid"
+  ],
   "exports": {
-    ".": { "default": "./index.mjs" }
+    ".": {
+      "default": "./index.mjs"
+    }
   },
-  "files": ["index.mjs", "README.md", "LICENSE"],
-  "publishConfig": { "access": "public" },
-  "engines": { "node": ">=18" },
+  "files": [
+    "index.mjs",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "test": "vitest run",
     "lint": "eslint ."
