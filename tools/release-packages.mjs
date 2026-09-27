@@ -250,6 +250,7 @@ function publishMode(dirs) {
   // Walk PACKAGES rather than the caller's list, so dependency order holds no
   // matter what order the directories were passed in.
   const queue = PACKAGES.filter((p) => dirs.includes(p.dir))
+  const skipped = []
 
   for (const pkg of queue) {
     const manifest = JSON.parse(readFileSync(manifestPath(pkg.dir), 'utf-8'))
@@ -260,6 +261,7 @@ function publishMode(dirs) {
     }
     if (isPublished(name, version)) {
       console.log(`- skip ${name}@${version} (already on the registry)`)
+      skipped.push(`${name}@${version}`)
       continue
     }
 
@@ -279,6 +281,16 @@ function publishMode(dirs) {
       console.error(`\nPublish failed for ${name}@${version}. Fix it and re-run - anything already published is skipped.`)
       process.exit(r.status || 1)
     }
+  }
+  if (skipped.length) {
+    // The detect step now walks past any version the registry already holds, so
+    // reaching this line means the number was taken between detect and publish
+    // and the tarball in the queue never went out. The caller tags on a zero
+    // exit, and a tag on an unpublished version is the failure that hid the
+    // grid 3.0.5 gap for eight days. Fail instead, and leave the tags off.
+    console.error(`\nNothing was published for: ${skipped.join(', ')}.`)
+    console.error('Those versions are already on the registry, so this run would tag code it never shipped.')
+    process.exit(1)
   }
   console.log('\nPublished everything in the queue.')
 }
@@ -344,7 +356,18 @@ function main() {
     // siblings in the same run against grid exports npm never received.
     const ahead = !!last && cmpVer(current, last.ver) > 0
     const handPublished = ahead && isPublished(manifest.name, fmtVer(current))
-    const next = ahead && !handPublished ? current : bumpPatch(handPublished ? current : last ? last.ver : current)
+    let next = ahead && !handPublished ? current : bumpPatch(handPublished ? current : last ? last.ver : current)
+    // Never settle on a number the registry already holds. The `handPublished`
+    // check above only guards the `ahead` branch; bumpPatch walks up from the
+    // last tag and lands wherever it lands. grid 3.0.5 went out by hand on
+    // 2026-09-19 while the tag still read grid-v3.0.4, so the 2026-09-27 run
+    // computed 3.0.5, the publish step skipped it as "already on the registry",
+    // and the run tagged grid-v3.0.5 regardless. Twenty-one commits of grid -
+    // among them the ./sparkline export that @svgrid/enterprise imports at
+    // runtime - never reached npm, and the tag said otherwise. Walking to a
+    // free number costs one wasted patch if a half-failed run is re-run.
+    // Reusing a taken one costs a release that is not the code it claims.
+    while (isPublished(manifest.name, fmtVer(next))) next = bumpPatch(next)
     const nextStr = fmtVer(next)
     if (handPublished) reason += `, ${fmtVer(current)} already on the registry`
 
