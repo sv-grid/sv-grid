@@ -134,10 +134,28 @@ wanted.set(
 // Compare before writing so --check can report without touching anything.
 const existing = existsSync(PLUGIN_DIR) ? walk(PLUGIN_DIR) : []
 const wantedPaths = new Set([...wanted.keys()].map((k) => k.replaceAll('\\', '/')))
+/**
+ * Equal as far as this check cares: same bytes, or same text once line endings
+ * are normalised.
+ *
+ * A raw Buffer comparison made `plugin:check` fail on Windows for every file,
+ * always. The generator joins with \n, but core.autocrlf writes CRLF into the
+ * working tree, so a fresh checkout mismatches on every line while the content
+ * is identical - and the reported fix, running the generator, only "worked"
+ * because it rewrote the files LF until the next checkout undid it. CI is Linux
+ * and never saw it, so the check was green there and unusable here.
+ */
+function sameContent(a, b) {
+  if (a.equals(b)) return true
+  // A NUL byte means binary, where a stray \r is real content, not an ending.
+  if (a.includes(0) || b.includes(0)) return false
+  return a.toString('utf8').replace(/\r\n/g, '\n') === b.toString('utf8').replace(/\r\n/g, '\n')
+}
+
 const drift = []
 for (const [rel, buf] of wanted) {
   const dest = join(PLUGIN_DIR, rel)
-  if (!existsSync(dest) || !readFileSync(dest).equals(buf)) drift.push(rel.replaceAll('\\', '/'))
+  if (!existsSync(dest) || !sameContent(readFileSync(dest), buf)) drift.push(rel.replaceAll('\\', '/'))
 }
 for (const rel of existing) {
   if (!wantedPaths.has(rel)) drift.push(`${rel} (stale)`)
