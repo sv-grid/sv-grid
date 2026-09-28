@@ -164,7 +164,13 @@ jobs:
           # published tarballs were always right, but git kept the old values,
           # so version.test.ts and two mcp-tools.test.ts cases went red on main
           # after 3.0.2 and again after 3.0.3, each time repaired by hand.
-          git add -- ${{ steps.release.outputs.files }}
+          # plugins/svgrid is generated, and its manifest carries the
+          # @svgrid/mcp version because the two ship as one thing. A release of
+          # mcp therefore strands it and `pnpm plugin:check` fails on main.
+          # Regenerating here costs nothing when mcp was not in the release: the
+          # generator is deterministic, so there is simply nothing to add.
+          node tools/sync-plugin.mjs
+          git add -- ${{ steps.release.outputs.files }} plugins/svgrid
           git commit -m "release: ${{ steps.release.outputs.summary }} [skip ci]" || echo "nothing to commit"
           # main can gain commits while a release builds; rebase the bump on top
           # rather than failing the run after the packages are already on npm.
