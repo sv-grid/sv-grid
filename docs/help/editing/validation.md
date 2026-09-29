@@ -184,6 +184,23 @@ rather than the order the grid demands.
 <p aria-live="polite">{problems === 0 ? 'All ages valid.' : problems + ' row(s) out of range.'}</p>
 ```
 
+<!-- tutorial:learn-4-editing -->
+<figure class="docs-tutorial" id="tutorial-learn-4-editing" data-docs-tutorial="learn-4-editing">
+<video class="docs-tutorial-video" src="/tutorials/learn-4-editing.mp4" poster="/tutorials/learn-4-editing.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 4: editing rows, and validating them, 91 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-4-editing.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-4-editing.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Learn SvGrid 4: editing rows, and validating them</strong> (91 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>A table people can only read is half a feature. This lesson makes it editable, and then makes it refuse the edits that should not happen.</p>
+<p>The same reactive rows as before. Three people, three fields.</p>
+<p>Each column picks its editor. Text for a name, number for an age. The editor is chosen per column, so the user gets the right control instead of a text box for everything.</p>
+<p>Then validate. It runs as the cell is edited and returns a message when the value is wrong. Pair it with rejectInvalid and the edit is refused outright rather than written and cleaned up later.</p>
+<p>Double-click a cell to edit it, type, and press Enter to commit. That is the whole gesture, and it is the one spreadsheet users already know.</p>
+<p>Now an email that is not one. Validate runs as you type, and hovering the cell tells the user what is wrong. Press Enter and rejectInvalid refuses the commit outright: the value is still the old one. Your row object is never touched by something you would have to clean up later.</p>
+<p>Undo with control zed, save in batches through the grid API, or hand every commit to your server. The editing pages in the docs cover each of those. Lesson five is selection, and doing something with the rows the user picked.</p>
+<p>The file is on the page below and you can edit it there too. See you in lesson five.</p>
+</details>
+</figure>
+<!-- /tutorial:learn-4-editing -->
+
 ## See also
 
 - [Parsing values](./parsing-values.md)

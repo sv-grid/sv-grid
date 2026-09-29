@@ -31,6 +31,7 @@ export default {
   title: 'Install SvGrid',
   description: 'Add the Svelte 5 data grid to a project: one npm package, one import, a data array and a columns array, and a styled table renders.',
   stage: true,
+  player: true,
   docsPage: 'docs/getting-started/1-install.md',
   anchor: '## Requirements',
   tags: ['install svgrid', 'svelte data grid', 'npm install', 'getting started', 'first grid'],

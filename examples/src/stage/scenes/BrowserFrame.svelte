@@ -7,9 +7,36 @@
   import { SvSheet, createWorkbook } from '@svgrid/enterprise'
   import { stage } from '../state.svelte'
   import { firstGrid, minimalTemplate, sheetBudget } from '../presets'
+  import type { Component } from 'svelte'
+  import { loadSnippet } from '../snippets'
   import Window from './Window.svelte'
 
   const wb = $derived(stage.browser.preset === 'sheet-budget' ? createWorkbook(sheetBudget) : null)
+
+  // A course lesson mounts a runnable doc snippet: the same file the editor
+  // scene typed, compiled by Vite, so the result cannot drift from the code.
+  let Snippet = $state<Component<Record<string, never>> | null>(null)
+  let snippetError = $state<string | null>(null)
+  $effect(() => {
+    const id = stage.browser.snippet
+    if (!id) {
+      Snippet = null
+      snippetError = null
+      return
+    }
+    let stale = false
+    snippetError = null
+    loadSnippet(id)
+      .then((c) => {
+        if (!stale) Snippet = c
+      })
+      .catch((e) => {
+        if (!stale) snippetError = String(e.message ?? e)
+      })
+    return () => {
+      stale = true
+    }
+  })
 </script>
 
 <Window>
@@ -21,6 +48,10 @@
     {#key stage.browser.key}
       {#if stage.browser.loading}
         <div class="br-blank"></div>
+      {:else if snippetError}
+        <div class="br-page br-error">{snippetError}</div>
+      {:else if stage.browser.snippet && Snippet}
+        <div class="br-page br-page-snippet"><Snippet /></div>
       {:else if stage.browser.preset === 'first-grid'}
         <div class="br-page br-page-plain">
           <SvGrid data={firstGrid.rows} columns={firstGrid.columns} />
@@ -109,4 +140,15 @@
   .br-grid { flex: 1; min-height: 0; }
   .br-sheet { flex: 1; min-height: 0; display: flex; }
   .br-sheet > :global(*) { flex: 1; min-height: 0; }
+  .br-page-snippet {
+    padding: 22px 26px;
+    gap: 12px;
+  }
+  .br-page-snippet :global(.sv-grid-root) { max-width: 100%; }
+  .br-error {
+    color: #f87171;
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 13px;
+    align-items: flex-start;
+  }
 </style>

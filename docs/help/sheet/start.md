@@ -23,6 +23,21 @@ opened as `.xlsx` or `.ods`.
 npm install @svgrid/grid @svgrid/enterprise
 ```
 
+<!-- tutorial:install-spreadsheet -->
+<figure class="docs-tutorial docs-tutorial-player" id="tutorial-install-spreadsheet" data-docs-tutorial="install-spreadsheet">
+<video class="docs-tutorial-video" src="/tutorials/install-spreadsheet.mp4" poster="/tutorials/install-spreadsheet.poster.webp" width="960" height="540" controls playsinline preload="none" aria-label="Install the SvGrid spreadsheet, 53 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/install-spreadsheet.vtt">Your browser does not play embedded video. <a href="/tutorials/install-spreadsheet.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Install the SvGrid spreadsheet</strong> (53 s, with narration).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>The spreadsheet ships in the enterprise package. Install it next to the grid; it runs unlicensed for evaluation.</p>
+<p>A workbook is plain data: sheets with a name and a cells matrix. Formulas are strings that start with an equals sign.</p>
+<p>Hand it to SvSheet. That is the whole API.</p>
+<p>The result is the full surface: a ribbon, the name box and formula bar, lettered columns, sheet tabs and a status bar, with the totals already computed.</p>
+<p>It behaves like a spreadsheet. Type a formula into a cell, press Enter, and the value appears while the formula bar keeps the source.</p>
+<p>Every Excel shortcut, fill handle, number formats, conditional formatting and xlsx import and export come with it. The docs list the whole surface.</p>
+</details>
+</figure>
+<!-- /tutorial:install-spreadsheet -->
+
 The examples on this page share one setup: a small budget as raw text,
 and the lookup that formats a rectangle of cells by row and column
 index.

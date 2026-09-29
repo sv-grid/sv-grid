@@ -23,8 +23,11 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { spawnSync } from 'node:child_process'
-import { tutorialBlock, upsertBlock } from '../lib/tutorial-media.mjs'
+import { tutorialBlock, upsertBlock, courseBlock, upsertCourseBlock } from '../lib/tutorial-media.mjs'
 import { readManifest, ROOT } from './lib/manifest.mjs'
+
+/** The course contents page, refreshed from the same manifest. */
+const COURSE_PAGE = 'docs/getting-started/course.md'
 
 /**
  * @param {{ dry?: boolean, check?: boolean, manifest?: ReturnType<typeof readManifest> }} opts
@@ -72,6 +75,23 @@ export function apply({ dry = false, check = false, manifest = readManifest() } 
       continue
     }
     if (!dry) writeFileSync(abs, crlf ? text.replace(/\n/g, '\r\n') : text, 'utf-8')
+  }
+
+  // The course contents table. Its rows point at the pages above rather than
+  // re-embedding, because a tutorial is embedded exactly once.
+  const lessons = manifest.tutorials.filter((t) => t.kind === 'course' && t.docsPage)
+  const courseAbs = join(ROOT, COURSE_PAGE)
+  if (lessons.length && existsSync(courseAbs)) {
+    const raw = readFileSync(courseAbs, 'utf-8')
+    const crlf = raw.includes('\r\n')
+    const res = upsertCourseBlock(raw.replace(/\r\n/g, '\n'), courseBlock(lessons))
+    if (res.changed) {
+      touched.push([COURSE_PAGE, 'course:learn', res.inserted ? 'inserted' : 'updated'])
+      if (check) stale.push(COURSE_PAGE)
+      else if (!dry) writeFileSync(courseAbs, crlf ? res.text.replace(/\n/g, '\r\n') : res.text, 'utf-8')
+    }
+  } else if (lessons.length && !existsSync(courseAbs)) {
+    missing.push(COURSE_PAGE)
   }
 
   return { touched, stale, missing }

@@ -271,11 +271,12 @@
     },
     {
       "id": "install-spreadsheet",
+      "player": true,
       "title": "Install the SvGrid spreadsheet",
       "description": "Add an Excel-style spreadsheet to a Svelte app: install the enterprise package, pass a workbook to SvSheet, and type formulas into a ribbon-driven sheet.",
       "demo": null,
-      "docsPage": "docs/help/cells/spreadsheet-shell.md",
-      "anchor": "## What you get",
+      "docsPage": "docs/help/sheet/start.md",
+      "anchor": "The examples on this page share one setup",
       "tags": [
         "svelte spreadsheet",
         "excel in the browser",
@@ -283,10 +284,10 @@
         "spreadsheet component",
         "formulas"
       ],
-      "duration": 56.3,
+      "duration": 52.9,
       "width": 960,
       "height": 540,
-      "recordedAt": "2026-09-21",
+      "recordedAt": "2026-09-28",
       "youtubeId": null,
       "publishedAt": null,
       "files": {
@@ -295,45 +296,46 @@
         "vtt": "/tutorials/install-spreadsheet.vtt"
       },
       "bytes": {
-        "mp4": 247306,
-        "poster": 20232,
-        "master": 1125616
+        "mp4": 644974,
+        "poster": 25210,
+        "master": 2252170
       },
       "transcript": [
         {
           "start": 1.2,
-          "end": 8.7,
+          "end": 8.33,
           "text": "The spreadsheet ships in the enterprise package. Install it next to the grid; it runs unlicensed for evaluation."
         },
         {
-          "start": 9.16,
-          "end": 18.26,
+          "start": 8.74,
+          "end": 16.28,
           "text": "A workbook is plain data: sheets with a name and a cells matrix. Formulas are strings that start with an equals sign."
         },
         {
-          "start": 18.71,
-          "end": 22.61,
+          "start": 18.16,
+          "end": 21.43,
           "text": "Hand it to SvSheet. That is the whole API."
         },
         {
-          "start": 22.97,
-          "end": 34.07,
+          "start": 21.75,
+          "end": 31.66,
           "text": "The result is the full surface: a ribbon, the name box and formula bar, lettered columns, sheet tabs and a status bar, with the totals already computed."
         },
         {
-          "start": 34.64,
-          "end": 44.54,
+          "start": 32.19,
+          "end": 40.34,
           "text": "It behaves like a spreadsheet. Type a formula into a cell, press Enter, and the value appears while the formula bar keeps the source."
         },
         {
-          "start": 45.33,
-          "end": 54.83,
+          "start": 41.06,
+          "end": 51.48,
           "text": "Every Excel shortcut, fill handle, number formats, conditional formatting and xlsx import and export come with it. The docs list the whole surface."
         }
       ]
     },
     {
       "id": "install-studio",
+      "player": true,
       "title": "SvGrid Studio: database to CRUD app",
       "description": "Scaffold a SvelteKit data app from the command line or the visual designer: tables in, a list, an edit form and a record page per table out.",
       "demo": null,
@@ -346,10 +348,10 @@
         "admin panel svelte",
         "low code svelte"
       ],
-      "duration": 72.1,
+      "duration": 69.2,
       "width": 960,
       "height": 540,
-      "recordedAt": "2026-09-21",
+      "recordedAt": "2026-09-28",
       "youtubeId": null,
       "publishedAt": null,
       "files": {
@@ -358,50 +360,51 @@
         "vtt": "/tutorials/install-studio.vtt"
       },
       "bytes": {
-        "mp4": 588171,
-        "poster": 44398,
-        "master": 3053515
+        "mp4": 1053840,
+        "poster": 44580,
+        "master": 3874863
       },
       "transcript": [
         {
-          "start": 1.2,
-          "end": 10.3,
+          "start": 1.21,
+          "end": 10.2,
           "text": "SvGrid Studio turns tables into a SvelteKit app. From the command line, one create command scaffolds a runnable app with sample tables."
         },
         {
-          "start": 10.66,
-          "end": 20.96,
+          "start": 10.52,
+          "end": 18.11,
           "text": "Point init at a real database and it reads the tables, then writes a list, an edit form and a record page for each one."
         },
         {
-          "start": 23.85,
-          "end": 32.95,
+          "start": 21.41,
+          "end": 29.18,
           "text": "The same generator runs in the browser. The designer opens with a wizard: start from sample data, your own database, or blank."
         },
         {
-          "start": 33.39,
-          "end": 38.89,
+          "start": 29.51,
+          "end": 34.31,
           "text": "Pick a dataset, choose which pages each table gets, and open the app."
         },
         {
-          "start": 39.87,
-          "end": 52.17,
+          "start": 38.66,
+          "end": 49.64,
           "text": "Two tables became six screens: an overview with a KPI and a chart, a list, a manage page and a detail page per table, all on the canvas to rearrange."
         },
         {
-          "start": 52.56,
-          "end": 59.66,
+          "start": 49.96,
+          "end": 55.97,
           "text": "Preview runs the app as a user sees it: the grid, the new record button, the navigation."
         },
         {
-          "start": 60.63,
-          "end": 70.13,
+          "start": 56.88,
+          "end": 67.31,
           "text": "Generate app writes the SvelteKit project: twenty-seven files, typed schemas, routes and a CI workflow. Download the zip or open it in StackBlitz."
         }
       ]
     },
     {
       "id": "install-svgrid",
+      "player": true,
       "title": "Install SvGrid",
       "description": "Add the Svelte 5 data grid to a project: one npm package, one import, a data array and a columns array, and a styled table renders.",
       "demo": null,
@@ -414,10 +417,10 @@
         "getting started",
         "first grid"
       ],
-      "duration": 50.6,
+      "duration": 45.3,
       "width": 960,
       "height": 540,
-      "recordedAt": "2026-09-21",
+      "recordedAt": "2026-09-28",
       "youtubeId": null,
       "publishedAt": null,
       "files": {
@@ -426,39 +429,39 @@
         "vtt": "/tutorials/install-svgrid.vtt"
       },
       "bytes": {
-        "mp4": 210213,
-        "poster": 23244,
-        "master": 987407
+        "mp4": 518854,
+        "poster": 23342,
+        "master": 1669682
       },
       "transcript": [
         {
           "start": 1.21,
-          "end": 9.11,
+          "end": 8.2,
           "text": "SvGrid is one npm package. In an existing Svelte 5 project, install it and you are done with setup."
         },
         {
-          "start": 9.57,
-          "end": 15.87,
+          "start": 8.61,
+          "end": 15.04,
           "text": "Starting from scratch? The create command scaffolds a working project with the grid already wired."
         },
         {
-          "start": 16.44,
-          "end": 24.74,
+          "start": 15.55,
+          "end": 22.72,
           "text": "Either way, a grid is a component, a data array and a columns array. Import SvGrid and describe the rows."
         },
         {
-          "start": 25.19,
-          "end": 30.69,
+          "start": 23.13,
+          "end": 27.65,
           "text": "Columns map a field to a header. Then render the component with both."
         },
         {
-          "start": 31.05,
-          "end": 40.15,
+          "start": 27.97,
+          "end": 35.23,
           "text": "Save, and the dev server shows a styled table with keyboard navigation, selection and a focus ring, all out of the box."
         },
         {
-          "start": 40.8,
-          "end": 49.1,
+          "start": 35.85,
+          "end": 43.91,
           "text": "Sorting, filtering, editing and the rest are features you switch on next. The docs at svgrid.com take it from here."
         }
       ]
@@ -512,6 +515,755 @@
           "start": 23.07,
           "end": 29.04,
           "text": "Switch to Table, and the same rows show as a grid, with the card you moved already in Review."
+        }
+      ]
+    },
+    {
+      "id": "learn-1-first-grid",
+      "kind": "course",
+      "title": "Learn SvGrid 1: install and your first grid",
+      "description": "Lesson one of the SvGrid course: install the package, write a twenty-line component, and get a styled, keyboard-navigable table.",
+      "demo": null,
+      "docsPage": "docs/getting-started/2-first-grid.md",
+      "anchor": "## What you got out of the box",
+      "tags": [
+        "svelte data grid tutorial",
+        "learn svgrid",
+        "svelte 5 table",
+        "getting started",
+        "svelte tutorial"
+      ],
+      "duration": 121.2,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-29",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/learn-1-first-grid.mp4",
+        "poster": "/tutorials/learn-1-first-grid.poster.webp",
+        "vtt": "/tutorials/learn-1-first-grid.vtt"
+      },
+      "bytes": {
+        "mp4": 440681,
+        "poster": 19340,
+        "master": 6551521
+      },
+      "transcript": [
+        {
+          "start": 0.6,
+          "end": 10.01,
+          "text": "Welcome to lesson one. By the end of it you will have a working data grid in a Svelte 5 project, and you will understand every line that put it there."
+        },
+        {
+          "start": 11.85,
+          "end": 20.6,
+          "text": "SvGrid is a single npm package. There is no CLI step and nothing to copy into your project: you install it and import from it."
+        },
+        {
+          "start": 21.02,
+          "end": 30.28,
+          "text": "It needs Svelte 5, because the grid is built on runes. If you are starting from nothing, the create command scaffolds a project with the grid already wired up."
+        },
+        {
+          "start": 32.25,
+          "end": 41.93,
+          "text": "Now the component. Import SvGrid, and import the GridColumns type as well. That type is what makes the column list check itself against your rows."
+        },
+        {
+          "start": 42.26,
+          "end": 52.82,
+          "text": "Your data is a plain array of plain objects. No store, no wrapper, no adapter. If you already have rows in your app, they are already in the right shape."
+        },
+        {
+          "start": 53.13,
+          "end": 66.11,
+          "text": "Columns are the other half. Each one maps a field on your row to a header the user reads. Because the array is typed as GridColumns of Person, a typo in a field name is a compile error, not a blank column."
+        },
+        {
+          "start": 66.43,
+          "end": 73.97,
+          "text": "Then render the component with both. That is the whole API for a basic grid: data in, columns in."
+        },
+        {
+          "start": 74.39,
+          "end": 80.82,
+          "text": "Save, and the dev server shows this. A real table element, with a header row and your three rows in it."
+        },
+        {
+          "start": 81.23,
+          "end": 94.82,
+          "text": "You did not ask for any of this, but you got it: click a cell and it takes focus, arrow keys move between cells, Home and End jump to the ends of a row. That is the ARIA grid pattern, on by default."
+        },
+        {
+          "start": 95.23,
+          "end": 110.02,
+          "text": "What you do not have yet is sorting, filtering or paging. Those are switched on deliberately, so a grid you never configured stays small in your bundle. Lesson two puts your own data in, and lesson three turns those features on."
+        },
+        {
+          "start": 111.94,
+          "end": 118.97,
+          "text": "The code from this lesson is on the page linked below, and it runs there too. See you in lesson two."
+        }
+      ]
+    },
+    {
+      "id": "learn-10-production",
+      "kind": "course",
+      "title": "Learn SvGrid 10: going to production",
+      "description": "Lesson ten: virtualization, the accessibility you already have, server-rendered markup, and the TypeScript habit that prevents blank columns.",
+      "demo": "06-large-dataset",
+      "docsPage": "docs/getting-started/6-going-to-production.md",
+      "tags": [
+        "svelte data grid tutorial",
+        "learn svgrid",
+        "virtualization",
+        "accessibility",
+        "production",
+        "svelte 5"
+      ],
+      "duration": 107.9,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-29",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/learn-10-production.mp4",
+        "poster": "/tutorials/learn-10-production.poster.webp",
+        "vtt": "/tutorials/learn-10-production.vtt"
+      },
+      "bytes": {
+        "mp4": 1292714,
+        "poster": 44828,
+        "master": 15246578
+      },
+      "transcript": [
+        {
+          "start": 0.61,
+          "end": 10.24,
+          "text": "Your grid works. This last lesson is the review a colleague would give it: the four things that decide whether it survives contact with real data and real users."
+        },
+        {
+          "start": 12.07,
+          "end": 28.49,
+          "text": "First, scale. Virtualization is on by default, so only the rows in view have DOM nodes. Fifty thousand rows by seventy-seven columns scroll in both directions, and the count of nodes stays roughly the same as it was with ten rows."
+        },
+        {
+          "start": 28.9,
+          "end": 39.79,
+          "text": "What you do have to give it is a height. A grid inside a container with no height cannot know what is on screen, and that is the single most common reason a large table feels slow."
+        },
+        {
+          "start": 41.61,
+          "end": 54.73,
+          "text": "Second, accessibility, which you mostly already have. It is a real table element carrying the ARIA grid pattern, so a screen reader announces rows and columns, and every cell is reachable from the keyboard."
+        },
+        {
+          "start": 55.14,
+          "end": 66.63,
+          "text": "What is on you is the rest of the page: a label on the grid, contrast that passes, and not removing the focus ring. There is a high-contrast preset in the box if procurement asks."
+        },
+        {
+          "start": 68.54,
+          "end": 88.76,
+          "text": "Third, the markup server-renders, so a viewport of real rows reaches the browser before hydration. And fourth, the habit that costs nothing: type the column array as GridColumns of your row. A bare GridColumns widens the row and stops checking field names, and a typo becomes a blank column nobody notices until a user does."
+        },
+        {
+          "start": 89.18,
+          "end": 105.46,
+          "text": "That is the course. You can build a grid, shape its columns, sort and filter it, edit it, group it, theme it, feed it from a server and ship it. Everything past this point is a feature you turn on when you need it, and the demos on the site show each one running."
+        }
+      ]
+    },
+    {
+      "id": "learn-2-data-and-columns",
+      "kind": "course",
+      "title": "Learn SvGrid 2: your data, your columns",
+      "description": "Lesson two of the SvGrid course: put your own row type in, keep it reactive, then set headers, widths and currency, percent and date formats.",
+      "demo": null,
+      "docsPage": "docs/getting-started/3-data-and-columns.md",
+      "tags": [
+        "svelte data grid tutorial",
+        "learn svgrid",
+        "column definitions",
+        "cell formatting",
+        "svelte 5"
+      ],
+      "duration": 87.9,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-29",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/learn-2-data-and-columns.mp4",
+        "poster": "/tutorials/learn-2-data-and-columns.poster.webp",
+        "vtt": "/tutorials/learn-2-data-and-columns.vtt"
+      },
+      "bytes": {
+        "mp4": 488470,
+        "poster": 30138,
+        "master": 6639149
+      },
+      "transcript": [
+        {
+          "start": 0.61,
+          "end": 8.9,
+          "text": "In lesson one the rows were made up. In this one they are yours, they stay reactive, and the columns start looking like a real application."
+        },
+        {
+          "start": 10.75,
+          "end": 23.17,
+          "text": "Start from your own row type. The grid never asks you to convert anything: whatever shape your records have, that is the shape it takes. Declare the array with the state rune and it stays reactive."
+        },
+        {
+          "start": 23.49,
+          "end": 32.61,
+          "text": "Columns map a field to a header, and width fixes one that would otherwise stretch. Then a plain function that pushes a record onto the array."
+        },
+        {
+          "start": 32.94,
+          "end": 43.08,
+          "text": "Watch what happens when that button runs. Pushing onto the array is all it does, and the grid follows, because the rows are a rune and not a copy the grid took at startup."
+        },
+        {
+          "start": 43.5,
+          "end": 52.06,
+          "text": "Now formatting. This is the same page of the docs, a few blocks further down, and it is the thing people most often do by hand and regret."
+        },
+        {
+          "start": 52.39,
+          "end": 65.55,
+          "text": "A currency format, a percent, a date. Each one renders the value for the reader and leaves your data alone, which matters because sorting and exporting both use the raw number underneath, not the string on screen."
+        },
+        {
+          "start": 65.96,
+          "end": 78.29,
+          "text": "One habit worth forming: type the column array as GridColumns of your row type. The compiler then checks every field name against the row, so a typo is a build error instead of an empty column nobody notices."
+        },
+        {
+          "start": 80.24,
+          "end": 85.65,
+          "text": "Both files are on the page below, and they run there too. See you in lesson three."
+        }
+      ]
+    },
+    {
+      "id": "learn-3-sort-filter-page",
+      "kind": "course",
+      "title": "Learn SvGrid 3: sorting, filtering and paging",
+      "description": "Lesson three of the SvGrid course: switch on sorting, filtering, grouping and pagination with boolean props, and see what each one does to the same table.",
+      "demo": "02-sort-filter-paginate",
+      "docsPage": "docs/getting-started/4-features.md",
+      "tags": [
+        "svelte data grid tutorial",
+        "learn svgrid",
+        "sorting",
+        "filtering",
+        "pagination",
+        "svelte 5"
+      ],
+      "duration": 142.7,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-29",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/learn-3-sort-filter-page.mp4",
+        "poster": "/tutorials/learn-3-sort-filter-page.poster.webp",
+        "vtt": "/tutorials/learn-3-sort-filter-page.vtt"
+      },
+      "bytes": {
+        "mp4": 1292051,
+        "poster": 30066,
+        "master": 17966472
+      },
+      "transcript": [
+        {
+          "start": 0.6,
+          "end": 10.8,
+          "text": "Your grid renders. It does not sort, filter or page yet, and that is deliberate. This lesson turns those on and explains the trade the library is making for you."
+        },
+        {
+          "start": 12.61,
+          "end": 19.78,
+          "text": "Here is a wider row type and a realistic set of records, the kind of table you would actually ship. Nothing new yet."
+        },
+        {
+          "start": 20.05,
+          "end": 23.92,
+          "text": "Columns, with a currency format on salary from the last lesson."
+        },
+        {
+          "start": 42.78,
+          "end": 57.15,
+          "text": "And now the part that matters. Sortable, filterable, editable, groupable, pageable. Each is one boolean, and each one pulls in only the code that feature needs, which is why a grid you never configured stays small."
+        },
+        {
+          "start": 57.47,
+          "end": 68.54,
+          "text": "That is the whole file: the row type, the records, the columns, and the component with those five words on it. Nothing else is configured, and nothing is hidden above the fold."
+        },
+        {
+          "start": 68.86,
+          "end": 75.9,
+          "text": "Click a header and it sorts. Click again for descending, and a third time to clear it and get your original order back."
+        },
+        {
+          "start": 77.48,
+          "end": 84.75,
+          "text": "Shift-click a second header to sort by two columns at once: department first, then name inside each department."
+        },
+        {
+          "start": 85.07,
+          "end": 94.61,
+          "text": "The funnel next to each header is filtering, switched on by that same one word. How it looks is a choice, and the next screen has the version most people want."
+        },
+        {
+          "start": 96.34,
+          "end": 110.99,
+          "text": "Five rows will not show you paging, so here is the same set of props over five thousand. Filterable on its own gives you a menu per header; filter mode row puts an input under each header instead, and it narrows the table as you type."
+        },
+        {
+          "start": 111.31,
+          "end": 120.35,
+          "text": "And the pager cuts what is left into pages, with the range and the count kept honest as the filter changes them. None of this needed a callback from you."
+        },
+        {
+          "start": 122.28,
+          "end": 140.46,
+          "text": "Those five booleans are a shorthand. When you need finer control, register the features explicitly with tableFeatures and pass them in, which is the same machinery with the wiring exposed; the docs page below shows both forms side by side. Lesson four lets people change the table."
+        }
+      ]
+    },
+    {
+      "id": "learn-4-editing",
+      "kind": "course",
+      "title": "Learn SvGrid 4: editing rows, and validating them",
+      "description": "Lesson four of the SvGrid course: make cells editable, pick an editor per column, and use validate with rejectInvalid so bad input never reaches your data.",
+      "demo": null,
+      "docsPage": "docs/help/editing/validation.md",
+      "tags": [
+        "svelte data grid tutorial",
+        "learn svgrid",
+        "inline editing",
+        "validation",
+        "svelte 5"
+      ],
+      "duration": 91.1,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-29",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/learn-4-editing.mp4",
+        "poster": "/tutorials/learn-4-editing.poster.webp",
+        "vtt": "/tutorials/learn-4-editing.vtt"
+      },
+      "bytes": {
+        "mp4": 446790,
+        "poster": 23782,
+        "master": 5939055
+      },
+      "transcript": [
+        {
+          "start": 0.62,
+          "end": 8.72,
+          "text": "A table people can only read is half a feature. This lesson makes it editable, and then makes it refuse the edits that should not happen."
+        },
+        {
+          "start": 10.54,
+          "end": 14.93,
+          "text": "The same reactive rows as before. Three people, three fields."
+        },
+        {
+          "start": 15.77,
+          "end": 26.48,
+          "text": "Each column picks its editor. Text for a name, number for an age. The editor is chosen per column, so the user gets the right control instead of a text box for everything."
+        },
+        {
+          "start": 26.75,
+          "end": 38.7,
+          "text": "Then validate. It runs as the cell is edited and returns a message when the value is wrong. Pair it with rejectInvalid and the edit is refused outright rather than written and cleaned up later."
+        },
+        {
+          "start": 39.02,
+          "end": 47.96,
+          "text": "Double-click a cell to edit it, type, and press Enter to commit. That is the whole gesture, and it is the one spreadsheet users already know."
+        },
+        {
+          "start": 48.28,
+          "end": 65.67,
+          "text": "Now an email that is not one. Validate runs as you type, and hovering the cell tells the user what is wrong. Press Enter and rejectInvalid refuses the commit outright: the value is still the old one. Your row object is never touched by something you would have to clean up later."
+        },
+        {
+          "start": 66.09,
+          "end": 81.43,
+          "text": "Undo with control zed, save in batches through the grid API, or hand every commit to your server. The editing pages in the docs cover each of those. Lesson five is selection, and doing something with the rows the user picked."
+        },
+        {
+          "start": 83.38,
+          "end": 88.88,
+          "text": "The file is on the page below and you can edit it there too. See you in lesson five."
+        }
+      ]
+    },
+    {
+      "id": "learn-5-selection",
+      "kind": "course",
+      "title": "Learn SvGrid 5: selection and bulk actions",
+      "description": "Lesson five of the SvGrid course: add row checkboxes, give the grid a stable row id, and float a bulk-action bar over the rows the user picked.",
+      "demo": null,
+      "docsPage": "docs/help/rows/selection-bar.md",
+      "tags": [
+        "svelte data grid tutorial",
+        "learn svgrid",
+        "row selection",
+        "bulk actions",
+        "svelte 5"
+      ],
+      "duration": 85.6,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-29",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/learn-5-selection.mp4",
+        "poster": "/tutorials/learn-5-selection.poster.webp",
+        "vtt": "/tutorials/learn-5-selection.vtt"
+      },
+      "bytes": {
+        "mp4": 564407,
+        "poster": 27854,
+        "master": 6827085
+      },
+      "transcript": [
+        {
+          "start": 0.6,
+          "end": 10.56,
+          "text": "Selecting rows is easy. Knowing which rows are selected after a sort, a filter or a refresh is the part that catches people out, and it comes down to one prop."
+        },
+        {
+          "start": 12.37,
+          "end": 16.06,
+          "text": "A small backlog of tasks and the columns to show them."
+        },
+        {
+          "start": 24.03,
+          "end": 45.32,
+          "text": "Three things on the component. showRowSelection adds the checkbox column. selectionBar floats the action bar. And getRowId is the one that matters: it tells the grid what identifies a row, so a selection survives sorting, filtering and new data arriving. Without it the grid falls back to position, and position changes."
+        },
+        {
+          "start": 45.63,
+          "end": 54.48,
+          "text": "Tick a couple of rows and the bar appears with a live count and the actions you defined. It stays out of the way until there is something to act on."
+        },
+        {
+          "start": 54.89,
+          "end": 63.27,
+          "text": "Now sort the table while those rows are ticked. The same three stay selected, because the grid is tracking ids rather than row numbers."
+        },
+        {
+          "start": 63.69,
+          "end": 77.36,
+          "text": "Over server data the same idea scales: select-all becomes a rule, every row except these, rather than a list of ids the browser would have to hold. Lesson six groups the rows and adds totals."
+        },
+        {
+          "start": 79.27,
+          "end": 83.38,
+          "text": "The file is on the page below. See you in lesson six."
+        }
+      ]
+    },
+    {
+      "id": "learn-6-grouping",
+      "kind": "course",
+      "title": "Learn SvGrid 6: grouping and totals",
+      "description": "Lesson six of the SvGrid course: group rows by a column, average and sum per group with the aggregate option, and add a summary row for the whole table.",
+      "demo": null,
+      "docsPage": "docs/help/grouping-aggregation.md",
+      "tags": [
+        "svelte data grid tutorial",
+        "learn svgrid",
+        "row grouping",
+        "aggregation",
+        "svelte 5"
+      ],
+      "duration": 94,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-29",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/learn-6-grouping.mp4",
+        "poster": "/tutorials/learn-6-grouping.poster.webp",
+        "vtt": "/tutorials/learn-6-grouping.vtt"
+      },
+      "bytes": {
+        "mp4": 1058209,
+        "poster": 43334,
+        "master": 14749996
+      },
+      "transcript": [
+        {
+          "start": 0.61,
+          "end": 9.36,
+          "text": "Once a table has more than a screenful of rows, people stop reading it and start asking it questions. Grouping and totals are how it answers."
+        },
+        {
+          "start": 11.21,
+          "end": 17.17,
+          "text": "The same people as before, with a department and a city to group by, and a salary worth adding up."
+        },
+        {
+          "start": 22.98,
+          "end": 39.07,
+          "text": "Two options do the work here. Aggregate says what a group header shows for that column: an average age, a summed salary. Summary does the same thing for the whole table at the bottom. Both read the raw value, so a formatted currency still adds up correctly."
+        },
+        {
+          "start": 39.34,
+          "end": 45.73,
+          "text": "Then groupBy on the component names the starting grouping, and groupable lets the user change it later."
+        },
+        {
+          "start": 46.04,
+          "end": 56.28,
+          "text": "Read it back whole: the same people, one column list with the aggregate and summary options on it, and groupBy on the component. That is everything this needs."
+        },
+        {
+          "start": 56.6,
+          "end": 69.9,
+          "text": "Every department is a group header carrying its own totals, and the row at the bottom totals the table. Open one and the people inside are ordinary rows: still sortable, still editable, still yours."
+        },
+        {
+          "start": 70.33,
+          "end": 86,
+          "text": "Grouping is part of the row model rather than a display trick, which is why the same thing works over server data: the server returns the groups and the grid asks for a group's rows only when someone opens it. Lesson seven makes all of this look like your product."
+        },
+        {
+          "start": 87.94,
+          "end": 91.72,
+          "text": "The file is on the page below. See you in lesson seven."
+        }
+      ]
+    },
+    {
+      "id": "learn-7-theme",
+      "kind": "course",
+      "title": "Learn SvGrid 7: themes, dark mode and density",
+      "description": "Lesson seven of the SvGrid course: set the CSS custom properties yourself, flip dark mode with one attribute, and change row density with a prop.",
+      "demo": "10-custom-cells-and-themes",
+      "docsPage": "docs/getting-started/5-theme-and-density.md",
+      "tags": [
+        "svelte data grid tutorial",
+        "learn svgrid",
+        "theming",
+        "dark mode",
+        "css variables",
+        "svelte 5"
+      ],
+      "duration": 112.7,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-29",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/learn-7-theme.mp4",
+        "poster": "/tutorials/learn-7-theme.poster.webp",
+        "vtt": "/tutorials/learn-7-theme.vtt"
+      },
+      "bytes": {
+        "mp4": 1159074,
+        "poster": 22242,
+        "master": 16233120
+      },
+      "transcript": [
+        {
+          "start": 0.61,
+          "end": 10.43,
+          "text": "A grid that looks like a grid library is a grid that never ships. Theming here is CSS custom properties, not utility classes and not a config object."
+        },
+        {
+          "start": 12.28,
+          "end": 27.3,
+          "text": "Twenty presets ship with the package, and importing one stylesheet is the whole setup. What a preset sets is a list of custom properties, which means you can set them yourself when one is close but not right. Same five people as before."
+        },
+        {
+          "start": 31.42,
+          "end": 45.23,
+          "text": "A wrapper, and a handful of properties on it. Background, text, border, the header colours, the accent, the hover. They cascade like any other custom property, so this theme is scoped to this one grid rather than the page."
+        },
+        {
+          "start": 45.51,
+          "end": 52.54,
+          "text": "The whole file, so nothing is hidden: the rows, the columns, a wrapper around the grid, and the properties on that wrapper."
+        },
+        {
+          "start": 53.13,
+          "end": 59.05,
+          "text": "Here is that file running. Nine declarations, and nothing about the grid was configured to accept them."
+        },
+        {
+          "start": 59.45,
+          "end": 71.36,
+          "text": "Density is separate from colour, and it is the setting people actually argue about. Row height is a prop, so the compact table and the comfortable one are the same component with one number changed."
+        },
+        {
+          "start": 73.14,
+          "end": 87.56,
+          "text": "Dark mode is not a second stylesheet you maintain. Every preset declares a light palette and a dark one, and an attribute on the document element picks which is live. Every surface follows, including the parts you never styled."
+        },
+        {
+          "start": 87.96,
+          "end": 99.08,
+          "text": "The density control here is the same row height prop behind a dropdown, which is what it usually becomes: a preference you save per user rather than a decision you make once for everybody."
+        },
+        {
+          "start": 101.05,
+          "end": 110.5,
+          "text": "The theme builder on the site edits these tokens live and hands you the CSS at the end. Every property is listed on the page below. See you in lesson eight."
+        }
+      ]
+    },
+    {
+      "id": "learn-8-server-data",
+      "kind": "course",
+      "title": "Learn SvGrid 8: data from a server",
+      "description": "Lesson eight of the SvGrid course: move sorting, filtering and paging to the backend, send one request per change, and cancel the one that is now stale.",
+      "demo": "09-server-side",
+      "docsPage": "docs/getting-started/6-going-to-production.md",
+      "tags": [
+        "svelte data grid tutorial",
+        "learn svgrid",
+        "server side data",
+        "pagination",
+        "svelte 5"
+      ],
+      "duration": 106.1,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-29",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/learn-8-server-data.mp4",
+        "poster": "/tutorials/learn-8-server-data.poster.webp",
+        "vtt": "/tutorials/learn-8-server-data.vtt"
+      },
+      "bytes": {
+        "mp4": 631485,
+        "poster": 23216,
+        "master": 8396451
+      },
+      "transcript": [
+        {
+          "start": 0.61,
+          "end": 13.07,
+          "text": "Everything so far held every row in memory. That works to tens of thousands of rows. Past that, the sorting and filtering have to move to the server, and the grid has to ask for what it needs."
+        },
+        {
+          "start": 14.95,
+          "end": 23.37,
+          "text": "The state the grid hands you is small: which column is sorted, which filters are set, which page you are on. Keep those in runes."
+        },
+        {
+          "start": 36.16,
+          "end": 53.31,
+          "text": "Then one function that turns that state into a request. Notice the abort controller: when the user types another letter, the request already in flight is cancelled, so a slow earlier response cannot overwrite a newer one. That race is the most common bug in a server-backed table."
+        },
+        {
+          "start": 53.63,
+          "end": 66.14,
+          "text": "An effect reruns it whenever sort, filters or page change, and the component passes the rows down with the total, so the pager knows how many pages there are without counting rows it never received."
+        },
+        {
+          "start": 69.42,
+          "end": 81.47,
+          "text": "Here is that pattern running against a real endpoint. Sorting goes to the server and comes back sorted; typing in the search box is debounced, so one request goes out rather than one per keystroke."
+        },
+        {
+          "start": 81.87,
+          "end": 90.53,
+          "text": "The loading state lives on the rows rather than as a spinner over the page, so the header and the controls stay usable while the next page arrives."
+        },
+        {
+          "start": 92.48,
+          "end": 103.83,
+          "text": "Past a million rows there is a dedicated row model that lazily loads groups and blocks; it is linked from the page below. Lesson nine puts all of this in a SvelteKit app."
+        }
+      ]
+    },
+    {
+      "id": "learn-9-sveltekit",
+      "kind": "course",
+      "title": "Learn SvGrid 9: SvelteKit end to end",
+      "description": "Lesson nine of the SvGrid course: query in a load function, hand the rows to the page, and get real server-rendered HTML instead of an empty shell.",
+      "demo": "497-live-rest-dummyjson",
+      "docsPage": "docs/getting-started/sveltekit.md",
+      "tags": [
+        "sveltekit data grid",
+        "learn svgrid",
+        "ssr",
+        "page.server.ts",
+        "svelte 5"
+      ],
+      "duration": 80.6,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-09-29",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/learn-9-sveltekit.mp4",
+        "poster": "/tutorials/learn-9-sveltekit.poster.webp",
+        "vtt": "/tutorials/learn-9-sveltekit.vtt"
+      },
+      "bytes": {
+        "mp4": 431862,
+        "poster": 35652,
+        "master": 5990047
+      },
+      "transcript": [
+        {
+          "start": 0.61,
+          "end": 8.85,
+          "text": "SvelteKit gives you a place to put the query that is already on the server. The grid does not need to know about any of it: it takes an array."
+        },
+        {
+          "start": 10.74,
+          "end": 18.98,
+          "text": "There is a SvelteKit template, so the whole app is two commands. If you have a project already, installing the package is enough."
+        },
+        {
+          "start": 20.88,
+          "end": 29.67,
+          "text": "The load function runs on the server. Your database credentials are already there, so the query belongs there too, and the browser never sees it."
+        },
+        {
+          "start": 30.09,
+          "end": 40.19,
+          "text": "The page takes what that returned and hands it straight to the grid. Type the columns against your row type, as in lesson two, and the compiler checks the field names for you."
+        },
+        {
+          "start": 42.14,
+          "end": 50.98,
+          "text": "Here is a grid over a real endpoint, which is what your page becomes once the load function points at a database instead of a demo API."
+        },
+        {
+          "start": 57.56,
+          "end": 70.49,
+          "text": "The part worth knowing: the server HTML contains a viewport of real rows, not an empty container waiting for hydration. A crawler sees data, and a reader sees the table before the JavaScript arrives."
+        },
+        {
+          "start": 72.42,
+          "end": 78.38,
+          "text": "URL-driven sorting and form actions for edits are on the page below. One lesson to go."
         }
       ]
     },
@@ -619,6 +1371,123 @@
       ]
     },
     {
+      "id": "mk-accessibility",
+      "kind": "marketing",
+      "title": "An accessible data grid, not a div soup",
+      "description": "SvGrid renders the WAI-ARIA grid pattern on a real table: keyboard navigation everywhere, a command palette, a cheat sheet, and a high-contrast preset.",
+      "demo": "17-accessibility",
+      "docsPage": null,
+      "tags": [
+        "accessible data grid",
+        "wai-aria",
+        "keyboard navigation",
+        "wcag",
+        "svelte data grid",
+        "svelte 5"
+      ],
+      "duration": 43.3,
+      "width": 1920,
+      "height": 1080,
+      "recordedAt": "2026-09-28",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": null,
+        "poster": null,
+        "vtt": null
+      },
+      "bytes": {
+        "mp4": 0,
+        "poster": 0,
+        "master": 5115390
+      },
+      "transcript": [
+        {
+          "start": 0.6,
+          "end": 5.87,
+          "text": "Most grids are a pile of divs. This one is a table with the ARIA grid pattern on it."
+        },
+        {
+          "start": 7.68,
+          "end": 16.15,
+          "text": "Arrow keys move the active cell, Home and End jump to the row edges, Control Home goes to the corner, and the focus ring follows."
+        },
+        {
+          "start": 18.02,
+          "end": 25.05,
+          "text": "Control K opens a command palette over the grid, and Control slash shows every shortcut the app has bound."
+        },
+        {
+          "start": 26.87,
+          "end": 32.05,
+          "text": "And a high-contrast preset ships with it, for the procurement checklist that asks."
+        },
+        {
+          "start": 34.12,
+          "end": 41.43,
+          "text": "There is a published conformance report to hand to whoever asks for one. Accessibility at svgrid.com."
+        }
+      ]
+    },
+    {
+      "id": "mk-alerts",
+      "kind": "marketing",
+      "title": "Alert rules your users write themselves",
+      "description": "Let users define rules over grid data at run time: raise a toast, tint a row, flash a cell, watch a whole-table total, or veto an edit that breaks a limit.",
+      "demo": "399-alert-rules-engine",
+      "docsPage": null,
+      "tags": [
+        "alert rules",
+        "conditional formatting",
+        "real time dashboard",
+        "svelte data grid",
+        "svelte 5"
+      ],
+      "duration": 44.1,
+      "width": 1920,
+      "height": 1080,
+      "recordedAt": "2026-09-28",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": null,
+        "poster": null,
+        "vtt": null
+      },
+      "bytes": {
+        "mp4": 0,
+        "poster": 0,
+        "master": 3306419
+      },
+      "transcript": [
+        {
+          "start": 0.62,
+          "end": 6.21,
+          "text": "The rule a user needs tomorrow is never the one you shipped today. So let them write it."
+        },
+        {
+          "start": 8.07,
+          "end": 16.13,
+          "text": "A live trading desk with rules watching it. When a row matches, the rule raises a toast, tints the row or flashes the cell."
+        },
+        {
+          "start": 18.24,
+          "end": 24.85,
+          "text": "Rules can watch an aggregate rather than a row: a total, an average, a count across the whole table."
+        },
+        {
+          "start": 26.67,
+          "end": 32.82,
+          "text": "And a validation rule runs on edit, so a change that breaks a limit is refused before it lands."
+        },
+        {
+          "start": 34.85,
+          "end": 42.07,
+          "text": "Rules are stored as data, so users keep their own and you ship nothing. Alerts at svgrid.com."
+        }
+      ]
+    },
+    {
       "id": "mk-calendars",
       "kind": "marketing",
       "title": "A calendar view for grid rows",
@@ -633,10 +1502,10 @@
         "svelte data grid",
         "svelte 5"
       ],
-      "duration": 45,
+      "duration": 43,
       "width": 1920,
       "height": 1080,
-      "recordedAt": "2026-09-21",
+      "recordedAt": "2026-09-28",
       "youtubeId": null,
       "publishedAt": null,
       "files": {
@@ -647,32 +1516,32 @@
       "bytes": {
         "mp4": 0,
         "poster": 0,
-        "master": 2411699
+        "master": 2827024
       },
       "transcript": [
         {
           "start": 0.61,
-          "end": 8.11,
+          "end": 6.07,
           "text": "Events are rows with a start and an end. The calendar is one more view of the grid."
         },
         {
-          "start": 10.01,
-          "end": 19.51,
+          "start": 7.94,
+          "end": 15.76,
           "text": "Month, week, day and agenda over the same rows, with drag to move and resize, and every change flowing back to the row."
         },
         {
-          "start": 21.54,
-          "end": 26.24,
+          "start": 17.7,
+          "end": 22.97,
           "text": "Timelines put resources in rows and time across: teams, rooms, machines."
         },
         {
-          "start": 28.48,
-          "end": 35.58,
+          "start": 25.1,
+          "end": 30.28,
           "text": "Compose it with the dock layout and a navigation pane, and you have a full calendar client."
         },
         {
-          "start": 37.83,
-          "end": 42.93,
+          "start": 32.48,
+          "end": 41,
           "text": "Recurring events, drafts, ICS import and export, resource views. Calendars at svgrid.com."
         }
       ]
@@ -691,10 +1560,10 @@
         "chart gallery",
         "svelte 5"
       ],
-      "duration": 45.9,
+      "duration": 44.2,
       "width": 1920,
       "height": 1080,
-      "recordedAt": "2026-09-21",
+      "recordedAt": "2026-09-28",
       "youtubeId": null,
       "publishedAt": null,
       "files": {
@@ -705,33 +1574,92 @@
       "bytes": {
         "mp4": 0,
         "poster": 0,
-        "master": 5332935
+        "master": 5802257
       },
       "transcript": [
         {
           "start": 0.61,
-          "end": 6.91,
+          "end": 5.46,
           "text": "The chart is not a second library. It reads the rows the grid is showing."
         },
         {
-          "start": 8.81,
-          "end": 16.31,
+          "start": 7.28,
+          "end": 12.92,
           "text": "Add the charting prop and pick a type. Click a bar and the grid filters to that category."
         },
         {
-          "start": 18.34,
-          "end": 25.04,
+          "start": 14.88,
+          "end": 22.94,
           "text": "Thirty chart types from one dataset: bars, lines, areas, pies, funnels, candlesticks, heat maps and more."
         },
         {
-          "start": 27.21,
-          "end": 32.71,
+          "start": 25.04,
+          "end": 29.98,
           "text": "Financial panes with indicators, and a zoom that keeps every pane in step."
         },
         {
-          "start": 34.73,
-          "end": 43.83,
+          "start": 32.91,
+          "end": 42.13,
           "text": "Export to PNG or SVG, drop a chart on a dashboard, or chart a pivot or a sheet range. Charts at svgrid.com."
+        }
+      ]
+    },
+    {
+      "id": "mk-columns",
+      "kind": "marketing",
+      "title": "Columns your users can rearrange",
+      "description": "Pin, reorder, resize and group columns in SvGrid, and dock a tool panel so users can show, hide and group them without you writing a settings screen.",
+      "demo": "25-column-pinning",
+      "docsPage": null,
+      "tags": [
+        "column pinning",
+        "column groups",
+        "tool panel",
+        "svelte data grid",
+        "resizable columns",
+        "svelte 5"
+      ],
+      "duration": 48.4,
+      "width": 1920,
+      "height": 1080,
+      "recordedAt": "2026-09-28",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": null,
+        "poster": null,
+        "vtt": null
+      },
+      "bytes": {
+        "mp4": 0,
+        "poster": 0,
+        "master": 6319526
+      },
+      "transcript": [
+        {
+          "start": 0.61,
+          "end": 7.55,
+          "text": "A wide table is only useful if the columns that matter stay put. SvGrid gives that control to the user."
+        },
+        {
+          "start": 9.42,
+          "end": 17.43,
+          "text": "Pin a column left or right and it stays while the rest slide under it. Pinning is a column option, or a choice in the header menu."
+        },
+        {
+          "start": 19.28,
+          "end": 26.45,
+          "text": "Drag a header to reorder, drag its edge to resize, and both land in the column state you can save and restore."
+        },
+        {
+          "start": 28.31,
+          "end": 37.2,
+          "text": "Switch on the tool panel and users get the whole thing themselves: show and hide columns, reorder them, group by one, all from a docked sidebar."
+        },
+        {
+          "start": 39.25,
+          "end": 46.33,
+          "text": "The whole layout is one object you can store per user and restore on load. Columns at svgrid.com."
         }
       ]
     },
@@ -750,10 +1678,10 @@
         "spreadsheet like grid",
         "svelte 5"
       ],
-      "duration": 50.5,
+      "duration": 51.4,
       "width": 1920,
       "height": 1080,
-      "recordedAt": "2026-09-21",
+      "recordedAt": "2026-09-28",
       "youtubeId": null,
       "publishedAt": null,
       "files": {
@@ -764,33 +1692,203 @@
       "bytes": {
         "mp4": 0,
         "poster": 0,
-        "master": 2428867
+        "master": 3462611
       },
       "transcript": [
         {
           "start": 0.61,
-          "end": 5.31,
+          "end": 5.64,
           "text": "Your users learned spreadsheets first. SvGrid meets them where they are."
         },
         {
-          "start": 7.21,
-          "end": 14.71,
+          "start": 7.44,
+          "end": 13.78,
           "text": "Every column gets the filter menu they know: a value list with counts, a search box and conditions."
         },
         {
-          "start": 16.74,
-          "end": 23.04,
+          "start": 15.78,
+          "end": 22.16,
           "text": "The fill handle continues a series: numbers, dates and weekdays, or repeats a single value."
         },
         {
-          "start": 27.94,
-          "end": 37.44,
+          "start": 30.21,
+          "end": 38.08,
           "text": "Turn on sheet mode and the keyboard follows: Control plus an arrow jumps to the edge of the data, Shift extends the selection."
         },
         {
-          "start": 39.68,
-          "end": 48.38,
+          "start": 40.31,
+          "end": 49.34,
           "text": "Paste special, find and replace, move a range, undo. All of it on the grid you already have. Demos at svgrid.com."
+        }
+      ]
+    },
+    {
+      "id": "mk-export",
+      "kind": "marketing",
+      "title": "Export a Svelte grid to Excel, PDF and print",
+      "description": "Export the grid the user is looking at: XLSX with live formulas, PDF, CSV, a printable view, and a password-protected workbook, all from the same API.",
+      "demo": "21-export-and-print",
+      "docsPage": null,
+      "tags": [
+        "svelte excel export",
+        "xlsx",
+        "pdf export",
+        "print",
+        "svelte data grid",
+        "svelte 5"
+      ],
+      "duration": 46.4,
+      "width": 1920,
+      "height": 1080,
+      "recordedAt": "2026-09-28",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": null,
+        "poster": null,
+        "vtt": null
+      },
+      "bytes": {
+        "mp4": 0,
+        "poster": 0,
+        "master": 4336460
+      },
+      "transcript": [
+        {
+          "start": 0.6,
+          "end": 6.43,
+          "text": "Every internal tool gets the same request: can I have this in Excel. Here is the answer."
+        },
+        {
+          "start": 8.23,
+          "end": 16.38,
+          "text": "One call exports what the grid is showing. Sort or filter first and the file follows, because it reads the view, not the raw array."
+        },
+        {
+          "start": 16.79,
+          "end": 24.34,
+          "text": "Currency, dates and percentages land formatted, not as raw numbers, and print opens the same view ready for paper."
+        },
+        {
+          "start": 26.21,
+          "end": 33.24,
+          "text": "A total column can go out as a live SUM, so the workbook recalculates in Excel instead of freezing your numbers."
+        },
+        {
+          "start": 35.28,
+          "end": 44.36,
+          "text": "CSV ships in the free core; Excel, PDF and protected workbooks come with the enterprise pack. Export at svgrid.com."
+        }
+      ]
+    },
+    {
+      "id": "mk-filtering",
+      "kind": "marketing",
+      "title": "Four ways to filter a Svelte data grid",
+      "description": "Filtering in SvGrid: a quick filter row under the headers, the Excel-style value list, a visual condition builder, and set filters over large value lists.",
+      "demo": "179-floating-filters",
+      "docsPage": null,
+      "tags": [
+        "svelte data grid filtering",
+        "excel style filter",
+        "filter builder",
+        "floating filters",
+        "svelte 5"
+      ],
+      "duration": 39,
+      "width": 1920,
+      "height": 1080,
+      "recordedAt": "2026-09-28",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": null,
+        "poster": null,
+        "vtt": null
+      },
+      "bytes": {
+        "mp4": 0,
+        "poster": 0,
+        "master": 3423595
+      },
+      "transcript": [
+        {
+          "start": 0.6,
+          "end": 6.29,
+          "text": "Every team filters differently, so SvGrid ships four ways to do it on the same columns."
+        },
+        {
+          "start": 8.08,
+          "end": 14.28,
+          "text": "The filter row sits under the headers. Each cell knows its column type, and the funnel picks the operator."
+        },
+        {
+          "start": 16.27,
+          "end": 22.42,
+          "text": "The column menu is the Excel-style one: a searchable value list with counts, ticked and unticked."
+        },
+        {
+          "start": 27.14,
+          "end": 28.9,
+          "text": "For the hard questions there is a visual builder: nested AND and OR conditions across columns, saved as a query your users can reuse."
+        },
+        {
+          "start": 28.95,
+          "end": 36.91,
+          "text": "The same filter model serializes to the server when the data is too big for the browser. Filtering at svgrid.com."
+        }
+      ]
+    },
+    {
+      "id": "mk-headless",
+      "kind": "marketing",
+      "title": "Headless first: bring your own markup",
+      "description": "SvGrid is an engine plus a renderer. Use createSvGrid for sorting, filtering and row models in your own table markup, and the virtualizer for 50,000 rows.",
+      "demo": "186-headless-table",
+      "docsPage": null,
+      "tags": [
+        "headless table svelte",
+        "svelte table library",
+        "virtualization",
+        "svelte 5",
+        "data grid"
+      ],
+      "duration": 36.6,
+      "width": 1920,
+      "height": 1080,
+      "recordedAt": "2026-09-28",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": null,
+        "poster": null,
+        "vtt": null
+      },
+      "bytes": {
+        "mp4": 0,
+        "poster": 0,
+        "master": 1441565
+      },
+      "transcript": [
+        {
+          "start": 0.62,
+          "end": 5.51,
+          "text": "Sometimes you want the logic, not the look. SvGrid separates the two."
+        },
+        {
+          "start": 7.33,
+          "end": 15.39,
+          "text": "This is a hand-written table, not the grid component. createSvGrid does the sorting and the filtering; the markup is yours."
+        },
+        {
+          "start": 17.27,
+          "end": 26.07,
+          "text": "The virtualizer is separate too: it tells you which rows are in view and where to put them, so fifty thousand rows cost about twenty nodes."
+        },
+        {
+          "start": 28.14,
+          "end": 34.62,
+          "text": "Same package, same row model, whichever half you use. Headless at svgrid.com."
         }
       ]
     },
@@ -809,10 +1907,10 @@
         "svelte data grid",
         "svelte 5"
       ],
-      "duration": 43.2,
+      "duration": 42.1,
       "width": 1920,
       "height": 1080,
-      "recordedAt": "2026-09-21",
+      "recordedAt": "2026-09-28",
       "youtubeId": null,
       "publishedAt": null,
       "files": {
@@ -823,32 +1921,32 @@
       "bytes": {
         "mp4": 0,
         "poster": 0,
-        "master": 3513409
+        "master": 3886993
       },
       "transcript": [
         {
           "start": 0.61,
-          "end": 6.11,
+          "end": 5.09,
           "text": "Editing is one prop, and every column brings the right editor with it."
         },
         {
-          "start": 7.97,
-          "end": 15.87,
+          "start": 6.85,
+          "end": 15.51,
           "text": "Text, dropdowns and dates, in place: double-click, type or pick, press Enter. Pending edits are counted until you save."
         },
         {
-          "start": 17.73,
-          "end": 24.83,
+          "start": 17.37,
+          "end": 23.15,
           "text": "A validate hook per column rejects bad input with a message before it ever reaches your data."
         },
         {
-          "start": 26.8,
-          "end": 33.5,
+          "start": 25.1,
+          "end": 30.46,
           "text": "Editors can depend on each other. Pick a region, and the country list narrows to match."
         },
         {
-          "start": 35.67,
-          "end": 41.17,
+          "start": 32.61,
+          "end": 40.02,
           "text": "Undo, cascading options, validation and batch saves, with one prop. Docs at svgrid.com."
         }
       ]
@@ -868,10 +1966,10 @@
         "drag and drop",
         "svelte 5"
       ],
-      "duration": 46.5,
+      "duration": 45.3,
       "width": 1920,
       "height": 1080,
-      "recordedAt": "2026-09-21",
+      "recordedAt": "2026-09-28",
       "youtubeId": null,
       "publishedAt": null,
       "files": {
@@ -882,32 +1980,32 @@
       "bytes": {
         "mp4": 0,
         "poster": 0,
-        "master": 2121820
+        "master": 2737040
       },
       "transcript": [
         {
           "start": 0.61,
-          "end": 8.11,
+          "end": 6.06,
           "text": "Cards are rows. Lanes are a field. The board is a prop on the grid you already have."
         },
         {
-          "start": 10.08,
-          "end": 15.18,
+          "start": 7.87,
+          "end": 12.03,
           "text": "Drag a card between lanes and the row behind it changes status."
         },
         {
-          "start": 17.45,
-          "end": 26.15,
+          "start": 14.11,
+          "end": 21.79,
           "text": "Swimlanes cross the lanes with a second field, here the assignee, and a WIP limit refuses a card past the line."
         },
         {
-          "start": 28.37,
-          "end": 35.07,
+          "start": 23.94,
+          "end": 32.13,
           "text": "Cards get rich by config alone: labels, avatars, sub-task progress, comments and attachments, no template code."
         },
         {
-          "start": 37.31,
-          "end": 44.41,
+          "start": 34.23,
+          "end": 43.27,
           "text": "Virtualized lanes, keyboard drag and drop, filters and card menus, epics with stories. Ten demos at svgrid.com."
         }
       ]
@@ -927,10 +2025,10 @@
         "svelte data grid",
         "svelte 5"
       ],
-      "duration": 45.9,
+      "duration": 45.1,
       "width": 1920,
       "height": 1080,
-      "recordedAt": "2026-09-21",
+      "recordedAt": "2026-09-28",
       "youtubeId": null,
       "publishedAt": null,
       "files": {
@@ -941,32 +2039,32 @@
       "bytes": {
         "mp4": 0,
         "poster": 0,
-        "master": 8597776
+        "master": 7984628
       },
       "transcript": [
         {
           "start": 0.61,
-          "end": 6.91,
+          "end": 7.04,
           "text": "Prices, sensors, transactions. Rows that change every second, in a grid that does not blink."
         },
         {
-          "start": 8.81,
-          "end": 15.91,
+          "start": 8.88,
+          "end": 15.17,
           "text": "A ticking feed updates cells in place and flashes what moved, while sorting and filtering stay applied."
         },
         {
-          "start": 17.97,
-          "end": 25.47,
+          "start": 17.11,
+          "end": 24.14,
           "text": "Sensor rows with thresholds driving the colours and sparklines tracking the trend, regrouped by status on the fly."
         },
         {
-          "start": 27.5,
-          "end": 36.2,
+          "start": 26.07,
+          "end": 34.36,
           "text": "Server-side too: a transaction stream applies inserts, updates and removes to a row model the browser does not own, in batches."
         },
         {
-          "start": 38.38,
-          "end": 43.88,
+          "start": 36.4,
+          "end": 43.11,
           "text": "Batched transactions keep the frame rate whatever the feed does. Real-time at svgrid.com."
         }
       ]
@@ -986,10 +2084,10 @@
         "performance",
         "svelte 5"
       ],
-      "duration": 42,
+      "duration": 38.9,
       "width": 1920,
       "height": 1080,
-      "recordedAt": "2026-09-21",
+      "recordedAt": "2026-09-28",
       "youtubeId": null,
       "publishedAt": null,
       "files": {
@@ -1000,32 +2098,32 @@
       "bytes": {
         "mp4": 0,
         "poster": 0,
-        "master": 7224798
+        "master": 5963603
       },
       "transcript": [
         {
           "start": 0.61,
-          "end": 7.31,
+          "end": 5.74,
           "text": "How many rows can a Svelte grid hold before it slows down? Let us find out."
         },
         {
-          "start": 9.21,
-          "end": 15.91,
+          "start": 7.6,
+          "end": 13.52,
           "text": "One million rows, generated in the browser. Scroll anywhere; only the rows in view are drawn."
         },
         {
-          "start": 16.38,
-          "end": 22.68,
+          "start": 13.94,
+          "end": 19.07,
           "text": "Group them by department and the same million rows fold into groups, still in place."
         },
         {
-          "start": 24.58,
-          "end": 31.28,
+          "start": 20.93,
+          "end": 28.2,
           "text": "Columns virtualize too. Fifty thousand rows by seventy-seven columns scroll in both directions without a stutter."
         },
         {
-          "start": 33.28,
-          "end": 39.98,
+          "start": 30.17,
+          "end": 36.88,
           "text": "The numbers are on the benchmarks page, with the harness that produced them. Start at svgrid.com."
         }
       ]
@@ -1044,10 +2142,10 @@
         "data analysis",
         "svelte 5"
       ],
-      "duration": 42.5,
+      "duration": 41.8,
       "width": 1920,
       "height": 1080,
-      "recordedAt": "2026-09-21",
+      "recordedAt": "2026-09-28",
       "youtubeId": null,
       "publishedAt": null,
       "files": {
@@ -1058,33 +2156,91 @@
       "bytes": {
         "mp4": 0,
         "poster": 0,
-        "master": 3687821
+        "master": 4476837
       },
       "transcript": [
         {
           "start": 0.61,
-          "end": 5.71,
+          "end": 5.7,
           "text": "A pivot table used to mean exporting to a spreadsheet. Not anymore."
         },
         {
-          "start": 7.61,
-          "end": 13.51,
+          "start": 7.54,
+          "end": 13.09,
           "text": "Drag fields into rows, columns and values and the pivot recomputes on the spot."
         },
         {
-          "start": 16.26,
-          "end": 20.16,
+          "start": 16.07,
+          "end": 19.3,
           "text": "Flip to Chart and the same layout draws itself."
         },
         {
-          "start": 22.54,
-          "end": 30.84,
+          "start": 21.27,
+          "end": 28.44,
           "text": "Or dock the designer beside a flat grid and flip pivot mode: same rows, two views, no second data source."
         },
         {
-          "start": 32.97,
-          "end": 40.47,
+          "start": 30.44,
+          "end": 39.74,
           "text": "Subtotals and grand totals, saved presets, export, and a server mode for millions of rows. Pivot at svgrid.com."
+        }
+      ]
+    },
+    {
+      "id": "mk-rest-api",
+      "kind": "marketing",
+      "title": "Connect a Svelte data grid to your API",
+      "description": "Point SvGrid at a REST endpoint: server sort, filter and paging over a live public API, cursor pagination, and a loading state that does not flicker.",
+      "demo": "497-live-rest-dummyjson",
+      "docsPage": null,
+      "tags": [
+        "svelte data grid rest api",
+        "server side data",
+        "pagination",
+        "sveltekit",
+        "svelte 5"
+      ],
+      "duration": 48.2,
+      "width": 1920,
+      "height": 1080,
+      "recordedAt": "2026-09-28",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": null,
+        "poster": null,
+        "vtt": null
+      },
+      "bytes": {
+        "mp4": 0,
+        "poster": 0,
+        "master": 6189163
+      },
+      "transcript": [
+        {
+          "start": 0.61,
+          "end": 6.76,
+          "text": "A demo with hard-coded rows proves nothing. This one is talking to a real endpoint over the network."
+        },
+        {
+          "start": 8.61,
+          "end": 17.97,
+          "text": "Every page turn is an HTTP request. The grid asks for the slice it needs, and the adapter maps your response shape to rows and a total."
+        },
+        {
+          "start": 19.8,
+          "end": 26.74,
+          "text": "Cursor APIs work the same way: the grid keeps the cursor your backend returned and asks for what follows it."
+        },
+        {
+          "start": 28.61,
+          "end": 35.6,
+          "text": "Sorting and searching go the same way, debounced, with the loading state on the rows rather than a spinner over the page."
+        },
+        {
+          "start": 38.05,
+          "end": 46.15,
+          "text": "REST, GraphQL, SQL or Supabase, it is one function you implement. Server data at svgrid.com."
         }
       ]
     },
@@ -1103,10 +2259,10 @@
         "hierarchical grid",
         "svelte 5"
       ],
-      "duration": 42.3,
+      "duration": 40.6,
       "width": 1920,
       "height": 1080,
-      "recordedAt": "2026-09-21",
+      "recordedAt": "2026-09-28",
       "youtubeId": null,
       "publishedAt": null,
       "files": {
@@ -1117,33 +2273,91 @@
       "bytes": {
         "mp4": 0,
         "poster": 0,
-        "master": 2084046
+        "master": 3078994
       },
       "transcript": [
         {
-          "start": 0.61,
-          "end": 4.91,
+          "start": 0.62,
+          "end": 5.33,
           "text": "Flat rows are the exception. SvGrid nests them three ways."
         },
         {
-          "start": 6.77,
-          "end": 14.67,
+          "start": 7.15,
+          "end": 13.07,
           "text": "Group by any column with a sum or an average per group, and switch the grouping at run time."
         },
         {
-          "start": 16.54,
-          "end": 24.04,
+          "start": 14.9,
+          "end": 21.47,
           "text": "Tree data: point the grid at a parent field and rows become a hierarchy, with expanders and indent."
         },
         {
-          "start": 26.14,
-          "end": 32.84,
+          "start": 23.51,
+          "end": 29.38,
           "text": "Master detail: a row opens a detail row, here a nested grid with its own sorting."
         },
         {
-          "start": 35.17,
-          "end": 40.27,
+          "start": 31.61,
+          "end": 38.55,
           "text": "Three props on one row model, virtualized and keyboard-navigable. Details at svgrid.com."
+        }
+      ]
+    },
+    {
+      "id": "mk-selection",
+      "kind": "marketing",
+      "title": "Select rows, act on them in bulk",
+      "description": "Selection in SvGrid: row checkboxes, a floating bulk-action bar, spreadsheet range selection, and dragging a selected block to move or copy it.",
+      "demo": "430-selection-bar",
+      "docsPage": null,
+      "tags": [
+        "row selection",
+        "bulk actions",
+        "range selection",
+        "svelte data grid",
+        "svelte 5"
+      ],
+      "duration": 44.7,
+      "width": 1920,
+      "height": 1080,
+      "recordedAt": "2026-09-28",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": null,
+        "poster": null,
+        "vtt": null
+      },
+      "bytes": {
+        "mp4": 0,
+        "poster": 0,
+        "master": 3089644
+      },
+      "transcript": [
+        {
+          "start": 0.62,
+          "end": 5.75,
+          "text": "Selecting rows is only half the job. What the user does next is the other half."
+        },
+        {
+          "start": 7.61,
+          "end": 14.5,
+          "text": "Tick a few rows and a bar floats over the grid with the actions you defined, and a live count of what is selected."
+        },
+        {
+          "start": 16.44,
+          "end": 22.96,
+          "text": "Cell selection works like a spreadsheet: drag a range, then grab its border and move the block somewhere else."
+        },
+        {
+          "start": 24.91,
+          "end": 29.77,
+          "text": "And the corner handle fills a series across the range, the way a spreadsheet does."
+        },
+        {
+          "start": 33.61,
+          "end": 42.64,
+          "text": "Over server data, select-all becomes a rule rather than a list of ids, so it works past a million rows. More at svgrid.com."
         }
       ]
     },
@@ -1162,10 +2376,10 @@
         "enterprise grid",
         "svelte 5"
       ],
-      "duration": 52,
+      "duration": 49.7,
       "width": 1920,
       "height": 1080,
-      "recordedAt": "2026-09-21",
+      "recordedAt": "2026-09-28",
       "youtubeId": null,
       "publishedAt": null,
       "files": {
@@ -1176,33 +2390,159 @@
       "bytes": {
         "mp4": 0,
         "poster": 0,
-        "master": 6664826
+        "master": 6207047
       },
       "transcript": [
         {
           "start": 0.61,
-          "end": 8.11,
+          "end": 6.15,
           "text": "When the data cannot fit in the browser, the grid asks the server for exactly what it shows."
         },
         {
-          "start": 10.01,
-          "end": 17.91,
+          "start": 8.01,
+          "end": 15.88,
           "text": "Scrolling fetches blocks on demand. Grouping is a request too: the server returns the groups, and each opens lazily."
         },
         {
-          "start": 21.01,
-          "end": 29.31,
+          "start": 21.28,
+          "end": 27.62,
           "text": "A file tree the grid never holds whole. Expanding a folder is one call with the folder as the parent."
         },
         {
-          "start": 31.17,
-          "end": 40.27,
+          "start": 29.47,
+          "end": 37.02,
           "text": "Even the pivot runs on the server: one request per layout. Expand a region and the pivot repeats per country beneath it."
         },
         {
-          "start": 42.41,
-          "end": 49.91,
+          "start": 39.05,
+          "end": 47.66,
           "text": "One getRows function against any backend, and a planner that turns each request into SQL. Details at svgrid.com."
+        }
+      ]
+    },
+    {
+      "id": "mk-sveltekit",
+      "kind": "marketing",
+      "title": "A data grid in a SvelteKit app",
+      "description": "Add SvGrid to SvelteKit: rows from a +page.server.ts load, the grid in the page, and real server-rendered HTML rather than an empty shell.",
+      "demo": "09-server-side",
+      "docsPage": null,
+      "tags": [
+        "sveltekit data grid",
+        "svelte 5",
+        "ssr table",
+        "page.server.ts",
+        "svelte data grid"
+      ],
+      "duration": 57.9,
+      "width": 1920,
+      "height": 1080,
+      "recordedAt": "2026-09-28",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": null,
+        "poster": null,
+        "vtt": null
+      },
+      "bytes": {
+        "mp4": 0,
+        "poster": 0,
+        "master": 3177514
+      },
+      "transcript": [
+        {
+          "start": 0.61,
+          "end": 6.44,
+          "text": "In SvelteKit the data comes from a load function. SvGrid takes it as a plain array."
+        },
+        {
+          "start": 8.28,
+          "end": 14.38,
+          "text": "Add the package to an existing project, or scaffold the whole SvelteKit app from the template."
+        },
+        {
+          "start": 18.91,
+          "end": 24.41,
+          "text": "Query in the load function, on the server, where your database credentials already are."
+        },
+        {
+          "start": 24.83,
+          "end": 33.62,
+          "text": "Then the page takes the rows straight from data and hands them to the grid. Type the columns against your row type and every field is checked."
+        },
+        {
+          "start": 35.68,
+          "end": 43.83,
+          "text": "For a table too big to send at once, move sort, filter and paging to the server and the grid requests one page at a time."
+        },
+        {
+          "start": 45.83,
+          "end": 55.84,
+          "text": "The server HTML carries a viewport of real rows, so the page is useful before hydration. The SvelteKit guide is at svgrid.com."
+        }
+      ]
+    },
+    {
+      "id": "mk-themes",
+      "kind": "marketing",
+      "title": "One grid, twenty themes",
+      "description": "SvGrid themes are CSS custom properties, so the same grid wears your design system: twenty presets, light and dark, plus density and a live theme builder.",
+      "demo": "10-custom-cells-and-themes",
+      "docsPage": null,
+      "tags": [
+        "svelte data grid theme",
+        "dark mode",
+        "design tokens",
+        "shadcn table",
+        "svelte 5"
+      ],
+      "duration": 41.2,
+      "width": 1920,
+      "height": 1080,
+      "recordedAt": "2026-09-28",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": null,
+        "poster": null,
+        "vtt": null
+      },
+      "bytes": {
+        "mp4": 0,
+        "poster": 0,
+        "master": 10406114
+      },
+      "transcript": [
+        {
+          "start": 0.61,
+          "end": 7.78,
+          "text": "A grid that looks like a grid library is a grid that never ships. SvGrid is themed with CSS variables."
+        },
+        {
+          "start": 9.56,
+          "end": 15.15,
+          "text": "This is the same demo, the same markup, under four presets. Here is the signature one."
+        },
+        {
+          "start": 16.92,
+          "end": 22.05,
+          "text": "The same grid in a shadcn-flavoured palette. Nothing changed but the tokens."
+        },
+        {
+          "start": 23.79,
+          "end": 26.69,
+          "text": "Material, with its own density and radius."
+        },
+        {
+          "start": 28.42,
+          "end": 31.6,
+          "text": "And a spreadsheet look, for users who expect one."
+        },
+        {
+          "start": 33.44,
+          "end": 39.17,
+          "text": "Start from a preset or set the tokens yourself in the theme builder at svgrid.com."
         }
       ]
     },
@@ -1221,10 +2561,10 @@
         "charts",
         "svelte 5"
       ],
-      "duration": 71.8,
+      "duration": 62.9,
       "width": 1920,
       "height": 1080,
-      "recordedAt": "2026-09-21",
+      "recordedAt": "2026-09-28",
       "youtubeId": null,
       "publishedAt": null,
       "files": {
@@ -1235,42 +2575,42 @@
       "bytes": {
         "mp4": 0,
         "poster": 0,
-        "master": 5597989
+        "master": 5350613
       },
       "transcript": [
         {
-          "start": 0.6,
-          "end": 11.3,
+          "start": 0.61,
+          "end": 9.41,
           "text": "Most apps end up with a table, a board and a calendar over the same records, and three components to keep in sync. SvGrid has one."
         },
         {
-          "start": 13.24,
-          "end": 21.54,
+          "start": 11.24,
+          "end": 18.04,
           "text": "The board prop turns rows into cards and a status field into lanes. Drag a card, and the row changes."
         },
         {
-          "start": 22.03,
-          "end": 29.93,
+          "start": 18.45,
+          "end": 24.56,
           "text": "Switch to Table, and it is the same grid with the same rows, the moved card already in Review."
         },
         {
-          "start": 32.11,
-          "end": 40.41,
+          "start": 26.67,
+          "end": 34.31,
           "text": "The scheduler prop renders the rows as a calendar: month, week, day and agenda, with drag to move and resize."
         },
         {
-          "start": 42.54,
-          "end": 49.24,
+          "start": 36.34,
+          "end": 42.26,
           "text": "Pivot mode summarizes the same rows by any dimension, with a designer docked beside the grid."
         },
         {
-          "start": 51.31,
-          "end": 60.01,
+          "start": 44.15,
+          "end": 51.37,
           "text": "And the charting prop draws what is on screen. Filter the grid, the chart follows; click the chart, the grid follows."
         },
         {
-          "start": 62.17,
-          "end": 69.67,
+          "start": 53.44,
+          "end": 60.94,
           "text": "One data model, one set of columns, one component. The views are props. See them all at svgrid.com."
         }
       ]
@@ -1394,10 +2734,10 @@
         "xlsx",
         "svelte 5"
       ],
-      "duration": 65.8,
+      "duration": 66.5,
       "width": 1920,
       "height": 1080,
-      "recordedAt": "2026-09-21",
+      "recordedAt": "2026-09-28",
       "youtubeId": null,
       "publishedAt": null,
       "files": {
@@ -1408,37 +2748,37 @@
       "bytes": {
         "mp4": 0,
         "poster": 0,
-        "master": 4791960
+        "master": 6511265
       },
       "transcript": [
         {
           "start": 0.61,
-          "end": 7.31,
+          "end": 6.71,
           "text": "Sometimes a grid is not enough and what people want is a spreadsheet. SvGrid ships one."
         },
         {
-          "start": 9.21,
-          "end": 19.51,
+          "start": 8.55,
+          "end": 18.46,
           "text": "SvSheet is the whole surface: a six-tab ribbon, the name box and formula bar, lettered columns and sheet tabs, with every Excel shortcut wired in."
         },
         {
-          "start": 21.55,
-          "end": 29.85,
+          "start": 20.41,
+          "end": 28.24,
           "text": "One formula engine spans the workbook. Orders looks prices up from Products, and Summary adds it all up across sheets."
         },
         {
-          "start": 31.97,
-          "end": 40.67,
+          "start": 33.01,
+          "end": 42.32,
           "text": "Conditional formatting is part of the document: data bars, colour scales and top-N rules over computed values, edited from the ribbon."
         },
         {
-          "start": 42.77,
-          "end": 53.87,
+          "start": 44.35,
+          "end": 53.84,
           "text": "Charts anchor to ranges the way Excel anchors them. Change a number and the chart redraws; save, and it lands in the xlsx as a real chart."
         },
         {
-          "start": 56.12,
-          "end": 63.62,
+          "start": 55.87,
+          "end": 64.49,
           "text": "Formulas, formats, charts and files, in a component your users already know how to use. Details at svgrid.com."
         }
       ]
@@ -1459,10 +2799,10 @@
         "low code",
         "svelte 5"
       ],
-      "duration": 76.8,
+      "duration": 85.6,
       "width": 1920,
       "height": 1080,
-      "recordedAt": "2026-09-21",
+      "recordedAt": "2026-09-28",
       "youtubeId": null,
       "publishedAt": null,
       "files": {
@@ -1473,42 +2813,42 @@
       "bytes": {
         "mp4": 0,
         "poster": 0,
-        "master": 4385107
+        "master": 6516659
       },
       "transcript": [
         {
           "start": 0.61,
-          "end": 10.51,
+          "end": 10.57,
           "text": "Every internal tool starts the same way: tables in a database, and the pages to browse and edit them. SvGrid Studio generates those pages."
         },
         {
-          "start": 12.45,
-          "end": 17.15,
+          "start": 12.41,
+          "end": 16.1,
           "text": "From the terminal, init reads the tables and writes the app."
         },
         {
-          "start": 21.78,
-          "end": 31.28,
+          "start": 21.61,
+          "end": 29.48,
           "text": "Or do it visually. The designer asks where the data is, which pages each table gets, and builds the app in the browser."
         },
         {
-          "start": 36.28,
-          "end": 46.18,
+          "start": 41.57,
+          "end": 50.46,
           "text": "Screens are blocks on a canvas: a KPI, a chart, a grid, a form. Drag them around, bind them to data, add an action."
         },
         {
-          "start": 46.61,
-          "end": 50.51,
+          "start": 50.77,
+          "end": 53.58,
           "text": "Preview runs it as your users will see it."
         },
         {
-          "start": 51.54,
-          "end": 64.24,
+          "start": 57.24,
+          "end": 69.57,
           "text": "Generate app writes a real SvelteKit project: typed schemas, routes, a data layer and a CI workflow. Download it, or open it in StackBlitz. It is code, and it is yours."
         },
         {
-          "start": 66.8,
-          "end": 74.7,
+          "start": 71.85,
+          "end": 83.53,
           "text": "Postgres, MySQL, SQL Server, SQLite, Supabase, a REST endpoint or an OpenAPI spec. Try it at svgrid.com slash studio."
         }
       ]
@@ -1529,10 +2869,10 @@
         "pivot table",
         "charts"
       ],
-      "duration": 73.1,
+      "duration": 71.8,
       "width": 1920,
       "height": 1080,
-      "recordedAt": "2026-09-21",
+      "recordedAt": "2026-09-28",
       "youtubeId": null,
       "publishedAt": null,
       "files": {
@@ -1543,47 +2883,47 @@
       "bytes": {
         "mp4": 0,
         "poster": 0,
-        "master": 7425997
+        "master": 8291076
       },
       "transcript": [
         {
-          "start": 0.61,
-          "end": 6.51,
+          "start": 0.6,
+          "end": 7.12,
           "text": "This is SvGrid, a data grid written for Svelte 5. One component, sixty seconds."
         },
         {
-          "start": 8.41,
-          "end": 15.51,
+          "start": 8.98,
+          "end": 16.06,
           "text": "It starts with scale. A million rows in the browser, virtualized, sorted, filtered and edited in place."
         },
         {
-          "start": 17.41,
-          "end": 24.51,
+          "start": 17.7,
+          "end": 24.13,
           "text": "Filters work the way spreadsheet users expect: a menu on every column with a searchable value list."
         },
         {
-          "start": 26.6,
-          "end": 34.1,
+          "start": 26.05,
+          "end": 35.96,
           "text": "Editing is one prop. Double-click, type, Enter. Text, numbers, dropdowns, dates and checkboxes each get the right editor."
         },
         {
-          "start": 36.17,
-          "end": 43.27,
+          "start": 37.81,
+          "end": 43.31,
           "text": "Flip pivot mode and the same rows become a pivot table, with the designer docked beside them."
         },
         {
-          "start": 45.37,
-          "end": 52.47,
+          "start": 45.57,
+          "end": 50.7,
           "text": "Or a Kanban board. Lanes come from a status field, and a drop writes the row back."
         },
         {
-          "start": 54.71,
-          "end": 61.4,
+          "start": 52.8,
+          "end": 58.07,
           "text": "Charts read the rows on screen. Click a bar to filter the grid to that category."
         },
         {
-          "start": 63.53,
-          "end": 71.03,
+          "start": 60.71,
+          "end": 69.79,
           "text": "The core is MIT. The pivot, board, charts and spreadsheet ship in the enterprise pack. Start at svgrid.com."
         }
       ]

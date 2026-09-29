@@ -419,6 +419,23 @@ level above.
 <SvGrid data={people} columns={nested} groupBy={['department', 'city']} groupable summary />
 ```
 
+<!-- tutorial:learn-6-grouping -->
+<figure class="docs-tutorial" id="tutorial-learn-6-grouping" data-docs-tutorial="learn-6-grouping">
+<video class="docs-tutorial-video" src="/tutorials/learn-6-grouping.mp4" poster="/tutorials/learn-6-grouping.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 6: grouping and totals, 94 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-6-grouping.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-6-grouping.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Learn SvGrid 6: grouping and totals</strong> (94 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>Once a table has more than a screenful of rows, people stop reading it and start asking it questions. Grouping and totals are how it answers.</p>
+<p>The same people as before, with a department and a city to group by, and a salary worth adding up.</p>
+<p>Two options do the work here. Aggregate says what a group header shows for that column: an average age, a summed salary. Summary does the same thing for the whole table at the bottom. Both read the raw value, so a formatted currency still adds up correctly.</p>
+<p>Then groupBy on the component names the starting grouping, and groupable lets the user change it later.</p>
+<p>Read it back whole: the same people, one column list with the aggregate and summary options on it, and groupBy on the component. That is everything this needs.</p>
+<p>Every department is a group header carrying its own totals, and the row at the bottom totals the table. Open one and the people inside are ordinary rows: still sortable, still editable, still yours.</p>
+<p>Grouping is part of the row model rather than a display trick, which is why the same thing works over server data: the server returns the groups and the grid asks for a group's rows only when someone opens it. Lesson seven makes all of this look like your product.</p>
+<p>The file is on the page below. See you in lesson seven.</p>
+</details>
+</figure>
+<!-- /tutorial:learn-6-grouping -->
+
 ## See also
 
 - [Architecture overview](./architecture.md) - where grouping sits in

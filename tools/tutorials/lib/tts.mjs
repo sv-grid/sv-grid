@@ -54,16 +54,26 @@ async function elevenlabs(text, cfg) {
     voice_settings: { stability: cfg.stability, similarity_boost: cfg.similarity, style: 0, use_speaker_boost: true },
   })
   let last
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'xi-api-key': cfg.key, 'content-type': 'application/json', accept: 'audio/mpeg' },
-      body,
-    })
+  // Six attempts with a growing pause. The HTTP cases are 429 and 5xx; the
+  // one that actually bit was a thrown "fetch failed" partway through a batch,
+  // which is a dropped connection rather than a status, so it is retried too.
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    if (attempt) await new Promise((r) => setTimeout(r, Math.min(2000 * 2 ** (attempt - 1), 20_000)))
+    let res
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'xi-api-key': cfg.key, 'content-type': 'application/json', accept: 'audio/mpeg' },
+        body,
+        signal: AbortSignal.timeout(120_000),
+      })
+    } catch (err) {
+      last = new Error(`ElevenLabs request failed: ${err.message}${err.cause?.code ? ` (${err.cause.code})` : ''}`)
+      continue
+    }
     if (res.ok) return Buffer.from(await res.arrayBuffer())
     last = new Error(`ElevenLabs ${res.status}: ${(await res.text()).slice(0, 300)}`)
     if (res.status !== 429 && res.status < 500) break
-    await new Promise((r) => setTimeout(r, 2000))
   }
   throw last
 }

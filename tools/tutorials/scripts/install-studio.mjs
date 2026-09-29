@@ -9,6 +9,7 @@ export default {
   id: 'install-studio',
   title: 'SvGrid Studio: database to CRUD app',
   description: 'Scaffold a SvelteKit data app from the command line or the visual designer: tables in, a list, an edit form and a record page per table out.',
+  player: true,
   docsPage: 'docs/enterprise/studio/getting-started.md',
   anchor: '## Guided path - answer a few questions, get the app',
   tags: ['svgrid studio', 'sveltekit crud generator', 'database to app', 'admin panel svelte', 'low code svelte'],

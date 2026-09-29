@@ -7,7 +7,8 @@
  *   tutorials-out/<id>/<id>.srt           captions for YouTube
  *   tutorials-out/<id>/<id>.thumb.jpg     YouTube thumbnail (no WebP there)
  *   tutorials-out/<id>/transcript.txt
- *   website/public/tutorials/<id>.mp4          muted docs cut, budget-checked
+ *   website/public/tutorials/<id>.mp4          docs cut, budget-checked (muted,
+ *                                              or narrated for `player: true`)
  *   website/public/tutorials/<id>.poster.webp
  *   website/public/tutorials/<id>.vtt
  *
@@ -28,16 +29,23 @@ export const DEFAULT_BUDGET_BYTES = 2.5 * 1024 * 1024
  */
 export async function findTrimStart(raw, timeline, log = () => {}) {
   if (timeline.trimmed) return 0
+  const rawDuration = await ffprobeDuration(raw).catch(() => 0)
+  // Anchor on the END of the file, not the wall clock: the recording stops
+  // right after the outro, so the take always occupies the last
+  // timeline.duration seconds. The wall-clock estimate assumes video time
+  // equals real time, and a dropped frame breaks that; one take ended up
+  // with an estimate past the end of its own file and trimmed to nothing.
+  const fromEnd = rawDuration ? Math.max(0, rawDuration - timeline.duration) : timeline.flashEstimate
   const intervals = await blackDetect(raw)
-  const est = timeline.flashEstimate
-  const plausible = intervals.filter((b) => b.duration >= 0.06 && b.duration <= 0.6)
-  const pick = plausible.sort((a, b) => Math.abs(a.end - est) - Math.abs(b.end - est))[0]
-  if (pick && Math.abs(pick.end - est) < 3) {
-    log(`sync flash found at ${pick.start.toFixed(3)}-${pick.end.toFixed(3)} s (estimate ${est.toFixed(3)} s)`)
+  const plausible = intervals.filter((b) => b.duration >= 0.06 && b.duration <= 0.8)
+  const pick = plausible.sort((a, b) => Math.abs(a.end - fromEnd) - Math.abs(b.end - fromEnd))[0]
+  if (pick && Math.abs(pick.end - fromEnd) < 3) {
+    log(`sync flash found at ${pick.start.toFixed(3)}-${pick.end.toFixed(3)} s (expected near ${fromEnd.toFixed(3)} s)`)
     return pick.end
   }
-  log(`WARNING: no sync flash near ${est.toFixed(3)} s (${intervals.length} black interval(s)); trimming by estimate`)
-  return est
+  log(`WARNING: no sync flash near ${fromEnd.toFixed(3)} s (${intervals.length} black interval(s)); trimming from the end of the file`)
+  // Never return a trim that would empty the output.
+  return Math.max(0, rawDuration ? Math.min(fromEnd, rawDuration - 0.5) : fromEnd)
 }
 
 /** @param {number} seconds */
@@ -46,7 +54,41 @@ const s = (seconds) => seconds.toFixed(3)
 /**
  * @param {{ id: string, outDir: string, siteDir: string, timeline: object, budgetBytes?: number, gif?: boolean, gifBeats?: [number, number], log?: (m: string) => void }} opts
  */
-export async function muxTutorial({ id, outDir, siteDir, timeline, budgetBytes = DEFAULT_BUDGET_BYTES, gif = true, gifBeats, posterBeat = null, docs = true, log = () => {} }) {
+/**
+ * The docs cut: 960 wide, stepping down a quality ladder until it fits the
+ * budget. Muted by default, a GIF-like clip; `voice` keeps the input's audio
+ * (the narrated master) for a `player` tutorial, mono at 64 kbps since it is
+ * one voice. Returns the file size.
+ */
+export async function docsCut({ input, trim = 0, duration, out, voice = false, budgetBytes = DEFAULT_BUDGET_BYTES, log = () => {} }) {
+  const ladder = [
+    { crf: 28, fps: 24 }, { crf: 30, fps: 24 }, { crf: 32, fps: 24 }, { crf: 32, fps: 20 }, { crf: 34, fps: 20 },
+  ]
+  const audio = voice ? ['-c:a', 'aac', '-b:a', '64k', '-ac', '1'] : ['-an']
+  let bytes = 0
+  let used = null
+  for (const step of ladder) {
+    await run([
+      '-y', '-ss', s(trim), '-t', s(duration), '-i', input,
+      '-vf', `scale=${DOCS_WIDTH}:-2:flags=lanczos,fps=${step.fps}`,
+      '-c:v', 'libx264', '-preset', 'slow', '-crf', String(step.crf), '-tune', 'animation', '-pix_fmt', 'yuv420p',
+      ...audio,
+      '-movflags', '+faststart',
+      out,
+    ])
+    bytes = statSync(out).size
+    used = step
+    if (bytes <= budgetBytes) break
+    log(`docs cut ${Math.round(bytes / 1024)} KB at crf ${step.crf}/${step.fps} fps is over budget, trying the next rung`)
+  }
+  if (bytes > budgetBytes) {
+    throw new Error(`docs cut is ${Math.round(bytes / 1024)} KB after the full ladder (budget ${Math.round(budgetBytes / 1024)} KB): shorten the tutorial or raise --budget-kb`)
+  }
+  log(`docs cut ${Math.round(bytes / 1024)} KB (crf ${used.crf}, ${used.fps} fps${voice ? ', narrated' : ''})`)
+  return bytes
+}
+
+export async function muxTutorial({ id, outDir, siteDir, timeline, budgetBytes = DEFAULT_BUDGET_BYTES, gif = true, gifBeats, posterBeat = null, docs = true, player = false, log = () => {} }) {
   if (docs) mkdirSync(siteDir, { recursive: true })
   const raw = join(outDir, timeline.rawVideo)
   const trim = await findTrimStart(raw, timeline, log)
@@ -79,31 +121,12 @@ export async function muxTutorial({ id, outDir, siteDir, timeline, budgetBytes =
   ])
   log(`master ${Math.round(statSync(master).size / 1024)} KB`)
 
-  // ---- Docs cut: muted, 960 wide, under budget ---------------------------
+  // ---- Docs cut: 960 wide, under budget ----------------------------------
   const docsMp4 = docs ? join(siteDir, `${id}.mp4`) : null
-  const ladder = docs ? [
-    { crf: 28, fps: 24 }, { crf: 30, fps: 24 }, { crf: 32, fps: 24 }, { crf: 32, fps: 20 }, { crf: 34, fps: 20 },
-  ] : []
-  let docsBytes = 0
-  let used = null
-  for (const step of ladder) {
-    await run([
-      '-y', '-ss', s(trim), '-t', s(duration), '-i', raw, '-an',
-      '-vf', `scale=${DOCS_WIDTH}:-2:flags=lanczos,fps=${step.fps}`,
-      '-c:v', 'libx264', '-preset', 'slow', '-crf', String(step.crf), '-tune', 'animation', '-pix_fmt', 'yuv420p',
-      '-movflags', '+faststart',
-      docsMp4,
-    ])
-    docsBytes = statSync(docsMp4).size
-    used = step
-    if (docsBytes <= budgetBytes) break
-    log(`docs cut ${Math.round(docsBytes / 1024)} KB at crf ${step.crf}/${step.fps} fps is over budget, trying the next rung`)
-  }
-  if (docs && docsBytes > budgetBytes) {
-    throw new Error(`docs cut is ${Math.round(docsBytes / 1024)} KB after the full ladder (budget ${Math.round(budgetBytes / 1024)} KB): shorten the tutorial or raise --budget-kb`)
-  }
+  const docsBytes = docs
+    ? await docsCut({ input: player ? master : raw, trim: player ? 0 : trim, duration, out: docsMp4, voice: player, budgetBytes, log })
+    : 0
   const docsInfo = docs ? await ffprobeVideo(docsMp4) : { width: info.width, height: info.height }
-  if (docs) log(`docs cut ${docsInfo.width}x${docsInfo.height} ${Math.round(docsBytes / 1024)} KB (crf ${used.crf}, ${used.fps} fps)`)
 
   // ---- Poster (docs) + thumbnail (YouTube) from the intro hold -----------
   // The poster/thumbnail frame: the intro hold by default, or the settled end

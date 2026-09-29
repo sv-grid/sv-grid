@@ -279,7 +279,11 @@ else: the row model caches on the array reference, which did not change, so
 the sort and the filters are stale for that row until something replaces the
 array. Replacing the array (`api.applyTransaction`, or `rows = next`) runs the
 row model, and the order is current again. For a sorted blotter the second
-path is the correct one, and the question is how often.
+path is the correct one, and the question is how often. Adding or removing a
+row through the proxy (`rows.push(...)`, `rows.splice(...)`) is tracked on its
+own: the row count is a dependency, so the grid rebuilds without you replacing
+the array. It is the right call for a user clicking "Add row" and the wrong one
+for a tick feed, which changes values rather than the row count.
 
 **What a data change costs at that row count.** Every array replacement used
 to re-sort every row - 100,000 rows in about 30 ms in the engine alone, so a

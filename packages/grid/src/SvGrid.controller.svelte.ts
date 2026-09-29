@@ -845,7 +845,18 @@ export function createSvGridController<
   // `data` is optional on the type (a `rowModel` may supply the rows
   // instead), so every read falls back to empty rather than to undefined.
   const EMPTY_DATA: ReadonlyArray<TData> = [];
-  let internalData = $state.raw<ReadonlyArray<TData>>(props.data ?? EMPTY_DATA);
+  // Seeded as a copy, for the same reason the sync effect below makes one: the
+  // row model tells data apart by array identity, so the grid has to own an
+  // array the consumer cannot grow behind its back.
+  let internalData = $state.raw<ReadonlyArray<TData>>(
+    props.data?.length ? props.data.slice() : EMPTY_DATA,
+  );
+  // What the last sync saw, so the effect can tell a replacement (drop the
+  // cell edits) from a push or splice (keep them) and skip a no-op run.
+  // svelte-ignore state_referenced_locally
+  let lastData: ReadonlyArray<TData> = props.data ?? EMPTY_DATA;
+  // svelte-ignore state_referenced_locally
+  let lastDataLength = props.data?.length ?? 0;
   // Resolve `cellDataType` / `inferColumnTypes` into concrete editorType +
   // format defaults once, up front, so every downstream reader sees a normal
   // column. Explicit fields on the ColumnDef always win.
@@ -893,12 +904,27 @@ export function createSvGridController<
   }
 
   $effect(() => {
+    const next = props.data ?? EMPTY_DATA;
+    // Reading `length` is what subscribes this effect to a `$state` array's own
+    // length signal, so `rows.push(...)` and `rows.splice(...)` re-run it.
+    // Without this read nothing in the grid tracks the row count at all:
+    // `getRowModel` reads `.length` only inside its cache miss, and the miss is
+    // keyed on the array reference, which a mutation does not change.
+    const length = next.length;
+    const replaced = next !== lastData;
+    if (!replaced && length === lastDataLength) return;
+    lastData = next;
+    lastDataLength = length;
+    // A fresh array object, because `getRowModel` memoises on identity. The
+    // elements are the same objects, so a row that did not move keeps its row
+    // object and a field write still reaches its cell through the proxy.
+    internalData = length === 0 ? EMPTY_DATA : next.slice();
     // When the consumer replaces `data` (e.g. a "Reset" button), drop any
     // accumulated cell-edit overrides - otherwise `getCellDisplayValue`
     // would keep returning the old edited values from `editedCellValues`
-    // even though the underlying data has been replaced.
-    internalData = props.data ?? EMPTY_DATA;
-    editedCellValues = {};
+    // even though the underlying data has been replaced. Growing or shrinking
+    // the array is not a reset, so it keeps them.
+    if (replaced) editedCellValues = {};
   });
   $effect(() => {
     internalColumns = resolveCols(props.columns);

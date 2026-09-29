@@ -1,8 +1,10 @@
 /**
  * The two ways a live feed can change a row, and what each one reaches.
  *
- * A `$state` array passed as `data` has two update paths and they are not
- * interchangeable, which is the whole design problem of a ticking grid:
+ * A `$state` array passed as `data` has two update paths for a row's VALUES,
+ * and they are not interchangeable, which is the whole design problem of a
+ * ticking grid. (Changing the row COUNT is a third path, tracked on its own;
+ * it lives in `svgrid.data-push.svelte.test.ts`.)
  *
  *   1. Mutate a field through the proxy (`rows[i].price = x`). The visible
  *      cell re-renders because its template reads the field through the

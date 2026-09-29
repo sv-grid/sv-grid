@@ -12,7 +12,7 @@ import { join, relative } from 'node:path'
 import { describe, it, expect } from 'vitest'
 import {
   captionTime, cuesFromBeats, toSrt, toVtt, iso8601Duration, tutorialBlock, upsertBlock,
-  videoObjectLd, tutorialIdsIn, normalizeNarration,
+  videoObjectLd, tutorialIdsIn, normalizeNarration, runtime, courseBlock,
   type TutorialEntry,
 } from './lib/tutorial-media.mjs'
 import { readManifest } from './tutorials/lib/manifest.mjs'
@@ -117,6 +117,19 @@ describe('tutorialBlock', () => {
   it('links the narrated YouTube copy once it has an id', () => {
     expect(tutorialBlock({ ...sample, youtubeId: 'abc123' })).toContain('https://www.youtube.com/watch?v=abc123')
   })
+
+  it('embeds a player walkthrough with sound and controls, not as a looping clip', () => {
+    const b = tutorialBlock({ ...sample, player: true })
+    expect(b).toContain('class="docs-tutorial docs-tutorial-player"')
+    expect(b).toContain(' controls ')
+    expect(b).not.toContain('muted')
+    expect(b).not.toContain(' loop')
+    expect(b).not.toContain('autoplay')
+    expect(b).toContain('preload="none"')
+    expect(b).toContain('(32 s, with narration)')
+    expect(block).toContain('class="docs-tutorial"')
+    expect(block).toContain('(32 s, silent)')
+  })
 })
 
 describe('upsertBlock', () => {
@@ -213,13 +226,50 @@ describe('recorded tutorials (manifest <-> docs <-> media)', () => {
     expect(stale, 'run node tools/tutorials/embed.mjs').toEqual([])
   })
 
+  it('the course page lists every lesson, in order, with its measured runtime', async () => {
+    const lessons = manifest.tutorials.filter((t) => t.kind === 'course')
+    expect(lessons.length, 'no course lessons in the manifest').toBeGreaterThan(0)
+    const page = await readFile(join(ROOT, 'docs', 'getting-started', 'course.md'), 'utf-8')
+    const table = page.replace(/\r\n/g, '\n').match(/<!-- course:learn -->[\s\S]*?<!-- \/course:learn -->/)?.[0]
+    expect(table, 'run node tools/tutorials/embed.mjs').toBeTruthy()
+    for (const t of lessons) {
+      // Linked by anchor on the page that embeds it, and timed from the
+      // manifest rather than typed.
+      expect(table, `${t.id} is missing from the course table`).toContain(`#tutorial-${t.id}`)
+      expect(table, `${t.id} runtime is stale`).toContain(runtime(t.duration))
+    }
+    const numbered = [...table!.matchAll(/^\| (\d+) \|/gm)].map((m) => Number(m[1]))
+    expect(numbered).toEqual(lessons.map((_, i) => i + 1))
+    // No lesson is described with its own row number still in the prose.
+    expect(table).not.toMatch(/\| Lesson \w+[:,]/)
+  })
+
+  it('runtime reads as minutes past a minute', () => {
+    expect(runtime(48)).toBe('48 s')
+    expect(runtime(60)).toBe('1 min 00 s')
+    expect(runtime(142.7)).toBe('2 min 23 s')
+  })
+
+  it('courseBlock links out of getting-started to a help page correctly', () => {
+    const block = courseBlock([
+      { id: 'learn-4-editing', title: 'Learn SvGrid 4: editing', description: 'Lesson four of the SvGrid course: edits.', duration: 91, docsPage: 'docs/help/editing/validation.md' } as TutorialEntry,
+      { id: 'learn-1-first-grid', title: 'Learn SvGrid 1: first grid', description: 'Lesson one: a grid.', duration: 121, docsPage: 'docs/getting-started/2-first-grid.md' } as TutorialEntry,
+    ])
+    expect(block).toContain('(./2-first-grid.md#tutorial-learn-1-first-grid)')
+    expect(block).toContain('(../help/editing/validation.md#tutorial-learn-4-editing)')
+    // Sorted by lesson number, not by input order.
+    expect(block.indexOf('learn-1-first-grid')).toBeLessThan(block.indexOf('learn-4-editing'))
+    expect(block).not.toMatch(/[–—]/)
+  })
+
   it('entries are well formed and free of dashes', () => {
     const problems: string[] = []
     for (const t of manifest.tutorials) {
       if (!/^[a-z0-9-]+$/.test(t.id)) problems.push(`${t.id}: id`)
       // Feature tutorials aim at 30 s; an install walkthrough (terminal, editor,
-      // result) runs longer, and a marketing cut longer still.
-      const maxSeconds = t.kind === 'marketing' ? 150 : 90
+      // result) runs longer, a marketing cut longer still, and a course lesson
+      // teaches one topic end to end, so it runs to a few minutes.
+      const maxSeconds = t.kind === 'course' ? 240 : t.kind === 'marketing' ? 150 : 90
       if (!(t.duration >= 15 && t.duration <= maxSeconds)) problems.push(`${t.id}: duration ${t.duration}`)
       if (!t.description || t.description.length > 160) problems.push(`${t.id}: description length`)
       if (!t.transcript.length) problems.push(`${t.id}: empty transcript`)

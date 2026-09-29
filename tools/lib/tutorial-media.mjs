@@ -108,8 +108,12 @@ export function iso8601Duration(seconds) {
  *     blank line and would wrap the rest in <p>,
  *   - one <p> per transcript cue, each on its own line starting with `<`, so
  *     the page summary extractors (which stop at `<`) never pick narration,
- *   - no `autoplay` and no `controls`: preload="none" plus autoplay would
- *     fetch every video on page open; Docs.svelte starts playback on scroll,
+ *   - no `autoplay`: preload="none" plus autoplay would fetch every video on
+ *     page open; Docs.svelte starts a silent clip on scroll,
+ *   - a `player` entry (an install walkthrough, watched once with sound) is
+ *     the narrated cut with native controls, not muted and not looped, and
+ *     Docs.svelte leaves it alone; a feature clip has no controls and reads
+ *     like a GIF,
  *   - the YouTube line appears only once the video has an id.
  * @param {import('./tutorial-media.d.mts').TutorialEntry} t
  */
@@ -117,22 +121,92 @@ export function tutorialBlock(t) {
   const title = escapeHtml(t.title)
   const secs = Math.round(t.duration)
   const yt = t.youtubeId
-    ? ` <a href="https://www.youtube.com/watch?v=${escapeHtml(t.youtubeId)}" rel="noopener">Watch with narration on YouTube</a>`
+    ? ` <a href="https://www.youtube.com/watch?v=${escapeHtml(t.youtubeId)}" rel="noopener">${t.player ? 'Watch on YouTube' : 'Watch with narration on YouTube'}</a>`
     : ''
   const cues = (t.transcript ?? []).map((c) => `<p>${escapeHtml(normalizeNarration(c.text))}</p>`)
+  const playback = t.player ? 'controls playsinline preload="none"' : 'muted loop playsinline preload="none"'
   return [
     `<!-- tutorial:${t.id} -->`,
-    `<figure class="docs-tutorial" id="tutorial-${t.id}" data-docs-tutorial="${t.id}">`,
-    `<video class="docs-tutorial-video" src="${t.files.mp4}" poster="${t.files.poster}" width="${t.width}" height="${t.height}" muted loop playsinline preload="none" aria-label="${title}, ${secs} second tutorial">` +
-      `<track kind="captions" srclang="en" label="English" src="${t.files.vtt}" default>` +
+    `<figure class="docs-tutorial${t.player ? ' docs-tutorial-player' : ''}" id="tutorial-${t.id}" data-docs-tutorial="${t.id}">`,
+    `<video class="docs-tutorial-video" src="${t.files.mp4}" poster="${t.files.poster}" width="${t.width}" height="${t.height}" ${playback} aria-label="${title}, ${secs} second tutorial">` +
+      `<track kind="captions" srclang="en" label="English" src="${t.files.vtt}"${t.player ? '' : ' default'}>` +
       `Your browser does not play embedded video. <a href="${t.files.mp4}">Download the MP4</a>.</video>`,
-    `<figcaption><strong>${title}</strong> (${secs} s, silent).${yt}</figcaption>`,
+    `<figcaption><strong>${title}</strong> (${secs} s, ${t.player ? 'with narration' : 'silent'}).${yt}</figcaption>`,
     `<details class="docs-tutorial-transcript"><summary>Transcript</summary>`,
     ...cues,
     `</details>`,
     `</figure>`,
     `<!-- /tutorial:${t.id} -->`,
   ].join('\n')
+}
+
+/** The generated course table's fence. */
+export const COURSE_RE = /<!-- course:learn -->[\s\S]*?<!-- \/course:learn -->/
+
+/** "2 min 21 s", or "48 s" under a minute. */
+export function runtime(seconds) {
+  const s = Math.round(seconds)
+  return s < 60 ? `${s} s` : `${Math.floor(s / 60)} min ${String(s % 60).padStart(2, '0')} s`
+}
+
+/** `docs/getting-started/2-first-grid.md` -> `./2-first-grid.md`, from getting-started. */
+function relativeTo(fromDir, docsPage) {
+  const parts = docsPage.replace(/^docs\//, '').replace(/\.md$/, '').split('/')
+  const from = fromDir.replace(/^docs\//, '').split('/')
+  let i = 0
+  while (i < from.length && i < parts.length - 1 && from[i] === parts[i]) i += 1
+  const up = from.length - i
+  const rest = parts.slice(i).join('/')
+  return `${up ? '../'.repeat(up) : './'}${rest}.md`
+}
+
+/**
+ * The course contents table, generated so the running times are measured
+ * rather than typed. Markdown rather than raw HTML: a table needs no blank
+ * line to survive `marked`, and relative `.md` links get rewritten to routes
+ * the same way the hand-written ones on every other page do.
+ *
+ * Each row points at the lesson's anchor on the page that already embeds it,
+ * because a tutorial may be embedded exactly once (tools/tutorials.test.ts).
+ * @param {Array<import('./tutorial-media.d.mts').TutorialEntry>} lessons
+ * @param {string} fromDir directory of the page holding the table
+ */
+export function courseBlock(lessons, fromDir = 'docs/getting-started') {
+  const ordered = [...lessons].sort(
+    (a, b) => Number(a.id.match(/\d+/)?.[0] ?? 0) - Number(b.id.match(/\d+/)?.[0] ?? 0),
+  )
+  const rows = ordered.map((t, i) => {
+    // Titles read "Learn SvGrid 4: editing rows, and validating them"; the
+    // number is already the first column and the prefix is dead weight.
+    const title = t.title.replace(/^Learn SvGrid \d+:\s*/, '')
+    // Descriptions are written for search results and open "Lesson four of
+    // the SvGrid course: ..." (or just "Lesson ten: ..."); the number is
+    // already the first column.
+    const what = t.description.replace(/^Lesson \w+(?: of the SvGrid course)?:\s*/i, '')
+    const href = `${relativeTo(fromDir, t.docsPage)}#tutorial-${t.id}`
+    return `| ${i + 1} | [${title.charAt(0).toUpperCase()}${title.slice(1)}](${href}) | ${what.charAt(0).toUpperCase()}${what.slice(1)} | ${runtime(t.duration)} |`
+  })
+  const total = ordered.reduce((n, t) => n + t.duration, 0)
+  return [
+    '<!-- course:learn -->',
+    '',
+    '| # | Lesson | What it covers | Length |',
+    '| --- | --- | --- | --- |',
+    ...rows,
+    '',
+    `Ten lessons, ${runtime(total)} in all.`,
+    '',
+    '<!-- /course:learn -->',
+  ].join('\n')
+}
+
+/** Insert or refresh the course table (LF text in, LF text out). */
+export function upsertCourseBlock(pageText, block) {
+  if (COURSE_RE.test(pageText)) {
+    const next = pageText.replace(COURSE_RE, block)
+    return { text: next, changed: next !== pageText, inserted: false }
+  }
+  return { text: `${pageText.replace(/\s*$/, '')}\n\n${block}\n`, changed: true, inserted: true }
 }
 
 /** Headings a block is inserted above when the tutorial names no anchor. */
@@ -194,8 +268,9 @@ export function upsertBlock(pageText, id, block, { anchor, anchorAfter } = {}) {
 
 /**
  * Schema.org VideoObject for a tutorial on a docs page. `contentUrl` points at
- * the silent docs cut that is actually on the page (Google requires the video
- * it indexes to be embedded there); `embedUrl` is the narrated YouTube copy.
+ * the docs cut that is actually on the page (Google requires the video it
+ * indexes to be embedded there; silent, or narrated for a `player` entry);
+ * `embedUrl` is the YouTube copy.
  * @param {import('./tutorial-media.d.mts').TutorialEntry} t
  * @param {{ origin: string, pageUrl: string }} ctx origin without trailing slash
  */

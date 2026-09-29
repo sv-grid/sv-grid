@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-09-25 from 403 pages, 18 comparison pages, plus 72 API reference pages.
+Generated 2026-09-29 from 404 pages, 18 comparison pages, plus 72 API reference pages.
 
 <!-- =================================================================
      /docs/changelog/  (community)
@@ -6336,6 +6336,22 @@ They all end in the same place, so pick by what you have:
 
 ---
 
+<!-- tutorial:install-studio -->
+<figure class="docs-tutorial docs-tutorial-player" id="tutorial-install-studio" data-docs-tutorial="install-studio">
+<video class="docs-tutorial-video" src="/tutorials/install-studio.mp4" poster="/tutorials/install-studio.poster.webp" width="960" height="540" controls playsinline preload="none" aria-label="SvGrid Studio: database to CRUD app, 69 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/install-studio.vtt">Your browser does not play embedded video. <a href="/tutorials/install-studio.mp4">Download the MP4</a>.</video>
+<figcaption><strong>SvGrid Studio: database to CRUD app</strong> (69 s, with narration).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>SvGrid Studio turns tables into a SvelteKit app. From the command line, one create command scaffolds a runnable app with sample tables.</p>
+<p>Point init at a real database and it reads the tables, then writes a list, an edit form and a record page for each one.</p>
+<p>The same generator runs in the browser. The designer opens with a wizard: start from sample data, your own database, or blank.</p>
+<p>Pick a dataset, choose which pages each table gets, and open the app.</p>
+<p>Two tables became six screens: an overview with a KPI and a chart, a list, a manage page and a detail page per table, all on the canvas to rearrange.</p>
+<p>Preview runs the app as a user sees it: the grid, the new record button, the navigation.</p>
+<p>Generate app writes the SvelteKit project: twenty-seven files, typed schemas, routes and a CI workflow. Download the zip or open it in StackBlitz.</p>
+</details>
+</figure>
+<!-- /tutorial:install-studio -->
+
 ## Guided path - answer a few questions, get the app
 
 If you already know where your data lives, let Studio ask:
@@ -6799,22 +6815,6 @@ whatever type your app already uses. If your app already sets a body font (or a
 [`--sg-font`](./theming.md) token), skip this block.
 
 ---
-
-<!-- tutorial:install-studio -->
-<figure class="docs-tutorial" id="tutorial-install-studio" data-docs-tutorial="install-studio">
-<video class="docs-tutorial-video" src="/tutorials/install-studio.mp4" poster="/tutorials/install-studio.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="SvGrid Studio: database to CRUD app, 72 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/install-studio.vtt" default>Your browser does not play embedded video. <a href="/tutorials/install-studio.mp4">Download the MP4</a>.</video>
-<figcaption><strong>SvGrid Studio: database to CRUD app</strong> (72 s, silent).</figcaption>
-<details class="docs-tutorial-transcript"><summary>Transcript</summary>
-<p>SvGrid Studio turns tables into a SvelteKit app. From the command line, one create command scaffolds a runnable app with sample tables.</p>
-<p>Point init at a real database and it reads the tables, then writes a list, an edit form and a record page for each one.</p>
-<p>The same generator runs in the browser. The designer opens with a wizard: start from sample data, your own database, or blank.</p>
-<p>Pick a dataset, choose which pages each table gets, and open the app.</p>
-<p>Two tables became six screens: an overview with a KPI and a chart, a list, a manage page and a detail page per table, all on the canvas to rearrange.</p>
-<p>Preview runs the app as a user sees it: the grid, the new record button, the navigation.</p>
-<p>Generate app writes the SvelteKit project: twenty-seven files, typed schemas, routes and a CI workflow. Download the zip or open it in StackBlitz.</p>
-</details>
-</figure>
-<!-- /tutorial:install-studio -->
 
 ## See also
 
@@ -11679,9 +11679,9 @@ yarn add @svgrid/grid
 ```
 
 <!-- tutorial:install-svgrid -->
-<figure class="docs-tutorial" id="tutorial-install-svgrid" data-docs-tutorial="install-svgrid">
-<video class="docs-tutorial-video" src="/tutorials/install-svgrid.mp4" poster="/tutorials/install-svgrid.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Install SvGrid, 51 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/install-svgrid.vtt" default>Your browser does not play embedded video. <a href="/tutorials/install-svgrid.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Install SvGrid</strong> (51 s, silent).</figcaption>
+<figure class="docs-tutorial docs-tutorial-player" id="tutorial-install-svgrid" data-docs-tutorial="install-svgrid">
+<video class="docs-tutorial-video" src="/tutorials/install-svgrid.mp4" poster="/tutorials/install-svgrid.poster.webp" width="960" height="540" controls playsinline preload="none" aria-label="Install SvGrid, 45 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/install-svgrid.vtt">Your browser does not play embedded video. <a href="/tutorials/install-svgrid.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Install SvGrid</strong> (45 s, with narration).</figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>SvGrid is one npm package. In an existing Svelte 5 project, install it and you are done with setup.</p>
 <p>Starting from scratch? The create command scaffolds a working project with the grid already wired.</p>
@@ -11822,6 +11822,26 @@ printing or single-tab reading.
 ```
 
 That's a complete, working grid.
+
+<!-- tutorial:learn-1-first-grid -->
+<figure class="docs-tutorial" id="tutorial-learn-1-first-grid" data-docs-tutorial="learn-1-first-grid">
+<video class="docs-tutorial-video" src="/tutorials/learn-1-first-grid.mp4" poster="/tutorials/learn-1-first-grid.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 1: install and your first grid, 121 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-1-first-grid.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-1-first-grid.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Learn SvGrid 1: install and your first grid</strong> (121 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>Welcome to lesson one. By the end of it you will have a working data grid in a Svelte 5 project, and you will understand every line that put it there.</p>
+<p>SvGrid is a single npm package. There is no CLI step and nothing to copy into your project: you install it and import from it.</p>
+<p>It needs Svelte 5, because the grid is built on runes. If you are starting from nothing, the create command scaffolds a project with the grid already wired up.</p>
+<p>Now the component. Import SvGrid, and import the GridColumns type as well. That type is what makes the column list check itself against your rows.</p>
+<p>Your data is a plain array of plain objects. No store, no wrapper, no adapter. If you already have rows in your app, they are already in the right shape.</p>
+<p>Columns are the other half. Each one maps a field on your row to a header the user reads. Because the array is typed as GridColumns of Person, a typo in a field name is a compile error, not a blank column.</p>
+<p>Then render the component with both. That is the whole API for a basic grid: data in, columns in.</p>
+<p>Save, and the dev server shows this. A real table element, with a header row and your three rows in it.</p>
+<p>You did not ask for any of this, but you got it: click a cell and it takes focus, arrow keys move between cells, Home and End jump to the ends of a row. That is the ARIA grid pattern, on by default.</p>
+<p>What you do not have yet is sorting, filtering or paging. Those are switched on deliberately, so a grid you never configured stays small in your bundle. Lesson two puts your own data in, and lesson three turns those features on.</p>
+<p>The code from this lesson is on the page linked below, and it runs there too. See you in lesson two.</p>
+</details>
+</figure>
+<!-- /tutorial:learn-1-first-grid -->
 
 ## What you got out of the box
 
@@ -12126,6 +12146,23 @@ date all come from the same place rather than from three helper functions.
 <SvGrid data={rows} {columns} sortable />
 ```
 
+<!-- tutorial:learn-2-data-and-columns -->
+<figure class="docs-tutorial" id="tutorial-learn-2-data-and-columns" data-docs-tutorial="learn-2-data-and-columns">
+<video class="docs-tutorial-video" src="/tutorials/learn-2-data-and-columns.mp4" poster="/tutorials/learn-2-data-and-columns.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 2: your data, your columns, 88 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-2-data-and-columns.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-2-data-and-columns.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Learn SvGrid 2: your data, your columns</strong> (88 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>In lesson one the rows were made up. In this one they are yours, they stay reactive, and the columns start looking like a real application.</p>
+<p>Start from your own row type. The grid never asks you to convert anything: whatever shape your records have, that is the shape it takes. Declare the array with the state rune and it stays reactive.</p>
+<p>Columns map a field to a header, and width fixes one that would otherwise stretch. Then a plain function that pushes a record onto the array.</p>
+<p>Watch what happens when that button runs. Pushing onto the array is all it does, and the grid follows, because the rows are a rune and not a copy the grid took at startup.</p>
+<p>Now formatting. This is the same page of the docs, a few blocks further down, and it is the thing people most often do by hand and regret.</p>
+<p>A currency format, a percent, a date. Each one renders the value for the reader and leaves your data alone, which matters because sorting and exporting both use the raw number underneath, not the string on screen.</p>
+<p>One habit worth forming: type the column array as GridColumns of your row type. The compiler then checks every field name against the row, so a typo is a build error instead of an empty column nobody notices.</p>
+<p>Both files are on the page below, and they run there too. See you in lesson three.</p>
+</details>
+</figure>
+<!-- /tutorial:learn-2-data-and-columns -->
+
 <!-- =================================================================
      /docs/getting-started/4-features/  (community)
      ================================================================== -->
@@ -12385,6 +12422,26 @@ See [Editing overview](../help/editing/overview.md).
 | Copy / paste range    | Ctrl/Cmd + C / V (TSV)                |
 
 The full a11y model is in [Accessibility](../help/accessibility.md).
+
+<!-- tutorial:learn-3-sort-filter-page -->
+<figure class="docs-tutorial" id="tutorial-learn-3-sort-filter-page" data-docs-tutorial="learn-3-sort-filter-page">
+<video class="docs-tutorial-video" src="/tutorials/learn-3-sort-filter-page.mp4" poster="/tutorials/learn-3-sort-filter-page.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 3: sorting, filtering and paging, 143 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-3-sort-filter-page.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-3-sort-filter-page.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Learn SvGrid 3: sorting, filtering and paging</strong> (143 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>Your grid renders. It does not sort, filter or page yet, and that is deliberate. This lesson turns those on and explains the trade the library is making for you.</p>
+<p>Here is a wider row type and a realistic set of records, the kind of table you would actually ship. Nothing new yet.</p>
+<p>Columns, with a currency format on salary from the last lesson.</p>
+<p>And now the part that matters. Sortable, filterable, editable, groupable, pageable. Each is one boolean, and each one pulls in only the code that feature needs, which is why a grid you never configured stays small.</p>
+<p>That is the whole file: the row type, the records, the columns, and the component with those five words on it. Nothing else is configured, and nothing is hidden above the fold.</p>
+<p>Click a header and it sorts. Click again for descending, and a third time to clear it and get your original order back.</p>
+<p>Shift-click a second header to sort by two columns at once: department first, then name inside each department.</p>
+<p>The funnel next to each header is filtering, switched on by that same one word. How it looks is a choice, and the next screen has the version most people want.</p>
+<p>Five rows will not show you paging, so here is the same set of props over five thousand. Filterable on its own gives you a menu per header; filter mode row puts an input under each header instead, and it narrows the table as you type.</p>
+<p>And the pager cuts what is left into pages, with the range and the count kept honest as the filter changes them. None of this needed a callback from you.</p>
+<p>Those five booleans are a shorthand. When you need finer control, register the features explicitly with tableFeatures and pass them in, which is the same machinery with the wiring exposed; the docs page below shows both forms side by side. Lesson four lets people change the table.</p>
+</details>
+</figure>
+<!-- /tutorial:learn-3-sort-filter-page -->
 
 <!-- =================================================================
      /docs/getting-started/5-theme-and-density/  (community)
@@ -12648,6 +12705,24 @@ any ancestor - no theme file, no build step.
 </style>
 ```
 
+<!-- tutorial:learn-7-theme -->
+<figure class="docs-tutorial" id="tutorial-learn-7-theme" data-docs-tutorial="learn-7-theme">
+<video class="docs-tutorial-video" src="/tutorials/learn-7-theme.mp4" poster="/tutorials/learn-7-theme.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 7: themes, dark mode and density, 113 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-7-theme.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-7-theme.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Learn SvGrid 7: themes, dark mode and density</strong> (113 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>A grid that looks like a grid library is a grid that never ships. Theming here is CSS custom properties, not utility classes and not a config object.</p>
+<p>Twenty presets ship with the package, and importing one stylesheet is the whole setup. What a preset sets is a list of custom properties, which means you can set them yourself when one is close but not right. Same five people as before.</p>
+<p>A wrapper, and a handful of properties on it. Background, text, border, the header colours, the accent, the hover. They cascade like any other custom property, so this theme is scoped to this one grid rather than the page.</p>
+<p>The whole file, so nothing is hidden: the rows, the columns, a wrapper around the grid, and the properties on that wrapper.</p>
+<p>Here is that file running. Nine declarations, and nothing about the grid was configured to accept them.</p>
+<p>Density is separate from colour, and it is the setting people actually argue about. Row height is a prop, so the compact table and the comfortable one are the same component with one number changed.</p>
+<p>Dark mode is not a second stylesheet you maintain. Every preset declares a light palette and a dark one, and an attribute on the document element picks which is live. Every surface follows, including the parts you never styled.</p>
+<p>The density control here is the same row height prop behind a dropdown, which is what it usually becomes: a preference you save per user rather than a decision you make once for everybody.</p>
+<p>The theme builder on the site edits these tokens live and hands you the CSS at the end. Every property is listed on the page below. See you in lesson eight.</p>
+</details>
+</figure>
+<!-- /tutorial:learn-7-theme -->
+
 <!-- =================================================================
      /docs/getting-started/6-going-to-production/  (community)
      ================================================================== -->
@@ -12910,6 +12985,105 @@ inference picks up which capabilities your grid has.
 - [How SvGrid compares](../help/comparison.md) - what
   evaluators read.
 - [Missing features](../help/missing-features.md) - the honest gap list.
+
+<!-- tutorial:learn-10-production -->
+<figure class="docs-tutorial" id="tutorial-learn-10-production" data-docs-tutorial="learn-10-production">
+<video class="docs-tutorial-video" src="/tutorials/learn-10-production.mp4" poster="/tutorials/learn-10-production.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 10: going to production, 108 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-10-production.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-10-production.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Learn SvGrid 10: going to production</strong> (108 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>Your grid works. This last lesson is the review a colleague would give it: the four things that decide whether it survives contact with real data and real users.</p>
+<p>First, scale. Virtualization is on by default, so only the rows in view have DOM nodes. Fifty thousand rows by seventy-seven columns scroll in both directions, and the count of nodes stays roughly the same as it was with ten rows.</p>
+<p>What you do have to give it is a height. A grid inside a container with no height cannot know what is on screen, and that is the single most common reason a large table feels slow.</p>
+<p>Second, accessibility, which you mostly already have. It is a real table element carrying the ARIA grid pattern, so a screen reader announces rows and columns, and every cell is reachable from the keyboard.</p>
+<p>What is on you is the rest of the page: a label on the grid, contrast that passes, and not removing the focus ring. There is a high-contrast preset in the box if procurement asks.</p>
+<p>Third, the markup server-renders, so a viewport of real rows reaches the browser before hydration. And fourth, the habit that costs nothing: type the column array as GridColumns of your row. A bare GridColumns widens the row and stops checking field names, and a typo becomes a blank column nobody notices until a user does.</p>
+<p>That is the course. You can build a grid, shape its columns, sort and filter it, edit it, group it, theme it, feed it from a server and ship it. Everything past this point is a feature you turn on when you need it, and the demos on the site show each one running.</p>
+</details>
+</figure>
+<!-- /tutorial:learn-10-production -->
+
+<!-- tutorial:learn-8-server-data -->
+<figure class="docs-tutorial" id="tutorial-learn-8-server-data" data-docs-tutorial="learn-8-server-data">
+<video class="docs-tutorial-video" src="/tutorials/learn-8-server-data.mp4" poster="/tutorials/learn-8-server-data.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 8: data from a server, 106 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-8-server-data.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-8-server-data.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Learn SvGrid 8: data from a server</strong> (106 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>Everything so far held every row in memory. That works to tens of thousands of rows. Past that, the sorting and filtering have to move to the server, and the grid has to ask for what it needs.</p>
+<p>The state the grid hands you is small: which column is sorted, which filters are set, which page you are on. Keep those in runes.</p>
+<p>Then one function that turns that state into a request. Notice the abort controller: when the user types another letter, the request already in flight is cancelled, so a slow earlier response cannot overwrite a newer one. That race is the most common bug in a server-backed table.</p>
+<p>An effect reruns it whenever sort, filters or page change, and the component passes the rows down with the total, so the pager knows how many pages there are without counting rows it never received.</p>
+<p>Here is that pattern running against a real endpoint. Sorting goes to the server and comes back sorted; typing in the search box is debounced, so one request goes out rather than one per keystroke.</p>
+<p>The loading state lives on the rows rather than as a spinner over the page, so the header and the controls stay usable while the next page arrives.</p>
+<p>Past a million rows there is a dedicated row model that lazily loads groups and blocks; it is linked from the page below. Lesson nine puts all of this in a SvelteKit app.</p>
+</details>
+</figure>
+<!-- /tutorial:learn-8-server-data -->
+
+<!-- =================================================================
+     /docs/getting-started/course/  (community)
+     ================================================================== -->
+
+# Learn SvGrid: the video course
+
+Ten short lessons that take you from an empty project to a grid you would put
+in front of users. Each one is a few minutes, each ends where the next begins,
+and every line of code on screen is a file you can open: the lessons are
+recorded against the runnable examples on these pages, so what you watch is
+what runs.
+
+Watch them in order the first time. After that they work as reference, since
+each lesson sits on the docs page for its subject and the page carries the
+same code in text.
+
+## What you need
+
+A project with Svelte 5 and the package installed. [Install](./1-install.md)
+covers both, and takes about a minute. Everything else is in the lessons.
+
+The course assumes you know Svelte 5 runes well enough to read `$state`, and
+nothing about data grids.
+
+## The lessons
+
+<!-- course:learn -->
+
+| # | Lesson | What it covers | Length |
+| --- | --- | --- | --- |
+| 1 | [Install and your first grid](./2-first-grid.md#tutorial-learn-1-first-grid) | Install the package, write a twenty-line component, and get a styled, keyboard-navigable table. | 2 min 01 s |
+| 2 | [Your data, your columns](./3-data-and-columns.md#tutorial-learn-2-data-and-columns) | Put your own row type in, keep it reactive, then set headers, widths and currency, percent and date formats. | 1 min 28 s |
+| 3 | [Sorting, filtering and paging](./4-features.md#tutorial-learn-3-sort-filter-page) | Switch on sorting, filtering, grouping and pagination with boolean props, and see what each one does to the same table. | 2 min 23 s |
+| 4 | [Editing rows, and validating them](../help/editing/validation.md#tutorial-learn-4-editing) | Make cells editable, pick an editor per column, and use validate with rejectInvalid so bad input never reaches your data. | 1 min 31 s |
+| 5 | [Selection and bulk actions](../help/rows/selection-bar.md#tutorial-learn-5-selection) | Add row checkboxes, give the grid a stable row id, and float a bulk-action bar over the rows the user picked. | 1 min 26 s |
+| 6 | [Grouping and totals](../help/grouping-aggregation.md#tutorial-learn-6-grouping) | Group rows by a column, average and sum per group with the aggregate option, and add a summary row for the whole table. | 1 min 34 s |
+| 7 | [Themes, dark mode and density](./5-theme-and-density.md#tutorial-learn-7-theme) | Set the CSS custom properties yourself, flip dark mode with one attribute, and change row density with a prop. | 1 min 53 s |
+| 8 | [Data from a server](./6-going-to-production.md#tutorial-learn-8-server-data) | Move sorting, filtering and paging to the backend, send one request per change, and cancel the one that is now stale. | 1 min 46 s |
+| 9 | [SvelteKit end to end](./sveltekit.md#tutorial-learn-9-sveltekit) | Query in a load function, hand the rows to the page, and get real server-rendered HTML instead of an empty shell. | 1 min 21 s |
+| 10 | [Going to production](./6-going-to-production.md#tutorial-learn-10-production) | Virtualization, the accessibility you already have, server-rendered markup, and the TypeScript habit that prevents blank columns. | 1 min 48 s |
+
+Ten lessons, 17 min 10 s in all.
+
+<!-- /course:learn -->
+
+## How the lessons are made
+
+The code you see typed in the editor is not a screenshot or a re-typed copy.
+Each lesson reads a runnable block straight out of these docs, types that
+file's own source, and mounts that same file in the browser pane beside it. So
+the code shown and the result shown cannot drift apart, and when a doc changes
+the lesson is re-recorded from it rather than edited to match.
+
+Every claim the narration makes is also checked while recording. When a lesson
+says a button adds a row, the recorder counts the rows before and after and
+fails the take if the count did not move. That check exists because a take
+once shipped where it had not.
+
+## See also
+
+- [Install](./1-install.md) - the one-minute setup the course assumes.
+- [Starters](./starters.md) - a scaffolded project if you would rather not
+  wire one up by hand.
+- [SvelteKit](./sveltekit.md) - the same grid in a SvelteKit app, end to end.
+- [Going to production](./6-going-to-production.md) - the checks before you
+  ship, which is where lesson ten ends.
 
 <!-- =================================================================
      /docs/getting-started/starters/  (community)
@@ -13496,6 +13670,22 @@ Three things to try, in this order:
   UI - hiding an edit button stops nobody from posting the action by hand.
 - **Deployment.** SvGrid is a normal client dependency with no build step or
   server runtime of its own, so any SvelteKit adapter works unchanged.
+
+<!-- tutorial:learn-9-sveltekit -->
+<figure class="docs-tutorial" id="tutorial-learn-9-sveltekit" data-docs-tutorial="learn-9-sveltekit">
+<video class="docs-tutorial-video" src="/tutorials/learn-9-sveltekit.mp4" poster="/tutorials/learn-9-sveltekit.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 9: SvelteKit end to end, 81 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-9-sveltekit.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-9-sveltekit.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Learn SvGrid 9: SvelteKit end to end</strong> (81 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>SvelteKit gives you a place to put the query that is already on the server. The grid does not need to know about any of it: it takes an array.</p>
+<p>There is a SvelteKit template, so the whole app is two commands. If you have a project already, installing the package is enough.</p>
+<p>The load function runs on the server. Your database credentials are already there, so the query belongs there too, and the browser never sees it.</p>
+<p>The page takes what that returned and hands it straight to the grid. Type the columns against your row type, as in lesson two, and the compiler checks the field names for you.</p>
+<p>Here is a grid over a real endpoint, which is what your page becomes once the load function points at a database instead of a demo API.</p>
+<p>The part worth knowing: the server HTML contains a viewport of real rows, not an empty container waiting for hydration. A crawler sees data, and a reader sees the table before the JavaScript arrives.</p>
+<p>URL-driven sorting and form actions for edits are on the page below. One lesson to go.</p>
+</details>
+</figure>
+<!-- /tutorial:learn-9-sveltekit -->
 
 ## See also
 
@@ -19505,21 +19695,6 @@ time, with a live sheet under each step: [Getting started](../sheet/start.md),
 [Data tools](../sheet/data-tools.md),
 [Charts, sparklines and pictures](../sheet/charts-and-objects.md) and
 [Review and share](../sheet/review.md).
-
-<!-- tutorial:install-spreadsheet -->
-<figure class="docs-tutorial" id="tutorial-install-spreadsheet" data-docs-tutorial="install-spreadsheet">
-<video class="docs-tutorial-video" src="/tutorials/install-spreadsheet.mp4" poster="/tutorials/install-spreadsheet.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Install the SvGrid spreadsheet, 56 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/install-spreadsheet.vtt" default>Your browser does not play embedded video. <a href="/tutorials/install-spreadsheet.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Install the SvGrid spreadsheet</strong> (56 s, silent).</figcaption>
-<details class="docs-tutorial-transcript"><summary>Transcript</summary>
-<p>The spreadsheet ships in the enterprise package. Install it next to the grid; it runs unlicensed for evaluation.</p>
-<p>A workbook is plain data: sheets with a name and a cells matrix. Formulas are strings that start with an equals sign.</p>
-<p>Hand it to SvSheet. That is the whole API.</p>
-<p>The result is the full surface: a ribbon, the name box and formula bar, lettered columns, sheet tabs and a status bar, with the totals already computed.</p>
-<p>It behaves like a spreadsheet. Type a formula into a cell, press Enter, and the value appears while the formula bar keeps the source.</p>
-<p>Every Excel shortcut, fill handle, number formats, conditional formatting and xlsx import and export come with it. The docs list the whole surface.</p>
-</details>
-</figure>
-<!-- /tutorial:install-spreadsheet -->
 
 ## What you get
 
@@ -32565,6 +32740,23 @@ rather than the order the grid demands.
 <p aria-live="polite">{problems === 0 ? 'All ages valid.' : problems + ' row(s) out of range.'}</p>
 ```
 
+<!-- tutorial:learn-4-editing -->
+<figure class="docs-tutorial" id="tutorial-learn-4-editing" data-docs-tutorial="learn-4-editing">
+<video class="docs-tutorial-video" src="/tutorials/learn-4-editing.mp4" poster="/tutorials/learn-4-editing.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 4: editing rows, and validating them, 91 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-4-editing.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-4-editing.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Learn SvGrid 4: editing rows, and validating them</strong> (91 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>A table people can only read is half a feature. This lesson makes it editable, and then makes it refuse the edits that should not happen.</p>
+<p>The same reactive rows as before. Three people, three fields.</p>
+<p>Each column picks its editor. Text for a name, number for an age. The editor is chosen per column, so the user gets the right control instead of a text box for everything.</p>
+<p>Then validate. It runs as the cell is edited and returns a message when the value is wrong. Pair it with rejectInvalid and the edit is refused outright rather than written and cleaned up later.</p>
+<p>Double-click a cell to edit it, type, and press Enter to commit. That is the whole gesture, and it is the one spreadsheet users already know.</p>
+<p>Now an email that is not one. Validate runs as you type, and hovering the cell tells the user what is wrong. Press Enter and rejectInvalid refuses the commit outright: the value is still the old one. Your row object is never touched by something you would have to clean up later.</p>
+<p>Undo with control zed, save in batches through the grid API, or hand every commit to your server. The editing pages in the docs cover each of those. Lesson five is selection, and doing something with the rows the user picked.</p>
+<p>The file is on the page below and you can edit it there too. See you in lesson five.</p>
+</details>
+</figure>
+<!-- /tutorial:learn-4-editing -->
+
 ## See also
 
 - [Parsing values](./parsing-values.md)
@@ -36965,6 +37157,23 @@ level above.
 
 <SvGrid data={people} columns={nested} groupBy={['department', 'city']} groupable summary />
 ```
+
+<!-- tutorial:learn-6-grouping -->
+<figure class="docs-tutorial" id="tutorial-learn-6-grouping" data-docs-tutorial="learn-6-grouping">
+<video class="docs-tutorial-video" src="/tutorials/learn-6-grouping.mp4" poster="/tutorials/learn-6-grouping.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 6: grouping and totals, 94 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-6-grouping.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-6-grouping.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Learn SvGrid 6: grouping and totals</strong> (94 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>Once a table has more than a screenful of rows, people stop reading it and start asking it questions. Grouping and totals are how it answers.</p>
+<p>The same people as before, with a department and a city to group by, and a salary worth adding up.</p>
+<p>Two options do the work here. Aggregate says what a group header shows for that column: an average age, a summed salary. Summary does the same thing for the whole table at the bottom. Both read the raw value, so a formatted currency still adds up correctly.</p>
+<p>Then groupBy on the component names the starting grouping, and groupable lets the user change it later.</p>
+<p>Read it back whole: the same people, one column list with the aggregate and summary options on it, and groupBy on the component. That is everything this needs.</p>
+<p>Every department is a group header carrying its own totals, and the row at the bottom totals the table. Open one and the people inside are ordinary rows: still sortable, still editable, still yours.</p>
+<p>Grouping is part of the row model rather than a display trick, which is why the same thing works over server data: the server returns the groups and the grid asks for a group's rows only when someone opens it. Lesson seven makes all of this look like your product.</p>
+<p>The file is on the page below. See you in lesson seven.</p>
+</details>
+</figure>
+<!-- /tutorial:learn-6-grouping -->
 
 ## See also
 
@@ -47426,7 +47635,11 @@ else: the row model caches on the array reference, which did not change, so
 the sort and the filters are stale for that row until something replaces the
 array. Replacing the array (`api.applyTransaction`, or `rows = next`) runs the
 row model, and the order is current again. For a sorted blotter the second
-path is the correct one, and the question is how often.
+path is the correct one, and the question is how often. Adding or removing a
+row through the proxy (`rows.push(...)`, `rows.splice(...)`) is tracked on its
+own: the row count is a dependency, so the grid rebuilds without you replacing
+the array. It is the right call for a user clicking "Add row" and the wrong one
+for a tick feed, which changes values rather than the row count.
 
 **What a data change costs at that row count.** Every array replacement used
 to re-sort every row - 100,000 rows in about 30 ms in the engine alone, so a
@@ -51659,6 +51872,22 @@ Demo `23-bulk-actions` builds the same idea by hand - a toolbar of your own
 markup driven by `onRowSelectionChange`. Reach for `selectionBar` when you want
 it working out of the box; hand-roll it when you want full control of the
 layout.
+
+<!-- tutorial:learn-5-selection -->
+<figure class="docs-tutorial" id="tutorial-learn-5-selection" data-docs-tutorial="learn-5-selection">
+<video class="docs-tutorial-video" src="/tutorials/learn-5-selection.mp4" poster="/tutorials/learn-5-selection.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 5: selection and bulk actions, 86 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-5-selection.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-5-selection.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Learn SvGrid 5: selection and bulk actions</strong> (86 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>Selecting rows is easy. Knowing which rows are selected after a sort, a filter or a refresh is the part that catches people out, and it comes down to one prop.</p>
+<p>A small backlog of tasks and the columns to show them.</p>
+<p>Three things on the component. showRowSelection adds the checkbox column. selectionBar floats the action bar. And getRowId is the one that matters: it tells the grid what identifies a row, so a selection survives sorting, filtering and new data arriving. Without it the grid falls back to position, and position changes.</p>
+<p>Tick a couple of rows and the bar appears with a live count and the actions you defined. It stays out of the way until there is something to act on.</p>
+<p>Now sort the table while those rows are ticked. The same three stay selected, because the grid is tracking ids rather than row numbers.</p>
+<p>Over server data the same idea scales: select-all becomes a rule, every row except these, rather than a list of ids the browser would have to hold. Lesson six groups the rows and adds totals.</p>
+<p>The file is on the page below. See you in lesson six.</p>
+</details>
+</figure>
+<!-- /tutorial:learn-5-selection -->
 
 ## See also
 
@@ -59639,6 +59868,21 @@ opened as `.xlsx` or `.ods`.
 ```bash
 npm install @svgrid/grid @svgrid/enterprise
 ```
+
+<!-- tutorial:install-spreadsheet -->
+<figure class="docs-tutorial docs-tutorial-player" id="tutorial-install-spreadsheet" data-docs-tutorial="install-spreadsheet">
+<video class="docs-tutorial-video" src="/tutorials/install-spreadsheet.mp4" poster="/tutorials/install-spreadsheet.poster.webp" width="960" height="540" controls playsinline preload="none" aria-label="Install the SvGrid spreadsheet, 53 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/install-spreadsheet.vtt">Your browser does not play embedded video. <a href="/tutorials/install-spreadsheet.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Install the SvGrid spreadsheet</strong> (53 s, with narration).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>The spreadsheet ships in the enterprise package. Install it next to the grid; it runs unlicensed for evaluation.</p>
+<p>A workbook is plain data: sheets with a name and a cells matrix. Formulas are strings that start with an equals sign.</p>
+<p>Hand it to SvSheet. That is the whole API.</p>
+<p>The result is the full surface: a ribbon, the name box and formula bar, lettered columns, sheet tabs and a status bar, with the totals already computed.</p>
+<p>It behaves like a spreadsheet. Type a formula into a cell, press Enter, and the value appears while the formula bar keeps the source.</p>
+<p>Every Excel shortcut, fill handle, number formats, conditional formatting and xlsx import and export come with it. The docs list the whole surface.</p>
+</details>
+</figure>
+<!-- /tutorial:install-spreadsheet -->
 
 The examples on this page share one setup: a small budget as raw text,
 and the lookup that formats a rectangle of cells by row and column

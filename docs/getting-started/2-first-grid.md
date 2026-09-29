@@ -28,6 +28,26 @@
 
 That's a complete, working grid.
 
+<!-- tutorial:learn-1-first-grid -->
+<figure class="docs-tutorial" id="tutorial-learn-1-first-grid" data-docs-tutorial="learn-1-first-grid">
+<video class="docs-tutorial-video" src="/tutorials/learn-1-first-grid.mp4" poster="/tutorials/learn-1-first-grid.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 1: install and your first grid, 121 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-1-first-grid.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-1-first-grid.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Learn SvGrid 1: install and your first grid</strong> (121 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>Welcome to lesson one. By the end of it you will have a working data grid in a Svelte 5 project, and you will understand every line that put it there.</p>
+<p>SvGrid is a single npm package. There is no CLI step and nothing to copy into your project: you install it and import from it.</p>
+<p>It needs Svelte 5, because the grid is built on runes. If you are starting from nothing, the create command scaffolds a project with the grid already wired up.</p>
+<p>Now the component. Import SvGrid, and import the GridColumns type as well. That type is what makes the column list check itself against your rows.</p>
+<p>Your data is a plain array of plain objects. No store, no wrapper, no adapter. If you already have rows in your app, they are already in the right shape.</p>
+<p>Columns are the other half. Each one maps a field on your row to a header the user reads. Because the array is typed as GridColumns of Person, a typo in a field name is a compile error, not a blank column.</p>
+<p>Then render the component with both. That is the whole API for a basic grid: data in, columns in.</p>
+<p>Save, and the dev server shows this. A real table element, with a header row and your three rows in it.</p>
+<p>You did not ask for any of this, but you got it: click a cell and it takes focus, arrow keys move between cells, Home and End jump to the ends of a row. That is the ARIA grid pattern, on by default.</p>
+<p>What you do not have yet is sorting, filtering or paging. Those are switched on deliberately, so a grid you never configured stays small in your bundle. Lesson two puts your own data in, and lesson three turns those features on.</p>
+<p>The code from this lesson is on the page linked below, and it runs there too. See you in lesson two.</p>
+</details>
+</figure>
+<!-- /tutorial:learn-1-first-grid -->
+
 ## What you got out of the box
 
 - A semantic `<table>` with WAI-ARIA `role="grid"` / `role="row"` /

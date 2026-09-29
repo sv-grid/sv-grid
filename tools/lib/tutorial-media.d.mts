@@ -6,6 +6,8 @@ export type TutorialEntry = {
   id: string
   /** A marketing cut is published on YouTube only: no docs page, no media under website/public. */
   kind?: 'marketing'
+  /** The docs cut keeps the narration and embeds as a player (controls, sound, no loop), for walkthroughs watched once. */
+  player?: boolean
   title: string
   description: string
   /** Gallery demo id the tutorial was recorded on (null for a stage-only cut). */

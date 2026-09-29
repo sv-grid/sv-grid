@@ -283,6 +283,22 @@ markup driven by `onRowSelectionChange`. Reach for `selectionBar` when you want
 it working out of the box; hand-roll it when you want full control of the
 layout.
 
+<!-- tutorial:learn-5-selection -->
+<figure class="docs-tutorial" id="tutorial-learn-5-selection" data-docs-tutorial="learn-5-selection">
+<video class="docs-tutorial-video" src="/tutorials/learn-5-selection.mp4" poster="/tutorials/learn-5-selection.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 5: selection and bulk actions, 86 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-5-selection.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-5-selection.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Learn SvGrid 5: selection and bulk actions</strong> (86 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>Selecting rows is easy. Knowing which rows are selected after a sort, a filter or a refresh is the part that catches people out, and it comes down to one prop.</p>
+<p>A small backlog of tasks and the columns to show them.</p>
+<p>Three things on the component. showRowSelection adds the checkbox column. selectionBar floats the action bar. And getRowId is the one that matters: it tells the grid what identifies a row, so a selection survives sorting, filtering and new data arriving. Without it the grid falls back to position, and position changes.</p>
+<p>Tick a couple of rows and the bar appears with a live count and the actions you defined. It stays out of the way until there is something to act on.</p>
+<p>Now sort the table while those rows are ticked. The same three stay selected, because the grid is tracking ids rather than row numbers.</p>
+<p>Over server data the same idea scales: select-all becomes a rule, every row except these, rather than a list of ids the browser would have to hold. Lesson six groups the rows and adds totals.</p>
+<p>The file is on the page below. See you in lesson six.</p>
+</details>
+</figure>
+<!-- /tutorial:learn-5-selection -->
+
 ## See also
 
 - [Row selection](../accessibility.md)

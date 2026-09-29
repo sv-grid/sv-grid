@@ -35,10 +35,19 @@ export const stage = $state({
     file: 'src/App.svelte',
     code: '',
     cursor: true,
+    /**
+     * Which 1-based line to bring into view, or null to follow the caret to
+     * the bottom the way typing does. A reveal sets the whole file at once,
+     * and the part that earns the result is usually at the end, so a lesson
+     * can point at it instead of leaving the viewer on line 1.
+     */
+    focusLine: null as number | null,
   },
   browser: {
     url: 'localhost:5173',
     preset: 'none' as PresetId,
+    /** A runnable doc snippet to mount instead of a preset (course lessons). */
+    snippet: null as string | null,
     /** Bumped to remount the preset. */
     key: 0,
     loading: false,

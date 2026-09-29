@@ -253,3 +253,23 @@ See [Editing overview](../help/editing/overview.md).
 | Copy / paste range    | Ctrl/Cmd + C / V (TSV)                |
 
 The full a11y model is in [Accessibility](../help/accessibility.md).
+
+<!-- tutorial:learn-3-sort-filter-page -->
+<figure class="docs-tutorial" id="tutorial-learn-3-sort-filter-page" data-docs-tutorial="learn-3-sort-filter-page">
+<video class="docs-tutorial-video" src="/tutorials/learn-3-sort-filter-page.mp4" poster="/tutorials/learn-3-sort-filter-page.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 3: sorting, filtering and paging, 143 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-3-sort-filter-page.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-3-sort-filter-page.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Learn SvGrid 3: sorting, filtering and paging</strong> (143 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>Your grid renders. It does not sort, filter or page yet, and that is deliberate. This lesson turns those on and explains the trade the library is making for you.</p>
+<p>Here is a wider row type and a realistic set of records, the kind of table you would actually ship. Nothing new yet.</p>
+<p>Columns, with a currency format on salary from the last lesson.</p>
+<p>And now the part that matters. Sortable, filterable, editable, groupable, pageable. Each is one boolean, and each one pulls in only the code that feature needs, which is why a grid you never configured stays small.</p>
+<p>That is the whole file: the row type, the records, the columns, and the component with those five words on it. Nothing else is configured, and nothing is hidden above the fold.</p>
+<p>Click a header and it sorts. Click again for descending, and a third time to clear it and get your original order back.</p>
+<p>Shift-click a second header to sort by two columns at once: department first, then name inside each department.</p>
+<p>The funnel next to each header is filtering, switched on by that same one word. How it looks is a choice, and the next screen has the version most people want.</p>
+<p>Five rows will not show you paging, so here is the same set of props over five thousand. Filterable on its own gives you a menu per header; filter mode row puts an input under each header instead, and it narrows the table as you type.</p>
+<p>And the pager cuts what is left into pages, with the range and the count kept honest as the filter changes them. None of this needed a callback from you.</p>
+<p>Those five booleans are a shorthand. When you need finer control, register the features explicitly with tableFeatures and pass them in, which is the same machinery with the wiring exposed; the docs page below shows both forms side by side. Lesson four lets people change the table.</p>
+</details>
+</figure>
+<!-- /tutorial:learn-3-sort-filter-page -->

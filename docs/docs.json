@@ -1,9 +1,9 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-25T22:07:18.185Z",
+  "generatedAt": "2026-09-29T20:17:51.073Z",
   "counts": {
-    "pages": 403,
+    "pages": 404,
     "enterprise": 87,
     "withDemo": 286
   },
@@ -95,6 +95,7 @@
         "getting-started/4-features.md",
         "getting-started/5-theme-and-density.md",
         "getting-started/6-going-to-production.md",
+        "getting-started/course.md",
         "getting-started/starters.md",
         "getting-started/sveltekit.md"
       ]
@@ -1250,7 +1251,7 @@
       "tier": "enterprise",
       "group": "Start here",
       "words": 2955,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-29",
       "demoIds": [],
       "tutorialIds": [
         "install-studio"
@@ -1621,7 +1622,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 872,
-      "lastUpdated": "2026-09-21",
+      "lastUpdated": "2026-09-29",
       "demoIds": [],
       "tutorialIds": [
         "install-svgrid"
@@ -1635,10 +1636,13 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 494,
-      "lastUpdated": "2026-09-03",
+      "words": 882,
+      "lastUpdated": "2026-09-29",
       "demoIds": [
         "01-quick-start"
+      ],
+      "tutorialIds": [
+        "learn-1-first-grid"
       ]
     },
     {
@@ -1649,9 +1653,12 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 1023,
-      "lastUpdated": "2026-09-03",
-      "demoIds": []
+      "words": 1324,
+      "lastUpdated": "2026-09-29",
+      "demoIds": [],
+      "tutorialIds": [
+        "learn-2-data-and-columns"
+      ]
     },
     {
       "path": "getting-started/4-features.md",
@@ -1661,9 +1668,12 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 1216,
-      "lastUpdated": "2026-09-03",
-      "demoIds": []
+      "words": 1602,
+      "lastUpdated": "2026-09-29",
+      "demoIds": [],
+      "tutorialIds": [
+        "learn-3-sort-filter-page"
+      ]
     },
     {
       "path": "getting-started/5-theme-and-density.md",
@@ -1673,10 +1683,13 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 1128,
-      "lastUpdated": "2026-09-03",
+      "words": 1477,
+      "lastUpdated": "2026-09-29",
       "demoIds": [
         "10-custom-cells-and-themes"
+      ],
+      "tutorialIds": [
+        "learn-7-theme"
       ]
     },
     {
@@ -1687,13 +1700,29 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 1173,
-      "lastUpdated": "2026-09-03",
+      "words": 1816,
+      "lastUpdated": "2026-09-29",
       "demoIds": [
         "09-server-side",
         "06-large-dataset",
         "17-accessibility"
+      ],
+      "tutorialIds": [
+        "learn-10-production",
+        "learn-8-server-data"
       ]
+    },
+    {
+      "path": "getting-started/course.md",
+      "url": "/docs/getting-started/course/",
+      "title": "Learn SvGrid: the video course",
+      "summary": "Ten short lessons that take you from an empty project to a grid you would put in front of users. Each one is a few minutes, each ends where the next begins, and every line of code on screen is a file you can open: the lessons are recorded against the runnable examples on these pages, so what you watch is what runs.",
+      "section": "getting-started",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 700,
+      "lastUpdated": "2026-09-29",
+      "demoIds": []
     },
     {
       "path": "getting-started/starters.md",
@@ -1715,9 +1744,12 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 2009,
-      "lastUpdated": "2026-09-06",
-      "demoIds": []
+      "words": 2256,
+      "lastUpdated": "2026-09-29",
+      "demoIds": [],
+      "tutorialIds": [
+        "learn-9-sveltekit"
+      ]
     },
     {
       "path": "help/accessibility.md",
@@ -2082,8 +2114,8 @@
       "pillar": "sheet",
       "tier": "enterprise",
       "group": "Reference",
-      "words": 19311,
-      "lastUpdated": "2026-09-25",
+      "words": 19135,
+      "lastUpdated": "2026-09-29",
       "demoIds": [
         "27-spreadsheet-ribbon",
         "456-sales-report-workbook",
@@ -2107,9 +2139,6 @@
         "492-sheet-iterative",
         "494-sheet-cell-images",
         "489-sheet-hyperlinks"
-      ],
-      "tutorialIds": [
-        "install-spreadsheet"
       ]
     },
     {
@@ -2782,11 +2811,14 @@
       "section": "help/editing",
       "pillar": "grid",
       "tier": "community",
-      "words": 1064,
-      "lastUpdated": "2026-09-22",
+      "words": 1367,
+      "lastUpdated": "2026-09-29",
       "demoIds": [
         "206-cell-validation",
         "24-validation"
+      ],
+      "tutorialIds": [
+        "learn-4-editing"
       ]
     },
     {
@@ -3067,12 +3099,15 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2288,
-      "lastUpdated": "2026-09-20",
+      "words": 2579,
+      "lastUpdated": "2026-09-29",
       "demoIds": [
         "07-grouping-aggregation",
         "427-group-footers",
         "89-group-panel"
+      ],
+      "tutorialIds": [
+        "learn-6-grouping"
       ]
     },
     {
@@ -3651,8 +3686,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2026,
-      "lastUpdated": "2026-09-21",
+      "words": 2083,
+      "lastUpdated": "2026-09-29",
       "demoIds": [
         "34-realtime-orders"
       ]
@@ -3915,10 +3950,13 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 1624,
-      "lastUpdated": "2026-09-21",
+      "words": 1878,
+      "lastUpdated": "2026-09-29",
       "demoIds": [
         "430-selection-bar"
+      ],
+      "tutorialIds": [
+        "learn-5-selection"
       ]
     },
     {
@@ -4482,11 +4520,14 @@
       "pillar": "sheet",
       "tier": "enterprise",
       "group": "Start here",
-      "words": 1536,
-      "lastUpdated": "2026-09-21",
+      "words": 1712,
+      "lastUpdated": "2026-09-29",
       "demoIds": [
         "207-blank-sheet",
         "27-spreadsheet-ribbon"
+      ],
+      "tutorialIds": [
+        "install-spreadsheet"
       ]
     },
     {
@@ -4536,7 +4577,7 @@
       "tier": "enterprise",
       "group": "Reference",
       "words": 5453,
-      "lastUpdated": "2026-09-25",
+      "lastUpdated": "2026-09-27",
       "demoIds": [
         "83-spreadsheet-formulas",
         "173-hyperformula",
@@ -6298,7 +6339,7 @@
       "tier": "enterprise",
       "group": "Start here",
       "words": 1176,
-      "lastUpdated": "2026-09-24",
+      "lastUpdated": "2026-09-27",
       "demoIds": []
     },
     {

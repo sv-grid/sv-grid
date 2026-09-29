@@ -12,7 +12,7 @@ muxes the outputs.
 ```
 tools/tutorials/scripts/<id>.mjs      the tutorial: narration beats + the actions
 tools/tutorials/manifest.json         what has been recorded (tracked, parent repo)
-website/public/tutorials/<id>.*       muted docs cut + poster + VTT (tracked, website repo)
+website/public/tutorials/<id>.*       docs cut (muted, or narrated with player: true) + poster + VTT (tracked, website repo)
 tutorials-out/<id>/                   narrated master, GIF, SRT, thumbnail (gitignored)
 ```
 
@@ -146,7 +146,16 @@ section of a page (tools/demo-doc-coverage.test.ts).
 The block carries the muted MP4 with `preload="none"`, the poster, the VTT
 captions and the transcript as plain paragraphs. Docs.svelte plays the clip
 when it scrolls into view and pauses it when it leaves; a click toggles; with
-`prefers-reduced-motion` the native controls are shown instead. The transcript
+`prefers-reduced-motion` the native controls are shown instead.
+
+`player: true` is for a walkthrough people watch once with the sound on (the
+three install videos). The docs cut is made from the narrated master instead
+of the silent screencast (mono AAC at 64 kbps, same 2.5 MB budget). The block
+gets native controls, no `muted` and no `loop`, and the class
+`docs-tutorial-player`, and Docs.svelte leaves it alone: it plays only when
+the reader presses play. Moving a block to another page is not automatic: a
+block already on a page is refreshed in place, so delete the old one by hand
+and re-run `embed.mjs`. The transcript
 is what reaches llms-full.txt and the site search, and the page's head gets a
 `VideoObject` per tutorial from `tools/lib/tutorial-media.mjs`, emitted by both
 the prerenderer and `seo.ts`.

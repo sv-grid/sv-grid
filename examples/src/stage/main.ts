@@ -9,6 +9,7 @@ import '../index.css'
 import Stage from './Stage.svelte'
 import { stage, sleep, type Layout, type TitleProps, type TermLine } from './state.svelte'
 import type { PresetId } from './presets'
+import { snippetSource } from './snippets'
 
 type OutLine = string | { text: string; cls?: TermLine['cls']; after?: number }
 
@@ -88,6 +89,38 @@ const api = {
       stage.editor.file = file
       stage.editor.code = code
       stage.editor.cursor = true
+      stage.editor.focusLine = null
+    },
+    /** Bring a 1-based line into view; null goes back to following the caret. */
+    focus(line: number | null) {
+      stage.editor.focusLine = line
+    },
+    /**
+     * Ease the editor's scroll between two fractions of its scrollable height.
+     * Typing follows the caret, so by the last line the top of a long file has
+     * scrolled away and the viewer has never seen it whole. A slow pass down
+     * the finished file is how they read it, and it stays legible, which
+     * shrinking 43 lines to fit one screen does not.
+     */
+    async pan(to = 1, { from, ms = 4000 }: { from?: number; ms?: number } = {}) {
+      const el = document.querySelector<HTMLElement>('.ed')
+      if (!el) return
+      const max = el.scrollHeight - el.clientHeight
+      if (max <= 1) return
+      const start = from == null ? el.scrollTop : from * max
+      const end = to * max
+      el.scrollTop = start
+      await new Promise<void>((done) => {
+        const t0 = performance.now()
+        const step = () => {
+          const t = Math.min(1, (performance.now() - t0) / ms)
+          const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
+          el.scrollTop = start + (end - start) * eased
+          if (t < 1) requestAnimationFrame(step)
+          else done()
+        }
+        requestAnimationFrame(step)
+      })
     },
     /** Append code with a typewriter; newlines pause a little longer. */
     async type(code: string, { cps = 48 } = {}) {
@@ -117,6 +150,26 @@ const api = {
       stage.browser.loading = false
       stage.browser.key += 1
       await sleep(80)
+    },
+    /**
+     * Mount a runnable doc snippet (examples/src/doc-snippets) rather than a
+     * fixed preset. The lesson types the same file's source in the editor, so
+     * what runs is what was shown.
+     */
+    async snippet(id: string, { url, loadMs = 500 }: { url?: string; loadMs?: number } = {}) {
+      if (url) stage.browser.url = url
+      stage.browser.loading = true
+      stage.browser.key += 1
+      await sleep(loadMs)
+      stage.browser.preset = 'none'
+      stage.browser.snippet = id
+      stage.browser.loading = false
+      stage.browser.key += 1
+      await sleep(120)
+    },
+    /** The snippet file as text, for editor.type(). */
+    source(id: string) {
+      return snippetSource(id)
     },
     url(text: string) {
       stage.browser.url = text

@@ -256,3 +256,35 @@ inference picks up which capabilities your grid has.
 - [How SvGrid compares](../help/comparison.md) - what
   evaluators read.
 - [Missing features](../help/missing-features.md) - the honest gap list.
+
+<!-- tutorial:learn-10-production -->
+<figure class="docs-tutorial" id="tutorial-learn-10-production" data-docs-tutorial="learn-10-production">
+<video class="docs-tutorial-video" src="/tutorials/learn-10-production.mp4" poster="/tutorials/learn-10-production.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 10: going to production, 108 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-10-production.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-10-production.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Learn SvGrid 10: going to production</strong> (108 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>Your grid works. This last lesson is the review a colleague would give it: the four things that decide whether it survives contact with real data and real users.</p>
+<p>First, scale. Virtualization is on by default, so only the rows in view have DOM nodes. Fifty thousand rows by seventy-seven columns scroll in both directions, and the count of nodes stays roughly the same as it was with ten rows.</p>
+<p>What you do have to give it is a height. A grid inside a container with no height cannot know what is on screen, and that is the single most common reason a large table feels slow.</p>
+<p>Second, accessibility, which you mostly already have. It is a real table element carrying the ARIA grid pattern, so a screen reader announces rows and columns, and every cell is reachable from the keyboard.</p>
+<p>What is on you is the rest of the page: a label on the grid, contrast that passes, and not removing the focus ring. There is a high-contrast preset in the box if procurement asks.</p>
+<p>Third, the markup server-renders, so a viewport of real rows reaches the browser before hydration. And fourth, the habit that costs nothing: type the column array as GridColumns of your row. A bare GridColumns widens the row and stops checking field names, and a typo becomes a blank column nobody notices until a user does.</p>
+<p>That is the course. You can build a grid, shape its columns, sort and filter it, edit it, group it, theme it, feed it from a server and ship it. Everything past this point is a feature you turn on when you need it, and the demos on the site show each one running.</p>
+</details>
+</figure>
+<!-- /tutorial:learn-10-production -->
+
+<!-- tutorial:learn-8-server-data -->
+<figure class="docs-tutorial" id="tutorial-learn-8-server-data" data-docs-tutorial="learn-8-server-data">
+<video class="docs-tutorial-video" src="/tutorials/learn-8-server-data.mp4" poster="/tutorials/learn-8-server-data.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 8: data from a server, 106 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-8-server-data.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-8-server-data.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Learn SvGrid 8: data from a server</strong> (106 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>Everything so far held every row in memory. That works to tens of thousands of rows. Past that, the sorting and filtering have to move to the server, and the grid has to ask for what it needs.</p>
+<p>The state the grid hands you is small: which column is sorted, which filters are set, which page you are on. Keep those in runes.</p>
+<p>Then one function that turns that state into a request. Notice the abort controller: when the user types another letter, the request already in flight is cancelled, so a slow earlier response cannot overwrite a newer one. That race is the most common bug in a server-backed table.</p>
+<p>An effect reruns it whenever sort, filters or page change, and the component passes the rows down with the total, so the pager knows how many pages there are without counting rows it never received.</p>
+<p>Here is that pattern running against a real endpoint. Sorting goes to the server and comes back sorted; typing in the search box is debounced, so one request goes out rather than one per keystroke.</p>
+<p>The loading state lives on the rows rather than as a spinner over the page, so the header and the controls stay usable while the next page arrives.</p>
+<p>Past a million rows there is a dedicated row model that lazily loads groups and blocks; it is linked from the page below. Lesson nine puts all of this in a SvelteKit app.</p>
+</details>
+</figure>
+<!-- /tutorial:learn-8-server-data -->

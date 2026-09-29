@@ -467,7 +467,7 @@ export function createHelpers(page, log = () => {}) {
      * flash with ffmpeg's blackdetect and trims the recording to its end, so
      * the video's zero and the beat clock share one origin.
      */
-    async flashSync(ms = 150) {
+    async flashSync(ms = 260) {
       await page.evaluate(async (ms) => {
         const el = document.createElement('div')
         el.id = 'tut-sync'
@@ -499,9 +499,15 @@ export function createHelpers(page, log = () => {}) {
         type: (code, opts = {}) => page.evaluate(([c, o]) => window.__stage.editor.type(c, o), [code, opts]),
         set: (code) => page.evaluate((c) => window.__stage.editor.set(c), code),
         cursor: (on) => page.evaluate((v) => window.__stage.editor.cursor(v), on),
+        focus: (line) => page.evaluate((l) => window.__stage.editor.focus(l), line ?? null),
+        pan: (to = 1, opts = {}) => page.evaluate(([t, o]) => window.__stage.editor.pan(t, o), [to, opts]),
       },
       browser: {
         mount: (preset, opts = {}) => page.evaluate(([p, o]) => window.__stage.browser.mount(p, o), [preset, opts]),
+        /** Mount a runnable doc snippet by id (examples/src/doc-snippets). */
+        snippet: (id, opts = {}) => page.evaluate(([i, o]) => window.__stage.browser.snippet(i, o), [id, opts]),
+        /** That snippet's own source text, to type into the editor scene. */
+        source: (id) => page.evaluate((i) => window.__stage.browser.source(i), id),
         url: (text) => page.evaluate((t) => window.__stage.browser.url(t), text),
       },
     },

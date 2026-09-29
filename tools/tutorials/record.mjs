@@ -250,12 +250,13 @@ async function main() {
         }
         const m = await muxTutorial({
           id: def.id, outDir, siteDir: SITE_MEDIA_DIR, timeline, budgetBytes: BUDGET,
-          gif: !NO_GIF, gifBeats: def.gif?.beats, posterBeat: def.poster?.beat ?? null, docs: !marketing, log,
+          gif: !NO_GIF, gifBeats: def.gif?.beats, posterBeat: def.poster?.beat ?? null, docs: !marketing, player: !marketing && !!def.player, log,
         })
         const previous = manifest.tutorials.find((t) => t.id === def.id)
         const entry = {
           id: def.id,
-          ...(marketing ? { kind: 'marketing' } : {}),
+          ...(def.kind ? { kind: def.kind } : {}),
+          ...(!marketing && def.player ? { player: true } : {}),
           title: def.title,
           description: def.description,
           demo: def.demo ?? timeline.demo ?? null,

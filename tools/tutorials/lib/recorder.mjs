@@ -111,7 +111,7 @@ async function recordTake(def, { base, siteBase, outDir, view, log, warm, tts })
     if (warm) {
       const ctx0 = await browser.newContext({ viewport: view })
       const p0 = await ctx0.newPage()
-      await p0.goto(url, { waitUntil: 'domcontentloaded' })
+      await p0.goto(url, { waitUntil: 'domcontentloaded', timeout: 90_000 }).catch(() => {})
       await p0.waitForSelector(readySelector, { timeout: 60_000 }).catch(() => {})
       if (target.kind === 'stage') await p0.waitForFunction(() => Boolean(window.__stage), null, { timeout: 60_000 }).catch(() => {})
       if (target.kind === 'demo') await assertGallery(p0, url)
@@ -168,7 +168,7 @@ async function recordTake(def, { base, siteBase, outDir, view, log, warm, tts })
     page.on('load', () => hmr.push('full page load'))
 
     try {
-      await page.goto(url, { waitUntil: 'domcontentloaded' })
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 90_000 })
       await page.addStyleTag({ content: HIDE_WATERMARK })
       if (target.kind === 'demo') {
         await page.addStyleTag({ content: HIDE_CHROME })

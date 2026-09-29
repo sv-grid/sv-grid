@@ -255,3 +255,21 @@ any ancestor - no theme file, no build step.
   }
 </style>
 ```
+
+<!-- tutorial:learn-7-theme -->
+<figure class="docs-tutorial" id="tutorial-learn-7-theme" data-docs-tutorial="learn-7-theme">
+<video class="docs-tutorial-video" src="/tutorials/learn-7-theme.mp4" poster="/tutorials/learn-7-theme.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 7: themes, dark mode and density, 113 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-7-theme.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-7-theme.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Learn SvGrid 7: themes, dark mode and density</strong> (113 s, silent).</figcaption>
+<details class="docs-tutorial-transcript"><summary>Transcript</summary>
+<p>A grid that looks like a grid library is a grid that never ships. Theming here is CSS custom properties, not utility classes and not a config object.</p>
+<p>Twenty presets ship with the package, and importing one stylesheet is the whole setup. What a preset sets is a list of custom properties, which means you can set them yourself when one is close but not right. Same five people as before.</p>
+<p>A wrapper, and a handful of properties on it. Background, text, border, the header colours, the accent, the hover. They cascade like any other custom property, so this theme is scoped to this one grid rather than the page.</p>
+<p>The whole file, so nothing is hidden: the rows, the columns, a wrapper around the grid, and the properties on that wrapper.</p>
+<p>Here is that file running. Nine declarations, and nothing about the grid was configured to accept them.</p>
+<p>Density is separate from colour, and it is the setting people actually argue about. Row height is a prop, so the compact table and the comfortable one are the same component with one number changed.</p>
+<p>Dark mode is not a second stylesheet you maintain. Every preset declares a light palette and a dark one, and an attribute on the document element picks which is live. Every surface follows, including the parts you never styled.</p>
+<p>The density control here is the same row height prop behind a dropdown, which is what it usually becomes: a preference you save per user rather than a decision you make once for everybody.</p>
+<p>The theme builder on the site edits these tokens live and hands you the CSS at the end. Every property is listed on the page below. See you in lesson eight.</p>
+</details>
+</figure>
+<!-- /tutorial:learn-7-theme -->

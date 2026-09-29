@@ -1387,9 +1387,6 @@ select.sv-grid-fr-editor {
 .sv-grid-cell-active,
 .sv-grid-cell-editing {
   position: relative;
-  /* High enough to sit above pinned-column stacking contexts (z=4) so the
-     list/chips popover overlays adjacent cells instead of being clipped. */
-  z-index: 20;
   /* `box-shadow: inset` is bound to the cell's own box, so the ring
      clips cleanly with the cell when it's partially scrolled out of
      view (and shows up consistently at the right edge of a virtualized
@@ -1399,9 +1396,23 @@ select.sv-grid-fr-editor {
      inconsistent at scroll boundaries. */
   box-shadow: inset 0 0 0 2px var(--sg-accent, #0b63f3);
   outline: none;
-  /* Let list/chips popouts extend past the cell box (default cells have
-     overflow: hidden so the chips picker would otherwise be clipped). */
+}
+/* Only the EDITING cell escapes its own box and outranks the pinned-column
+   stacking contexts (z=4), so its list/chips popout overlays the neighbours
+   instead of being clipped. The merely-ACTIVE cell used to get the same
+   treatment, and on a grid scrolled sideways that made it paint straight over
+   the sticky selection / row-number column: the checkbox disappeared and the
+   cell's text - unclipped, because overflow was visible - spilled across it.
+   A grid seeds its active cell at (0,0), so this hit the FIRST row of any
+   horizontally scrolled grid with `showRowSelection`, untouched by the user. */
+.sv-grid-cell-editing {
+  z-index: 20;
   overflow: visible;
+}
+/* Above ordinary cells so the ring is not overdrawn by a neighbour, below the
+   sticky columns (z=4) so those keep covering it as they should. */
+.sv-grid-cell-active:not(.sv-grid-cell-editing) {
+  z-index: 3;
 }
 /* The active cell a grid mounts with is seeded at (0,0), not chosen: no
    ring until a click, an arrow key or the api activates a cell (the same
