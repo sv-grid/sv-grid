@@ -65,10 +65,14 @@ adds the column to the sort key list (multi-sort).
 
 ```ts
 import { sortFns } from '@svgrid/grid'
-// sortFns.auto    - lexical (default for unknown types)
-// sortFns.number  - numeric, NaN-safe
-// sortFns.date    - Date-parsed
+// sortFns.auto    - blanks, then numbers numerically, then text (default for unknown types)
+// sortFns.number  - numeric; blanks and non-numeric values ('n/a') first
+// sortFns.date    - Date-parsed; blanks and invalid dates first
 ```
+
+All three sort blanks (`null`, `undefined`, `''`) first ascending and last
+descending, and never return `NaN`, so a column with placeholder text still
+sorts into a consistent order.
 
 The grid picks the comparator based on the column's `editorType`:
 

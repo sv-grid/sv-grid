@@ -745,13 +745,52 @@ export function tableFeatures<T extends TableFeatures>(features: T): T {
  * text; set a column's type or supply your own comparator to override.
  */
 export const sortFns = {
-  auto: (a: unknown, b: unknown) => String(a).localeCompare(String(b)),
-  number: (a: unknown, b: unknown) => Number(a ?? 0) - Number(b ?? 0),
-  date: (a: unknown, b: unknown) => {
-    const aa = new Date(a as any).getTime()
-    const bb = new Date(b as any).getTime()
-    return aa - bb
-  },
+  auto: (a: unknown, b: unknown) => compareAutoValues(a, b),
+  number: (a: unknown, b: unknown) => compareNumericKeys(numberSortKey(a), numberSortKey(b)),
+  date: (a: unknown, b: unknown) => compareNumericKeys(dateSortKey(a), dateSortKey(b)),
+}
+
+/** Null, undefined and the empty string: the values every built-in sort puts first. */
+function isBlankSortValue(value: unknown): boolean {
+  return value == null || value === ''
+}
+
+/**
+ * Sort key for the `number` comparator. Blanks and anything that does not
+ * coerce to a number ('n/a', a placeholder) become -Infinity, so they sort
+ * together ahead of every number instead of producing NaN. A NaN key made the
+ * comparator inconsistent - NaN compared equal to everything while the numbers
+ * around it did not - and `Array.prototype.sort` then returned a visibly
+ * unsorted column (#104).
+ */
+function numberSortKey(value: unknown): number {
+  if (isBlankSortValue(value)) return -Infinity
+  const n = Number(value)
+  return Number.isNaN(n) ? -Infinity : n
+}
+
+/** Sort key for the `date` comparator; blanks and invalid dates sort first. */
+function dateSortKey(value: unknown): number {
+  if (isBlankSortValue(value)) return -Infinity
+  const t = new Date(value as any).getTime()
+  return Number.isNaN(t) ? -Infinity : t
+}
+
+/**
+ * The `auto` comparator: blanks first, then numbers in numeric order, then
+ * everything else as collated text. Ordering by kind before value keeps it
+ * transitive on mixed columns - comparing a number to a string as text
+ * instead would give 2 < 10, 10 < '1a' and '1a' < 2, a cycle.
+ */
+function compareAutoValues(a: unknown, b: unknown): number {
+  const aBlank = isBlankSortValue(a)
+  const bBlank = isBlankSortValue(b)
+  if (aBlank || bBlank) return aBlank === bBlank ? 0 : aBlank ? -1 : 1
+  const aNum = typeof a === 'number'
+  const bNum = typeof b === 'number'
+  if (aNum && bNum) return compareNumericKeys(numberSortKey(a), numberSortKey(b))
+  if (aNum !== bNum) return aNum ? -1 : 1
+  return compareCollatedKeys(String(a), String(b))
 }
 
 /**
@@ -1446,15 +1485,35 @@ export function createSortedRowModel<TData extends RowData>(
       let keys: Array<any> = new Array(n)
       let compare: (a: any, b: any) => number
       let keyOf: (row: Row<TData>) => any
+      let autoMode: 'number' | 'mixed' | 'text' | undefined
 
       if (comparator === sortFns.number) {
-        keyOf = (row) => Number(row.getCellValueByColumnId(columnId) ?? 0)
+        keyOf = (row) => numberSortKey(row.getCellValueByColumnId(columnId))
         for (let i = 0; i < n; i++) keys[i] = keyOf(rows[i]!)
         compare = compareNumericKeys
       } else if (comparator === sortFns.date) {
-        keyOf = (row) => new Date(row.getCellValueByColumnId(columnId) as any).getTime()
+        keyOf = (row) => dateSortKey(row.getCellValueByColumnId(columnId))
         for (let i = 0; i < n; i++) keys[i] = keyOf(rows[i]!)
         compare = compareNumericKeys
+      } else if (comparator === sortFns.auto && (autoMode = autoSortMode(rows, columnId)) === 'number') {
+        // A column with no declared type whose values are all numbers. Sorting
+        // it as text put 10 before 2 (#104).
+        keyOf = (row) => {
+          const value = row.getCellValueByColumnId(columnId)
+          // A text value arriving in a tick changes the mode; only a full sort
+          // can place it.
+          return typeof value === 'number' || isBlankSortValue(value)
+            ? numberSortKey(value)
+            : MISSING_KEY
+        }
+        for (let i = 0; i < n; i++) keys[i] = keyOf(rows[i]!)
+        compare = compareNumericKeys
+      } else if (autoMode === 'mixed') {
+        // Numbers and text in one column. Rare, so no key tricks: the raw
+        // values through the pairwise comparator, which orders by kind first.
+        keyOf = (row) => row.getCellValueByColumnId(columnId)
+        for (let i = 0; i < n; i++) keys[i] = keyOf(rows[i]!)
+        compare = compareAutoValues
       } else if (comparator === sortFns.auto) {
         const strings: string[] = new Array(n)
         // Decide whether ranking is worth attempting BEFORE paying for it.
@@ -1477,7 +1536,7 @@ export function createSortedRowModel<TData extends RowData>(
           const sample = new Set<string>()
           let sampled = 0
           for (let i = 0; i < n; i += stride) {
-            sample.add(String(rows[i]!.getCellValueByColumnId(columnId)))
+            sample.add(autoTextKey(rows[i]!.getCellValueByColumnId(columnId)))
             sampled++
           }
           // Only attempt ranking when the sample suggests real repetition.
@@ -1485,7 +1544,7 @@ export function createSortedRowModel<TData extends RowData>(
         }
 
         for (let i = 0; i < n; i++) {
-          const s = String(rows[i]!.getCellValueByColumnId(columnId))
+          const s = autoTextKey(rows[i]!.getCellValueByColumnId(columnId))
           strings[i] = s
           if (distinct) {
             distinct.add(s)
@@ -1514,11 +1573,19 @@ export function createSortedRowModel<TData extends RowData>(
           compare = compareNumericKeys
           // A replacement whose text is not among the ranked values has no
           // rank; the repair path treats that as "sort everything again".
-          keyOf = (row) => rankOf.get(String(row.getCellValueByColumnId(columnId))) ?? MISSING_KEY
+          keyOf = (row) => {
+            const value = row.getCellValueByColumnId(columnId)
+            // A number arriving in a tick makes the column mixed; resort fully.
+            if (typeof value === 'number') return MISSING_KEY
+            return rankOf.get(autoTextKey(value)) ?? MISSING_KEY
+          }
         } else {
           keys = strings
           compare = compareCollatedKeys
-          keyOf = (row) => String(row.getCellValueByColumnId(columnId))
+          keyOf = (row) => {
+            const value = row.getCellValueByColumnId(columnId)
+            return typeof value === 'number' ? MISSING_KEY : autoTextKey(value)
+          }
         }
       } else {
         keyOf = (row) => row.getCellValueByColumnId(columnId)
@@ -1735,14 +1802,37 @@ export function createSortedRowModel<TData extends RowData>(
 }
 
 /**
- * Numeric key comparison for the built-in `number` and `date` comparators.
- * Subtraction rather than `<`/`>` on purpose: it reproduces the originals
- * exactly, NaN included. An unparseable date or a non-numeric value yields NaN,
- * and the sort spec turns a NaN comparison result into 0 (SortCompare coerces
- * it), which is the behaviour callers already depend on.
+ * Numeric key comparison for the built-in `number`, `date` and numeric
+ * `auto` comparators. Keys are never NaN (blanks and unparseable values map to
+ * -Infinity), but two -Infinity keys subtract to NaN, so equal keys return 0
+ * explicitly: the multi-clause sort reads any non-zero result, NaN included,
+ * as decided and would skip the next clause.
  */
 function compareNumericKeys(a: number, b: number): number {
-  return a - b
+  return a === b ? 0 : a - b
+}
+
+/** Text key for the `auto` comparator: blanks become '' so they collate first. */
+function autoTextKey(value: unknown): string {
+  return isBlankSortValue(value) ? '' : String(value)
+}
+
+/**
+ * How the `auto` comparator should treat a column: 'number' when every
+ * non-blank value is a number, 'mixed' when numbers share it with anything
+ * else, 'text' otherwise. One pass, stopping as soon as the answer is known.
+ */
+function autoSortMode(rows: ReadonlyArray<Row<any>>, columnId: string): 'number' | 'mixed' | 'text' {
+  let numbers = false
+  let other = false
+  for (let i = 0; i < rows.length; i++) {
+    const value = rows[i]!.getCellValueByColumnId(columnId)
+    if (isBlankSortValue(value)) continue
+    if (typeof value === 'number') numbers = true
+    else other = true
+    if (numbers && other) return 'mixed'
+  }
+  return numbers ? 'number' : 'text'
 }
 
 /**

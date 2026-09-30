@@ -23,8 +23,14 @@ const columns: GridColumns<Person> = [
 ```
 
 Even if you do not enable inline editing, set `editorType` so sort and
-filter behave correctly for the column's data type. A `number` column
-without `editorType` sorts as lexical strings.
+filter behave correctly for the column's data type. Without it, sorting
+falls back to the `auto` comparator: a column whose values are all numbers
+still sorts numerically, but numbers stored as strings (`'10'`, `'9'`) sort
+as text, and a column mixing numbers and text puts the numbers first.
+
+Every built-in comparator sorts blanks (`null`, `undefined`, `''`) first in
+ascending order and last in descending. The `number` and `date` comparators
+treat values they cannot parse (`'n/a'`, an invalid date) the same way.
 
 ## `cellDataType` shorthand
 

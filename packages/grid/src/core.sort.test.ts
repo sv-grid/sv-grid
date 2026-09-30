@@ -12,6 +12,10 @@
  * snapshot the new output, `referenceSort` below is a literal transcription of
  * the ORIGINAL comparator, and every case asserts the two agree. If the rewrite
  * ever diverges on any input, including the randomised ones, this fails.
+ *
+ * The oracle calls the pairwise `sortFns`, so it tracks their semantics: since
+ * #104 those put blanks and unparseable values first instead of returning NaN,
+ * and `auto` compares numbers numerically.
  */
 import { describe, expect, it } from 'vitest'
 // From './core' rather than './index': `createSvGridCore` is the runes-free
@@ -230,6 +234,88 @@ describe('createSortedRowModel - equivalence with the original comparator', () =
       ]
       expectSameOrder(actualSort(rows, COLUMNS, sorting), referenceSort(rows, COLUMNS, sorting))
     }
+  })
+})
+
+describe('built-in comparators keep the Array.sort contract (#104)', () => {
+  it('number: non-numeric values sort together ahead of the numbers', () => {
+    expect([5, 'n/a', 3, 1, 'n/a', 4, 2].sort(sortFns.number)).toEqual(['n/a', 'n/a', 1, 2, 3, 4, 5])
+    expect(sortFns.number('n/a', 'x')).toBe(0)
+    expect(Number.isNaN(sortFns.number('n/a', 3))).toBe(false)
+  })
+
+  it('date: blanks and invalid dates sort first and never return NaN', () => {
+    // null, not undefined: Array.prototype.sort moves undefined to the end
+    // without calling the comparator.
+    const sorted = ['2021-01-01', null, 'junk', '2020-01-01'].sort(sortFns.date)
+    expect(sorted).toEqual([null, 'junk', '2020-01-01', '2021-01-01'])
+    expect(sortFns.date(undefined, 'junk')).toBe(0)
+  })
+
+  it('auto: numbers compare numerically, blanks come first', () => {
+    expect([2, 10, 1, 20, 100, 3].sort(sortFns.auto)).toEqual([1, 2, 3, 10, 20, 100])
+    expect(['oak', null, 'nuclear', '', 'apple'].sort(sortFns.auto)).toEqual([
+      null, '', 'apple', 'nuclear', 'oak',
+    ])
+  })
+
+  it('every built-in comparator is antisymmetric and transitive on mixed values', () => {
+    const pool: unknown[] = [
+      null, undefined, '', 0, -1, 2, 10, NaN, 1e21, '1a', '2', '10', 'n/a', 'apple', 'Apple',
+      true, '2020-01-01', 'junk', 1600000000000,
+    ]
+    for (const [name, cmp] of Object.entries(sortFns)) {
+      const sign = (a: unknown, b: unknown) => Math.sign(cmp(a, b))
+      for (const a of pool) {
+        for (const b of pool) {
+          const ab = sign(a, b)
+          expect(Number.isNaN(ab), `${name}(${String(a)}, ${String(b)}) is NaN`).toBe(false)
+          expect(ab, `${name} antisymmetry on ${String(a)}, ${String(b)}`).toBe(-sign(b, a) || 0)
+          for (const c of pool) {
+            if (ab <= 0 && sign(b, c) <= 0) {
+              expect(sign(a, c), `${name}: ${String(a)} <= ${String(b)} <= ${String(c)}`).toBeLessThanOrEqual(0)
+            }
+          }
+        }
+      }
+    }
+  })
+
+  it('sorts an untyped numeric column numerically in the row model', () => {
+    const rows: Row[] = [2, 10, null, 1, 20, 100, 3].map((qty) => ({ qty }))
+    const cols = [{ field: 'qty' }]
+    expect(actualSort(rows, cols, [{ id: 'qty', desc: false }]).map((r) => r.qty)).toEqual([
+      null, 1, 2, 3, 10, 20, 100,
+    ])
+    expect(actualSort(rows, cols, [{ id: 'qty', desc: true }]).map((r) => r.qty)).toEqual([
+      100, 20, 10, 3, 2, 1, null,
+    ])
+  })
+
+  it('sorts a number column with placeholder text in order', () => {
+    const rows: Row[] = [5, 'n/a', 3, 1, 'n/a', 4, 2].map((v) => ({ v }))
+    const sorted = actualSort(rows, [{ field: 'v', editorType: 'number' }], [{ id: 'v', desc: false }])
+    expect(sorted.map((r) => r.v)).toEqual(['n/a', 'n/a', 1, 2, 3, 4, 5])
+  })
+
+  it('orders a mixed number and text column by kind, then value', () => {
+    const rows: Row[] = [10, 'b', 2, null, 'a', 1].map((v) => ({ v }))
+    const sorted = actualSort(rows, [{ field: 'v' }], [{ id: 'v', desc: false }])
+    expect(sorted.map((r) => r.v)).toEqual([null, 1, 2, 10, 'a', 'b'])
+  })
+
+  it('lets the next clause decide when two blanks tie on a numeric clause', () => {
+    // Two -Infinity keys subtract to NaN; the multi-clause loop must see 0.
+    const rows: Row[] = [
+      { num: null, text: 'b' },
+      { num: 'n/a', text: 'a' },
+      { num: 1, text: 'c' },
+    ]
+    const sorted = actualSort(rows, COLUMNS, [
+      { id: 'num', desc: false },
+      { id: 'text', desc: false },
+    ])
+    expect(sorted.map((r) => r.text)).toEqual(['a', 'b', 'c'])
   })
 })
 
