@@ -129,6 +129,52 @@ export function objectAt(
   return null
 }
 
+/**
+ * The four panes Freeze Panes splits a sheet into: the frozen corner, the
+ * frozen rows (which scroll across), the frozen columns (which scroll
+ * down), and the body (which scrolls both ways).
+ */
+export type SheetPane = 'corner' | 'rows' | 'cols' | 'body'
+
+/**
+ * The pane an object belongs to: the one its anchor cell is in. Excel keeps
+ * an object with that pane, so one hung from a frozen cell is drawn over
+ * the frozen cells and stays put while the sheet scrolls under it.
+ */
+export function paneOf(anchor: { row: number; col: number }, freeze: { rows: number; cols: number }): SheetPane {
+  const row = anchor.row < freeze.rows
+  const col = anchor.col < freeze.cols
+  return row && col ? 'corner' : row ? 'rows' : col ? 'cols' : 'body'
+}
+
+/**
+ * How much of an object its pane cuts off, in pixels from each edge of its
+ * box. `box` and `edges` are in the same frame: `left` measured from the
+ * inline start, `top` from the top.
+ *
+ * `edges.start` and `edges.top` are where the scrolling cells begin (past
+ * the frozen columns, or the row numbers when none are frozen; under the
+ * frozen rows, or the header), and `edges.end` and `edges.bottom` where the
+ * sheet's window ends. An object is cut on the sides its pane scrolls from,
+ * so it slides under the frozen cells, and always at the window's far
+ * edges. A frozen pane never scrolls past its start, so nothing is cut
+ * there and the object is drawn whole over its frozen cells.
+ */
+export function paneClip(
+  pane: SheetPane,
+  box: { left: number; top: number; width: number; height: number },
+  edges: { start: number; top: number; end: number; bottom: number },
+): { start: number; top: number; end: number; bottom: number } {
+  const across = pane === 'rows' || pane === 'body'
+  const down = pane === 'cols' || pane === 'body'
+  return {
+    start: across ? Math.max(0, edges.start - box.left) : 0,
+    top: down ? Math.max(0, edges.top - box.top) : 0,
+    end: Math.max(0, box.left + box.width - edges.end),
+    bottom: Math.max(0, box.top + box.height - edges.bottom),
+  }
+}
+
 /** A cell's value as a number, or null when it is not one. */
 function numberOf(value: CellValue): number | null {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null

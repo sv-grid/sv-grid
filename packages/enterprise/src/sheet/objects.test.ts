@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chartSpecOf, chartFromRange, shiftObject, shiftObjects, objectAt, copyObject, objectId, type SheetChartObject, type SheetObject } from './objects'
+import { chartSpecOf, chartFromRange, shiftObject, shiftObjects, objectAt, copyObject, objectId, paneOf, paneClip, type SheetChartObject, type SheetObject } from './objects'
 import type { Rect } from './format-store'
 import type { CellValue } from './ast'
 
@@ -150,5 +150,67 @@ describe('a chart with a trendline and a second axis', () => {
     expect(spec.series.map((s) => [s.label, s.axis])).toEqual([['Revenue', undefined], ['Margin', 'right']])
     const missing = chartSpecOf(chart({ secondary: 'Nothing' }), valueAt, textAt)
     expect(missing.series.every((s) => s.axis === undefined)).toBe(true)
+  })
+})
+
+// Issue #116: a chart hung from A7 with column A frozen was painted over by
+// column A. An object keeps to the pane of its anchor cell, and is cut on
+// the sides that pane scrolls from.
+describe('paneOf', () => {
+  const freeze = { rows: 1, cols: 1 }
+  it('routes an object to the pane of its anchor cell', () => {
+    expect(paneOf({ row: 0, col: 0 }, freeze)).toBe('corner')
+    expect(paneOf({ row: 0, col: 3 }, freeze)).toBe('rows')
+    expect(paneOf({ row: 6, col: 0 }, freeze)).toBe('cols')
+    expect(paneOf({ row: 6, col: 1 }, freeze)).toBe('body')
+  })
+  it('puts everything in the body of a sheet with nothing frozen', () => {
+    expect(paneOf({ row: 0, col: 0 }, { rows: 0, cols: 0 })).toBe('body')
+  })
+  it('reads the freeze as a count: the line after the last frozen one scrolls', () => {
+    expect(paneOf({ row: 2, col: 2 }, { rows: 3, cols: 2 })).toBe('rows')
+    expect(paneOf({ row: 3, col: 1 }, { rows: 3, cols: 2 })).toBe('cols')
+  })
+})
+
+describe('paneClip', () => {
+  // Row numbers and column A end at 150, header and row 1 at 45; the window is 600 by 400.
+  const edges = { start: 150, top: 45, end: 600, bottom: 400 }
+  const none = { start: 0, top: 0, end: 0, bottom: 0 }
+
+  it('leaves an object anchored in the frozen column whole over it', () => {
+    // A7 + 8px: the chart starts inside column A and runs on across the body.
+    expect(paneClip('cols', { left: 48, top: 180, width: 420, height: 260 }, edges)).toEqual({ ...none, bottom: 40 })
+  })
+
+  it('cuts a frozen-column object at the frozen rows as it scrolls up under them', () => {
+    expect(paneClip('cols', { left: 48, top: 20, width: 100, height: 100 }, edges)).toEqual({ ...none, top: 25 })
+  })
+
+  it('cuts a body object at the frozen column as it scrolls across under it', () => {
+    expect(paneClip('body', { left: 100, top: 100, width: 200, height: 100 }, edges)).toEqual({ ...none, start: 50 })
+  })
+
+  it('cuts a body object at the frozen rows as it scrolls up under them', () => {
+    expect(paneClip('body', { left: 200, top: 30, width: 200, height: 100 }, edges)).toEqual({ ...none, top: 15 })
+  })
+
+  it('cuts a frozen-row object only where the columns scroll', () => {
+    expect(paneClip('rows', { left: 120, top: 10, width: 100, height: 300 }, edges)).toEqual({ ...none, start: 30 })
+  })
+
+  it('never cuts the corner at the frozen edges', () => {
+    expect(paneClip('corner', { left: 60, top: 30, width: 200, height: 200 }, edges)).toEqual(none)
+  })
+
+  it('cuts every pane at the far edges of the window', () => {
+    for (const pane of ['corner', 'rows', 'cols', 'body'] as const) {
+      expect(paneClip(pane, { left: 500, top: 350, width: 200, height: 100 }, edges)).toEqual({ ...none, end: 100, bottom: 50 })
+    }
+  })
+
+  it('an object wholly under a frozen pane is cut away entirely', () => {
+    const cut = paneClip('body', { left: 20, top: 100, width: 100, height: 50 }, edges)
+    expect(cut.start).toBeGreaterThanOrEqual(100)
   })
 })

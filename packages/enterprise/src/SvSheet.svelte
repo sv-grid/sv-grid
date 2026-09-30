@@ -99,7 +99,7 @@
   import SvSheetLink from './SvSheetLink.svelte'
   import SvSheetTable from './SvSheetTable.svelte'
   import {
-    chartSpecOf, chartFromRange, copyObject, objectId,
+    chartSpecOf, chartFromRange, copyObject, objectId, paneOf, paneClip,
     type SheetObject, type SheetChartObject, type ObjectAnchor,
   } from './sheet/objects'
   import {
@@ -1806,8 +1806,16 @@
   const activeObjects = $derived.by(() => { void version; return objectsNow() })
   let selectedObject = $state<string | null>(null)
   let chartSetup = $state<SheetChartObject | null>(null)
-  /** Where each object sits in the layer right now, by id. */
-  let objectBoxes = $state<Record<string, { left: number; top: number; width: number; height: number }>>({})
+  /**
+   * Where each object sits in the layer right now, by id. `frozen` is true
+   * for one hung from a frozen cell, which is drawn over the frozen panes;
+   * `clip` is the CSS clip-path that cuts it to its pane, or null when
+   * nothing of it is cut.
+   */
+  type ObjectBox = { left: number; top: number; width: number; height: number; frozen: boolean; clip: string | null }
+  let objectBoxes = $state<Record<string, ObjectBox>>({})
+  /** The object being dragged, drawn whole and on top until it is dropped. */
+  let draggingObject = $state<string | null>(null)
   let dragging: { id: string; kind: 'move' | 'resize'; x: number; y: number; anchor: ObjectAnchor } | null = null
   let imageInput = $state<HTMLInputElement | null>(null)
 
@@ -2444,22 +2452,68 @@
     return sheetIsRtl() ? b.right - start : b.left + start
   }
 
+  /**
+   * Where the panes meet, in the layer's frame: the scrolling cells begin at
+   * `start` (past the frozen columns, or the row numbers) and `top` (under
+   * the frozen rows, or the header), and the sheet's window ends at `end`
+   * and `bottom`. Read from the grid's own sticky cells, which sit still
+   * while the sheet scrolls.
+   */
+  function paneEdges(host: HTMLElement, b: DOMRect) {
+    const grid = host.querySelector<HTMLElement>('.sv-grid-container')
+    if (!grid) return null
+    const g = grid.getBoundingClientRect()
+    const rtl = sheetIsRtl()
+    const endOf = (r: DOMRect) => (rtl ? b.right - r.left : r.right - b.left)
+    // The row numbers and the frozen columns, from the first row's cells
+    // rather than the header's, which View > Headings can hide.
+    let start = startOf(g, b)
+    const row = grid.querySelector('td[data-svgrid-row]')?.parentElement
+    for (const el of row?.querySelectorAll<HTMLElement>('td[data-pinned="left"], td.sv-grid-row-number-cell') ?? []) {
+      const r = el.getBoundingClientRect()
+      if (r.width) start = Math.max(start, endOf(r))
+    }
+    let top = g.top - b.top
+    const head = grid.querySelector('.sv-grid-head')
+    if (head) top = Math.max(top, head.getBoundingClientRect().bottom - b.top)
+    for (const tr of grid.querySelectorAll('tr.sv-grid-row-frozen')) top = Math.max(top, tr.getBoundingClientRect().bottom - b.top)
+    return { start, top, end: endOf(g), bottom: g.bottom - b.top, rtl }
+  }
+
   function measureObjects() {
     const host = gridHost
     const objects = objectsNow()
     if (!host || !objects.length) { objectBoxes = {}; return }
     const b = host.getBoundingClientRect()
-    const next: Record<string, { left: number; top: number; width: number; height: number }> = {}
+    const edges = paneEdges(host, b)
+    const freeze = doc.get(wb.active).freeze
+    const next: Record<string, ObjectBox> = {}
     for (const object of objects) {
       const td = host.querySelector<HTMLElement>(`td[data-svgrid-row="${object.anchor.row}"][data-svgrid-col="${object.anchor.col}"]`)
       if (!td) continue
       const a = td.getBoundingClientRect()
-      next[object.id] = {
+      const box = {
         left: startOf(a, b) + object.anchor.dx,
         top: a.top - b.top + object.anchor.dy,
         width: object.anchor.width,
         height: object.anchor.height,
       }
+      // Each object stays with the pane of its anchor cell (#116): one hung
+      // from a frozen cell is drawn over the frozen cells, the rest slide
+      // under them, and every one is cut at its pane's edges.
+      const pane = paneOf(object.anchor, freeze)
+      let clip: string | null = null
+      if (edges) {
+        const cut = paneClip(pane, box, edges)
+        if (cut.start || cut.top || cut.end || cut.bottom) {
+          // An uncut side is left open by a few pixels, so the shadow and
+          // the resize grip still show there.
+          const side = (n: number) => (n > 0 ? `${n}px` : '-12px')
+          const [left, right] = edges.rtl ? [cut.end, cut.start] : [cut.start, cut.end]
+          clip = `inset(${side(cut.top)} ${side(right)} ${side(cut.bottom)} ${side(left)})`
+        }
+      }
+      next[object.id] = { ...box, frozen: pane !== 'body', clip }
     }
     objectBoxes = next
   }
@@ -2543,6 +2597,9 @@
     // Moved live in the layer only; the document hears about it on release.
     const box = objectBoxes[drag.id]
     if (!box) return
+    // Drawn whole and over the frozen panes while it moves, so it can be
+    // carried across a pane edge; cut to its new pane once it lands.
+    if ((dx || dy) && draggingObject !== drag.id) draggingObject = drag.id
     objectBoxes = {
       ...objectBoxes,
       [drag.id]: drag.kind === 'move'
@@ -2550,10 +2607,18 @@
         : { ...box, width: Math.max(80, drag.anchor.width + (sheetIsRtl() ? -dx : dx)), height: Math.max(60, drag.anchor.height + dy) },
     }
   }
+  /** A drag the browser took back (a touch turned into a scroll): nothing moves. */
+  function onObjectPointerCancel() {
+    dragging = null
+    draggingObject = null
+    measureObjects()
+  }
   function onObjectPointerUp(event: PointerEvent) {
     const drag = dragging
     dragging = null
     if (!drag) return
+    // Cut to its pane again from where it landed, once the move is in.
+    if (draggingObject) { draggingObject = null; void tick().then(measureObjects) }
     const object = objectsNow().find((o) => o.id === drag.id)
     const box = objectBoxes[drag.id]
     if (!object || !box) return
@@ -6360,7 +6425,10 @@
   {/if}
   {#if activeObjects.length}
     <!-- Excel's floating objects: each anchored to a cell, drawn over the
-         rendered ones, moved by a drag and resized by the corner. -->
+         rendered ones, moved by a drag and resized by the corner. Each
+         keeps to the pane of its anchor cell: `frozen` lifts one hung from
+         a frozen cell over the frozen cells, and `clip` cuts every one at
+         its pane's edges. -->
     <div class="sheet-object-layer">
       {#each activeObjects as object (object.id)}
         {@const box = objectBoxes[object.id]}
@@ -6369,15 +6437,19 @@
           <div
             class="sheet-object"
             class:selected={selectedObject === object.id}
+            class:frozen={box.frozen}
+            class:dragging={draggingObject === object.id}
             role="figure"
             aria-label={object.kind === 'chart' ? t('chartObject') : object.alt || t('pictureObject')}
             style:inset-inline-start="{box.left}px"
             style:top="{box.top}px"
             style:width="{box.width}px"
             style:height="{box.height}px"
+            style:clip-path={draggingObject === object.id ? null : box.clip}
             onpointerdown={(event) => onObjectPointerDown(event, object, 'move')}
             onpointermove={onObjectPointerMove}
             onpointerup={onObjectPointerUp}
+            onpointercancel={onObjectPointerCancel}
             ondblclick={() => { if (object.kind === 'chart') chartSetup = object }}
           >
             {#if object.kind === 'chart'}
@@ -6397,6 +6469,7 @@
                 onpointerdown={(event) => onObjectPointerDown(event, object, 'resize')}
                 onpointermove={onObjectPointerMove}
                 onpointerup={onObjectPointerUp}
+                onpointercancel={onObjectPointerCancel}
               ></span>
             {/if}
           </div>
@@ -7002,15 +7075,19 @@
   .sheet-cell-anchor .box { display: inline-block; }
   .sheet-file-input { display: none; }
   /* The object layer: charts and pictures over the cells. The layer itself
-     lets the pointer through, each object catches it. */
+     lets the pointer through, each object catches it. No z-index on the
+     layer, so it makes no stacking context and each object is stacked
+     against the grid's sticky cells on its own: an object in the scrolling
+     pane under the frozen cells (z-index 30) and the frozen rows (31), one
+     hung from a frozen cell over them, and all under the header (35). */
   .sheet-object-layer {
     position: absolute;
     inset: 0;
-    z-index: 7;
     pointer-events: none;
   }
   .sheet-object {
     position: absolute;
+    z-index: 7;
     pointer-events: auto;
     background: var(--sg-bg, #fff);
     border: 1px solid var(--sg-border, #d1d1d1);
@@ -7020,6 +7097,8 @@
     cursor: move;
     touch-action: none;
   }
+  .sheet-object.frozen { z-index: 32; }
+  .sheet-object.dragging { z-index: 33; }
   .sheet-object.selected {
     border-color: var(--sg-accent, #107c41);
     box-shadow: 0 0 0 1px var(--sg-accent, #107c41), 0 2px 8px rgb(0 0 0 / 16%);

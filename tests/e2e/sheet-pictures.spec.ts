@@ -171,7 +171,9 @@ test.describe('Insert > Picture (demo 485)', () => {
     const svg = join(dir, 'mark.svg')
     writeFileSync(svg, '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 3"><rect width="4" height="3" fill="#dc2626"/></svg>')
 
-    await cell(page, 6, 1).click()
+    // The demo's first chart hangs from B7 at an 8px offset and covers the
+    // cell's middle, so click its top-left corner.
+    await cell(page, 6, 1).click({ position: { x: 4, y: 4 } })
     await tab(page, 'Insert').click()
     const chooser = page.waitForEvent('filechooser', { timeout: 10_000 })
     await button(page, 'Put a picture on the sheet').click()
