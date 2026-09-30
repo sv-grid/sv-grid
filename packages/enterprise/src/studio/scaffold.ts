@@ -260,7 +260,8 @@ ${managed(serverBody)}
   const pageBody = `  const source = createKitDataSource<${rowType}>({ endpoint: '${apiRoute}' })
   const columns = schemaToColumns(${constName})${lookupsSection}
 
-  let state = $state<ServerState<${rowType}>>({
+  // Not "state": a local of that name makes svelte-check read $state as a store of it.
+  let view = $state<ServerState<${rowType}>>({
     rows: [], total: 0, loading: false, saving: false, error: null,
     pageIndex: 0, pageSize: 25, pageCount: 1, sortModel: [], filterModel: {},
   })
@@ -268,7 +269,7 @@ ${managed(serverBody)}
     pageSize: 25,
     optimistic: true,
     getRowId: (r) => String(r.${idField}),
-    onChange: (s) => (state = s),
+    onChange: (s) => (view = s),
   })
   controller.refresh()
 
@@ -278,7 +279,7 @@ ${managed(serverBody)}
   async function save({ mode, id, values }: { mode: 'create' | 'edit'; id: string | null; values: Partial<${rowType}> }) {
     if (mode === 'create') {
       await controller.createRow(values)
-      controller.setPage(state.pageCount - 1) // jump to the new row (appended at the end)
+      controller.setPage(view.pageCount - 1) // jump to the new row (appended at the end)
     } else if (id) {
       await controller.updateRow(id, values)
     }
@@ -294,12 +295,11 @@ ${managed(serverBody)}
     path: `src/routes/${route}/+page.svelte`,
     description: 'The data screen: sort, filter, search, paging, multi-select delete, and create/edit - wired to the API route.',
     contents: `<script lang="ts">
-  import { SvGrid, createServerDataSource } from '@svgrid/grid'
+  import { SvGrid, createServerDataSource, type ServerState } from '@svgrid/grid'
   import {
     SvGridEditPanel,
     createKitDataSource,${hasLookups ? '\n    createRelationLookup,' : ''}
     schemaToColumns,
-    type ServerState,
   } from '@svgrid/enterprise'
   import { ${constName}, type ${rowType} } from '${schemaImport}'
 
@@ -321,12 +321,12 @@ ${themeTokenCss({ preset: options.theme, mode: options.dark ? 'dark' : 'light' }
     </div>
   </header>
 
-  {#if state.error}<p class="page__error" role="alert">{state.error}</p>{/if}
+  {#if view.error}<p class="page__error" role="alert">{view.error}</p>{/if}
 
   <SvGrid
-    data={state.rows}
+    data={view.rows}
     {columns}
-    loading={state.loading}
+    loading={view.loading}
     loadingOverlay
     fitColumns
     enableRowSummaries={false}
@@ -349,11 +349,11 @@ ${themeTokenCss({ preset: options.theme, mode: options.dark ? 'dark' : 'light' }
     onRowSelectionChange={(_sel, rows) => (selected = rows)}
     showPagination
     externalPagination
-    rowCount={state.total}
-    pageIndex={state.pageIndex}
-    pageSize={state.pageSize}
+    rowCount={view.total}
+    pageIndex={view.pageIndex}
+    pageSize={view.pageSize}
     onPaginationChange={({ pageIndex, pageSize }) => {
-      if (pageSize !== state.pageSize) controller.setPageSize(pageSize)
+      if (pageSize !== view.pageSize) controller.setPageSize(pageSize)
       else controller.setPage(pageIndex)
     }}
     emptyMessage="No ${label} yet"
@@ -387,6 +387,7 @@ ${themeTokenCss({ preset: options.theme, mode: options.dark ? 'dark' : 'light' }
  */
 export function mergeManaged(existing: string | null | undefined, generated: string): string {
   if (!existing) return generated
+  existing = migrateStateLocal(existing)
 
   const startIdx = existing.indexOf(MANAGED_START)
   const endIdx = existing.indexOf(MANAGED_END)
@@ -400,4 +401,21 @@ export function mergeManaged(existing: string | null | undefined, generated: str
   return (
     existing.slice(0, startIdx) + newRegion + existing.slice(endIdx + MANAGED_END.length)
   )
+}
+
+/** The managed line pages scaffolded before the rename carried. */
+const OLD_STATE_LOCAL = /\blet state = \$state<ServerState</
+
+/**
+ * Pages scaffolded before the rename kept their server state in a local named
+ * `state`, which svelte-check reads as a store subscription whenever `$state`
+ * appears. The managed region now calls it `view`, but the markup below the
+ * region is the user's and still says `state.rows`; a plain merge would leave it
+ * pointing at nothing. Rename the references too. Nothing else in such a page
+ * could be called `state` (the old local would have clashed), and member reads
+ * like `page.state` are skipped.
+ */
+function migrateStateLocal(existing: string): string {
+  if (!OLD_STATE_LOCAL.test(existing)) return existing
+  return existing.replace(/(?<![.\w$])state(?=\s*[.?[]|\s*=[^=>])/g, 'view')
 }

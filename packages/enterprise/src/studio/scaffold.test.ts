@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { compile } from 'svelte/compiler'
 import type { EntitySchema } from '../schema'
 import { MANAGED_END, MANAGED_START, mergeManaged, scaffold, skipUserOwned } from './scaffold'
@@ -61,6 +63,29 @@ describe('scaffold', () => {
     expect(c).toContain('schemaToColumns(customersSchema)')
     expect(c).toContain('<SvGrid')
     expect(c).toContain('<SvGridEditPanel')
+  })
+
+  it('imports each name from the package that exports it', () => {
+    // `type ServerState` was imported from @svgrid/enterprise, which does not
+    // export it. Svelte compiles type imports away, so only svelte-check in the
+    // generated app noticed, and every `state` in the page went untyped.
+    const page = byPath['src/routes/customers/+page.svelte']!.contents
+    const barrels: Record<string, string> = {
+      '@svgrid/grid': readFileSync(resolve(__dirname, '../../../grid/src/index.ts'), 'utf8'),
+      '@svgrid/enterprise': readFileSync(resolve(__dirname, '../index.ts'), 'utf8'),
+    }
+    for (const [pkg, barrel] of Object.entries(barrels)) {
+      const block = new RegExp(`import \\{([^}]*)\\} from '${pkg}'`).exec(page)
+      expect(block, pkg).not.toBeNull()
+      const names = block![1]!.split(',').map((n) => n.trim().replace(/^type\s+/, '')).filter(Boolean)
+      for (const name of names) expect(barrel, `${name} from ${pkg}`).toMatch(new RegExp(`\\b${name}\\b`))
+    }
+  })
+
+  it('never names a local `state`, which shadows the $state rune', () => {
+    // svelte-check read `$state<...>(...)` as a store subscription to the local
+    // and failed the generated app with ten errors across two pages.
+    for (const f of files) expect(f.contents, f.path).not.toMatch(/\b(let|const|var)\s+state\b/)
   })
 
   it('the page is a full data screen: sort, filter, paging, delete, optimistic', () => {
@@ -167,6 +192,22 @@ describe('scaffold with relation fields', () => {
 })
 
 describe('mergeManaged', () => {
+  it('moves a page scaffolded with the old `state` local over to `view`', () => {
+    const fresh = scaffold(schema).files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    // What an older `add` wrote: same page, local named `state`, plus a line the
+    // user added below the managed region.
+    const old = fresh.replace(/\bview\b/g, 'state').replace('</script>', '  const here = page.state?.from\n</script>')
+    expect(old).toContain('let state = $state<ServerState<')
+    const merged = mergeManaged(old, fresh)
+    // No read, write or declaration of a bare `state` is left.
+    expect(merged).not.toMatch(/(?<![.\w$])state(?=\s*[.?[=])|\blet state\b/)
+    expect(merged).toContain('data={view.rows}')
+    expect(merged).toContain('page.state?.from')
+    expect(() => compile(merged, { filename: '+page.svelte', generate: 'client' })).not.toThrow()
+    // A current page is left exactly as merged.
+    expect(mergeManaged(fresh, fresh)).toBe(fresh)
+  })
+
   it('uses the generated file whole when there is no existing content', () => {
     const gen = `head\n${MANAGED_START}\nX\n${MANAGED_END}\ntail`
     expect(mergeManaged(null, gen)).toBe(gen)

@@ -512,3 +512,84 @@ describe('runStudioInit', () => {
     expect(fs.files.get(handlers)).toBe('// my own code')
   })
 })
+
+// GitHub #105: `init --from schema.ts` used to drop --from and build the
+// customers-orders sample, whose `city` column this schema never declares.
+describe('runStudioInit --from a schema file', () => {
+  const ordersSchema = `
+    import { pgTable, serial, text, boolean, timestamp, integer, numeric } from 'drizzle-orm/pg-core'
+    export const customers = pgTable('customers', {
+      id: serial('id').primaryKey(),
+      name: text('name').notNull(),
+      email: text('email'),
+      country: text('country'),
+      tier: text('tier'),
+      active: boolean('active'),
+      createdAt: timestamp('created_at'),
+    })
+    export const orders = pgTable('orders', {
+      id: serial('id').primaryKey(),
+      customerId: integer('customer_id').references(() => customers.id),
+      reference: text('reference'),
+      status: text('status'),
+      total: numeric('total'),
+      placedAt: timestamp('placed_at'),
+    })
+  `
+  const withSchema = () => {
+    const fs = memoryIo()
+    fs.files.set('schema.ts', ordersSchema)
+    return fs
+  }
+
+  it('builds the entities and fields the schema declares, not a sample dataset', async () => {
+    const fs = withSchema()
+    const prompts = scriptedPrompts([])
+    const result = await runStudioInit({ from: 'schema.ts', yes: true, title: 'Orders Desk' }, prompts.io, null, fs.io)
+
+    expect(result.project.title).toBe('Orders Desk')
+    expect(result.project.entities.map((e) => e.name)).toEqual(['customers', 'orders'])
+    const fields = (name: string) => result.project.entities.find((e) => e.name === name)!.fields.map((f) => f.field)
+    expect(fields('customers')).toEqual(['id', 'name', 'email', 'country', 'tier', 'active', 'createdAt'])
+    expect(fields('orders')).toEqual(['id', 'customerId', 'reference', 'status', 'total', 'placedAt'])
+    const fk = result.project.entities.find((e) => e.name === 'orders')!.fields.find((f) => f.field === 'customerId')!
+    expect(fk.type).toBe('relation')
+    expect(fk.relation?.entity).toBe('customers')
+
+    expect(fs.files.get('studio.config.json')).not.toContain('"city"')
+    expect(prompts.said.join('\n')).not.toContain('Customers & orders')
+    expect(result.project.dataSource).toBe('memory')
+    expect(validateProject(result.project).filter((i) => i.level === 'error')).toEqual([])
+    expect(prompts.asked).toEqual([])
+  })
+
+  it('asks which tables to build when run interactively', async () => {
+    const fs = withSchema()
+    const prompts = scriptedPrompts(['orders'])
+    const result = await runStudioInit({ from: 'schema.ts' }, prompts.io, null, fs.io)
+    expect(prompts.asked[0]).toBe('Which tables? (all, or a comma list of names/numbers)')
+    expect(result.project.entities.map((e) => e.name)).toEqual(['orders'])
+  })
+
+  it('reports a missing schema file as a user error', async () => {
+    const err = await thrownBy(runStudioInit({ from: 'nope.ts', yes: true }, scriptedPrompts([]).io, null, memoryIo().io))
+    expect(isUserError(err)).toBe(true)
+    expect((err as Error).message).toContain('nope.ts')
+  })
+
+  it('reports a schema file with no tables as a user error', async () => {
+    const fs = memoryIo()
+    fs.files.set('empty.ts', 'export const x = 1\n')
+    const err = await thrownBy(runStudioInit({ from: 'empty.ts', yes: true }, scriptedPrompts([]).io, null, fs.io))
+    expect(isUserError(err)).toBe(true)
+    expect((err as Error).message).toContain('empty.ts')
+  })
+
+  it('refuses --from together with another data source', async () => {
+    const err = await thrownBy(
+      runStudioInit({ from: 'schema.ts', dataset: 'customers-orders', yes: true }, scriptedPrompts([]).io, null, withSchema().io),
+    )
+    expect(isUserError(err)).toBe(true)
+    expect((err as Error).message).toContain('--dataset')
+  })
+})

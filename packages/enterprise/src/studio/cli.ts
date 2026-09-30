@@ -101,6 +101,61 @@ export async function runStudioAdd(options: AddOptions, io: StudioIO): Promise<A
 
 export type AddAppResult = { written: string[]; verify: VerifyResult }
 
+/** The stylesheets an `init`-generated layout imports, in cascade order. */
+const APP_STYLESHEETS = ['app.css', 'custom.css']
+
+/**
+ * Fill the app-shell options the caller left out from the app already on disk,
+ * so `add --all` in a folder `init` generated keeps its stylesheets, title and
+ * theme. The shell layout from `init` carries no managed markers, so the merge
+ * write replaces it whole; anything it imported or named has to be carried
+ * over here or it is lost.
+ *
+ * Title: studio.config.json (shell brand, then title), else the `appTitle`
+ * constant of a layout an earlier `add --all` wrote.
+ */
+async function appShellDefaults(options: ScaffoldAppOptions, io: StudioIO): Promise<ScaffoldAppOptions> {
+  const stylesheets = options.stylesheets ?? []
+  if (!options.stylesheets) {
+    for (const css of APP_STYLESHEETS) {
+      if ((await io.readFile(`src/${css}`)) != null) stylesheets.push(css)
+    }
+  }
+
+  let title: string | undefined
+  let theme: { preset?: unknown; mode?: unknown; shell?: { brand?: unknown } } | undefined
+  const config = await io.readFile('studio.config.json')
+  if (config != null) {
+    try {
+      const parsed = JSON.parse(config) as { title?: unknown; theme?: typeof theme }
+      theme = parsed.theme
+      const brand = typeof theme?.shell?.brand === 'string' ? theme.shell.brand.trim() : ''
+      title = brand || (typeof parsed.title === 'string' ? parsed.title : undefined)
+    } catch {
+      /* unreadable config: fall back to the layout below */
+    }
+  }
+  if (!title) {
+    const layout = await io.readFile('src/routes/+layout.svelte')
+    const m = layout?.match(/const appTitle = ("(?:[^"\\]|\\.)*")/)
+    if (m) {
+      try {
+        title = JSON.parse(m[1]!) as string
+      } catch {
+        /* not a JSON string literal: keep the default */
+      }
+    }
+  }
+
+  return {
+    ...options,
+    stylesheets,
+    ...(options.appTitle == null && title ? { appTitle: title } : {}),
+    ...(options.theme == null && typeof theme?.preset === 'string' ? { theme: theme.preset } : {}),
+    ...(options.dark == null && theme?.mode === 'dark' ? { dark: true } : {}),
+  }
+}
+
 /**
  * Scaffold a whole multi-entity app - every entity's screen plus a nav layout
  * and home page - and merge-write it. The `--all` path behind `svgrid-studio`.
@@ -110,7 +165,7 @@ export async function runStudioAddApp(
   options: ScaffoldAppOptions,
   io: StudioIO,
 ): Promise<AddAppResult> {
-  const { files } = scaffoldApp(schemas, options)
+  const { files } = scaffoldApp(schemas, await appShellDefaults(options, io))
   const written = await writeAll(files, io)
   const verify = await verifyScaffold(files)
   return { written, verify }

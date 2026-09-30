@@ -189,6 +189,8 @@ Guided setup (init) - asks where your data lives, which tables you want, and
 which pages each gets, then writes a runnable app + studio.config.json.
 Running \`svgrid-studio\` with no arguments starts it too.
   --db <dialect> --url <conn>   skip the questions and read a live database
+  --from <schema>  build from a Drizzle (.ts) or Prisma (.prisma) schema file
+                   (in-memory data with sample rows)
   --supabase-url <url> --supabase-key <anon>   read a Supabase project over its
                    REST API (no driver, works without a local database)
   --dataset <id>   start from sample data (customers-orders, products-categories,
@@ -228,6 +230,7 @@ Options:
   --table <name>   Which table/model to use (defaults to <name>)
   --sql            Wire a real SQL data source (default with --db)
   --route <seg>    Route segment (default: <name> / table name)
+  --title <name>   --all: app title (default: studio.config.json, else the current layout)
   --api <path>     API route path (default: /api/<route>)
   --theme <id>     design-system preset (default: ember) - layered, so your own tokens win
   --dark           start in dark mode
@@ -325,6 +328,7 @@ async function main(): Promise<void> {
       ...(opts.outDir ? { out: opts.outDir } : {}),
       ...(opts.db ? { db: opts.db } : {}),
       ...(opts.url ? { url: opts.url } : {}),
+      ...(opts.from ? { from: opts.from } : {}),
       ...(opts.supabaseUrl ? { supabaseUrl: opts.supabaseUrl } : {}),
       ...(opts.supabaseKey ? { supabaseKey: opts.supabaseKey } : {}),
       ...(opts.dataset ? { dataset: opts.dataset } : {}),
@@ -507,7 +511,7 @@ async function main(): Promise<void> {
       for (const table of tables) {
         schemas.push(await introspectDatabase({ dialect: opts.db, table, execute }))
       }
-      const res = await runStudioAddApp(schemas, { dataSource: ds, theme: opts.theme, dark: opts.dark }, io)
+      const res = await runStudioAddApp(schemas, { dataSource: ds, theme: opts.theme, dark: opts.dark, appTitle: opts.title }, io)
       report(`app (${schemas.length} entities)`, res.written, summarizeVerify(res.verify))
       process.stdout.write(`\nRun \`npm run dev\` and open /\n`)
       return
@@ -534,7 +538,7 @@ async function main(): Promise<void> {
       process.stderr.write('svgrid-studio: no tables/models found in ' + opts.from + '\n')
       process.exit(1)
     }
-    const res = await runStudioAddApp(schemas, { dataSource: opts.dataSource, theme: opts.theme, dark: opts.dark }, io)
+    const res = await runStudioAddApp(schemas, { dataSource: opts.dataSource, theme: opts.theme, dark: opts.dark, appTitle: opts.title }, io)
     report(`app (${schemas.length} entities)`, res.written, summarizeVerify(res.verify))
     process.stdout.write(`\nRun \`npm run dev\` and open /\n`)
     return

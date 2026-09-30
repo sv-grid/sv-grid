@@ -19,7 +19,7 @@ The guided path: answer a few questions and get a working app. This is also what
 runs when you type `npx @svgrid/studio` with no arguments in a terminal.
 
 ```bash
-npx @svgrid/studio init [--db <dialect> --url <conn>] [--dataset <id>] [--out <dir>]
+npx @svgrid/studio init [--db <dialect> --url <conn> | --from <schema> | --dataset <id>] [--out <dir>]
 ```
 
 It asks where the data comes from, which tables to include, which pages each
@@ -35,6 +35,7 @@ app leads with an overview dashboard over its most-referenced table.
 | --- | --- |
 | `--db <dialect>` | Skip the source question and read a live database: `postgres` \| `supabase` \| `mysql` \| `mssql` \| `sqlite`. The driver is installed for you. |
 | `--url <conn>` | Connection string (or file path for SQLite) for `--db`. |
+| `--from <path>` | Build from a Drizzle `schema.ts` or a Prisma `schema.prisma`: its tables, columns and foreign keys, served from memory with sample rows. |
 | `--supabase-url <url>` | Read a Supabase project over its REST API instead - no driver, no connection string. |
 | `--supabase-key <anon>` | The project's anon key, paired with `--supabase-url`. |
 | `--dataset <id>` | Start from sample data: `customers-orders`, `products-categories`, `projects-tasks`, `employees-departments`, `tickets-accounts`. |
@@ -85,7 +86,12 @@ page.
 | `--api <path>` | API route path (default: `/api/<route>`). |
 | `--theme <id>` | Design-system preset for the generated screens (default: `ember`, the demo theme). The tokens go in the page's `<svelte:head>` inside `@layer svgrid-studio`, so an app that already defines its own `--sg-*` tokens keeps its look. |
 | `--dark` | Start in dark mode. |
+| `--title <name>` | With `--all`: the app title. Defaults to the title in `studio.config.json`, then to the one in the current layout. |
 | `-h`, `--help` | Show help. |
+
+`add --all` rewrites `src/routes/+layout.svelte` and the home page. In an app
+`init` generated, the new layout keeps the `app.css` / `custom.css` imports, the
+app title, and the theme from `studio.config.json`.
 
 ## Examples
 

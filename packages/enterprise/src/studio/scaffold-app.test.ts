@@ -91,6 +91,17 @@ describe('scaffoldApp', () => {
     }
   })
 
+  it('imports the listed stylesheets inside the managed region, and none by default', () => {
+    expect(byPath['src/routes/+layout.svelte']!.contents).not.toContain("import '../")
+    const layout = scaffoldApp([companies], { stylesheets: ['app.css', 'custom.css'] })
+      .files.find((f) => f.path === 'src/routes/+layout.svelte')!.contents
+    const start = layout.indexOf(MANAGED_START)
+    expect(layout.indexOf("import '../app.css'")).toBeGreaterThan(start)
+    expect(layout.indexOf("import '../custom.css'")).toBeGreaterThan(layout.indexOf("import '../app.css'"))
+    expect(layout.indexOf("import '../custom.css'")).toBeLessThan(layout.indexOf(MANAGED_END))
+    expect(() => compile(layout, { filename: '+layout.svelte', generate: 'client' })).not.toThrow()
+  })
+
   it('wraps shell files in managed markers', () => {
     for (const p of ['src/routes/+layout.svelte', 'src/routes/+page.svelte']) {
       expect(byPath[p]!.contents).toContain(MANAGED_START)

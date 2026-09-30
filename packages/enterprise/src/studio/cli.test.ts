@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { EntitySchema } from '../schema'
 import { resolveSchema, resolveSchemas, runStudioAdd, runStudioAddApp, type StudioIO } from './cli'
 import { MANAGED_END, MANAGED_START } from './scaffold'
+import { runStudioInit } from './init-flow'
 
 /** In-memory StudioIO for tests. */
 function memIO(seed: Record<string, string> = {}) {
@@ -183,5 +184,55 @@ describe('resolveSchemas + runStudioAddApp (--all --from a file)', () => {
     expect(schemas.map((s) => s.name)).toEqual(['User', 'Post'])
     const res = await runStudioAddApp(schemas, {}, io)
     expect(res.verify.ok).toBe(true)
+  })
+})
+
+// GitHub #106: `add --all` in a folder `init` generated rewrote the layout
+// without the app.css / custom.css imports (the app lost its styling) and
+// reset the title to "Data App".
+describe('runStudioAddApp over an app init generated', () => {
+  it('keeps the stylesheet imports, the title and the theme', async () => {
+    const { io, files } = memIO({ 'schema.ts': linkedDrizzle })
+    await runStudioInit(
+      { from: 'schema.ts', yes: true, title: 'Orders Desk', theme: 'material', dark: true },
+      { ask: async (_q, def) => def ?? '', say: () => {} },
+      null,
+      io,
+    )
+    expect(files.get('src/routes/+layout.svelte')).toContain("import '../app.css'")
+
+    const res = await runStudioAddApp(await resolveSchemas('schema.ts', io), {}, io)
+    const layout = files.get('src/routes/+layout.svelte')!
+    expect(layout).toContain("import '../app.css'")
+    expect(layout).toContain("import '../custom.css'")
+    expect(layout.indexOf("import '../app.css'")).toBeLessThan(layout.indexOf("import '../custom.css'"))
+    expect(layout).toContain('const appTitle = "Orders Desk"')
+    expect(layout).not.toContain('Data App')
+    expect(files.get('src/routes/+page.svelte')).toContain('const appTitle = "Orders Desk"')
+    expect(layout).toContain('--sg-accent: #6750a4') // material, from studio.config.json
+    expect(layout).toMatch(/:root \{[^}]*color-scheme: dark;/)
+    expect(res.verify.ok).toBe(true)
+  })
+
+  it('keeps the title across a second add --all with no studio.config.json', async () => {
+    const { io, files } = memIO({ 'schema.ts': linkedDrizzle })
+    const schemas = await resolveSchemas('schema.ts', io)
+    await runStudioAddApp(schemas, { appTitle: 'Blog "Admin"' }, io)
+    await runStudioAddApp(schemas, {}, io)
+    expect(files.get('src/routes/+layout.svelte')).toContain('const appTitle = "Blog \\"Admin\\""')
+  })
+
+  it('an explicit title wins over studio.config.json', async () => {
+    const { io, files } = memIO({ 'schema.ts': linkedDrizzle, 'studio.config.json': '{"title":"Old"}' })
+    await runStudioAddApp(await resolveSchemas('schema.ts', io), { appTitle: 'New' }, io)
+    expect(files.get('src/routes/+layout.svelte')).toContain('const appTitle = "New"')
+  })
+
+  it('imports no stylesheet the app does not have', async () => {
+    const { io, files } = memIO({ 'schema.ts': linkedDrizzle, 'src/app.css': ':root {}' })
+    await runStudioAddApp(await resolveSchemas('schema.ts', io), {}, io)
+    const layout = files.get('src/routes/+layout.svelte')!
+    expect(layout).toContain("import '../app.css'")
+    expect(layout).not.toContain('custom.css')
   })
 })

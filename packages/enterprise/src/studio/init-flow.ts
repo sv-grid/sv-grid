@@ -11,7 +11,7 @@
  * imports). The CLI bin supplies readline, node:fs, and the DB drivers.
  */
 import type { EntitySchema } from '../schema.js'
-import type { StudioIO } from './cli.js'
+import { resolveSchemas, type StudioIO } from './cli.js'
 import { crudAppFromSchemas, type CrudEditingMode, type CrudScreenKind, type CrudSuiteOptions } from './screen-suites.js'
 import { starterDatasets, getStarterDataset } from './samples/datasets.js'
 import { introspectDatabase, listDatabaseTables, countTableRows, type DbExecute, type SqlDialectName } from './introspect-db.js'
@@ -54,6 +54,11 @@ export type InitFlags = {
   supabaseUrl?: string
   /** Supabase anon key. */
   supabaseKey?: string
+  /**
+   * A Drizzle (.ts) or Prisma (.prisma) schema file. Skips the source question
+   * and builds the app from its tables, served from memory with sample rows.
+   */
+  from?: string
   /** Pick a starter dataset by id, skipping the source question. */
   dataset?: string
   /** Theme preset id. */
@@ -167,7 +172,14 @@ type Gathered = {
 }
 
 /** Step 1-2: where does the data come from, and what tables does it have? */
-async function gatherData(flags: InitFlags, prompts: PromptIO, db: DbGateway | null, fetchText: FetchText | null): Promise<Gathered> {
+async function gatherData(
+  flags: InitFlags,
+  prompts: PromptIO,
+  db: DbGateway | null,
+  fetchText: FetchText | null,
+  io: StudioIO,
+): Promise<Gathered> {
+  if (flags.from) return gatherFromSchemaFile(flags, flags.from, prompts, io)
   let source: SourceKey = 'sample'
   if (flags.db) source = 'db'
   else if (flags.supabaseUrl) source = 'supabase'
@@ -197,6 +209,50 @@ async function gatherData(flags: InitFlags, prompts: PromptIO, db: DbGateway | n
   for (const e of entities) sources[e.name] = kind === 'pglite' ? { kind: 'pglite', table: e.name } : { kind: 'memory' }
   prompts.say(`  Using ${dataset.name} (${entities.length} tables).`)
   return { schemas: entities, sources, seed, kind, title: dataset.name }
+}
+
+/**
+ * A schema file names the tables and columns but holds no rows and no
+ * connection, so the app runs on the in-memory source and the emitter seeds it
+ * with sample rows. `--db` + `--url` is the path to a live database.
+ */
+async function gatherFromSchemaFile(flags: InitFlags, from: string, prompts: PromptIO, io: StudioIO): Promise<Gathered> {
+  const clash = flags.db ? '--db' : flags.supabaseUrl ? '--supabase-url' : flags.dataset ? '--dataset' : null
+  if (clash) throw new UserError(`--from and ${clash} both name the data source.`, 'Pass one of them.')
+
+  if ((await io.readFile(from)) == null) {
+    throw new UserError(`Schema file not found: ${from}`, 'Pass the path to a Drizzle schema (.ts) or a Prisma schema (.prisma).')
+  }
+  let all: EntitySchema[]
+  try {
+    all = await resolveSchemas(from, io)
+  } catch (e) {
+    throw new UserError(
+      `Could not read ${from}: ${e instanceof Error ? e.message : String(e)}`,
+      'Pass a Drizzle schema (.ts) or a Prisma schema (.prisma).',
+    )
+  }
+  if (all.length === 0) {
+    throw new UserError(
+      `No tables or models found in ${from}.`,
+      'Drizzle tables are read from pgTable / mysqlTable / sqliteTable calls, Prisma models from `model X {` blocks.',
+    )
+  }
+
+  let picked = all.map((s) => s.name)
+  if (!flags.yes) {
+    prompts.say('')
+    prompts.say(`Found ${all.length} ${all.length === 1 ? 'table' : 'tables'} in ${from}:`)
+    all.forEach((s, i) => prompts.say(`  ${i + 1}. ${s.name}`))
+    picked = parseSelection(await prompts.ask('Which tables? (all, or a comma list of names/numbers)', 'all'), picked)
+  }
+  const schemas = all.filter((s) => picked.includes(s.name))
+  if (schemas.length === 0) throw new UserError('No tables picked - nothing to build.')
+
+  const sources: Record<string, EntityDataSource> = {}
+  for (const s of schemas) sources[s.name] = { kind: 'memory' }
+  prompts.say(`  Read ${schemas.length} ${schemas.length === 1 ? 'table' : 'tables'} from ${from} (in-memory data with sample rows).`)
+  return { schemas, sources, seed: {}, kind: 'memory' }
 }
 
 async function gatherFromDatabase(flags: InitFlags, prompts: PromptIO, db: DbGateway | null): Promise<Gathered> {
@@ -517,7 +573,7 @@ export async function runStudioInit(
   const candidateDir = flags.out ?? '.'
   const markersBefore = await markersIn(candidateDir, io)
 
-  const data = await gatherData(flags, prompts, db, fetchText)
+  const data = await gatherData(flags, prompts, db, fetchText, io)
   const perEntity = await askScreens(data.schemas, flags, prompts)
   const theme = await askTheme(flags, prompts)
 
