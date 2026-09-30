@@ -261,8 +261,20 @@ export function createVirtualizer(initial: VirtualizerOptions) {
   return {
     setOptions(next: Partial<VirtualizerOptions>) {
       const merged = { ...options, ...next }
-      if (sameOptions(options, merged)) return
+      // Passing a size function means "sizes may have changed", even when it is
+      // the same reference: the documented variable-height pattern is a stable
+      // function reading a mutable map, and keying the cache on identity alone
+      // left the offsets and total stale after a row grew (#102).
+      const remeasure = typeof next.estimateSize === 'function'
+      if (!remeasure && sameOptions(options, merged)) return
       options = merged
+      if (remeasure) offsetCache = null
+      recalc()
+    },
+    /** Drop the cached offsets and re-read every size from `estimateSize`.
+     *  Call after the sizes a stable size function reports have changed. */
+    measure() {
+      offsetCache = null
       recalc()
     },
     setScrollOffset(scrollOffset: number) {

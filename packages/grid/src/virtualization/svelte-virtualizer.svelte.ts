@@ -14,6 +14,7 @@ export function createSvelteVirtualizer(options: VirtualizerOptions) {
       return version
     },
     setOptions: virtualizer.setOptions,
+    measure: virtualizer.measure,
     setScrollOffset: virtualizer.setScrollOffset,
     setViewportHeight: virtualizer.setViewportHeight,
     scrollToIndex: virtualizer.scrollToIndex,
