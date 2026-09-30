@@ -3,6 +3,7 @@
 // (plus DOM/Intl globals), so they live here to keep the component leaner.
 import type { CellEditorType, CellEditorOption } from "./index";
 import type { ResolvedCellFormat } from "./conditional-formatting";
+import { parseDateValue } from "./cell-formatting";
 
 export function cfTextStyle(cf: ResolvedCellFormat): string {
   let s = "";
@@ -258,10 +259,7 @@ export function getEditorClass(editorType: CellEditorType) {
 }
 
 export function asDate(value: unknown) {
-  if (value == null || value === "") return null;
-  const parsed =
-    value instanceof Date ? value : new Date(value as string | number);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
+  return parseDateValue(value);
 }
 
 export function clampMenuX(x: number, width: number) {

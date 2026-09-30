@@ -413,3 +413,38 @@ describe('format sniffing', () => {
     expect(r.rows).toHaveLength(1)
   })
 })
+
+async function inZone<T>(tz: string, fn: () => T | Promise<T>): Promise<T> {
+  const prev = process.env.TZ
+  process.env.TZ = tz
+  try {
+    return await fn()
+  } finally {
+    if (prev === undefined) delete process.env.TZ
+    else process.env.TZ = prev
+  }
+}
+
+// #103 sibling: Date.parse reads these as local time, so slicing the UTC ISO
+// string moved the day (east of UTC) or the time (everywhere but UTC).
+describe('columnTypes keep the local day and time', () => {
+  it('date: a non-ISO date lands on the same day east of UTC', async () => {
+    await inZone('Pacific/Auckland', async () => {
+      const { api } = fakeApi()
+      const r = await importData(api, {
+        file: 'placed\n"Jan 15, 2024"\n', format: 'csv', columnTypes: { placed: 'date' },
+      })
+      expect(r.rows[0]).toEqual({ placed: '2024-01-15' })
+    })
+  })
+
+  it('datetime: the wall-clock time is kept', async () => {
+    await inZone('Europe/Sofia', async () => {
+      const { api } = fakeApi()
+      const r = await importData(api, {
+        file: 'at\n"Jan 15, 2024 10:30"\n', format: 'csv', columnTypes: { at: 'datetime' },
+      })
+      expect(r.rows[0]).toEqual({ at: '2024-01-15T10:30:00' })
+    })
+  })
+})

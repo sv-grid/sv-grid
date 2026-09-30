@@ -127,6 +127,37 @@ export function getNumberFormatter(
   return fmt
 }
 
+/**
+ * A cell value as a Date, or null when it is not one. Accepts a Date, epoch ms,
+ * or a parseable string.
+ *
+ * A bare calendar date ('2026-06-27') is read as LOCAL midnight of that day.
+ * `new Date('2026-06-27')` reads it as UTC midnight, which every zone west of
+ * UTC formats as the 26th. The day in the string is the day the user meant.
+ */
+export function parseDateValue(value: unknown): Date | null {
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return null
+    const d = new Date(value)
+    return Number.isNaN(d.getTime()) ? null : d
+  }
+  if (typeof value !== 'string') return null
+  const s = value.trim()
+  if (s === '') return null
+  const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
+  if (ymd) {
+    const [y, m, day] = [Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3])]
+    const d = new Date(0)
+    d.setFullYear(y, m, day)
+    d.setHours(0, 0, 0, 0)
+    // Reject a rollover ('2026-02-30' is not March 2nd), as `new Date` does.
+    return d.getMonth() === m && d.getDate() === day ? d : null
+  }
+  const d = new Date(s)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
 /** Cache of `Intl.DateTimeFormat` by `(locale, options)` signature. */
 const dateFormatterCache = new Map<string, Intl.DateTimeFormat>()
 /** A cached `Intl.DateTimeFormat` for the locale and options given. Cached because

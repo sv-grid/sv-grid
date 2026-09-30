@@ -618,6 +618,15 @@ function buildRecords<TData>(
  * silently coerce to 0 / null - the consumer can drop the row in
  * their validator if blanks should be tolerated.
  */
+/** Local wall-clock `YYYY-MM-DDTHH:mm:ss`, no zone: what the file said, unshifted. */
+function localIso(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return (
+    `${String(d.getFullYear()).padStart(4, '0')}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+  )
+}
+
 function coerceTyped(raw: string, type: ImportFieldType):
   | { ok: true; value: unknown }
   | { ok: false; message: string }
@@ -675,7 +684,9 @@ function coerceTyped(raw: string, type: ImportFieldType):
       }
       const parsed = Date.parse(trimmed)
       if (!Number.isNaN(parsed)) {
-        return { ok: true, value: new Date(parsed).toISOString().slice(0, 10) }
+        // Date.parse reads 'Jan 15 2024' as LOCAL midnight; slicing the UTC
+        // ISO string gave the 14th east of UTC.
+        return { ok: true, value: localIso(new Date(parsed)).slice(0, 10) }
       }
       return { ok: false, message: `not a date: ${trimmed}` }
     }
@@ -684,7 +695,8 @@ function coerceTyped(raw: string, type: ImportFieldType):
       // Accept anything Date.parse handles.
       const parsed = Date.parse(trimmed)
       if (Number.isNaN(parsed)) return { ok: false, message: `not a datetime: ${trimmed}` }
-      return { ok: true, value: new Date(parsed).toISOString().slice(0, 19) }
+      // Zone-less out, so local in: a UTC slice shifted the time by the offset.
+      return { ok: true, value: localIso(new Date(parsed)) }
     }
 
     case 'json': {

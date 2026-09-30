@@ -20,6 +20,7 @@ import type { CellFormatConfig } from './core'
 import {
   formatNumericWithConfig,
   getDateFormatter,
+  parseDateValue,
   resolveDatePattern,
 } from './cell-formatting'
 
@@ -39,16 +40,27 @@ export {
 /** Best-effort coercion of a cell value to a Date. Accepts Date, epoch ms
  *  numbers, and parseable date strings. Returns null when it isn't a date. */
 export function coerceExportDate(value: unknown): Date | null {
-  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    const d = new Date(value)
-    return Number.isNaN(d.getTime()) ? null : d
-  }
-  if (typeof value === 'string' && value.trim() !== '') {
-    const d = new Date(value)
-    return Number.isNaN(d.getTime()) ? null : d
-  }
-  return null
+  return parseDateValue(value)
+}
+
+/**
+ * A Date as ISO 8601 in LOCAL time with its offset, e.g.
+ * `2024-01-15T00:00:00.000+02:00`. Text exports used `toISOString()`, which
+ * is UTC: local midnight on the 15th came out as `2024-01-14T22:00:00.000Z`
+ * east of UTC, and anything reading the date part got the wrong day (#103).
+ * Same instant, but the date part is the one the grid showed.
+ */
+export function toLocalIsoString(d: Date): string {
+  const pad = (n: number, w = 2) => String(Math.abs(n)).padStart(w, '0')
+  const offset = -d.getTimezoneOffset()
+  const sign = offset < 0 ? '-' : '+'
+  const year = d.getFullYear()
+  return (
+    (year < 0 ? '-' + pad(year, 6) : pad(year, 4)) +
+    `-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}` +
+    `${sign}${pad(Math.floor(Math.abs(offset) / 60))}:${pad(Math.abs(offset) % 60)}`
+  )
 }
 
 /**
@@ -325,7 +337,7 @@ function csvCell(value: unknown, delimiter: string): string {
     value == null
       ? ''
       : value instanceof Date
-        ? value.toISOString()
+        ? toLocalIsoString(value)
         : String(value)
   if (s === '') return s
   if (s.includes(delimiter) || s.includes('"') || s.includes('\n') || s.includes('\r')) {
@@ -373,7 +385,7 @@ const HTML_ESCAPE: Record<string, string> = {
 }
 function htmlCell(value: unknown): string {
   const s =
-    value == null ? '' : value instanceof Date ? value.toISOString() : String(value)
+    value == null ? '' : value instanceof Date ? toLocalIsoString(value) : String(value)
   return s.replace(/[&<>"']/g, (c) => HTML_ESCAPE[c]!)
 }
 
@@ -472,7 +484,7 @@ export async function serializeJson(
 
 /** Escape a Markdown table cell: pipes and newlines would break the row. */
 function mdCell(value: unknown): string {
-  const s = value == null ? '' : value instanceof Date ? value.toISOString() : String(value)
+  const s = value == null ? '' : value instanceof Date ? toLocalIsoString(value) : String(value)
   return s.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\r?\n/g, '<br>')
 }
 
@@ -520,7 +532,7 @@ const XML_ESCAPE: Record<string, string> = {
   "'": '&apos;',
 }
 function xmlText(value: unknown): string {
-  const s = value == null ? '' : value instanceof Date ? value.toISOString() : String(value)
+  const s = value == null ? '' : value instanceof Date ? toLocalIsoString(value) : String(value)
   // Stripping control characters is the point: XML 1.0 forbids them outright,
   // so a stray \x00 from a data source would produce an unopenable file.
   // eslint-disable-next-line no-control-regex

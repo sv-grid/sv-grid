@@ -110,10 +110,30 @@ function argb(hex: string | undefined): string | null {
   return m ? 'FF' + m[1]!.toUpperCase() : null
 }
 
-/** Excel serial date (days since 1899-12-30), UTC-based. */
-function toSerialDate(d: Date): number {
-  const epoch = Date.UTC(1899, 11, 30)
-  return (d.getTime() - epoch) / 86_400_000
+/**
+ * Excel serial date: days since 1899-12-30 on the LOCAL wall clock.
+ *
+ * An Excel serial has no timezone; it is the date and time a person reads. So
+ * it has to be built from the local parts the grid displays. Subtracting a UTC
+ * epoch from `getTime()` wrote local midnight on the 15th as 45305.9167 in
+ * UTC+2, which Excel shows as the 14th, and west of UTC added a spurious time
+ * to every pure date (#103).
+ */
+export function toSerialDate(d: Date): number {
+  const wallClock = Date.UTC(
+    d.getFullYear(), d.getMonth(), d.getDate(),
+    d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds(),
+  )
+  return (wallClock - Date.UTC(1899, 11, 30)) / 86_400_000
+}
+
+/** A non-Date `t: 'd'` value as a Date. A bare 'YYYY-MM-DD' is that local day,
+ *  not UTC midnight, which would be the day before west of UTC. */
+function toCellDate(value: unknown): Date {
+  if (value instanceof Date) return value
+  const s = String(value).trim()
+  const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
+  return ymd ? new Date(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3])) : new Date(s)
 }
 
 // Static package parts that never change.
@@ -287,7 +307,7 @@ export function buildXlsxParts(model: XlsxModel): Record<string, string> {
       } else if (cell.t === 'n') {
         cellXml.push(`<c r="${ref}"${sAttr}><v>${Number(cell.value)}</v></c>`)
       } else if (cell.t === 'd') {
-        const d = cell.value instanceof Date ? cell.value : new Date(String(cell.value))
+        const d = toCellDate(cell.value)
         cellXml.push(`<c r="${ref}"${sAttr}><v>${toSerialDate(d)}</v></c>`)
       } else if (cell.t === 'b') {
         cellXml.push(`<c r="${ref}"${sAttr} t="b"><v>${cell.value ? 1 : 0}</v></c>`)

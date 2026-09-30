@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildXlsxParts, colName, type XlsxCell } from './export-ooxml'
+import { buildXlsxParts, colName, toSerialDate, type XlsxCell } from './export-ooxml'
 
 const model = {
   sheetName: 'Orders',
@@ -8,12 +8,12 @@ const model = {
     [
       { t: 's', value: 'ACME' },
       { t: 'n', value: 19.95, numFmt: '"$"#,##0.00', align: 'right', fill: '#fee2e2', color: '#991b1b', bold: true },
-      { t: 'd', value: new Date('2026-03-04T00:00:00Z'), numFmt: 'yyyy-mm-dd' },
+      { t: 'd', value: new Date(2026, 2, 4), numFmt: 'yyyy-mm-dd' },
     ],
     [
       { t: 's', value: 'Globex', link: 'https://x.test/globex' },
       { t: 'n', value: 1000 },
-      { t: 'd', value: new Date('2026-06-01T00:00:00Z') },
+      { t: 'd', value: new Date(2026, 5, 1) },
     ],
   ] as XlsxCell[][],
   widths: [140, 90, 110],
@@ -41,7 +41,7 @@ describe('buildXlsxParts', () => {
     const s = parts['xl/worksheets/sheet1.xml']!
     expect(s).toContain('<v>19.95</v>')
     expect(s).toContain('<v>1000</v>')
-    expect(s).toMatch(/<v>46\d{3}<\/v>/) // 2026 date serial (~46085)
+    expect(s).toContain('<v>46085</v>') // 2026-03-04, local midnight: a whole day
     expect(s).toContain('t="inlineStr"') // header + string cells
   })
 
@@ -148,5 +148,51 @@ describe('colName', () => {
     expect(colName(25)).toBe('Z')
     expect(colName(26)).toBe('AA')
     expect(colName(27)).toBe('AB')
+  })
+})
+
+async function inZone<T>(tz: string, fn: () => T | Promise<T>): Promise<T> {
+  const prev = process.env.TZ
+  process.env.TZ = tz
+  try {
+    return await fn()
+  } finally {
+    if (prev === undefined) delete process.env.TZ
+    else process.env.TZ = prev
+  }
+}
+
+// #103: an Excel serial is the local wall clock. Pinned zones, because a UTC
+// machine passed the old UTC-based code.
+describe('date serials', () => {
+  const serialOf = (value: unknown) => {
+    const p = buildXlsxParts({
+      sheetName: 'S',
+      header: ['When'],
+      rows: [[{ t: 'd', value: value as Date, numFmt: 'yyyy-mm-dd' }]],
+    })
+    return Number(/<v>([^<]+)<\/v>/.exec(p['xl/worksheets/sheet1.xml']!)![1])
+  }
+
+  it('writes local midnight as a whole day in every zone', async () => {
+    for (const tz of ['Pacific/Auckland', 'Europe/Sofia', 'UTC', 'America/New_York']) {
+      await inZone(tz, () => {
+        expect(serialOf(new Date(2024, 0, 15)), tz).toBe(45306)
+        expect(toSerialDate(new Date(2024, 0, 15, 18)), tz).toBe(45306.75)
+      })
+    }
+  })
+
+  it('writes a date-only string as that day west of UTC', async () => {
+    await inZone('America/New_York', () => {
+      expect(serialOf('2024-01-15')).toBe(45306)
+    })
+  })
+
+  it('keeps the wall clock across a DST change', async () => {
+    await inZone('Europe/Sofia', () => {
+      // Summer time: UTC+3.
+      expect(toSerialDate(new Date(2024, 6, 1, 12))).toBe(45474.5)
+    })
   })
 })
