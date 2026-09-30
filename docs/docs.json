@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-29T20:17:51.073Z",
+  "generatedAt": "2026-09-30T07:41:29.193Z",
   "counts": {
     "pages": 404,
     "enterprise": 87,
@@ -1092,8 +1092,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Three ways to build",
-      "words": 1233,
-      "lastUpdated": "2026-09-21",
+      "words": 1317,
+      "lastUpdated": "2026-09-30",
       "demoIds": []
     },
     {
@@ -1954,8 +1954,8 @@
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
-      "words": 1005,
-      "lastUpdated": "2026-09-03",
+      "words": 1069,
+      "lastUpdated": "2026-09-30",
       "demoIds": [
         "01-quick-start"
       ]
@@ -3896,8 +3896,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 985,
-      "lastUpdated": "2026-09-03",
+      "words": 1028,
+      "lastUpdated": "2026-09-30",
       "demoIds": [
         "02-sort-filter-paginate"
       ]

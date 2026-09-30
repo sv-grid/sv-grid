@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-09-29 from 404 pages, 18 comparison pages, plus 72 API reference pages.
+Generated 2026-09-30 from 404 pages, 18 comparison pages, plus 72 API reference pages.
 
 <!-- =================================================================
      /docs/changelog/  (community)
@@ -4184,7 +4184,7 @@ The guided path: answer a few questions and get a working app. This is also what
 runs when you type `npx @svgrid/studio` with no arguments in a terminal.
 
 ```bash
-npx @svgrid/studio init [--db <dialect> --url <conn>] [--dataset <id>] [--out <dir>]
+npx @svgrid/studio init [--db <dialect> --url <conn> | --from <schema> | --dataset <id>] [--out <dir>]
 ```
 
 It asks where the data comes from, which tables to include, which pages each
@@ -4200,6 +4200,7 @@ app leads with an overview dashboard over its most-referenced table.
 | --- | --- |
 | `--db <dialect>` | Skip the source question and read a live database: `postgres` \| `supabase` \| `mysql` \| `mssql` \| `sqlite`. The driver is installed for you. |
 | `--url <conn>` | Connection string (or file path for SQLite) for `--db`. |
+| `--from <path>` | Build from a Drizzle `schema.ts` or a Prisma `schema.prisma`: its tables, columns and foreign keys, served from memory with sample rows. |
 | `--supabase-url <url>` | Read a Supabase project over its REST API instead - no driver, no connection string. |
 | `--supabase-key <anon>` | The project's anon key, paired with `--supabase-url`. |
 | `--dataset <id>` | Start from sample data: `customers-orders`, `products-categories`, `projects-tasks`, `employees-departments`, `tickets-accounts`. |
@@ -4250,7 +4251,12 @@ page.
 | `--api <path>` | API route path (default: `/api/<route>`). |
 | `--theme <id>` | Design-system preset for the generated screens (default: `ember`, the demo theme). The tokens go in the page's `<svelte:head>` inside `@layer svgrid-studio`, so an app that already defines its own `--sg-*` tokens keeps its look. |
 | `--dark` | Start in dark mode. |
+| `--title <name>` | With `--all`: the app title. Defaults to the title in `studio.config.json`, then to the one in the current layout. |
 | `-h`, `--help` | Show help. |
+
+`add --all` rewrites `src/routes/+layout.svelte` and the home page. In an app
+`init` generated, the new layout keeps the `app.css` / `custom.css` imports, the
+app title, and the theme from `studio.config.json`.
 
 ## Examples
 
@@ -17435,8 +17441,14 @@ const columns: GridColumns<Person> = [
 ```
 
 Even if you do not enable inline editing, set `editorType` so sort and
-filter behave correctly for the column's data type. A `number` column
-without `editorType` sorts as lexical strings.
+filter behave correctly for the column's data type. Without it, sorting
+falls back to the `auto` comparator: a column whose values are all numbers
+still sorts numerically, but numbers stored as strings (`'10'`, `'9'`) sort
+as text, and a column mixing numbers and text puts the numbers first.
+
+Every built-in comparator sorts blanks (`null`, `undefined`, `''`) first in
+ascending order and last in descending. The `number` and `date` comparators
+treat values they cannot parse (`'n/a'`, an invalid date) the same way.
 
 ## `cellDataType` shorthand
 
@@ -50342,10 +50354,14 @@ adds the column to the sort key list (multi-sort).
 
 ```ts
 import { sortFns } from '@svgrid/grid'
-// sortFns.auto    - lexical (default for unknown types)
-// sortFns.number  - numeric, NaN-safe
-// sortFns.date    - Date-parsed
+// sortFns.auto    - blanks, then numbers numerically, then text (default for unknown types)
+// sortFns.number  - numeric; blanks and non-numeric values ('n/a') first
+// sortFns.date    - Date-parsed; blanks and invalid dates first
 ```
+
+All three sort blanks (`null`, `undefined`, `''`) first ascending and last
+descending, and never return `NaN`, so a column with placeholder text still
+sorts into a consistent order.
 
 The grid picks the comparator based on the column's `editorType`:
 
