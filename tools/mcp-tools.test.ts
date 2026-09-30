@@ -181,6 +181,9 @@ describe.skipIf(!hasDist)('svgrid_search answers in one call', () => {
       ['pivot table', 'help/pivot'],
       ['column filtering', 'help/filtering/overview'],
       ['data export', 'help/export'],
+      // The queries from issue #107.
+      ['grouping', 'help/grouping-aggregation'],
+      ['row grouping aggregation', 'help/grouping-aggregation'],
     ]
     for (const [query, canonical] of CASES) {
       const body = await callJson('svgrid_search', { query, kind: 'docs' })
@@ -202,6 +205,14 @@ describe.skipIf(!hasDist)('svgrid_search answers in one call', () => {
         (h: { slug: string }) => h.slug.includes('virtualization') || h.slug === 'recipes/million-rows',
       ),
     ).toBe(true)
+  }, 30_000)
+
+  it('matches inflected query terms against their stems', async () => {
+    // The virtualization page says "scroll" and "row", never "scrolling" or
+    // "rows", so requiring every literal term used to drop it (#107).
+    const body = await callJson('svgrid_search', { query: 'virtual scrolling rows', kind: 'docs' })
+    const top = body.docs.hits.slice(0, 3).map((h: { slug: string }) => h.slug)
+    expect(top, top.join(', ')).toContain('help/headless/virtualization')
   }, 30_000)
 })
 

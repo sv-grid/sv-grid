@@ -70,6 +70,30 @@ export function queryTokens(query: string): string[] {
   return tokens.length ? tokens : [query.toLowerCase().trim()]
 }
 
+/**
+ * Reduce a term to a stem that still matches its other forms as a substring.
+ *
+ * Terms match by substring, so "virtual" already finds "virtualization", but the
+ * reverse fails: "virtual scrolling rows" dropped the virtualization page, which
+ * says "scroll" and "row" and never "scrolling" or "rows". Stripping the common
+ * inflections fixes that direction. Deliberately crude - it only ever shortens
+ * a term, so it can widen a match but never lose one the full word had. Used
+ * only as a fallback presence check; ranking still scores the exact term.
+ */
+export function stem(term: string): string {
+  // Longer minimums on the verb endings keep "string" from becoming "str".
+  for (const [suffix, min] of [['ing', 4], ['ed', 4], ['ies', 3], ['s', 3]] as const) {
+    if (!term.endsWith(suffix)) continue
+    let base = term.slice(0, -suffix.length)
+    if (base.length < min) continue
+    // "pinning" -> "pinn" -> "pin", "pinned" -> "pin". "queries" -> "quer"
+    // matches "query" too.
+    if (suffix !== 's' && suffix !== 'ies' && base.at(-1) === base.at(-2)) base = base.slice(0, -1)
+    return base
+  }
+  return term
+}
+
 /** A window of text around the first needle that appears, for search results. */
 export function excerptAround(markdown: string, needles: string[]): string {
   const lower = markdown.toLowerCase()
@@ -117,6 +141,13 @@ export function rankDocs<T extends RankableDoc>(
       const inHeading = headings.includes(t)
       const count = occurrences(markdown, t)
       if (inTitle || inHeading || count > 0) matched += 1
+      // The stem only decides whether the term is present at all. Scoring it
+      // like the exact form reorders pages that already matched: "column
+      // filtering" put "Custom column filters" above the filtering overview.
+      else if (markdown.includes(stem(t))) {
+        matched += 1
+        score += 1
+      }
       if (inTitle) score += 25
       if (slugWords.includes(t)) score += 10
       if (inHeading) score += 8
@@ -138,7 +169,7 @@ export function rankDocs<T extends RankableDoc>(
       title: s.d.title,
       section: s.d.section,
       score: s.score,
-      excerpt: excerptAround(s.d.markdown, [phrase, ...tokens]),
+      excerpt: excerptAround(s.d.markdown, [phrase, ...tokens, ...tokens.map(stem)]),
     })),
     total: pool.length,
     partial: complete.length === 0 && scored.length > 0,
