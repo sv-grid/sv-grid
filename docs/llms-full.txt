@@ -11832,7 +11832,7 @@ That's a complete, working grid.
 <!-- tutorial:learn-1-first-grid -->
 <figure class="docs-tutorial" id="tutorial-learn-1-first-grid" data-docs-tutorial="learn-1-first-grid">
 <video class="docs-tutorial-video" src="/tutorials/learn-1-first-grid.mp4" poster="/tutorials/learn-1-first-grid.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 1: install and your first grid, 121 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-1-first-grid.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-1-first-grid.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Learn SvGrid 1: install and your first grid</strong> (121 s, silent).</figcaption>
+<figcaption><strong>Learn SvGrid 1: install and your first grid</strong> (121 s, silent). <a href="https://www.youtube.com/watch?v=s7NHVtLQaOs" rel="noopener">Watch with narration on YouTube</a></figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Welcome to lesson one. By the end of it you will have a working data grid in a Svelte 5 project, and you will understand every line that put it there.</p>
 <p>SvGrid is a single npm package. There is no CLI step and nothing to copy into your project: you install it and import from it.</p>
@@ -12155,7 +12155,7 @@ date all come from the same place rather than from three helper functions.
 <!-- tutorial:learn-2-data-and-columns -->
 <figure class="docs-tutorial" id="tutorial-learn-2-data-and-columns" data-docs-tutorial="learn-2-data-and-columns">
 <video class="docs-tutorial-video" src="/tutorials/learn-2-data-and-columns.mp4" poster="/tutorials/learn-2-data-and-columns.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 2: your data, your columns, 88 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-2-data-and-columns.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-2-data-and-columns.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Learn SvGrid 2: your data, your columns</strong> (88 s, silent).</figcaption>
+<figcaption><strong>Learn SvGrid 2: your data, your columns</strong> (88 s, silent). <a href="https://www.youtube.com/watch?v=HvQ4PDuY8Q4" rel="noopener">Watch with narration on YouTube</a></figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>In lesson one the rows were made up. In this one they are yours, they stay reactive, and the columns start looking like a real application.</p>
 <p>Start from your own row type. The grid never asks you to convert anything: whatever shape your records have, that is the shape it takes. Declare the array with the state rune and it stays reactive.</p>
@@ -12432,7 +12432,7 @@ The full a11y model is in [Accessibility](../help/accessibility.md).
 <!-- tutorial:learn-3-sort-filter-page -->
 <figure class="docs-tutorial" id="tutorial-learn-3-sort-filter-page" data-docs-tutorial="learn-3-sort-filter-page">
 <video class="docs-tutorial-video" src="/tutorials/learn-3-sort-filter-page.mp4" poster="/tutorials/learn-3-sort-filter-page.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 3: sorting, filtering and paging, 143 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-3-sort-filter-page.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-3-sort-filter-page.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Learn SvGrid 3: sorting, filtering and paging</strong> (143 s, silent).</figcaption>
+<figcaption><strong>Learn SvGrid 3: sorting, filtering and paging</strong> (143 s, silent). <a href="https://www.youtube.com/watch?v=iBInYQ1kmDg" rel="noopener">Watch with narration on YouTube</a></figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Your grid renders. It does not sort, filter or page yet, and that is deliberate. This lesson turns those on and explains the trade the library is making for you.</p>
 <p>Here is a wider row type and a realistic set of records, the kind of table you would actually ship. Nothing new yet.</p>
@@ -12714,7 +12714,7 @@ any ancestor - no theme file, no build step.
 <!-- tutorial:learn-7-theme -->
 <figure class="docs-tutorial" id="tutorial-learn-7-theme" data-docs-tutorial="learn-7-theme">
 <video class="docs-tutorial-video" src="/tutorials/learn-7-theme.mp4" poster="/tutorials/learn-7-theme.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 7: themes, dark mode and density, 113 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-7-theme.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-7-theme.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Learn SvGrid 7: themes, dark mode and density</strong> (113 s, silent).</figcaption>
+<figcaption><strong>Learn SvGrid 7: themes, dark mode and density</strong> (113 s, silent). <a href="https://www.youtube.com/watch?v=yhJMpkQ0Kww" rel="noopener">Watch with narration on YouTube</a></figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>A grid that looks like a grid library is a grid that never ships. Theming here is CSS custom properties, not utility classes and not a config object.</p>
 <p>Twenty presets ship with the package, and importing one stylesheet is the whole setup. What a preset sets is a list of custom properties, which means you can set them yourself when one is close but not right. Same five people as before.</p>
@@ -12995,7 +12995,7 @@ inference picks up which capabilities your grid has.
 <!-- tutorial:learn-10-production -->
 <figure class="docs-tutorial" id="tutorial-learn-10-production" data-docs-tutorial="learn-10-production">
 <video class="docs-tutorial-video" src="/tutorials/learn-10-production.mp4" poster="/tutorials/learn-10-production.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 10: going to production, 108 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-10-production.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-10-production.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Learn SvGrid 10: going to production</strong> (108 s, silent).</figcaption>
+<figcaption><strong>Learn SvGrid 10: going to production</strong> (108 s, silent). <a href="https://www.youtube.com/watch?v=VfZuJIwldwY" rel="noopener">Watch with narration on YouTube</a></figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Your grid works. This last lesson is the review a colleague would give it: the four things that decide whether it survives contact with real data and real users.</p>
 <p>First, scale. Virtualization is on by default, so only the rows in view have DOM nodes. Fifty thousand rows by seventy-seven columns scroll in both directions, and the count of nodes stays roughly the same as it was with ten rows.</p>
@@ -13011,7 +13011,7 @@ inference picks up which capabilities your grid has.
 <!-- tutorial:learn-8-server-data -->
 <figure class="docs-tutorial" id="tutorial-learn-8-server-data" data-docs-tutorial="learn-8-server-data">
 <video class="docs-tutorial-video" src="/tutorials/learn-8-server-data.mp4" poster="/tutorials/learn-8-server-data.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 8: data from a server, 106 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-8-server-data.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-8-server-data.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Learn SvGrid 8: data from a server</strong> (106 s, silent).</figcaption>
+<figcaption><strong>Learn SvGrid 8: data from a server</strong> (106 s, silent). <a href="https://www.youtube.com/watch?v=JPkoLN20sPQ" rel="noopener">Watch with narration on YouTube</a></figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Everything so far held every row in memory. That works to tens of thousands of rows. Past that, the sorting and filtering have to move to the server, and the grid has to ask for what it needs.</p>
 <p>The state the grid hands you is small: which column is sorted, which filters are set, which page you are on. Keep those in runes.</p>
@@ -13680,7 +13680,7 @@ Three things to try, in this order:
 <!-- tutorial:learn-9-sveltekit -->
 <figure class="docs-tutorial" id="tutorial-learn-9-sveltekit" data-docs-tutorial="learn-9-sveltekit">
 <video class="docs-tutorial-video" src="/tutorials/learn-9-sveltekit.mp4" poster="/tutorials/learn-9-sveltekit.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 9: SvelteKit end to end, 81 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-9-sveltekit.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-9-sveltekit.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Learn SvGrid 9: SvelteKit end to end</strong> (81 s, silent).</figcaption>
+<figcaption><strong>Learn SvGrid 9: SvelteKit end to end</strong> (81 s, silent). <a href="https://www.youtube.com/watch?v=SQTeHpA7Bys" rel="noopener">Watch with narration on YouTube</a></figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>SvelteKit gives you a place to put the query that is already on the server. The grid does not need to know about any of it: it takes an array.</p>
 <p>There is a SvelteKit template, so the whole app is two commands. If you have a project already, installing the package is enough.</p>
@@ -32755,7 +32755,7 @@ rather than the order the grid demands.
 <!-- tutorial:learn-4-editing -->
 <figure class="docs-tutorial" id="tutorial-learn-4-editing" data-docs-tutorial="learn-4-editing">
 <video class="docs-tutorial-video" src="/tutorials/learn-4-editing.mp4" poster="/tutorials/learn-4-editing.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 4: editing rows, and validating them, 91 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-4-editing.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-4-editing.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Learn SvGrid 4: editing rows, and validating them</strong> (91 s, silent).</figcaption>
+<figcaption><strong>Learn SvGrid 4: editing rows, and validating them</strong> (91 s, silent). <a href="https://www.youtube.com/watch?v=4CMH4FKGZB4" rel="noopener">Watch with narration on YouTube</a></figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>A table people can only read is half a feature. This lesson makes it editable, and then makes it refuse the edits that should not happen.</p>
 <p>The same reactive rows as before. Three people, three fields.</p>
@@ -37173,7 +37173,7 @@ level above.
 <!-- tutorial:learn-6-grouping -->
 <figure class="docs-tutorial" id="tutorial-learn-6-grouping" data-docs-tutorial="learn-6-grouping">
 <video class="docs-tutorial-video" src="/tutorials/learn-6-grouping.mp4" poster="/tutorials/learn-6-grouping.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 6: grouping and totals, 94 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-6-grouping.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-6-grouping.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Learn SvGrid 6: grouping and totals</strong> (94 s, silent).</figcaption>
+<figcaption><strong>Learn SvGrid 6: grouping and totals</strong> (94 s, silent). <a href="https://www.youtube.com/watch?v=U39CKHyrdqQ" rel="noopener">Watch with narration on YouTube</a></figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Once a table has more than a screenful of rows, people stop reading it and start asking it questions. Grouping and totals are how it answers.</p>
 <p>The same people as before, with a department and a city to group by, and a salary worth adding up.</p>
@@ -51892,7 +51892,7 @@ layout.
 <!-- tutorial:learn-5-selection -->
 <figure class="docs-tutorial" id="tutorial-learn-5-selection" data-docs-tutorial="learn-5-selection">
 <video class="docs-tutorial-video" src="/tutorials/learn-5-selection.mp4" poster="/tutorials/learn-5-selection.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 5: selection and bulk actions, 86 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-5-selection.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-5-selection.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Learn SvGrid 5: selection and bulk actions</strong> (86 s, silent).</figcaption>
+<figcaption><strong>Learn SvGrid 5: selection and bulk actions</strong> (86 s, silent). <a href="https://www.youtube.com/watch?v=NO_xuVJdqVQ" rel="noopener">Watch with narration on YouTube</a></figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Selecting rows is easy. Knowing which rows are selected after a sort, a filter or a refresh is the part that catches people out, and it comes down to one prop.</p>
 <p>A small backlog of tasks and the columns to show them.</p>

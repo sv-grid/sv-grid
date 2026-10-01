@@ -257,7 +257,7 @@ The full a11y model is in [Accessibility](../help/accessibility.md).
 <!-- tutorial:learn-3-sort-filter-page -->
 <figure class="docs-tutorial" id="tutorial-learn-3-sort-filter-page" data-docs-tutorial="learn-3-sort-filter-page">
 <video class="docs-tutorial-video" src="/tutorials/learn-3-sort-filter-page.mp4" poster="/tutorials/learn-3-sort-filter-page.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 3: sorting, filtering and paging, 143 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-3-sort-filter-page.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-3-sort-filter-page.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Learn SvGrid 3: sorting, filtering and paging</strong> (143 s, silent).</figcaption>
+<figcaption><strong>Learn SvGrid 3: sorting, filtering and paging</strong> (143 s, silent). <a href="https://www.youtube.com/watch?v=iBInYQ1kmDg" rel="noopener">Watch with narration on YouTube</a></figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Your grid renders. It does not sort, filter or page yet, and that is deliberate. This lesson turns those on and explains the trade the library is making for you.</p>
 <p>Here is a wider row type and a realistic set of records, the kind of table you would actually ship. Nothing new yet.</p>

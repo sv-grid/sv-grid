@@ -31,7 +31,7 @@ That's a complete, working grid.
 <!-- tutorial:learn-1-first-grid -->
 <figure class="docs-tutorial" id="tutorial-learn-1-first-grid" data-docs-tutorial="learn-1-first-grid">
 <video class="docs-tutorial-video" src="/tutorials/learn-1-first-grid.mp4" poster="/tutorials/learn-1-first-grid.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 1: install and your first grid, 121 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-1-first-grid.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-1-first-grid.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Learn SvGrid 1: install and your first grid</strong> (121 s, silent).</figcaption>
+<figcaption><strong>Learn SvGrid 1: install and your first grid</strong> (121 s, silent). <a href="https://www.youtube.com/watch?v=s7NHVtLQaOs" rel="noopener">Watch with narration on YouTube</a></figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Welcome to lesson one. By the end of it you will have a working data grid in a Svelte 5 project, and you will understand every line that put it there.</p>
 <p>SvGrid is a single npm package. There is no CLI step and nothing to copy into your project: you install it and import from it.</p>

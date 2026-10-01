@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-30T07:41:29.193Z",
+  "generatedAt": "2026-09-30T09:52:50.031Z",
   "counts": {
     "pages": 404,
     "enterprise": 87,
@@ -1636,8 +1636,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 882,
-      "lastUpdated": "2026-09-29",
+      "words": 889,
+      "lastUpdated": "2026-09-30",
       "demoIds": [
         "01-quick-start"
       ],
@@ -1653,8 +1653,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 1324,
-      "lastUpdated": "2026-09-29",
+      "words": 1331,
+      "lastUpdated": "2026-09-30",
       "demoIds": [],
       "tutorialIds": [
         "learn-2-data-and-columns"
@@ -1668,8 +1668,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 1602,
-      "lastUpdated": "2026-09-29",
+      "words": 1609,
+      "lastUpdated": "2026-09-30",
       "demoIds": [],
       "tutorialIds": [
         "learn-3-sort-filter-page"
@@ -1683,8 +1683,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 1477,
-      "lastUpdated": "2026-09-29",
+      "words": 1484,
+      "lastUpdated": "2026-09-30",
       "demoIds": [
         "10-custom-cells-and-themes"
       ],
@@ -1700,8 +1700,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 1816,
-      "lastUpdated": "2026-09-29",
+      "words": 1830,
+      "lastUpdated": "2026-09-30",
       "demoIds": [
         "09-server-side",
         "06-large-dataset",
@@ -1744,8 +1744,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 2256,
-      "lastUpdated": "2026-09-29",
+      "words": 2263,
+      "lastUpdated": "2026-09-30",
       "demoIds": [],
       "tutorialIds": [
         "learn-9-sveltekit"
@@ -2811,8 +2811,8 @@
       "section": "help/editing",
       "pillar": "grid",
       "tier": "community",
-      "words": 1367,
-      "lastUpdated": "2026-09-29",
+      "words": 1374,
+      "lastUpdated": "2026-09-30",
       "demoIds": [
         "206-cell-validation",
         "24-validation"
@@ -3099,8 +3099,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2579,
-      "lastUpdated": "2026-09-29",
+      "words": 2586,
+      "lastUpdated": "2026-09-30",
       "demoIds": [
         "07-grouping-aggregation",
         "427-group-footers",
@@ -3950,8 +3950,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 1878,
-      "lastUpdated": "2026-09-29",
+      "words": 1885,
+      "lastUpdated": "2026-09-30",
       "demoIds": [
         "430-selection-bar"
       ],

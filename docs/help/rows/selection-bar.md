@@ -286,7 +286,7 @@ layout.
 <!-- tutorial:learn-5-selection -->
 <figure class="docs-tutorial" id="tutorial-learn-5-selection" data-docs-tutorial="learn-5-selection">
 <video class="docs-tutorial-video" src="/tutorials/learn-5-selection.mp4" poster="/tutorials/learn-5-selection.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 5: selection and bulk actions, 86 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-5-selection.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-5-selection.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Learn SvGrid 5: selection and bulk actions</strong> (86 s, silent).</figcaption>
+<figcaption><strong>Learn SvGrid 5: selection and bulk actions</strong> (86 s, silent). <a href="https://www.youtube.com/watch?v=NO_xuVJdqVQ" rel="noopener">Watch with narration on YouTube</a></figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Selecting rows is easy. Knowing which rows are selected after a sort, a filter or a refresh is the part that catches people out, and it comes down to one prop.</p>
 <p>A small backlog of tasks and the columns to show them.</p>
