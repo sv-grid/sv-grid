@@ -129,6 +129,34 @@ test.describe('objects under frozen panes (#116)', () => {
     expect(await topAt(page, colA.x + colA.width / 2, frozen.y + frozen.height + 10)).toBe('object:2')
   })
 
+  test('a chart hanging past the sheet does not make the page taller', async ({ page }) => {
+    // A chart's clip-path hid the part below the sheet's window, but it still
+    // counted as overflow: the page was taller by it, and scrolling the sheet
+    // shrank the page again, so a scrolled page jumped. On CI's taller text
+    // layout the gallery page scrolled and the test above missed by ~40px.
+    await page.setViewportSize({ width: 1000, height: 700 })
+    await open(page)
+    const chart = await chartInColumnA(page, true)
+    const sheetWindow = await rectOf(page, page.locator('.sv-sheet .sv-grid-container'))
+    const box = await rectOf(page, chart)
+    expect(box.y + box.height).toBeGreaterThan(sheetWindow.y + sheetWindow.height + 40)
+    const page0 = await page.evaluate(() => {
+      let el = document.querySelector('.sv-sheet')!.parentElement
+      while (el && !/auto|scroll/.test(getComputedStyle(el).overflowY)) el = el.parentElement
+      const sc = (el ?? document.scrollingElement)! as HTMLElement
+      sc.setAttribute('data-test-page-scroller', '')
+      sc.scrollTop = sc.scrollHeight
+      return { top: sc.scrollTop, height: sc.scrollHeight, client: sc.clientHeight }
+    })
+    expect(page0.height).toBeLessThanOrEqual(page0.client + 8)
+    await scrollBy(page, 0, 60)
+    const page1 = await page.evaluate(() => {
+      const sc = document.querySelector('[data-test-page-scroller]') as HTMLElement
+      return { top: sc.scrollTop, height: sc.scrollHeight, client: sc.clientHeight }
+    })
+    expect(page1).toEqual(page0)
+  })
+
   test('a chart in the scrolling pane is cut at the frozen column as it slides under', async ({ page }) => {
     await open(page)
     // The demo's first chart hangs from B7.

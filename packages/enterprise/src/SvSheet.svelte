@@ -7079,10 +7079,16 @@
      layer, so it makes no stacking context and each object is stacked
      against the grid's sticky cells on its own: an object in the scrolling
      pane under the frozen cells (z-index 30) and the frozen rows (31), one
-     hung from a frozen cell over them, and all under the header (35). */
+     hung from a frozen cell over them, and all under the header (35).
+     `overflow: clip` because an object's clip-path hides the part below the
+     sheet's window but still counts as scrollable overflow: a chart hanging
+     past the bottom made the page taller, and scrolling the sheet shrank it
+     again, so a scrolled page jumped. `clip` rather than `hidden` keeps the
+     layer from becoming a scroll container. */
   .sheet-object-layer {
     position: absolute;
     inset: 0;
+    overflow: clip;
     pointer-events: none;
   }
   .sheet-object {
