@@ -119,6 +119,11 @@ test.describe('rich date editor inside a cell', () => {
     // left a single date picker: `valueTo` stayed empty, `condActive` never
     // fired, and the filter silently matched everything. Between now swaps in
     // one range field, so both bounds come from a single gesture.
+    //
+    // The demo's due dates are pinned around 2026-09-15 and the range picker
+    // opens on today's month, so the clock is pinned too. Without it the test
+    // picked October days on 2026-10-01 and matched no rows.
+    await page.clock.setFixedTime(new Date('2026-09-15T12:00:00'))
     await page.goto(NARROW_FILTER_DEMO)
     await page.locator('.sv-dtp__field').waitFor()
 

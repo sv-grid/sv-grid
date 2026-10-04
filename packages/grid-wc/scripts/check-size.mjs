@@ -213,10 +213,16 @@ const dist = join(here, '..', 'dist')
  * filtered and sorted output instead of redoing both), reaching the
  * elements at 1:1, plus one surface entry (114 -> 115 properties:
  * includeCollapsedRows). The seventh time for the two-edit cost.
+ *
+ * 112.9 -> 113.2 and 113.5 -> 113.8 for the #102, #103 and #104 fixes
+ * (2026-10-04). Measured 112.93 / 113.46, <sv-grid> 33 bytes over: the
+ * grid's base grew 0.5 KB (measure-size.mjs: the sort comparators
+ * that no longer return NaN, and local-day parsing of 'YYYY-MM-DD'),
+ * reaching the elements at 1:1. No surface change. The eighth time.
  */
 const BUDGET_KIB = {
-  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 112.9 },
-  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 113.5 },
+  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 113.2 },
+  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 113.8 },
   '<sv-chart>': { file: join(dist, 'chart', 'sv-chart-element.js'), budget: 68.6 },
 }
 

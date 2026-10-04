@@ -440,7 +440,22 @@ const BUDGET_KB = {
   //   - history.ts (+0.09): the undo buffer caps on actions rather than
   //     steps, so a 5,000-cell sort is not cut mid-group.
   //   - cell-render / cell-formatting (+0.10).
-  'full render component (SvGrid)': 97.9,
+  //
+  // 97.9 -> 98.6 for three bug fixes (2026-10-04). Measured 98.29; the gate
+  // last passed at 355d564. attribute-size.mjs against that commit's source
+  // charges +0.5 to two files already on the static path:
+  //
+  //   - core.ts (+0.26): #104. The built-in comparators returned NaN for
+  //     text in a number column and for invalid dates, and `auto` compared
+  //     numbers as text, so Array.sort got an inconsistent order. Blanks and
+  //     unparseable values now sort to one end and `auto` is transitive. It
+  //     is the sort path, so it cannot be lazy.
+  //   - cell-formatting.ts (+0.21): #103. `parseDateValue` reads a bare
+  //     'YYYY-MM-DD' as local midnight instead of UTC, which showed the day
+  //     before west of UTC. The screen and the exports both use it.
+  //
+  // #102 (the virtualizer re-measuring a stable size function) is +0.03.
+  'full render component (SvGrid)': 98.6,
   'headless core (createGrid)': 3.0,
   // 5.0 -> 5.3 for the specialised single-clause sort comparators. Most sorts
   // are one column, and that comparator runs O(n log n) times - 1.66M calls for
@@ -466,7 +481,11 @@ const BUDGET_KB = {
   // spread onto your own markup, no DOM), and core.ts's tick repair
   // (+0.87), which the full component pays for too and which the row above
   // explains.
-  'headless subpath (@svgrid/grid/core)': 8.3,
+  //
+  // 8.3 -> 8.6 (measured 8.35) for #104's sort comparators in core.ts, the
+  // same +0.26 the full component's note above describes. The headless core
+  // sorts with them too, so it pays the same.
+  'headless subpath (@svgrid/grid/core)': 8.6,
   // Measured 26.3 KB: SvGridChart.svelte plus the chart.ts engine it statically
   // imports. Nobody pays this unless they chart - SvGrid reaches both through
   // `import()` - but it is the biggest deferred thing in the package and until
