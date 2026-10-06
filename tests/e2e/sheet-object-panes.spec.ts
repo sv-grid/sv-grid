@@ -136,6 +136,13 @@ test.describe('objects under frozen panes (#116)', () => {
     // layout the gallery page scrolled and the test above missed by ~40px.
     await page.setViewportSize({ width: 1000, height: 700 })
     await open(page)
+    // The sheet fills the page below the demo's description, which wraps to
+    // more lines on CI's Linux fonts: at a fixed 700px CI was left with the
+    // header and row 1 only, and B2 could not be clicked. Size the viewport so
+    // the sheet's window is ~120px (three body rows) whatever the text does.
+    const h0 = (await rectOf(page, page.locator('.sv-sheet .sv-grid-container'))).height
+    await page.setViewportSize({ width: 1000, height: Math.round(700 + 120 - h0) })
+    await page.waitForTimeout(400)
     const chart = await chartInColumnA(page, true)
     const sheetWindow = await rectOf(page, page.locator('.sv-sheet .sv-grid-container'))
     const box = await rectOf(page, chart)
