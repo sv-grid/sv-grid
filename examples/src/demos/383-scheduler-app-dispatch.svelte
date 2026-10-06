@@ -32,9 +32,8 @@
     type SchedulerEventResizeEvent,
     type SchedulerEventCommitEvent,
   } from '@svgrid/grid'
-  import { enableSchedulerView, setLicenseKey } from '@svgrid/enterprise'
+  import { enableSchedulerView } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableSchedulerView()
 
   // Job status (what a job is doing) vs tech status (where a crew is) are

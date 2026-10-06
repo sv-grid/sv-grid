@@ -21,22 +21,31 @@
   import {
     installEnterprise,
     setLicenseKey,
+    getLicenseKey,
     clearLicenseKey,
     dismissUnlicensedNudge,
     type EnterpriseGridApi,
   } from '@svgrid/enterprise'
   import { makeOrders, type Order } from '../shared/seed'
 
-  // Development license. In production, customers set their own SVENTERPRISE-...
-  // key once at app startup (e.g. in main.ts). Toggle below to see the
-  // unlicensed evaluation state (watermark in the grid + console.log nudge).
-  let licensed = $state(true)
+  // The license key is set once at app startup (main.ts), never in a
+  // component. This demo borrows whatever key the app set so the toggle can
+  // show the unlicensed state (watermark + console nudge) and back. With no
+  // key set there is nothing to toggle: the watermark simply shows.
+  const appKey = getLicenseKey()
+  let licensed = $state(appKey !== null)
   $effect(() => {
+    if (!appKey) return
     if (licensed) {
-      setLicenseKey('SVENTERPRISE-DEV-LOCAL')
-      dismissUnlicensedNudge()
+      setLicenseKey(appKey)
+      dismissUnlicensedNudge() // clear the watermark the unlicensed view left
     } else {
       clearLicenseKey()
+    }
+    // Leaving the demo restores the key, so the next page is not unlicensed.
+    return () => {
+      setLicenseKey(appKey)
+      dismissUnlicensedNudge()
     }
   })
 
@@ -156,7 +165,7 @@
     {/if}
 
     <label class="ml-auto flex items-center gap-2 text-xs xp-note">
-      <input type="checkbox" bind:checked={licensed} class="h-4 w-4" />
+      <input type="checkbox" bind:checked={licensed} disabled={!appKey} class="h-4 w-4" />
       Licensed (uncheck to see the unlicensed watermark + console nudge)
     </label>
   </div>
@@ -184,7 +193,7 @@
   <footer class="text-xs shrink-0 xp-note">
     Pro feature - gated by <code>setLicenseKey()</code>. Without a valid key
     (prefix <code>SVENTERPRISE-</code>), the feature still runs but the grid shows
-    a watermark linking to jqwidgets.com. Revoked or malformed keys throw.
+    a watermark linking to svgrid.com/pricing. Revoked or malformed keys throw.
   </footer>
 </section>
 

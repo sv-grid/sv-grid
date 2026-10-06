@@ -59,9 +59,10 @@ column-mapping, validation, error preview - not the parser itself.
 ```svelte {runnable}
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi, type ColumnDef } from '@svgrid/grid'
-  import { installEnterprise, setLicenseKey, type EnterpriseGridApi } from '@svgrid/enterprise'
+  import { installEnterprise, type EnterpriseGridApi } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-XXXX-XXXX-XXXX')
+  // No key needed to try it (a watermark shows). After you buy, call
+  // setLicenseKey(yourKey) once at startup.
 
   type Order = { orderId: number; customer: string; total: number }
   let rows = $state<Order[]>([])

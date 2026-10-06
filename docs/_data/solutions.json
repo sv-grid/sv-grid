@@ -6,6 +6,7 @@
       "kind": "view",
       "icon": "▥",
       "cardText": "Lanes from a status field, drag and drop.",
+      "signature": "board={{ groupBy: 'status' }}",
       "query": "svelte kanban board",
       "h1": "Svelte Kanban Board",
       "seoTitle": "Svelte Kanban Board - Drag and Drop from Grid Data",
@@ -99,6 +100,7 @@
       "kind": "view",
       "icon": "◷",
       "cardText": "Events on a calendar or a resource timeline.",
+      "signature": "scheduler={{ startField: 'start', endField: 'end' }}",
       "query": "svelte scheduler component",
       "h1": "Svelte Scheduler and Calendar",
       "seoTitle": "Svelte Scheduler - Calendar and Resource Timeline",
@@ -191,6 +193,7 @@
       "kind": "view",
       "icon": "▦",
       "cardText": "Crosstab your rows, with a drag-and-drop designer.",
+      "signature": "createPivotModel(orders, { rows, cols, values })",
       "query": "svelte pivot table",
       "h1": "Svelte Pivot Table",
       "seoTitle": "Svelte Pivot Table - Drag-and-Drop Designer",
@@ -226,8 +229,7 @@
         "recipes/mobile-card-pivot"
       ],
       "posts": [
-        "pivot-tables",
-        "what-is-a-pivot-table"
+        "pivot-tables"
       ],
       "features": [
         {
@@ -284,6 +286,7 @@
       "kind": "feature",
       "icon": "▩",
       "cardText": "Cell ranges, a fill handle, real formulas.",
+      "signature": "selectionMode=\"cell\" enableCellSelection showRowNumbers",
       "query": "svelte spreadsheet",
       "h1": "Svelte Spreadsheet",
       "seoTitle": "Svelte Spreadsheet - Formulas, Ranges, Fill Handle",
@@ -379,6 +382,7 @@
       "kind": "view",
       "icon": "≡",
       "cardText": "Task bars, links and a critical path from one prop.",
+      "signature": "gantt={{ startField: 'start', endField: 'end' }}",
       "query": "svelte gantt chart",
       "h1": "Svelte Gantt Chart",
       "seoTitle": "Svelte Gantt Chart - Project Plan from Grid Data",
@@ -419,7 +423,6 @@
         "help/gantt/views"
       ],
       "posts": [
-        "svelte-gantt-chart-with-the-scheduler-timeline",
         "project-task-board-grid"
       ],
       "features": [
@@ -476,6 +479,7 @@
         "kind": "feature",
         "icon": "▬",
         "cardText": "Task bars in one wide custom cell.",
+        "signature": "cell: (ctx) => renderSnippet(TimelineCell, …)",
         "seoTitle": "Svelte Gantt Chart - Project Timeline in a Grid",
         "seoDescription": "A Gantt-style project plan in a Svelte 5 data grid: task bars positioned by start and end date in one wide cell, with phase colour and progress fill.",
         "tier": "community",
@@ -562,6 +566,7 @@
       "kind": "feature",
       "icon": "⊞",
       "cardText": "Nested rows from a parent id.",
+      "signature": "treeData={{ parentField: 'managerId' }}",
       "query": "svelte tree grid",
       "h1": "Svelte Tree Grid",
       "seoTitle": "Svelte Tree Grid - Hierarchical Rows from a Parent Id",
@@ -657,6 +662,7 @@
       "kind": "feature",
       "icon": "▤",
       "cardText": "Sort, filter, paginate. The grid as it comes.",
+      "signature": "filterMode=\"row\" showPagination pageSize={50}",
       "query": "svelte data table",
       "h1": "Svelte Data Table",
       "seoTitle": "Svelte Data Table - Sortable, Filterable, Paginated",
@@ -751,6 +757,7 @@
       "kind": "feature",
       "icon": "✎",
       "cardText": "Typed cell editors, validation and undo.",
+      "signature": "enableInlineEditing onCellValueChange={save}",
       "query": "svelte editable table",
       "h1": "Svelte Editable Table",
       "seoTitle": "Svelte Editable Table - Inline Cell Editing",
@@ -846,6 +853,7 @@
       "kind": "feature",
       "icon": "⇅",
       "cardText": "Sorting, filtering and paging on your endpoint.",
+      "signature": "createServerDataSource(source, { pageSize: 50 })",
       "query": "svelte server side table",
       "h1": "Svelte Server-Side Table",
       "seoTitle": "SvelteKit Server-Side Table - Paging, Sort, Filter",
@@ -943,6 +951,7 @@
       "kind": "feature",
       "icon": "◈",
       "cardText": "Grid, stat tiles and charts on one screen.",
+      "signature": "npm create @svgrid@latest -- --template admin-dashboard",
       "query": "svelte admin dashboard",
       "h1": "Svelte Admin Dashboard",
       "seoTitle": "Svelte Admin Dashboard - Grid, Stats and Charts",
@@ -1033,10 +1042,116 @@
       ]
     },
     {
+      "slug": "component-library",
+      "kind": "component",
+      "icon": "◫",
+      "cardText": "Inputs, pickers, overlays and forms, free.",
+      "signature": "import { SvTextInput, SvButton } from '@svgrid/grid'",
+      "query": "svelte component library",
+      "h1": "Svelte Component Library",
+      "seoTitle": "Svelte Component Library - Svelte 5 UI Components, MIT",
+      "seoDescription": "A Svelte 5 component library in @svgrid/grid: inputs, pickers, overlays, forms and layout, MIT. Each one also edits grid cells, so forms and tables match.",
+      "keywords": [
+        "svelte component library",
+        "svelte ui components",
+        "svelte 5 component library",
+        "svelte ui library",
+        "sveltekit ui components"
+      ],
+      "tier": "community",
+      "intro": [
+        "SvGrid UI is the component library inside @svgrid/grid: buttons, text and number inputs, dropdowns, a combo box, date and time pickers, tabs, a tree, modals, drawers, toasts, a schema-driven form and the layout pieces around them. They exist because the grid needed them. Each one is also the editor SvGrid mounts when you edit a cell, so a field in a form and the same field in a table behave the same way, keyboard included.",
+        "There is no second package to install and no UI peer dependency. The components style themselves from the --sg-* theme tokens, so the grid's theme restyles the whole page, and each control follows its WAI-ARIA pattern. When you need your own markup, the headless create* cores give you the state, keyboard handling and ARIA without the styles."
+      ],
+      "install": "npm i @svgrid/grid",
+      "snippet": {
+        "lang": "svelte",
+        "code": "<script lang=\"ts\">\n  import { SvTextInput, SvDropDownList, SvSwitchButton, SvButton, type ListOption } from '@svgrid/grid'\n\n  const plans: ListOption[] = [\n    { value: 'free', label: 'Free' },\n    { value: 'team', label: 'Team' },\n  ]\n  let email = $state('')\n  let plan = $state<string | null>('free')\n  let notify = $state(true)\n</script>\n\n<SvTextInput label=\"Work email\" type=\"email\" bind:value={email} />\n<SvDropDownList label=\"Plan\" options={plans} value={plan} onChange={(v) => (plan = v)} />\n<SvSwitchButton label=\"Email me updates\" checked={notify} onChange={(v) => (notify = v)} />\n<SvButton variant=\"primary\">Create account</SvButton>"
+      },
+      "heroDemo": "334-checkout-form",
+      "demos": [
+        "334-checkout-form",
+        "335-booking-form",
+        "253-buttons-toggles",
+        "254-text-inputs",
+        "255-selection",
+        "257-tabs-tree-form",
+        "331-app-overlays",
+        "332-app-navigation"
+      ],
+      "docs": [
+        "help/ui-components/index",
+        "help/ui-components/cli",
+        "help/ui-components/headless-editors",
+        "help/ui-components/sv-form",
+        "help/ui-components/i18n-rtl"
+      ],
+      "posts": [
+        "svelte-ui-component-library-what-to-look-for",
+        "svgrid-ui-components-tips-and-tricks",
+        "the-headless-ui-pattern"
+      ],
+      "features": [
+        {
+          "title": "One package",
+          "body": "Import the components from @svgrid/grid, next to the grid. No UI peer dependency, no date library and no icon font: the icons are inline SVG."
+        },
+        {
+          "title": "Styled by theme tokens",
+          "body": "Every component reads --sg-accent, --sg-bg, --sg-border and the rest, so a preset theme or one made in the Theme Builder restyles the whole kit at once."
+        },
+        {
+          "title": "Accessible by pattern",
+          "body": "Listbox, combobox, radio group, slider, tabs and tree each follow their WAI-ARIA pattern, with roving tabindex where the pattern calls for it."
+        },
+        {
+          "title": "Headless when you want it",
+          "body": "Each Sv component renders over a create* core such as createListbox. Use the core to draw your own markup with the same state and keyboard model."
+        },
+        {
+          "title": "Forms from a schema",
+          "body": "SvForm builds a validated form from a field list, with columns, a stepper mode for wizards and repeatable field arrays."
+        },
+        {
+          "title": "Try one before you add it",
+          "body": "npx @svgrid/ui try calendar opens a component in a browser sandbox, and npx @svgrid/ui add calendar drops a starter file into your app."
+        }
+      ],
+      "faq": [
+        {
+          "question": "Is SvGrid UI a separate package?",
+          "answer": "No. The components ship in @svgrid/grid, so import { SvButton } from '@svgrid/grid' is all it takes. There is nothing else to install."
+        },
+        {
+          "question": "Is it free for commercial use?",
+          "answer": "Yes. The component library is MIT-licensed in @svgrid/grid, with no license key. The paid @svgrid/enterprise package covers grid features such as export and pivot tables."
+        },
+        {
+          "question": "Does it work with Svelte 5 and SvelteKit?",
+          "answer": "It is written for Svelte 5 only, with runes and snippets, and drops into a SvelteKit route like any other Svelte component."
+        },
+        {
+          "question": "Can I use my own markup?",
+          "answer": "Yes. Every styled component has a headless create* core that returns state, actions and prop getters you spread onto your own elements, with none of the kit's styles."
+        },
+        {
+          "question": "Does it support right-to-left layouts?",
+          "answer": "Yes. Pass dir=\"rtl\" to any editor and it mirrors both layout and behavior: arrow keys reverse in tabs, tree and slider, and calendar navigation flips."
+        }
+      ],
+      "related": [
+        "date-picker",
+        "command-palette",
+        "dock-layout",
+        "rich-text-editor"
+      ]
+    },
+    {
       "slug": "date-picker",
       "kind": "component",
       "icon": "▣",
       "cardText": "Calendar, range and date-time, no dependency.",
+      "signature": "<SvCalendar selectionMode=\"range\" />",
       "query": "svelte date picker",
       "h1": "Svelte Date Picker",
       "seoTitle": "Svelte Date Picker - Calendar, Range and Date-Time",
@@ -1120,6 +1235,7 @@
         }
       ],
       "related": [
+        "component-library",
         "editable-table",
         "command-palette",
         "rich-text-editor"
@@ -1130,6 +1246,7 @@
       "kind": "component",
       "icon": "⌘",
       "cardText": "Fuzzy search over your actions, on Cmd+K.",
+      "signature": "<SvCommand {commands} onRun={run} />",
       "query": "svelte command palette",
       "h1": "Svelte Command Palette",
       "seoTitle": "Svelte Command Palette - Cmd+K Fuzzy Search",
@@ -1208,6 +1325,7 @@
         }
       ],
       "related": [
+        "component-library",
         "dock-layout",
         "date-picker",
         "rich-text-editor"
@@ -1218,6 +1336,7 @@
       "kind": "component",
       "icon": "❖",
       "cardText": "Draggable, resizable, serializable panels.",
+      "signature": "<SvDockLayout bind:layout>",
       "query": "svelte dock layout",
       "h1": "Svelte Dock Layout",
       "seoTitle": "Svelte Dock Layout - Draggable Docking Panels",
@@ -1301,6 +1420,7 @@
         }
       ],
       "related": [
+        "component-library",
         "admin-dashboard",
         "command-palette",
         "data-table"
@@ -1311,6 +1431,7 @@
       "kind": "component",
       "icon": "¶",
       "cardText": "A small WYSIWYG that emits HTML.",
+      "signature": "<SvRichText bind:value={html} />",
       "query": "svelte rich text editor",
       "h1": "Svelte Rich Text Editor",
       "seoTitle": "Svelte Rich Text Editor - WYSIWYG with bind:value",
@@ -1390,6 +1511,7 @@
         }
       ],
       "related": [
+        "component-library",
         "editable-table",
         "date-picker",
         "command-palette"
@@ -1400,6 +1522,7 @@
       "kind": "feature",
       "icon": "⌗",
       "cardText": "The engine alone: your markup, your classes, your tokens.",
+      "signature": "createSvGrid({ data, columns, … })",
       "query": "svelte headless table",
       "h1": "Svelte Headless Table",
       "seoTitle": "Svelte Headless Table - The Grid Engine, Your Markup",
@@ -1504,6 +1627,7 @@
       "kind": "feature",
       "icon": "⇅",
       "cardText": "A blotter that stays sorted while the feed ticks.",
+      "signature": "api.applyTransaction({ update })",
       "query": "svelte trading grid",
       "h1": "Svelte Trading Grid",
       "seoTitle": "Svelte Trading Grid - 100,000 Rows on a Live WebSocket Feed",

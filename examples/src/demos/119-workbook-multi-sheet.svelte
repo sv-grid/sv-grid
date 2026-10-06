@@ -34,11 +34,8 @@
   } from '@svgrid/grid'
   import {
     installEnterprise,
-    setLicenseKey,
     type EnterpriseGridApi,
   } from '@svgrid/enterprise'
-
-  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   // ───────────────────────── Column address helpers ─────────────────────
   function colToLetters(n: number): string {

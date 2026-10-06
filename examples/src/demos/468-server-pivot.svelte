@@ -14,10 +14,8 @@
    * contract the warehouse implements is free.
    */
   import type { GridColumns } from '@svgrid/grid'
-  import { SvPivotDesigner, createServerRowModel, setLicenseKey, type PivotField, type PivotLayout } from '@svgrid/enterprise'
+  import { SvPivotDesigner, createServerRowModel, type PivotField, type PivotLayout } from '@svgrid/enterprise'
   import { createWarehouse, type WarehouseLogEntry, type WarehouseRow } from '../shared/server-warehouse'
-
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
 
   let log = $state<WarehouseLogEntry[]>([])
   const warehouse = createWarehouse({

@@ -103,18 +103,6 @@ const KEY = {
 setLicenseKey(KEY)
 ```
 
-## Dev / demo key
-
-For demos + integration tests, use the published sentinel:
-
-```ts
-setLicenseKey('SVENTERPRISE-DEV-DEMO')
-```
-
-This suppresses the watermark for local development. **Do not ship
-this key to production** - it's a dev-only convenience and will be
-revoked in any production-domain validation pipeline.
-
 ## What happens without a key
 
 | Surface                     | Behaviour                                                  |

@@ -459,7 +459,7 @@
     </div>
 
     <footer class="ai-footer">
-      Provider: <code>mockAIProvider</code> · License: <code>SVENTERPRISE-DEV-AI</code>
+      Provider: <code>mockAIProvider</code>
     </footer>
   </aside>
 

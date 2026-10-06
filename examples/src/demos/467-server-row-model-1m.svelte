@@ -24,7 +24,6 @@
     type SvGridApi,
   } from '@svgrid/grid'
   import {
-    setLicenseKey,
     installEnterprise,
     compilePredicate,
     createServerRowModel,
@@ -37,8 +36,6 @@
   } from '@svgrid/enterprise'
   import { createWarehouse, type WarehouseLogEntry, type WarehouseRow } from '../shared/server-warehouse'
   import BlockMap from '../shared/BlockMap.svelte'
-
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature, rowSelectionFeature })
 

@@ -19,15 +19,12 @@
    */
   import {
     SvPivotDesigner,
-    setLicenseKey,
     type PivotField,
     type PivotLayout,
     type PivotPreset,
     type PivotRow,
   } from '@svgrid/enterprise'
   import type { ColumnDef } from '@svgrid/grid'
-
-  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   // ---- Domain ---------------------------------------------------------
   type Region = 'NA' | 'EMEA' | 'APAC' | 'LATAM'

@@ -43,15 +43,15 @@ exports, with nothing else to wire up.
 ```svelte
 <script>
   import { SvGrid } from '@svgrid/grid'
-  import { installEnterprise, setLicenseKey } from '@svgrid/enterprise'
+  import { installEnterprise } from '@svgrid/enterprise'
   // One of 20 themes that ship with the package. Swap the id for material,
   // nord, dracula, fluent, carbon, ag-alpine, and so on. Each carries a full
   // light AND dark palette; dark activates on <html data-theme="dark">.
   import '@svgrid/grid/themes/shadcn.css'
 
-  // Once, before any Enterprise feature runs. Optional while you evaluate:
-  // without a key everything still works and shows a watermark.
-  setLicenseKey('SVENTERPRISE-DEV-DEMO')
+  // No key while you evaluate: everything works and shows a watermark.
+  // After you buy, call setLicenseKey(yourKey) once, before any Enterprise
+  // feature runs, and the watermark goes away.
 
   let api = $state(null)
   let status = $state('')

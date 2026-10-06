@@ -133,11 +133,8 @@ disappear:
 
 ```ts
 import { setLicenseKey } from '@svgrid/enterprise'
-setLicenseKey('SVENTERPRISE-XXXX-XXXX-XXXX')
+setLicenseKey('YOUR-LICENSE-KEY') // the key from your order
 ```
-
-For dev builds, the demos use `setLicenseKey('SVENTERPRISE-DEV-DEMO')` to
-suppress the watermark in screenshots.
 
 The pack comes in two editions, both covering unlimited production apps.
 **Grid** is everything on this page except the spreadsheet and Studio;

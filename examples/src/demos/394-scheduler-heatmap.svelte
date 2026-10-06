@@ -9,9 +9,8 @@
    * the pressure is. Toggle to the Table - same grid rows. Renderer: @svgrid/enterprise.
    */
   import { SvGrid, type ColumnDef, type SchedulerResource, type SchedulerEventMoveEvent, type SchedulerEventResizeEvent } from '@svgrid/grid'
-  import { enableSchedulerView, setLicenseKey, type SchedulerProConfig } from '@svgrid/enterprise'
+  import { enableSchedulerView, type SchedulerProConfig } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableSchedulerView()
 
   type Queue = SchedulerResource & { cap: number }

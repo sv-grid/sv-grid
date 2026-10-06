@@ -1,8 +1,9 @@
 /**
  * The blog topic queue: tools/blog-topics.json, a prioritized list of search
- * queries the daily generator writes against instead of inventing a subject.
+ * queries the weekly generator writes against instead of inventing a subject.
  *
- * A topic is consumed when website/src/content/blog/<slug>.md exists, so the
+ * A topic is consumed when website/src/content/blog/<slug>.md (or the parked
+ * copy in content/blog-drafts/) exists, so the
  * queue itself never changes when a post ships. That matters because the post
  * lands in the private website repo while the queue lives here; a "consumed"
  * flag would need a commit in both repos at once. Array order is priority.
@@ -79,8 +80,11 @@ export function loadTopics(root) {
   return { topics, problems: validateTopics(root, topics) }
 }
 
+// A post parked in blog-drafts/ (written, held back from the publish queue)
+// still consumes its topic; otherwise the generator would write it again.
 export function isTopicConsumed(root, slug) {
-  return existsSync(join(root, 'website', 'src', 'content', 'blog', `${slug}.md`))
+  const content = join(root, 'website', 'src', 'content')
+  return existsSync(join(content, 'blog', `${slug}.md`)) || existsSync(join(content, 'blog-drafts', `${slug}.md`))
 }
 
 /** First topic in priority order whose post has not been written yet. */

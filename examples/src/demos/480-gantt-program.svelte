@@ -24,9 +24,8 @@
    * the search box and the grid filters, the Gantt drawing what is left.
    */
   import { SvGrid, type ColumnDef } from '@svgrid/grid'
-  import { enableGanttView, setLicenseKey, type GanttProConfig } from '@svgrid/enterprise'
+  import { enableGanttView, type GanttProConfig } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableGanttView()
 
   type Task = {

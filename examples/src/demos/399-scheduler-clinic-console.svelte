@@ -27,9 +27,8 @@
     type SchedulerEventResizeEvent,
     type SchedulerEventCommitEvent,
   } from '@svgrid/grid'
-  import { enableSchedulerView, setLicenseKey, availableSlots, type SchedulerProConfig, type SchedulerResourceGroup } from '@svgrid/enterprise'
+  import { enableSchedulerView, availableSlots, type SchedulerProConfig, type SchedulerResourceGroup } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableSchedulerView()
 
   // --- providers grouped by department (resource tree) ---

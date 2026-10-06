@@ -18,9 +18,7 @@ npm install jszip pdfmake   # only needed for Excel and PDF export
 ```svelte
 <script>
   import { SvGrid } from '@svgrid/grid'
-  import { installEnterprise, setLicenseKey } from '@svgrid/enterprise'
-
-  setLicenseKey('SVENTERPRISE-DEV-DEMO') // local dev key, removes the watermark
+  import { installEnterprise } from '@svgrid/enterprise'
 
   let api = $state(null)
 

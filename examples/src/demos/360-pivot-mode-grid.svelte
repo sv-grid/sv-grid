@@ -28,13 +28,10 @@
   } from '@svgrid/grid'
   import {
     SvPivotDesigner,
-    setLicenseKey,
     type PivotField,
     type PivotLayout,
     type PivotRow,
   } from '@svgrid/enterprise'
-
-  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   // ---- Domain ----------------------------------------------------------
   const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'] as const

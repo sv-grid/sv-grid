@@ -12,9 +12,8 @@
    */
   import { SvGrid, SvToaster, SvNavPane, toast, type ColumnDef, type NavSection } from '@svgrid/grid'
   import type { ConditionalFormat } from '@svgrid/grid/format'
-  import { SvGridAlerts, alertStore, enableAlerts, setLicenseKey, type AlertEvent, type AlertRule, type ExprColumn } from '@svgrid/enterprise'
+  import { SvGridAlerts, alertStore, enableAlerts, type AlertEvent, type AlertRule, type ExprColumn } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableAlerts()
 
   type Server = { host: string; role: string; region: string; cpu: number; diskUsed: number; diskTotal: number; status: string; cpuHistory: number[] }

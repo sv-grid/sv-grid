@@ -15,13 +15,10 @@
    */
   import {
     SvPivotDesigner,
-    setLicenseKey,
     type PivotField,
     type PivotLayout,
     type PivotPreset,
   } from '@svgrid/enterprise'
-
-  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   // ---- Domain --------------------------------------------------------
   type City = 'Chicago' | 'Houston' | 'Los Angeles' | 'Miami' | 'New York' | 'San Francisco'

@@ -18,9 +18,8 @@
     type SchedulerEventResizeEvent,
     type SchedulerEventCommitEvent,
   } from '@svgrid/grid'
-  import { enableSchedulerView, setLicenseKey } from '@svgrid/enterprise'
+  import { enableSchedulerView } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableSchedulerView()
 
   type Ev = { id: number; title: string; start: string; end: string; color: string; allDay?: boolean }

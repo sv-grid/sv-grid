@@ -16,14 +16,11 @@
   } from '@svgrid/grid'
   import {
     installEnterprise,
-    setLicenseKey,
     type EnterpriseGridApi,
     type ExportStyles,
     type ExportFormat,
   } from '@svgrid/enterprise'
   import { makeOrders, type Order } from '../shared/seed'
-
-  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
   const rows = makeOrders(80)

@@ -4,6 +4,7 @@
  * page.evaluate. Every method returns when its animation has finished, so a
  * beat can await it and the narration timing stays honest.
  */
+import '../gallery-license'
 import { mount } from 'svelte'
 import '../index.css'
 import Stage from './Stage.svelte'

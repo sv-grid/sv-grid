@@ -31,11 +31,8 @@
   } from '@svgrid/grid'
   import {
     installEnterprise,
-    setLicenseKey,
     type EnterpriseGridApi,
   } from '@svgrid/enterprise'
-
-  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   // ---- Domain --------------------------------------------------------
   type Region = 'AMER' | 'EMEA' | 'APAC'

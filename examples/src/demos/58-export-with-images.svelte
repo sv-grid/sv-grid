@@ -26,11 +26,8 @@
   } from '@svgrid/grid'
   import {
     installEnterprise,
-    setLicenseKey,
     type EnterpriseGridApi,
   } from '@svgrid/enterprise'
-
-  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   type Product = {
     id: string

@@ -20,9 +20,8 @@
    *     follows.
    */
   import { SvGrid, type ColumnDef, type GanttConfig, type GanttDependency } from '@svgrid/grid'
-  import { enableGanttView, setLicenseKey } from '@svgrid/enterprise'
+  import { enableGanttView } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableGanttView()
 
   type Task = {

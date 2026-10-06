@@ -9,8 +9,11 @@ const WATERMARK_ATTR = 'data-svgrid-enterprise-watermark'
 // Marks a grid that has already shown (and faded) its watermark, so the
 // MutationObserver doesn't re-add it once it fades out and is removed.
 const NUDGED_ATTR = 'data-svgrid-enterprise-nudged'
-const HOMEPAGE_URL = 'https://svgrid.com'
-const LICENSE_URL = 'https://svgrid.com/pricing/'
+// Both point at pricing with UTM tags, the convention upgrade-prompt.ts set.
+// The watermark link carries rel="noreferrer", so without utm_medium the site
+// analytics cannot tell a visit from an unlicensed install from direct traffic.
+const WATERMARK_URL = 'https://svgrid.com/pricing/?utm_source=svgrid-enterprise&utm_medium=watermark'
+const LICENSE_URL = 'https://svgrid.com/pricing/?utm_source=svgrid-enterprise&utm_medium=console'
 const WATERMARK_LABEL = 'www.svgrid.com'
 
 // How long the watermark stays fully visible before it starts fading, and how
@@ -134,7 +137,7 @@ function ensureFixedFallback(): void {
 function buildWatermark(kind: 'grid' | 'fixed'): HTMLAnchorElement {
   const a = document.createElement('a')
   a.setAttribute(WATERMARK_ATTR, kind)
-  a.href = HOMEPAGE_URL
+  a.href = WATERMARK_URL
   a.target = '_blank'
   a.rel = 'noopener noreferrer'
   a.textContent = WATERMARK_LABEL

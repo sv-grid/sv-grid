@@ -34,6 +34,7 @@ import { comparePageModel, renderCompareHtml, compareHubModel, renderCompareHubH
 import { loadComparisons, loadLedger, loadSvgridSize } from './lib/compare-data.mjs'
 import { buildTagHubs, postTags, tagSlug, tagLabel } from './lib/blog-tags.mjs'
 import { prerenderedRoutes, ROUTE_SEO } from './lib/route-seo.mjs'
+import { FREE_TOOLS, findFreeTool } from './lib/free-tools.mjs'
 import { productGraph } from './lib/product-ld.mjs'
 import { HOME_GUIDES } from './lib/home-guides.mjs'
 import { tutorialIdsIn, videoObjectLd, tutorialBlock } from './lib/tutorial-media.mjs'
@@ -706,6 +707,44 @@ function faqLd(items) {
   }
 }
 
+// ---- free tools (/tools/<slug>, copy in tools/lib/free-tools.mjs) -----------
+
+function freeToolLd(tool, url) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: tool.name,
+    url,
+    description: tool.description,
+    applicationCategory: 'UtilitiesApplication',
+    operatingSystem: 'Any',
+    browserRequirements: 'Requires JavaScript',
+    isAccessibleForFree: true,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    isPartOf: { '@type': 'WebSite', name: 'SvGrid', url: CANON + '/' },
+  }
+}
+
+function freeToolBody(tool) {
+  let html = `<main class="prerender-route" data-prerender="1"><nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}tools/">Free tools</a></nav>`
+  html += `<h1>${escapeAttr(tool.h1)}</h1><p>${escapeAttr(tool.lead)}</p>`
+  html += `<h2>How to use it</h2><ol>${tool.steps.map((s) => `<li>${escapeAttr(s)}</li>`).join('')}</ol>`
+  html += `<h2>Built with SvGrid</h2><p>The table is <a href="${BASE}">SvGrid</a>, a free MIT data grid for Svelte 5. "Get the code" turns your file into a Svelte component that renders the same table in your own app. See the <a href="${BASE}docs/">documentation</a> and the <a href="${BASE}demos/">live demos</a>.</p>`
+  html += `<h2>Frequently asked questions</h2>`
+  for (const f of tool.faq) html += `<h3 id="${slugifyHeading(f.question)}">${escapeAttr(f.question)}</h3><p>${escapeAttr(f.answer)}</p>`
+  const others = FREE_TOOLS.filter((t) => t.slug !== tool.slug)
+  if (others.length) {
+    html += `<h2>More free tools</h2><ul>${others.map((t) => `<li><a href="${BASE}tools/${t.slug}/">${escapeAttr(t.name)}</a> - ${escapeAttr(t.cardText)}</li>`).join('')}</ul>`
+  }
+  return html + `</main>`
+}
+
+function freeToolsIndexBody() {
+  let html = `<main class="prerender-index" data-prerender="1"><h1>Free CSV and JSON tools</h1><p>Browser tools built on the SvGrid data grid. Files are read and parsed in your browser and never uploaded.</p><ul>`
+  for (const t of FREE_TOOLS) html += `<li><a href="${BASE}tools/${t.slug}/">${escapeAttr(t.name)}</a> - ${escapeAttr(t.description)}</li>`
+  return html + `</ul></main>`
+}
+
 function demosIndexBody(demos) {
   const byCat = new Map()
   for (const d of demos) { if (!byCat.has(d.category)) byCat.set(d.category, []); byCat.get(d.category).push(d) }
@@ -806,11 +845,25 @@ function docsIndexBody(docs, solutions = []) {
 }
 
 function solutionsIndexBody(solutions) {
-  let html = `<main class="prerender-index" data-prerender="1"><h1>Build It in Svelte with SvGrid</h1><p>${solutions.length} things people build with a Svelte 5 data grid and the SvGrid component suite - a Kanban board, a scheduler, a pivot table, a spreadsheet, an editable table, a date picker - each with the prop that turns it on, a live demo, and the documentation.</p><ul>`
-  for (const s of solutions) {
-    html += `<li><a href="${BASE}svelte/${s.slug}/">${escapeAttr(s.h1)}</a> - ${escapeAttr(s.seoDescription || '')}</li>`
+  // Grouped and worded like website/src/components/solutions/SolutionsIndex.svelte,
+  // with each entry's `signature` (the line that turns it on).
+  const groups = [
+    ['view', 'Views of the grid', 'Not separate widgets. The rows you pass to a table become the cards on a board or the events on a calendar; change the prop and the same data redraws.'],
+    ['feature', 'The grid, configured', 'The table itself, set up for one job, in the free @svgrid/grid package unless marked Enterprise.'],
+    ['component', 'Components in the same package', 'They started as the grid\'s cell editors and menus. Import them on their own for forms, dialogs and settings pages.'],
+  ]
+  let html = `<main class="prerender-index" data-prerender="1"><h1>Build it in Svelte. Start from one grid.</h1><p>A Kanban board, a scheduler and a pivot table are the same &lt;SvGrid&gt; drawn a different way. A tree grid or a spreadsheet is the grid with a few props set. ${solutions.length} pages, each with the line that turns it on, a live demo and the documentation.</p>`
+  for (const [kind, title, blurb] of groups) {
+    const items = solutions.filter((s) => s.kind === kind)
+    if (!items.length) continue
+    html += `<h2>${escapeAttr(title)}</h2><p>${escapeAttr(blurb)}</p><ul>`
+    for (const s of items) {
+      const tier = s.tier === 'enterprise' ? ' (Enterprise)' : ''
+      html += `<li><a href="${BASE}svelte/${s.slug}/">${escapeAttr(s.h1)}</a>${tier} - ${escapeAttr(s.seoDescription || '')}${s.signature ? ` <code>${escapeAttr(s.signature)}</code>` : ''}</li>`
+    }
+    html += `</ul>`
   }
-  return html + `</ul></main>`
+  return html + `</main>`
 }
 
 function compareIndexBody(comparisons, ledger) {
@@ -1337,6 +1390,14 @@ async function main() {
       body = aiPromptsBody(aiPrompts)
       const all = aiPrompts.flatMap((g) => g.items)
       if (all.length) html = injectJsonLd(html, faqLd(all))
+    } else if (route === 'tools') {
+      body = freeToolsIndexBody()
+      html = injectJsonLd(html, collectionLd('Free CSV and JSON tools', url, FREE_TOOLS.map((t) => ({ name: t.name, url: `${CANON}/tools/${t.slug}/` }))))
+    } else if (route.startsWith('tools/')) {
+      const tool = findFreeTool(route.slice('tools/'.length))
+      if (!tool) throw new Error(`ROUTE_SEO names ${route} but tools/lib/free-tools.mjs has no such tool`)
+      body = freeToolBody(tool)
+      html = injectJsonLd(html, [freeToolLd(tool, url), faqLd(tool.faq)])
     } else {
       body = `<main class="prerender-route" data-prerender="1"><h1>${escapeAttr(title)}</h1><p>${escapeAttr(description)}</p><p><a href="${BASE}docs/">Documentation</a> · <a href="${BASE}demos/">Demos</a></p></main>`
     }
@@ -1496,6 +1557,7 @@ async function main() {
     body += `<nav><a href="${BASE}">SvGrid</a> / <a href="${BASE}svelte/">Build it in Svelte</a></nav>`
     body += `<h1>${escapeAttr(s.h1)}</h1>`
     for (const p of s.intro ?? []) body += `<p>${escapeAttr(p)}</p>`
+    if (s.signature) body += `<p>Turn it on: <code>${escapeAttr(s.signature)}</code></p>`
     if (s.install) {
       body += `<h2>Install</h2><pre><code>${escapeAttr(s.install)}</code></pre>`
       body += `<p>${s.tier === 'enterprise'
@@ -1885,6 +1947,13 @@ ${feedItems.join('\n')}
   // 7. Persist the hashes. Written last so a failed build cannot leave the map
   // claiming pages are current when their HTML was never produced.
   await saveLastmod()
+  // The same hashes, published with the site. The next deploy compares its own
+  // manifest against the live copy to find the pages that changed and submits
+  // only those to IndexNow (tools/indexnow.mjs). Comparing against the live
+  // site rather than tools/sitemap-lastmod.json matters: CI never commits that
+  // file back, so it would report the same pages as changed on every deploy.
+  const pageHashes = Object.fromEntries(Object.keys(lastmodNext).sort().map((k) => [k, lastmodNext[k].hash]))
+  await writeFile(join(DIST, 'page-hashes.json'), JSON.stringify(pageHashes) + '\n', 'utf-8')
   const movedDates = Object.entries(lastmodNext).filter(([k, v]) => lastmodPrev[k]?.date !== v.date).length
 
   process.stdout.write(`prerender: ${written + 1} static pages · sitemap ${urls.length} urls (${docs.length} docs, ${demos.length} demos, ${comparisons.length} comparisons, ${solutions.length} solutions, ${blogPosts.length} blog posts, ${tagHubs.length} tag hubs, ${categoryArchives.length} category archives) · feed.xml ${feedItems.length} items · ${rasterCount}/${blogPosts.length} blog card PNGs · og-image.png ${ogPngWritten ? 'ok' : 'skipped'} · lastmod ${movedDates} moved\n`)

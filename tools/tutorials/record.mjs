@@ -46,6 +46,7 @@ import { recordTutorial } from './lib/recorder.mjs'
 import { muxTutorial, stitchSegments, DEFAULT_BUDGET_BYTES } from './lib/mux.mjs'
 import { readManifest, writeManifest, upsertTutorial, ROOT, SCRIPTS_DIR, OUT_DIR, SITE_MEDIA_DIR } from './lib/manifest.mjs'
 import { normalizeNarration } from '../lib/tutorial-media.mjs'
+import { ROUTE_SEO } from '../lib/route-seo.mjs'
 
 const args = process.argv.slice(2)
 const flag = (name) => args.includes(name)
@@ -328,7 +329,7 @@ async function main() {
         } else if (Array.isArray(def.segments)) {
           const recorded = []
           for (let i = 0; i < def.segments.length; i += 1) {
-            const seg = { id: `${def.id}-${i + 1}`, theme: def.theme, preset: def.preset, ...def.segments[i] }
+            const seg = { id: `${def.id}-${i + 1}`, theme: def.theme, preset: def.preset, today: def.today, ...def.segments[i] }
             const dir = join(outDir, `seg-${i + 1}`)
             console.log(`  segment ${i + 1}/${def.segments.length}: ${targetLabel(seg)}`)
             const t = await recordTutorial(seg, { base: BASE, siteBase: SITE_BASE, appBase, outDir: dir, view, log, warm: WARM, tts })
@@ -350,7 +351,12 @@ async function main() {
         // tutorial, and a marketing cut that names a docsPage. One predicate,
         // because the mux and the manifest files{} have to agree: they drifted
         // once and left an mp4 on disk that no page could reference.
-        const onAPage = !marketing || !!def.docsPage
+        // A hand-written route can name a cut in tools/lib/route-seo.mjs
+        // instead of embedding it in markdown, and it needs the same
+        // docs-sized outputs. Checked here so the route table stays the one
+        // place that decides, rather than a second flag on the script.
+        const onARoute = Object.values(ROUTE_SEO).some((r) => r.video === def.id)
+        const onAPage = !marketing || !!def.docsPage || onARoute
         const m = await muxTutorial({
           id: def.id, outDir, siteDir: SITE_MEDIA_DIR, timeline, budgetBytes: BUDGET,
           gif: !NO_GIF, gifBeats: def.gif?.beats, posterBeat: def.poster?.beat ?? null, docs: onAPage, player: onAPage && !!def.player, log,

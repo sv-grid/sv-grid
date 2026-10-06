@@ -23,6 +23,10 @@ import { cuesFromBeats, toSrt, toVtt, normalizeNarration } from '../../lib/tutor
 export const DOCS_WIDTH = 960
 export const DEFAULT_BUDGET_BYTES = 2.5 * 1024 * 1024
 
+/** Longest GIF window. Past this it is a video file with a .gif extension:
+ *  a 30 s window came out at 22 MB, which no social platform accepts. */
+export const MAX_GIF_SECONDS = 10
+
 /**
  * Find where the recording really starts: the end of the black flash nearest
  * the recorder's estimate. Falls back to the estimate with a warning.
@@ -148,7 +152,11 @@ export async function muxTutorial({ id, outDir, siteDir, timeline, budgetBytes =
     if (gifBeats) {
       const [a, b] = gifBeats
       from = timeline.beats[a]?.start ?? 0
-      len = Math.max(1, (timeline.beats[b]?.end ?? duration) - from)
+      // `beats` is a RANGE, start of `a` to end of `b`, which is easy to read as
+      // "these two beats" and ask for half the video by accident. A 30 s window
+      // produced a 22 MB GIF, past what any social platform accepts, so the
+      // window is capped: a GIF is a loop, not a cut of the film.
+      len = Math.max(1, Math.min(MAX_GIF_SECONDS, (timeline.beats[b]?.end ?? duration) - from))
     }
     gifPath = join(outDir, `${id}.gif`)
     await run([

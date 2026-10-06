@@ -9,9 +9,8 @@
    * read the same grid rows. Renderer ships in @svgrid/enterprise.
    */
   import { SvGrid, type ColumnDef, type SchedulerResource, type SchedulerEventMoveEvent, type SchedulerEventResizeEvent, type SchedulerEventCommitEvent } from '@svgrid/grid'
-  import { enableSchedulerView, setLicenseKey, type SchedulerProConfig, type SchedulerResourceGroup } from '@svgrid/enterprise'
+  import { enableSchedulerView, type SchedulerProConfig, type SchedulerResourceGroup } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableSchedulerView()
 
   type Provider = SchedulerResource & { dept: string }

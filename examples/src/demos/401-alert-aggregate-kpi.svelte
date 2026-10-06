@@ -11,9 +11,8 @@
    */
   import { SvGrid, SvToaster, renderSnippet, type ColumnDef, type SvGridApi } from '@svgrid/grid'
   import type { ConditionalFormat } from '@svgrid/grid/format'
-  import { SvGridAlerts, enableAlerts, setLicenseKey, type AlertRule, type ExprColumn } from '@svgrid/enterprise'
+  import { SvGridAlerts, enableAlerts, type AlertRule, type ExprColumn } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableAlerts()
 
   type Region = { region: string; owner: string; revenue: number; target: number; deals: number }

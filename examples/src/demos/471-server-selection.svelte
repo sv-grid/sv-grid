@@ -16,7 +16,6 @@
    */
   import { SvGrid, renderComponent, tableFeatures, rowSortingFeature, columnFilteringFeature, rowSelectionFeature, type GridColumns } from '@svgrid/grid'
   import {
-    setLicenseKey,
     installEnterprise,
     createInMemoryDataSource,
     createServerRowModel,
@@ -30,8 +29,6 @@
     type ServerGroupSelectionNode,
   } from '@svgrid/enterprise'
   import { createPrng } from '../shared/mock-api'
-
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature, rowSelectionFeature })
 

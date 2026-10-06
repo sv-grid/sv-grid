@@ -22,9 +22,8 @@
    * hands the title to whichever chain is longest next.
    */
   import { SvGrid, type ColumnDef, type GanttDependency } from '@svgrid/grid'
-  import { enableGanttView, setLicenseKey, type GanttProConfig } from '@svgrid/enterprise'
+  import { enableGanttView, type GanttProConfig } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableGanttView()
 
   type Task = {

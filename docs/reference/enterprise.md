@@ -21,7 +21,7 @@ import { setAIProvider, aiFilter, aiSmartFill, aiSummarize, aiClassify } from '@
 ### `setLicenseKey(key)` / `clearLicenseKey()` / `isLicenseKeySet()`
 
 ```ts
-setLicenseKey('SVENTERPRISE-XXXX-XXXX-XXXX')
+setLicenseKey('YOUR-LICENSE-KEY') // the key from your order
 ```
 
 Call once at app startup. Without a key the Enterprise methods still work

@@ -34,9 +34,8 @@
     type ColumnDef,
     type GanttDependency,
   } from '@svgrid/grid'
-  import { enableGanttView, setLicenseKey, criticalPath, slackDays, makeCalendar, type GanttProConfig } from '@svgrid/enterprise'
+  import { enableGanttView, criticalPath, slackDays, makeCalendar, type GanttProConfig } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableGanttView()
 
   type Health = 'On track' | 'At risk' | 'Late'

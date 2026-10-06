@@ -12,9 +12,8 @@
    */
   import { SvGrid, SvToaster, renderSnippet, type ColumnDef, type SvGridApi } from '@svgrid/grid'
   import type { ConditionalFormat } from '@svgrid/grid/format'
-  import { SvGridAlerts, alertStore, enableAlerts, setLicenseKey, type AlertRule, type ExprColumn } from '@svgrid/enterprise'
+  import { SvGridAlerts, alertStore, enableAlerts, type AlertRule, type ExprColumn } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableAlerts()
 
   type Quote = { symbol: string; name: string; sector: string; price: number; changePct: number; bid: number; ask: number; volume: number; history: number[] }

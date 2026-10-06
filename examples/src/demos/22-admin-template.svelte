@@ -26,13 +26,8 @@
     type GridColumns,
     type SvGridApi,
   } from '@svgrid/grid'
-  import { installEnterprise, setLicenseKey, type EnterpriseGridApi } from '@svgrid/enterprise'
+  import { installEnterprise, type EnterpriseGridApi } from '@svgrid/enterprise'
   import { makeOrders, makePeople, type Order, type Person } from '../shared/seed'
-
-  // Dev license so the Pro export buttons work inside the demo without a
-  // real customer key. Removes the watermark and surfaces a one-time
-  // dev-license console notice.
-  setLicenseKey('SVENTERPRISE-DEV-ADMIN-DEMO')
 
   const features = tableFeatures({
     rowSortingFeature,

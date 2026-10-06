@@ -18,14 +18,9 @@
   } from '@svgrid/grid'
   import {
     installEnterprise,
-    setLicenseKey,
-    dismissUnlicensedNudge,
     type EnterpriseGridApi,
   } from '@svgrid/enterprise'
   import { makeOrders, type Order } from '../shared/seed'
-
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
-  dismissUnlicensedNudge()
 
   const features = tableFeatures({
     rowSortingFeature,

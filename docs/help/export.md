@@ -141,12 +141,12 @@ when the recipient expects formatted documents.
 ```svelte {runnable}
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi, type ColumnDef } from '@svgrid/grid'
-  import { installEnterprise, setLicenseKey, type EnterpriseGridApi } from '@svgrid/enterprise'
+  import { installEnterprise, type EnterpriseGridApi } from '@svgrid/enterprise'
 
-  // Set the license key once at startup. Without a key, the feature still
-  // works but the grid shows an "unlicensed" watermark and the console
-  // emits a one-time nudge directing users to the pricing page.
-  setLicenseKey('SVENTERPRISE-XXXX-XXXX-XXXX')
+  // Without a key, the feature still works but the grid shows an
+  // "unlicensed" watermark and the console emits a one-time nudge directing
+  // users to the pricing page. After you buy, call setLicenseKey(yourKey)
+  // once at startup.
 
   const features = tableFeatures({ rowSortingFeature })
 
@@ -200,15 +200,13 @@ them.
 
 | Key state                                  | Behavior |
 | ------------------------------------------ | -------- |
-| No key set (`setLicenseKey()` not called)  | Feature works. Grid shows an unlicensed watermark linking to jqwidgets.com; console.log emits a one-time nudge. |
+| No key set (`setLicenseKey()` not called)  | Feature works. Grid shows an unlicensed watermark linking to svgrid.com/pricing; console.log emits a one-time nudge. |
 | Key doesn't start with `SVENTERPRISE-`            | Throws - programmer error. |
 | Key is in the revoked list                 | Throws - contact support for a replacement. |
-| `SVENTERPRISE-DEV-...` or `SVENTERPRISE-EVAL-...`        | Works. One-time console.info notice. No watermark. |
-| Any other `SVENTERPRISE-...`                      | Works silently. |
+| Your license key                           | Works silently. |
 
 Buy a production key at <https://svgrid.com/pricing/> ($599 / developer /
-year). `SVENTERPRISE-DEV-...` keys cover local development. To evaluate, you
-need no key at all: everything runs with a watermark.
+year). To evaluate, you need no key at all: everything runs with a watermark.
 
 ## Reference
 

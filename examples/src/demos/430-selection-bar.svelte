@@ -43,11 +43,10 @@
     type SelectionBarAction,
     type SvGridApi,
   } from '@svgrid/grid'
-  import { installEnterprise, setLicenseKey } from '@svgrid/enterprise'
+  import { installEnterprise } from '@svgrid/enterprise'
 
   // The bar is a Pro renderer. installEnterprise() registers it (along with the
   // rest of the Pro surface) the moment the grid hands us its api.
-  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   type Task = {
     id: number

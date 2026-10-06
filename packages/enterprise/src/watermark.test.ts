@@ -41,7 +41,10 @@ describe('unlicensed watermark', () => {
     const mark = grid.querySelector(`[${WATERMARK_ATTR}]`) as HTMLAnchorElement | null
     expect(mark).not.toBeNull()
     expect(mark!.textContent).toBe('www.svgrid.com')
-    expect(mark!.href).toContain('svgrid.com')
+    expect(mark!.href).toContain('svgrid.com/pricing/')
+    // The site analytics attributes these visits by utm_medium; the link is
+    // rel="noreferrer", so the tag is the only signal that survives.
+    expect(mark!.href).toContain('utm_medium=watermark')
     expect(mark!.style.position).toBe('absolute')
     expect(mark!.style.bottom).toBe('6px')
     expect(mark!.style.right).toBe('8px')

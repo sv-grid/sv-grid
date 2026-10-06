@@ -29,12 +29,9 @@
   import {
     createPivotModel,
     filterCollapsedPivotRows,
-    setLicenseKey,
     type PivotRow,
     type PivotValueConfig,
   } from '@svgrid/enterprise'
-
-  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   // ---- Domain --------------------------------------------------------
   type Region = 'AMER' | 'EMEA' | 'APAC'

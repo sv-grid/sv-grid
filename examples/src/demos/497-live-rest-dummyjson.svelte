@@ -22,9 +22,7 @@
     type GridColumns,
     type ServerState,
   } from '@svgrid/grid'
-  import { createRestDataSource, dummyJsonAdapter, setLicenseKey } from '@svgrid/enterprise'
-
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
+  import { createRestDataSource, dummyJsonAdapter } from '@svgrid/enterprise'
 
   const features = tableFeatures({ rowSortingFeature })
 

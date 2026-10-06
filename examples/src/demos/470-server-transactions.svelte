@@ -15,7 +15,6 @@
    */
   import { SvGrid, renderComponent, tableFeatures, type GridColumns, type ServerDataSource } from '@svgrid/grid'
   import {
-    setLicenseKey,
     createServerRowModel,
     serverGroupText,
     SvGroupCell,
@@ -25,8 +24,6 @@
     type ServerTransactionResult,
   } from '@svgrid/enterprise'
   import { createPrng } from '../shared/mock-api'
-
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
 
   const features = tableFeatures({})
 

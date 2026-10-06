@@ -35,6 +35,7 @@
  */
 import { PRODUCT_KEYWORDS } from './product-ld.mjs'
 import { isReleased } from './releases.mjs'
+import { FREE_TOOLS } from './free-tools.mjs'
 
 const GANTT = isReleased('gantt')
 
@@ -117,12 +118,29 @@ export const ROUTE_SEO = {
     keywords: ['sv-grid theme builder', 'svelte data grid theming', 'data grid brand theme', 'svelte grid colors', 'svgrid theme generator', 'data grid wcag contrast'],
     path: '/theme-builder',
   },
+  tools: {
+    title: 'Free CSV and JSON Tools - View, Convert and Edit in the Browser',
+    description:
+      'Free browser tools built on the SvGrid data grid: a CSV viewer and editor, and a JSON to table converter with CSV export. No sign-up, and your file is never uploaded.',
+    keywords: FREE_TOOLS.flatMap((t) => t.keywords.slice(0, 2)),
+    path: '/tools',
+  },
+  // One entry per tool, from tools/lib/free-tools.mjs. The key has a slash in
+  // it on purpose: the prerenderer writes dist/<key>/index.html and App.svelte
+  // looks the entry up as "tools/<slug>".
+  ...Object.fromEntries(FREE_TOOLS.map((t) => [`tools/${t.slug}`, {
+    title: t.title,
+    description: t.description,
+    keywords: t.keywords,
+    path: `/tools/${t.slug}`,
+  }])),
   pricing: {
     // Kept as the prerendered wording: this is the title Google has indexed.
     title: 'Pricing - SvGrid Community (Free) + @svgrid/enterprise',
     description:
       `SvGrid Community is free under the MIT License for commercial use. The Enterprise pack (@svgrid/enterprise) is paid, per developer, unlimited apps: Enterprise ($599) is the enterprise grid - the Kanban board and ${GANTT ? 'Scheduler and Gantt' : 'Scheduler'} views, the Server-Side Row Model, Excel, PDF, CSV, TSV, HTML export and Print, pivot tables, plus direct support; Enterprise Suite ($999) adds the Excel-style Spreadsheet and SvGrid Studio. Buy once, keep forever, with an optional yearly renewal for new updates and support (cancel anytime). Enterprise - Custom is a tailored contract for 50+ seats, MSA / NDA, source escrow, named support, on-prem docs, and multi-year terms. AI helpers are built into the free @svgrid/grid.`,
     keywords: ['svelte grid pricing', 'sv-grid license', '@svgrid/enterprise license', 'grid developer license', 'suite developer license', 'svgrid enterprise suite', 'enterprise custom svelte grid', 'svelte table commercial license'],
+    video: 'mk-what-the-licence-buys',
     path: '/pricing',
   },
   blog: {

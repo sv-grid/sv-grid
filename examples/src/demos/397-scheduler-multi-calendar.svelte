@@ -8,9 +8,8 @@
    * it sets its own. The same grid rows power the Table. Renderer: @svgrid/enterprise.
    */
   import { SvGrid, type ColumnDef, type SchedulerEventMoveEvent, type SchedulerEventResizeEvent, type SchedulerEventCommitEvent } from '@svgrid/grid'
-  import { enableSchedulerView, setLicenseKey, type SchedulerProConfig } from '@svgrid/enterprise'
+  import { enableSchedulerView, type SchedulerProConfig } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableSchedulerView()
 
   const calendars = [

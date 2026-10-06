@@ -25,12 +25,18 @@ on:
       - 'tools/blog-pillars.mjs'
       - 'tools/twitter/build-tips-pages.mjs'
       - 'tools/twitter/tips-data.mjs'
+      - 'tools/indexnow.mjs'
   # Instant deploy: the PRIVATE website repo (sv-grid/website) fires this via a
   # repository_dispatch on every push to its main (see its notify-monorepo
   # workflow), since website content changes no longer land in this repo.
   repository_dispatch:
     types: [website-updated]
   workflow_dispatch:
+    inputs:
+      indexnow_all:
+        description: 'Submit every sitemap URL to IndexNow, not only the changed ones'
+        type: boolean
+        default: false
   # Daily rebuild so scheduled blog posts go live on their date. The build gates
   # out future-dated posts (see tools/schedule-blog.mjs + lib/blog.ts), so each
   # day's rebuild publishes exactly the posts whose date has arrived. 07:12 UTC
@@ -123,6 +129,26 @@ jobs:
       - name: Add .nojekyll
         run: touch website/dist/.nojekyll
 
+      # IndexNow, step 1 of 2 (tools/indexnow.mjs). Runs here, before the
+      # deploy, because it compares this build's page hashes with the copy on
+      # the site that is still live. It also writes the key file into dist, so
+      # it has to come before the pages artifact is uploaded. Never fails the
+      # build.
+      - name: Plan IndexNow submission
+        continue-on-error: true
+        run: node tools/indexnow.mjs plan --dist website/dist --out indexnow-urls.json ${{ inputs.indexnow_all && '--all' || '' }}
+        env:
+          SVGRID_SITE_ORIGIN: https://svgrid.com
+
+      - name: Keep the IndexNow list for the submit job
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: indexnow-urls
+          path: indexnow-urls.json
+          if-no-files-found: ignore
+          retention-days: 3
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: website/dist
@@ -136,3 +162,29 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # IndexNow, step 2 of 2: tell Bing and the other IndexNow engines which pages
+  # changed, once the new build (and its key file) is live. ChatGPT search reads
+  # Bing's index, so this is how a new page reaches it without waiting for a
+  # crawl. Informational only: it cannot fail or block a deploy.
+  indexnow:
+    needs: deploy
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: tools/indexnow.mjs
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: indexnow-urls
+
+      - name: Submit changed URLs
+        run: node tools/indexnow.mjs submit --in indexnow-urls.json
+        env:
+          SVGRID_SITE_ORIGIN: https://svgrid.com

@@ -36,9 +36,8 @@
     toICS,
     fromICS,
   } from '@svgrid/grid'
-  import { enableSchedulerView, setLicenseKey } from '@svgrid/enterprise'
+  import { enableSchedulerView } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableSchedulerView()
 
   type Cal = { id: string; name: string; color: string }

@@ -66,7 +66,7 @@ function noticeExpired(info: LicenseInfo): void {
   console.info(
     `@svgrid/enterprise: your evaluation license expired${on}. Everything still ` +
       'works, but the watermark and upgrade notice stay until a license key is set. ' +
-      'Contact sales@jqwidgets.com or see https://svgrid.com/pricing',
+      'Contact sales@jqwidgets.com or see https://svgrid.com/pricing/?utm_source=svgrid-enterprise&utm_medium=console',
   )
 }
 
@@ -158,7 +158,7 @@ function noticeEdition(product: LicensedProduct): void {
     `@svgrid/enterprise: your Grid license does not cover ${PRODUCT_LABEL[product]}. ` +
       'Everything still works, but the watermark and upgrade notice stay until the ' +
       'license is upgraded to Suite. Contact sales@jqwidgets.com or see ' +
-      'https://svgrid.com/pricing',
+      'https://svgrid.com/pricing/?utm_source=svgrid-enterprise&utm_medium=console',
   )
 }
 

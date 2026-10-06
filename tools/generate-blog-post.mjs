@@ -28,6 +28,16 @@
  *                                                     # to rerun after a partial batch to finish
  *                                                     # what got skipped or failed.
  *   node tools/generate-blog-post.mjs --dry-run       # print, do not write (works with all modes)
+ *   node tools/generate-blog-post.mjs --force         # write a new post even when the publish
+ *                                                     # queue already runs past the cap below
+ *
+ * Cadence (2026-10-06): one post a week, held to a deeper bar than the old
+ * twice-weekly drip (DEPTH_CONTRACT below). A new post is dated 7 days after the
+ * last scheduled one, and nothing is written while the queue already runs more
+ * than QUEUE_CAP_DAYS ahead, so a post goes live within about eight weeks of
+ * being written instead of a year later. Posts parked in
+ * website/src/content/blog-drafts/ are never published but still count as
+ * written: their titles and slugs are not reused and their topics stay consumed.
  *
  * Why this exists: the original generator produced short, thin posts (~400
  * words, 1-2 code blocks, no real SvGrid API usage). Users get nothing from
@@ -68,10 +78,17 @@ import { clampDescription } from './lib/seo-text.mjs'
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..')
 const BLOG_DIR = join(ROOT, 'website', 'src', 'content', 'blog')
+const DRAFTS_DIR = join(ROOT, 'website', 'src', 'content', 'blog-drafts')
 const DEMOS_DIR = join(ROOT, 'examples', 'src', 'demos')
 
 const DRY_RUN = process.argv.includes('--dry-run')
-const MODEL = process.env.BLOG_MODEL || 'claude-sonnet-4-6'
+const FORCE = process.argv.includes('--force')
+// One post a week. The publish drip used to run at two a week with a queue a
+// year deep, so a post was stale before it went live.
+const CADENCE_DAYS = 7
+const QUEUE_CAP_DAYS = 56
+// A weekly post carries the long-form bar, so it gets the stronger model.
+const MODEL = process.env.BLOG_MODEL || 'claude-opus-5-5'
 const API_KEY = process.env.ANTHROPIC_API_KEY
 // Required when ANTHROPIC_API_KEY is an identity-linked key; ignored otherwise.
 const WORKSPACE_ID = process.env.ANTHROPIC_WORKSPACE_ID
@@ -141,12 +158,13 @@ function slugify(s) {
     .slice(0, 80)
 }
 
-function listPosts() {
-  const files = readdirSync(BLOG_DIR).filter((f) => f.endsWith('.md'))
+function listPosts(dir = BLOG_DIR) {
+  if (!existsSync(dir)) return []
+  const files = readdirSync(dir).filter((f) => f.endsWith('.md'))
   return files.map((f) => {
-    const raw = readFileSync(join(BLOG_DIR, f), 'utf-8')
+    const raw = readFileSync(join(dir, f), 'utf-8')
     const { meta, body } = parseFrontmatter(raw)
-    return { file: join(BLOG_DIR, f), slug: f.replace(/\.md$/, ''), meta, body }
+    return { file: join(dir, f), slug: f.replace(/\.md$/, ''), meta, body }
   })
 }
 
@@ -348,8 +366,11 @@ VOICE
 
 - Write like a working engineer explaining to a peer over coffee. Occasional
   opinions are good ("this is easy to get wrong", "I never liked this API").
-- Concrete numbers > vague words. Say "10,000 rows at 60 fps", not "large
-  datasets rendered smoothly".
+- Concrete numbers > vague words, but only numbers you were given. An input
+  size is fine ("10,000 rows"). A measured result (ms, fps, KB, MB, rows per
+  second) is stated only when it appears in the grounding facts; otherwise show
+  the reader how to measure it on their own machine. An invented benchmark is
+  worse than none.
 - If a design has a downside, name it. Do not spin.
 
 STYLE RULES (hard)
@@ -398,6 +419,30 @@ you want it to appear on disk, including \`\`\` code fences).
 ---BODY-END---
 
 Emit NOTHING outside those markers. No prose, no explanation, no extra fences.`
+
+// New posts only. Regenerating an existing post keeps the floors above; a new
+// post is the one post this blog ships that week, so it carries more.
+const DEEP_PROSE_FLOOR = 1500
+const DEEP_PROSE_CEILING = 2600
+const DEPTH_CONTRACT = `DEPTH CONTRACT (hard - overrides the length and code floors above)
+
+This blog publishes ONE post a week. It has to be the most complete answer on
+the web for its query, written by someone who built the thing, not a summary of
+the docs page on the same subject.
+
+- Length: ${DEEP_PROSE_FLOOR}-${DEEP_PROSE_CEILING} words of prose, code removed. ${DEEP_PROSE_FLOOR} is a hard floor.
+- Code: at least FOUR fenced blocks and at least 150 lines of code in total
+  (three blocks and 80 lines for a comparison). One block is a complete component a reader pastes into a
+  SvelteKit route and runs: imports, types, data, columns, markup.
+- Build it end to end. Start from an empty route and finish with the working
+  feature; each step says what the previous step got wrong or left out.
+- A section on where it breaks: the limit, the input that defeats it, the
+  symptom the reader will see, and the fix or the different tool to reach for.
+- A short, honest "when not to do this" paragraph naming the simpler option.
+- Add something the docs do not: a design trade-off argued with code, a
+  migration shown as a before/after diff, a failure you can reproduce, or a
+  measuring harness (performance.now() around the operation, what to look for
+  in the result). Never quote a measured number that is not in the grounding.`
 
 /** The part of the prompt that turns a queued search query into a post that
  *  can rank for it: the query where it has to appear, the demos and docs the
@@ -455,6 +500,8 @@ ${grounding}
 
 ${STRUCTURE_CONTRACT}
 
+${DEPTH_CONTRACT}
+
 ${task}
 
 ${OUTPUT_FORMAT}`
@@ -503,7 +550,8 @@ async function callModel(prompt) {
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 8000,
+      // A 2,600-word post with 150+ lines of code runs past 8,000 tokens.
+      max_tokens: 16000,
       messages: [{ role: 'user', content: prompt }],
     }),
   })
@@ -689,23 +737,25 @@ const RIVAL_VENDORS = [
 /** Verify the body meets minimum quality bars WITHOUT forcing a fixed
  *  section skeleton. Returns null on pass, or a string describing what
  *  needs to change (used to retry). */
-function validateBody(body, topic = null) {
+function validateBody(body, topic = null, { deep = false } = {}) {
   const errs = []
   const wc = wordCount(body)
-  if (wc < 900) errs.push(`Body is ${wc} words of prose; expand to 900-1600. Do not pad - explain why each snippet is shaped the way it is, and what breaks without it.`)
+  const proseFloor = deep ? DEEP_PROSE_FLOOR : 900
+  const proseRange = deep ? `${DEEP_PROSE_FLOOR}-${DEEP_PROSE_CEILING}` : '900-1600'
+  if (wc < proseFloor) errs.push(`Body is ${wc} words of prose; expand to ${proseRange}. Do not pad - explain why each snippet is shaped the way it is, and what breaks without it.`)
   const blocks = countCodeBlocks(body)
   // Same reasoning as the code-line floor below: a comparison post argues in
   // prose and shows less code, so holding it to a how-to's block count just
   // forces filler. Relaxing the line count but not the block count was an
   // inconsistency on my part, and it failed two otherwise-good posts.
-  const blockFloor = topic?.intent === 'comparison' ? 2 : 3
+  const blockFloor = (topic?.intent === 'comparison' ? 2 : 3) + (deep ? 1 : 0)
   if (blocks < blockFloor) errs.push(`Only ${blocks} code blocks; need >= ${blockFloor}.`)
   const codeLines = codeLineCount(body)
   // The existing corpus runs a median of 132 lines of code per post, and the
   // first generated batch came in at ~73 - thinner than what readers already
   // get. A comparison post legitimately carries less code than a how-to, so
   // the floor follows the intent rather than being one number for everything.
-  const codeFloor = topic?.intent === 'comparison' ? 45 : 90
+  const codeFloor = topic?.intent === 'comparison' ? (deep ? 80 : 45) : (deep ? 150 : 90)
   if (codeLines < codeFloor) {
     errs.push(`Only ${codeLines} lines of code; need >= ${codeFloor}. Show the fuller example rather than an elided fragment.`)
   }
@@ -864,14 +914,20 @@ function assembleTagsField(tags) {
 
 async function generateNew({ topic = null } = {}) {
   const posts = listPosts()
-  const titles = posts.map((p) => p.meta.title).filter(Boolean)
-  const slugs = new Set(posts.map((p) => p.slug))
+  // Parked drafts are written ground: never reuse their title or slug.
+  const written = [...posts, ...listPosts(DRAFTS_DIR)]
+  const titles = written.map((p) => p.meta.title).filter(Boolean)
+  const slugs = new Set(written.map((p) => p.slug))
   const maxDate = posts.reduce((m, p) => (p.meta.date && p.meta.date > m ? p.meta.date : m), todayISO())
-  // Two posts a week, not one a day. Publishing ~900 URLs into a domain with
-  // little authority left most of them crawled and not indexed, so the drip is
-  // deliberately slower. A uniform pick over 2..5 days averages 3.5, which is
-  // exactly two a week, while keeping the interval from looking machine-timed.
-  const date = addDays(maxDate, [2, 3, 4, 5][Math.floor(Math.random() * 4)])
+  // One post a week, on the weekday the queue already uses. The queue is capped
+  // so a post written today goes live within ~8 weeks; a full queue is a quiet
+  // no-op (the scheduled run stays green and commits nothing).
+  const horizon = addDays(todayISO(), QUEUE_CAP_DAYS)
+  if (maxDate > horizon && !FORCE) {
+    process.stdout.write(`Publish queue already runs to ${maxDate}, past the ${QUEUE_CAP_DAYS}-day cap (${horizon}); nothing generated. Pass --force to write anyway.\n`)
+    return
+  }
+  const date = addDays(maxDate, CADENCE_DAYS)
   if (topic && slugs.has(topic.slug)) throw new Error(`Topic "${topic.slug}" already has a post; it is consumed.`)
 
   const grounding = buildGrounding(topic ? { tags: topic.tags, title: topic.workingTitle, demos: topic.demos ?? [] } : {})
@@ -884,7 +940,7 @@ async function generateNew({ topic = null } = {}) {
     if (lastErr) prompt += `\n\nRETRY: the previous output failed validation:\n${lastErr}\nRegenerate the post from scratch, addressing every point.`
     const raw = await callModel(prompt)
     post = extractStructured(raw)
-    const err = validateBody(post.body, topic)
+    const err = validateBody(post.body, topic, { deep: true })
     if (!err) { passed = true; break }
     lastErr = err
     attempt += 1
@@ -1086,7 +1142,7 @@ async function main() {
     await generateNew({ topic })
     return
   }
-  // --next, or no flag at all: the queue drives the daily post. An empty queue
+  // --next, or no flag at all: the queue drives the weekly post. An empty queue
   // is a quiet no-op so the scheduled run stays green and commits nothing.
   const topic = nextTopic(ROOT, topics)
   if (!topic) {

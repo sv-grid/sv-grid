@@ -2129,6 +2129,76 @@
       ]
     },
     {
+      "id": "mk-pick-the-demo",
+      "kind": "marketing",
+      "title": "Four hundred SvGrid demos: how to find the one you need",
+      "description": "A tour of the SvGrid demo gallery: how to narrow it down, and four demos that show the range of what one component renders.",
+      "demo": "11-stock-market",
+      "docsPage": null,
+      "tags": [
+        "svelte data grid",
+        "demos",
+        "examples",
+        "svelte 5",
+        "kanban",
+        "charts",
+        "spreadsheet"
+      ],
+      "duration": 122.5,
+      "width": 1920,
+      "height": 1080,
+      "recordedAt": "2026-10-06",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": null,
+        "poster": null,
+        "vtt": null
+      },
+      "bytes": {
+        "mp4": 0,
+        "poster": 0,
+        "master": 21423744
+      },
+      "transcript": [
+        {
+          "start": 0.71,
+          "end": 14.81,
+          "text": "There are more than four hundred live demos, which is useful once you know what you are looking for and a wall of tiles before that. So here is how to narrow it down, and then four of them that have almost nothing in common except the component underneath."
+        },
+        {
+          "start": 16.61,
+          "end": 35.81,
+          "text": "The gallery is grouped by what you are trying to build rather than by feature name, and there is a search across every demo title. Type what you actually want. Pivot, Kanban, tree, chart, spreadsheet, server side. You land on a running example, not a documentation page about one."
+        },
+        {
+          "start": 37.64,
+          "end": 54.38,
+          "text": "First, the one people check before anything else. A live market feed: prices changing under you, conditional formatting following them, and fifteen columns that stay readable while they update. If your data arrives rather than sits still, this is the demo to open."
+        },
+        {
+          "start": 56.1,
+          "end": 68.71,
+          "text": "Second, rows that nest. A work breakdown where every row can open into its own children, with totals that roll up the tree rather than down a flat list. Same grid, a different shape of data."
+        },
+        {
+          "start": 70.37,
+          "end": 87.34,
+          "text": "Third, a chart that is not a bar chart. Treemaps, sankey diagrams, sunbursts, funnels and gauges all render as inline SVG from the grid's own rows, with no charting library underneath. Twenty nine types, and whatever you filtered is what you plot."
+        },
+        {
+          "start": 89.04,
+          "end": 105.83,
+          "text": "And fourth, the one that catches people out. This is the same grid with one more prop on it. The rows became cards in lanes, with work in progress limits and a card you can move with the keyboard. Not a second component, and not a second data model to keep in sync."
+        },
+        {
+          "start": 107.67,
+          "end": 120.14,
+          "text": "Every one of them runs in the browser with its source next to it, so the way to use the gallery is to find the demo closest to what you are building and start from its code. The grid is MIT on npm."
+        }
+      ]
+    },
+    {
       "id": "mk-pivot-tables",
       "kind": "marketing",
       "title": "Pivot tables in the browser",
@@ -3077,6 +3147,86 @@
           "start": 112.91,
           "end": 126.26,
           "text": "The grid is MIT on npm, it server-renders in SvelteKit, and the docs carry a ten lesson video course that builds all of this from an empty project. Install it and see how far twenty lines get you."
+        }
+      ]
+    },
+    {
+      "id": "mk-what-the-licence-buys",
+      "kind": "marketing",
+      "player": true,
+      "title": "What the SvGrid licence actually buys you",
+      "description": "What is free, what Enterprise adds at $599 and what Suite adds at $999, shown as working software rather than a feature table.",
+      "demo": "03-excel-filters",
+      "docsPage": null,
+      "tags": [
+        "svelte data grid",
+        "pricing",
+        "licensing",
+        "enterprise",
+        "svelte 5",
+        "data grid licence"
+      ],
+      "duration": 186.6,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-10-06",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": "/tutorials/mk-what-the-licence-buys.mp4",
+        "poster": "/tutorials/mk-what-the-licence-buys.poster.webp",
+        "vtt": "/tutorials/mk-what-the-licence-buys.vtt"
+      },
+      "bytes": {
+        "mp4": 3691383,
+        "poster": 49198,
+        "master": 28860510
+      },
+      "transcript": [
+        {
+          "start": 0.7,
+          "end": 13.12,
+          "text": "Every component library has a pricing page, and every pricing page is a wall of ticks. Here is the same thing shown as software, so you can see what you would be paying for before you decide whether it is worth it."
+        },
+        {
+          "start": 14.98,
+          "end": 36.83,
+          "text": "Start with what costs nothing. The grid itself is MIT on npm. Sorting, Excel-style filters per column, inline editing, grouping with totals, row and column virtualization, keyboard navigation and screen reader support. There is no key to install, no sign-up, and no row cap waiting to stop you at ten thousand."
+        },
+        {
+          "start": 38.55,
+          "end": 49.9,
+          "text": "That includes the part people assume is the paid tier. This is a million rows in the browser, scrolling, in the free package. The number of DOM nodes stays about what it was with ten."
+        },
+        {
+          "start": 51.61,
+          "end": 71.55,
+          "text": "Now the paid pack. What it adds, at five hundred and ninety nine dollars per developer, starts with the server side row model. The grid asks your backend for one block of rows at a time, so the table on screen is a window onto a database rather than a copy of it. The panel on the right is every request as it goes out."
+        },
+        {
+          "start": 73.22,
+          "end": 86.33,
+          "text": "The same licence turns the grid into a pivot table, with a designer you drag fields into, and an exporter that writes real Excel files and PDFs rather than a comma separated file with an xls extension on it."
+        },
+        {
+          "start": 88.04,
+          "end": 107.19,
+          "text": "And it is the licence that turns those same rows into a Kanban board, or a scheduler, by passing one more prop to the grid you already have. They are not separate products with their own data model to learn. Both tiers cover an unlimited number of deployed applications, so this is per developer, not per app."
+        },
+        {
+          "start": 108.9,
+          "end": 130.61,
+          "text": "Nine hundred and ninety nine dollars buys one more thing, and it is the one piece that is genuinely its own product. A spreadsheet: a ribbon, a formula bar, sheet tabs, a formula engine with named ranges and LAMBDA, and codecs that open and save real workbooks. That is why it sits in its own tier rather than being another grid prop."
+        },
+        {
+          "start": 132.37,
+          "end": 144.33,
+          "text": "The same tier includes Studio, which points at a database or a schema and writes a SvelteKit application you own and keep editing. Source in your repository, not a runtime you ship."
+        },
+        {
+          "start": 146.28,
+          "end": 184.15,
+          "text": "Two last things, because both are unusual. You do not need a key to try any of the paid pack. Install it and use it, and it runs in full: nothing disabled, nothing capped, and no clock running out. What you get instead is a watermark and a line in the console, and setting a key removes them. And it is a perpetual licence, not a rental. You buy it once and the version you have keeps working forever. The yearly renewal only pays for new updates and support, you can cancel any time, and you keep every version released while you were paying. The grid underneath all of it is still MIT."
         }
       ]
     },

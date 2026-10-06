@@ -130,6 +130,9 @@ describe('solution pages', () => {
       // a card; the seoDescription is search copy and far too long for one.
       if (!extra.icon || [...extra.icon].length !== 1) problems.push(`${at}: icon must be a single glyph`)
       if (!extra.cardText || extra.cardText.length > 60) problems.push(`${at}: cardText missing or over 60 chars`)
+      // The /svelte/ index prints it as the line that turns the page's thing on.
+      const sig = (s as unknown as { signature?: string }).signature
+      if (!sig || sig.length > 64) problems.push(`${at}: signature missing or over 64 chars`)
       if (!s.faq?.length) problems.push(`${at}: no FAQ`)
       for (const id of [...(s.demos ?? []), ...(s.heroDemo ? [s.heroDemo] : [])]) {
         if (!existsSync(join(ROOT, 'examples', 'src', 'demos', `${id}.svelte`))) problems.push(`${at}: demo "${id}" does not exist`)

@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-10-06T07:41:46.326Z",
+  "generatedAt": "2026-10-06T12:57:40.494Z",
   "counts": {
     "pages": 405,
     "enterprise": 88,
@@ -940,7 +940,7 @@
       "section": "enterprise",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 448,
+      "words": 439,
       "lastUpdated": "2026-10-06",
       "demoIds": []
     },
@@ -952,7 +952,7 @@
       "section": "enterprise",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 1269,
+      "words": 1275,
       "lastUpdated": "2026-10-06",
       "demoIds": []
     },
@@ -964,7 +964,7 @@
       "section": "enterprise",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 1442,
+      "words": 1397,
       "lastUpdated": "2026-10-06",
       "demoIds": []
     },
@@ -2846,7 +2846,7 @@
       "pillar": "enterprise",
       "tier": "enterprise",
       "group": "Reference",
-      "words": 4982,
+      "words": 4965,
       "lastUpdated": "2026-10-06",
       "demoIds": [
         "21-export-and-print",
@@ -3267,8 +3267,8 @@
       "pillar": "enterprise",
       "tier": "enterprise",
       "group": "Reference",
-      "words": 2727,
-      "lastUpdated": "2026-09-21",
+      "words": 2744,
+      "lastUpdated": "2026-10-06",
       "demoIds": [
         "53-excel-import",
         "204-import-dialog"
@@ -4704,8 +4704,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1423,
-      "lastUpdated": "2026-09-04",
+      "words": 1418,
+      "lastUpdated": "2026-10-06",
       "demoIds": [
         "02-sort-filter-paginate",
         "01-quick-start"

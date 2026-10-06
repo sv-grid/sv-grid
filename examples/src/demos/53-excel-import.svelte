@@ -25,8 +25,6 @@
   } from '@svgrid/grid'
   import {
     installEnterprise,
-    setLicenseKey,
-    dismissUnlicensedNudge,
     importData,
     type EnterpriseGridApi,
     type ImportResult,
@@ -35,10 +33,7 @@
     type ImportFieldType,
   } from '@svgrid/enterprise'
 
-  // ---- License + features --------------------------------------------
-
-  setLicenseKey('SVENTERPRISE-DEV-IMPORT')
-  dismissUnlicensedNudge()
+  // ---- Features ------------------------------------------------------
 
   type Row = Record<string, unknown>
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
@@ -421,7 +416,7 @@
     </div>
 
     <footer class="imp-footer">
-      Peer deps: <code>jszip</code> for xlsx. CSV/TSV/JSON parse natively. License: <code>SVENTERPRISE-DEV-IMPORT</code>
+      Peer deps: <code>jszip</code> for xlsx. CSV/TSV/JSON parse natively.
     </footer>
   </aside>
 

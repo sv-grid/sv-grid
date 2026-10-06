@@ -49,7 +49,6 @@
     enableAlerts,
     enableBoardView,
     installEnterprise,
-    setLicenseKey,
     type AlertEvent,
     type AlertRule,
     type EnterpriseGridApi,
@@ -58,7 +57,6 @@
     type ExprColumn,
   } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableAlerts()
   enableBoardView()
 

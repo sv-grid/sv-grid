@@ -29,7 +29,6 @@
     type SvGridApi,
   } from '@svgrid/grid'
   import {
-    setLicenseKey,
     installEnterprise,
     createServerRowModel,
     createWorkerDataSource,
@@ -41,8 +40,6 @@
     type ServerRowModelGridRow,
   } from '@svgrid/enterprise'
   import { makeOrders, type Order } from '../shared/orders-dataset'
-
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
 
   type Mode = 'worker' | 'free'
   const canUseWorker = typeof Worker !== 'undefined'

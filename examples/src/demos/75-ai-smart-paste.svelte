@@ -29,9 +29,7 @@
     rowSelectionFeature,
     type GridColumns,
   } from '@svgrid/grid'
-  import { installEnterprise, setLicenseKey, type EnterpriseGridApi } from '@svgrid/enterprise'
-
-  setLicenseKey('SVENTERPRISE-DEV-DEMO')
+  import { installEnterprise, type EnterpriseGridApi } from '@svgrid/enterprise'
 
   type Contact = {
     id: string

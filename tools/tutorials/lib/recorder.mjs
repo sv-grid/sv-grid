@@ -23,8 +23,9 @@ import { join } from 'node:path'
 import { chromium } from 'playwright'
 import { cachedSynthesize, ttsConfig } from './tts.mjs'
 import { ffprobeDuration } from './ffmpeg.mjs'
-import { createHelpers, HIDE_CHROME, HIDE_SITE_CHROME, HIDE_WATERMARK } from './drive.mjs'
+import { createHelpers, HIDE_CHROME, HIDE_SITE_CHROME, HIDE_WATERMARK, HIDE_DEV_OVERLAY } from './drive.mjs'
 import { CURSOR_INIT_SCRIPT } from './cursor.mjs'
+import { CALLOUT_INIT_SCRIPT } from './callout.mjs'
 
 export const VIEW = { width: 1280, height: 720 }
 const INTRO_HOLD = 1.2
@@ -150,6 +151,16 @@ async function recordTake(def, { base, siteBase, appBase, outDir, view, log, war
       { theme: def.theme ?? 'dark', preset: def.preset ?? 'ember' },
     )
     await ctx.addInitScript(CURSOR_INIT_SCRIPT)
+    await ctx.addInitScript(CALLOUT_INIT_SCRIPT)
+    // Record a feature whose release date has not arrived. tools/lib/releases.mjs
+    // keeps its demos out of the gallery until the day, which is correct for the
+    // site and makes the video impossible to shoot in advance. This is the
+    // documented browser override, set before the app's modules load, so a cut
+    // can be recorded now and held until the gate opens. It only affects this
+    // browser context; nothing on disk or on the site changes.
+    if (def.today) {
+      await ctx.addInitScript((d) => { globalThis.__SVGRID_TODAY__ = d }, def.today)
+    }
     // Drop the Vite error overlay the moment it is inserted: hidden by CSS it
     // still steals focus from an editor typing under it.
     await ctx.addInitScript(() => {
@@ -178,7 +189,13 @@ async function recordTake(def, { base, siteBase, appBase, outDir, view, log, war
 
     try {
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 90_000 })
-      await page.addStyleTag({ content: HIDE_WATERMARK })
+      // The unlicensed watermark is hidden by default: every take would
+      // otherwise carry it, and a feature video is not about licensing. A
+      // segment that IS about licensing sets `watermark: true` and shows the
+      // real thing - claiming "it runs unlicensed with a watermark" over a
+      // frame with no watermark in it is the kind of gap a viewer notices.
+      await page.addStyleTag({ content: HIDE_DEV_OVERLAY })
+      if (!def.watermark) await page.addStyleTag({ content: HIDE_WATERMARK })
       if (target.kind === 'demo') {
         await page.addStyleTag({ content: HIDE_CHROME })
         // CSS zoom, not deviceScaleFactor: the screencast frame is the viewport

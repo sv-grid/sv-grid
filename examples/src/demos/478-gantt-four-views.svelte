@@ -36,9 +36,8 @@
     type BoardCardMoveEvent,
     type BoardCardCommitEvent,
   } from '@svgrid/grid'
-  import { enableBoardView, enableGanttView, enableSchedulerView, setLicenseKey } from '@svgrid/enterprise'
+  import { enableBoardView, enableGanttView, enableSchedulerView } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableGanttView()
   enableSchedulerView()
   enableBoardView()

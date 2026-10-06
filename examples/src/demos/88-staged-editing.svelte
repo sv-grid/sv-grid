@@ -23,12 +23,9 @@
   import {
     createStagedEditing,
     installEnterprise,
-    setLicenseKey,
     type EnterpriseGridApi,
     type StagedChange,
   } from '@svgrid/enterprise'
-
-  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   type Level = 'L3' | 'L4' | 'L5' | 'L6' | 'L7'
   type Employee = {

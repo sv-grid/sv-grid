@@ -25,13 +25,10 @@
     createPivotModel,
     filterCollapsedPivotRows,
     installEnterprise,
-    setLicenseKey,
     type PivotRow,
     type EnterpriseGridApi,
     type PivotValueConfig,
   } from '@svgrid/enterprise'
-
-  setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   // ---- Fact data --------------------------------------------------------
   type Region = 'AMER' | 'EMEA' | 'APAC'

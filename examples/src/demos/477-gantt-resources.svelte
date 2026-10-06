@@ -21,9 +21,8 @@
    * under it.
    */
   import { SvGrid, type ColumnDef } from '@svgrid/grid'
-  import { enableGanttView, setLicenseKey, type GanttProConfig } from '@svgrid/enterprise'
+  import { enableGanttView, type GanttProConfig } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableGanttView()
 
   type Job = {

@@ -81,10 +81,8 @@ and `exportData` builds an `<a download>`. Set vitest's `environment`
 to `'jsdom'` for these files.
 
 ```ts
-import { describe, it, expect, beforeEach } from 'vitest'
-import { importData, setLicenseKey } from '@svgrid/enterprise'
-
-beforeEach(() => setLicenseKey('SVENTERPRISE-DEV-TEST'))
+import { describe, it, expect } from 'vitest'
+import { importData } from '@svgrid/enterprise'
 
 describe('CSV import', () => {
   it('parses, coerces types, and rejects negative prices', async () => {

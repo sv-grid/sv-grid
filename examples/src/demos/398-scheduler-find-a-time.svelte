@@ -8,9 +8,8 @@
    * suggestion to book it for all. Renderer + pure `commonFree` ship in @svgrid/enterprise.
    */
   import { SvGrid, type ColumnDef, type SchedulerResource, type SchedulerEventMoveEvent, type SchedulerEventResizeEvent } from '@svgrid/grid'
-  import { enableSchedulerView, setLicenseKey, commonFree, availableSlots, type SchedulerProConfig, type Interval } from '@svgrid/enterprise'
+  import { enableSchedulerView, commonFree, availableSlots, type SchedulerProConfig, type Interval } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableSchedulerView()
 
   const people: SchedulerResource[] = [

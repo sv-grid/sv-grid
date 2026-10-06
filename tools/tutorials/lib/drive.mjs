@@ -43,8 +43,14 @@ export const HIDE_SITE_CHROME = `
  * importing an uninstalled package is enough), the stage and the website
  * included, and it then covers the take from that moment on.
  */
+// Two separate rules on purpose. The Vite overlay must never be in a frame,
+// whatever the take is about; the licence watermark is only hidden when the
+// video is not about licensing (see `watermark` in recorder.mjs).
 export const HIDE_WATERMARK = `
   [data-svgrid-enterprise-watermark] { display: none !important; }
+`
+
+export const HIDE_DEV_OVERLAY = `
   vite-error-overlay { display: none !important; }
 `
 
@@ -510,6 +516,69 @@ export function createHelpers(page, log = () => {}) {
      * flash with ffmpeg's blackdetect and trims the recording to its end, so
      * the video's zero and the beat clock share one origin.
      */
+    /**
+     * Point at something while the narration talks about it. Dims the rest of
+     * the frame, rings the element and puts a label beside it.
+     *
+     *   await h.callout('.sv-grid-header-cell:nth-child(3)', 'every column has a filter')
+     *   await h.callout(someLocator, 'the group total', { place: 'above' })
+     *   await h.clearCallout()
+     *
+     * `target` is a selector or a Locator. The mark is drawn into the page, so
+     * the screencast captures it; it never takes pointer events, so a later
+     * beat's click still lands. Returns the rect it marked, which is also a
+     * cheap assertion: it throws if the element is not on screen, so a beat
+     * cannot narrate a callout that pointed at nothing.
+     *
+     * Options: `pad` (px around the element, default 8), `place` ('above' |
+     * 'below' | auto), `dim` (false to ring without darkening the rest),
+     * `ring` (false to dim without the outline), `hold` (ms to wait after it
+     * lands, so it reads before the next beat moves on).
+     */
+    async callout(target, text = '', opts = {}) {
+      const loc = typeof target === 'string' ? page.locator(target).first() : target
+      await loc.waitFor({ state: 'visible', timeout: 10_000 })
+      const rect = await loc.evaluate((el) => {
+        const r = el.getBoundingClientRect()
+        return { x: r.x, y: r.y, width: r.width, height: r.height }
+      })
+      if (rect.width < 1 || rect.height < 1) {
+        throw new Error(`callout: "${text || 'target'}" resolved to a ${Math.round(rect.width)}x${Math.round(rect.height)} box`)
+      }
+      await page.evaluate(
+        ({ rect, text, opts }) => window.__tutCallout?.show(rect, text, opts),
+        { rect, text, opts },
+      )
+      // The hole and the label have their own transitions; wait them out so a
+      // screenshot taken right after this is the settled frame.
+      await page.waitForTimeout(opts.settle ?? 420)
+      if (opts.hold) await page.waitForTimeout(opts.hold)
+      return rect
+    },
+
+    /** Take the callout down. Safe to call when none is showing. */
+    async clearCallout(settle = 320) {
+      await page.evaluate(() => window.__tutCallout?.hide())
+      await page.waitForTimeout(settle)
+    },
+
+    /**
+     * One expanding ring on an element: "this is what just changed". Unlike
+     * `callout` it dims nothing and clears itself, so it suits a beat that
+     * should keep moving.
+     */
+    async pulse(target) {
+      const loc = typeof target === 'string' ? page.locator(target).first() : target
+      await loc.waitFor({ state: 'visible', timeout: 10_000 })
+      const rect = await loc.evaluate((el) => {
+        const r = el.getBoundingClientRect()
+        return { x: r.x, y: r.y, width: r.width, height: r.height }
+      })
+      await page.evaluate((rect) => window.__tutCallout?.pulse(rect), rect)
+      await page.waitForTimeout(760)
+      return rect
+    },
+
     async flashSync(ms = 260) {
       await page.evaluate(async (ms) => {
         const el = document.createElement('div')

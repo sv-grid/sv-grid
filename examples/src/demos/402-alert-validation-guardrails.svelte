@@ -14,9 +14,8 @@
    */
   import { SvGrid, SvSwitchButton, renderSnippet, type ColumnDef } from '@svgrid/grid'
   import type { ConditionalFormat } from '@svgrid/grid/format'
-  import { createAlertEngine, enableAlerts, setLicenseKey, type AlertRule } from '@svgrid/enterprise'
+  import { createAlertEngine, enableAlerts, type AlertRule } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableAlerts()
 
   type Expense = { id: string; item: string; category: string; amount: number; budget: number }

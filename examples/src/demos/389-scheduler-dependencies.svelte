@@ -10,9 +10,8 @@
    * scheduler, not a project planner. Toggle to the Table - same grid rows, a view.
    */
   import { SvGrid, type ColumnDef, type SchedulerResource, type SchedulerEventMoveEvent, type SchedulerEventResizeEvent } from '@svgrid/grid'
-  import { enableSchedulerView, setLicenseKey, type SchedulerProConfig, type SchedulerDependency } from '@svgrid/enterprise'
+  import { enableSchedulerView, type SchedulerProConfig, type SchedulerDependency } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableSchedulerView()
 
   type Job = { id: string; title: string; station: string; vehicle: string; start: string; end: string; color: string }

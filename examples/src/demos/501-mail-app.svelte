@@ -55,13 +55,11 @@
   import {
     enableSchedulerView,
     installEnterprise,
-    setLicenseKey,
     type EnterpriseGridApi,
     type ExportColumn,
     type ExportFormat,
   } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
   enableSchedulerView()
 
   // ---- Domain ---------------------------------------------------------------

@@ -1748,9 +1748,7 @@ npm install jszip pdfmake   # only needed for Excel and PDF export
 ```svelte
 <script>
   import { SvGrid } from '@svgrid/grid'
-  import { installEnterprise, setLicenseKey } from '@svgrid/enterprise'
-
-  setLicenseKey('SVENTERPRISE-DEV-DEMO') // local dev key, removes the watermark
+  import { installEnterprise } from '@svgrid/enterprise'
 
   let api = $state(null)
 
@@ -1870,15 +1868,15 @@ exports, with nothing else to wire up.
 ```svelte
 <script>
   import { SvGrid } from '@svgrid/grid'
-  import { installEnterprise, setLicenseKey } from '@svgrid/enterprise'
+  import { installEnterprise } from '@svgrid/enterprise'
   // One of 20 themes that ship with the package. Swap the id for material,
   // nord, dracula, fluent, carbon, ag-alpine, and so on. Each carries a full
   // light AND dark palette; dark activates on <html data-theme="dark">.
   import '@svgrid/grid/themes/shadcn.css'
 
-  // Once, before any Enterprise feature runs. Optional while you evaluate:
-  // without a key everything still works and shows a watermark.
-  setLicenseKey('SVENTERPRISE-DEV-DEMO')
+  // No key while you evaluate: everything works and shows a watermark.
+  // After you buy, call setLicenseKey(yourKey) once, before any Enterprise
+  // feature runs, and the watermark goes away.
 
   let api = $state(null)
   let status = $state('')
@@ -2191,18 +2189,6 @@ const KEY = {
 
 setLicenseKey(KEY)
 ```
-
-## Dev / demo key
-
-For demos + integration tests, use the published sentinel:
-
-```ts
-setLicenseKey('SVENTERPRISE-DEV-DEMO')
-```
-
-This suppresses the watermark for local development. **Do not ship
-this key to production** - it's a dev-only convenience and will be
-revoked in any production-domain validation pipeline.
 
 ## What happens without a key
 
@@ -33087,12 +33073,12 @@ when the recipient expects formatted documents.
 ```svelte {runnable}
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi, type ColumnDef } from '@svgrid/grid'
-  import { installEnterprise, setLicenseKey, type EnterpriseGridApi } from '@svgrid/enterprise'
+  import { installEnterprise, type EnterpriseGridApi } from '@svgrid/enterprise'
 
-  // Set the license key once at startup. Without a key, the feature still
-  // works but the grid shows an "unlicensed" watermark and the console
-  // emits a one-time nudge directing users to the pricing page.
-  setLicenseKey('SVENTERPRISE-XXXX-XXXX-XXXX')
+  // Without a key, the feature still works but the grid shows an
+  // "unlicensed" watermark and the console emits a one-time nudge directing
+  // users to the pricing page. After you buy, call setLicenseKey(yourKey)
+  // once at startup.
 
   const features = tableFeatures({ rowSortingFeature })
 
@@ -33146,15 +33132,13 @@ them.
 
 | Key state                                  | Behavior |
 | ------------------------------------------ | -------- |
-| No key set (`setLicenseKey()` not called)  | Feature works. Grid shows an unlicensed watermark linking to jqwidgets.com; console.log emits a one-time nudge. |
+| No key set (`setLicenseKey()` not called)  | Feature works. Grid shows an unlicensed watermark linking to svgrid.com/pricing; console.log emits a one-time nudge. |
 | Key doesn't start with `SVENTERPRISE-`            | Throws - programmer error. |
 | Key is in the revoked list                 | Throws - contact support for a replacement. |
-| `SVENTERPRISE-DEV-...` or `SVENTERPRISE-EVAL-...`        | Works. One-time console.info notice. No watermark. |
-| Any other `SVENTERPRISE-...`                      | Works silently. |
+| Your license key                           | Works silently. |
 
 Buy a production key at <https://svgrid.com/pricing/> ($599 / developer /
-year). `SVENTERPRISE-DEV-...` keys cover local development. To evaluate, you
-need no key at all: everything runs with a watermark.
+year). To evaluate, you need no key at all: everything runs with a watermark.
 
 ## Reference
 
@@ -39984,9 +39968,10 @@ column-mapping, validation, error preview - not the parser itself.
 ```svelte {runnable}
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature, type SvGridApi, type ColumnDef } from '@svgrid/grid'
-  import { installEnterprise, setLicenseKey, type EnterpriseGridApi } from '@svgrid/enterprise'
+  import { installEnterprise, type EnterpriseGridApi } from '@svgrid/enterprise'
 
-  setLicenseKey('SVENTERPRISE-XXXX-XXXX-XXXX')
+  // No key needed to try it (a watermark shows). After you buy, call
+  // setLicenseKey(yourKey) once at startup.
 
   type Order = { orderId: number; customer: string; total: number }
   let rows = $state<Order[]>([])
@@ -62755,10 +62740,8 @@ and `exportData` builds an `<a download>`. Set vitest's `environment`
 to `'jsdom'` for these files.
 
 ```ts
-import { describe, it, expect, beforeEach } from 'vitest'
-import { importData, setLicenseKey } from '@svgrid/enterprise'
-
-beforeEach(() => setLicenseKey('SVENTERPRISE-DEV-TEST'))
+import { describe, it, expect } from 'vitest'
+import { importData } from '@svgrid/enterprise'
 
 describe('CSV import', () => {
   it('parses, coerces types, and rejects negative prices', async () => {
@@ -114764,7 +114747,7 @@ import { setAIProvider, aiFilter, aiSmartFill, aiSummarize, aiClassify } from '@
 ### `setLicenseKey(key)` / `clearLicenseKey()` / `isLicenseKeySet()`
 
 ```ts
-setLicenseKey('SVENTERPRISE-XXXX-XXXX-XXXX')
+setLicenseKey('YOUR-LICENSE-KEY') // the key from your order
 ```
 
 Call once at app startup. Without a key the Enterprise methods still work

@@ -18,7 +18,6 @@
    */
   import { SvGrid, renderComponent, tableFeatures, type GridColumns, type ServerDataSource } from '@svgrid/grid'
   import {
-    setLicenseKey,
     createServerRowModel,
     serverGroupText,
     SvGroupCell,
@@ -26,8 +25,6 @@
     type ServerRowModelState,
     type ServerRowModelGridRow,
   } from '@svgrid/enterprise'
-
-  setLicenseKey('SVENTERPRISE-DEV-LOCAL')
 
   const features = tableFeatures({})
 
