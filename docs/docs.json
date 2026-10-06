@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-09-30T09:52:50.031Z",
+  "generatedAt": "2026-10-06T06:45:21.358Z",
   "counts": {
-    "pages": 404,
-    "enterprise": 87,
-    "withDemo": 286
+    "pages": 405,
+    "enterprise": 88,
+    "withDemo": 287
   },
   "pillars": [
     {
@@ -309,7 +309,8 @@
         "help/server/server-tree-data.md",
         "help/server/server-pivot.md",
         "help/server/server-transactions.md",
-        "help/server/server-selection.md"
+        "help/server/server-selection.md",
+        "help/server/worker-data-source.md"
       ],
       "groups": []
     },
@@ -1250,8 +1251,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Start here",
-      "words": 2955,
-      "lastUpdated": "2026-09-29",
+      "words": 2799,
+      "lastUpdated": "2026-10-06",
       "demoIds": [],
       "tutorialIds": [
         "install-studio"
@@ -1609,9 +1610,12 @@
       "section": "",
       "pillar": "grid",
       "tier": "community",
-      "words": 524,
-      "lastUpdated": "2026-09-03",
-      "demoIds": []
+      "words": 576,
+      "lastUpdated": "2026-10-06",
+      "demoIds": [],
+      "tutorialIds": [
+        "mk-what-is-svgrid"
+      ]
     },
     {
       "path": "getting-started/1-install.md",
@@ -1621,8 +1625,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 872,
-      "lastUpdated": "2026-09-29",
+      "words": 760,
+      "lastUpdated": "2026-10-06",
       "demoIds": [],
       "tutorialIds": [
         "install-svgrid"
@@ -1636,8 +1640,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 889,
-      "lastUpdated": "2026-09-30",
+      "words": 888,
+      "lastUpdated": "2026-10-06",
       "demoIds": [
         "01-quick-start"
       ],
@@ -1653,8 +1657,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 1331,
-      "lastUpdated": "2026-09-30",
+      "words": 1330,
+      "lastUpdated": "2026-10-06",
       "demoIds": [],
       "tutorialIds": [
         "learn-2-data-and-columns"
@@ -1668,8 +1672,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 1609,
-      "lastUpdated": "2026-09-30",
+      "words": 1608,
+      "lastUpdated": "2026-10-06",
       "demoIds": [],
       "tutorialIds": [
         "learn-3-sort-filter-page"
@@ -1683,8 +1687,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 1484,
-      "lastUpdated": "2026-09-30",
+      "words": 1483,
+      "lastUpdated": "2026-10-06",
       "demoIds": [
         "10-custom-cells-and-themes"
       ],
@@ -1700,8 +1704,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 1830,
-      "lastUpdated": "2026-09-30",
+      "words": 1828,
+      "lastUpdated": "2026-10-06",
       "demoIds": [
         "09-server-side",
         "06-large-dataset",
@@ -1720,8 +1724,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 700,
-      "lastUpdated": "2026-09-29",
+      "words": 713,
+      "lastUpdated": "2026-10-04",
       "demoIds": []
     },
     {
@@ -1744,8 +1748,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 2263,
-      "lastUpdated": "2026-09-30",
+      "words": 2262,
+      "lastUpdated": "2026-10-06",
       "demoIds": [],
       "tutorialIds": [
         "learn-9-sveltekit"
@@ -2811,8 +2815,8 @@
       "section": "help/editing",
       "pillar": "grid",
       "tier": "community",
-      "words": 1374,
-      "lastUpdated": "2026-09-30",
+      "words": 1373,
+      "lastUpdated": "2026-10-06",
       "demoIds": [
         "206-cell-validation",
         "24-validation"
@@ -3099,8 +3103,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2586,
-      "lastUpdated": "2026-09-30",
+      "words": 2585,
+      "lastUpdated": "2026-10-06",
       "demoIds": [
         "07-grouping-aggregation",
         "427-group-footers",
@@ -3132,8 +3136,8 @@
       "section": "help/headless",
       "pillar": "grid",
       "tier": "community",
-      "words": 1071,
-      "lastUpdated": "2026-09-21",
+      "words": 1127,
+      "lastUpdated": "2026-10-04",
       "demoIds": [
         "186-headless-table"
       ]
@@ -3146,8 +3150,8 @@
       "section": "help/headless",
       "pillar": "grid",
       "tier": "community",
-      "words": 977,
-      "lastUpdated": "2026-09-21",
+      "words": 1032,
+      "lastUpdated": "2026-10-04",
       "demoIds": [
         "189-headless-shared-state"
       ]
@@ -3160,8 +3164,8 @@
       "section": "help/headless",
       "pillar": "grid",
       "tier": "community",
-      "words": 1176,
-      "lastUpdated": "2026-09-21",
+      "words": 1230,
+      "lastUpdated": "2026-10-04",
       "demoIds": [
         "186-headless-table"
       ]
@@ -3174,8 +3178,8 @@
       "section": "help/headless",
       "pillar": "grid",
       "tier": "community",
-      "words": 1177,
-      "lastUpdated": "2026-09-21",
+      "words": 1260,
+      "lastUpdated": "2026-10-04",
       "demoIds": [
         "190-headless-row-models"
       ]
@@ -3188,8 +3192,8 @@
       "section": "help/headless",
       "pillar": "grid",
       "tier": "community",
-      "words": 1038,
-      "lastUpdated": "2026-09-21",
+      "words": 1071,
+      "lastUpdated": "2026-10-04",
       "demoIds": [
         "191-headless-server-side",
         "19-ssr"
@@ -3203,8 +3207,8 @@
       "section": "help/headless",
       "pillar": "grid",
       "tier": "community",
-      "words": 2074,
-      "lastUpdated": "2026-09-21",
+      "words": 2182,
+      "lastUpdated": "2026-10-04",
       "demoIds": [
         "188-headless-styled"
       ]
@@ -3950,8 +3954,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 1885,
-      "lastUpdated": "2026-09-30",
+      "words": 1884,
+      "lastUpdated": "2026-10-06",
       "demoIds": [
         "430-selection-bar"
       ],
@@ -4179,8 +4183,8 @@
       "section": "help/server",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 3463,
-      "lastUpdated": "2026-09-22",
+      "words": 3544,
+      "lastUpdated": "2026-10-05",
       "demoIds": [
         "496-server-grouping-model",
         "467-server-row-model-1m",
@@ -4245,8 +4249,8 @@
       "section": "help/server",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 2338,
-      "lastUpdated": "2026-09-22",
+      "words": 2363,
+      "lastUpdated": "2026-10-04",
       "demoIds": [
         "148-server-row-model",
         "467-server-row-model-1m",
@@ -4328,6 +4332,20 @@
         "469-server-tree-data",
         "31-lazy-tree-load",
         "496-server-grouping-model"
+      ]
+    },
+    {
+      "path": "help/server/worker-data-source.md",
+      "url": "/docs/help/server/worker-data-source/",
+      "title": "Worker data source - Enterprise",
+      "summary": "When every row is already in the browser, a sort or a grouping still has to walk all of them, and on the main thread nothing else happens until it is done: the page does not paint, scroll or take input. createWorkerDataSource moves that work into a Web Worker. The worker holds the rows and answers the grid's requests the way a server would, and the server-side row model asks it for one block of rows at a time, so only the rows on screen cross back to the page.",
+      "section": "help/server",
+      "pillar": "enterprise",
+      "tier": "enterprise",
+      "words": 1482,
+      "lastUpdated": "2026-10-05",
+      "demoIds": [
+        "500-worker-data-source"
       ]
     },
     {
@@ -4520,8 +4538,8 @@
       "pillar": "sheet",
       "tier": "enterprise",
       "group": "Start here",
-      "words": 1712,
-      "lastUpdated": "2026-09-29",
+      "words": 1586,
+      "lastUpdated": "2026-10-06",
       "demoIds": [
         "207-blank-sheet",
         "27-spreadsheet-ribbon"
@@ -5315,10 +5333,11 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 1825,
-      "lastUpdated": "2026-09-03",
+      "words": 1920,
+      "lastUpdated": "2026-10-05",
       "demoIds": [
         "362-dock-manager",
+        "502-ops-workspace",
         "364-dock-api",
         "367-dock-popout"
       ]
@@ -5639,10 +5658,11 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 917,
-      "lastUpdated": "2026-09-03",
+      "words": 1019,
+      "lastUpdated": "2026-10-05",
       "demoIds": [
-        "327-navpane"
+        "327-navpane",
+        "501-mail-app"
       ]
     },
     {

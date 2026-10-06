@@ -144,7 +144,12 @@ the same value drive a URL, a saved view, or two grids at once.
     onSortingChange: (u) => (sorting = typeof u === 'function' ? u(sorting) : u),
   })
 
-  const rows = $derived(table.getRowModel().rows)
+  // Touch the state this component owns so the derived re-runs:
+  // the engine's store is framework-free and not a rune.
+  const rows = $derived.by(() => {
+    sorting
+    return table.getRowModel().rows
+  })
 </script>
 
 <button type="button" onclick={() => (sorting = [{ id: 'name', desc: false }])}>
@@ -214,7 +219,13 @@ path, and a header click stops working.
     },
   })
 
-  const rows = $derived(table.getRowModel().rows)
+  // Touch the state this component owns so the derived re-runs:
+  // the engine's store is framework-free and not a rune.
+  const rows = $derived.by(() => {
+    sorting
+    updates
+    return table.getRowModel().rows
+  })
 </script>
 
 <table>

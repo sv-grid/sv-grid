@@ -23,7 +23,11 @@ export function subscribeGrid<
   grid: SvGrid<TData>,
   selector: (state: Record<string, any>) => TSelected,
 ) {
-  let current = selector(grid.store.state)
+  // $state, not a plain variable: core.ts keeps a deliberately framework-free
+  // store, so this Svelte adapter is where reactivity belongs. Without it a
+  // `$derived` reading .current never re-runs and the docs' headless examples
+  // render their seeded state forever.
+  let current = $state(selector(grid.store.state))
   grid.store.subscribe(() => {
     const next = selector(grid.store.state)
     if (!shallowCompare(current, next)) current = next

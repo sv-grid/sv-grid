@@ -422,7 +422,7 @@ level above.
 <!-- tutorial:learn-6-grouping -->
 <figure class="docs-tutorial" id="tutorial-learn-6-grouping" data-docs-tutorial="learn-6-grouping">
 <video class="docs-tutorial-video" src="/tutorials/learn-6-grouping.mp4" poster="/tutorials/learn-6-grouping.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 6: grouping and totals, 94 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-6-grouping.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-6-grouping.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Learn SvGrid 6: grouping and totals</strong> (94 s, silent). <a href="https://www.youtube.com/watch?v=U39CKHyrdqQ" rel="noopener">Watch with narration on YouTube</a></figcaption>
+<figcaption><strong>Learn SvGrid 6: grouping and totals</strong> (1:34, silent). <a href="https://www.youtube.com/watch?v=U39CKHyrdqQ" rel="noopener">Watch with narration on YouTube</a></figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Once a table has more than a screenful of rows, people stop reading it and start asking it questions. Grouping and totals are how it answers.</p>
 <p>The same people as before, with a department and a city to group by, and a salary worth adding up.</p>

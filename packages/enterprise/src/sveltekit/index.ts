@@ -8,7 +8,7 @@ export {
   type PlanAggregate,
   type PlanOptions,
 } from './query-plan'
-export { createInMemoryDataSource } from './in-memory'
+export { createInMemoryDataSource, type InMemoryDataSourceOptions } from './in-memory'
 export {
   createKitDataSource,
   createKitHandlers,

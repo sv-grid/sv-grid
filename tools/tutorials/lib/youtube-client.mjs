@@ -241,6 +241,28 @@ export function createClient(creds = credentials()) {
       return json.items?.[0]?.default?.url ?? null
     },
 
+    /**
+     * Create a playlist and return its id. A course published as ten separate
+     * uploads has no ordering and no autoplay; a playlist gives it both, plus
+     * one URL the docs can link instead of ten.
+     */
+    async createPlaylist(title, { description = '', privacy = 'public' } = {}) {
+      const json = await call('POST', `${API}/playlists?part=snippet,status`, {
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          snippet: { title, description, defaultLanguage: 'en' },
+          status: { privacyStatus: privacy },
+        }),
+      })
+      return json.id
+    },
+
+    /** The caller's playlists, so a re-run reuses one instead of making a second. */
+    async myPlaylists() {
+      const json = await call('GET', `${API}/playlists?part=snippet&mine=true&maxResults=50`)
+      return (json.items ?? []).map((p) => ({ id: p.id, title: p.snippet?.title }))
+    },
+
     async addToPlaylist(playlistId, videoId) {
       const json = await call('POST', `${API}/playlistItems?part=snippet`, {
         headers: { 'content-type': 'application/json' },

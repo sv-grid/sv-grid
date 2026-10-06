@@ -33,7 +33,8 @@ import { compareSeo, compareKeywords } from './lib/compare-meta.mjs'
 import { guardGenerator } from './lib/generator-guard.mjs'
 import { clampDescription } from './lib/seo-text.mjs'
 import { parseDemoRegistry } from './lib/demo-registry.mjs'
-import { tutorialIdsIn } from './lib/tutorial-media.mjs'
+import { tutorialIdsIn, normalizeNarration } from './lib/tutorial-media.mjs'
+import { readManifest as readTutorialManifest } from './tutorials/lib/manifest.mjs'
 
 // Resolved from this file, not process.cwd(): the website's `prebuild` runs this
 // with cwd set to website/, which used to make DOCS_DIR website/docs and fail.
@@ -41,6 +42,12 @@ const ROOT      = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DOCS_DIR  = join(ROOT, 'docs')
 const PUBLIC_DIR = join(ROOT, 'website', 'public') // served copies for crawlers
 const SITE      = process.env.SVGRID_SITE_ORIGIN ?? 'https://svgrid.com'   // canonical doc origin
+
+// The tutorials a page embeds, as manifest entries. Used to append a narrated
+// cut's words to llms-full.txt: that block is only rendered visibly for silent
+// clips, and a model reading the corpus cannot hear the narration.
+const TUTORIAL_BY_ID = new Map(readTutorialManifest().tutorials.map((t) => [t.id, t]))
+const tutorialsOn = (body) => tutorialIdsIn(body).map((id) => TUTORIAL_BY_ID.get(id)).filter(Boolean)
 
 const SECTION_TITLES = {
   '':                  'Overview',
@@ -134,6 +141,7 @@ const PAGE_PILLAR = {
   'help/server/server-pivot':       'enterprise',
   'help/server/server-transactions':'enterprise',
   'help/server/server-selection':   'enterprise',
+  'help/server/worker-data-source': 'enterprise',
   'help/export':                    'enterprise',
   'help/import':                    'enterprise',
   'help/pivot':                     'enterprise',
@@ -206,7 +214,7 @@ const PAGE_GROUPS = {
   // The row model: the walkthrough, the hub, the free controller pages, then
   // the Enterprise deep dives, the order the sidebar and the hub use.
   'help/server': [
-    { label: '', pages: ['row-model-walkthrough', 'server-row-model', 'server-infinite-scroll', 'server-paging', 'server-sorting', 'server-filtering', 'server-editing', 'server-grouping', 'server-tree-data', 'server-pivot', 'server-transactions', 'server-selection'] },
+    { label: '', pages: ['row-model-walkthrough', 'server-row-model', 'server-infinite-scroll', 'server-paging', 'server-sorting', 'server-filtering', 'server-editing', 'server-grouping', 'server-tree-data', 'server-pivot', 'server-transactions', 'server-selection', 'worker-data-source'] },
   ],
   'help/gantt': [
     { label: '', pages: ['help/gantt.md'] },
@@ -535,6 +543,18 @@ async function main() {
     llmsFullLines.push(`     ================================================================== -->`)
     llmsFullLines.push('')
     llmsFullLines.push(body.trim())
+    // A narrated video's words are on the page as audio, as a captions track
+    // and in its VideoObject, but not as prose - the visible transcript block
+    // is only rendered for silent clips, where it is the sole text. A model
+    // reading this corpus has no audio, so the narration is appended here.
+    // Nothing is claimed that the page does not actually say out loud.
+    for (const t of tutorialsOn(body)) {
+      if (!t.player || !t.transcript?.length) continue
+      llmsFullLines.push('')
+      llmsFullLines.push(`## Transcript: ${t.title} (video, ${Math.round(t.duration)} s)`)
+      llmsFullLines.push('')
+      llmsFullLines.push(t.transcript.map((c) => normalizeNarration(c.text)).join(' '))
+    }
     llmsFullLines.push('')
   }
   // The comparison pages, under the same separator shape as a docs page so

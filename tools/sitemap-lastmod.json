@@ -1,7 +1,7 @@
 {
   "/": {
-    "hash": "fd2f4f6fa03a",
-    "date": "2026-09-21"
+    "hash": "3e426950fec1",
+    "date": "2026-10-06"
   },
   "/about/": {
     "hash": "79398a92c875",
@@ -16,8 +16,8 @@
     "date": "2026-09-03"
   },
   "/blog/": {
-    "hash": "095eee8de5bc",
-    "date": "2026-09-29"
+    "hash": "48e1aa388609",
+    "date": "2026-10-04"
   },
   "/blog/accessibility-from-the-ground-up/": {
     "hash": "6b93132ad60f",
@@ -100,12 +100,12 @@
     "date": "2026-09-03"
   },
   "/blog/category/compare/": {
-    "hash": "091dec018752",
-    "date": "2026-09-20"
+    "hash": "39dd19e30927",
+    "date": "2026-10-04"
   },
   "/blog/category/engineering/": {
-    "hash": "82caa772f652",
-    "date": "2026-09-29"
+    "hash": "5171090ceed0",
+    "date": "2026-10-04"
   },
   "/blog/category/enterprise/": {
     "hash": "18612076d186",
@@ -599,6 +599,10 @@
     "hash": "a3420031ed93",
     "date": "2026-09-12"
   },
+  "/blog/svelte-effect-pitfalls/": {
+    "hash": "08cb982f322c",
+    "date": "2026-07-02"
+  },
   "/blog/svelte-headless-table-svelte-5-options/": {
     "hash": "41e10932713f",
     "date": "2026-09-20"
@@ -634,6 +638,10 @@
   "/blog/svgrid-ui-components-tips-and-tricks/": {
     "hash": "53faf3300a3b",
     "date": "2026-09-12"
+  },
+  "/blog/svgrid-vs-svelte-headless-table/": {
+    "hash": "70c2ed3cf3b2",
+    "date": "2026-07-02"
   },
   "/blog/sync-grid-state-to-url/": {
     "hash": "09b6b6b7673e",
@@ -708,8 +716,8 @@
     "date": "2026-09-29"
   },
   "/blog/tag/headless/": {
-    "hash": "e4690d22c68d",
-    "date": "2026-09-29"
+    "hash": "2a99f5d0b73c",
+    "date": "2026-10-04"
   },
   "/blog/tag/master-detail/": {
     "hash": "d71c9e0fcfcb",
@@ -728,8 +736,8 @@
     "date": "2026-09-29"
   },
   "/blog/tag/reactivity/": {
-    "hash": "d522a75d8c68",
-    "date": "2026-09-29"
+    "hash": "dff62b0dafb3",
+    "date": "2026-10-04"
   },
   "/blog/tag/realtime/": {
     "hash": "ad24cb642802",
@@ -756,8 +764,8 @@
     "date": "2026-09-29"
   },
   "/blog/tag/svelte-5/": {
-    "hash": "e1d8a1ae829f",
-    "date": "2026-09-29"
+    "hash": "09e0d063409b",
+    "date": "2026-10-04"
   },
   "/blog/tag/sveltekit/": {
     "hash": "dbf8e97ecb01",
@@ -924,8 +932,8 @@
     "date": "2026-09-03"
   },
   "/demos/": {
-    "hash": "5ce1582c1997",
-    "date": "2026-09-29"
+    "hash": "0ee6b4ed7480",
+    "date": "2026-10-05"
   },
   "/demos/00-trading-desk/": {
     "hash": "42bf6d0ba9c5",
@@ -1000,8 +1008,8 @@
     "date": "2026-09-15"
   },
   "/demos/108-pinned-rows-engine/": {
-    "hash": "cac507b91bc1",
-    "date": "2026-09-29"
+    "hash": "797c4ee77f77",
+    "date": "2026-10-04"
   },
   "/demos/109-column-reorder-engine/": {
     "hash": "0160c6ddfab2",
@@ -1200,8 +1208,8 @@
     "date": "2026-09-18"
   },
   "/demos/161-chart-radar/": {
-    "hash": "aedfa99b9e6d",
-    "date": "2026-09-18"
+    "hash": "fe34cfc34dd2",
+    "date": "2026-10-04"
   },
   "/demos/162-chart-calendar/": {
     "hash": "18f2622d0d3e",
@@ -1308,68 +1316,68 @@
     "date": "2026-09-15"
   },
   "/demos/186-headless-table/": {
-    "hash": "7f227cf023bf",
-    "date": "2026-09-20"
+    "hash": "a21399df4752",
+    "date": "2026-10-04"
   },
   "/demos/187-headless-virtual/": {
-    "hash": "09b7f99024a7",
-    "date": "2026-09-20"
+    "hash": "0bc3e18fa47a",
+    "date": "2026-10-04"
   },
   "/demos/188-headless-styled/": {
-    "hash": "1954604da0c1",
-    "date": "2026-09-20"
+    "hash": "64dae9d349cf",
+    "date": "2026-10-04"
   },
   "/demos/189-headless-shared-state/": {
-    "hash": "d73884fc2691",
-    "date": "2026-09-29"
+    "hash": "3537afe5e6f1",
+    "date": "2026-10-04"
   },
   "/demos/19-ssr/": {
     "hash": "1b613c5360e7",
     "date": "2026-09-15"
   },
   "/demos/190-headless-row-models/": {
-    "hash": "81c10dc9e5a8",
-    "date": "2026-09-20"
+    "hash": "f203622c9d92",
+    "date": "2026-10-04"
   },
   "/demos/191-headless-server-side/": {
     "hash": "71c9bc030306",
     "date": "2026-09-20"
   },
   "/demos/193-studio-live-sql/": {
-    "hash": "4ec50d66b041",
-    "date": "2026-09-29"
+    "hash": "cc80be861a1d",
+    "date": "2026-10-04"
   },
   "/demos/194-studio-supabase/": {
-    "hash": "6e0da9711c37",
-    "date": "2026-09-29"
+    "hash": "f160e498defb",
+    "date": "2026-10-04"
   },
   "/demos/195-studio-relations/": {
-    "hash": "bf8c32d9e614",
-    "date": "2026-09-29"
+    "hash": "82af2fc43457",
+    "date": "2026-10-04"
   },
   "/demos/196-studio-auth/": {
-    "hash": "9cda2a51f7f2",
-    "date": "2026-09-29"
+    "hash": "95e0f7e8f0fc",
+    "date": "2026-10-04"
   },
   "/demos/197-studio-chart/": {
-    "hash": "720d2c9df2c5",
-    "date": "2026-09-29"
+    "hash": "07f605c552d8",
+    "date": "2026-10-04"
   },
   "/demos/198-studio-form-fields/": {
-    "hash": "5a162e7a0ca3",
-    "date": "2026-09-29"
+    "hash": "839a8a859926",
+    "date": "2026-10-04"
   },
   "/demos/199-studio-computed-hooks/": {
-    "hash": "229a6fff0e96",
-    "date": "2026-09-29"
+    "hash": "3977cb96309b",
+    "date": "2026-10-04"
   },
   "/demos/20-industrial-dashboard/": {
     "hash": "6fbb3567f269",
     "date": "2026-09-21"
   },
   "/demos/200-studio-dashboard/": {
-    "hash": "78ef694f1ec8",
-    "date": "2026-09-29"
+    "hash": "473ae4c9a2c7",
+    "date": "2026-10-04"
   },
   "/demos/201-export-formatting-and-xls/": {
     "hash": "422f26bec6a4",
@@ -1488,104 +1496,104 @@
     "date": "2026-09-20"
   },
   "/demos/260-headless-editors/": {
-    "hash": "4a9e967d2431",
-    "date": "2026-09-20"
+    "hash": "b85ec6d337bc",
+    "date": "2026-10-04"
   },
   "/demos/261-headless-combobox/": {
-    "hash": "1e891ca1c9ad",
-    "date": "2026-09-20"
+    "hash": "b367eb97511f",
+    "date": "2026-10-04"
   },
   "/demos/262-headless-dropdownlist/": {
-    "hash": "e0d7074bfe8e",
-    "date": "2026-09-20"
+    "hash": "8ccae70931f8",
+    "date": "2026-10-04"
   },
   "/demos/263-headless-autocomplete/": {
-    "hash": "7a3c3e6b148d",
-    "date": "2026-09-20"
+    "hash": "fd5af6ab7df0",
+    "date": "2026-10-04"
   },
   "/demos/264-headless-tagsinput/": {
-    "hash": "c0cbdb397e39",
-    "date": "2026-09-20"
+    "hash": "b85f9ec5b36b",
+    "date": "2026-10-04"
   },
   "/demos/265-headless-countryinput/": {
-    "hash": "a8b4cf8e890c",
-    "date": "2026-09-20"
+    "hash": "442bb01172b3",
+    "date": "2026-10-04"
   },
   "/demos/266-headless-numberinput/": {
-    "hash": "87dd09c6cc36",
-    "date": "2026-09-20"
+    "hash": "c68aa4cd6e65",
+    "date": "2026-10-04"
   },
   "/demos/267-headless-maskedinput/": {
-    "hash": "dae0b6e068e0",
-    "date": "2026-09-20"
+    "hash": "233725230c93",
+    "date": "2026-10-04"
   },
   "/demos/268-headless-phoneinput/": {
-    "hash": "aca960fa633e",
-    "date": "2026-09-20"
+    "hash": "7950074d28b3",
+    "date": "2026-10-04"
   },
   "/demos/269-headless-colorinput/": {
-    "hash": "9ad71a82e676",
-    "date": "2026-09-20"
+    "hash": "f95ee7309092",
+    "date": "2026-10-04"
   },
   "/demos/27-spreadsheet-ribbon/": {
     "hash": "5611f26aadee",
     "date": "2026-09-22"
   },
   "/demos/270-headless-passwordinput/": {
-    "hash": "2826ccc7182b",
-    "date": "2026-09-20"
+    "hash": "cf7811836f7c",
+    "date": "2026-10-04"
   },
   "/demos/271-headless-togglebutton/": {
-    "hash": "306dfa8888e2",
-    "date": "2026-09-20"
+    "hash": "3606fced796c",
+    "date": "2026-10-04"
   },
   "/demos/272-headless-switchbutton/": {
-    "hash": "0b7a7a789668",
-    "date": "2026-09-20"
+    "hash": "7f88901dd9b4",
+    "date": "2026-10-04"
   },
   "/demos/273-headless-checkbox/": {
-    "hash": "2f39ddf2b501",
-    "date": "2026-09-20"
+    "hash": "ca5a5ece5421",
+    "date": "2026-10-04"
   },
   "/demos/274-headless-radiogroup/": {
-    "hash": "44acd0f4b5aa",
-    "date": "2026-09-20"
+    "hash": "b0815aae69a4",
+    "date": "2026-10-04"
   },
   "/demos/275-headless-rating/": {
-    "hash": "c08012385459",
-    "date": "2026-09-20"
+    "hash": "6bac29833dd9",
+    "date": "2026-10-04"
   },
   "/demos/276-headless-calendar/": {
-    "hash": "52ba17d7905e",
-    "date": "2026-09-20"
+    "hash": "0b91fea8ba91",
+    "date": "2026-10-04"
   },
   "/demos/277-headless-timepicker/": {
-    "hash": "b97e9421dd29",
-    "date": "2026-09-20"
+    "hash": "d9cc647b02ac",
+    "date": "2026-10-04"
   },
   "/demos/278-headless-datetimepicker/": {
-    "hash": "70b605a94cef",
-    "date": "2026-09-20"
+    "hash": "03d8e023015d",
+    "date": "2026-10-04"
   },
   "/demos/279-headless-tabs/": {
-    "hash": "97d453fcbf14",
-    "date": "2026-09-20"
+    "hash": "2e4da29bd4e6",
+    "date": "2026-10-04"
   },
   "/demos/28-org-chart-tree/": {
     "hash": "0e9dbd98f933",
     "date": "2026-09-18"
   },
   "/demos/280-headless-tree/": {
-    "hash": "afcd32f83113",
-    "date": "2026-09-20"
+    "hash": "b3e2c4cec861",
+    "date": "2026-10-04"
   },
   "/demos/281-headless-slider/": {
-    "hash": "a9a184b92ee2",
-    "date": "2026-09-20"
+    "hash": "628f61c0d63a",
+    "date": "2026-10-04"
   },
   "/demos/282-headless-gauge/": {
-    "hash": "bc897eb7b9e1",
-    "date": "2026-09-20"
+    "hash": "08fc38e5f03a",
+    "date": "2026-10-04"
   },
   "/demos/283-daterange-input/": {
     "hash": "e92b643a5bd8",
@@ -2056,8 +2064,8 @@
     "date": "2026-09-20"
   },
   "/demos/399-alert-rules-engine/": {
-    "hash": "0b249a677bfc",
-    "date": "2026-09-29"
+    "hash": "ffb1fd9bb78f",
+    "date": "2026-10-04"
   },
   "/demos/399-scheduler-clinic-console/": {
     "hash": "3f44205c3d43",
@@ -2436,12 +2444,24 @@
     "date": "2026-09-27"
   },
   "/demos/499-sheet-engineering-stats/": {
-    "hash": "06587218aed5",
-    "date": "2026-09-27"
+    "hash": "d75d54778357",
+    "date": "2026-10-04"
   },
   "/demos/50-seller-panel/": {
     "hash": "66d55c632965",
     "date": "2026-09-15"
+  },
+  "/demos/500-worker-data-source/": {
+    "hash": "952a0eb60f32",
+    "date": "2026-10-05"
+  },
+  "/demos/501-mail-app/": {
+    "hash": "c77e0e4e5502",
+    "date": "2026-10-05"
+  },
+  "/demos/502-ops-workspace/": {
+    "hash": "8c74e169f430",
+    "date": "2026-10-05"
   },
   "/demos/51-ai-assistant/": {
     "hash": "6e9978e272cb",
@@ -2632,8 +2652,8 @@
     "date": "2026-09-10"
   },
   "/docs/": {
-    "hash": "540755c81126",
-    "date": "2026-09-29"
+    "hash": "8dbdbbe29083",
+    "date": "2026-10-06"
   },
   "/docs/changelog/": {
     "hash": "4f7fd90c38b0",
@@ -2708,8 +2728,8 @@
     "date": "2026-08-18"
   },
   "/docs/enterprise/studio/cli/": {
-    "hash": "b4a5e3e7b635",
-    "date": "2026-09-22"
+    "hash": "b44222f9124b",
+    "date": "2026-10-04"
   },
   "/docs/enterprise/studio/code-behind/": {
     "hash": "1938a6761a8c",
@@ -2756,8 +2776,8 @@
     "date": "2026-08-23"
   },
   "/docs/enterprise/studio/getting-started/": {
-    "hash": "450534da008f",
-    "date": "2026-09-29"
+    "hash": "c86a8081bcfe",
+    "date": "2026-10-06"
   },
   "/docs/enterprise/studio/i18n/": {
     "hash": "362003cdbe9c",
@@ -2860,48 +2880,48 @@
     "date": "2026-09-21"
   },
   "/docs/getting-started-full/": {
-    "hash": "e198ac8c857d",
-    "date": "2026-09-29"
+    "hash": "760e61b8720d",
+    "date": "2026-10-04"
   },
   "/docs/getting-started/": {
-    "hash": "dfc4f9b18e78",
-    "date": "2026-06-22"
+    "hash": "16f29d3c3cce",
+    "date": "2026-10-06"
   },
   "/docs/getting-started/1-install/": {
-    "hash": "2181a39b4e31",
-    "date": "2026-09-29"
+    "hash": "c6c1547fac37",
+    "date": "2026-10-06"
   },
   "/docs/getting-started/2-first-grid/": {
-    "hash": "af53bf9ea726",
-    "date": "2026-09-29"
+    "hash": "e5b05432fb79",
+    "date": "2026-10-06"
   },
   "/docs/getting-started/3-data-and-columns/": {
-    "hash": "142f036d86ba",
-    "date": "2026-09-29"
+    "hash": "b58d48f595d0",
+    "date": "2026-10-06"
   },
   "/docs/getting-started/4-features/": {
-    "hash": "6fbe7f542aea",
-    "date": "2026-09-29"
+    "hash": "1d6c541cb788",
+    "date": "2026-10-06"
   },
   "/docs/getting-started/5-theme-and-density/": {
-    "hash": "f61b20b57da0",
-    "date": "2026-09-29"
+    "hash": "698cb4cdb5ca",
+    "date": "2026-10-06"
   },
   "/docs/getting-started/6-going-to-production/": {
-    "hash": "629153e273f1",
-    "date": "2026-09-29"
+    "hash": "e6724652bdc1",
+    "date": "2026-10-06"
   },
   "/docs/getting-started/course/": {
-    "hash": "92045fd672a8",
-    "date": "2026-09-29"
+    "hash": "79072cdc2e67",
+    "date": "2026-10-04"
   },
   "/docs/getting-started/starters/": {
     "hash": "0b5a12232646",
     "date": "2026-09-22"
   },
   "/docs/getting-started/sveltekit/": {
-    "hash": "c4d73357b918",
-    "date": "2026-09-29"
+    "hash": "68349e6ceeb0",
+    "date": "2026-10-06"
   },
   "/docs/help/accessibility/": {
     "hash": "b6085f786382",
@@ -2956,8 +2976,8 @@
     "date": "2026-09-29"
   },
   "/docs/help/cells/cell-data-types/": {
-    "hash": "d7ca7ebf94e8",
-    "date": "2026-09-29"
+    "hash": "ec34148dd6cd",
+    "date": "2026-10-04"
   },
   "/docs/help/cells/cell-text-selection/": {
     "hash": "4a96d996fec8",
@@ -3128,8 +3148,8 @@
     "date": "2026-09-03"
   },
   "/docs/help/comparison/": {
-    "hash": "bf821c431f12",
-    "date": "2026-09-29"
+    "hash": "58a1345dfe4f",
+    "date": "2026-10-04"
   },
   "/docs/help/conditional-form-schema/": {
     "hash": "f5e745ac37f1",
@@ -3172,8 +3192,8 @@
     "date": "2026-09-21"
   },
   "/docs/help/editing/validation/": {
-    "hash": "d1e027e3c3e8",
-    "date": "2026-09-29"
+    "hash": "a2e4e84b2c35",
+    "date": "2026-10-06"
   },
   "/docs/help/errors/": {
     "hash": "eb572a139e8d",
@@ -3244,40 +3264,40 @@
     "date": "2026-09-22"
   },
   "/docs/help/grouping-aggregation/": {
-    "hash": "158c85769420",
-    "date": "2026-09-29"
+    "hash": "df699884e762",
+    "date": "2026-10-06"
   },
   "/docs/help/grouping/aggregators/": {
     "hash": "2f92d5917e91",
     "date": "2026-09-02"
   },
   "/docs/help/headless/build-a-table/": {
-    "hash": "15bc791477b1",
-    "date": "2026-09-20"
+    "hash": "f80f19e9801e",
+    "date": "2026-10-05"
   },
   "/docs/help/headless/controlled-state/": {
-    "hash": "11c0b85d63bc",
-    "date": "2026-09-29"
+    "hash": "a5b10bb34ba3",
+    "date": "2026-10-05"
   },
   "/docs/help/headless/overview/": {
-    "hash": "cb72467dfe8c",
-    "date": "2026-09-20"
+    "hash": "64b80100de25",
+    "date": "2026-10-05"
   },
   "/docs/help/headless/row-models/": {
-    "hash": "5dfddbc3d57f",
-    "date": "2026-09-20"
+    "hash": "9f0f9d553317",
+    "date": "2026-10-05"
   },
   "/docs/help/headless/server-side/": {
-    "hash": "0f3d100f5baf",
-    "date": "2026-09-20"
+    "hash": "5713ab207b41",
+    "date": "2026-10-05"
   },
   "/docs/help/headless/styling/": {
-    "hash": "c5c2f50a0821",
-    "date": "2026-09-20"
+    "hash": "adb6d4badb1d",
+    "date": "2026-10-05"
   },
   "/docs/help/headless/virtualization/": {
-    "hash": "0054e1f4888b",
-    "date": "2026-09-20"
+    "hash": "362035b4461b",
+    "date": "2026-10-04"
   },
   "/docs/help/i18n-rtl/": {
     "hash": "4a1e072fef24",
@@ -3304,8 +3324,8 @@
     "date": "2026-09-22"
   },
   "/docs/help/migrating-from-ag-grid/": {
-    "hash": "a85a9dde5c06",
-    "date": "2026-09-29"
+    "hash": "d0ac4fd545fc",
+    "date": "2026-10-04"
   },
   "/docs/help/migrating-from-devextreme/": {
     "hash": "f039afb5b6a5",
@@ -3340,8 +3360,8 @@
     "date": "2026-09-29"
   },
   "/docs/help/migrating-from-react-data-grid/": {
-    "hash": "68c134825f79",
-    "date": "2026-09-29"
+    "hash": "1c36deae772a",
+    "date": "2026-10-04"
   },
   "/docs/help/migrating-from-shadcn-data-table/": {
     "hash": "e5879324d36d",
@@ -3452,8 +3472,8 @@
     "date": "2026-09-20"
   },
   "/docs/help/rows/row-sorting/": {
-    "hash": "d3048d3f0a22",
-    "date": "2026-09-03"
+    "hash": "2a904b9163ec",
+    "date": "2026-10-04"
   },
   "/docs/help/rows/row-spanning/": {
     "hash": "c785a2f23ec1",
@@ -3464,8 +3484,8 @@
     "date": "2026-09-22"
   },
   "/docs/help/rows/selection-bar/": {
-    "hash": "451efef06a4d",
-    "date": "2026-09-29"
+    "hash": "1a059a3ff063",
+    "date": "2026-10-06"
   },
   "/docs/help/rows/styling-rows/": {
     "hash": "e8fb58323b59",
@@ -3516,8 +3536,8 @@
     "date": "2026-09-20"
   },
   "/docs/help/server/server-grouping/": {
-    "hash": "dda720b463b1",
-    "date": "2026-09-22"
+    "hash": "fa96a13175e8",
+    "date": "2026-10-05"
   },
   "/docs/help/server/server-infinite-scroll/": {
     "hash": "30dfb399f5f9",
@@ -3532,8 +3552,8 @@
     "date": "2026-09-20"
   },
   "/docs/help/server/server-row-model/": {
-    "hash": "8163e684574e",
-    "date": "2026-09-22"
+    "hash": "eb05377afc8b",
+    "date": "2026-10-05"
   },
   "/docs/help/server/server-selection/": {
     "hash": "a233bb2ca49b",
@@ -3550,6 +3570,10 @@
   "/docs/help/server/server-tree-data/": {
     "hash": "1f5156f973ef",
     "date": "2026-09-22"
+  },
+  "/docs/help/server/worker-data-source/": {
+    "hash": "a6720dd372ef",
+    "date": "2026-10-05"
   },
   "/docs/help/shadcn/": {
     "hash": "a6ffd925255f",
@@ -3580,8 +3604,8 @@
     "date": "2026-09-21"
   },
   "/docs/help/sheet/start/": {
-    "hash": "4cb229e1c632",
-    "date": "2026-09-29"
+    "hash": "bcfc50f776aa",
+    "date": "2026-10-06"
   },
   "/docs/help/sheet/validation/": {
     "hash": "9735f8bbdd35",
@@ -3648,16 +3672,16 @@
     "date": "2026-09-02"
   },
   "/docs/help/ui-components/headless-editors/": {
-    "hash": "8a7bed91ef17",
-    "date": "2026-09-20"
+    "hash": "6e3f9732e903",
+    "date": "2026-10-04"
   },
   "/docs/help/ui-components/i18n-rtl/": {
     "hash": "3763a72ba81a",
     "date": "2026-09-02"
   },
   "/docs/help/ui-components/index/": {
-    "hash": "b9fef180362f",
-    "date": "2026-09-29"
+    "hash": "6302e014b5ff",
+    "date": "2026-10-04"
   },
   "/docs/help/ui-components/inputs/": {
     "hash": "a017cfaca7a9",
@@ -3792,8 +3816,8 @@
     "date": "2026-09-03"
   },
   "/docs/help/ui-components/sv-dock-manager/": {
-    "hash": "35ff3a0c6278",
-    "date": "2026-09-03"
+    "hash": "e17a67e46ec0",
+    "date": "2026-10-05"
   },
   "/docs/help/ui-components/sv-drawer/": {
     "hash": "93807649ad9c",
@@ -3880,8 +3904,8 @@
     "date": "2026-09-03"
   },
   "/docs/help/ui-components/sv-nav-pane/": {
-    "hash": "d5ea6cde142d",
-    "date": "2026-09-02"
+    "hash": "a6c3376f81e7",
+    "date": "2026-10-05"
   },
   "/docs/help/ui-components/sv-number-input/": {
     "hash": "ab334bb2697a",
@@ -4036,16 +4060,16 @@
     "date": "2026-09-29"
   },
   "/docs/help/web-components/angular/": {
-    "hash": "f4acb4ecbd1b",
-    "date": "2026-09-29"
+    "hash": "f8e53804b836",
+    "date": "2026-10-04"
   },
   "/docs/help/web-components/enterprise/": {
     "hash": "7a6df08d567a",
     "date": "2026-09-20"
   },
   "/docs/help/web-components/frameworks/": {
-    "hash": "8f3b0005e4c5",
-    "date": "2026-09-29"
+    "hash": "c8a4f75391b0",
+    "date": "2026-10-04"
   },
   "/docs/help/web-components/limitations/": {
     "hash": "8b0c26a09095",
@@ -4056,8 +4080,8 @@
     "date": "2026-09-05"
   },
   "/docs/help/web-components/react/": {
-    "hash": "6dfd06b77d77",
-    "date": "2026-09-29"
+    "hash": "ac1cd291ce54",
+    "date": "2026-10-04"
   },
   "/docs/help/web-components/shadow-dom/": {
     "hash": "529ec8bb27e6",
@@ -4080,12 +4104,12 @@
     "date": "2026-09-29"
   },
   "/docs/help/web-components/vue/": {
-    "hash": "07c8464189ab",
-    "date": "2026-09-29"
+    "hash": "96719bbe73fd",
+    "date": "2026-10-04"
   },
   "/docs/legal/EULA/": {
-    "hash": "856cdfb71981",
-    "date": "2026-09-29"
+    "hash": "d6885a856d1e",
+    "date": "2026-10-04"
   },
   "/docs/recipes/autosave-with-debounce/": {
     "hash": "ed95b7b0ef3d",
@@ -4252,8 +4276,8 @@
     "date": "2026-09-20"
   },
   "/faq/": {
-    "hash": "e803314fd7cc",
-    "date": "2026-09-21"
+    "hash": "104589b81498",
+    "date": "2026-10-05"
   },
   "/mcp/": {
     "hash": "6ec31c12119d",

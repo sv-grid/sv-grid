@@ -259,7 +259,7 @@ any ancestor - no theme file, no build step.
 <!-- tutorial:learn-7-theme -->
 <figure class="docs-tutorial" id="tutorial-learn-7-theme" data-docs-tutorial="learn-7-theme">
 <video class="docs-tutorial-video" src="/tutorials/learn-7-theme.mp4" poster="/tutorials/learn-7-theme.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 7: themes, dark mode and density, 113 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-7-theme.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-7-theme.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Learn SvGrid 7: themes, dark mode and density</strong> (113 s, silent). <a href="https://www.youtube.com/watch?v=yhJMpkQ0Kww" rel="noopener">Watch with narration on YouTube</a></figcaption>
+<figcaption><strong>Learn SvGrid 7: themes, dark mode and density</strong> (1:53, silent). <a href="https://www.youtube.com/watch?v=yhJMpkQ0Kww" rel="noopener">Watch with narration on YouTube</a></figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>A grid that looks like a grid library is a grid that never ships. Theming here is CSS custom properties, not utility classes and not a config object.</p>
 <p>Twenty presets ship with the package, and importing one stylesheet is the whole setup. What a preset sets is a list of custom properties, which means you can set them yourself when one is close but not right. Same five people as before.</p>

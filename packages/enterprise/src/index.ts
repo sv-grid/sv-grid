@@ -524,6 +524,7 @@ export {
   type SqlExecutor,
   type SqlDataSourceConfig,
   type WritableDataSource,
+  type InMemoryDataSourceOptions,
 } from './sveltekit'
 
 // Server-Side Row Model: lazy server-side grouping and tree data over the
@@ -578,6 +579,10 @@ export {
   createServerGroupModel,
   serverGroupRows,
   serverGroupNav,
+  createWorkerDataSource,
+  type WorkerDataSource,
+  type WorkerDataSourceOptions,
+  type WorkerLike,
   enableServerRowModel,
   SvGroupCell,
   SvRowGroupPanel,

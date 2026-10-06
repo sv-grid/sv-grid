@@ -25,6 +25,9 @@
  *                    unreachable, stop them after
  *   --dry            load and validate the scripts, print the beats, record nothing
  *   --skip-mux       record only; leave raw.webm + timeline.json in tutorials-out/<id>/
+ *   --mux-only       re-cut from the timeline.json already in tutorials-out/<id>/:
+ *                    no browser, no TTS. Use when only the outputs changed
+ *                    (a cut gained a docsPage, a budget moved) and the take is good.
  *   --no-gif         skip the GIF export
  *   --budget-kb <n>  docs MP4 size budget (default 2560)
  *   --no-warm        skip the warm-up load of the demo before recording
@@ -33,8 +36,8 @@
  * TTS_PROVIDER=silence to run the pipeline with silent narration. ffmpeg on
  * PATH or FFMPEG_PATH. After a successful run: `pnpm tutorials:embed`.
  */
-import { existsSync, readdirSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, readdirSync, statSync, rmSync, mkdirSync, readFileSync } from 'node:fs'
+import { join, dirname, isAbsolute } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { spawn, spawnSync } from 'node:child_process'
 import { requireFfmpeg } from './lib/ffmpeg.mjs'
@@ -50,13 +53,16 @@ const opt = (name, dflt) => {
   const i = args.indexOf(name)
   return i >= 0 && args[i + 1] ? args[i + 1] : dflt
 }
-const positional = args.filter((a, i) => !a.startsWith('--') && !(i > 0 && ['--base', '--site', '--budget-kb'].includes(args[i - 1])))
+const positional = args.filter((a, i) => !a.startsWith('--') && !(i > 0 && ['--base', '--site', '--budget-kb', '--app-dir', '--app-port'].includes(args[i - 1])))
 
 const BASE = opt('--base', 'http://localhost:5174')
 const SITE_BASE = opt('--site', 'http://localhost:5180')
 const DRY = flag('--dry')
 const SERVE = flag('--serve')
+const APP_PORT = Number(opt('--app-port', '5190'))
+const APP_DIR = opt('--app-dir', '')  || undefined
 const SKIP_MUX = flag('--skip-mux')
+const MUX_ONLY = flag('--mux-only')
 const NO_GIF = flag('--no-gif')
 const WARM = !flag('--no-warm')
 const BUDGET = Number(opt('--budget-kb', '')) * 1024 || DEFAULT_BUDGET_BYTES
@@ -84,9 +90,10 @@ async function loadScript(id) {
   if (Array.isArray(def.segments) && !def.segments.length) problems.push('segments must be a non-empty array')
   takes.forEach((t, i) => {
     const where = Array.isArray(def.segments) ? `segment ${i + 1}: ` : ''
-    const targets = ['demo', 'stage', 'site'].filter((k) => t[k])
-    if (targets.length !== 1) problems.push(`${where}needs exactly one of demo, stage, site (has ${targets.join(', ') || 'none'})`)
+    const targets = ['demo', 'stage', 'site', 'app'].filter((k) => t[k])
+    if (targets.length !== 1) problems.push(`${where}needs exactly one of demo, stage, site, app (has ${targets.join(', ') || 'none'})`)
     if (t.demo && !existsSync(join(ROOT, 'examples', 'src', 'demos', `${t.demo}.svelte`))) problems.push(`${where}demo ${t.demo} does not exist`)
+    if (t.app && !def.appScaffold && !process.argv.includes('--app-dir')) problems.push(`${where}app target needs appScaffold on the script, or --app-dir`)
     if (!Array.isArray(t.beats) || !t.beats.length) problems.push(`${where}beats must be a non-empty array`)
   })
   if (def.description && def.description.length > 160) problems.push('description over 160 chars')
@@ -112,6 +119,80 @@ async function reachable(url) {
  * server is a grandchild behind a shell wrapper and outlives a tree kill on
  * Windows, which left a stray :5174 listener after the first run.
  */
+/**
+ * Scaffold a real app, install it, and run its dev server, so a script with
+ * `app: '/customers'` records the thing a user would actually get rather than
+ * a mock of it. Two sources:
+ *
+ *   appScaffold: { studio: 'customers-orders' }      svgrid-studio init --dataset
+ *   appScaffold: { template: 'sveltekit' }           npm create @svgrid@latest
+ *
+ * `npm install` dominates the runtime, so the directory is reused across a run
+ * and `--app-dir <path>` skips scaffolding entirely for a dir you already have.
+ * On failure the directory is left in place: a scaffolded app that will not
+ * boot is the interesting artifact, not something to clean up.
+ */
+async function serveApp(scaffold, { port = 5190, dir } = {}) {
+  // The look is part of the directory name: a dark scaffold and a light one
+  // are different apps, and reusing one path meant the second run tried to
+  // delete a tree a previous dev server still held open.
+  const slug = [scaffold.studio ?? scaffold.template ?? 'app', scaffold.theme, scaffold.dark ? 'dark' : null]
+    .filter(Boolean)
+    .join('-')
+  const appDir = dir ?? join(OUT_DIR, 'app', slug)
+  const base = `http://localhost:${port}`
+  if (!dir) {
+    rmSync(appDir, { recursive: true, force: true })
+    mkdirSync(dirname(appDir), { recursive: true })
+    // `theme` / `dark` reach both scaffolders: a video shot against the light
+    // default looks nothing like the dark demos it sits next to.
+    const look = [...(scaffold.theme ? ['--theme', scaffold.theme] : []), ...(scaffold.dark ? ['--dark'] : [])]
+    if (scaffold.studio) {
+      console.log(`scaffolding a Studio app (${scaffold.studio}${scaffold.dark ? ', dark' : ''}) ...`)
+      const cli = join(ROOT, 'packages', 'studio', 'dist', 'cli.js')
+      if (!existsSync(cli)) throw new Error(`${cli} not found: run \`pnpm --filter @svgrid/studio build\``)
+      run(process.execPath, [cli, 'init', '--dataset', scaffold.studio, '--out', appDir, ...look, '-y'])
+    } else {
+      console.log(`scaffolding the ${scaffold.template} template ...`)
+      run('npm', ['create', '@svgrid@latest', appDir, '--', '--template', scaffold.template, ...look, '--force'])
+    }
+    console.log('  npm install ...')
+    run('npm', ['install', '--no-audit', '--no-fund'], appDir)
+  }
+
+  console.log(`starting the app on :${port} ...`)
+  const child = spawn('npm', ['run', 'dev', '--', '--port', String(port), '--strictPort'], {
+    cwd: appDir,
+    stdio: 'ignore',
+    shell: process.platform === 'win32',
+    windowsHide: true,
+  })
+  const stop = () => {
+    if (!child.killed) child.kill()
+  }
+  const started = Date.now()
+  while (Date.now() - started < 180_000) {
+    if (child.exitCode !== null) throw new Error(`the app exited with code ${child.exitCode} (is :${port} taken?)`)
+    if (await reachable(base)) return { stop, base, appDir }
+    await new Promise((r) => setTimeout(r, 1000))
+  }
+  stop()
+  throw new Error(`the scaffolded app did not come up on ${base} within 180 s (left in ${appDir})`)
+}
+
+/** Run a command to completion, throwing with its output on failure. */
+function run(cmd, args, cwd = ROOT) {
+  // Windows needs a shell to resolve `npm` -> `npm.cmd`, but a shell also
+  // splits an absolute path on its spaces: `C:\Program Files\nodejs\node.exe`
+  // became `'C:\Program' is not recognized`. Shell only for bare commands.
+  const shell = process.platform === 'win32' && !isAbsolute(cmd)
+  const r = spawnSync(cmd, args, { cwd, encoding: 'utf8', shell, windowsHide: true })
+  if (r.status !== 0) {
+    throw new Error(`${cmd} ${args.join(' ')} failed (${r.status}):\n${(r.stderr || r.stdout || '').slice(-1200)}`)
+  }
+  return r.stdout
+}
+
 async function serveGallery(base) {
   const port = new URL(base).port || '5174'
   const examples = join(ROOT, 'examples')
@@ -172,7 +253,7 @@ function wordsOf(def) {
 
 /** What a script records, for the log line. */
 function targetLabel(def) {
-  const one = (t) => (t.demo ? t.demo : t.site ? `site:${t.site}` : 'stage')
+  const one = (t) => (t.demo ? t.demo : t.site ? `site:${t.site}` : t.app ? `app:${t.app}` : 'stage')
   return Array.isArray(def.segments) ? def.segments.map(one).join(' + ') : one(def)
 }
 
@@ -207,13 +288,23 @@ async function main() {
   if (tts.provider === 'silence') console.log('  no ELEVENLABS_API_KEY: narration will be silent, captions still written')
 
   const stops = []
-  if (!(await reachable(BASE))) {
+  if (!MUX_ONLY && !(await reachable(BASE))) {
     if (!SERVE) fail(`gallery not reachable at ${BASE}: run \`pnpm dev\` or pass --serve`)
     stops.push(await serveGallery(BASE))
   }
-  if (defs.some(needsSite) && !(await reachable(SITE_BASE))) {
+  if (!MUX_ONLY && defs.some(needsSite) && !(await reachable(SITE_BASE))) {
     if (!SERVE) fail(`website not reachable at ${SITE_BASE}: run \`pnpm --filter svgrid-website dev\` or pass --serve`)
     stops.push(await serveSite(SITE_BASE))
+  }
+  // A script that records a real scaffolded app declares how to build it.
+  // One app per run: scaffolding and `npm install` dominate the runtime.
+  let appBase
+  const wantsApp = MUX_ONLY ? null : defs.find((d) => d.appScaffold)
+  if (wantsApp) {
+    const served = await serveApp(wantsApp.appScaffold, { port: APP_PORT, dir: APP_DIR })
+    appBase = served.base
+    stops.push(served.stop)
+    console.log(`  app on ${served.base} (${served.appDir})`)
   }
 
   const results = []
@@ -227,13 +318,20 @@ async function main() {
       const view = def.view ?? (marketing ? { width: 1920, height: 1080 } : undefined)
       try {
         let timeline
-        if (Array.isArray(def.segments)) {
+        if (MUX_ONLY) {
+          // The take is already on disk. stitchSegments wrote the whole
+          // timeline, beat audio paths included, so the mux needs nothing else.
+          const saved = join(outDir, 'timeline.json')
+          if (!existsSync(saved)) throw new Error(`--mux-only: no timeline.json in ${outDir}`)
+          timeline = JSON.parse(readFileSync(saved, 'utf-8'))
+          log(`re-cutting from ${timeline.duration.toFixed(1)} s already recorded`)
+        } else if (Array.isArray(def.segments)) {
           const recorded = []
           for (let i = 0; i < def.segments.length; i += 1) {
             const seg = { id: `${def.id}-${i + 1}`, theme: def.theme, preset: def.preset, ...def.segments[i] }
             const dir = join(outDir, `seg-${i + 1}`)
             console.log(`  segment ${i + 1}/${def.segments.length}: ${targetLabel(seg)}`)
-            const t = await recordTutorial(seg, { base: BASE, siteBase: SITE_BASE, outDir: dir, view, log, warm: WARM, tts })
+            const t = await recordTutorial(seg, { base: BASE, siteBase: SITE_BASE, appBase, outDir: dir, view, log, warm: WARM, tts })
             recorded.push({ dir, timeline: t })
           }
           if (SKIP_MUX) {
@@ -242,21 +340,26 @@ async function main() {
           }
           timeline = await stitchSegments({ id: def.id, outDir, segments: recorded, log })
         } else {
-          timeline = await recordTutorial(def, { base: BASE, siteBase: SITE_BASE, outDir, view, log, warm: WARM, tts })
+          timeline = await recordTutorial(def, { base: BASE, siteBase: SITE_BASE, appBase, outDir, view, log, warm: WARM, tts })
           if (SKIP_MUX) {
             results.push({ id: def.id, ok: true, note: 'recorded (mux skipped)' })
             continue
           }
         }
+        // A cut gets docs-sized outputs when it lands on a page. That is every
+        // tutorial, and a marketing cut that names a docsPage. One predicate,
+        // because the mux and the manifest files{} have to agree: they drifted
+        // once and left an mp4 on disk that no page could reference.
+        const onAPage = !marketing || !!def.docsPage
         const m = await muxTutorial({
           id: def.id, outDir, siteDir: SITE_MEDIA_DIR, timeline, budgetBytes: BUDGET,
-          gif: !NO_GIF, gifBeats: def.gif?.beats, posterBeat: def.poster?.beat ?? null, docs: !marketing, player: !marketing && !!def.player, log,
+          gif: !NO_GIF, gifBeats: def.gif?.beats, posterBeat: def.poster?.beat ?? null, docs: onAPage, player: onAPage && !!def.player, log,
         })
         const previous = manifest.tutorials.find((t) => t.id === def.id)
         const entry = {
           id: def.id,
           ...(def.kind ? { kind: def.kind } : {}),
-          ...(!marketing && def.player ? { player: true } : {}),
+          ...(onAPage && def.player ? { player: true } : {}),
           title: def.title,
           description: def.description,
           demo: def.demo ?? timeline.demo ?? null,
@@ -270,7 +373,7 @@ async function main() {
           recordedAt: new Date().toISOString().slice(0, 10),
           youtubeId: previous?.youtubeId ?? null,
           publishedAt: previous?.publishedAt ?? null,
-          files: marketing
+          files: !onAPage
             ? { mp4: null, poster: null, vtt: null }
             : {
                 mp4: `/tutorials/${def.id}.mp4`,
@@ -280,8 +383,12 @@ async function main() {
           bytes: { mp4: m.docsBytes, poster: m.posterBytes, master: statSync(m.master).size },
           transcript: m.cues.map((c) => ({ start: Math.round(c.start * 100) / 100, end: Math.round(c.end * 100) / 100, text: c.text })),
         }
-        manifest = upsertTutorial(manifest, entry)
-        writeManifest(manifest)
+        if (!def.internal) {
+          manifest = upsertTutorial(manifest, entry)
+          writeManifest(manifest)
+        } else {
+          log('internal: outputs written, manifest left alone')
+        }
         results.push({
           id: def.id, ok: true,
           duration: entry.duration, mp4: m.docsBytes, poster: m.posterBytes,

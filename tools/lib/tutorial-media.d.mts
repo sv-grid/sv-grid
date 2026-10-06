@@ -30,6 +30,17 @@ export type TutorialEntry = {
   transcript: TutorialCue[]
 }
 
+/**
+ * The part of a TutorialEntry a VideoObject needs. Both generated files that
+ * reach the site carry exactly this subset (website/src/lib/docs-index.json and
+ * route-videos.json, via tools/build-docs-page-index.mjs), so the bundle ships
+ * one transcript per page instead of the whole manifest.
+ */
+export type TutorialVideoMeta = Pick<
+  TutorialEntry,
+  'id' | 'title' | 'description' | 'duration' | 'recordedAt' | 'publishedAt' | 'youtubeId' | 'files' | 'transcript'
+> & { player?: boolean }
+
 export const TUTORIAL_RE: RegExp
 export function escapeHtml(s: unknown): string
 export function normalizeNarration(text: unknown): string
@@ -41,6 +52,8 @@ export function cuesFromBeats(
 export function toSrt(cues: TutorialCue[]): string
 export function toVtt(cues: TutorialCue[]): string
 export function iso8601Duration(seconds: number): string
+export function captionDuration(seconds: number): string
+export function runtime(seconds: number): string
 export function tutorialBlock(t: TutorialEntry): string
 export function upsertBlock(
   pageText: string,
@@ -49,7 +62,7 @@ export function upsertBlock(
   opts?: { anchor?: string; anchorAfter?: string },
 ): { text: string; changed: boolean; inserted: boolean }
 export function videoObjectLd(
-  t: TutorialEntry,
+  t: TutorialVideoMeta,
   ctx: { origin: string; pageUrl: string },
 ): Record<string, unknown>
 export function tutorialIdsIn(markdown: string): string[]

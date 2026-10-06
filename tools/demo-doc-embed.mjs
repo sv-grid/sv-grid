@@ -35,6 +35,8 @@ function block(demo, height) {
  * big ones or leaves a field floating in 460px of nothing.
  */
 function heightFor(category) {
+  // A whole app screen: the ops workspace alone needs 760px for its panes.
+  if (/App Templates/i.test(category)) return 780
   if (/Chart|Kanban|Scheduler|Pivot|Spreadsheet|Industry|Server|Recipes/i.test(category)) return 560
   if (/Layout|Blocks|Alerts/i.test(category)) return 520
   if (/Headless Editors|Inputs|Buttons|Range/i.test(category)) return 420

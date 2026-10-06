@@ -12,7 +12,10 @@ import { compilePredicate } from '../expressions/compile'
 import type { WritableDataSource } from './types'
 import { aggregateRows, type AggregateBucket, type AggregateRequest, type AggregateSource } from '../sources/aggregate'
 
-function asString(v: unknown): string {
+// asString, matchesPredicate and sortRows are exported for the columnar
+// engine behind the worker data source, which must answer exactly as this
+// reference does. They are not part of the package API.
+export function asString(v: unknown): string {
   return v == null ? '' : String(v)
 }
 
@@ -20,7 +23,7 @@ function num(v: unknown): number {
   return typeof v === 'number' ? v : Number(v)
 }
 
-function matchesPredicate(row: RowData, p: PlanPredicate): boolean {
+export function matchesPredicate(row: RowData, p: PlanPredicate): boolean {
   const cell = row[p.field]
   switch (p.op) {
     case 'eq':
@@ -126,27 +129,40 @@ function aggregate<T extends RowData>(
   fn: string,
 ): number | null {
   if (fn === 'count') return rows.length
-  const nums: number[] = []
+  // One pass, no spread: `Math.min(...nums)` throws a RangeError once a
+  // group holds more than about 150,000 values (V8's argument limit).
+  let count = 0
+  let sum = 0
+  let min = Infinity
+  let max = -Infinity
   for (const row of rows) {
     const n = Number((row as Record<string, unknown>)[field])
-    if (Number.isFinite(n)) nums.push(n)
+    if (!Number.isFinite(n)) continue
+    count += 1
+    sum += n
+    if (n < min) min = n
+    if (n > max) max = n
   }
-  if (nums.length === 0) return null
+  if (count === 0) return null
   switch (fn) {
     case 'sum':
-      return nums.reduce((s, n) => s + n, 0)
+      return sum
     case 'avg':
-      return nums.reduce((s, n) => s + n, 0) / nums.length
+      return sum / count
     case 'min':
-      return Math.min(...nums)
+      return min
     case 'max':
-      return Math.max(...nums)
+      return max
     default:
       return null
   }
 }
 
-function sortRows<T extends RowData>(rows: T[], orderBy: QueryPlan['orderBy']): T[] {
+// What `localeCompare` with no arguments does, without building a collator
+// per comparison - which is most of the cost of sorting a large array.
+const collator = new Intl.Collator()
+
+export function sortRows<T extends RowData>(rows: T[], orderBy: QueryPlan['orderBy']): T[] {
   if (orderBy.length === 0) return rows
   // Stable multi-key sort: decorate with index, compare keys in order, fall back to index.
   return rows
@@ -157,7 +173,7 @@ function sortRows<T extends RowData>(rows: T[], orderBy: QueryPlan['orderBy']): 
         const bv = b.row[field]
         let cmp: number
         if (typeof av === 'number' && typeof bv === 'number') cmp = av - bv
-        else cmp = asString(av).localeCompare(asString(bv))
+        else cmp = collator.compare(asString(av), asString(bv))
         if (cmp !== 0) return desc ? -cmp : cmp
       }
       return a.index - b.index
@@ -165,116 +181,175 @@ function sortRows<T extends RowData>(rows: T[], orderBy: QueryPlan['orderBy']): 
     .map((d) => d.row)
 }
 
+export type InMemoryDataSourceOptions = {
+  /**
+   * Keep the last few filtered, sorted (and grouped) results and answer a
+   * request that differs only in its row range by slicing one, instead of
+   * filtering and sorting the whole array again. Scrolling a block-loading
+   * row model asks for the same query once per block, so on a large array
+   * this is the difference between one sort and one sort per block.
+   *
+   * Off by default because a cached result does not see a row object that
+   * was changed in place, only changes made through this source's own
+   * `createRow` / `updateRow` / `deleteRow` / `updateWhere`, which drop the
+   * cache. `createWorkerDataSource` turns it on: there the rows live in the
+   * worker and nothing else can reach them.
+   */
+  cacheResults?: boolean
+}
+
+/** A whole result before the requested range is cut out of it. */
+type Prepared<TData> = {
+  rows: TData[]
+  appliedExpression: boolean
+  grandTotal?: TData
+  pivotFields?: string[]
+}
+
+/** Results kept by `cacheResults`: a handful of sort / filter / group states. */
+const RESULT_CACHE_SIZE = 8
+
 export function createInMemoryDataSource<TData extends RowData>(
   initial: ReadonlyArray<TData>,
   schema: EntitySchema<TData>,
+  options: InMemoryDataSourceOptions = {},
 ): WritableDataSource<TData> &
   Required<Pick<ServerDataSource<TData>, 'updateWhere'>> &
   AggregateSource & { rows(): ReadonlyArray<TData> } {
   let store: TData[] = [...initial]
   const idField = resolveIdField(schema)
 
+  // Every write reassigns `store`, so a cache filled from an older array is
+  // stale by identity alone.
+  const cache = new Map<string, Prepared<TData>>()
+  let cacheStore: TData[] | null = null
+
+  function prepare(plan: QueryPlan): Prepared<TData> {
+    if (!options.cacheResults) return run(plan)
+    if (cacheStore !== store) {
+      cache.clear()
+      cacheStore = store
+    }
+    // The range is the only part of a plan that does not change the result.
+    const key = JSON.stringify({ ...plan, limit: 0, offset: 0 })
+    const hit = cache.get(key)
+    if (hit) {
+      // Re-insert so the Map's order is least-recently used first.
+      cache.delete(key)
+      cache.set(key, hit)
+      return hit
+    }
+    const prepared = run(plan)
+    cache.set(key, prepared)
+    if (cache.size > RESULT_CACHE_SIZE) cache.delete(cache.keys().next().value!)
+    return prepared
+  }
+
+  function run(plan: QueryPlan): Prepared<TData> {
+    let filtered = store.filter((r) => matches(r, plan))
+
+    // Advanced filter. `planQuery` only admits an expression whose columns
+    // are all on the schema, so reaching here means it is safe to run. If it
+    // was rejected, or fails to compile, we must NOT acknowledge it - the
+    // grid then tells the user the filter did not run rather than showing a
+    // superset that looks filtered.
+    let appliedExpression = false
+    let expressionPredicate: ((row: TData) => boolean) | null = null
+    if (plan.expression) {
+      const predicate = compilePredicate(plan.expression as never, {
+        getValue: (row: TData, columnId: string) =>
+          (row as unknown as Record<string, unknown>)[columnId],
+        rows: filtered,
+      })
+      if (predicate) {
+        filtered = filtered.filter(predicate)
+        expressionPredicate = predicate
+        appliedExpression = true
+      }
+    }
+
+    // The grand total spans everything the FILTERS admit - the whole
+    // store minus the filters and the expression, but NOT minus the group
+    // path, which only scopes this request.
+    const grandTotal = plan.grandTotal
+      ? { grandTotal: grandTotalOf(store, plan, expressionPredicate) }
+      : {}
+
+    // Grouped request: return one row per distinct key at this level, each
+    // carrying the requested aggregates. The chosen path is already in
+    // `plan.where`, so `filtered` is exactly this group's slice of the data.
+    // Reference behaviour for what a SQL backend does with `planToSql`'s
+    // `select` / `groupByText` / `countText`.
+    if (plan.groupBy) {
+      const groupField = plan.groupBy
+      const buckets = new Map<string, TData[]>()
+      for (const row of filtered) {
+        const key = asString((row as Record<string, unknown>)[groupField])
+        const bucket = buckets.get(key)
+        if (bucket) bucket.push(row)
+        else buckets.set(key, [row])
+      }
+
+      // Pivoting: every aggregate is computed once per distinct pivot key
+      // path inside the group, under a field named from the path, and the
+      // field list goes back so the grid can build the columns.
+      const pivotPaths = new Set<string>()
+      const groups = [...buckets.entries()].map(([key, rows]) => {
+        const out: Record<string, unknown> = { [groupField]: key }
+        aggregateInto(out, rows, plan, pivotPaths)
+        // What opening this group would show: distinct keys of the next
+        // level, or the rows themselves at the innermost group level.
+        out.childCount = plan.childGroupBy
+          ? new Set(rows.map((r) => asString((r as Record<string, unknown>)[plan.childGroupBy!]))).size
+          : rows.length
+        return out as unknown as TData
+      })
+      // The pivoted fields in a fixed order - key paths in plain string
+      // order, aggregations as requested under each - so the grid builds
+      // the same columns whatever order the groups came in. Every group
+      // row carries every field; a cell with no rows under it is null, the
+      // way a conditional aggregate answers in SQL.
+      const pivotFields = [...pivotPaths]
+        .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+        .flatMap((path) => (plan.aggregations ?? []).map((agg) => `${path}_${agg.field}`))
+      for (const g of groups as Array<Record<string, unknown>>) {
+        for (const f of pivotFields) if (!(f in g)) g[f] = null
+      }
+
+      // Sort by the group key unless the request sorted on a column we
+      // actually produced (the key or an aggregate).
+      const produced = new Set<string>([
+        groupField,
+        ...(plan.pivotBy?.length ? [] : (plan.aggregations ?? []).map((a) => a.field)),
+      ])
+      const groupOrder = plan.orderBy.filter((o) => produced.has(o.field))
+      const sorted = groupOrder.length
+        ? sortRows(groups, groupOrder)
+        : sortRows(groups, [{ field: groupField, desc: false }])
+
+      return {
+        rows: sorted,
+        appliedExpression,
+        ...grandTotal,
+        ...(plan.pivotBy?.length ? { pivotFields } : {}),
+      }
+    }
+
+    return { rows: sortRows(filtered, plan.orderBy), appliedExpression, ...grandTotal }
+  }
+
   return {
     async getRows(request: ServerRequest): Promise<ServerResult<TData>> {
       const plan = planQuery(schema, request)
-      let filtered = store.filter((r) => matches(r, plan))
-
-      // Advanced filter. `planQuery` only admits an expression whose columns
-      // are all on the schema, so reaching here means it is safe to run. If it
-      // was rejected, or fails to compile, we must NOT acknowledge it - the
-      // grid then tells the user the filter did not run rather than showing a
-      // superset that looks filtered.
-      let appliedExpression = false
-      let expressionPredicate: ((row: TData) => boolean) | null = null
-      if (plan.expression) {
-        const predicate = compilePredicate(plan.expression as never, {
-          getValue: (row: TData, columnId: string) =>
-            (row as unknown as Record<string, unknown>)[columnId],
-          rows: filtered,
-        })
-        if (predicate) {
-          filtered = filtered.filter(predicate)
-          expressionPredicate = predicate
-          appliedExpression = true
-        }
-      }
-
-      // The grand total spans everything the FILTERS admit - the whole
-      // store minus the filters and the expression, but NOT minus the group
-      // path, which only scopes this request.
-      const grandTotal = plan.grandTotal
-        ? { grandTotal: grandTotalOf(store, plan, expressionPredicate) }
-        : {}
-
-      // Grouped request: return one row per distinct key at this level, each
-      // carrying the requested aggregates. The chosen path is already in
-      // `plan.where`, so `filtered` is exactly this group's slice of the data.
-      // Reference behaviour for what a SQL backend does with `planToSql`'s
-      // `select` / `groupByText` / `countText`.
-      if (plan.groupBy) {
-        const groupField = plan.groupBy
-        const buckets = new Map<string, TData[]>()
-        for (const row of filtered) {
-          const key = asString((row as Record<string, unknown>)[groupField])
-          const bucket = buckets.get(key)
-          if (bucket) bucket.push(row)
-          else buckets.set(key, [row])
-        }
-
-        // Pivoting: every aggregate is computed once per distinct pivot key
-        // path inside the group, under a field named from the path, and the
-        // field list goes back so the grid can build the columns.
-        const pivotPaths = new Set<string>()
-        const groups = [...buckets.entries()].map(([key, rows]) => {
-          const out: Record<string, unknown> = { [groupField]: key }
-          aggregateInto(out, rows, plan, pivotPaths)
-          // What opening this group would show: distinct keys of the next
-          // level, or the rows themselves at the innermost group level.
-          out.childCount = plan.childGroupBy
-            ? new Set(rows.map((r) => asString((r as Record<string, unknown>)[plan.childGroupBy!]))).size
-            : rows.length
-          return out as unknown as TData
-        })
-        // The pivoted fields in a fixed order - key paths in plain string
-        // order, aggregations as requested under each - so the grid builds
-        // the same columns whatever order the groups came in. Every group
-        // row carries every field; a cell with no rows under it is null, the
-        // way a conditional aggregate answers in SQL.
-        const pivotFields = [...pivotPaths]
-          .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
-          .flatMap((path) => (plan.aggregations ?? []).map((agg) => `${path}_${agg.field}`))
-        for (const g of groups as Array<Record<string, unknown>>) {
-          for (const f of pivotFields) if (!(f in g)) g[f] = null
-        }
-
-        // Sort by the group key unless the request sorted on a column we
-        // actually produced (the key or an aggregate).
-        const produced = new Set<string>([
-          groupField,
-          ...(plan.pivotBy?.length ? [] : (plan.aggregations ?? []).map((a) => a.field)),
-        ])
-        const groupOrder = plan.orderBy.filter((o) => produced.has(o.field))
-        const sorted = groupOrder.length
-          ? sortRows(groups, groupOrder)
-          : sortRows(groups, [{ field: groupField, desc: false }])
-
-        return {
-          rows: sorted.slice(plan.offset, plan.offset + plan.limit),
-          // The count is DISTINCT GROUPS, not underlying rows - the grid sizes
-          // its scrollbar and paging from this.
-          rowCount: sorted.length,
-          appliedExpression,
-          ...grandTotal,
-          ...(plan.pivotBy?.length ? { pivotResultFields: pivotFields } : {}),
-        }
-      }
-
-      const sortedLeaves = sortRows(filtered, plan.orderBy)
+      const prepared = prepare(plan)
       return {
-        rows: sortedLeaves.slice(plan.offset, plan.offset + plan.limit),
-        rowCount: sortedLeaves.length,
-        appliedExpression,
-        ...grandTotal,
+        rows: prepared.rows.slice(plan.offset, plan.offset + plan.limit),
+        // On a grouped request the count is DISTINCT GROUPS, not underlying
+        // rows - the grid sizes its scrollbar and paging from this.
+        rowCount: prepared.rows.length,
+        appliedExpression: prepared.appliedExpression,
+        ...(prepared.grandTotal !== undefined ? { grandTotal: prepared.grandTotal } : {}),
+        ...(prepared.pivotFields ? { pivotResultFields: prepared.pivotFields } : {}),
       }
     },
     async createRow(input: Partial<TData>): Promise<TData> {

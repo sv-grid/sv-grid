@@ -131,10 +131,13 @@ export function tutorialBlock(t) {
     `<video class="docs-tutorial-video" src="${t.files.mp4}" poster="${t.files.poster}" width="${t.width}" height="${t.height}" ${playback} aria-label="${title}, ${secs} second tutorial">` +
       `<track kind="captions" srclang="en" label="English" src="${t.files.vtt}"${t.player ? '' : ' default'}>` +
       `Your browser does not play embedded video. <a href="${t.files.mp4}">Download the MP4</a>.</video>`,
-    `<figcaption><strong>${title}</strong> (${secs} s, ${t.player ? 'with narration' : 'silent'}).${yt}</figcaption>`,
-    `<details class="docs-tutorial-transcript"><summary>Transcript</summary>`,
-    ...cues,
-    `</details>`,
+    `<figcaption><strong>${title}</strong> (${captionDuration(t.duration)}, ${t.player ? 'with narration' : 'silent'}).${yt}</figcaption>`,
+    // A silent clip's only text is this block, so it keeps it. A narrated one
+    // says the same words out loud and carries a captions track the player can
+    // turn on, so the visible copy is a third telling of the same thing and it
+    // reads as clutter under the video. The full text stays machine-readable in
+    // the page's VideoObject either way.
+    ...(t.player ? [] : [`<details class="docs-tutorial-transcript"><summary>Transcript</summary>`, ...cues, `</details>`]),
     `</figure>`,
     `<!-- /tutorial:${t.id} -->`,
   ].join('\n')
@@ -142,6 +145,17 @@ export function tutorialBlock(t) {
 
 /** The generated course table's fence. */
 export const COURSE_RE = /<!-- course:learn -->[\s\S]*?<!-- \/course:learn -->/
+
+/**
+ * Duration as a figure caption says it. Seconds read fine for a short clip;
+ * past a minute "129 s" makes a reader do arithmetic, so it becomes "2:09".
+ * Shared with the route video component so the same cut cannot show one
+ * duration on a docs page and another on the homepage.
+ */
+export function captionDuration(seconds) {
+  const s = Math.round(seconds)
+  return s < 60 ? `${s} s` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+}
 
 /** "2 min 21 s", or "48 s" under a minute. */
 export function runtime(seconds) {

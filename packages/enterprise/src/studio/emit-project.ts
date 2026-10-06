@@ -18,7 +18,7 @@ import { uiComponentSpec, gridApiSettableProps, STANDARD_UI_EVENTS } from './ui-
 import { isDarkTheme, themeTokenCss } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
 import { hasFieldConditions } from '../edit-panel.js'
-import { SVGRID_VERSION } from '../version.js'
+import { SVGRID_VERSION, GRID_VERSION } from '../version.js'
 import { emitEntityModules, homeFile, layoutFile, lookupVar, namesFor, prepareEntities, relationDisplayFields, sqlDdlFiles, type NavItem } from './emit-schema.js'
 
 const has = (blocks: Block[], kind: Block['config']['kind']) => blocks.some((b) => b.config.kind === kind)
@@ -5225,8 +5225,13 @@ export function runtimeDeps(project: StudioProject, allSource: string): Record<s
   // APIs of the SvGrid it was written by, so the app must install a runtime at
   // least that new. `latest` also made a scaffold non-reproducible - an app could
   // resolve a different runtime tomorrow, or break on an unrelated publish.
-  const svgrid = `^${SVGRID_VERSION}`
-  const dependencies: Record<string, string> = { '@svgrid/grid': svgrid, '@svgrid/enterprise': svgrid }
+  // The two packages release on separate lines, so they need separate ranges.
+  // Using this package's version for BOTH asked for `@svgrid/grid@^3.1.1`,
+  // which does not exist, and `npm install` failed on every scaffolded app.
+  const dependencies: Record<string, string> = {
+    '@svgrid/grid': `^${GRID_VERSION}`,
+    '@svgrid/enterprise': `^${SVGRID_VERSION}`,
+  }
   if (allSource.includes("from '@supabase/supabase-js'")) dependencies['@supabase/supabase-js'] = '^2.45.0'
   if (allSource.includes("import pg from 'pg'")) dependencies['pg'] = '^8.11.0'
   if (allSource.includes("from 'mysql2/promise'")) dependencies['mysql2'] = '^3.9.0'

@@ -116,7 +116,13 @@ const table = $derived.by(() => createSvGrid({
   onExpandedChange: (u) => (expanded = typeof u === 'function' ? u(expanded) : u),
 }))
 
-const rows = $derived(table.getRowModel().rows)
+// Touch the state this component owns so the derived re-runs:
+// the engine's store is framework-free and not a rune.
+const rows = $derived.by(() => {
+  grouping
+  expanded
+  return table.getRowModel().rows
+})
 // each row: row.getIsGrouped(), row.getIsExpanded(), row.toggleExpanded()
 ```
 
@@ -195,7 +201,12 @@ is why the buttons below just assign to it.
     }),
   )
 
-  const rows = $derived(table.getRowModel().rows)
+  // Touch the state this component owns so the derived re-runs:
+  // the engine's store is framework-free and not a rune.
+  const rows = $derived.by(() => {
+    pagination
+    return table.getRowModel().rows
+  })
   const pages = $derived(Math.ceil(data.length / pagination.pageSize))
 
   function go(delta: number) {
@@ -278,7 +289,13 @@ branch on it.
     }),
   )
 
-  const rows = $derived(table.getRowModel().rows)
+  // Touch the state this component owns so the derived re-runs:
+  // the engine's store is framework-free and not a rune.
+  const rows = $derived.by(() => {
+    grouping
+    expanded
+    return table.getRowModel().rows
+  })
 
   // Feature-conditional members: present because rowExpandingFeature is on.
   const isGroup = (r: any) => typeof r.getCanExpand === 'function' && r.getCanExpand()

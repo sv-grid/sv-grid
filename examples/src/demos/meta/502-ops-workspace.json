@@ -1,0 +1,32 @@
+{
+  "description": "An on-call operations workspace in Svelte 5 built on SvDockManager that runs a whole incident. A deploy rolls out and the service degrades; an alert rule tints its row in the live service grid and opens an incident; the team's on-call primary is paged and acknowledges; rolling the deploy back recovers the service and moves the incident to Mitigated. Panes hold p50, p95 and p99 latency and error charts, a Kanban incident board that switches to a table, deploys, on-call and an alert feed. Each incident opens a drawer with its timeline, notes, severity and status, and the pane layout saves to localStorage.",
+  "keywords": [
+    "svelte ops dashboard template",
+    "svelte incident management dashboard",
+    "svelte docking layout dashboard",
+    "svelte real-time monitoring grid alerts",
+    "svelte on-call incident timeline"
+  ],
+  "faq": [
+    {
+      "question": "Which parts of this template need @svgrid/enterprise?",
+      "answer": "The alert rules engine, the Kanban board renderer and export. The docking layout, the live grid, the sparklines, the charts and the incident drawer are in the MIT @svgrid/grid package."
+    },
+    {
+      "question": "How does an alert open an incident?",
+      "answer": "The alert rules write fired events to alertStore. An effect in the template reads new events from its own two rules and opens an incident for the service, or escalates the open one if the new event is more severe, then pages the team's primary. Events fired before the workspace mounted are ignored."
+    },
+    {
+      "question": "What goes on an incident's timeline?",
+      "answer": "Every change: who opened it and why, each page and acknowledgement, severity, status and commander changes, the rollback, and any note typed in the drawer. Each entry carries its time and author, which is what a postmortem is written from."
+    },
+    {
+      "question": "Can users rearrange and keep the layout?",
+      "answer": "Yes. Panes drag between tab groups, float, maximize and auto-hide. The whole arrangement is one serializable DockManagerState; Save layout writes it to localStorage and the workspace reads it back on load. Reset restores the default."
+    },
+    {
+      "question": "Where would real metrics and deploys come from?",
+      "answer": "The tick function stands in for a metrics feed and ship() for your deploy pipeline. Replace them with a WebSocket or a poll that writes rows into the services and deploys arrays; the grid, the alert rules, the charts, the KPIs and the incident loop all read from those arrays."
+    }
+  ]
+}

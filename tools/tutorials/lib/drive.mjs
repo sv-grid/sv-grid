@@ -293,6 +293,49 @@ export function createHelpers(page, log = () => {}) {
       )
     },
 
+    /**
+     * Scroll by a PIXEL distance rather than a fraction of the scrollable
+     * height. On a million-row grid a fraction is useless on camera: 0.4 of an
+     * 18,000,000px scroller is 400,000 rows in a few seconds, far faster than
+     * the grid can rebuild rows, so the body records as blank and only fills
+     * in once the scroll stops. A pixel rate is what a human does.
+     */
+    async easedScrollBy(px, ms = 3000, selector = '.sv-grid-container') {
+      await page.evaluate(
+        async ({ px, ms, selector }) => {
+          const el = document.querySelector(selector)
+          if (!el) throw new Error(`no scroller ${selector}`)
+          const from = el.scrollTop
+          const max = el.scrollHeight - el.clientHeight
+          const target = Math.max(0, Math.min(max, from + px))
+          const start = performance.now()
+          await new Promise((done) => {
+            const step = (t) => {
+              const p = Math.min(1, (t - start) / ms)
+              const eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2
+              el.scrollTop = from + (target - from) * eased
+              if (p < 1) requestAnimationFrame(step)
+              else done()
+            }
+            requestAnimationFrame(step)
+          })
+        },
+        { px, ms, selector },
+      )
+    },
+
+    /** Jump straight to a fraction of the scroll height, no animation. */
+    async scrollTo(fraction, selector = '.sv-grid-container') {
+      await page.evaluate(
+        ({ fraction, selector }) => {
+          const el = document.querySelector(selector)
+          if (!el) throw new Error(`no scroller ${selector}`)
+          el.scrollTop = Math.floor((el.scrollHeight - el.clientHeight) * fraction)
+        },
+        { fraction, selector },
+      )
+    },
+
     /** The horizontal twin of easedScroll: scrollLeft to a fraction of the width. */
     async easedScrollX(fraction, ms = 3000, selector = '.sv-grid-container') {
       await page.evaluate(

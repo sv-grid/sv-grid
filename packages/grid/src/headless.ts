@@ -84,7 +84,7 @@ export {
 
 export { createGrid, createSvGrid, type SvelteGrid } from './createGrid.svelte'
 export { createGridState, createSvGridState } from './createGridState.svelte'
-export { subscribeGrid, subscribeSvGrid } from './subscribe'
+export { subscribeGrid, subscribeSvGrid } from './subscribe.svelte'
 
 // The virtualizers are pure window arithmetic (scroll offset in, visible
 // range out) with no DOM of their own, and a custom renderer over 50k rows

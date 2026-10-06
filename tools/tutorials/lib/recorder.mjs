@@ -49,7 +49,15 @@ export class TaintedTakeError extends Error {
 }
 
 /** Which page a script (or segment) records, and the URL for it. */
-export function targetOf(def, { base, siteBase }) {
+export function targetOf(def, { base, siteBase, appBase }) {
+  // `app: '/customers'` records a REAL scaffolded app on its own dev server,
+  // not the gallery and not the stage. record.mjs scaffolds it once per run
+  // (Studio or a create-sv-grid template), installs, starts `vite dev` and
+  // passes the URL in as appBase.
+  if (def.app) {
+    if (!appBase) throw new Error(`${def.id ?? 'segment'}: an app target needs --app-dir or a scaffold step`)
+    return { kind: 'app', url: `${appBase.replace(/\/$/, '')}/${String(def.app).replace(/^\//, '')}` }
+  }
   if (def.site) return { kind: 'site', url: `${siteBase.replace(/\/$/, '')}/${String(def.site).replace(/^\//, '')}` }
   if (def.stage) return { kind: 'stage', url: `${base.replace(/\/$/, '')}/stage.html` }
   if (def.demo) return { kind: 'demo', url: `${base.replace(/\/$/, '')}/#/${def.demo}` }
@@ -60,14 +68,14 @@ export function targetOf(def, { base, siteBase }) {
  * @param {object} def the tutorial script's default export, or one segment of it
  * @param {{ base: string, siteBase?: string, outDir: string, view?: {width:number,height:number}, log?: (s: string) => void, warm?: boolean, tts?: ReturnType<typeof ttsConfig>, attempts?: number }} opts
  */
-export async function recordTutorial(def, { base, siteBase = 'http://localhost:5180', outDir, view = VIEW, log = () => {}, warm = true, tts = ttsConfig(), attempts = 3 }) {
+export async function recordTutorial(def, { base, siteBase = 'http://localhost:5180', appBase, outDir, view = VIEW, log = () => {}, warm = true, tts = ttsConfig(), attempts = 3 }) {
   // The gallery is a Vite dev server: any edit under examples/ or the aliased
   // package sources hot-swaps the demo component mid-take, which resets its
   // state and leaves a video of two different sessions. The take watches the
   // Vite client's console line for that and is redone from scratch.
   for (let attempt = 1; ; attempt += 1) {
     try {
-      return await recordTake(def, { base, siteBase, outDir, view, log, warm: warm && attempt === 1, tts })
+      return await recordTake(def, { base, siteBase, appBase, outDir, view, log, warm: warm && attempt === 1, tts })
     } catch (err) {
       if (!(err instanceof TaintedTakeError) || attempt >= attempts) throw err
       log(`take ${attempt} discarded: ${err.message}; recording again`)
@@ -75,7 +83,7 @@ export async function recordTutorial(def, { base, siteBase = 'http://localhost:5
   }
 }
 
-async function recordTake(def, { base, siteBase, outDir, view, log, warm, tts }) {
+async function recordTake(def, { base, siteBase, appBase, outDir, view, log, warm, tts }) {
   mkdirSync(outDir, { recursive: true })
   const rawDir = join(outDir, 'raw')
   mkdirSync(rawDir, { recursive: true })
@@ -94,16 +102,17 @@ async function recordTake(def, { base, siteBase, outDir, view, log, warm, tts })
     beats.push(entry)
   }
 
-  const target = targetOf(def, { base, siteBase })
+  const target = targetOf(def, { base, siteBase, appBase })
   const { url } = target
   // Demos are laid out for ~1000 css px and get enlarged; the stage and the
   // site are designed for the frame (the stage scales itself to the viewport).
   const zoom = def.zoom ?? (target.kind === 'demo' ? 1.25 : 1)
-  const readySelector = target.kind === 'stage'
-    ? 'body'
-    : target.kind === 'site'
-      ? '#root main'
-      : 'main .sv-grid-body, main .sv-grid-container, main svg, main canvas'
+  const readySelector =
+    target.kind === 'stage' || target.kind === 'app'
+      ? 'body'
+      : target.kind === 'site'
+        ? '#root main'
+        : 'main .sv-grid-body, main .sv-grid-container, main svg, main canvas'
   const browser = await chromium.launch()
   try {
     // 2. Warm-up in a throwaway context: Vite compiles the page on first hit
@@ -182,6 +191,12 @@ async function recordTake(def, { base, siteBase, outDir, view, log, warm, tts })
         await page.addStyleTag({ content: HIDE_SITE_CHROME })
         if (zoom !== 1) await page.addStyleTag({ content: `#root main { zoom: ${zoom}; }` })
         await page.waitForSelector(readySelector, { timeout: 60_000 })
+      } else if (target.kind === 'app') {
+        // A real scaffolded app: no stage bridge, no gallery assertion. Wait
+        // for SvelteKit to hydrate rather than for a marker that cannot exist.
+        await page.waitForSelector(readySelector, { timeout: 60_000 })
+        await page.waitForLoadState('networkidle').catch(() => {})
+        if (zoom !== 1) await page.addStyleTag({ content: `body { zoom: ${zoom}; }` })
       } else {
         await page.waitForFunction(() => Boolean(window.__stage), null, { timeout: 60_000 })
       }

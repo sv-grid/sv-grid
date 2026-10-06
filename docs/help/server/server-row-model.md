@@ -285,6 +285,7 @@ the rest of the request filled in, and the same one-prop wiring:
 | [Server pivot](./server-pivot.md) | pivot on the server, columns built from `pivotResultFields`, the pivot designer in server mode |
 | [Server transactions](./server-transactions.md) | add, update and remove rows in a loaded level without a request, sync or batched |
 | [Server selection](./server-selection.md) | select-all as a rule across unloaded rows, a bulk edit by rule |
+| [Worker data source](./worker-data-source.md) | rows already in the browser, queried in a Web Worker so sorting and grouping do not block the page |
 
 The flagship demo runs all of it over one million rows through one
 `rowModel` prop:

@@ -61,6 +61,54 @@ describe('createInMemoryDataSource reads', () => {
   })
 })
 
+describe('createInMemoryDataSource cacheResults', () => {
+  type Big = { id: number; group: string; v: number }
+  const bigSchema: EntitySchema<Big> = {
+    name: 'big',
+    fields: [
+      { field: 'id', type: 'number', primaryKey: true },
+      { field: 'group', type: 'text' },
+      { field: 'v', type: 'number' },
+    ],
+  }
+  const big: Big[] = Array.from({ length: 2000 }, (_, i) => ({ id: i, group: `g${i % 7}`, v: (i * 31) % 997 }))
+
+  it('answers every block exactly as the uncached source does', async () => {
+    const plain = createInMemoryDataSource(big, bigSchema)
+    const cached = createInMemoryDataSource(big, bigSchema, { cacheResults: true })
+    for (const startRow of [0, 100, 1900, 0]) {
+      const r = req({ sortModel: [{ id: 'v', desc: true }], startRow, pageSize: 100 })
+      expect(await cached.getRows(r)).toEqual(await plain.getRows(r))
+    }
+    const grouped = req({ groupBy: ['group'], groupKeys: [], aggregations: [{ col: 'v', fn: 'sum' }], needsGrandTotal: true })
+    expect(await cached.getRows(grouped)).toEqual(await plain.getRows(grouped))
+  })
+
+  it('drops the cache on every write', async () => {
+    const cached = createInMemoryDataSource(big, bigSchema, { cacheResults: true })
+    const top = req({ sortModel: [{ id: 'v', desc: true }], pageSize: 1 })
+    expect((await cached.getRows(top)).rows[0]!.v).toBe(996)
+    await cached.updateRow('5', { v: 5000 })
+    expect((await cached.getRows(top)).rows[0]).toMatchObject({ id: 5, v: 5000 })
+    await cached.deleteRow('5')
+    expect((await cached.getRows(top)).rows[0]!.v).toBe(996)
+    await cached.createRow({ id: 9999, group: 'g0', v: 7000 })
+    expect((await cached.getRows(top)).rows[0]!.id).toBe(9999)
+  })
+
+  it('aggregates min and max over more values than fit in a spread', async () => {
+    const many: Big[] = Array.from({ length: 300_000 }, (_, i) => ({ id: i, group: 'all', v: i % 1000 }))
+    const src = createInMemoryDataSource(many, bigSchema)
+    const { rows } = await src.getRows(
+      req({ groupBy: ['group'], groupKeys: [], aggregations: [{ col: 'v', fn: 'min' }, { col: 'v', fn: 'max' }] }),
+    )
+    expect(rows[0]).toMatchObject({ group: 'all', v: 999 })
+    // `v` holds the last aggregation for the column; check min through its own request.
+    const min = await src.getRows(req({ groupBy: ['group'], groupKeys: [], aggregations: [{ col: 'v', fn: 'min' }] }))
+    expect(min.rows[0]).toMatchObject({ v: 0 })
+  })
+})
+
 describe('createInMemoryDataSource writes', () => {
   it('creates, updates, and deletes, reflected in subsequent reads', async () => {
     const src = createInMemoryDataSource(seed, schema)

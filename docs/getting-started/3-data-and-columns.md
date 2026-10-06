@@ -224,7 +224,7 @@ date all come from the same place rather than from three helper functions.
 <!-- tutorial:learn-2-data-and-columns -->
 <figure class="docs-tutorial" id="tutorial-learn-2-data-and-columns" data-docs-tutorial="learn-2-data-and-columns">
 <video class="docs-tutorial-video" src="/tutorials/learn-2-data-and-columns.mp4" poster="/tutorials/learn-2-data-and-columns.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 2: your data, your columns, 88 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-2-data-and-columns.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-2-data-and-columns.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Learn SvGrid 2: your data, your columns</strong> (88 s, silent). <a href="https://www.youtube.com/watch?v=HvQ4PDuY8Q4" rel="noopener">Watch with narration on YouTube</a></figcaption>
+<figcaption><strong>Learn SvGrid 2: your data, your columns</strong> (1:28, silent). <a href="https://www.youtube.com/watch?v=HvQ4PDuY8Q4" rel="noopener">Watch with narration on YouTube</a></figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>In lesson one the rows were made up. In this one they are yours, they stay reactive, and the columns start looking like a real application.</p>
 <p>Start from your own row type. The grid never asks you to convert anything: whatever shape your records have, that is the shape it takes. Declare the array with the state rune and it stays reactive.</p>

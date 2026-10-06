@@ -41,8 +41,9 @@ export function apply({ dry = false, check = false, manifest = readManifest() } 
   // Group by page so a page with two tutorials is read and written once.
   const byPage = new Map()
   for (const t of manifest.tutorials) {
-    // Marketing cuts live on YouTube only; nothing to place on a docs page.
-    if (t.kind === 'marketing' || !t.docsPage) continue
+    // No docsPage means YouTube only, which is the default for a marketing cut.
+    // A marketing cut that names a page is placed like any other.
+    if (!t.docsPage) continue
     if (!byPage.has(t.docsPage)) byPage.set(t.docsPage, [])
     byPage.get(t.docsPage).push(t)
   }

@@ -38,6 +38,7 @@ const CATEGORY_HINTS = {
   'Server-Side Row Model': ['help/server/'],
   'Industry Templates': ['recipes/'],
   Alerts: ['help/alerts'],
+  'App Templates': ['help/ui-components/', 'help/alerts', 'help/rows/'],
   'Rows & Cells': ['help/rows/', 'help/cells/'],
   Recipes: ['recipes/'],
   Selection: ['help/selection', 'help/rows/'],

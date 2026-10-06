@@ -187,7 +187,10 @@ describe('prerendered output', () => {
       if (demo && html.includes(`href="/demos/${demo[1]}/"`)) offenders.push(`${rel}: links to itself`)
     }
     expect(offenders).toEqual([])
-  })
+    // Reads every index.html in dist, which is now 1,086 pages plus the
+    // tutorial media; it passed under the default 5 s until the course landed
+    // and would otherwise flake in CI rather than report a real problem.
+  }, 60_000)
 })
 
 describe('static route SEO table', () => {
@@ -213,6 +216,27 @@ describe('static route SEO table', () => {
 })
 
 describe('prerendered head matches the shared table', () => {
+  // A VideoObject describing a video the page does not show is a structured
+  // data violation, and the two halves live in different files: the route names
+  // the video in ROUTE_SEO, the route's component renders it. This catches the
+  // half that gets forgotten.
+  it.skipIf(!hasPrerenderedDist)('shows the video every route with a VideoObject claims', async () => {
+    const problems: string[] = []
+    for (const [section, seo] of Object.entries(ROUTE_SEO)) {
+      if (!(seo as { video?: string }).video) continue
+      const id = (seo as { video: string }).video
+      const file = section === '' ? join(DIST, 'index.html') : join(DIST, section, 'index.html')
+      if (!existsSync(file)) {
+        problems.push(`${section || '/'}: no index.html written`)
+        continue
+      }
+      const html = await readFile(file, 'utf-8')
+      if (!html.includes(`"@type":"VideoObject"`)) problems.push(`${section || '/'}: no VideoObject in the head`)
+      if (!html.includes(`id="tutorial-${id}"`)) problems.push(`${section || '/'}: head claims ${id}, body does not show it`)
+    }
+    expect(problems).toEqual([])
+  })
+
   it.skipIf(!hasPrerenderedDist)('serves each static route its own title and self canonical', async () => {
     const problems: string[] = []
     for (const [section, title] of prerenderedRoutes()) {

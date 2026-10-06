@@ -58,6 +58,22 @@ describe('unknown field', () => {
     expect(run({ data: [...loading, ...data], columns: [{ field: 'naem' }] })).toHaveLength(1)
   })
 
+  it('does not walk a million placeholders looking for the sample', () => {
+    // A row model scrolled to its middle: placeholders up to the loaded block.
+    const placeholder = createRowPlaceholder('loading', { index: 0 })
+    const big = new Array(1_000_000).fill(placeholder)
+    big.push({ name: 'x' })
+    let reads = 0
+    const counted = new Proxy(big, {
+      get(target, key, receiver) {
+        if (typeof key === 'string' && /^\d+$/.test(key)) reads += 1
+        return Reflect.get(target, key, receiver)
+      },
+    })
+    expect(run({ data: counted, columns: [{ field: 'naem' }] })).toEqual([])
+    expect(reads).toBeLessThanOrEqual(1000)
+  })
+
   it('looks through group columns', () => {
     const msgs = run({ columns: [{ header: 'Group', columns: [{ field: 'nope' }] }] })
     expect(msgs[0]).toContain('"nope" does not exist')

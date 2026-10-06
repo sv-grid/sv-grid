@@ -57,6 +57,10 @@
       "svelte": "./dist/server/index.js",
       "import": "./dist/server/index.js"
     },
+    "./worker": {
+      "types": "./dist/worker/index.d.ts",
+      "import": "./dist/worker/index.js"
+    },
     "./license": {
       "types": "./dist/license.d.ts",
       "svelte": "./dist/license.js",

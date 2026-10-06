@@ -187,7 +187,7 @@ rather than the order the grid demands.
 <!-- tutorial:learn-4-editing -->
 <figure class="docs-tutorial" id="tutorial-learn-4-editing" data-docs-tutorial="learn-4-editing">
 <video class="docs-tutorial-video" src="/tutorials/learn-4-editing.mp4" poster="/tutorials/learn-4-editing.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 4: editing rows, and validating them, 91 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-4-editing.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-4-editing.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Learn SvGrid 4: editing rows, and validating them</strong> (91 s, silent). <a href="https://www.youtube.com/watch?v=4CMH4FKGZB4" rel="noopener">Watch with narration on YouTube</a></figcaption>
+<figcaption><strong>Learn SvGrid 4: editing rows, and validating them</strong> (1:31, silent). <a href="https://www.youtube.com/watch?v=4CMH4FKGZB4" rel="noopener">Watch with narration on YouTube</a></figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>A table people can only read is half a feature. This lesson makes it editable, and then makes it refuse the edits that should not happen.</p>
 <p>The same reactive rows as before. Three people, three fields.</p>

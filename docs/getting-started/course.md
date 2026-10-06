@@ -18,6 +18,10 @@ covers both, and takes about a minute. Everything else is in the lessons.
 The course assumes you know Svelte 5 runes well enough to read `$state`, and
 nothing about data grids.
 
+All ten also play back to back as a
+[YouTube playlist](https://www.youtube.com/playlist?list=PLODWzOnOLhEk), with
+narration.
+
 ## The lessons
 
 <!-- course:learn -->

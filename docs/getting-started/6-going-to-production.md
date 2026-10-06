@@ -260,7 +260,7 @@ inference picks up which capabilities your grid has.
 <!-- tutorial:learn-10-production -->
 <figure class="docs-tutorial" id="tutorial-learn-10-production" data-docs-tutorial="learn-10-production">
 <video class="docs-tutorial-video" src="/tutorials/learn-10-production.mp4" poster="/tutorials/learn-10-production.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 10: going to production, 108 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-10-production.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-10-production.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Learn SvGrid 10: going to production</strong> (108 s, silent). <a href="https://www.youtube.com/watch?v=VfZuJIwldwY" rel="noopener">Watch with narration on YouTube</a></figcaption>
+<figcaption><strong>Learn SvGrid 10: going to production</strong> (1:48, silent). <a href="https://www.youtube.com/watch?v=VfZuJIwldwY" rel="noopener">Watch with narration on YouTube</a></figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Your grid works. This last lesson is the review a colleague would give it: the four things that decide whether it survives contact with real data and real users.</p>
 <p>First, scale. Virtualization is on by default, so only the rows in view have DOM nodes. Fifty thousand rows by seventy-seven columns scroll in both directions, and the count of nodes stays roughly the same as it was with ten rows.</p>
@@ -276,7 +276,7 @@ inference picks up which capabilities your grid has.
 <!-- tutorial:learn-8-server-data -->
 <figure class="docs-tutorial" id="tutorial-learn-8-server-data" data-docs-tutorial="learn-8-server-data">
 <video class="docs-tutorial-video" src="/tutorials/learn-8-server-data.mp4" poster="/tutorials/learn-8-server-data.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 8: data from a server, 106 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-8-server-data.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-8-server-data.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Learn SvGrid 8: data from a server</strong> (106 s, silent). <a href="https://www.youtube.com/watch?v=JPkoLN20sPQ" rel="noopener">Watch with narration on YouTube</a></figcaption>
+<figcaption><strong>Learn SvGrid 8: data from a server</strong> (1:46, silent). <a href="https://www.youtube.com/watch?v=JPkoLN20sPQ" rel="noopener">Watch with narration on YouTube</a></figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>Everything so far held every row in memory. That works to tens of thousands of rows. Past that, the sorting and filtering have to move to the server, and the grid has to ask for what it needs.</p>
 <p>The state the grid hands you is small: which column is sorted, which filters are set, which page you are on. Keep those in runes.</p>

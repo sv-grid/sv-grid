@@ -11,3 +11,17 @@
  * `version.test.ts` asserts this matches `package.json`, so the two cannot drift.
  */
 export const SVGRID_VERSION = '3.1.1'
+
+/**
+ * The version of `@svgrid/grid`, which releases on its own line: enterprise is
+ * on 3.1.x while the grid is on 3.0.x.
+ *
+ * A scaffolded app depends on BOTH packages, and pinning the grid to this
+ * package's version asked npm for `@svgrid/grid@^3.1.1`, which has never been
+ * published. Every `svgrid-studio init` therefore produced an app whose very
+ * next step, `npm install`, failed with ERESOLVE. Found 2026-10-05 by
+ * scaffolding one and running the install.
+ *
+ * `version.test.ts` asserts this matches packages/grid/package.json.
+ */
+export const GRID_VERSION = '3.0.7'

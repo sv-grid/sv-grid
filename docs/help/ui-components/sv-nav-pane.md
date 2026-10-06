@@ -158,6 +158,14 @@ fires `onSelect`. Give routable destinations to the leaf items (`work`,
 - Arrow Up / Down move focus between items; the module splitter is a focusable
   `separator` with `aria-valuenow` that Arrow Up / Down resize.
 
+## More examples
+
+### Mail client
+
+An Outlook-shaped mail client in one file. The inbox is a SvGrid with sender avatars, conversation counts, quick filters, hover actions and bulk actions on ticked rows; the reading pane shows the whole conversation with quoted text folded; the SvRichText composer has recipient chips with contact suggestions, Cc, attachments, a signature and a five-second Undo send. New mail arrives while the page is open, Gmail-style keys work (press ?), an accepted invite lands on the Calendar module (the same grid as a scheduler), and Export writes a folder to Excel, CSV or PDF.
+
+<div data-docs-demo="501-mail-app" data-height="780"></div>
+
 ## See also
 
 - [Navigation overview](navigation.md) - the wayfinding family at a glance.

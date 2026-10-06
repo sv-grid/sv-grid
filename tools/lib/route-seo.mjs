@@ -22,6 +22,14 @@
  * `description` is clamped to a meta budget by both consumers, and `path` is
  * page-relative with no trailing slash except on the homepage.
  *
+ * `video` names a tutorial id from tools/tutorials/manifest.json. The route then
+ * carries a VideoObject in its head and a <video:video> in the sitemap, which is
+ * what makes it eligible for a video thumbnail in the result. The route's
+ * component has to render that same video: structured data for a video the page
+ * does not show is a guidelines violation, not a shortcut. Docs pages get this
+ * from their embedded block instead (tools/tutorials/embed.mjs); this field is
+ * only for the hand-written routes, which have no markdown to embed into.
+ *
  * Dependency-free (product-ld.mjs aside, which is too) so Vite can bundle it
  * into the site.
  */
@@ -40,13 +48,14 @@ export const ROUTE_SEO = {
     description:
       'SvGrid is a Svelte data grid for Svelte 5: headless core plus render component, virtualization, Excel-style filters, grouping, inline editing. MIT core.',
     keywords: [...PRODUCT_KEYWORDS, 'enterprise svelte grid'],
+    video: 'mk-what-is-svgrid',
     path: '/',
     prerender: false,
   },
   demos: {
-    title: 'Demos - 370+ Production-Ready SvGrid Examples',
+    title: 'Demos - 400+ Production-Ready SvGrid Examples',
     description:
-      '370+ production-quality SvGrid demos: quick start, server-side data, 100k rows, Excel-style filters, grouping + aggregation, master/detail, live stock market feed, inline editing, Kanban boards, scheduling, accessibility, SSR, and more. Copy-paste any example into your project.',
+      '400+ production-quality SvGrid demos: quick start, server-side data, 100k rows, Excel-style filters, grouping + aggregation, master/detail, live stock market feed, inline editing, Kanban boards, scheduling, accessibility, SSR, and more. Copy-paste any example into your project.',
     keywords: ['svelte data grid examples', 'svelte table examples', 'sv-grid demos'],
     path: '/demos',
   },
@@ -55,6 +64,7 @@ export const ROUTE_SEO = {
     description:
       '360+ documentation pages covering every SvGrid feature: column definitions, row sorting, Excel-style filters, inline editing, grouping, virtualization, accessibility, theming. Topic-oriented, copy-paste examples.',
     keywords: ['svelte grid documentation', 'sv-grid docs', 'svelte table tutorial'],
+    video: 'mk-what-is-svgrid',
     path: '/docs',
   },
   api: {
@@ -89,7 +99,7 @@ export const ROUTE_SEO = {
   mcp: {
     title: '@svgrid/mcp - Model Context Protocol Server for SvGrid',
     description:
-      'Give Claude, Cursor, and other AI assistants accurate, version-pinned answers about SvGrid. The @svgrid/mcp package is an MCP server exposing 370+ example sources, 360+ docs, and the API reference as tools.',
+      'Give Claude, Cursor, and other AI assistants accurate, version-pinned answers about SvGrid. The @svgrid/mcp package is an MCP server exposing 400+ example sources, 360+ docs, and the API reference as tools.',
     keywords: ['mcp server', 'sv-grid mcp', 'svelte ai integration', 'claude desktop mcp', 'model context protocol'],
     path: '/mcp',
   },

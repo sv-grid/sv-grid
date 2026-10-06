@@ -399,6 +399,9 @@ import ServerGroupingModel       from '../demos/496-server-grouping-model.svelte
 import LiveRestDummyJson         from '../demos/497-live-rest-dummyjson.svelte'
 import SheetBoundTabs498         from '../demos/498-sheet-bound-tabs.svelte'
 import SheetEngineeringStats499  from '../demos/499-sheet-engineering-stats.svelte'
+import WorkerDataSource500       from '../demos/500-worker-data-source.svelte'
+import MailApp501                from '../demos/501-mail-app.svelte'
+import OpsWorkspace502           from '../demos/502-ops-workspace.svelte'
 import RealtimeCollaboration     from '../demos/149-realtime-collaboration.svelte'
 import ScatterBubble             from '../demos/150-scatter-bubble.svelte'
 import TimeSeriesChart           from '../demos/151-time-series-chart.svelte'
@@ -494,6 +497,9 @@ export type DemoCategory =
   | 'Studio'
   | 'AI'
   | 'Alerts'
+  // Whole application screens composed from the grid, the UI kit and the
+  // Enterprise renderers. Every demo in it needs @svgrid/enterprise.
+  | 'App Templates'
   // SvGrid Editors product lanes (@svgrid/grid UI components). A separate
   // product in the switcher so they don't bloat the main grid gallery.
   | 'Date & Time'
@@ -524,6 +530,9 @@ export const ENTERPRISE_CATEGORIES = new Set<DemoCategory>([
   'Gantt',
   'Studio',
   'Alerts',
+  // Only templates that use a paid feature (scheduler, export, alerts, board)
+  // belong here. One built from free parts goes in 'Industry Templates'.
+  'App Templates',
 ])
 
 export function isEnterpriseCategory(category: DemoCategory): boolean {
@@ -580,6 +589,7 @@ export const CATEGORY_ORDER: DemoCategory[] = [
   'Pivot Grid',
   'Studio',
   'Alerts',
+  'App Templates',
   // SvGrid Editors product
   'Date & Time',
   'Buttons & Toggles',
@@ -780,6 +790,9 @@ const baseDemos: Demo[] = [
   demo('401-alert-aggregate-kpi', 'KPI & aggregate alerts', 'Alerts that watch a whole-table total, not just a row. An aggregate-scope rule fires once when SUM(revenue) crosses the company target; a row rule flags any region trailing its own target. Close a few deals and watch the aggregate alert fire the moment the total clears the line. Aggregate rules use the expression language SUM / AVG / COUNT reducers.', 'Alerts', AlertAggregateKpi401, { pro: true }),
   demo('402-alert-validation-guardrails', 'Validation guardrails', 'A validation-trigger alert is evaluated on edit and can veto the change. A budget sheet is editable, and two guardrail rules block bad edits: a negative amount, or an amount over that line budget. The pure engine is wired into the grid per-column validate hook - the blessed integration point for prevent-edit. Toggle a guardrail off to allow the edit through.', 'Alerts', AlertValidationGuardrails402, { pro: true }),
   demo('403-alert-console-navpane', 'Alerts operations console', 'A full monitoring app: an Outlook-style navigation pane (SvNavPane) on the left - a module rail (Monitor / Rules / Reports) plus badged folders (Critical / Warnings / Healthy and per-region) - filtering a live fleet grid on the right. Alert rules watch every host regardless of the folder you are viewing, paint the rows, and feed the bell and the fired-alert panel. Module buttons open the rule manager and the report panel.', 'Alerts', AlertConsoleNavPane403, { pro: true }),
+  // ----- Enterprise: App Templates
+  demo('501-mail-app', 'Mail client', 'An Outlook-shaped mail client in one file. The inbox is a SvGrid with sender avatars, conversation counts, quick filters, hover actions and bulk actions on ticked rows; the reading pane shows the whole conversation with quoted text folded; the SvRichText composer has recipient chips with contact suggestions, Cc, attachments, a signature and a five-second Undo send. New mail arrives while the page is open, Gmail-style keys work (press ?), an accepted invite lands on the Calendar module (the same grid as a scheduler), and Export writes a folder to Excel, CSV or PDF.', 'App Templates', MailApp501, { pro: true }),
+  demo('502-ops-workspace', 'Ops workspace', 'An on-call workspace on SvDockManager that runs a whole incident: a deploy rolls out and the service degrades, an alert rule tints its row and opens an incident, the on-call primary is paged and acknowledges, and rolling the deploy back recovers it. Panes hold a live service grid, p50 / p95 / p99 latency and error charts, an incident board (one SvGrid, Board or Table), deploys, on-call and an alert feed; an incident opens a drawer with its timeline, notes, severity and status. Panes drag, tab, float and save.', 'App Templates', OpsWorkspace502, { pro: true }),
   demo('406-chart-context-menu', 'Chart a selection (context menu)', 'With integrated charting enabled, the right-click menu gains a Chart selected range item: select a block of cells, right-click, and the chart panel opens scoped to that range - the Excel chart-this gesture, built in. The item appears only when charting is on and is appended to the default context menu automatically.', 'Charts', ChartContextMenu406),
   demo('407-grid-chart-view', 'Chart view of the grid', 'The `chart` prop turns the same <SvGrid> into a chart, driven by the grid’s filtered + sorted rows (search + sort flow through). A view of the grid like board and scheduler, but the renderer is free: the grid lazy-loads a built-in view wrapping the standalone SvChart via rowsToChartSpec. Flip Table <-> Chart (bar / line / area) over one source of truth.', 'Charts', GridChartView407),
 
@@ -916,6 +929,7 @@ const baseDemos: Demo[] = [
   demo('473-server-grouping-rules', 'Server grouping: totals, sort and refresh rules', 'The options around a grouped row model with the request log to show what each costs: a grand total in any of four positions, subtotal footers, levels that open on arrival, expand-all that reaches groups not loaded yet, refresh in place versus purge, and the rules for what a sort or a filter re-requests - a plain column re-fetches leaf levels only, a group column its own level, an aggregated column every level; a filter purges all or only the groups it touches.', 'Server-Side Row Model', ServerGroupingRules473, { pro: true }),
   demo('482-server-crud', 'Server row model: CRUD', 'The four writes over a grouped server row model, against a backend that says no: a new order through the form lands under the focused region as a transaction, an inline edit is one updateRow carrying the row\'s version so a lost race is refused, a delete of a shipped order is refused, a delete that went through is undone. saving shows while a write is out; optimistic mode shows the edit before the server answers and puts the row back when it refuses, and the slow-server switch makes the difference visible. The log is what the server received and what it said.', 'Server-Side Row Model', ServerCrud482, { pro: true }),
   demo('483-server-master-detail', 'Server row model: master-detail', 'A detail panel under a leaf of a grouped server row model: the chevron on an order asks the model to open its detail (toggleDetail), the model puts a detail row under the leaf, the grid draws it through renderDetailRow at a height the virtualizer knows (detailRowHeight), and the panel fetches the order\'s line items from a second endpoint the moment it appears. The tree stays virtualized, and the region row holds under the header (stickyGroupRows) while the panels scroll past.', 'Server-Side Row Model', ServerMasterDetail483, { pro: true }),
+  demo('500-worker-data-source', 'Worker data source: queries off the main thread', 'Up to a million orders in two grids. The free grid sorts, filters, searches and groups every row on the page; the Enterprise grid does the same work in a Web Worker, where a columnar engine answers each request, and the server row model brings back one block of 100 rows at a time. Compare the two meters, the slowest request and the longest frame.', 'Server-Side Row Model', WorkerDataSource500, { pro: true }),
   demo('497-live-rest-dummyjson',   'Live REST (public API)',      'Real rows over the network from dummyjson.com via the enterprise createRestDataSource + a shape adapter (dummyJsonAdapter): skip/limit paging and sortBy/order sorting mapped to the API dialect. Swap URL + adapter (jsonServerAdapter / offsetLimitAdapter) to point at any public API. Includes an error/retry surface.', 'Server-Side Row Model', LiveRestDummyJson, { pro: true }),
   demo('467-server-row-model-1m',  'Server-Side Row Model: 1,000,000 rows', 'One grid, one rowModel prop, a million rows that stay on the server. Sort, filter, global search, grouping to any depth (Region > Country > Rep), infinite scroll or paging, inline edits applied back as transactions with the subtotal following, add and delete, select-all across rows the grid never loaded with a bulk edit by rule, failed blocks with Retry, a request log that shows every call to the columnar warehouse behind it, and a live map of the block cache per level. The row model ships in @svgrid/enterprise; the datasource contract is free.', 'Server-Side Row Model', ServerRowModel1m467, { pro: true }),
 

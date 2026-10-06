@@ -210,6 +210,15 @@ export type ServerRowModelOptions<TData> = {
    * grid's pinned rows so it stays in view.
    */
   grandTotalRow?: 'top' | 'bottom' | 'pinnedTop' | 'pinnedBottom'
+  /**
+   * Milliseconds to keep the rows on screen after a sort, a filter or a
+   * regroup while the new answer loads. If its first block lands in that
+   * time, the grid goes straight from the old rows to the new ones: no
+   * frame of skeletons between them, and one update instead of two. A fast
+   * source (a worker, a local database) never shows a skeleton; a slow one
+   * shows them once the time is up. Default 0: skeletons at once.
+   */
+  keepRowsWhileLoading?: number
   /** Drop a group's cached children when it is collapsed. Default false. */
   purgeClosedGroups?: boolean
   /**
@@ -931,12 +940,75 @@ export function createServerRowModel<TData>(
 
   // ---------------------------------------------------------- flatten
 
+  /**
+   * A level's rows as display and grid rows, kept from one emit to the next.
+   *
+   * A level of leaves maps each cached row to one display row that depends on
+   * nothing but that row, so the mapping only has to be redone where the
+   * cache changed - and every cache write (a landed block, a patch, a purge)
+   * puts a new object at the index it touches. Comparing identities is a
+   * tight loop; mapping a million rows per landed block of a hundred was most
+   * of what a block cost on the main thread. Keeping the grid row objects also
+   * lets the grid keep its own row objects for them.
+   *
+   * Null for a level holding groups (a group row's display depends on what is
+   * expanded beneath it) and while any detail is open (a detail adds a row).
+   */
+  type LeafRun = {
+    rows: ReadonlyArray<Child<TData>>
+    display: Array<ServerRowModelDisplayRow<TData>>
+    grid: Array<ServerRowModelGridRow<TData>>
+  }
+  const leafRuns = new WeakMap<Store<TData>, LeafRun>()
+
+  function leafRun(store: Store<TData>, rows: ReadonlyArray<Child<TData>>): LeafRun | null {
+    if (openDetails.size) return null
+    const prev = leafRuns.get(store)
+    if (prev && prev.rows === rows) return prev
+    const n = rows.length
+    // Same length (a block landed, a row was patched): update the kept
+    // arrays in place. The flatten only ever copies out of them.
+    const inPlace = !!prev && prev.rows.length === n
+    const display = inPlace ? prev!.display : new Array<ServerRowModelDisplayRow<TData>>(n)
+    const grid = inPlace ? prev!.grid : new Array<ServerRowModelGridRow<TData>>(n)
+    const old = prev?.rows
+    const oldLength = old ? old.length : 0
+    for (let i = 0; i < n; i += 1) {
+      const child = rows[i]!
+      if (i < oldLength && old![i] === child) {
+        if (!inPlace) {
+          display[i] = prev!.display[i]!
+          grid[i] = prev!.grid[i]!
+        }
+        continue
+      }
+      const ph = rowPlaceholderState(child)
+      if (ph) {
+        const d = ph === 'failed' ? FAILED_ROW : LOADING_ROW
+        display[i] = d
+        grid[i] = toGridRow(d)
+        continue
+      }
+      if (child.kind !== 'leaf') {
+        // Written in place up to here, so the kept run is no longer whole.
+        leafRuns.delete(store)
+        return null
+      }
+      const d: ServerLeafRow<TData> = { kind: 'leaf', id: child.id, level: store.level, route: store.route, data: child.data }
+      display[i] = d
+      grid[i] = toGridRow(d, child.data)
+    }
+    const run = { rows, display, grid }
+    leafRuns.set(store, run)
+    return run
+  }
+
   function flatten(): {
     display: ServerRowModelDisplayRow<TData>[]
     grid: ServerRowModelGridRow<TData>[]
   } {
-    const display: ServerRowModelDisplayRow<TData>[] = []
-    const grid: ServerRowModelGridRow<TData>[] = []
+    let display: ServerRowModelDisplayRow<TData>[] = []
+    let grid: ServerRowModelGridRow<TData>[] = []
     segments = []
 
     const pushRow = (d: ServerRowModelDisplayRow<TData>, data?: TData): void => {
@@ -959,6 +1031,27 @@ export function createServerRowModel<TData>(
 
     const walk = (store: Store<TData>, from = 0, to = Number.POSITIVE_INFINITY): void => {
       const rows = store.cache.rows()
+      const run = store.loadMore ? null : leafRun(store, rows)
+      if (run) {
+        // A level of leaves maps one to one: copy the range out of the run.
+        const end = Math.min(rows.length, to)
+        if (end > from) {
+          segments.push({ store, displayStart: display.length, storeStart: from, length: end - from })
+          const { display: d, grid: g } = run
+          if (display.length === 0) {
+            // The common flat case: the whole list is this run. A slice is a
+            // block copy; a push per row was the rest of the flatten's cost.
+            display = d.slice(from, end)
+            grid = g.slice(from, end)
+          } else {
+            for (let i = from; i < end; i += 1) {
+              display.push(d[i]!)
+              grid.push(g[i]!)
+            }
+          }
+        }
+        return
+      }
       const end = Math.min(rows.length, to, store.loadMore ? loadedPrefix(rows) : Number.POSITIVE_INFINITY)
       let segStart = from
       let dispStart = display.length
@@ -1192,13 +1285,58 @@ export function createServerRowModel<TData>(
     }
   }
 
+  // `keepRowsWhileLoading`: after a sort, a filter or a regroup, the rows on
+  // screen stay until the new answer's first block lands or the time runs
+  // out. `holdUntil` is that deadline, 0 when nothing is held.
+  let holdUntil = 0
+  let holdTimer: ReturnType<typeof setTimeout> | null = null
+  let held = false
+
+  function holdRows(): void {
+    const ms = options.keepRowsWhileLoading ?? 0
+    if (ms > 0 && current.displayRows.length > 0) holdUntil = Date.now() + ms
+  }
+
+  /** Whether the rows on screen should stay a little longer. */
+  function holding(): boolean {
+    if (!holdUntil) return false
+    const root = stores.get(routeKey([]))
+    // A failed block ends the hold too: its Retry is the answer to show.
+    const rootAnswered = !!root && root.cache.getCacheState().some((b) => b.status !== 'loading')
+    let pending = false
+    for (const s of stores.values()) if (s.refreshPending) pending = true
+    if (Date.now() >= holdUntil || rootError || (rootAnswered && !pending)) {
+      holdUntil = 0
+      return false
+    }
+    return true
+  }
+
   function scheduleEmit(): void {
     if (disposed || emitScheduled) return
     emitScheduled = true
     queueMicrotask(() => {
       emitScheduled = false
       if (disposed) return
+      if (holding()) {
+        held = true
+        holdTimer ??= setTimeout(() => {
+          holdTimer = null
+          scheduleEmit()
+        }, Math.max(0, holdUntil - Date.now()))
+        return
+      }
+      if (holdTimer) {
+        clearTimeout(holdTimer)
+        holdTimer = null
+      }
       current = buildState()
+      // While rows were held the grid kept reporting positions in the old
+      // list, mapped through the old segments; map them through the new.
+      if (held) {
+        held = false
+        applyViewport()
+      }
       options.onChange?.(current)
       for (const notify of subscribers) notify()
     })
@@ -1320,6 +1458,7 @@ export function createServerRowModel<TData>(
 
   function setSort(next: ServerSortModel): void {
     sortModel = next
+    holdRows()
     for (const store of storesAffectedBySort(next)) {
       if (options.clientSideSort && sortLocally(store)) continue
       store.refreshPending = true
@@ -1330,6 +1469,7 @@ export function createServerRowModel<TData>(
 
   function setFilter(next: ServerFilterModel | GridFilterState): void {
     const previous = filterModel
+    holdRows()
     filterModel = Array.isArray(next.columns)
       ? { global: next.global, columns: toServerFilterColumns(next as GridFilterState) }
       : (next as ServerFilterModel)
@@ -1768,6 +1908,7 @@ export function createServerRowModel<TData>(
         expanded.clear()
         seenGroups.clear()
       }
+      holdRows()
       rebuild()
     },
     toggleGroup(row) {
@@ -1956,6 +2097,8 @@ export function createServerRowModel<TData>(
       generation += 1
       if (asyncTimer) clearTimeout(asyncTimer)
       asyncTimer = null
+      if (holdTimer) clearTimeout(holdTimer)
+      holdTimer = null
       asyncQueue.length = 0
       for (const s of stores.values()) s.cache.dispose()
       stores.clear()

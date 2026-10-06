@@ -36,7 +36,7 @@ import { buildTagHubs, postTags, tagSlug, tagLabel } from './lib/blog-tags.mjs'
 import { prerenderedRoutes, ROUTE_SEO } from './lib/route-seo.mjs'
 import { productGraph } from './lib/product-ld.mjs'
 import { HOME_GUIDES } from './lib/home-guides.mjs'
-import { tutorialIdsIn, videoObjectLd } from './lib/tutorial-media.mjs'
+import { tutorialIdsIn, videoObjectLd, tutorialBlock } from './lib/tutorial-media.mjs'
 import { readManifest as readTutorialManifest } from './tutorials/lib/manifest.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -98,6 +98,20 @@ function injectJsonLd(html, obj) {
   // Escape "<" so a value containing "</script>" cannot terminate the tag.
   const json = JSON.stringify(obj).replace(/</g, '\\u003c')
   const snippet = `    <script type="application/ld+json" data-seo="prerender">${json}</script>\n  </head>`
+  return html.replace('</head>', () => snippet)
+}
+/**
+ * Start the video's poster downloading with the HTML instead of after the SPA
+ * has booted. Without it the fetch waits on HTML -> JS -> hydrate -> mount, and
+ * main.ts clears #root on the way, so the copy in the prerendered body is
+ * discarded mid-flight. The poster is the LCP element on both routes that carry
+ * a video, so its discovery should not depend on when the bundle happens to
+ * execute. No measurable LCP difference at 1.6 Mbps either way (~3.98 s with and
+ * without): at that bandwidth the pipe is the limit, not discovery. This is here
+ * for the dependency chain, not for a number.
+ */
+function injectPosterPreload(html, poster) {
+  const snippet = `    <link rel="preload" as="image" href="${escapeAttr(poster)}" fetchpriority="high">\n  </head>`
   return html.replace('</head>', () => snippet)
 }
 function injectBody(html, bodyHtml) {
@@ -936,7 +950,7 @@ function ogSvg({ eyebrow, line1, line2white, line2accent, sub1, sub2 }) {
 
 const OG_SECTIONS = {
   docs:    { eyebrow: 'DOCUMENTATION', line1: 'Guides for the', line2white: 'Svelte 5', line2accent: 'data grid.', sub1: 'Columns, rows, cells, filtering, editing,', sub2: 'each with copy-paste examples.' },
-  demos:   { eyebrow: 'EXAMPLES', line1: '370+ live', line2white: 'Svelte 5 grid', line2accent: 'demos.', sub1: 'Sorting, filtering, grouping, editing,', sub2: 'virtualization, server-side data, and more.' },
+  demos:   { eyebrow: 'EXAMPLES', line1: '400+ live', line2white: 'Svelte 5 grid', line2accent: 'demos.', sub1: 'Sorting, filtering, grouping, editing,', sub2: 'virtualization, server-side data, and more.' },
   compare: { eyebrow: 'COMPARISONS', line1: 'SvGrid vs the', line2white: 'other Svelte', line2accent: 'data grids.', sub1: 'Honest, feature-by-feature matrices.', sub2: '' },
   pricing: { eyebrow: 'PRICING', line1: 'Free core.', line2white: 'Pro for export', line2accent: '& pivot.', sub1: 'Community is MIT-licensed and free.', sub2: '@svgrid/enterprise from $599/dev/yr.' },
   roadmap: { eyebrow: 'ROADMAP', line1: 'What SvGrid is', line2white: 'building', line2accent: 'next.', sub1: 'An honest, living feature list,', sub2: 'plus a recently-shipped track record.' },
@@ -991,6 +1005,18 @@ async function main() {
   // 30-second tutorials (tools/tutorials/manifest.json): a VideoObject per
   // embed on a doc page, built by the helper website/src/lib/seo.ts also uses.
   const tutorialById = new Map(readTutorialManifest().tutorials.map((t) => [t.id, t]))
+  /**
+   * The tutorial a hand-written route shows, or null. A route naming a video
+   * with no docs cut on disk gets nothing rather than a VideoObject pointing at
+   * a missing file: `files.mp4` is null until the cut has actually been muxed.
+   */
+  const videoForRoute = (route) => {
+    const id = ROUTE_SEO[route]?.video
+    if (!id) return null
+    const t = tutorialById.get(id)
+    if (!t) throw new Error(`route-seo: route "${route}" names video "${id}", which is not in the tutorial manifest`)
+    return t.files?.mp4 ? t : null
+  }
   // Comparison pages: the JSON the SPA imports, joined with the measured
   // facts ledger the same way website/src/routes/Compare.svelte joins them.
   const comparisons = await loadComparisons()
@@ -1313,6 +1339,17 @@ async function main() {
       if (all.length) html = injectJsonLd(html, faqLd(all))
     } else {
       body = `<main class="prerender-route" data-prerender="1"><h1>${escapeAttr(title)}</h1><p>${escapeAttr(description)}</p><p><a href="${BASE}docs/">Documentation</a> · <a href="${BASE}demos/">Demos</a></p></main>`
+    }
+    // A route that names a video in ROUTE_SEO carries its VideoObject and the
+    // video itself, so the page is eligible for a video thumbnail in the
+    // result. Docs pages get both from their embedded markdown block; a
+    // hand-written route has no markdown, so it is wired here and the route's
+    // own component renders the same video for a reader running the SPA.
+    const routeVideo = videoForRoute(route)
+    if (routeVideo) {
+      html = injectJsonLd(html, videoObjectLd(routeVideo, { origin: CANON, pageUrl: url }))
+      if (routeVideo.files.poster) html = injectPosterPreload(html, routeVideo.files.poster)
+      body = tutorialBlock(routeVideo) + body
     }
     html = injectBody(html, body)
     await writePage(join(DIST, route), html, url, body)
@@ -1693,7 +1730,7 @@ async function main() {
   // Build from `template` (the normalized clean shell), not by re-reading
   // dist/index.html - that file is this step's own output, so re-reading it
   // makes a second prerender run over the same dist non-idempotent.
-  const homeBody = homeCrawlBody(homeFaqs)
+  let homeBody = homeCrawlBody(homeFaqs)
   // The head goes through applyHead like every other static route: the raw
   // index.html head used to be served as-is (a 245-char description Google
   // cut mid-list) while hydration clamped the same table entry to 155.
@@ -1706,6 +1743,15 @@ async function main() {
     keywords: homeSeo.keywords.join(', '),
     imageAlt: 'SvGrid - the Svelte data grid for Svelte 5',
   })
+  // The homepage is the one route whose body is synthesized rather than taken
+  // from the if/else above, so its video is wired separately. Same helper,
+  // same block, so the two paths cannot show different videos.
+  const homeVideo = videoForRoute('')
+  if (homeVideo) {
+    homeHtml = injectJsonLd(homeHtml, videoObjectLd(homeVideo, { origin: CANON, pageUrl: `${CANON}/` }))
+    if (homeVideo.files.poster) homeHtml = injectPosterPreload(homeHtml, homeVideo.files.poster)
+    homeBody = tutorialBlock(homeVideo) + homeBody
+  }
   homeHtml = injectBody(homeHtml, homeBody)
   if (homeFaqs.length) {
     homeHtml = injectJsonLd(homeHtml, {
@@ -1723,12 +1769,31 @@ async function main() {
   const urls = []
   // Normalize to the trailing-slash form GitHub Pages serves as 200 (see the
   // per-page canonicals above), so the sitemap never lists a URL that 301s.
-  const push = (loc, priority) => {
-    const norm = loc.endsWith('/') ? loc : loc + '/'
-    urls.push({ loc: norm, priority, lastmod: lastmodNext[lastmodKey(norm)]?.date ?? TODAY })
+  // Which tutorials sit on which docs slug, so the sitemap can carry a
+  // <video:video> for each. Without this the VideoObject on the page is the
+  // only signal and the pages are not eligible for video results; the two are
+  // meant to agree, so both are generated from the same manifest entry.
+  const videosBySlug = new Map()
+  for (const t of tutorialById.values()) {
+    if (!t.docsPage || !t.files?.mp4) continue
+    const slug = t.docsPage.replace(/^docs\//, '').replace(/\.md$/, '')
+    if (!videosBySlug.has(slug)) videosBySlug.set(slug, [])
+    videosBySlug.get(slug).push(t)
   }
-  push(`${CANON}/`, '1.0')
-  for (const [route] of STATIC_ROUTES) push(`${CANON}/${route}`, '0.8')
+
+  const push = (loc, priority, videos) => {
+    const norm = loc.endsWith('/') ? loc : loc + '/'
+    urls.push({ loc: norm, priority, lastmod: lastmodNext[lastmodKey(norm)]?.date ?? TODAY, videos })
+  }
+  // A video in the head without one in the sitemap leaves the page ineligible
+  // for a video result, so the hand-written routes list theirs the same way the
+  // docs slugs above do.
+  const routeVideos = (route) => {
+    const t = videoForRoute(route)
+    return t ? [t] : undefined
+  }
+  push(`${CANON}/`, '1.0', routeVideos(''))
+  for (const [route] of STATIC_ROUTES) push(`${CANON}/${route}`, '0.8', routeVideos(route))
   for (const c of comparisons) push(`${CANON}/compare/${c.slug}`, '0.7')
   for (const s of solutions) push(`${CANON}/svelte/${s.slug}`, '0.8')
   for (const h of tagHubs) push(`${CANON}/blog/tag/${h.slug}`, '0.5')
@@ -1736,11 +1801,38 @@ async function main() {
   // A post that defers to a docs guide (canonical) and a noindex doc are not
   // sitemap entries: the sitemap must only list URLs meant to be indexed.
   for (const p of blogPosts) if (!p.canonical) push(`${CANON}/blog/${p.slug}`, '0.6')
-  for (const d of docs) if (!d.noindex) push(`${CANON}/docs/${d.slug}`, d.slug.startsWith('getting-started') ? '0.8' : '0.6')
+  for (const d of docs) if (!d.noindex) push(`${CANON}/docs/${d.slug}`, d.slug.startsWith('getting-started') ? '0.8' : '0.6', videosBySlug.get(d.slug))
   for (const d of demos) push(`${CANON}/demos/${d.id}`, '0.5')
 
-  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls
-    .map((u) => `  <url>\n    <loc>${u.loc}</loc>\n    <lastmod>${u.lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`)
+  /** One <video:video> block. Google requires thumbnail, title, description
+   *  and a content or player location; the rest is optional but cheap. */
+  const videoBlock = (t) => {
+    const abs = (p) => (p.startsWith('http') ? p : `${CANON}${p}`)
+    const lines = [
+      '    <video:video>',
+      `      <video:thumbnail_loc>${escapeAttr(abs(t.files.poster))}</video:thumbnail_loc>`,
+      `      <video:title>${escapeAttr(t.title)}</video:title>`,
+      `      <video:description>${escapeAttr(t.description)}</video:description>`,
+      `      <video:content_loc>${escapeAttr(abs(t.files.mp4))}</video:content_loc>`,
+    ]
+    if (t.youtubeId) {
+      lines.push(`      <video:player_loc>https://www.youtube.com/embed/${escapeAttr(t.youtubeId)}</video:player_loc>`)
+    }
+    lines.push(`      <video:duration>${Math.round(t.duration)}</video:duration>`)
+    if (t.publishedAt ?? t.recordedAt) {
+      lines.push(`      <video:publication_date>${escapeAttr(t.publishedAt ?? t.recordedAt)}</video:publication_date>`)
+    }
+    lines.push('      <video:family_friendly>yes</video:family_friendly>')
+    lines.push('    </video:video>')
+    return lines.join('\n')
+  }
+
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n${urls
+    .map((u) => {
+      const head = `  <url>\n    <loc>${u.loc}</loc>\n    <lastmod>${u.lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${u.priority}</priority>`
+      const vids = (u.videos ?? []).map(videoBlock).join('\n')
+      return `${head}${vids ? `\n${vids}` : ''}\n  </url>`
+    })
     .join('\n')}\n</urlset>\n`
   await writeFile(join(DIST, 'sitemap.xml'), sitemap, 'utf-8')
   await writeFile(join(PUBLIC, 'sitemap.xml'), sitemap, 'utf-8').catch(() => {})

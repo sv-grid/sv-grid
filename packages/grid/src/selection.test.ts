@@ -657,6 +657,43 @@ describe('createSelection - onCellClick', () => {
     expect(ctx.selectionRange.anchor).toEqual({ rowIndex: 0, colIndex: 0 })
   })
 
+  describe('boolean cells that are not declared checkboxes', () => {
+    const boolCtx = (over: any = {}, columnDef: any = {}) =>
+      clickCtx({
+        allRows: [makeDataRow('r0', { done: true })],
+        allColumns: [makeColumn('done', { field: 'done', ...columnDef })],
+        ...over,
+      })
+
+    it('do not toggle (or write the row) while inline editing is off', () => {
+      const ctx = boolCtx({ editingEnabled: false })
+      createSelection(ctx).onCellClick(0, 0)
+      expect(ctx.toggleBooleanCell).not.toHaveBeenCalled()
+      expect(ctx.selectionRange.anchor).toEqual({ rowIndex: 0, colIndex: 0 })
+    })
+
+    it('toggle when inline editing is on and the cell is editable', () => {
+      const ctx = boolCtx({ editingEnabled: true, isCellEditableAt: () => true })
+      createSelection(ctx).onCellClick(0, 0)
+      expect(ctx.toggleBooleanCell).toHaveBeenCalledWith(0, 0)
+    })
+
+    it('do not toggle when the column has its own cell renderer', () => {
+      const ctx = boolCtx({ editingEnabled: true, isCellEditableAt: () => true }, { cell: () => 'flag' })
+      createSelection(ctx).onCellClick(0, 0)
+      expect(ctx.toggleBooleanCell).not.toHaveBeenCalled()
+    })
+  })
+
+  it('a declared checkbox that is not editable stays put', () => {
+    const ctx = clickCtx({
+      allColumns: [makeColumn('c0', { editorType: 'checkbox', editable: false })],
+      isCellEditableAt: () => false,
+    })
+    createSelection(ctx).onCellClick(0, 0)
+    expect(ctx.toggleBooleanCell).not.toHaveBeenCalled()
+  })
+
   it('enters edit mode when clicking the previously-active editable cell', () => {
     const ctx = clickCtx({
       editingEnabled: true,

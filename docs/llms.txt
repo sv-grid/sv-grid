@@ -388,6 +388,7 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 - [Server pivot - Enterprise](https://svgrid.com/docs/help/server/server-pivot/): A pivot over a million rows cannot happen in the browser. The server-side row model sends the pivot to the backend and builds its columns from the answer: with pivotMode on, each request carries...
 - [Server transactions - Enterprise](https://svgrid.com/docs/help/server/server-transactions/): A row was added on the server and the grid should show it now, not after a refetch. A socket said a price moved. A row was deleted and its group should lose it.
 - [Server selection - Enterprise](https://svgrid.com/docs/help/server/server-selection/): A grid that keeps a list of selected ids is right until the rows it has seen are a window onto a million on a server.
+- [Worker data source - Enterprise](https://svgrid.com/docs/help/server/worker-data-source/): When every row is already in the browser, a sort or a grouping still has to walk all of them, and on the main thread nothing else happens until it is done: the page does not paint, scroll or take...
 
 ### Import & export
 

@@ -26,6 +26,11 @@
     }
     let stale = false
     snippetError = null
+    // Drop the previous snippet BEFORE the dynamic import resolves. Otherwise
+    // the old component stays mounted while the new one loads, and a recorder
+    // waiting for "a row" matches the OUTGOING table: a lesson then clicked a
+    // header that belonged to the previous snippet and nothing happened.
+    Snippet = null
     loadSnippet(id)
       .then((c) => {
         if (!stale) Snippet = c

@@ -73,6 +73,12 @@ export {
   buildPivotResultColumns,
   type PivotResultColumnOptions,
 } from './server-pivot'
+export {
+  createWorkerDataSource,
+  type WorkerDataSource,
+  type WorkerDataSourceOptions,
+  type WorkerLike,
+} from './worker-data-source'
 export { enableServerRowModel } from './enable'
 export {
   defaultServerGroupMessages,

@@ -212,7 +212,7 @@ describe('recorded tutorials (manifest <-> docs <-> media)', () => {
     const unknown = [...onPages.keys()].filter((id) => !ids.has(id))
     expect(unknown, 'data-docs-tutorial ids with no manifest entry').toEqual([])
     const misplaced = manifest.tutorials
-      .filter((t) => t.kind !== 'marketing')
+      .filter((t) => t.kind !== 'marketing' || t.docsPage)
       .filter((t) => !(onPages.get(t.id) ?? []).includes(t.docsPage))
       .map((t) => `${t.id} -> ${t.docsPage} (found on: ${(onPages.get(t.id) ?? []).join(', ') || 'nowhere'})`)
     expect(misplaced, 'run node tools/tutorials/embed.mjs').toEqual([])
@@ -269,7 +269,10 @@ describe('recorded tutorials (manifest <-> docs <-> media)', () => {
       // Feature tutorials aim at 30 s; an install walkthrough (terminal, editor,
       // result) runs longer, a marketing cut longer still, and a course lesson
       // teaches one topic end to end, so it runs to a few minutes.
-      const maxSeconds = t.kind === 'course' ? 240 : t.kind === 'marketing' ? 150 : 90
+      // The marketing ceiling is 300 s because the series cuts that cover one
+      // component end to end were agreed at 3 to 5 minutes; the old 150 s cap
+      // was set when every marketing cut was a 60 s teaser.
+      const maxSeconds = t.kind === 'course' ? 240 : t.kind === 'marketing' ? 300 : 90
       if (!(t.duration >= 15 && t.duration <= maxSeconds)) problems.push(`${t.id}: duration ${t.duration}`)
       if (!t.description || t.description.length > 160) problems.push(`${t.id}: description length`)
       if (!t.transcript.length) problems.push(`${t.id}: empty transcript`)

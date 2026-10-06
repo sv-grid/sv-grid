@@ -154,7 +154,12 @@ every element below is markup you wrote, which is the whole proposition.
     onSortingChange: (u) => (sorting = typeof u === 'function' ? u(sorting) : u),
   })
 
-  const rows = $derived(table.getRowModel().rows)
+  // Touch the state this component owns so the derived re-runs:
+  // the engine's store is framework-free and not a rune.
+  const rows = $derived.by(() => {
+    sorting
+    return table.getRowModel().rows
+  })
 </script>
 
 <table>
@@ -229,7 +234,12 @@ and a filter starts applying; leave it out and the code for it never ships.
       (columnFilters = typeof u === 'function' ? u(columnFilters) : u),
   })
 
-  const rows = $derived(table.getRowModel().rows)
+  // Touch the state this component owns so the derived re-runs:
+  // the engine's store is framework-free and not a rune.
+  const rows = $derived.by(() => {
+    columnFilters
+    return table.getRowModel().rows
+  })
 </script>
 
 <input

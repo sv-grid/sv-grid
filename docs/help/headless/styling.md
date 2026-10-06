@@ -148,7 +148,12 @@ five lines as the unstyled version.
     onSortingChange: (u) => (sorting = typeof u === 'function' ? u(sorting) : u),
   })
 
-  const rows = $derived(table.getRowModel().rows)
+  // Touch the state this component owns so the derived re-runs:
+  // the engine's store is framework-free and not a rune.
+  const rows = $derived.by(() => {
+    sorting
+    return table.getRowModel().rows
+  })
 </script>
 
 <div class="scroller">
@@ -251,7 +256,12 @@ different markup.
     onSortingChange: (u) => (sorting = typeof u === 'function' ? u(sorting) : u),
   })
 
-  const rows = $derived(table.getRowModel().rows)
+  // Touch the state this component owns so the derived re-runs:
+  // the engine's store is framework-free and not a rune.
+  const rows = $derived.by(() => {
+    sorting
+    return table.getRowModel().rows
+  })
 </script>
 
 <button type="button" onclick={() => (sorting = [{ id: 'name', desc: false }])}>
@@ -321,7 +331,12 @@ on when it keeps the shadcn markup and swaps the engine.
     state: { sorting },
     onSortingChange: (u) => (sorting = typeof u === 'function' ? u(sorting) : u),
   })
-  const rows = $derived(table.getRowModel().rows)
+  // Touch the state this component owns so the derived re-runs:
+  // the engine's store is framework-free and not a rune.
+  const rows = $derived.by(() => {
+    sorting
+    return table.getRowModel().rows
+  })
 </script>
 
 <Table.Root>
@@ -410,7 +425,12 @@ spread onto your own elements. Wire the four of them and arrow keys, `Home`,
     (s) => ({ activeCell: s.activeCell as { rowIndex: number; colIndex: number } }),
   )
 
-  const rows = $derived(table.getRowModel().rows)
+  // Touch the state this component owns so the derived re-runs:
+  // the engine's store is framework-free and not a rune.
+  const rows = $derived.by(() => {
+    sorting
+    return table.getRowModel().rows
+  })
   const active = $derived(table.state.activeCell)
   const GRID_ID = 'repos'
   const activeId = $derived(getGridCellDomId(GRID_ID, active.rowIndex, active.colIndex))

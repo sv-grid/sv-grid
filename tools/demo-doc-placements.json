@@ -110,7 +110,11 @@
   ],
   "docs/help/ui-components/sv-dock-manager.md": [
     "364-dock-api",
-    "367-dock-popout"
+    "367-dock-popout",
+    "502-ops-workspace"
+  ],
+  "docs/help/ui-components/sv-nav-pane.md": [
+    "501-mail-app"
   ],
   "docs/help/ui-components/sv-grid-chart.md": [
     "407-grid-chart-view",

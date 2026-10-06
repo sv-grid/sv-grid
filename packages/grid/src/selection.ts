@@ -655,12 +655,22 @@ export function createSelection<
       row: row.original as TData,
     });
 
-    const isCheckboxColumn =
-      column.columnDef.editorType === "checkbox" ||
-      typeof cellValue === "boolean";
+    // A declared checkbox editor toggles on click unless the cell is not
+    // editable. A value that only HAPPENS to be boolean is drawn as a read-only
+    // checkbox, so it toggles only when inline editing is on - it used to flip
+    // and write the row on any click, in grids with editing switched off. A
+    // column with its own `cell` renderer draws (and handles) the value itself.
+    const declaredCheckbox = column.columnDef.editorType === "checkbox";
+    const inferredCheckbox =
+      !declaredCheckbox &&
+      typeof cellValue === "boolean" &&
+      column.columnDef.cell == null;
 
-    if (isCheckboxColumn) {
-      ctx.toggleBooleanCell(rowIndex, colIndex);
+    if (declaredCheckbox || inferredCheckbox) {
+      const editable = ctx.isCellEditableAt?.(rowIndex, colIndex) ?? true;
+      if (editable && (declaredCheckbox || ctx.editingEnabled)) {
+        ctx.toggleBooleanCell(rowIndex, colIndex);
+      }
       setActiveCell(rowIndex, colIndex);
       setSelection(rowIndex, colIndex);
       ctx.editingCell = null;

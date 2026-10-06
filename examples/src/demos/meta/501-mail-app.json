@@ -1,0 +1,32 @@
+{
+  "description": "An Outlook-style mail client built in Svelte 5 from one file. The inbox is a SvGrid with sender avatars, conversation counts, quick filters (Unread, Flagged, Files), hover actions and bulk actions on ticked rows. The reading pane shows the whole conversation with older messages and quoted text folded. The SvRichText composer has recipient chips with contact suggestions, Cc, attachments, a signature and a five-second Undo send. New mail arrives while the page is open, Gmail-style keyboard shortcuts work, accepted invites land on a scheduler calendar, and Export writes a folder to Excel, CSV or PDF.",
+  "keywords": [
+    "svelte mail client template",
+    "svelte outlook clone",
+    "svelte inbox data grid",
+    "svelte email composer recipient chips",
+    "svelte 5 app template navigation pane"
+  ],
+  "faq": [
+    {
+      "question": "Which parts of this template need @svgrid/enterprise?",
+      "answer": "Two: the Calendar module (the scheduler renderer behind the grid's scheduler prop) and Export (the Excel, CSV and PDF writer). The nav pane, the message grid, the reading pane, the composer and the modals are in the MIT @svgrid/grid package."
+    },
+    {
+      "question": "How are conversations built?",
+      "answer": "Each message carries a thread id. The reading pane collects every message of the thread outside Trash and Drafts, oldest first, and opens the one you clicked; the list shows the thread size next to the sender. A reply inherits the thread, so it joins the conversation when it is sent."
+    },
+    {
+      "question": "Is the email HTML safe to render?",
+      "answer": "Every body goes through sanitizeHtml from @svgrid/grid, which strips scripts, event handlers, style attributes and javascript: URLs. Links inside a mail open in a new tab, and a mailto: link opens the composer. Mail from a real server should still be sanitized on the server as well."
+    },
+    {
+      "question": "How does Undo send work?",
+      "answer": "Send closes the composer and holds the message for five seconds behind a toast with an Undo button. Undo reopens the composer with everything you wrote; otherwise the message lands in Sent. In a real app the timer is where you call your mail API."
+    },
+    {
+      "question": "How do I connect it to a real mailbox?",
+      "answer": "Replace the seeded msgs array with rows from your API and keep the same fields (folder, from, to, subject, body, received, unread, flagged, thread). Each action only patches that array, so each one maps to one request: move, flag, mark read, send, save draft."
+    }
+  ]
+}

@@ -69,7 +69,14 @@ this for you; here you do it explicitly.
   )
 
   const headerGroups = $derived(table.getHeaderGroups())
-  const rows = $derived(table.getRowModel().rows)
+  // Touch the state this component owns so the derived re-runs:
+  // the engine's store is framework-free and not a rune.
+  const rows = $derived.by(() => {
+    sorting
+    columnFilters
+    query
+    return table.getRowModel().rows
+  })
 
   function toggleSort(id: string) {
     const cur = sorting[0]
@@ -242,7 +249,12 @@ write, because the engine has no opinion about what a sorted header looks like.
     onSortingChange: (u) => (sorting = typeof u === 'function' ? u(sorting) : u),
   })
 
-  const rows = $derived(table.getRowModel().rows)
+  // Touch the state this component owns so the derived re-runs:
+  // the engine's store is framework-free and not a rune.
+  const rows = $derived.by(() => {
+    sorting
+    return table.getRowModel().rows
+  })
   const arrow = (id: string) =>
     sorting[0]?.id === id ? (sorting[0].desc ? ' v' : ' ^') : ''
 </script>

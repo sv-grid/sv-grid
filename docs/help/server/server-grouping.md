@@ -241,6 +241,14 @@ under the viewport, `blockSize` rows at a time, keeps at most
 placeholders before its first block lands, so an expand never opens onto
 nothing.
 
+A sort, a filter or a regroup turns the rows on screen into placeholders
+until the new answer arrives. Against a source that answers quickly, that is
+a frame of skeletons and an extra render for nothing. `keepRowsWhileLoading`
+(milliseconds) keeps the current rows on screen instead, until the new
+answer's first block lands or the time runs out, whichever comes first. A
+failed block ends the wait at once, so its Retry shows. The default, 0, shows
+the placeholders straight away.
+
 `levelParams(level, route)` tunes one level: a different `blockSize` or
 `maxBlocksInCache`, `infinite: false` to load a level completely as soon as it
 opens (which also allows sorting it in the browser, see `clientSideSort`), or

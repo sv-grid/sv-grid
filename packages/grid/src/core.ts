@@ -2216,8 +2216,11 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
           const original = data[index]!
           const kept = previous?.[index] as BaseRowState<TData> | undefined
           if (kept && kept.original === original) {
-            kept[ROW_VALUES] = null
-            kept[ROW_CELLS] = null
+            // Read before writing: a row nobody rendered (a million off-screen
+            // placeholders under a row model) has nothing memoised, and a
+            // store per row was a measurable share of each block landing.
+            if (kept[ROW_VALUES] !== null) kept[ROW_VALUES] = null
+            if (kept[ROW_CELLS] !== null) kept[ROW_CELLS] = null
             cachedBaseRows[index] = kept
             continue
           }

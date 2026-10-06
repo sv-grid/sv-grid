@@ -387,7 +387,7 @@ Three things to try, in this order:
 <!-- tutorial:learn-9-sveltekit -->
 <figure class="docs-tutorial" id="tutorial-learn-9-sveltekit" data-docs-tutorial="learn-9-sveltekit">
 <video class="docs-tutorial-video" src="/tutorials/learn-9-sveltekit.mp4" poster="/tutorials/learn-9-sveltekit.poster.webp" width="960" height="540" muted loop playsinline preload="none" aria-label="Learn SvGrid 9: SvelteKit end to end, 81 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/learn-9-sveltekit.vtt" default>Your browser does not play embedded video. <a href="/tutorials/learn-9-sveltekit.mp4">Download the MP4</a>.</video>
-<figcaption><strong>Learn SvGrid 9: SvelteKit end to end</strong> (81 s, silent). <a href="https://www.youtube.com/watch?v=SQTeHpA7Bys" rel="noopener">Watch with narration on YouTube</a></figcaption>
+<figcaption><strong>Learn SvGrid 9: SvelteKit end to end</strong> (1:21, silent). <a href="https://www.youtube.com/watch?v=SQTeHpA7Bys" rel="noopener">Watch with narration on YouTube</a></figcaption>
 <details class="docs-tutorial-transcript"><summary>Transcript</summary>
 <p>SvelteKit gives you a place to put the query that is already on the server. The grid does not need to know about any of it: it takes an array.</p>
 <p>There is a SvelteKit template, so the whole app is two commands. If you have a project already, installing the package is enough.</p>

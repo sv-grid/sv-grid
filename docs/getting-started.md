@@ -6,6 +6,13 @@ scales from a 10-row read-only table to a virtualized
 100,000-row × 100-column editing surface with grouping, multi-column
 filtering, server-side data, and full keyboard and screen-reader support.
 
+<!-- tutorial:mk-what-is-svgrid -->
+<figure class="docs-tutorial docs-tutorial-player" id="tutorial-mk-what-is-svgrid" data-docs-tutorial="mk-what-is-svgrid">
+<video class="docs-tutorial-video" src="/tutorials/mk-what-is-svgrid.mp4" poster="/tutorials/mk-what-is-svgrid.poster.webp" width="960" height="540" controls playsinline preload="none" aria-label="What is SvGrid, 129 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/mk-what-is-svgrid.vtt">Your browser does not play embedded video. <a href="/tutorials/mk-what-is-svgrid.mp4">Download the MP4</a>.</video>
+<figcaption><strong>What is SvGrid</strong> (2:09, with narration). <a href="https://www.youtube.com/watch?v=tPL_HyVVCEU" rel="noopener">Watch on YouTube</a></figcaption>
+</figure>
+<!-- /tutorial:mk-what-is-svgrid -->
+
 This guide is six short pages. Read them in order if you're new; jump
 straight to the one you need if you're not.
 

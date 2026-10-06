@@ -1212,7 +1212,10 @@
     column: Column<TData>,
     cellValue: unknown,
   )}
-    {#if column.columnDef.editorType === "checkbox" || typeof cellValue === "boolean"}
+    <!-- A column's own `cell` renderer wins over every built-in display, the
+         checkbox included: a boolean field drawn as a flag button or a status
+         pill used to come out as a read-only checkbox, with `cell` never called. -->
+    {#if (column.columnDef.editorType === "checkbox" || typeof cellValue === "boolean") && column.columnDef.cell == null}
       <div
         class="sv-grid-checkbox sv-grid-checkbox-readonly"
         role="checkbox"

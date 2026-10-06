@@ -73,7 +73,7 @@ export {
 
 export { createGrid, createSvGrid, type SvelteGrid } from './createGrid.svelte'
 export { createGridState, createSvGridState } from './createGridState.svelte'
-export { subscribeGrid, subscribeSvGrid } from './subscribe'
+export { subscribeGrid, subscribeSvGrid } from './subscribe.svelte'
 export { default as SvGrid } from './SvGrid.svelte'
 // Kanban board view. The `board` prop + its config types live in the free grid,
 // but the RENDERER (SvGridBoard) ships in @svgrid/enterprise and registers itself

@@ -2421,6 +2421,373 @@
       ]
     },
     {
+      "id": "mk-svelte-headless-table",
+      "kind": "marketing",
+      "title": "A headless table in Svelte",
+      "description": "Use the grid engine without its renderer: createSvGrid gives you rows, headers, sorting and pagination, and you write the table markup and the CSS yourself.",
+      "demo": "187-headless-virtual",
+      "docsPage": null,
+      "tags": [
+        "svelte headless table",
+        "headless ui svelte",
+        "svelte table",
+        "createSvGrid",
+        "svelte 5",
+        "headless data grid"
+      ],
+      "duration": 227.6,
+      "width": 1920,
+      "height": 1080,
+      "recordedAt": "2026-10-04",
+      "youtubeId": "z-k5MVKE2iY",
+      "publishedAt": "2026-10-04",
+      "files": {
+        "mp4": null,
+        "poster": null,
+        "vtt": null
+      },
+      "bytes": {
+        "mp4": 0,
+        "poster": 0,
+        "master": 19289867
+      },
+      "transcript": [
+        {
+          "start": 0.71,
+          "end": 18.33,
+          "text": "Sometimes you want the logic and not the look. You have a design system already, or the markup has to be a particular shape, and a component that renders its own table is the wrong tool. This is the other half of SvGrid: the engine on its own, with no renderer attached."
+        },
+        {
+          "start": 20.21,
+          "end": 34.45,
+          "text": "It comes from a separate entry point, slash core, so none of the rendering code is in your bundle. You describe the data and the columns the same way you would for the component: a row type, an array of plain objects, and a column per field."
+        },
+        {
+          "start": 35.29,
+          "end": 51.1,
+          "text": "Then createSvGrid builds the table instance. The row models are the part worth understanding: a model is a stage in the pipeline, and you opt into each one. Here there is only the core model, so the engine hands back your rows in order and does nothing else to them."
+        },
+        {
+          "start": 51.43,
+          "end": 65.43,
+          "text": "And this is the part a rendering component would never let you write. Your own table element, your own classes, your own cells. The engine gives you header groups and rows; what they look like is entirely yours."
+        },
+        {
+          "start": 65.75,
+          "end": 83.6,
+          "text": "Sixty lines, and the result is a plain HTML table. No grid stylesheet, no wrapper divs, no class names you did not choose. If your design system has a table component already, this is how you keep it and still get sorting, filtering, grouping and pagination underneath."
+        },
+        {
+          "start": 84.02,
+          "end": 110.37,
+          "text": "Sorting is a second row model and a piece of state you own. Add the sorted model, keep the sorting array in a rune, and put an onclick on your own header. Clicking cycles that column: ascending, descending, then back to the order your data arrived in. And because the state is an array rather than a single column, clicking a second header adds to the sort instead of replacing it, so multi-column sorting falls out of the same three lines."
+        },
+        {
+          "start": 110.77,
+          "end": 131.6,
+          "text": "Pagination is the same move again. Add the paginated model and the engine hands back one page at a time, with the page count and the controls left to you. And notice this one is not a table at all. It is a list, because nothing in the engine knows or cares what you draw: it gives you rows, and the markup is a decision you make per screen."
+        },
+        {
+          "start": 133.44,
+          "end": 165.6,
+          "text": "Virtualization is separate too, and it is the reason this is worth doing rather than writing the loop by hand. The virtualizer tells you which rows are in view and the offset to put them at. You still write the row markup; you just write fifty of them instead of fifty thousand. Scroll it and the DOM node count holds steady while the data under it does not. Doing that yourself is where most hand-rolled tables quietly fall over, because it is not the first thousand rows that hurt, it is the scroll position arithmetic when the rows are different heights."
+        },
+        {
+          "start": 167.44,
+          "end": 202.94,
+          "text": "The table is not the only thing with a headless half. There are around twenty more: a calendar, a combobox, an autocomplete, a tags input, a slider, a tree. Each one is a function that owns the state and the keyboard behaviour and hands you the parts to render. That is the part people underestimate. A date picker is two days of work if you write the markup, and two weeks if you also have to get arrow keys, page up and down, home and end, the month roll-over and the screen reader announcements right. This gives you the second part and leaves you the first."
+        },
+        {
+          "start": 204.87,
+          "end": 225.14,
+          "text": "Same package either way. Import from slash core and you get the engine with none of the renderer; import from the package root and you get a grid that draws itself, with the same row models underneath. You can start headless and switch later, or use both in one app. The docs page below builds this table from scratch."
+        }
+      ]
+    },
+    {
+      "id": "mk-svelte-kanban-board",
+      "kind": "marketing",
+      "title": "A Kanban board in Svelte, from an array of objects",
+      "description": "Give the Svelte 5 data grid a board prop and your rows become cards in lanes: drag to change a field, swimlanes, WIP limits, and the same data as a table.",
+      "demo": "343-kanban-board",
+      "docsPage": null,
+      "tags": [
+        "svelte kanban",
+        "kanban board",
+        "svelte 5",
+        "svelte board",
+        "drag and drop",
+        "svelte data grid",
+        "sveltekit"
+      ],
+      "duration": 91.7,
+      "width": 1920,
+      "height": 1080,
+      "recordedAt": "2026-10-04",
+      "youtubeId": "UHUfpqDz1Ok",
+      "publishedAt": "2026-10-04",
+      "files": {
+        "mp4": null,
+        "poster": null,
+        "vtt": null
+      },
+      "bytes": {
+        "mp4": 0,
+        "poster": 0,
+        "master": 4514195
+      },
+      "transcript": [
+        {
+          "start": 0.72,
+          "end": 11.65,
+          "text": "Most board libraries ask you to model a board: lanes, cards, an order per lane. This one does not. You already have rows, and a lane is just a field on them."
+        },
+        {
+          "start": 13.47,
+          "end": 24.13,
+          "text": "Here is the same grid twice. As a table it is rows and columns. Switch it to board and each row becomes a card, grouped into lanes by whichever field you name."
+        },
+        {
+          "start": 24.53,
+          "end": 40.3,
+          "text": "Move a card and the row behind it changes. You can drag it, or focus it and move it from the keyboard: Space to pick it up, arrows to move it, Space to drop. The board is a view of the data, so there is no second copy to keep in step."
+        },
+        {
+          "start": 42.11,
+          "end": 52.3,
+          "text": "The card is yours. This is a sales pipeline: the lanes are deal stages, the card is a snippet you wrote, and the lane header totals the deals inside it as they move."
+        },
+        {
+          "start": 54.07,
+          "end": 64.68,
+          "text": "Cross the lanes with a swimlane and you get a grid of both: status across, priority down. Search filters the cards in place, and a lane can refuse work past a limit."
+        },
+        {
+          "start": 66.51,
+          "end": 74,
+          "text": "Point it at a child field and a card carries its own children, so an epic shows its stories without a second board underneath."
+        },
+        {
+          "start": 75.94,
+          "end": 89.29,
+          "text": "It is one prop on a grid that is MIT on npm, it keeps your row type the whole way through, and the board, the table and the chart are the same component. The docs page below has the code from all of this."
+        }
+      ]
+    },
+    {
+      "id": "mk-svelte-pivot-olap",
+      "kind": "marketing",
+      "title": "A pivot table and an OLAP cube in Svelte",
+      "description": "Cross-tab your rows without a second library: a pivot from four lines, a drag-and-drop designer, pivot mode on the grid you already have, and a cube browser.",
+      "demo": "168-pivot-designer",
+      "docsPage": null,
+      "tags": [
+        "svelte pivot table",
+        "javascript pivot table olap",
+        "olap cube",
+        "pivot grid",
+        "svelte 5",
+        "data analysis"
+      ],
+      "duration": 215.2,
+      "width": 1920,
+      "height": 1080,
+      "recordedAt": "2026-10-04",
+      "youtubeId": "pW3ZioODNLQ",
+      "publishedAt": "2026-10-04",
+      "files": {
+        "mp4": null,
+        "poster": null,
+        "vtt": null
+      },
+      "bytes": {
+        "mp4": 0,
+        "poster": 0,
+        "master": 23754462
+      },
+      "transcript": [
+        {
+          "start": 0.71,
+          "end": 18.2,
+          "text": "A pivot table used to mean exporting to a spreadsheet. The data is already in the browser, in a grid that knows the shape of every row, so the sensible place to pivot it is right there. This is what that looks like in Svelte, starting from the smallest version and ending at a cube browser."
+        },
+        {
+          "start": 20.04,
+          "end": 32.55,
+          "text": "Here is the smallest pivot there is. The same rows you would put in a table, and one more prop describing the shape you want: which fields go down the side, which go across the top, and what to aggregate in the middle."
+        },
+        {
+          "start": 63.82,
+          "end": 78.98,
+          "text": "That is the whole configuration. Rows, columns, values, and an aggregation per value. The engine groups, aggregates and lays out the cross-tab, and the result is still a grid, so it sorts, scrolls and exports like one."
+        },
+        {
+          "start": 79.39,
+          "end": 92.65,
+          "text": "Change the shape and the numbers follow. Add a second field down the side and you get a nested cross-tab, with subtotals at each level, because the aggregation is computed per group rather than summed from the cells above it."
+        },
+        {
+          "start": 94.47,
+          "end": 112.7,
+          "text": "Most of the time the person who wants the pivot is not the person who wrote the code, so there is a designer. Fields down one side, three wells on the other: rows, columns and values. Tick a field and it joins the layout in the well that suits its type, and the cross-tab recomputes on the spot."
+        },
+        {
+          "start": 114.5,
+          "end": 128.27,
+          "text": "And you do not need a separate component for it. A grid you already have flips into pivot mode with one switch: the flat rows become the cross-tab, the designer docks beside it, and flipping back returns the table you started with."
+        },
+        {
+          "start": 130.07,
+          "end": 168.96,
+          "text": "Push it further and you get a cube browser: dimensions nested down the side, measures across the top, and a tabular layout an analyst recognises immediately. Expand a dimension and the level below it appears with its own subtotals. Every number here is computed in the browser from the rows you handed it. There is no cube server behind this, no query language to learn, and no second dependency in the bundle. The practical consequence is that the thing your users asked for, the one that normally means a BI tool and a nightly job, is a prop on a component in your own app, against data you already loaded, behind your own auth."
+        },
+        {
+          "start": 170.64,
+          "end": 189.28,
+          "text": "A cross-tab is already the shape a chart wants: categories down one axis, series across the other, a number in each cell. So the same layout drives a chart without you restating any of it. Re-pivot and the chart follows, because it is reading the pivot result rather than a copy of it."
+        },
+        {
+          "start": 191.17,
+          "end": 212.79,
+          "text": "The pivot engine and the designer are an Enterprise feature; the grid they sit on is MIT on npm. The same engine drives pivot over server data, where the server returns the aggregates and the browser never sees the detail rows, and it drives the pivot table inside the spreadsheet too. The docs page below has the configuration from all of this."
+        }
+      ]
+    },
+    {
+      "id": "mk-svelte-sankey-treemap",
+      "kind": "marketing",
+      "title": "Sankey, treemap and 29 chart types in Svelte",
+      "description": "A chart component for Svelte 5 with no charting dependency: hand it a plain spec and it draws inline SVG, from a bar chart to a sankey, treemap or sunburst.",
+      "demo": "165-chart-sankey",
+      "docsPage": null,
+      "tags": [
+        "svelte sankey diagram",
+        "svelte chart component",
+        "svelte treemap",
+        "svelte charts",
+        "sunburst chart",
+        "svelte 5",
+        "data visualization"
+      ],
+      "duration": 171.7,
+      "width": 1920,
+      "height": 1080,
+      "recordedAt": "2026-10-05",
+      "youtubeId": "Cscq9KFvZ2g",
+      "publishedAt": "2026-10-05",
+      "files": {
+        "mp4": null,
+        "poster": null,
+        "vtt": null
+      },
+      "bytes": {
+        "mp4": 0,
+        "poster": 0,
+        "master": 12543192
+      },
+      "transcript": [
+        {
+          "start": 0.72,
+          "end": 31.67,
+          "text": "Most Svelte component libraries stop before charts, and the ones that do charts usually wrap a large JavaScript charting library, which you then carry in your bundle, configure in its own vocabulary, and theme separately from everything else. This is neither. It is one component that takes a plain object describing what you want and draws inline SVG. Twenty nine types share that one object, including the three or four shapes that normally send people looking for a second dependency: the sankey, the treemap, the sunburst."
+        },
+        {
+          "start": 33.55,
+          "end": 49.26,
+          "text": "Here is the whole API. Import the chart component, describe the chart as data: a type, and the values it needs. This one is a sunburst, so the values are a hierarchy. There is no chart builder to learn and no plugin to register."
+        },
+        {
+          "start": 49.57,
+          "end": 60.28,
+          "text": "Nineteen lines, and no grid anywhere in it. The chart is a component in its own right, so it works on a dashboard, in a card, or beside a table you happen to have."
+        },
+        {
+          "start": 62.11,
+          "end": 93.85,
+          "text": "A sankey is the one people give up on. It takes a list of nodes and a list of links, works out the depth of each node by its longest path, and sizes every band by the value flowing through it. Change the data and the whole layout recomputes; there is nothing to position by hand and no coordinates in your source. That is the actual reason flow diagrams end up as a screenshot pasted into a slide: the drawing is the hard part, not the numbers. Here the numbers are the input and the drawing is the output."
+        },
+        {
+          "start": 95.67,
+          "end": 112.31,
+          "text": "A treemap is the same idea for a hierarchy: revenue by region, then category, then product, with area standing in for size. It is the chart that answers what is big and what is inside it in one picture, and it is the other one people reach for a separate library to get."
+        },
+        {
+          "start": 114.11,
+          "end": 141.53,
+          "text": "And when there is a grid in the picture, the chart can read its rows rather than a copy of them. That matters more than it sounds. The usual arrangement is a chart fed by its own query, which drifts from the table beside it the moment someone filters: two numbers on one screen that disagree, and an afternoon spent working out which one lied. Here the filter narrows the rows and the chart is drawing those rows, so the two cannot disagree."
+        },
+        {
+          "start": 143.45,
+          "end": 169.24,
+          "text": "Twenty nine types share that one spec, from the ordinary bar and line through to pareto, bullet, stream, nightingale and dumbbell. They render as inline SVG, so they print, they scale, and they carry text a screen reader can read. And when you do have a grid, the chart can read its rows directly, so filtering the table filters the chart. The types page below has a live example of every one."
+        }
+      ]
+    },
+    {
+      "id": "mk-svelte-tree-grid",
+      "kind": "marketing",
+      "title": "A tree grid in Svelte: hierarchies from flat rows",
+      "description": "Org charts, work breakdowns and permission trees from a flat array: name a parent field and the grid nests the rows, with totals, checkboxes and lazy loading.",
+      "demo": "28-org-chart-tree",
+      "docsPage": null,
+      "tags": [
+        "svelte tree grid",
+        "svelte tree table",
+        "svelte orgchart",
+        "svelte tree view",
+        "hierarchy",
+        "svelte 5"
+      ],
+      "duration": 126.4,
+      "width": 1920,
+      "height": 1080,
+      "recordedAt": "2026-10-05",
+      "youtubeId": "Pchx12_IvU4",
+      "publishedAt": "2026-10-05",
+      "files": {
+        "mp4": null,
+        "poster": null,
+        "vtt": null
+      },
+      "bytes": {
+        "mp4": 0,
+        "poster": 0,
+        "master": 11482137
+      },
+      "transcript": [
+        {
+          "start": 0.7,
+          "end": 19.58,
+          "text": "Org charts, work breakdowns, folder trees, permission matrices. They all arrive from the database the same way: a flat list of rows where one column points at another row. Turning that into something a person can read is usually where the custom component gets written. It does not need to be."
+        },
+        {
+          "start": 21.41,
+          "end": 36.57,
+          "text": "Here is the whole thing. Rows with an id and a parent id, exactly as they came out of the query, and one prop that says which field is which. No pre-nesting, no building a tree of children arrays before you render, no recursive component."
+        },
+        {
+          "start": 48.13,
+          "end": 58.88,
+          "text": "The grid works out the depth of every row, draws the expanders, and keeps it a grid: the columns still sort, the cells still edit, and a child row is a row like any other."
+        },
+        {
+          "start": 60.74,
+          "end": 79.66,
+          "text": "Five levels of an employee hierarchy, chief executive down to individual contributors. Open a branch and the people under it appear. This is a grid rather than a diagram of boxes and lines, which is the right shape for a hierarchy you need to read numbers out of rather than frame on a wall."
+        },
+        {
+          "start": 81.5,
+          "end": 100.14,
+          "text": "The same structure carries behaviour down it. This is a permissions matrix: tick a workspace and every resource under it follows, untick one child and the parent goes to the indeterminate state rather than lying to you about what is selected. That tri-state is the detail people get wrong when they build this by hand."
+        },
+        {
+          "start": 102.07,
+          "end": 123.96,
+          "text": "If the tree is too big to send at once, the same prop works against a server: the grid asks for a branch when someone opens it, and nothing else travels. If you want the hierarchy as a picture rather than a table, the sunburst and the treemap chart types take the same shape of data. The docs page below has the flat array and the one prop from the start of this."
+        }
+      ]
+    },
+    {
       "id": "mk-sveltekit",
       "kind": "marketing",
       "title": "A data grid in a SvelteKit app",
@@ -2484,6 +2851,80 @@
       ]
     },
     {
+      "id": "mk-sveltekit-studio-crud",
+      "kind": "marketing",
+      "title": "A SvelteKit CRUD app from a database, in one command",
+      "description": "Point SvGrid Studio at a schema and it writes a SvelteKit app: a list, an edit form and a record page per table, as source you own and keep editing.",
+      "demo": "48-crm-sales-pipeline",
+      "docsPage": null,
+      "tags": [
+        "sveltekit crud",
+        "sveltekit data grid",
+        "svelte admin panel",
+        "code generation",
+        "svelte 5",
+        "crud app"
+      ],
+      "duration": 166.6,
+      "width": 1920,
+      "height": 1080,
+      "recordedAt": "2026-10-05",
+      "youtubeId": "OzQIdNtqPiI",
+      "publishedAt": "2026-10-05",
+      "files": {
+        "mp4": null,
+        "poster": null,
+        "vtt": null
+      },
+      "bytes": {
+        "mp4": 0,
+        "poster": 0,
+        "master": 12738452
+      },
+      "transcript": [
+        {
+          "start": 0.71,
+          "end": 12.15,
+          "text": "Every internal tool starts the same way. There are tables, somebody needs to see them and change them, and two weeks disappear into list screens and forms the same shape as the last ones you wrote."
+        },
+        {
+          "start": 14.01,
+          "end": 34.19,
+          "text": "This is the kind of thing people mean. A sales pipeline: every row a deal, every column a number somebody has to defend on Friday. Owners, stages, values, close dates, the lot. It is not hard work exactly, it is just a lot of it, and it looks the same in every company you have ever worked at."
+        },
+        {
+          "start": 36.05,
+          "end": 53.21,
+          "text": "So point the generator at where your data already lives. A Postgres or MySQL connection string, a Drizzle or Prisma schema file, an OpenAPI document, or for this one a sample dataset so you can follow along without a database. Pick a theme while you are there."
+        },
+        {
+          "start": 53.54,
+          "end": 62.15,
+          "text": "Twenty eight files, six screens, two tables. Install it and run it the way you would any SvelteKit project, because that is all it is."
+        },
+        {
+          "start": 64,
+          "end": 84.41,
+          "text": "And that is the app, in the theme you asked for. A nav built from your tables, a card per entity, and a working screen behind each one. Nothing here is a placeholder waiting for you to fill it in, and nothing is a component from a library you now depend on at runtime. It is routes, components and a schema file, in your repository."
+        },
+        {
+          "start": 86.24,
+          "end": 114.59,
+          "text": "The list screen is the grid you already know, wired to the schema: a column per field, a filter per column, paging at the bottom, and the types carried through from the table definition rather than retyped by hand. Which is the quiet part that matters. The schema file is one place, and the grid columns, the form controls and the validation all read from it. Add a field to the table and it appears in all three, instead of you remembering the three files that have to agree."
+        },
+        {
+          "start": 116.37,
+          "end": 135.99,
+          "text": "The manage screen pairs the list with an editor. Pick a record and its form appears underneath, built from the same schema: every field gets the control its type asks for, and the validation is that schema read back to you. Create and update are both already wired. This is the part that normally eats the fortnight."
+        },
+        {
+          "start": 137.9,
+          "end": 164.16,
+          "text": "The important part is what it is not. It is not a runtime you ship, and it is not a black box you configure forever. It is source in your repository, under your version control, which you edit like anything else you wrote. Re-run the generator and the parts you changed stay changed, because the generated regions are marked and the rest is left alone. Studio is the Suite tier; the grid it builds on is MIT on npm."
+        }
+      ]
+    },
+    {
       "id": "mk-themes",
       "kind": "marketing",
       "title": "One grid, twenty themes",
@@ -2543,6 +2984,99 @@
           "start": 33.44,
           "end": 39.17,
           "text": "Start from a preset or set the tokens yourself in the theme builder at svgrid.com."
+        }
+      ]
+    },
+    {
+      "id": "mk-what-is-svgrid",
+      "kind": "marketing",
+      "player": true,
+      "title": "What is SvGrid",
+      "description": "A data grid built for Svelte 5: a million rows, filters, inline editing, grouping, pivot mode, a Kanban board and charts, from one component.",
+      "demo": "78-million-rows",
+      "docsPage": "docs/getting-started.md",
+      "anchor": "This guide is six short pages",
+      "tags": [
+        "svelte data grid",
+        "svelte 5",
+        "svelte table",
+        "data grid",
+        "kanban",
+        "pivot table",
+        "charts",
+        "sveltekit"
+      ],
+      "duration": 128.7,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-10-05",
+      "youtubeId": "tPL_HyVVCEU",
+      "publishedAt": "2026-10-03",
+      "files": {
+        "mp4": "/tutorials/mk-what-is-svgrid.mp4",
+        "poster": "/tutorials/mk-what-is-svgrid.poster.webp",
+        "vtt": "/tutorials/mk-what-is-svgrid.vtt"
+      },
+      "bytes": {
+        "mp4": 2418039,
+        "poster": 30956,
+        "master": 19242656
+      },
+      "transcript": [
+        {
+          "start": 0.7,
+          "end": 11.78,
+          "text": "SvGrid is a data grid written for Svelte 5. Not a port of something older and not a wrapper around it: runes and snippets the whole way down. Here is what it does."
+        },
+        {
+          "start": 13.6,
+          "end": 22.96,
+          "text": "It starts with scale. A million rows in the browser, virtualized in both directions, so the number of DOM nodes stays about the same as it was with ten."
+        },
+        {
+          "start": 24.77,
+          "end": 35.1,
+          "text": "Then the work people actually do with a table. Every column carries a filter menu listing the values that are in it, so narrowing the data is picking from a list."
+        },
+        {
+          "start": 36.97,
+          "end": 46.1,
+          "text": "Cells edit in place, with the editor each column asks for, and validation that refuses a value instead of writing it and cleaning up afterwards."
+        },
+        {
+          "start": 47.94,
+          "end": 56.88,
+          "text": "Group by any column and each group header carries its own totals, averaged or summed from the raw values rather than the formatted text."
+        },
+        {
+          "start": 58.72,
+          "end": 67.89,
+          "text": "The same component flips into pivot mode, and the rows become a cross-tab. There is no second library underneath and no export to a spreadsheet to get there."
+        },
+        {
+          "start": 69.7,
+          "end": 78.92,
+          "text": "Hand it the board prop and those rows become cards in lanes. Same data, same column definitions, and dragging a card writes back to the row."
+        },
+        {
+          "start": 80.74,
+          "end": 87.73,
+          "text": "Charts read off the grid's own rows, so whatever you filtered is what you plot, and the chart moves when the table does."
+        },
+        {
+          "start": 89.58,
+          "end": 99.08,
+          "text": "Twenty themes ship with the package, each carrying a light and a dark palette, and every surface underneath is a CSS custom property you can set yourself."
+        },
+        {
+          "start": 100.94,
+          "end": 110.99,
+          "text": "The AI helpers are in the free package rather than sold as an add-on, and they are model agnostic: you hand them a provider and ask for a filter in plain words."
+        },
+        {
+          "start": 112.91,
+          "end": 126.26,
+          "text": "The grid is MIT on npm, it server-renders in SvelteKit, and the docs carry a ten lesson video course that builds all of this from an empty project. Install it and see how far twenty lines get you."
         }
       ]
     },

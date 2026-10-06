@@ -70,7 +70,18 @@ There is no local pipeline here - just `coreRowModel`. You own three things:
       columns,
     }),
   )
-  const rows = $derived(table.getRowModel().rows)
+  // Touch the state this component owns so the derived re-runs:
+  // the engine's store is framework-free and not a rune.
+  const rows = $derived.by(() => {
+    pageIndex
+    sort
+    desc
+    q
+    pageRows
+    total
+    loading
+    return table.getRowModel().rows
+  })
   const pageCount = $derived(Math.max(1, Math.ceil(total / pageSize)))
 </script>
 ```

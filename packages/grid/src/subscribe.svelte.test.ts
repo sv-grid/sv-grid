@@ -6,7 +6,7 @@
  * selection actually changed.
  */
 import { describe, expect, it } from 'vitest'
-import { subscribeGrid, subscribeSvGrid } from './subscribe'
+import { subscribeGrid, subscribeSvGrid } from './subscribe.svelte'
 
 type Listener = () => void
 

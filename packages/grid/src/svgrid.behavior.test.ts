@@ -620,6 +620,35 @@ describe('SvGrid - custom snippet cell', () => {
       destroy()
     }
   })
+
+  it('a boolean column with its own cell renderer draws the renderer, not the built-in checkbox', async () => {
+    // The checkbox branch used to run before the `cell` branch, so any boolean
+    // value came out as a read-only checkbox and the renderer was never called.
+    const flagCols: ColumnDef<typeof fullFeatures, Person>[] = personColumns.map((c) =>
+      c.field === 'active'
+        ? { ...c, cell: (ctx: any) => ((ctx.row.original as Person).active ? 'ON' : 'OFF') }
+        : c,
+    )
+    const { target, destroy } = await mountGrid({ columns: flagCols, showRowSelection: false })
+    try {
+      await tick()
+      expect(target.querySelectorAll('.sv-grid-checkbox-readonly').length).toBe(0)
+      expect(target.textContent).toContain('ON')
+      expect(target.textContent).toContain('OFF')
+    } finally {
+      destroy()
+    }
+  })
+
+  it('a boolean column without a renderer still draws the read-only checkbox', async () => {
+    const { target, destroy } = await mountGrid({ showRowSelection: false })
+    try {
+      await tick()
+      expect(target.querySelectorAll('.sv-grid-checkbox-readonly').length).toBeGreaterThan(0)
+    } finally {
+      destroy()
+    }
+  })
 })
 
 describe('SvGrid - filterMode shortcuts', () => {

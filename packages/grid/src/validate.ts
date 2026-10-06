@@ -24,6 +24,8 @@ import { rowPlaceholderState } from './server-block-cache'
 
 /** How many rows to sample when deciding whether a `field` exists. */
 const FIELD_SAMPLE_ROWS = 10
+/** How many rows to look through for that sample, placeholders included. */
+const FIELD_SCAN_ROWS = 1000
 
 const DOCS = 'https://svgrid.com/docs/getting-started/3-data-and-columns/'
 
@@ -79,9 +81,15 @@ export function validateGridConfig<
   // no data keys at all and say nothing about the columns.
   // Stops at the sample size: this runs on every data change, and a filter
   // over all the rows first was O(n) per tick on a live feed.
+  // The scan is bounded too: a row model scrolled to the middle of a million
+  // rows, or just purged by a sort, hands over a list that is placeholders
+  // up to the loaded block, and walking all of them for ten real rows was
+  // O(n) per block landing. Finding none means nothing to judge by.
   const sample: TData[] = []
-  for (const row of input.data ?? []) {
-    if (sample.length >= FIELD_SAMPLE_ROWS) break
+  const data = input.data ?? []
+  const scan = Math.min(data.length, FIELD_SCAN_ROWS)
+  for (let i = 0; i < scan && sample.length < FIELD_SAMPLE_ROWS; i += 1) {
+    const row = data[i]!
     if (!rowPlaceholderState(row)) sample.push(row)
   }
   // Under server-side grouping the first rows are group rows, which carry

@@ -16,6 +16,7 @@ import type { ServerDataSource, ServerRequest } from '@svgrid/grid'
 import type { EntitySchema } from '../schema'
 import { createInMemoryDataSource } from './in-memory'
 import { createSqlDataSource, type SqlExecutor } from './sql-source'
+import { createColumnarDataSource } from '../worker/columnar'
 
 type Sale = { id: number; region: string; country: string; year: string; rep: string; amount: number; qty: number }
 
@@ -132,6 +133,10 @@ describe('the matrix covers something in every case', () => {
     })
   }
 })
+
+// ------------------------------------------- the worker's columnar engine
+
+runContract('createColumnarDataSource', () => createColumnarDataSource(ROWS, schema))
 
 // ---------------------------------------------------------- SQL over SQLite
 

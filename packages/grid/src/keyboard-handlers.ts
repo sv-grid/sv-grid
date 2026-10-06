@@ -216,7 +216,11 @@ export function createKeyboard<
         }
       }
       if (column?.columnDef.editorType === "checkbox") {
-        ctx.toggleBooleanCell(current.rowIndex, current.colIndex);
+        // Same rule as a click: `editable: false` (or an editable callback
+        // saying no) keeps the checkbox read-only.
+        if (ctx.isCellEditableAt?.(current.rowIndex, current.colIndex) ?? true) {
+          ctx.toggleBooleanCell(current.rowIndex, current.colIndex);
+        }
         return;
       }
       ctx.onCellDoubleClick(current.rowIndex, current.colIndex);

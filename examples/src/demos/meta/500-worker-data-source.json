@@ -1,0 +1,28 @@
+{
+  "description": "Two grids over the same orders table, up to a million rows. The free grid hands the rows to SvGrid and sorts, filters, searches and groups them on the page. The Enterprise grid builds the rows inside a Web Worker, where a columnar engine answers each request, and the server row model asks it for one block of 100 rows at a time, so only the visible rows cross back. Two meters show the slowest request and the longest frame over the last four seconds.",
+  "keywords": [
+    "svelte data grid web worker",
+    "svelte grid sort million rows",
+    "svelte 5 grid off main thread",
+    "svelte grid large dataset performance",
+    "svelte grid worker filtering grouping"
+  ],
+  "faq": [
+    {
+      "question": "Why move a client-side grid's queries into a worker?",
+      "answer": "Sorting, searching or grouping a few hundred thousand rows takes long enough that the page cannot paint, scroll or take input until it finishes. In a worker the same work runs on another thread, and the page only waits for the next block of rows to arrive."
+    },
+    {
+      "question": "Why is the worker faster, and not just off the main thread?",
+      "answer": "The worker keeps each field as a dictionary of its distinct values with an integer code per row, built in idle time after the rows load. A filter or a search is decided once per distinct value, a sort is a counting sort over integer ranks, and a grouping buckets rows by code. The answers are the same as the reference in-memory source gives, row for row."
+    },
+    {
+      "question": "Does the grid need a backend for this?",
+      "answer": "No. The worker plays the server: it holds the rows and answers the same getRows requests a backend would. The rows can be built in the worker, fetched there, or sent from the page with setRows."
+    },
+    {
+      "question": "What cannot run in the worker?",
+      "answer": "Your functions. A worker receives data, not code, so a column valueGetter, a custom comparator or a filter function stays on the page. Sorting and filtering in the worker go by field value, the way a database would."
+    }
+  ]
+}

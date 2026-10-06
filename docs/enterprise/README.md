@@ -103,7 +103,8 @@ Demos: [467 one million rows](../../examples/src/demos/467-server-row-model-1m.s
 [472 request to SQL](../../examples/src/demos/472-server-sql-planner.svelte),
 [473 grouping rules](../../examples/src/demos/473-server-grouping-rules.svelte),
 [482 CRUD with a version check](../../examples/src/demos/482-server-crud.svelte),
-[483 master-detail](../../examples/src/demos/483-server-master-detail.svelte).
+[483 master-detail](../../examples/src/demos/483-server-master-detail.svelte),
+[500 queries in a Web Worker](../../examples/src/demos/500-worker-data-source.svelte).
 
 ### Views of the same grid
 

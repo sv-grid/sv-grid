@@ -1718,15 +1718,21 @@ export function createSvGridController<
 
     let rows = rawRows;
     if (globalFilter.trim()) {
-      const needle = normalizeForFilter(globalFilter, (props.filterLocale ?? props.localization?.locale));
-      rows = rows.filter((row) =>
-        row
-          .getAllCells()
-          .some((cell) =>
-            normalizeForFilter(String(cell.getValue() ?? ""), (props.filterLocale ?? props.localization?.locale))
-              .includes(needle),
-          ),
-      );
+      const locale = props.filterLocale ?? props.localization?.locale;
+      const needle = normalizeForFilter(globalFilter, locale);
+      // Read the values, not the cells. `getAllCells()` built a cell object
+      // with two closures per column on EVERY row and kept them on the row:
+      // ten million objects for one keystroke over a million rows, and a
+      // search that froze the page for seconds. `cell.getValue()` and
+      // `getCellValueByColumnId` read the same per-row values array, so the
+      // answer is the same. The columns are the ones the rows were built with.
+      const columnIds = grid.getAllColumns().map((c) => c.id);
+      rows = rows.filter((row) => {
+        for (const id of columnIds) {
+          if (normalizeForFilter(String(row.getCellValueByColumnId(id) ?? ""), locale).includes(needle)) return true;
+        }
+        return false;
+      });
     }
 
     rows = applyColumnFilters(rows);

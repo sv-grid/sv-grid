@@ -62,6 +62,7 @@ import { existsSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs
 import { execFileSync, spawnSync } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { snapshotCurrent, writeSnapshot } from './lib/released-demos.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..')
@@ -205,6 +206,24 @@ function syncVersionConstant(dir, version) {
   if (next === text) return []
   writeFileSync(file, next)
   return [`packages/${dir}/src/version.ts`]
+}
+
+/**
+ * The enterprise generator also writes a `@svgrid/grid` range into every app it
+ * scaffolds, and the grid releases on its own line (grid 3.0.x, enterprise
+ * 3.1.x). Releasing the GRID therefore has to bump `GRID_VERSION` inside the
+ * ENTERPRISE package, or scaffolded apps pin a grid that does not exist - which
+ * is exactly what shipped until 2026-10-05, when `npm install` failed with
+ * ERESOLVE on every `svgrid-studio init`. `version.test.ts` guards the pair.
+ */
+function syncGridVersionConstant(version) {
+  const file = join(ROOT, 'packages', 'enterprise', 'src', 'version.ts')
+  if (!existsSync(file)) return []
+  const text = readFileSync(file, 'utf8')
+  const next = text.replace(/(export const GRID_VERSION = ')[^']*(')/, `$1${version}$2`)
+  if (next === text) return []
+  writeFileSync(file, next)
+  return ['packages/enterprise/src/version.ts']
 }
 
 /**
@@ -391,6 +410,9 @@ function main() {
       writeFileSync(file, JSON.stringify(manifest, null, 2) + '\n')
       touched.push(`packages/${pkg.dir}/package.json`)
       touched.push(...syncVersionConstant(pkg.dir, nextStr))
+      // Releasing the grid also moves GRID_VERSION inside the enterprise
+      // package, which is what scaffolded apps pin.
+      if (pkg.dir === 'grid') touched.push(...syncGridVersionConstant(nextStr))
       touched.push(...syncMcpPins(pkg.dir, nextStr))
     }
     console.error(
@@ -398,6 +420,14 @@ function main() {
     )
     bumped.add(pkg.dir)
     publish.push({ dir: pkg.dir, name: manifest.name, to: nextStr, tag: `${prefix}${nextStr}` })
+  }
+
+  // A grid release ships every demo registered now; from here on none of
+  // them is "new" in the gallery. Staged with the rest of what this rewrites.
+  const gridRelease = publish.find((p) => p.dir === 'grid')
+  if (gridRelease && !CHECK_ONLY) {
+    touched.push(writeSnapshot(ROOT, snapshotCurrent(ROOT, gridRelease.tag)))
+    console.error(`- released demos: snapshot at ${gridRelease.tag}.`)
   }
 
   emit([

@@ -114,14 +114,14 @@ function verifyClaims(actual) {
 const claimProblems = verifyClaims(total)
 
 /**
- * The newest demos must carry an `added` date, which is what drives the "new"
- * dot in the gallery (see isNewDemo in website/src/lib/demos.ts).
+ * The newest demos must carry an `added` date. The "new" badge no longer reads
+ * it (that is the released-demos list, tools/lib/released-demos.mjs), but the
+ * date is still the record of when a demo landed.
  *
- * Checked here rather than trusted to memory because the failure is silent: a
- * demo with no date simply never shows the dot, and nobody notices a badge
- * that did not appear. The window is the three highest-numbered demos - ids
- * are assigned incrementally, so those are the recent ones, and dating an
- * older demo would be pointless anyway since the dot expires on age.
+ * Checked here rather than trusted to memory because the failure is silent:
+ * nobody notices a date that is missing. The window is the three
+ * highest-numbered demos - ids are assigned incrementally, so those are the
+ * recent ones.
  *
  * A date already present is also checked for shape and for being in the past,
  * since a future date would read as "new" indefinitely.

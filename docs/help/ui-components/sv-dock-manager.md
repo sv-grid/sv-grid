@@ -253,6 +253,13 @@ windows, reordering, or auto-hide.
 
 ## More examples
 
+### Ops workspace
+
+An on-call workspace on SvDockManager that runs a whole incident: a deploy rolls out and the service degrades, an alert rule tints its row and opens an incident, the on-call primary is paged and acknowledges, and rolling the deploy back recovers it. Panes hold a live service grid, p50 / p95 / p99 latency and error charts, an incident board (one SvGrid, Board or Table), deploys, on-call and an alert feed; an incident opens a drawer with its timeline, notes, severity and status. Panes drag, tab, float and save.
+
+<div data-docs-demo="502-ops-workspace" data-height="780"></div>
+
+
 ### Docking: API & events
 
 SvDockManager imperative API (onReady) + event stream (onEvent): a toolbar floats / pops out / maximizes / auto-hides / focuses panes from code, with every action logged live.

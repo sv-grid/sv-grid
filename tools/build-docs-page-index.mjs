@@ -24,17 +24,19 @@ import { isHiddenDoc, parseDocFrontmatter } from './lib/doc-meta.mjs'
 import { titleFromMarkdown, descriptionFromMarkdown, faqFromMarkdown } from './lib/docs-page.mjs'
 import { tutorialIdsIn } from './lib/tutorial-media.mjs'
 import { readManifest } from './tutorials/lib/manifest.mjs'
+import { ROUTE_SEO } from './lib/route-seo.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DOCS_DIR = join(ROOT, 'docs')
 const OUT = join(ROOT, 'website', 'src', 'lib', 'docs-index.json')
+const ROUTE_VIDEOS_OUT = join(ROOT, 'website', 'src', 'lib', 'route-videos.json')
 
 // 30-second tutorials embedded on a page (tools/tutorials/embed.mjs). The
 // page entry carries what the hydrated head needs to emit the same
 // VideoObject graph the prerenderer does; the site never loads the manifest.
 const tutorialById = new Map(readManifest().tutorials.map((t) => [t.id, t]))
-const tutorialMeta = ({ id, title, description, duration, recordedAt, publishedAt, youtubeId, files, transcript }) =>
-  ({ id, title, description, duration, recordedAt, publishedAt, youtubeId, files, transcript })
+const tutorialMeta = ({ id, title, description, duration, recordedAt, publishedAt, youtubeId, files, transcript, player }) =>
+  ({ id, title, description, duration, recordedAt, publishedAt, youtubeId, files, transcript, ...(player ? { player: true } : {}) })
 
 /** @param {string} dir @returns {Promise<string[]>} */
 async function walk(dir) {
@@ -71,3 +73,18 @@ for (const file of (await walk(DOCS_DIR)).sort()) {
 
 await writeFile(OUT, JSON.stringify(pages, null, 2) + '\n', 'utf-8')
 console.log(`build-docs-page-index: ${pages.length} pages -> ${OUT}`)
+
+// The same thing for the hand-written routes, which have no markdown to embed
+// a block into and name their video in ROUTE_SEO instead. Written as its own
+// small file so the site gets one route's entry rather than all 55 transcripts.
+const routeVideos = {}
+for (const [route, seo] of Object.entries(ROUTE_SEO)) {
+  if (!seo.video) continue
+  const t = tutorialById.get(seo.video)
+  if (!t) throw new Error(`route-seo: route "${route}" names video "${seo.video}", which is not in the tutorial manifest`)
+  // No docs cut means no file to point a VideoObject at: the route renders
+  // nothing and the entry is left out rather than written half-formed.
+  if (t.files?.mp4) routeVideos[route] = tutorialMeta(t)
+}
+await writeFile(ROUTE_VIDEOS_OUT, JSON.stringify(routeVideos, null, 2) + '\n', 'utf-8')
+console.log(`build-docs-page-index: ${Object.keys(routeVideos).length} route video(s) -> ${ROUTE_VIDEOS_OUT}`)

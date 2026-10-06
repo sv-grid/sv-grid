@@ -64,6 +64,7 @@ const SECTION = {
   'Tree & Hierarchy': [/^docs\/help\/rows\//],
   'Real-time & Streaming': [/^docs\/help\/(real-time|rows)\//],
   Alerts: [/^docs\/help\/alerts/],
+  'App Templates': [/^docs\/help\/ui-components\/sv-(nav-pane|dock-manager|dock-layout|rich-text)/, /^docs\/help\/alerts/, /^docs\/help\/rows\//],
   AI: [/^docs\/help\/ai/],
   'Keyboard & Accessibility': [/^docs\/help\/accessibility/],
   'Themes & Styling': [/^docs\/help\/(tokens|tailwind|shadcn)/],
