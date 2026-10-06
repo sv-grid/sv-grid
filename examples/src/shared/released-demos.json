@@ -1,6 +1,6 @@
 {
-  "release": "grid-v3.0.7",
-  "date": "2026-09-30",
+  "release": "grid-v3.0.8",
+  "date": "2026-10-06",
   "ids": [
     "00-trading-desk",
     "01-quick-start",
@@ -381,6 +381,9 @@
     "498-sheet-bound-tabs",
     "499-sheet-engineering-stats",
     "50-seller-panel",
+    "500-worker-data-source",
+    "501-mail-app",
+    "502-ops-workspace",
     "51-ai-assistant",
     "52-pivot-table",
     "53-excel-import",

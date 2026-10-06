@@ -10,7 +10,7 @@
  *
  * `version.test.ts` asserts this matches `package.json`, so the two cannot drift.
  */
-export const SVGRID_VERSION = '3.1.1'
+export const SVGRID_VERSION = '3.1.2'
 
 /**
  * The version of `@svgrid/grid`, which releases on its own line: enterprise is
@@ -24,4 +24,4 @@ export const SVGRID_VERSION = '3.1.1'
  *
  * `version.test.ts` asserts this matches packages/grid/package.json.
  */
-export const GRID_VERSION = '3.0.7'
+export const GRID_VERSION = '3.0.8'
