@@ -15,7 +15,7 @@
 //
 // Zero runtime dependencies - Node built-ins only.
 
-import { cp, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
+import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -527,11 +527,34 @@ ${sections.join('\n')}
 `,
   )
 
-  // Install only when the sandbox isn't already provisioned.
+  // Install only when the sandbox isn't already provisioned. Check for files, not
+  // directories: OS temp cleaners (Windows Storage Sense) delete old files under
+  // %TEMP% and leave the folder tree, which used to pass a directory check and
+  // then fail in vite.config.js with "Could not resolve 'vite'".
+  const nodeModules = join(sandbox, 'node_modules')
+  const viteBin = join(nodeModules, 'vite', 'bin', 'vite.js')
   const provisioned =
-    existsSync(join(sandbox, 'node_modules', '@svgrid', 'grid')) && existsSync(join(sandbox, 'node_modules', 'vite'))
-  if (!provisioned) {
-    stdout.write(`\n${color('dim', 'Setting up preview sandbox (first run installs deps)...')}\n`)
+    existsSync(viteBin) &&
+    ['@svgrid/grid', '@sveltejs/vite-plugin-svelte', 'svelte', 'vite'].every((dep) =>
+      existsSync(join(nodeModules, ...dep.split('/'), 'package.json')),
+    )
+  // The sandbox asks for @svgrid/grid@latest, but a cached install keeps whatever
+  // was latest on the first run. Reinstall when npm has moved on.
+  let stale = null
+  if (provisioned) {
+    const installed = await installedVersion(join(nodeModules, '@svgrid', 'grid', 'package.json'))
+    const latest = await latestVersion('@svgrid/grid')
+    if (installed && latest && installed !== latest) stale = { installed, latest }
+  }
+  if (!provisioned || stale) {
+    stdout.write(
+      stale
+        ? `\n${color('dim', `Updating preview sandbox: @svgrid/grid ${stale.installed} -> ${stale.latest}...`)}\n`
+        : `\n${color('dim', 'Setting up preview sandbox (first run installs deps)...')}\n`,
+    )
+    // A half-deleted node_modules can confuse npm; start clean.
+    await rm(nodeModules, { recursive: true, force: true })
+    await rm(join(sandbox, 'package-lock.json'), { force: true })
     const res = spawnSync('npm install', { cwd: sandbox, stdio: 'inherit', shell: true })
     if (res.status !== 0) {
       stdout.write(`${color('red', '✖')} Sandbox install failed.\n`)
@@ -542,7 +565,30 @@ ${sections.join('\n')}
   stdout.write(
     `\n${color('green', '▶')} Opening ${color('cyan', items.map((i) => i.id).join(', '))} ${color('dim', '(Ctrl+C to stop)')}\n`,
   )
-  spawnSync('npx vite --open', { cwd: sandbox, stdio: 'inherit', shell: true })
+  // Run the sandbox's own Vite. `npx vite` would fall back to downloading a
+  // separate copy whenever the local one is missing, which can't see the
+  // sandbox's plugins.
+  spawnSync(process.execPath, [viteBin, '--open'], { cwd: sandbox, stdio: 'inherit' })
+}
+
+async function installedVersion(pkgJsonPath) {
+  try {
+    return JSON.parse(await readFile(pkgJsonPath, 'utf8')).version ?? null
+  } catch {
+    return null
+  }
+}
+
+/** The `latest` dist-tag from the npm registry, or null when offline / slow, so
+ *  `try` still opens the cached sandbox without a network. */
+async function latestVersion(name) {
+  try {
+    const res = await fetch(`https://registry.npmjs.org/${name}/latest`, { signal: AbortSignal.timeout(3000) })
+    if (!res.ok) return null
+    return (await res.json()).version ?? null
+  } catch {
+    return null
+  }
 }
 
 /** Component export name from its id (calendar -> SvCalendar, time-picker ->
