@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-10-06T06:45:21.358Z",
+  "generatedAt": "2026-10-06T07:41:46.326Z",
   "counts": {
     "pages": 405,
     "enterprise": 88,
@@ -936,12 +936,12 @@
       "path": "enterprise/evaluation.md",
       "url": "/docs/enterprise/evaluation/",
       "title": "Enterprise evaluation",
-      "summary": "@svgrid/enterprise comes with a 30-day evaluation period, and you can evaluate every feature in production-equivalent code paths without contacting sales: loaded without a license key, the Enterprise module displays a watermark and a console message about the Enterprise package, and an evaluation key removes them for 30 days. This page is the playbook.",
+      "summary": "You can try every @svgrid/enterprise feature without a key. Install it and use it. Nothing is locked; the page shows a small watermark and logs a console message, and that is the only difference.",
       "section": "enterprise",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 1027,
-      "lastUpdated": "2026-09-21",
+      "words": 448,
+      "lastUpdated": "2026-10-06",
       "demoIds": []
     },
     {
@@ -952,20 +952,20 @@
       "section": "enterprise",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 1275,
-      "lastUpdated": "2026-09-21",
+      "words": 1269,
+      "lastUpdated": "2026-10-06",
       "demoIds": []
     },
     {
       "path": "enterprise/licensing.md",
       "url": "/docs/enterprise/licensing/",
       "title": "Enterprise licensing",
-      "summary": "@svgrid/enterprise comes with a **30-day evaluation period**: an evaluation key, issued on request, runs the full package without the watermark for 30 days. Loaded without a license key, the Enterprise module displays a watermark in the bottom-right corner of the grid and a console message about the Enterprise package; every feature still works. Set a key once at app startup and both disappear.",
+      "summary": "You can evaluate @svgrid/enterprise without asking for a key. Loaded without a license key, the Enterprise module displays a watermark in the bottom-right corner of the grid and a console message about the Enterprise package; every feature still works. Set a key once at app startup and both disappear.",
       "section": "enterprise",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 1466,
-      "lastUpdated": "2026-09-21",
+      "words": 1442,
+      "lastUpdated": "2026-10-06",
       "demoIds": []
     },
     {
@@ -976,8 +976,8 @@
       "section": "enterprise/studio",
       "pillar": "studio",
       "tier": "enterprise",
-      "words": 2053,
-      "lastUpdated": "2026-09-21",
+      "words": 2055,
+      "lastUpdated": "2026-10-06",
       "demoIds": []
     },
     {
@@ -1015,8 +1015,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Three ways to build",
-      "words": 1207,
-      "lastUpdated": "2026-09-21",
+      "words": 1203,
+      "lastUpdated": "2026-10-06",
       "demoIds": []
     },
     {
@@ -1093,8 +1093,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Three ways to build",
-      "words": 1317,
-      "lastUpdated": "2026-09-30",
+      "words": 1321,
+      "lastUpdated": "2026-10-06",
       "demoIds": []
     },
     {
@@ -1132,8 +1132,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Start here",
-      "words": 971,
-      "lastUpdated": "2026-09-21",
+      "words": 969,
+      "lastUpdated": "2026-10-06",
       "demoIds": []
     },
     {
@@ -1561,8 +1561,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Reference & help",
-      "words": 835,
-      "lastUpdated": "2026-09-21",
+      "words": 834,
+      "lastUpdated": "2026-10-06",
       "demoIds": []
     },
     {
@@ -1736,8 +1736,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 1250,
-      "lastUpdated": "2026-09-21",
+      "words": 1249,
+      "lastUpdated": "2026-10-06",
       "demoIds": []
     },
     {
@@ -2846,8 +2846,8 @@
       "pillar": "enterprise",
       "tier": "enterprise",
       "group": "Reference",
-      "words": 4975,
-      "lastUpdated": "2026-09-21",
+      "words": 4982,
+      "lastUpdated": "2026-10-06",
       "demoIds": [
         "21-export-and-print",
         "93-password-protected-export",
@@ -3091,8 +3091,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1256,
-      "lastUpdated": "2026-09-21",
+      "words": 1251,
+      "lastUpdated": "2026-10-06",
       "demoIds": []
     },
     {
@@ -3318,8 +3318,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 3211,
-      "lastUpdated": "2026-09-21",
+      "words": 3210,
+      "lastUpdated": "2026-10-06",
       "demoIds": []
     },
     {
@@ -3380,8 +3380,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2125,
-      "lastUpdated": "2026-09-22",
+      "words": 2123,
+      "lastUpdated": "2026-10-06",
       "demoIds": [
         "208-freeze-panes",
         "207-blank-sheet"

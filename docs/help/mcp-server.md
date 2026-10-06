@@ -447,8 +447,8 @@ without trouble; a script that parsed the old shape by hand needs a look.
 ## Licensing
 
 The documentation and example tools are free. The Studio code
-generators are part of the commercial offering, with its 30-day
-evaluation period: without a key they run, but prepend a notice comment
+generators are part of the commercial offering. You can evaluate them
+without a key: they run, but prepend a notice comment
 to generated files. To license them, set
 the key in your MCP client's server config:
 

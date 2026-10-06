@@ -125,7 +125,7 @@ same grid is in progress and due on 1 November 2026.
 
 ## Licensing
 
-The pack comes with a **30-day evaluation period**. Until a valid
+You can evaluate the pack without asking for a key. Until a valid
 license key is set, everything still functions, and loading the
 Enterprise module displays a watermark on the grid and a console message
 about the Enterprise package. Set a key once at app startup and both

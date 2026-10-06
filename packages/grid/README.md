@@ -180,7 +180,7 @@ The pack sells in two editions, both covering unlimited production apps.
   merges, frozen panes, named ranges and charts surviving the round trip.
 - **SvGrid Studio.** The designer, the code generator and the SQL data sources.
 
-Both editions come with a 30-day evaluation period: every feature runs without a key, and under a
+You can evaluate both editions without asking for a key: every feature runs without one, and under a
 key that does not cover it, with a watermark and a console message about the Enterprise package. `licenseCovers('spreadsheet')` tells you which
 side of the line the current key is on, if you would rather hide an entry point than let it nudge.
 

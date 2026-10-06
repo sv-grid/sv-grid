@@ -420,9 +420,9 @@ For a machine-readable manifest: see [docs.json](/docs.json).
 
 ### Enterprise tier
 
-- [Enterprise evaluation](https://svgrid.com/docs/enterprise/evaluation/): @svgrid/enterprise comes with a 30-day evaluation period, and you can evaluate every feature in production-equivalent code paths without contacting sales: loaded without a license key, the...
+- [Enterprise evaluation](https://svgrid.com/docs/enterprise/evaluation/): You can try every @svgrid/enterprise feature without a key. Install it and use it. Nothing is locked; the page shows a small watermark and logs a console message, and that is the only difference.
 - [Enterprise getting started: a complete example](https://svgrid.com/docs/enterprise/getting-started/): One page, one file, from an empty folder to a working grid with Excel, PDF and CSV export. Nothing is elided - every command and every line below was run end to end against the published packages.
-- [Enterprise licensing](https://svgrid.com/docs/enterprise/licensing/): @svgrid/enterprise comes with a 30-day evaluation period: an evaluation key, issued on request, runs the full package without the watermark for 30 days.
+- [Enterprise licensing](https://svgrid.com/docs/enterprise/licensing/): You can evaluate @svgrid/enterprise without asking for a key. Loaded without a license key, the Enterprise module displays a watermark in the bottom-right corner of the grid and a console message...
 - [Enterprise support](https://svgrid.com/docs/enterprise/support/): What you get on each tier, what response time to expect, how to escalate.
 
 ### Compliance

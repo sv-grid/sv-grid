@@ -207,8 +207,8 @@ them.
 | Any other `SVENTERPRISE-...`                      | Works silently. |
 
 Buy a production key at <https://svgrid.com/pricing/> ($599 / developer /
-year). `SVENTERPRISE-DEV-...` and `SVENTERPRISE-EVAL-...` keys cover local development
-and 30-day trials respectively.
+year). `SVENTERPRISE-DEV-...` keys cover local development. To evaluate, you
+need no key at all: everything runs with a watermark.
 
 ## Reference
 

@@ -1,11 +1,10 @@
 # Enterprise licensing
 
-`@svgrid/enterprise` comes with a **30-day evaluation period**: an
-evaluation key, issued on request, runs the full package without the
-watermark for 30 days. Loaded without a license key, the Enterprise
-module displays a watermark in the bottom-right corner of the grid and a
-console message about the Enterprise package; every feature still works.
-Set a key once at app startup and both disappear.
+You can evaluate `@svgrid/enterprise` without asking for a key. Loaded
+without a license key, the Enterprise module displays a watermark in the
+bottom-right corner of the grid and a console message about the
+Enterprise package; every feature still works. Set a key once at app
+startup and both disappear.
 
 ![The evaluation model: without a key the grid runs fully with a small watermark and a console message about the Enterprise package; calling setLicenseKey once clears both, and every feature runs either way.](/docs-media/enterprise-licensing.svg)
 
@@ -132,9 +131,8 @@ revoked in any production-domain validation pipeline.
 | Watermark                   | Visible on every grid instance.                            |
 | Console message             | About the Enterprise package, logged once per page load.   |
 
-That is the evaluation period: every feature, with the watermark and the
-console message until a key is set, and a 30-day evaluation key that
-removes them while you decide. Once you're sold, drop in a key.
+That is the evaluation: every feature, with the watermark and the
+console message until a key is set. Once you're sold, drop in a key.
 
 ## A Grid key on a Suite feature
 
@@ -222,6 +220,6 @@ support uses the ID you give us, not anything we phoned home for.
 
 ## See also
 
-- [Enterprise evaluation](./evaluation.md) - 30-day evaluation flow
+- [Enterprise evaluation](./evaluation.md) - trying Enterprise without a key
 - [Enterprise support](./support.md) - SLAs, escalation, contact channels
 - [Pricing](https://svgrid.com/pricing/) - canonical pricing source

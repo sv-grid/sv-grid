@@ -49,8 +49,8 @@ exports, with nothing else to wire up.
   // light AND dark palette; dark activates on <html data-theme="dark">.
   import '@svgrid/grid/themes/shadcn.css'
 
-  // Once, before any Enterprise feature runs. Use your own key here; see
-  // ./evaluation.md for how to get an evaluation key.
+  // Once, before any Enterprise feature runs. Optional while you evaluate:
+  // without a key everything still works and shows a watermark.
   setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   let api = $state(null)
@@ -251,8 +251,7 @@ is the better fix.
 
 ## Next
 
-- [Evaluation playbook](./evaluation.md) - the 30-day evaluation, what shows without a key, and how
-  to get an evaluation key.
+- [Evaluation](./evaluation.md) - what shows without a key, and how to remove it.
 - [Licensing](./licensing.md) - key formats, seats, renewals.
 - [Data export](../help/export.md) - styles, headers, images, multi-sheet.
 - [Data import](../help/import.md) - column mapping and per-row validation.

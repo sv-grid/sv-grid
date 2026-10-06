@@ -1730,195 +1730,96 @@ rather than being a point-in-time snapshot.
 
 # Enterprise evaluation
 
-`@svgrid/enterprise` comes with a 30-day evaluation period, and you can
-evaluate every feature in production-equivalent code paths without
-contacting sales: loaded without a license key, the Enterprise module
-displays a watermark and a console message about the Enterprise package,
-and an evaluation key removes them for 30 days. This page is the
-playbook.
+You can try every `@svgrid/enterprise` feature without a key. Install it
+and use it. Nothing is locked; the page shows a small watermark and logs
+a console message, and that is the only difference.
 
 ![The evaluation: install, try every feature while the watermark and the console message show, then set a license key when ready, with no gated-off code paths.](/docs-media/enterprise-evaluation.svg)
 
-## Step 1: Install
-
-The examples on this page run against these rows:
-
-```svelte {preamble}
-<script lang="ts">
-  import { SvGrid, type GridColumns, tableFeatures, rowSortingFeature, columnFilteringFeature } from '@svgrid/grid'
-
-  type Person = {
-    id: number
-    name: string
-    email: string
-    department: string
-    age: number
-    salary: number
-    city: string
-    startDate: string
-    active: boolean
-  }
-
-  type Order = {
-    id: string
-    customer: string
-    product: string
-    quantity: number
-    total: number
-    status: 'pending' | 'shipped' | 'delivered'
-    orderedAt: string
-  }
-
-  const features = tableFeatures({ rowSortingFeature, columnFilteringFeature })
-
-  const people: Person[] = [
-    { id: 1, name: 'Ada Lovelace',   email: 'ada@example.com',   department: 'Engineering', age: 36, salary: 142000, city: 'London',   startDate: '2021-03-01', active: true },
-    { id: 2, name: 'Grace Hopper',   email: 'grace@example.com', department: 'Engineering', age: 45, salary: 168000, city: 'New York', startDate: '2019-07-15', active: true },
-    { id: 3, name: 'Linus Torvalds', email: 'linus@example.com', department: 'Platform',    age: 54, salary: 155000, city: 'Portland', startDate: '2020-01-20', active: false },
-    { id: 4, name: 'Radia Perlman',  email: 'radia@example.com', department: 'Networking',  age: 49, salary: 161000, city: 'Seattle',  startDate: '2022-09-05', active: true },
-    { id: 5, name: 'Barbara Liskov', email: 'barbara@example.com', department: 'Platform',  age: 52, salary: 172000, city: 'Boston',   startDate: '2018-11-11', active: true },
-  ]
-
-  let rows = $state<Person[]>(people)
-
-  const columns: GridColumns<Person> = [
-    { field: 'name',       header: 'Name',       width: 200 },
-    { field: 'department', header: 'Department', width: 150 },
-    { field: 'city',       header: 'City',       width: 140 },
-    { field: 'age',        header: 'Age',        width: 90 },
-    { field: 'salary',     header: 'Salary',     width: 130, format: { type: 'currency', currency: 'USD' } },
-  ]
-</script>
-```
+## 1. Install
 
 ```bash
-pnpm add @svgrid/enterprise
-# Add the peers for the features you want to evaluate:
-pnpm add jszip          # xlsx export/import
-pnpm add pdfmake        # pdf export
+npm install @svgrid/grid @svgrid/enterprise
+npm install jszip pdfmake   # only needed for Excel and PDF export
 ```
 
-`jszip` and `pdfmake` are lazy-loaded by @svgrid/enterprise - they're only
-required if you actually invoke the matching feature.
-
-## Step 2: Install the evaluation key
-
-```ts
-import { setLicenseKey } from '@svgrid/enterprise'
-setLicenseKey('SVENTERPRISE-DEV-DEMO')
-```
-
-This suppresses the watermark in local dev. **For staging /
-production evaluation, request an evaluation key** at
-[svgrid.com/contact](https://svgrid.com/contact/) - no sales call
-required.
-
-The evaluation key is a real key with a 30-day expiry. Behaves
-identically to a paid license; lets you ship internal staging /
-demo deployments to evaluators without the watermark.
-
-### What the evaluation looks like without a key
-
-With no key set, Enterprise stays fully functional and displays three
-things:
-
-- A small **"www.svgrid.com" watermark** in the corner of each grid
-  (fades after 5 seconds).
-- A **console message about the Enterprise package**, logged once per
-  page load when the module is loaded.
-- The first time you actually invoke a Enterprise feature (export, import,
-  print, AI), a one-time **upgrade card** appears in the bottom-right
-  naming that feature, with a one-click link to start a free trial. It
-  shows at most once per session.
-
-All three are pure DOM or console output - **no network calls, no
-cookies, no web storage** (see [security](../help/security.md)).
-`setLicenseKey()` with any valid key suppresses them before they appear. To remove the upgrade
-card programmatically (e.g. you render your own upgrade UI), call:
-
-```ts
-import { dismissUpgradePrompt } from '@svgrid/enterprise'
-dismissUpgradePrompt()
-```
-
-## Step 3: Wire up
+## 2. Add Enterprise to a grid
 
 ```svelte
-<script lang="ts">
-  import { SvGrid, type SvGridApi } from '@svgrid/grid'
-  import { installEnterprise, type EnterpriseGridApi } from '@svgrid/enterprise'
+<script>
+  import { SvGrid } from '@svgrid/grid'
+  import { installEnterprise, setLicenseKey } from '@svgrid/enterprise'
 
-  let api = $state<EnterpriseGridApi<typeof features, Order> | null>(null)
+  setLicenseKey('SVENTERPRISE-DEV-DEMO') // local dev key, removes the watermark
+
+  let api = $state(null)
+
+  const rows = [
+    { name: 'Ada Lovelace', team: 'Engineering', salary: 145000 },
+    { name: 'Alan Turing', team: 'Research', salary: 160000 },
+  ]
+  const columns = [
+    { field: 'name', header: 'Name' },
+    { field: 'team', header: 'Team' },
+    { field: 'salary', header: 'Salary' },
+  ]
 </script>
 
-<SvGrid
-  data={rows} columns={columns} features={features}
-  onApiReady={(next: SvGridApi<typeof features, Order>) => {
-    api = installEnterprise(next)
-  }}
-/>
+<SvGrid data={rows} {columns} onApiReady={(next) => (api = installEnterprise(next))} />
 
-<button onclick={() => api?.exportData({ format: 'xlsx' })}>Export</button>
+<button onclick={() => api?.exportData({ format: 'xlsx', filename: 'team' })}>
+  Export to Excel
+</button>
 ```
 
-That's the integration. The Community grid is unchanged; Enterprise
-augments the api object.
+The `<SvGrid>` component itself stays the same. `installEnterprise()` adds
+the Enterprise methods to the grid API: `exportData`, `importData`,
+`print`, pivot and AI.
 
-## Step 4: Try the features (30-min tour)
+For a complete page with themes, PDF, CSV and print, see
+[Enterprise getting started](./getting-started.md).
 
-| Feature | One-line evaluation                                                  |
-| ------- | -------------------------------------------------------------------- |
-| Export  | `api.exportData({ format: 'xlsx', filename: 'data' })`                |
-| Pivot   | `const pivot = createPivotModel(rows, { rows: ['region'], cols: ['quarter'], values: [{ field: 'amount', agg: 'sum' }] })` |
-| Import  | `<input type="file" onchange={(e) => api.importData({ file: e.target.files[0] }).then(r => api.addRows(r.rows))}>` |
-| AI      | `setAIProvider(yourAdapter); const plan = await api.ai.filter('show last quarter > $10k')` |
+## 3. Try the features
 
-Each Enterprise feature has a fully-working demo in the gallery
-([56-60 + 51 + 52 + 53](https://svgrid.com/demos/)) that you can
-read end-to-end.
+The [demo gallery](https://svgrid.com/demos/) has a working demo for every
+Enterprise feature, with the source next to it. These pages cover each
+one in detail:
 
-## Step 5: Performance + budget check
+- [Export](../help/export.md) - Excel, PDF, CSV
+- [Import](../help/import.md) - column mapping and per-row validation
 
-Bundle sizes (gzip):
+## Without a key
 
-| Surface         | Size  | Notes                              |
-| --------------- | ----- | ---------------------------------- |
-| Community only  | 77 kB | Renderer + engine (+ 9 kB CSS)     |
-| + Enterprise export    | +12 kB| + `jszip` peer when xlsx is used   |
-| + Enterprise pdf       | +90 kB| + `pdfmake` peer when pdf is used  |
-| + Enterprise pivot     | +6 kB | Pure TS, no peers                  |
-| + Enterprise import    | +5 kB | + `jszip` for xlsx import          |
+You can skip `setLicenseKey()` entirely. Everything still runs, and you
+see:
 
-Subpath imports (`@svgrid/enterprise/export`, `@svgrid/enterprise/pivot`, etc.)
-ensure you only pay for what you use.
+- a small "www.svgrid.com" watermark on each grid, which fades after 5
+  seconds
+- one console message per page load
+- a one-time upgrade card the first time you call an Enterprise feature
 
-## Step 6: Decide
+None of these make network calls or write cookies or storage (see
+[security](../help/security.md)).
 
-- Using the enterprise grid, without the spreadsheet or Studio? **Grid
-  Developer License** ($599 per developer, unlimited apps).
-- Using `<SvSheet>`, the formula engine, the spreadsheet file formats, or
-  Studio? **Suite Developer License** ($999 per developer, unlimited apps).
-- Large team (5+), multi-year, NDA, or PO? **Enterprise / volume**
-  (contact sales).
-- Shipping SvGrid to third parties as a component, SDK, or app builder?
-  **OEM / redistribution** (contact sales; see Section 4A of the EULA).
+This works the same on localhost, staging, or a demo deployment. You don't
+need to ask anyone for a trial key. When you buy a license, call
+`setLicenseKey()` with your key and the watermark goes away.
 
-Each is a perpetual license + 1 year of updates and support that renews
-automatically; cancel anytime.
+## Buying
 
-[Full pricing](https://svgrid.com/pricing/).
+- **Grid Developer License**, $599 per developer: the enterprise grid.
+- **Suite Developer License**, $999 per developer: adds the spreadsheet
+  (`<SvSheet>`) and Studio.
 
-## Migrating from another grid mid-evaluation
-
-If you're swapping out an existing grid, see the
-[migration guides](../help/migrating-from-ag-grid.md) - typically a half-day
-port for a 5-grid app.
+Both cover unlimited apps and are perpetual, with a year of updates and
+support. For 5+ developers, a PO, or redistribution as an SDK, contact
+sales. Details on the [pricing page](https://svgrid.com/pricing/).
 
 ## See also
 
-- [Enterprise licensing](./licensing.md) - what each tier covers
-- [Enterprise support](./support.md) - what you get with each tier
-- [Missing features](../help/missing-features.md) - the honest gap list
+- [Enterprise getting started](./getting-started.md) - a complete working page
+- [Enterprise licensing](./licensing.md) - key formats, seats, renewals
+- [Migration guides](../help/migrating-from-ag-grid.md) - moving from another grid
 
 <!-- =================================================================
      /docs/enterprise/getting-started/  (enterprise)
@@ -1975,8 +1876,8 @@ exports, with nothing else to wire up.
   // light AND dark palette; dark activates on <html data-theme="dark">.
   import '@svgrid/grid/themes/shadcn.css'
 
-  // Once, before any Enterprise feature runs. Use your own key here; see
-  // ./evaluation.md for how to get an evaluation key.
+  // Once, before any Enterprise feature runs. Optional while you evaluate:
+  // without a key everything still works and shows a watermark.
   setLicenseKey('SVENTERPRISE-DEV-DEMO')
 
   let api = $state(null)
@@ -2177,8 +2078,7 @@ is the better fix.
 
 ## Next
 
-- [Evaluation playbook](./evaluation.md) - the 30-day evaluation, what shows without a key, and how
-  to get an evaluation key.
+- [Evaluation](./evaluation.md) - what shows without a key, and how to remove it.
 - [Licensing](./licensing.md) - key formats, seats, renewals.
 - [Data export](../help/export.md) - styles, headers, images, multi-sheet.
 - [Data import](../help/import.md) - column mapping and per-row validation.
@@ -2189,12 +2089,11 @@ is the better fix.
 
 # Enterprise licensing
 
-`@svgrid/enterprise` comes with a **30-day evaluation period**: an
-evaluation key, issued on request, runs the full package without the
-watermark for 30 days. Loaded without a license key, the Enterprise
-module displays a watermark in the bottom-right corner of the grid and a
-console message about the Enterprise package; every feature still works.
-Set a key once at app startup and both disappear.
+You can evaluate `@svgrid/enterprise` without asking for a key. Loaded
+without a license key, the Enterprise module displays a watermark in the
+bottom-right corner of the grid and a console message about the
+Enterprise package; every feature still works. Set a key once at app
+startup and both disappear.
 
 ![The evaluation model: without a key the grid runs fully with a small watermark and a console message about the Enterprise package; calling setLicenseKey once clears both, and every feature runs either way.](/docs-media/enterprise-licensing.svg)
 
@@ -2321,9 +2220,8 @@ revoked in any production-domain validation pipeline.
 | Watermark                   | Visible on every grid instance.                            |
 | Console message             | About the Enterprise package, logged once per page load.   |
 
-That is the evaluation period: every feature, with the watermark and the
-console message until a key is set, and a 30-day evaluation key that
-removes them while you decide. Once you're sold, drop in a key.
+That is the evaluation: every feature, with the watermark and the
+console message until a key is set. Once you're sold, drop in a key.
 
 ## A Grid key on a Suite feature
 
@@ -2411,7 +2309,7 @@ support uses the ID you give us, not anything we phoned home for.
 
 ## See also
 
-- [Enterprise evaluation](./evaluation.md) - 30-day evaluation flow
+- [Enterprise evaluation](./evaluation.md) - trying Enterprise without a key
 - [Enterprise support](./support.md) - SLAs, escalation, contact channels
 - [Pricing](https://svgrid.com/pricing/) - canonical pricing source
 
@@ -2428,8 +2326,8 @@ columns, the edit form, validation, and the generated code.
 
 ![A CRUD screen generated by SvGrid Studio: sortable, filterable grid with a native pager, over a live data source.](/docs-media/studio-crud.png)
 
-It is part of the **Enterprise** license, with its 30-day evaluation period:
-loaded without a key, everything runs and the watermark and the console
+It is part of the **Enterprise** license, and you can evaluate it
+without a key: loaded without one, everything runs and the watermark and the console
 message about the Enterprise package are displayed. See
 [licensing](./licensing.md#studio-data-app-generator).
 
@@ -3154,7 +3052,7 @@ introspection + scaffolding + verification tools that the host agent drives.
 
 ## Licensing
 
-Generation is part of the 30-day evaluation period: without a key it runs
+You can evaluate generation without a key: it runs
 and prepends a one-line commercial notice, and the generated app displays
 the watermark and the console message about the Enterprise package until
 you call `setLicenseKey()`. Set `SVGRID_LICENSE_KEY` in the MCP config to license it. See
@@ -4341,9 +4239,8 @@ npx svelte-check
 ## Requirements
 
 `@svgrid/grid` and `@svgrid/enterprise` in your project, plus the driver for your
-database (`pg` / `mysql2` / `mssql` / `better-sqlite3`) when using `--db`. Studio
-is part of the [Enterprise license](../licensing.md), with its 30-day
-evaluation period.
+database (`pg` / `mysql2` / `mssql` / `better-sqlite3`) when using `--db`. Studio is part of the [Enterprise license](../licensing.md); it runs
+without a key while you evaluate it.
 
 ## See also
 
@@ -4754,7 +4651,7 @@ designer can work on one project interchangeably.
 | **Code-behind** | A user-owned `handlers.ts` next to a generated screen for typed event handlers; created once, never overwritten. [Code-behind](./code-behind.md) |
 | **Scaffold** | The codegen step: schema in, SvelteKit files out. Shared by the CLI, the designer, and the AI path. [CLI](./cli.md) |
 | **Introspection** | Reading an existing source (database table, Drizzle / Prisma schema, OpenAPI spec, CSV) to produce an `EntitySchema`. [Databases](./databases.md) |
-| **Evaluation period** | Enterprise licensing without a hard stop: 30 days on an evaluation key, and without a key a watermark and a console message about the Enterprise package when the module loads, nothing breaks. [Licensing](../licensing.md) |
+| **Evaluation period** | Enterprise licensing without a hard stop: no key needed to evaluate; without a key a watermark and a console message about the Enterprise package when the module loads, nothing breaks. [Licensing](../licensing.md) |
 
 ## Which tool when
 
@@ -6493,7 +6390,7 @@ npm i @svgrid/grid @svgrid/enterprise
 
 - `@svgrid/grid` is the grid itself.
 - `@svgrid/enterprise` adds Studio: the schema, the edit form, and the data-source
-  helpers. It comes with a 30-day evaluation period; loaded without a key
+  helpers. No key is needed to evaluate it; loaded without a key
   it displays a watermark and a console message about the Enterprise
   package, and everything still runs. See [licensing](../licensing.md).
 
@@ -10376,8 +10273,7 @@ postgres.js, better-sqlite3, mysql2, Kysely, and others all work.
 
 ### Is Studio free?
 
-It is part of the Enterprise license, with its 30-day evaluation period:
-without a key it runs with the watermark and the console message about the
+It is part of the Enterprise license. You can evaluate it without a key: it runs with the watermark and the console message about the
 Enterprise package. See [pricing](https://svgrid.com/pricing/).
 
 ## See also
@@ -13208,8 +13104,7 @@ first (above) avoids that step.
 ## The pivot dashboard starter
 
 `pivot-dashboard` is the one template built on `@svgrid/enterprise` rather than the
-free package, because the pivot designer is a paid feature. It comes with
-the 30-day evaluation period: without a key it runs and displays the
+free package, because the pivot designer is a paid feature. No key is needed to try it: without one it runs and displays the
 watermark and the console message about the Enterprise package, so you
 can evaluate it before buying.
 
@@ -33258,8 +33153,8 @@ them.
 | Any other `SVENTERPRISE-...`                      | Works silently. |
 
 Buy a production key at <https://svgrid.com/pricing/> ($599 / developer /
-year). `SVENTERPRISE-DEV-...` and `SVENTERPRISE-EVAL-...` keys cover local development
-and 30-day trials respectively.
+year). `SVENTERPRISE-DEV-...` keys cover local development. To evaluate, you
+need no key at all: everything runs with a watermark.
 
 ## Reference
 
@@ -36712,9 +36607,9 @@ grid as the render template format for cells, headers, and editors.
 
 **Evaluation period.** The Enterprise package without a license key:
 every feature still runs, and loading the module displays a small
-watermark and a console message about the Enterprise package. A 30-day
-evaluation key removes them while you evaluate; a license key removes
-them for good (`setLicenseKey('SVENTERPRISE-...')`).
+watermark and a console message about the Enterprise package. No key is
+needed to evaluate; a license key removes them
+(`setLicenseKey('SVENTERPRISE-...')`).
 
 ## T
 
@@ -41368,8 +41263,8 @@ without trouble; a script that parsed the old shape by hand needs a look.
 ## Licensing
 
 The documentation and example tools are free. The Studio code
-generators are part of the commercial offering, with its 30-day
-evaluation period: without a key they run, but prepend a notice comment
+generators are part of the commercial offering. You can evaluate them
+without a key: they run, but prepend a notice comment
 to generated files. To license them, set
 the key in your MCP client's server config:
 
@@ -42780,8 +42675,8 @@ Handsontable's grid needs a commercial licence for commercial use; its free
 Hobby licence is for personal, exploratory projects, as its pricing page
 states (the wording and the date are in the facts box at the top of this
 page). Sv-grid's `@svgrid/grid` is MIT with no licence key, and the
-[Enterprise tier](../enterprise/licensing.md) comes with a 30-day evaluation
-period: it works without a key and displays a watermark and a console
+[Enterprise tier](../enterprise/licensing.md) needs no key to evaluate:
+it works without one and displays a watermark and a console
 message until you add one, so there is no cutoff to plan around.
 
 ## What you get for free vs Handsontable

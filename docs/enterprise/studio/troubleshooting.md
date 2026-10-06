@@ -136,8 +136,7 @@ postgres.js, better-sqlite3, mysql2, Kysely, and others all work.
 
 ### Is Studio free?
 
-It is part of the Enterprise license, with its 30-day evaluation period:
-without a key it runs with the watermark and the console message about the
+It is part of the Enterprise license. You can evaluate it without a key: it runs with the watermark and the console message about the
 Enterprise package. See [pricing](https://svgrid.com/pricing/).
 
 ## See also
