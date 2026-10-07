@@ -147,6 +147,13 @@ export function softwareApplicationLd({ homepage, version, reviews = [] }) {
       },
       {
         '@type': 'Offer',
+        name: 'Indie - Indie Developer License',
+        price: '299',
+        priceCurrency: 'USD',
+        description: `Per developer, for freelancers and companies with under $1M in yearly revenue (self-declared). The same feature set as the Grid Developer License: ${ENTERPRISE_PACK}, on unlimited production applications. Buy once, keep forever - includes one year of updates, optional yearly renewal for updates. No email or Slack support (GitHub issues only). No spreadsheet, no Studio.`,
+      },
+      {
+        '@type': 'Offer',
         name: 'Enterprise Suite - Suite Developer License',
         price: '999',
         priceCurrency: 'USD',

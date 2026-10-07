@@ -100,7 +100,7 @@ const data = await (async () => {
   const size = await loadSvgridSize()
   const tokens = factTokens({ ledger, size })
   // A price the ledger renders in words: "$599" and "$599 per developer per year" both.
-  tokens.add(`$${SVGRID_PRICING.grid}`); tokens.add(`$${SVGRID_PRICING.suite}`)
+  tokens.add(`$${SVGRID_PRICING.indie}`); tokens.add(`$${SVGRID_PRICING.grid}`); tokens.add(`$${SVGRID_PRICING.suite}`)
   return { comparisons, ledger, size, tokens }
 })()
 
@@ -226,7 +226,7 @@ describe('comparison guides', () => {
     const problems: string[] = []
     // The guides may quote SvGrid's own prices; everything else with a number
     // of these kinds belongs in the generated block.
-    const allowed = new Set([`$${SVGRID_PRICING.grid}`, `$${SVGRID_PRICING.suite}`])
+    const allowed = new Set([`$${SVGRID_PRICING.indie}`, `$${SVGRID_PRICING.grid}`, `$${SVGRID_PRICING.suite}`])
     for (const f of files) {
       const md = (await readFile(join(HELP, f), 'utf-8')).replace(/\r\n/g, '\n')
       const fileSlug = f.replace(/\.md$/, '')

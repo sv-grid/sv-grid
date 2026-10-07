@@ -16,7 +16,7 @@
  * ```
  */
 import { registerSchedulerView } from '@svgrid/grid'
-import { isLicenseKeySet } from './license'
+import { hasValidLicense } from './license'
 import { emitUnlicensedNudge } from './watermark'
 import SvGridScheduler from './SvGridScheduler.svelte'
 
@@ -31,7 +31,7 @@ export function enableSchedulerView(): void {
   if (enabled) return
   enabled = true
   registerSchedulerView(SvGridScheduler as never)
-  if (!isLicenseKeySet()) emitUnlicensedNudge()
+  if (!hasValidLicense()) emitUnlicensedNudge()
 }
 
 export { default as SvGridScheduler } from './SvGridScheduler.svelte'

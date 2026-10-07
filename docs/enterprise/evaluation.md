@@ -75,12 +75,14 @@ need to ask anyone for a trial key. When you buy a license, call
 
 ## Buying
 
+- **Indie Developer License**, $299 per developer: the enterprise grid for
+  freelancers and companies under $1M revenue, without support.
 - **Grid Developer License**, $599 per developer: the enterprise grid.
 - **Suite Developer License**, $999 per developer: adds the spreadsheet
   (`<SvSheet>`) and Studio.
 
-Both cover unlimited apps and are perpetual, with a year of updates and
-support. For 5+ developers, a PO, or redistribution as an SDK, contact
+All three cover unlimited apps and are perpetual, with a year of updates
+(and support, except Indie). For 5+ developers, a PO, or redistribution as an SDK, contact
 sales. Details on the [pricing page](https://svgrid.com/pricing/).
 
 ## See also

@@ -15,7 +15,7 @@
  * // spread `formats` into <SvGrid conditionalFormats={[...base, ...formats]} />
  * ```
  */
-import { isLicenseKeySet } from './license'
+import { hasValidLicense } from './license'
 import { emitUnlicensedNudge } from './watermark'
 
 let enabled = false
@@ -24,5 +24,5 @@ let enabled = false
 export function enableAlerts(): void {
   if (enabled) return
   enabled = true
-  if (!isLicenseKeySet()) emitUnlicensedNudge()
+  if (!hasValidLicense()) emitUnlicensedNudge()
 }

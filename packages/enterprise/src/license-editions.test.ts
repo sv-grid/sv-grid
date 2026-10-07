@@ -15,14 +15,18 @@ vi.mock('./watermark', async (importOriginal) => ({
   ...(await importOriginal()),
   emitUnlicensedNudge: vi.fn(),
 }))
+// A test key in place of the real one (see license-core.test.ts).
+vi.mock('./license-hash', async () => {
+  const { sha256Hex } = await import('./sha256')
+  return { LICENSE_KEY_SHA256: sha256Hex('test-license-key-0000') }
+})
 
-// The pricing page sells the SQL, REST and Supabase data sources as Suite
-// features, so every one of them has to nudge a Grid key the same way. Before
-// this test the two Supabase modules called the edition-blind nudge, so a Grid
-// key that opened createRestDataSource got the watermark and one that opened
-// createSupabaseDataSource did not.
-const GRID_KEY = 'SVENTERPRISE-GRID-ACME-5-209912-9XYZ'
-const SUITE_KEY = 'SVENTERPRISE-SUITE-ACME-5-209912-9XYZ'
+// Every customer has the same key and it covers every edition, so the Studio
+// data sources (sold as Suite features) stay quiet on it. Edition keys are
+// gone: a GRID-format key is just a string that is not the license key, and
+// gets the same nudge as no key, never the old "does not cover" notice.
+const LICENSE_KEY = 'test-license-key-0000'
+const FORGED_GRID_KEY = 'SVENTERPRISE-GRID-ACME-5-209912-9XYZ'
 
 type Row = { id: number; name: string }
 const schema: EntitySchema<Row> = {
@@ -57,36 +61,36 @@ const studioSurfaces: Array<[string, () => unknown]> = [
 
 const watermarkCalls = () => vi.mocked(emitUnlicensedNudge).mock.calls.length
 
-describe('the Studio data sources on a Grid key', () => {
+describe('the Studio data sources and the one license key', () => {
   beforeEach(() => {
     clearLicenseKey()
     dismissUpgradePrompt()
     vi.mocked(emitUnlicensedNudge).mockClear()
-    // Spying on an already-spied method returns the same spy with its calls
-    // intact, so clear it here or the notice count reads across tests.
     vi.spyOn(console, 'info').mockImplementation(() => {}).mockClear()
+    vi.spyOn(console, 'warn').mockImplementation(() => {}).mockClear()
     document.body.innerHTML = ''
   })
 
   for (const [name, open] of studioSurfaces) {
-    it(`${name} nudges a Grid key and stays quiet on a Suite key`, () => {
-      setLicenseKey(GRID_KEY)
+    it(`${name} stays quiet on the license key and nudges a forged Grid key`, () => {
+      setLicenseKey(LICENSE_KEY)
+      expect(() => open()).not.toThrow()
+      expect(watermarkCalls()).toBe(0)
+
+      setLicenseKey(FORGED_GRID_KEY)
       expect(() => open()).not.toThrow()
       expect(watermarkCalls()).toBe(1)
-
-      vi.mocked(emitUnlicensedNudge).mockClear()
-      setLicenseKey(SUITE_KEY)
-      open()
-      expect(watermarkCalls()).toBe(0)
     })
   }
 
-  it('the Grid key gets the edition notice, not the unlicensed one', () => {
+  it('a forged Grid key gets the invalid-key warning, not the edition notice', () => {
     const info = vi.mocked(console.info)
-    setLicenseKey(GRID_KEY)
+    const warn = vi.mocked(console.warn)
+    setLicenseKey(FORGED_GRID_KEY)
     createSupabaseDataSource<Row>({ client: supabaseClient, table: 'rows', schema })
-    const notice = info.mock.calls.flat().filter((m) => typeof m === 'string' && m.includes('does not cover'))
-    expect(notice).toHaveLength(1)
-    expect(notice[0]).toMatch(/Grid license does not cover/)
+    const edition = info.mock.calls.flat().filter((m) => typeof m === 'string' && m.includes('does not cover'))
+    const invalid = warn.mock.calls.flat().filter((m) => typeof m === 'string' && m.includes('is not valid'))
+    expect(edition).toHaveLength(0)
+    expect(invalid).toHaveLength(1)
   })
 })

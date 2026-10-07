@@ -191,9 +191,9 @@
   </div>
 
   <footer class="text-xs shrink-0 xp-note">
-    Pro feature - gated by <code>setLicenseKey()</code>. Without a valid key
-    (prefix <code>SVENTERPRISE-</code>), the feature still runs but the grid shows
-    a watermark linking to svgrid.com/pricing. Revoked or malformed keys throw.
+    Pro feature - gated by <code>setLicenseKey()</code>. Without your license key
+    the feature still runs, but the grid shows a watermark linking to
+    svgrid.com/pricing. A wrong key never throws; it behaves like no key.
   </footer>
 </section>
 

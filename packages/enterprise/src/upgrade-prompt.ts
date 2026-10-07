@@ -17,6 +17,8 @@
 //   - Zero dependencies, inline styles - no CSS file to import, nothing to
 //     bundle, works in any host app regardless of its styling.
 
+import { isFirstPartySite } from './first-party'
+
 const CARD_ATTR = 'data-svgrid-enterprise-upgrade'
 const PRICING_URL = 'https://svgrid.com/pricing'
 // ?ref=in-app lets us measure how many trials start from this exact prompt
@@ -47,6 +49,7 @@ export function showUpgradePrompt(
 ): void {
   if (shownThisSession) return
   if (typeof document === 'undefined' || typeof window === 'undefined') return
+  if (isFirstPartySite()) return
   if (document.querySelector(`[${CARD_ATTR}]`)) return
   shownThisSession = true
 

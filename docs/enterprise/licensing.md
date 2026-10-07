@@ -17,7 +17,7 @@ setLicenseKey(import.meta.env.VITE_SVPRO_KEY)
 ```
 
 Call this before the first `<SvGrid>` mounts. In Vite/SvelteKit,
-expose the key as `VITE_SVPRO_KEY=SVENTERPRISE-...` in your `.env` (NOT
+expose the key as `VITE_SVPRO_KEY=YOUR-LICENSE-KEY` in your `.env` (NOT
 checked in) - or read it from your config service.
 
 ## License tiers
@@ -29,17 +29,25 @@ version released during your paid term.
 
 | License                            | What it covers                                                     | Price (per developer) | Support                                   |
 | ---------------------------------- | ------------------------------------------------------------------ | --------------------- | ----------------------------------------- |
+| **Indie Developer License**        | Grid features, for freelancers and companies under $1M revenue     | **$299**              | None (GitHub issues only), updates only   |
 | **Grid Developer License**         | Enterprise grid features. No spreadsheet, no Studio                 | **$599**              | Email (next business day) + private Slack |
 | **Suite Developer License**        | Everything in Grid, plus the spreadsheet and Studio                 | **$999**              | Email (next business day) + private Slack |
 | **Enterprise / volume**            | Suite, site or organisation-wide                                    | Custom quote          | Priority + named contact, NDA / PO        |
 | **OEM / redistribution**           | Shipping SvGrid to third parties as a component or app builder      | Custom quote          | Priority + named contact, NDA / PO        |
 
-Both developer licenses cover an **unlimited number of production apps** in your
+All three developer licenses cover an **unlimited number of production apps** in your
 organisation. The line between them is the feature set, not the app count.
 
 **Grid ($599)** is the enterprise grid: server-side row model, grouping and tree
 data, pivot, export and import, print, the advanced filter, alerts, the selection
 bar, and the Kanban, scheduler and Gantt renderers.
+
+**Indie ($299)** is the Grid feature set for freelancers and for companies with
+less than $1M in yearly revenue, self-declared at purchase. It comes without
+support (no email, no Slack; public GitHub issues only, as with the Community
+tier), and its yearly renewal pays for updates only. Indie orders are
+fulfilled with a standard Grid key. Grow past the threshold and you move the
+seats to Grid at your next renewal.
 
 **Suite ($999)** adds the two things that are their own products:
 
@@ -64,30 +72,28 @@ seats. Section 4A of the [EULA](/docs/legal/EULA) has the exact test. If you are
 not sure which side of the line you are on, email `sales@jqwidgets.com` and
 describe the product; the answer is usually one message.
 
-## License key format
+## The license key
 
-```
-SVENTERPRISE-SUITE-XXXX-XXXX-XXXX-XXXX
-│            │
-│            └── edition: GRID or SUITE
-└── prefix the runtime recognises; the rest identifies your license
-```
+Every customer receives the same license key, a GUID, in the order email. Set
+it once at app startup with `setLicenseKey()`; it covers every edition and
+carries no expiry date. Your edition, seat count and updates term are recorded
+on your order and governed by the [EULA](/docs/legal/EULA), not encoded in the
+key.
 
-A key issued before editions existed carries no edition segment. Those keys read
-as Suite, so nothing an existing customer already ships changes.
+The check is client-side and **no network call** is ever made to validate, so
+air-gapped deployments work out of the box. The package keeps only a SHA-256 of
+the key and compares the key you set against it
+(`packages/enterprise/src/license-core.ts`), so the key is not readable in
+`node_modules`.
 
-The check is purely client-side and **no network call** is ever made to
-validate, so air-gapped deployments work out of the box.
+A key that is not the license key (a typo, or an `SVENTERPRISE-...` string from
+before October 2026) never throws: the features still run, with the watermark
+and a one-time console warning, exactly as if no key were set.
 
-It is also deliberately not cryptography. The runtime classifies the key
-string - prefix recognised, which edition it names, on the revoked list, a
-`DEV` / `EVAL` sentinel, or a paid key - and nothing more (`checkLicenseKey` in
-`packages/enterprise/src/license-core.ts`). Anyone with devtools can read a key
-out of a deployed bundle, and an unlicensed build still runs; it just shows a
-watermark and logs a one-time notice. The license is a legal agreement, not a
-technical lock, and we would rather say so than imply a DRM scheme that isn't
-there. Keys are revocable: a key we revoke stops being accepted in later
-releases.
+It is not DRM. Anyone with devtools can read a key out of a deployed bundle,
+which is why the key file must never be committed to a public repository. The
+license is a legal agreement, not a technical lock, and we would rather say so
+than imply a scheme that isn't there.
 
 ## Per-environment keys
 
@@ -172,7 +178,7 @@ once:
     "svgrid": {
       "command": "npx",
       "args": ["@svgrid/mcp"],
-      "env": { "SVGRID_LICENSE_KEY": "SVENTERPRISE-..." }
+      "env": { "SVGRID_LICENSE_KEY": "YOUR-LICENSE-KEY" }
     }
   }
 }

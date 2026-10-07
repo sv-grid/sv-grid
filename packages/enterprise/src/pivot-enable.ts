@@ -17,7 +17,7 @@
  * ```
  */
 import { registerPivotEngine, type PivotEngine } from '@svgrid/grid'
-import { isLicenseKeySet } from './license'
+import { hasValidLicense } from './license'
 import { emitUnlicensedNudge } from './watermark'
 import { createPivotModel, type PivotConfig } from './pivot'
 
@@ -40,5 +40,5 @@ export function enablePivot(): void {
   if (enabled) return
   enabled = true
   registerPivotEngine(pivotEngine)
-  if (!isLicenseKeySet()) emitUnlicensedNudge()
+  if (!hasValidLicense()) emitUnlicensedNudge()
 }

@@ -16,7 +16,7 @@
  * ```
  */
 import { registerGanttView } from '@svgrid/grid'
-import { isLicenseKeySet } from '../license'
+import { hasValidLicense } from '../license'
 import { emitUnlicensedNudge } from '../watermark'
 import SvGridGantt from './SvGridGantt.svelte'
 
@@ -31,7 +31,7 @@ export function enableGanttView(): void {
   if (enabled) return
   enabled = true
   registerGanttView(SvGridGantt as never)
-  if (!isLicenseKeySet()) emitUnlicensedNudge()
+  if (!hasValidLicense()) emitUnlicensedNudge()
 }
 
 export { default as SvGridGantt } from './SvGridGantt.svelte'

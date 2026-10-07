@@ -32,13 +32,16 @@
 
 /** SvGrid's own prices, mirrored by website/src/routes/Pricing.svelte and seo.ts.
  *  Both editions cover unlimited apps; the line between them is the feature
- *  set. `grid` is the enterprise grid, `suite` adds the spreadsheet and Studio. */
+ *  set. `grid` is the enterprise grid, `suite` adds the spreadsheet and Studio.
+ *  `indie` (added 2026-10-07) is the grid edition for freelancers and
+ *  companies under $1M revenue, without support. */
 export const SVGRID_PRICING = Object.freeze({
+  indie: 299,
   grid: 599,
   suite: 999,
   unit: 'per developer per year',
   url: 'https://svgrid.com/pricing/',
-  summary: 'MIT core; @svgrid/enterprise from $599 per developer per year',
+  summary: 'MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise',
 })
 
 /** Framework ids in the comparison JSON, as they read on the page. */

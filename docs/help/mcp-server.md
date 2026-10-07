@@ -458,7 +458,7 @@ the key in your MCP client's server config:
     "svgrid": {
       "command": "npx",
       "args": ["-y", "@svgrid/mcp"],
-      "env": { "SVGRID_LICENSE_KEY": "SVENTERPRISE-..." }
+      "env": { "SVGRID_LICENSE_KEY": "YOUR-LICENSE-KEY" }
     }
   }
 }

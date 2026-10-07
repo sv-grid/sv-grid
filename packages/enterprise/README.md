@@ -55,7 +55,7 @@ npm install pdfmake    # PDF export
 ```ts
 import { setLicenseKey, installEnterprise } from '@svgrid/enterprise'
 
-setLicenseKey('SVENTERPRISE-XXXX-XXXX-XXXX') // your Enterprise key
+setLicenseKey('YOUR-LICENSE-KEY') // your Enterprise key
 
 // Inside <SvGrid onApiReady={(api) => { ... }}>:
 const pro = installEnterprise(api)
@@ -95,18 +95,18 @@ Purchase a key at [svgrid.com/pricing](https://svgrid.com/pricing/).
 
 **The gate is soft.** Every feature runs without a key, and under a key whose edition does not cover
 it. You get a small watermark on the grid and a one-time console notice; nothing throws and nothing
-is disabled, so you can evaluate any of this in your own app before buying. A key is only rejected
-when it is malformed or revoked.
+is disabled, so you can evaluate any of this in your own app before buying. A key that is not your
+license key gets the same treatment as no key.
 
 ```ts
-import { setLicenseKey, licenseCovers } from '@svgrid/enterprise'
+import { setLicenseKey } from '@svgrid/enterprise'
 
 setLicenseKey(import.meta.env.VITE_SVPRO_KEY)
-licenseCovers('spreadsheet') // false on a Grid key, true on Suite
 ```
 
-Keys carry their edition: `SVENTERPRISE-GRID-...` or `SVENTERPRISE-SUITE-...`. A key issued before
-editions existed carries neither and reads as Suite, so nothing you already ship changes.
+Every customer receives the same license key; it covers every edition and carries no expiry. Your
+edition (Grid or Suite), seats and updates term are set by your order and the EULA, not by the key.
+A key that is not the license key runs like no key: watermark, one console warning, nothing thrown.
 
 **OEM and redistribution.** A developer seat covers your own application, including a SaaS product
 your customers pay for. It does not cover shipping this package to third parties as a component, an

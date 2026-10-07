@@ -80,21 +80,22 @@ the trailing detail at the patch level if the diagnostic improves.
 
 - **Class:** `Error`
 - **When:** `setLicenseKey('')` or `setLicenseKey(null)`.
-- **Fix:** Pass a valid `SVENTERPRISE-...` string.
+- **Fix:** Pass the license key from your order email.
 
-### `Error: @svgrid/enterprise: invalid license key format (expected "SVENTERPRISE-..." prefix).`
+### Console warning: `@svgrid/enterprise: the license key passed to setLicenseKey() is not valid`
 
-- **Class:** `Error`
-- **When:** A key that doesn't start with `SVENTERPRISE-` was set; the first
-  Enterprise call throws.
-- **Fix:** Use the key issued by jQWidgets. The free Community grid is
-  the right choice if you don't have a key.
+- **Class:** `console.warn`, once per page. Not an error: nothing throws.
+- **When:** `setLicenseKey()` was given a string that is not the license key,
+  for example a typo or an `SVENTERPRISE-...` key from before October 2026.
+  The Enterprise features keep running, with the watermark and upgrade card.
+- **Fix:** Copy the key from your order email. The free Community grid is the
+  right choice if you don't have a key.
 
-### `Error: @svgrid/enterprise: this license key has been revoked. Contact sales@jqwidgets.com for a replacement.`
+### Revoked keys (before October 2026)
 
-- **Class:** `Error`
-- **When:** A key matching an entry in the package's revoked-keys list.
-- **Fix:** Contact `sales@jqwidgets.com` for a replacement.
+Keys are no longer revoked one by one, and a revoked key no longer throws.
+Since October 2026 there is one license key; any other string, including a
+previously revoked one, gets the watermark and the console warning above.
 
 ## @svgrid/enterprise - Export
 

@@ -3,11 +3,25 @@
 // (which reads the key from the SVGRID_LICENSE_KEY env var). One definition of
 // "what a valid key is," so the two contexts can never drift.
 //
-// This is deliberately NOT crypto (see license.ts). It classifies a key string;
-// callers decide what to do with the result. The Studio never blocks:
-// unlicensed use still works, it just nudges.
-import { REVOKED_KEYS } from './revoked.js'
+// It classifies a key string; callers decide what to do with the result. The
+// Studio never blocks: unlicensed use still works, it just nudges.
+//
+// One key (2026-10-07). Every customer receives the same license key, and the
+// package stores only its SHA-256, so the key itself is not readable in
+// node_modules or in this public source. Before this, any string starting with
+// "SVENTERPRISE-" passed as a paid Suite license, which the published key
+// format made trivial to type. A key that does not hash to LICENSE_KEY_SHA256
+// is 'invalid' and gets the watermark, never an exception. The key carries no
+// edition and no expiry: it reads as Suite, and a paid key cannot lapse into
+// the watermark (EULA s.6: paid-term versions keep working).
+//
+// Rotating the key: issue a new one, put its hash here, release. Versions
+// already shipped keep accepting the old key, which matches the perpetual
+// license.
+import { sha256Hex } from './sha256'
+import { LICENSE_KEY_SHA256 } from './license-hash'
 
+/** Kept for messages and older callers; no longer what makes a key valid. */
 export const VALID_PREFIX = 'SVENTERPRISE-'
 
 /**
@@ -111,27 +125,12 @@ export function checkLicenseKey(
 ): LicenseInfo {
   // An unusable key reports `suite` rather than a narrower edition on purpose:
   // callers branch on `valid` first, and an edition on a rejected key would
-  // read as though something had been granted.
-  if (key == null || key === '') return { status: 'unset', valid: false, edition: 'suite' }
-  if (!key.startsWith(VALID_PREFIX)) return { status: 'invalid', valid: false, edition: 'suite' }
-  if (REVOKED_KEYS.has(key)) return { status: 'revoked', valid: false, edition: 'suite' }
-
-  const expiresAt = parseLicenseExpiry(key) ?? undefined
-  // Left undefined rather than false when the key encodes no date, so callers
-  // can tell "not expired" apart from "no expiry to check".
-  const expired = expiresAt ? now.getTime() > expiresAt.getTime() : undefined
-
-  const status: LicenseStatus = key.startsWith('SVENTERPRISE-DEV')
-    ? 'dev'
-    : key.startsWith('SVENTERPRISE-EVAL')
-      ? 'eval'
-      : 'licensed'
-
-  // Only a paid key can be narrowed: a trial evaluates the whole product, and
-  // `SVENTERPRISE-GRID` is an edition marker rather than a kind, so it lands in
-  // the same segment DEV and EVAL use.
-  const edition: LicenseEdition =
-    status === 'licensed' && key.startsWith(`${VALID_PREFIX}GRID-`) ? 'grid' : 'suite'
-
-  return { status, valid: true, edition, expiresAt, expired }
+  // read as though something had been granted. `now` stays in the signature
+  // for callers and tests; the one key has no expiry to compare it with.
+  void now
+  if (key == null || key.trim() === '') return { status: 'unset', valid: false, edition: 'suite' }
+  if (sha256Hex(key.trim().toLowerCase()) !== LICENSE_KEY_SHA256) {
+    return { status: 'invalid', valid: false, edition: 'suite' }
+  }
+  return { status: 'licensed', valid: true, edition: 'suite' }
 }

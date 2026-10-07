@@ -107,16 +107,16 @@ Feed `model.rows` and `model.columns` into a second, read-only `<sv-grid>`.
 ```js
 import { setLicenseKey } from '@svgrid/enterprise/license'
 
-setLicenseKey('SVENTERPRISE-...')
+setLicenseKey('YOUR-LICENSE-KEY')
 ```
 
 Call it once, before the first export. With **no** key nothing breaks: the paid
 features still run, the grid shows a small watermark, and the console carries a
 one-time notice.
 
-A **malformed** key is a different case - it throws rather than degrading, so a
-placeholder string is worse than no key at all. Keys carry an `SVENTERPRISE-`
-prefix.
+A key that is not your license key (a typo, a placeholder) behaves like no key:
+the features run with the watermark, and the console warns once that the key is
+not valid. Nothing throws.
 
 ## Needs a Svelte-aware bundler
 

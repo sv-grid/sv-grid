@@ -201,8 +201,7 @@ them.
 | Key state                                  | Behavior |
 | ------------------------------------------ | -------- |
 | No key set (`setLicenseKey()` not called)  | Feature works. Grid shows an unlicensed watermark linking to svgrid.com/pricing; console.log emits a one-time nudge. |
-| Key doesn't start with `SVENTERPRISE-`            | Throws - programmer error. |
-| Key is in the revoked list                 | Throws - contact support for a replacement. |
+| A key that is not your license key         | Same as no key: the feature works, with the watermark and a one-time console warning. |
 | Your license key                           | Works silently. |
 
 Buy a production key at <https://svgrid.com/pricing/> ($599 / developer /

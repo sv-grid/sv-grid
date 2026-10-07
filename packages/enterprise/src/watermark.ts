@@ -1,9 +1,11 @@
 // Evaluation UX for unlicensed @svgrid/enterprise use. Shows a small clickable
 // "www.svgrid.com" watermark in the bottom-right corner of every SvGrid on
 // the page, which fades out after 5 seconds, and emits a one-time console
-// nudge. Hard errors (revoked / bad-prefix keys) still throw via license.ts -
-// this file is only for the "no key set" case where the feature continues to
-// work but the user gets nudged.
+// nudge. Shown for "no key" and for a key that is not the license key alike;
+// neither throws, the feature keeps working and the user gets nudged. Never
+// shown on svgrid.com itself (first-party.ts).
+
+import { isFirstPartySite } from './first-party'
 
 const WATERMARK_ATTR = 'data-svgrid-enterprise-watermark'
 // Marks a grid that has already shown (and faded) its watermark, so the
@@ -25,6 +27,7 @@ let consoleNudgeShown = false
 let observer: MutationObserver | null = null
 
 export function emitUnlicensedNudge(): void {
+  if (isFirstPartySite()) return
   showConsoleOnce()
   if (typeof document === 'undefined' || typeof window === 'undefined') return
   // Defer one tick: installEnterprise may run inside onApiReady before the grid's

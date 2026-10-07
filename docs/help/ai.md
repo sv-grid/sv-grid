@@ -273,7 +273,7 @@ The AI helpers are built into the free `@svgrid/grid` and are **never** gated -
 no key, no watermark, no nudge. The only license interaction is `aiExport`'s
 final write step: emitting an enterprise format (xlsx / pdf) goes through
 `@svgrid/enterprise`'s export engine, which carries the usual enterprise
-watermark until a `SVENTERPRISE-` key is set. Planning the export, and every
+watermark until your license key is set. Planning the export, and every
 other AI helper, is unconditionally free.
 
 ## Frequently asked questions

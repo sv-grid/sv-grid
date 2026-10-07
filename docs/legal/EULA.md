@@ -102,15 +102,23 @@ The scope of the license is determined by the Subscriber's order:
   environments.
 - A **Suite Developer License** covers the Enterprise Package in full, including
   the Spreadsheet Module and Studio, on the same unlimited application scope.
+- An **Indie Developer License** covers the same scope as a Grid Developer
+  License. It is available only to a Subscriber that is an individual working on
+  their own account, or an organization whose total revenue, together with its
+  affiliates, was less than one million US dollars (USD 1,000,000) in the twelve
+  (12) months before the order. By placing an Indie order the Subscriber confirms
+  that it meets this condition. A Subscriber that no longer meets it must move its
+  seats to a Grid Developer License no later than its next renewal. An Indie
+  Developer License includes no support (see Section 6).
 - An **Enterprise / Custom (Site or Organization-wide) License** covers the scope
   defined in the separately negotiated order or master agreement.
 - An **OEM License** covers the redistribution cases in Section 4A.
 
-Use of the Spreadsheet Module or Studio under a Grid Developer License is outside
-the licensed scope. Consistent with Section 7, the Software does not block such
-use: the feature runs, and the watermark and the console notice described in
-Section 7 are displayed for it. Bringing that use into scope requires a Suite
-Developer License.
+Use of the Spreadsheet Module or Studio under a Grid Developer License or an
+Indie Developer License is outside the licensed scope. The License Key does not
+distinguish editions (Section 9), so the Software neither blocks nor flags such
+use; it remains outside the license, and bringing it into scope requires a
+Suite Developer License.
 
 ## 4A. OEM AND REDISTRIBUTION LICENSE
 
@@ -183,6 +191,9 @@ updates-and-support term:
   (b) the Subscriber stops receiving new releases and support issued after the
       paid term ends.
 
+For an Indie Developer License, the yearly term covers software updates only;
+no support is included beyond the public issue tracker.
+
 The Author will not disable working features of a paying or previously paying
 Subscriber.
 
@@ -204,31 +215,18 @@ watermark and the notice stay until a License Key is set. Continued use after
 the evaluation period, or any production use, without a License Key is outside
 this EULA.
 
-On request, the Author issues an Evaluation Key with a 30-day expiry that runs
-the Enterprise Package in full without the watermark and the notice, so that
-staging and demonstration deployments can be shown to evaluators as they would
-ship. When the Evaluation Key expires the Software keeps running, displays the
-watermark again, and emits a console notice naming the expiry date; nothing in a
-deployed application breaks. An Evaluation Key must not be used in production,
-shared outside the evaluating organization, or embedded in a product
-distributed to third parties. Any development key published by the Author for
-local development and testing is subject to the same limits.
-
-The same mechanism applies to a feature outside a Subscriber's edition. A Grid
-Developer License that reaches the Spreadsheet Module or Studio is treated as
-unlicensed for that feature: the feature runs, and the watermark and a console
-notice naming the covering edition stay until the license is upgraded. The
-Author does not disable a feature that is already running in a Subscriber's
-application.
+The Author does not issue separate Evaluation Keys; evaluation runs without a
+key as described above. The Author does not disable a feature that is already
+running in a Subscriber's application.
 
 ## 8. ENTERPRISE LICENSE - OPEN SOURCE PROJECTS
 
-The Author issues a free Enterprise License Key for projects that are open source
-under an OSI-approved license, hosted in a public repository, and are not a paid
-product. Such keys are issued at the Suite Edition, provide the full Enterprise
-feature set with no watermark, and are renewable annually for as long as the
-project remains open source. Requests
-are made to the Author with the repository URL.
+The Author grants a free Enterprise license, at the Suite Edition, to projects
+that are open source under an OSI-approved license, hosted in a public
+repository, and are not a paid product, renewable annually for as long as the
+project remains open source. Requests are made to the Author with the
+repository URL. The License Key must be kept out of the public repository, for
+example by injecting it at build time from a secret.
 
 ## 9. ENTERPRISE LICENSE - LICENSE KEY AND VALIDATION
 
@@ -236,20 +234,23 @@ License Key validation is performed entirely client-side. No network call is mad
 to validate a License Key, and no telemetry is sent. Air-gapped deployments are
 supported.
 
-The check is deliberately not a cryptographic one. The Software classifies the
-key string: whether it carries the Author's prefix, which edition it names,
-whether it appears on the Author's revoked list, whether it is a development or
-evaluation sentinel, and any expiry date the key encodes. It does nothing more.
-A key can be read out of a deployed bundle by anyone with developer tools, and an
-unlicensed or out-of-edition build still runs. This is stated plainly because the
-license is a legal agreement and not a technical lock, and the Author would
-rather describe the mechanism accurately than imply protection that is not there.
-Keys are revocable: a key the Author revokes stops being accepted in later
-releases.
+Every Subscriber receives the same License Key. The Software compares a SHA-256
+digest of the key it is given with the digest of the Author's License Key, and
+does nothing more; it does not read an edition, a seat count or an expiry date
+from the key. The Subscriber's edition, seats and updates-and-support term are
+set by its order and this EULA. A key that does not match runs as unlicensed:
+the features keep working and the watermark and the console notice show.
 
-Each License Key embeds a stable identifier used only to cross-reference the
-Subscriber's order during support. The Subscriber must not remove, obscure, or
-disable the License Key check, the watermark, or the console notice.
+A key can be read out of a deployed bundle by anyone with developer tools, and an
+unlicensed build still runs. This is stated plainly because the license is a
+legal agreement and not a technical lock, and the Author would rather describe
+the mechanism accurately than imply protection that is not there. The Author may
+replace the License Key in a later release; versions released before the
+replacement keep accepting the earlier key.
+
+The Subscriber must not publish the License Key, for example in a public
+repository, and must not remove, obscure, or disable the License Key check, the
+watermark, or the console notice.
 
 ## 10. ENTERPRISE LICENSE - RESTRICTIONS
 

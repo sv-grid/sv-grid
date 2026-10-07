@@ -6,7 +6,7 @@
  * compiler that turns an expression into a row predicate.
  */
 import { registerAdvancedFilterEngine, type AdvancedFilterEngine } from '@svgrid/grid'
-import { isLicenseKeySet } from './license'
+import { hasValidLicense } from './license'
 import { emitUnlicensedNudge } from './watermark'
 import { compilePredicate } from './expressions/compile'
 
@@ -31,5 +31,5 @@ export function enableAdvancedFilter(): void {
   if (enabled) return
   enabled = true
   registerAdvancedFilterEngine(advancedFilterEngine)
-  if (!isLicenseKeySet()) emitUnlicensedNudge()
+  if (!hasValidLicense()) emitUnlicensedNudge()
 }

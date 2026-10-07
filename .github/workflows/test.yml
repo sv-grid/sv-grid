@@ -417,6 +417,13 @@ jobs:
         # The `perf` project is deliberately excluded - its own comment explains
         # why browser wall-clock on a shared runner is not a gate.
         run: pnpm exec playwright test --project=chromium --project=mobile
+        env:
+          # The specs run the website on localhost, where @svgrid/enterprise
+          # shows its watermark and upgrade card unless the license key is set
+          # (svgrid.com itself is exempt by hostname). website/src/main.ts reads
+          # this only on the dev server the specs start, so it never reaches a
+          # deployed bundle. Unset (e.g. a fork PR), the nudges show.
+          VITE_SVGRID_LICENSE_KEY: ${{ secrets.SVGRID_LICENSE_KEY }}
 
       - name: Upload the failure evidence
         # The `github` reporter writes annotations, not an HTML report, so

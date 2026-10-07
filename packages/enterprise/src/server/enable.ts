@@ -19,7 +19,7 @@
  * const ctl = createServerRowModel(source, { groupBy: ['region'], onChange })
  * ```
  */
-import { isLicenseKeySet } from '../license'
+import { hasValidLicense } from '../license'
 import { emitUnlicensedNudge } from '../watermark'
 
 let enabled = false
@@ -35,7 +35,7 @@ let enabled = false
 export function enableServerRowModel(): void {
   if (enabled) return
   enabled = true
-  if (!isLicenseKeySet()) emitUnlicensedNudge()
+  if (!hasValidLicense()) emitUnlicensedNudge()
 }
 
 /**

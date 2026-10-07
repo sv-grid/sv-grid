@@ -12,6 +12,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ServerDataSource } from '@svgrid/grid'
 
+// A test key in place of the real license key (see ../license-core.test.ts).
+// vi.mock survives the vi.resetModules() in freshGraph, so every fresh graph
+// compares against this hash.
+vi.mock('../license-hash', async () => {
+  const { sha256Hex } = await import('../sha256')
+  return { LICENSE_KEY_SHA256: sha256Hex('test-license-key-0000') }
+})
+
 const WATERMARK_ATTR = 'data-svgrid-enterprise-watermark'
 
 const emptySource: ServerDataSource<{ region: string }> = {
@@ -74,7 +82,7 @@ describe('server row model unlicensed nudge', () => {
 
   it('stays quiet when a license key is set', async () => {
     const { create, setLicenseKey } = await freshGraph()
-    setLicenseKey('SVENTERPRISE-DEV-LOCAL')
+    setLicenseKey('test-license-key-0000')
     makeGridRoot()
 
     create(emptySource, { groupBy: ['region'], onChange: () => {} })

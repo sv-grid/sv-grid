@@ -8,7 +8,7 @@ import {
 } from './export'
 import { printGrid, type PrintOptions } from './print'
 import { importData, type ImportOptions, type ImportResult } from './import'
-import { isLicenseKeySet } from './license'
+import { hasValidLicense } from './license'
 import { emitUnlicensedNudge } from './watermark'
 // AI helpers are built-in + free in @svgrid/grid now; enterprise just wires them
 // into the Pro API and registers its export engine so AI exports can write xlsx/pdf.
@@ -168,6 +168,6 @@ export function installEnterprise<
   }
   // Surface the unlicensed state at install time so the watermark appears
   // alongside the grid, not just after the user clicks Export.
-  if (!isLicenseKeySet()) emitUnlicensedNudge()
+  if (!hasValidLicense()) emitUnlicensedNudge()
   return pro
 }

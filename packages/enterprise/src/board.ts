@@ -15,7 +15,7 @@
  * ```
  */
 import { registerBoardView } from '@svgrid/grid'
-import { isLicenseKeySet } from './license'
+import { hasValidLicense } from './license'
 import { emitUnlicensedNudge } from './watermark'
 import SvGridBoard from './SvGridBoard.svelte'
 
@@ -30,7 +30,7 @@ export function enableBoardView(): void {
   if (enabled) return
   enabled = true
   registerBoardView(SvGridBoard as never)
-  if (!isLicenseKeySet()) emitUnlicensedNudge()
+  if (!hasValidLicense()) emitUnlicensedNudge()
 }
 
 export { default as SvGridBoard } from './SvGridBoard.svelte'

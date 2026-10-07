@@ -121,7 +121,7 @@ in a side form. Toggled via `enableInlineEditing` on `<SvGrid>` +
 Layer 1 is your data; Layer 2 is the engine; Layer 3 is the
 `<SvGrid>` renderer.
 
-**License key.** A string starting with `SVENTERPRISE-` set via
+**License key.** The key from your `@svgrid/enterprise` order email, set via
 `setLicenseKey(...)`. Removes the unlicensed watermark + console
 nudge. See [API stability](./api-stability.md) for license-related
 errors.
@@ -185,7 +185,7 @@ grid as the render template format for cells, headers, and editors.
 every feature still runs, and loading the module displays a small
 watermark and a console message about the Enterprise package. No key is
 needed to evaluate; a license key removes them
-(`setLicenseKey('SVENTERPRISE-...')`).
+(`setLicenseKey('YOUR-LICENSE-KEY')`).
 
 ## T
 
@@ -212,7 +212,7 @@ more than a few hundred rows. Bypassed in jsdom (zero layout metrics)
 
 **Watermark.** The "Unlicensed @svgrid/enterprise" badge that appears
 bottom-right when a Enterprise feature runs without a valid license. Removed
-by `setLicenseKey('SVENTERPRISE-...')` or `dismissUnlicensedNudge()` (the
+by `setLicenseKey('YOUR-LICENSE-KEY')` or `dismissUnlicensedNudge()` (the
 nudge only).
 
 ## See also

@@ -1,37 +1,34 @@
-﻿// Polite license gate. Not crypto - anyone with devtools can extract the key
-// from a deployed bundle. The point is to make commercial use require a
-// transaction, not to defeat reverse engineering.
+﻿// Polite license gate. Not DRM - anyone with devtools can patch a deployed
+// bundle. The point is to make commercial use require a transaction, not to
+// defeat reverse engineering.
 //
-// Behavior matrix:
+// One license key for every customer (see license-core.ts); the package keeps
+// only its SHA-256. Behavior:
 //
 //   currentKey state                  -> result
 //   ────────────────────────────────────────────────────────────────────
-//   null (no key set)                 -> evaluation: watermark + console.log,
-//                                        feature still runs
-//   does not start with "SVENTERPRISE-"      -> throws (programmer error)
-//   in REVOKED_KEYS                   -> throws (revoked / leaked / expired)
-//   starts with "SVENTERPRISE-DEV" or
-//     "SVENTERPRISE-EVAL"                    -> works; one-time console.info notice
-//   an EXPIRED dev/eval key            -> still works, but stops looking
-//                                        licensed: watermark + a one-time
-//                                        console notice naming the expiry date
-//                                        + the upgrade card. Never blocks,
-//                                        so a trial ending cannot break a build.
-//   any other "SVENTERPRISE-..."             -> works silently (paid production)
+//   null (no key set)                 -> evaluation: watermark + console.log
+//                                        + upgrade card, feature still runs
+//   anything but the license key      -> same as no key, plus a one-time
+//                                        console warning that the key is not
+//                                        valid. Never throws: a wrong key must
+//                                        not break a running app.
+//   the license key                   -> works silently, every edition, no
+//                                        expiry (a paid key never lapses into
+//                                        the watermark; EULA s.6)
 //
-// Editions cut across that matrix. A paid key names GRID or SUITE (and a key
-// issued before editions existed reads as SUITE). `nudgeEnterpriseFor` is the
-// gate for a surface a GRID key does not reach: same never-blocks contract, with
-// its own console notice saying which edition covers it.
-
+// On svgrid.com itself none of the nudges show (first-party.ts).
+//
+// The dev / eval / expiry branches below stay for the statuses the type still
+// names; the one-key check never produces them.
 import {
   checkLicenseKey,
   editionCovers,
-  VALID_PREFIX,
   type LicenseInfo,
   type LicensedProduct,
 } from './license-core'
 import { emitUnlicensedNudge } from './watermark'
+import { isFirstPartySite } from './first-party'
 import { showUpgradePrompt, type EnterpriseFeatureLabel } from './upgrade-prompt'
 
 export {
@@ -70,6 +67,24 @@ function noticeExpired(info: LicenseInfo): void {
   )
 }
 
+/** dev / eval keys are trials; only they can lapse. */
+function isTrial(info: LicenseInfo): boolean {
+  return info.status === 'dev' || info.status === 'eval'
+}
+
+let noticedInvalid = false
+/** One-time console warning for a key that is set but is not the license key. */
+function noticeInvalid(info: LicenseInfo): void {
+  if (noticedInvalid || (info.status !== 'invalid' && info.status !== 'revoked')) return
+  if (isFirstPartySite()) return
+  noticedInvalid = true
+  // eslint-disable-next-line no-console
+  console.warn(
+    '@svgrid/enterprise: the license key passed to setLicenseKey() is not valid, so the ' +
+      'watermark stays. Copy the key from your order email, or contact sales@jqwidgets.com.',
+  )
+}
+
 export function setLicenseKey(key: string): void {
   if (typeof key !== 'string' || key.length === 0) {
     throw new Error('@svgrid/enterprise: setLicenseKey() requires a non-empty string')
@@ -77,6 +92,7 @@ export function setLicenseKey(key: string): void {
   currentKey = key
   noticedDev = false
   noticedExpired = false
+  noticedInvalid = false
   noticedEdition.clear()
 }
 
@@ -84,6 +100,7 @@ export function clearLicenseKey(): void {
   currentKey = null
   noticedDev = false
   noticedExpired = false
+  noticedInvalid = false
   noticedEdition.clear()
 }
 
@@ -130,8 +147,11 @@ export function nudgeEnterprise(feature?: EnterpriseFeatureLabel): void {
   const info = checkLicenseKey(currentKey)
   // `valid` stays true past a trial's expiry (the feature keeps running), so
   // checking it alone would let a lapsed trial through silently forever.
-  if (info.valid && !info.expired) return
-  const lapsedTrial = info.valid && info.expired === true
+  // Only a trial key can lapse. A paid key carries no expiry, and even if one
+  // ever did, it must not bring the watermark back (EULA s.6).
+  const lapsedTrial = isTrial(info) && info.expired === true
+  if (info.valid && !lapsedTrial) return
+  noticeInvalid(info)
   // A lapsed trial gets the same treatment as an unlicensed app - watermark,
   // console notice and card. The evaluation is over; the app keeps running,
   // but it stops looking licensed.
@@ -190,15 +210,17 @@ export function nudgeEnterpriseFor(
 ): void {
   const info = checkLicenseKey(currentKey)
   const covered = info.valid && editionCovers(info.edition, product)
-  if (covered && !info.expired) return
+  const lapsedTrial = isTrial(info) && info.expired === true
+  if (covered && !lapsedTrial) return
+  noticeInvalid(info)
   // A key that is valid, unexpired and merely out of edition is a different
   // message from an unlicensed or lapsed one, so it gets its own notice. The
   // watermark and the card are the same either way.
-  const outOfEdition = info.valid && info.expired !== true && !covered
+  const outOfEdition = info.valid && !lapsedTrial && !covered
   emitUnlicensedNudge()
   if (outOfEdition) noticeEdition(product)
-  else if (info.valid && info.expired === true) noticeExpired(info)
-  showUpgradePrompt(feature, { expired: info.valid && info.expired === true })
+  else if (lapsedTrial) noticeExpired(info)
+  showUpgradePrompt(feature, { expired: lapsedTrial })
 }
 
 export function assertEnterpriseLicensed(feature?: EnterpriseFeatureLabel): void {
@@ -213,14 +235,13 @@ export function assertEnterpriseLicensed(feature?: EnterpriseFeatureLabel): void
       showUpgradePrompt(feature)
       return
     case 'invalid':
-      throw new Error(
-        `@svgrid/enterprise: invalid license key format (expected "${VALID_PREFIX}..." prefix).`,
-      )
     case 'revoked':
-      throw new Error(
-        '@svgrid/enterprise: this license key has been revoked. ' +
-          'Contact sales@jqwidgets.com for a replacement.',
-      )
+      // A wrong key is treated like no key: the feature runs, nudged. It used to
+      // throw, which turned a typo (or an old-format key) into a broken app.
+      noticeInvalid(info)
+      emitUnlicensedNudge()
+      showUpgradePrompt(feature)
+      return
     case 'dev':
     case 'eval':
       if (info.expired) {

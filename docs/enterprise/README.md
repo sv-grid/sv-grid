@@ -16,7 +16,7 @@ pnpm add @svgrid/enterprise
 ```ts
 import { installEnterprise, setLicenseKey } from '@svgrid/enterprise'
 
-setLicenseKey('SVENTERPRISE-…')   // once, at app startup
+setLicenseKey('YOUR-LICENSE-KEY')   // once, at app startup
 const pro = installEnterprise(api) // wraps a SvGridApi with Enterprise methods
 ```
 
@@ -138,7 +138,9 @@ setLicenseKey('YOUR-LICENSE-KEY') // the key from your order
 
 The pack comes in two editions, both covering unlimited production apps.
 **Grid** is everything on this page except the spreadsheet and Studio;
-**Suite** is all of it. A key names its edition, and a key that predates
+**Suite** is all of it. The Indie license is the Grid edition at a lower
+price for freelancers and companies under $1M revenue, without support.
+A key names its edition, and a key that predates
 editions reads as Suite. A Grid key that opens `<SvSheet>` is treated the
 same way as an unlicensed build: the feature runs, with the watermark and a
 console notice naming the edition that covers it.

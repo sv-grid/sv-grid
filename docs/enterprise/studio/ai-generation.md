@@ -31,7 +31,7 @@ server runs in a Node process):
     "svgrid": {
       "command": "npx",
       "args": ["@svgrid/mcp"],
-      "env": { "SVGRID_LICENSE_KEY": "SVENTERPRISE-..." }
+      "env": { "SVGRID_LICENSE_KEY": "YOUR-LICENSE-KEY" }
     }
   }
 }

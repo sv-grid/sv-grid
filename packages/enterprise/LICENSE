@@ -41,6 +41,13 @@ License scope is set by the Subscriber's order:
     internal dev / staging environments.
   - Suite Developer License: the Software in full, including the
     Spreadsheet Module and the Studio, on the same unlimited scope.
+  - Indie Developer License: the same scope as a Grid Developer
+    License, for a Subscriber that is an individual working on their
+    own account or an organization whose revenue, with its affiliates,
+    was under USD 1,000,000 in the 12 months before the order. Placing
+    an Indie order confirms this. A Subscriber that no longer qualifies
+    moves its seats to a Grid Developer License by its next renewal.
+    Includes software updates only; no support.
   - Enterprise / Custom (Site or Org-wide): scope per the negotiated
     order or master agreement.
   - OEM License: the redistribution cases in Section 1A.
@@ -51,10 +58,10 @@ the formula evaluator, and the .xlsx / .xls / .ods / .csv readers and
 writers. The "Studio" is the designer, the code generator and the SQL
 data sources.
 
-Using the Spreadsheet Module or the Studio under a Grid Developer
-License is outside the licensed scope. The Software does not block it:
-the feature runs, and the watermark and the console notice described in
-Section 4 show until the license is upgraded to Suite.
+Using the Spreadsheet Module or the Studio under a Grid or Indie
+Developer License is outside the licensed scope. The license key does
+not distinguish editions, so the Software neither blocks nor flags it;
+it stays outside the license until the license is upgraded to Suite.
 
 ------------------------------------------------------------------------
 1A. OEM AND REDISTRIBUTION
@@ -140,22 +147,20 @@ development, staging and demonstration environments; production use
 needs a license key. Without a key the grid and the spreadsheet show a
 small watermark and the Software emits a console notice about the
 Enterprise package; nothing is disabled and nothing stops after the 30
-days, the watermark and the notice stay until a key is set. On request
-the Author issues an evaluation key with a 30-day expiry that removes
-both for staging and demonstration deployments; when it expires the
-Software keeps running, the watermark returns and a console notice names
-the date. Evaluation and development keys are not for production and
-must not be shared or embedded in a product distributed to third
-parties.
+days, the watermark and the notice stay until a key is set. The Author
+does not issue separate evaluation keys.
 
 Projects that are open source under an OSI-approved license, hosted in a
 public repository, and not a paid product qualify for a free Enterprise
-key with the full feature set and no watermark, renewable annually.
+license with the full feature set, renewable annually. The license key
+must be kept out of the public repository.
 
-License key validation is performed entirely client-side and is not a
-cryptographic check: the Software classifies the key string and nothing
-more. No network call is made to validate, and no telemetry is sent.
-Air-gapped deployments are supported.
+Every Subscriber receives the same license key. Validation is performed
+entirely client-side: the Software compares a SHA-256 digest of the key
+with the digest of the Author's key and does nothing more; the edition,
+seats and term come from the order, not the key. A key that does not
+match runs as unlicensed. No network call is made to validate, and no
+telemetry is sent. Air-gapped deployments are supported.
 
 ------------------------------------------------------------------------
 5. RESTRICTIONS
