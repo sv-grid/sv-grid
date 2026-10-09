@@ -11,6 +11,7 @@
  * self-contained).
  */
 import type { GeneratedFile } from './scaffold.js'
+import { toSvelteKit3 } from './sveltekit3.js'
 import type { ActionConfig, Block, ComponentBinding, ComponentConfig, EntityDataSource, FilterPanelConfig, FormConfig, GridColumnConfig, GridConfig, KpiConfig, OAuthProvider, PivotConfig, RecordConfig, RowAction, ScheduledJob, SchedulerViewConfig, Screen, StudioProject, SupabaseSource } from './project.js'
 import { tenantField, isTenantScoped } from './project.js'
 import { blockColumns, blockStyleCss, blockClassName, sanitizeClassName, componentHandleName, componentHasBindings, entityDataSource, flattenBlocks, serializeProject, seedUsers, compileHandlerSteps, rowSelectSlot, eventSlot, FORM_SUBMIT, GRID_EVENTS, screenLayoutOf, isPaneLayout, canvasRectOf, CANVAS_ROW_PX, CANVAS_GAP_PX, gridOpts, stackOpts, splitOpts, dockOpts, canvasOpts, stateInitExpr, stateTsType, reconcileDock, ON_LOAD, ON_DESTROY, isSsrScreen, ssrScreenShape } from './project.js'
@@ -19,7 +20,7 @@ import { isDarkTheme, themeTokenCss } from './themes.js'
 import type { EntityField, EntitySchema } from '../schema.js'
 import { hasFieldConditions } from '../edit-panel.js'
 import { SVGRID_VERSION, GRID_VERSION } from '../version.js'
-import { emitEntityModules, homeFile, layoutFile, lookupVar, namesFor, prepareEntities, relationDisplayFields, sqlDdlFiles, type NavItem } from './emit-schema.js'
+import { emitEntityModules, homeFile, layoutFile, lookupVar, namesFor, prepareEntities, relationDisplayFields, sqlDdlFiles, storeVar, type NavItem } from './emit-schema.js'
 
 const has = (blocks: Block[], kind: Block['config']['kind']) => blocks.some((b) => b.config.kind === kind)
 
@@ -2352,31 +2353,36 @@ function screenChildEntities(blocks: Block[], resolve: (name: string) => EntityS
 /** `+page.server.ts` for a read-only SSR screen (data-viz / detail / master-
  *  detail): a `load` that returns the full dataset (+ each child collection) -
  *  the page renders real SSR HTML from `data.*`. No actions (read-only). */
-/** Sources a screen can render on the server. See `ssrScreenShape`. */
-type SsrSourceKind = 'memory' | 'sql' | 'rest'
+/** Whether an entity is reached through its own /api route (SQL, and in-memory
+ *  rows held on the server). The SSR emitters read those through SvelteKit's
+ *  event.fetch, so the route's validation / RBAC / triggers / audit apply once.
+ *  Everything else an SSR screen can bind (REST on an absolute URL) is called
+ *  in-process from `$lib/data`. */
+type RoutedEntity = (entity: string) => boolean
 
-function ssrReadServerFile(schema: EntitySchema, screen: Screen, sourceKind: SsrSourceKind, accessEnabled: boolean, screenIds: string[], resolve: (name: string) => EntitySchema | undefined): GeneratedFile {
-  const n = namesFor(schema)
-  const isSql = sourceKind === 'sql'
+function ssrReadServerFile(schema: EntitySchema, screen: Screen, routed: RoutedEntity, accessEnabled: boolean, screenIds: string[], resolve: (name: string) => EntitySchema | undefined): GeneratedFile {
   const children = screenChildEntities(screen.blocks, resolve)
-  const rbac = accessEnabled && !isSql // sql: the /api route already enforces authz
+  const viaRoute = routed(schema.name)
+  const rbac = accessEnabled && !viaRoute // a routed entity's /api route already enforces authz
   const srcExpr = (s: EntitySchema) =>
-    isSql ? `createKitDataSource<Record<string, unknown>>({ endpoint: ${jsStr('/api/' + namesFor(s).route)}, fetch })` : namesFor(s).sourceVar
-  const memImports = isSql ? [] : [...new Set([n.sourceVar, ...children.map((c) => namesFor(c).sourceVar)])]
+    routed(s.name) ? `createKitDataSource<Record<string, unknown>>({ endpoint: ${jsStr('/api/' + namesFor(s).route)}, fetch })` : namesFor(s).sourceVar
+  const all = [schema, ...children]
+  const anyRouted = all.some((s) => routed(s.name))
+  const dataImports = [...new Set(all.filter((s) => !routed(s.name)).map((s) => namesFor(s).sourceVar))]
   const childLoads = children.map((c) => `  const ${mdChildVar(c.name)} = (await ${srcExpr(c)}.getRows(PAGE)).rows`).join('\n')
   return {
     path: `src/routes/${screen.route}/+page.server.ts`,
     description: `${screen.title} - SSR load (full dataset${children.length ? ' + child collections' : ''}).`,
     contents: `import type { PageServerLoad } from './$types'
 import type { ServerRequest } from '@svgrid/grid'
-${isSql ? "import { createKitDataSource } from '@svgrid/enterprise'\n" : ''}${rbac ? "import { error } from '@sveltejs/kit'\nimport { authorizeAction, getServerRole } from '$lib/access'\n" : ''}${memImports.length ? `import { ${memImports.join(', ')} } from '$lib/data'\n` : ''}
+${anyRouted ? "import { createKitDataSource } from '@svgrid/enterprise'\n" : ''}${rbac ? "import { error } from '@sveltejs/kit'\nimport { authorizeAction, getServerRole } from '$lib/access'\n" : ''}${dataImports.length ? `import { ${dataImports.join(', ')} } from '$lib/data'\n` : ''}
 // This screen renders on the server: real SSR HTML, not just a server-side
 // load. Stated explicitly so it holds whichever way the root layout is set.
 export const ssr = true
 ${rbac ? `\nconst SCREEN_IDS = ${JSON.stringify(screenIds)}\n` : ''}
 const PAGE: ServerRequest = { startRow: 0, endRow: 1000, pageIndex: 0, pageSize: 1000, sortModel: [], filterModel: {} }
 
-export const load: PageServerLoad = async (${isSql || rbac ? `{ ${[isSql ? 'fetch' : '', rbac ? 'locals' : ''].filter(Boolean).join(', ')} }` : ''}) => {
+export const load: PageServerLoad = async (${anyRouted || rbac ? `{ ${[anyRouted ? 'fetch' : '', rbac ? 'locals' : ''].filter(Boolean).join(', ')} }` : ''}) => {
 ${rbac ? `  if (!authorizeAction(getServerRole({ locals }), 'read', SCREEN_IDS)) throw error(403, 'Not allowed')\n` : ''}  const rows = (await ${srcExpr(schema)}.getRows(PAGE)).rows
 ${childLoads ? childLoads + '\n' : ''}  return { rows${children.map((c) => `, ${mdChildVar(c.name)}`).join('')} }
 }
@@ -2456,13 +2462,13 @@ function attrs(f: EntityField): string {
 }
 
 /** The `+page.server.ts` + SSR `+page.svelte` for a single-grid CRUD screen. */
-function emitSsrGridScreen(schema: EntitySchema, screen: Screen, sourceKind: SsrSourceKind, accessEnabled: boolean, screenIds: string[], byName: Map<string, EntitySchema>): GeneratedFile[] {
+function emitSsrGridScreen(schema: EntitySchema, screen: Screen, routed: RoutedEntity, accessEnabled: boolean, screenIds: string[], byName: Map<string, EntitySchema>): GeneratedFile[] {
   const n = namesFor(schema)
-  const isSql = sourceKind === 'sql'
-  // REST reads like the memory path - the source is imported from $lib/data and
-  // called directly - but the remote API owns the ids, so a create posts the
-  // values alone, as sql does.
-  const isRest = sourceKind === 'rest'
+  // Routed (SQL, or in-memory rows held on the server): a same-origin client over
+  // the entity's /api route. Otherwise REST, whose source is imported from
+  // $lib/data and called directly. Either way the backend owns the ids, so a
+  // create posts the values alone.
+  const isSql = routed(schema.name)
   const relSchemaOf = (f: EntityField) => byName.get(f.relation!.entity)!
   const relIdOf = (rs: EntitySchema) => rs.idField ?? rs.fields.find((x) => x.primaryKey)?.field ?? 'id'
   const grid = screen.blocks.find((b) => b.config.kind === 'grid')!.config as GridConfig
@@ -2484,20 +2490,19 @@ function emitSsrGridScreen(schema: EntitySchema, screen: Screen, sourceKind: Ssr
   const fieldTypesLit = `{ ${formFields.map((f) => `${jsStr(f.field)}: ${jsStr(normType(f.type))}`).join(', ')} }`
 
   // Relation fields render as a native <select> whose options are prefetched in
-  // load - from the in-process source on memory, or the related entity's /api
-  // route on sql (see relSource below).
+  // load - from the related entity's /api route when it has one, else from its
+  // in-process source in $lib/data (see relSource below).
   const isRel = (f: EntityField) => f.type === 'relation' && !!f.relation && byName.has(f.relation!.entity)
   const relFields = formFields.filter(isRel)
-  // The $lib/data import only needs the related sources on the memory path; on sql
-  // the related options come from the related entity's /api route (via event.fetch).
-  const relSourceVars = isSql ? [] : [...new Set(relFields.map((f) => namesFor(relSchemaOf(f)).sourceVar))]
+  const relRouted = relFields.some((f) => routed(relSchemaOf(f).name))
+  const relSourceVars = [...new Set(relFields.filter((f) => !routed(relSchemaOf(f).name)).map((f) => namesFor(relSchemaOf(f)).sourceVar))]
   const relPrefetch = relFields
     .map((f) => {
       const rs = relSchemaOf(f)
       const rel = namesFor(rs)
       const relId = relIdOf(rs)
       const labelF = f.relation!.labelField ?? relId
-      const relSource = isSql
+      const relSource = routed(rs.name)
         ? `createKitDataSource<Record<string, unknown>>({ endpoint: ${jsStr('/api/' + rel.route)}, fetch })`
         : rel.sourceVar
       return `  const ${f.field}Options = (await ${relSource}.getRows({ startRow: 0, endRow: 100, pageIndex: 0, pageSize: 100, sortModel: [], filterModel: {} })).rows.map((r: Record<string, unknown>) => ({ value: String(r[${jsStr(relId)}] ?? ''), label: String(r[${jsStr(labelF)}] ?? '') }))`
@@ -2505,13 +2510,14 @@ function emitSsrGridScreen(schema: EntitySchema, screen: Screen, sourceKind: Ssr
     .join('\n')
   const relReturn = relFields.map((f) => `, ${f.field}Options`).join('')
 
-  // Source acquisition differs by kind:
-  //  - memory: import the in-process source from $lib/data and call it directly.
-  //  - sql: build a same-origin client over the connected /api/<entity> route with
-  //    SvelteKit's event.fetch, so validation / RBAC / triggers / audit stay enforced
-  //    once, in that route's createKitHandlers - not duplicated here.
+  // Source acquisition:
+  //  - routed: build a same-origin client over the entity's /api/<entity> route
+  //    with SvelteKit's event.fetch, so validation / RBAC / triggers / audit stay
+  //    enforced once, in that route's createKitHandlers - not duplicated here.
+  //  - REST: import the source from $lib/data and call the remote API directly.
   const src = isSql ? 'source(fetch)' : n.sourceVar
   const fetchArg = isSql ? ', fetch' : ''
+  const loadFetchArg = isSql || relRouted ? ', fetch' : ''
   // A schema with value-driven fields posts through `stripHiddenValues`, so a
   // field the form was hiding is never written from a submitted FormData - the
   // same fields the client panel would have sent.
@@ -2520,22 +2526,18 @@ function emitSsrGridScreen(schema: EntitySchema, screen: Screen, sourceKind: Ssr
   const enterpriseImports = [
     'validateAll',
     ...(conditional ? ['stripHiddenValues'] : []),
-    ...(isSql ? ['createKitDataSource'] : []),
+    ...(isSql || relRouted ? ['createKitDataSource'] : []),
   ].join(', ')
-  const sourceImport = isSql
-    ? ''
-    : `import { ${[...new Set([n.sourceVar, ...relSourceVars]), ...(isRest ? [] : ['nextId'])].join(', ')} } from '$lib/data'\n`
+  const dataImports = [...new Set([...(isSql ? [] : [n.sourceVar]), ...relSourceVars])]
+  const sourceImport = dataImports.length ? `import { ${dataImports.join(', ')} } from '$lib/data'\n` : ''
   const schemaImport = `import { ${n.schemaVar}${isSql ? `, type ${n.type}` : ''} } from '$lib/schemas'`
-  const idConst = isSql || isRest ? '' : `\nconst ID_FIELD = ${jsStr(idField)}`
   const srcHelper = isSql
     ? `\n// Same-origin client over the connected /api/${n.route} route (that route runs\n// validation, RBAC, triggers + audit via createKitHandlers).\nconst source = (fetch: typeof globalThis.fetch) => createKitDataSource<${n.type}>({ endpoint: ${jsStr('/api/' + n.route)}, fetch })\n`
     : ''
-  const createCall = isSql || isRest
-    ? `await ${src}.createRow(values)`
-    : `await ${n.sourceVar}.createRow({ [ID_FIELD]: nextId(${jsStr(n.idPrefix)}), ...values })`
+  const createCall = `await ${src}.createRow(values)`
 
-  // RBAC only needs inline enforcement for the memory path; sql inherits it from the
-  // connected /api route (createKitHandlers authorize), reached via event.fetch.
+  // RBAC only needs inline enforcement off the route (REST); a routed entity inherits
+  // it from its /api route (createKitHandlers authorize), reached via event.fetch.
   const rbac = accessEnabled && !isSql
   const localsArg = rbac ? ', locals' : ''
   const readGuard = rbac ? `    if (!authorizeAction(getServerRole({ locals }), 'read', SCREEN_IDS)) throw error(403, 'Not allowed')\n` : ''
@@ -2550,7 +2552,7 @@ import { planFromSearchParams } from '$lib/server/query'
 // This screen renders on the server: real SSR HTML, not just a server-side
 // load. Stated explicitly so it holds whichever way the root layout is set.
 export const ssr = true
-${idConst}${rbac ? `\nconst SCREEN_IDS = ${JSON.stringify(screenIds)}` : ''}
+${rbac ? `\nconst SCREEN_IDS = ${JSON.stringify(screenIds)}` : ''}
 const FIELD_TYPES: Record<string, 'text' | 'number' | 'boolean'> = ${fieldTypesLit}
 ${srcHelper}
 /** Read a submitted form into a typed partial row. Booleans come from checkbox
@@ -2566,7 +2568,7 @@ function formToValues(fd: FormData): Record<string, unknown> {
   return values
 }
 
-export const load: PageServerLoad = async ({ url${fetchArg}${localsArg} }) => {
+export const load: PageServerLoad = async ({ url${loadFetchArg}${localsArg} }) => {
 ${readGuard}  const plan = planFromSearchParams(url, ${pageSize})
   const { rows, rowCount } = await ${src}.getRows(plan)
 ${relPrefetch ? relPrefetch + '\n' : ''}  return { rows, total: rowCount, page: plan.pageIndex, size: plan.pageSize, sort: plan.sortModel${relReturn} }
@@ -2788,14 +2790,26 @@ ${g.title ? `          <legend>${htmlEsc(g.title)}</legend>\n` : ''}${inner}
     const q = sp.toString()
     void goto(q ? \`?\${q}\` : page.url.pathname, { keepFocus: true, noScroll: true })
   }
+
+  // Only a sort the URL does not already hold navigates. Grid releases before
+  // the mount-report fix also reported the starting sort when they mounted,
+  // and acting on that would drop ?page on every load.
+  function onSort(s: Array<{ id: string; desc: boolean }>) {
+    const sort = s.map((x) => \`\${x.id}:\${x.desc ? 'desc' : 'asc'}\`).join(',')
+    if (sort !== (page.url.searchParams.get('sort') ?? '')) setParams({ sort: sort || null, page: null })
+  }
 ${wantsFilter ? `
   // Filter via the URL (q = global search, f_<col> = per-column). The server's
   // planFromSearchParams reads these, so load() re-filters; reset to the first page.
   function applyFilters(f: { global: string; columns: Array<{ id: string; value: string }> }) {
     const sp = new URLSearchParams(page.url.searchParams)
+    const filterParams = (p: URLSearchParams) => [...p].filter(([k]) => k === 'q' || k.startsWith('f_')).sort().join('&')
+    const before = filterParams(sp)
     for (const k of [...sp.keys()]) if (k === 'q' || k.startsWith('f_')) sp.delete(k)
     if (f.global) sp.set('q', f.global)
     for (const c of f.columns) if (c.value) sp.set('f_' + c.id, c.value)
+    // Nothing changed (older grid releases report the starting filters on mount).
+    if (filterParams(sp) === before) return
     sp.delete('page')
     const q = sp.toString()
     void goto(q ? \`?\${q}\` : page.url.pathname, { keepFocus: true, noScroll: true })
@@ -2829,12 +2843,13 @@ ${facetForm}
   {columns}
   externalSort
   initialSorting={data.sort}
+  showPagination
   externalPagination${wantsFilter ? '\n  filterable\n  externalFilter\n  onFiltersChange={applyFilters}' : ''}
   rowCount={data.total}
   pageIndex={data.page}
   pageSize={data.size}
-  onSortingChange={(s) => setParams({ sort: s.map((x) => \`\${x.id}:\${x.desc ? 'desc' : 'asc'}\`).join(',') || null, page: null })}
-  onPaginationChange={(p) => setParams({ page: String(p.pageIndex), size: String(p.pageSize) })}
+  onSortingChange={onSort}
+  onPaginationChange={(p) => { if (p.pageIndex !== data.page || p.pageSize !== data.size) setParams({ page: String(p.pageIndex), size: String(p.pageSize) }) }}
 />
 
 {#if editing}
@@ -2900,8 +2915,12 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
   )
   const accessEnabled = project.access?.enabled === true && (project.access?.roles.length ?? 0) > 0
   const authEnabled = project.auth?.enabled === true
-  // Audit only fires on server routes, so it needs at least one SQL-bound entity.
-  const auditEnabled = project.audit === true && Object.values(sources).some((s) => s.kind === 'sql')
+  // SQL and in-memory entities each get an /api route: SQL because the database
+  // is server-side, memory because its rows are held once on the server
+  // ($lib/server/store) so server-rendered and browser-rendered screens share them.
+  const routed: RoutedEntity = (entity) => sources[entity]?.kind === 'sql' || sources[entity]?.kind === 'memory'
+  // Audit only fires on server routes, so it needs at least one routed entity.
+  const auditEnabled = project.audit === true && project.entities.some((e) => routed(e.name))
   const i18nEnabled = project.i18n?.enabled === true && (project.i18n?.locales.length ?? 0) > 0
   // Which screen(s) read-gate each entity's SQL route: a role may read the entity's
   // data only if it can open at least one screen bound to it (an entity with no
@@ -2917,7 +2936,7 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
   const tenancyRequested = project.tenancy?.enabled === true
   const tenancyOn = tenancyRequested && authEnabled && project.dataLayer === 'drizzle' && Object.values(sources).some((s) => s.kind === 'sql')
   const tenantCol = tenancyOn ? tenantField(project) : undefined
-  const { files, prepared } = emitEntityModules(project.entities, { sources, accessEnabled, auditEnabled, screensByEntity, triggers: project.triggers, supabaseConn: project.supabase, supabaseAuth: project.auth?.enabled === true && project.auth.provider === 'supabase', tenantField: tenantCol, tenantScoped: (name) => isTenantScoped(project, name) })
+  const { files, prepared } = emitEntityModules(project.entities, { sources, accessEnabled, auditEnabled, screensByEntity, triggers: project.triggers, supabaseConn: project.supabase, supabaseAuth: project.auth?.enabled === true && project.auth.provider === 'supabase', tenantField: tenantCol, tenantScoped: (name) => isTenantScoped(project, name), serverMemory: true })
   const byName = new Map(prepared.map((s) => [s.name, s]))
   // Raw (unprepared) entities keep their original field set - needed to derive
   // relation display-field names that match withRelationLabels (the prepared
@@ -2965,13 +2984,11 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
     // driven sort/filter/page; a read-only screen (data-viz / detail) gets a
     // load-only server file, and the SAME page markup renders from data.*.
     if (isSsrScreen(project, screen)) {
-      const kind = sources[screen.entity]?.kind
-      const srcKind: SsrSourceKind = kind === 'sql' ? 'sql' : kind === 'rest' ? 'rest' : 'memory'
       if (ssrScreenShape(project, screen) === 'grid') {
-        pages.push(...emitSsrGridScreen(schema, screen, srcKind, accessEnabled, screensByEntity.get(screen.entity) ?? [], byName))
+        pages.push(...emitSsrGridScreen(schema, screen, routed, accessEnabled, screensByEntity.get(screen.entity) ?? [], byName))
       } else {
         pages.push(
-          ssrReadServerFile(schema, screen, srcKind, accessEnabled, screensByEntity.get(screen.entity) ?? [], resolve),
+          ssrReadServerFile(schema, screen, routed, accessEnabled, screensByEntity.get(screen.entity) ?? [], resolve),
           screenPage(schema, rawByName.get(screen.entity) ?? schema, screen, resolve, (name) => rawByName.get(name), accessEnabled, i18nEnabled, routeById, drillEnabled, true),
         )
       }
@@ -3323,6 +3340,10 @@ export function requireTenant(event: TenantEvent): string {
  * route checks `CRON_SECRET` and runs the due handlers.
  */
 function jobsFiles(project: StudioProject, jobs: ScheduledJob[], emailAvailable: boolean): GeneratedFile[] {
+  // A job runs on the server with no request, so an in-memory entity is read
+  // from its server-held store directly rather than through its /api client.
+  const isServerHeld = (ent: EntitySchema) => entityDataSource(project, ent.name).kind === 'memory'
+  const jobSourceVar = (ent: EntitySchema) => (isServerHeld(ent) ? storeVar(ent) : namesFor(ent).sourceVar)
   const handler = (j: ScheduledJob): string => {
     const label = jsStr(j.name)
     if (j.kind === 'email') {
@@ -3335,9 +3356,8 @@ function jobsFiles(project: StudioProject, jobs: ScheduledJob[], emailAvailable:
         const why = !emailAvailable ? 'email is not enabled on this project' : !j.to ? 'no recipient set' : `unknown entity ${j.entity}`
         return `  ${JSON.stringify(j.id)}: async () => {\n    // ${label}: cannot send - ${why}.\n    console.warn('cron ${j.id}: skipped (${why})')\n  },`
       }
-      const n = namesFor(ent)
       return `  ${JSON.stringify(j.id)}: async () => {
-    const { rows, rowCount } = await ${n.sourceVar}.getRows({ startRow: 0, endRow: 10, sortModel: [], filterModel: {} })
+    const { rows, rowCount } = await ${jobSourceVar(ent)}.getRows({ startRow: 0, endRow: 10, sortModel: [], filterModel: {} })
     const items = rows.map((r) => '<li>' + Object.values(r).slice(0, 3).map(String).join(' &middot; ') + '</li>').join('')
     await sendEmail(${to}, ${subject}, '<p>' + rowCount + ' ${ent.name} total. Most recent:</p><ul>' + items + '</ul>')
   },`
@@ -3347,17 +3367,25 @@ function jobsFiles(project: StudioProject, jobs: ScheduledJob[], emailAvailable:
   }
 
   const entityImports = new Set<string>()
+  const storeImports = new Set<string>()
   for (const j of jobs) {
     if (j.kind !== 'email') continue
     const ent = project.entities.find((e) => e.name === j.entity)
-    if (ent && emailAvailable && j.to) entityImports.add(namesFor(ent).sourceVar)
+    if (!ent || !emailAvailable || !j.to) continue
+    if (isServerHeld(ent)) storeImports.add(jobSourceVar(ent))
+    else entityImports.add(jobSourceVar(ent))
   }
   const imports = [
     ...(entityImports.size ? [`import { ${[...entityImports].sort().join(', ')} } from '$lib/data'`] : []),
+    ...(storeImports.size ? [`import { ${[...storeImports].sort().join(', ')} } from '$lib/server/store'`] : []),
     ...(jobs.some((j) => j.kind === 'email') && emailAvailable ? [`import { sendEmail } from '$lib/server/email'`] : []),
   ]
 
-  const table = jobs.map((j) => ` *   ${j.id.padEnd(20)} ${j.cron.padEnd(16)} ${j.name}`).join('\n')
+  // `//`, not ` * `: the header below is line comments, so a ` * ` row was not
+  // a comment at all and every app with a scheduled job failed to compile.
+  // No sample app has a job, which is how it went unnoticed - found by
+  // `verify:app --all-paths`.
+  const table = jobs.map((j) => `//   ${j.id.padEnd(20)} ${j.cron.padEnd(16)} ${j.name}`).join('\n')
   const jobsTs = `// Regenerated by SvGrid Studio. Scheduled job handlers.
 //
 // Schedule (UTC):
@@ -4840,10 +4868,10 @@ function rootLayoutModule(project: StudioProject): GeneratedFile {
   const anySsr = project.screens.some((s) => isSsrScreen(project, s))
   return {
     path: 'src/routes/+layout.ts',
-    description: anySsr ? 'Root layout options (SSR on; client-only screens opt out per page).' : 'Client SPA (in-memory sources persist across navigation).',
+    description: anySsr ? 'Root layout options (SSR on; client-only screens opt out per page).' : 'Client SPA (no screen renders on the server).',
     contents: anySsr
-      ? `// Server rendering stays on (SvelteKit's default). Screens that have to run in\n// the browser - anything on an in-memory source, or a shape that can't render on\n// the server - opt out in their own +page.ts.\nexport const prerender = false\n`
-      : `// In-memory sources are module singletons, so render as a client SPA. Move an\n// entity to SQL / Supabase and its /api route still runs server-side.\nexport const ssr = false\nexport const prerender = false\n`,
+      ? `// Server rendering stays on (SvelteKit's default). Screens that have to run in\n// the browser - a shape that can't render on the server, or a source the server\n// can't reach - opt out in their own +page.ts.\nexport const prerender = false\n`
+      : `// No screen here renders on the server, so the app runs as a client SPA.\nexport const ssr = false\nexport const prerender = false\n`,
   }
 }
 
@@ -5454,7 +5482,11 @@ export function emitStudioAppBundle(project: StudioProject): GeneratedFile[] {
     ...(plan.deployWorkflow ? [{ path: '.github/workflows/deploy.yml', description: `Deploy to ${plan.label} on push to main.`, contents: plan.deployWorkflow }] : []),
     { path: 'DEPLOY.md', description: 'Deploy runbook (env vars, Git integration, CI, CLI).', contents: deployDocs(project, plan, envKeysUsed(allSource), generated.some((f) => f.path === 'drizzle.config.ts'), { hasDdl: generated.some((f) => f.path === 'db/schema.sql'), hasSeedScript: generated.some((f) => f.path === 'db/seed.ts') }) },
   ]
-  return [...scaffold, ...generated]
+  const bundle = [...scaffold, ...generated]
+  // SvelteKit 3 is an opt-in conversion of the finished bundle, so the default
+  // SvelteKit 2 output above is untouched by it. See sveltekit3.ts for why the
+  // default is not v3 yet (StackBlitz cannot run Vite 8).
+  return project.kit === 3 ? toSvelteKit3(bundle) : bundle
 }
 
 /**

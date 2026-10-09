@@ -5,6 +5,7 @@ import {
   createProject,
   parseProject,
   serializeProject,
+  setScreenRenderMode,
   ssrEligible,
   validateProject,
   withSsrDefaults,
@@ -217,11 +218,21 @@ describe('crudAppFromSchemas', () => {
       }
     })
 
-    it('leaves in-memory apps as a client SPA', () => {
-      // In-memory sources are per-process singletons: an SSR screen would mutate
-      // the server's rows while the app's SPA screens read the browser's.
+    it('renders in-memory screens on the server too, now that the rows live there', () => {
+      // In-memory rows are held once on the server behind each entity's /api
+      // route, so an SSR screen and an SPA screen share them.
       const app = crudAppFromSchemas([customers, orders])
-      expect(app.screens.every((s) => s.renderMode === undefined)).toBe(true)
+      expect(app.screens.find((s) => s.id === 'customers')!.renderMode).toBe('ssr')
+      for (const s of app.screens.filter((s) => s.renderMode === 'ssr')) {
+        expect(ssrEligible(app, s), `${s.id} claims ssr but is not eligible`).toBe(true)
+      }
+    })
+
+    it('keeps a screen switched to spa as spa', () => {
+      const app = crudAppFromSchemas([customers, orders])
+      const off = setScreenRenderMode(app, 'customers', 'spa')
+      expect(off.screens.find((s) => s.id === 'customers')!.renderMode).toBe('spa')
+      expect(withSsrDefaults(off).screens.find((s) => s.id === 'customers')!.renderMode).toBe('spa')
     })
 
     it('leaves PGlite alone even in a SQL project', () => {

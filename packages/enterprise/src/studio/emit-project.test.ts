@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { compile } from 'svelte/compiler'
 import type { EntitySchema } from '../schema'
-import { addBlock, addScreen, blockPalette, validateProject, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, addAccordionBlock, addAccordionComponent, createProject, enableScreenCode, flattenBlocks, parseProject, serializeProject, addStateVar, setScreenLayout, setLayoutOpts, setDockPaneTitle, dockPaneTitleOf, syncDockPanes, dockPaneIds, removeBlock, setAuth, setComponentBinding, setDataLayer, setDeployTarget, setEntityDataSource, setJob, setTenancy, setTrigger, setHandlerBody, setHandlerSteps, stepsToCode, clickSlot, setScreenHandlersSource, setScreenRenderGrid, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type AccordionConfig, type StudioProject } from './project'
+import { addBlock, addScreen, blockPalette, validateProject, addComponentBlock, addFreestandingScreen, addScreenAction, addTabBlock, addAccordionBlock, addAccordionComponent, createProject, enableScreenCode, flattenBlocks, parseProject, serializeProject, addStateVar, setScreenLayout, setLayoutOpts, setDockPaneTitle, dockPaneTitleOf, syncDockPanes, dockPaneIds, removeBlock, setAuth, setComponentBinding, setDataLayer, setDeployTarget, setEntityDataSource, setJob, setTenancy, setTrigger, setHandlerBody, setHandlerSteps, stepsToCode, clickSlot, setScreenHandlersSource, setScreenRenderGrid, setScreenRenderMode, setShell, setTheme, setThemePreset, updateBlock, updateScreen, type GridConfig, type MasterDetailConfig, type TabsConfig, type AccordionConfig, type StudioProject } from './project'
 import ts from 'typescript'
 import { emitStudioProject, emitStudioAppBundle, emitStudioFragment, studioDeployInfo, ctxCompletions, ctxAmbientDts } from './emit-project'
 import { crudAppFromSchemas } from './screen-suites'
@@ -88,7 +88,9 @@ describe('SSR-native screens (renderMode: ssr)', () => {
     expect(c).toMatch(/await validateAll\(customersSchema, values\)/) // server-side validation
     expect(c).toMatch(/return fail\(422/)
     expect(c).toMatch(/planFromSearchParams\(url/)
-    expect(c).toMatch(/await customersSource\.getRows\(plan\)/)
+    // In-memory rows are read through the /api route, like SQL.
+    expect(c).toMatch(/await source\(fetch\)\.getRows\(plan\)/)
+    expect(c).toMatch(/await source\(fetch\)\.createRow\(values\)/)
   })
 
   it('emits an SSR +page.svelte: server rows, URL-driven sort/page, form-action editing', () => {
@@ -166,7 +168,7 @@ describe('SSR-native screens (renderMode: ssr)', () => {
     const server = files.find((f) => f.path === 'src/routes/customers/+page.server.ts')!.contents
     expect(server).toMatch(/export const ssr = true/)
     expect(server).toMatch(/export const load: PageServerLoad/)
-    expect(server).toMatch(/const rows = \(await customersSource\.getRows\(PAGE\)\)\.rows/)
+    expect(server).toMatch(/const rows = \(await createKitDataSource<Record<string, unknown>>\(\{ endpoint: '\/api\/customers', fetch \}\)\.getRows\(PAGE\)\)\.rows/)
     expect(server).not.toMatch(/export const actions/) // read-only
     const page = files.find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
     expect(page).toMatch(/let \{ data \}: PageProps = \$props\(\)/)
@@ -353,11 +355,55 @@ describe('SSR-native screens (renderMode: ssr)', () => {
     expect(() => compile(page, { filename: 'p.svelte', generate: 'server' })).not.toThrow()
   })
 
-  it('an in-memory app stays a SPA at the layout, with no per-screen opt-outs', () => {
+  it('an in-memory app renders on the server, and its client screens opt out per page', () => {
     const app = crudAppFromSchemas([customers])
+    const bundle = emitStudioAppBundle(app)
+    expect(bundle.find((f) => f.path === 'src/routes/+layout.ts')!.contents).not.toMatch(/export const ssr = false/)
+    expect(app.screens.some((s) => s.renderMode === 'ssr')).toBe(true)
+    for (const screen of app.screens) {
+      const optOut = bundle.find((f) => f.path === `src/routes/${screen.route}/+page.ts`)
+      if (screen.renderMode === 'ssr') expect(optOut, `${screen.id} is SSR and needs no opt-out`).toBeUndefined()
+      else expect(optOut?.contents, `${screen.id} runs client-side and must opt out`).toMatch(/export const ssr = false/)
+    }
+  })
+
+  it('an in-memory app with every screen on spa stays a SPA at the layout', () => {
+    let app = crudAppFromSchemas([customers])
+    for (const s of app.screens) app = setScreenRenderMode(app, s.id, 'spa')
     const bundle = emitStudioAppBundle(app)
     expect(bundle.find((f) => f.path === 'src/routes/+layout.ts')!.contents).toMatch(/export const ssr = false/)
     expect(bundle.filter((f) => f.path.endsWith('/+page.ts'))).toEqual([])
+  })
+
+  it('holds in-memory rows once on the server: seeded store, /api route, client over the route', () => {
+    const files = emitStudioProject(createProject([customers, orders]))
+    const store = files.find((f) => f.path === 'src/lib/server/store.ts')!.contents
+    expect(store).toMatch(/export const customersStore = serverHeld<Customers>\(\[/)
+    expect(store).toMatch(/export const ordersStore = serverHeld<Orders>\(\[/)
+    const route = files.find((f) => f.path === 'src/routes/api/customers/+server.ts')!.contents
+    expect(route).toContain(`import { customersStore as source } from '$lib/server/store'`)
+    expect(route).toMatch(/createKitHandlers\(\{\s*schema: customersSchema,\s*source,\s*validate: true/)
+    const data = files.find((f) => f.path === 'src/lib/data.ts')!.contents
+    expect(data).toContain(`createKitDataSource<Customers>({ endpoint: '/api/customers' })`)
+    // The seed is server-only: not a second copy in the browser bundle.
+    expect(data).not.toContain('createInMemoryDataSource')
+  })
+
+  it('the server store assigns a free id when a create brings none, or a taken one', async () => {
+    // Run the generated serverHeld() for real: two tabs each counting from the
+    // seed would both post the same id, and the second must not overwrite.
+    const store = emitStudioProject(createProject([customers])).find((f) => f.path === 'src/lib/server/store.ts')!.contents
+    const body = store.slice(store.indexOf('function serverHeld'), store.indexOf('\nexport const'))
+    const js = ts.transpileModule(body, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText
+    const { createInMemoryDataSource } = await import('../sveltekit/in-memory.js')
+    const serverHeld = new Function('createInMemoryDataSource', `${js}; return serverHeld`)(createInMemoryDataSource)
+    const schema = { name: 'c', idField: 'id', fields: [{ field: 'id', type: 'text' }, { field: 'name', type: 'text' }] }
+    const s = serverHeld([{ id: 'c1', name: 'a' }, { id: 'c2', name: 'b' }], schema, 'id', 'c')
+    expect((await s.createRow({ name: 'no id' })).id).toBe('c3')
+    expect((await s.createRow({ id: 'c3', name: 'taken' })).id).toBe('c4')
+    expect((await s.createRow({ id: 'mine', name: 'free' })).id).toBe('mine')
+    const n = serverHeld([{ id: 4 }, { id: 9 }], { name: 'n', idField: 'id', fields: [{ field: 'id', type: 'number' }] }, 'id', null)
+    expect((await n.createRow({})).id).toBe(10)
   })
 
   it('sql SSR + relation field: prefetches options via the related /api route', () => {
@@ -377,28 +423,29 @@ describe('SSR-native screens (renderMode: ssr)', () => {
     expect(page).toMatch(/#each data\.customer_idOptions as o/)
   })
 
-  it('memory SSR + RBAC: load/actions enforce authz inline (sql inherits from /api)', () => {
+  it('memory SSR + RBAC: the /api route enforces authz, so the load does not repeat it', () => {
     const p0 = createProject([customers])
     const p: StudioProject = {
       ...p0,
       access: { enabled: true, defaultRole: 'viewer', roles: [{ role: 'admin', screens: '*', actions: '*' }, { role: 'viewer', screens: p0.screens.map((s) => s.id), actions: [] }] },
       screens: p0.screens.map((s) => ({ ...s, renderMode: 'ssr' as const })),
     }
-    const server = emitStudioProject(p).find((f) => f.path === 'src/routes/customers/+page.server.ts')!.contents
-    expect(server).toMatch(/import \{ fail, error \} from '@sveltejs\/kit'/)
-    expect(server).toMatch(/import \{ authorizeAction, getServerRole \} from '\$lib\/access'/)
-    expect(server).toMatch(/authorizeAction\(getServerRole\(\{ locals \}\), 'read', SCREEN_IDS\)/)
-    expect(server).toMatch(/authorizeAction\(getServerRole\(\{ locals \}\), 'create', SCREEN_IDS\)/)
-    expect(server).toMatch(/authorizeAction\(getServerRole\(\{ locals \}\), 'delete', SCREEN_IDS\)/)
+    const files = emitStudioProject(p)
+    const server = files.find((f) => f.path === 'src/routes/customers/+page.server.ts')!.contents
+    expect(server).toMatch(/createKitDataSource<Customers>\(\{ endpoint: '\/api\/customers', fetch \}\)/)
+    expect(server).not.toMatch(/authorizeAction/)
+    const route = files.find((f) => f.path === 'src/routes/api/customers/+server.ts')!.contents
+    expect(route).toMatch(/authorize: \(\{ action, event \}\) => authorizeAction\(getServerRole\(event\), action, /)
   })
 
-  it('memory SSR + relation field: prefetches options in load and renders a <select>', () => {
+  it('memory SSR + relation field: prefetches options via the related /api route and renders a <select>', () => {
     const p0 = createProject([customers, orders])
     const p: StudioProject = { ...p0, screens: p0.screens.map((s) => (s.entity === 'orders' ? { ...s, renderMode: 'ssr' as const } : s)) }
     const files = emitStudioProject(p)
     const server = files.find((f) => f.path === 'src/routes/orders/+page.server.ts')!.contents
-    expect(server).toMatch(/import \{ ordersSource, customersSource, nextId \} from '\$lib\/data'/)
-    expect(server).toMatch(/const customer_idOptions = \(await customersSource\.getRows\(/)
+    expect(server).not.toMatch(/from '\$lib\/data'/)
+    expect(server).not.toMatch(/nextId/) // the server store owns ids
+    expect(server).toMatch(/const customer_idOptions = \(await createKitDataSource<Record<string, unknown>>\(\{ endpoint: '\/api\/customers', fetch \}\)\.getRows\(/)
     expect(server).toMatch(/label: String\(r\['name'\]/) // uses the relation's labelField
     expect(server).toMatch(/, customer_idOptions \}/) // options returned from load
     const page = files.find((f) => f.path === 'src/routes/orders/+page.svelte')!.contents
@@ -1199,8 +1246,17 @@ describe('emitStudioProject (per-block screens)', () => {
     }
   })
 
-  it('emits no audit files without a SQL-bound entity (audit needs a server route)', () => {
+  it('audits an in-memory entity too, through its server-held /api route', () => {
     const files = emitStudioProject({ ...createProject([customers]), audit: true })
+    expect(files.find((f) => f.path === 'src/lib/audit.ts')).toBeTruthy()
+    const route = files.find((f) => f.path === 'src/routes/api/customers/+server.ts')!.contents
+    expect(route).toContain("from '$lib/server/store'")
+    expect(route).toContain('audit: (e) => recordAudit(')
+  })
+
+  it('emits no audit files without a server route (audit needs one)', () => {
+    const p = createProject([customers])
+    const files = emitStudioProject({ ...p, audit: true, dataSources: { customers: { kind: 'pglite', table: 'customers' } } })
     expect(files.find((f) => f.path === 'src/lib/audit.ts')).toBeUndefined()
     expect(files.find((f) => f.path === 'src/routes/audit/+page.svelte')).toBeUndefined()
   })
@@ -1320,6 +1376,22 @@ describe('emitStudioProject (per-block screens)', () => {
     expect(jobs).toContain('"nightly-digest"')
     expect(jobs).toContain("console.log('tick')")
     expect(jobs).toContain('export const enabledJobs: string[] = ["nightly-digest"]')
+  })
+
+  it('the jobs.ts schedule header is all comments, so the file compiles', () => {
+    // The assertions above are about what the file contains, and they passed
+    // while it did not compile: each schedule row was written ` *   id ...`, a
+    // block-comment continuation inside a `//` header, so TypeScript read it as
+    // code. No sample app has a job, so nothing built one until
+    // `verify:app --all-paths`. Check the property that broke.
+    let p = createProject([customers, orders])
+    p = setJob(p, 'nightly', { name: 'Nightly', cron: '0 2 * * *', kind: 'code', code: '' })
+    p = setJob(p, 'weekly-report', { name: 'Weekly report', cron: '0 8 * * 1', kind: 'code', code: '' })
+    const jobs = emitStudioProject(p).find((f) => f.path === 'src/lib/server/jobs.ts')!.contents
+    const header = jobs.split('\n').slice(0, jobs.split('\n').findIndex((l) => /^(import|export)\b/.test(l)))
+    const notComment = header.filter((l) => l.trim() !== '' && !l.trim().startsWith('//'))
+    expect(notComment, 'a header line that TypeScript would parse as code').toEqual([])
+    expect(header.some((l) => l.includes('nightly') && l.includes('0 2 * * *'))).toBe(true)
   })
 
   it('a disabled job keeps its handler but drops out of the scheduled run', () => {
@@ -1795,7 +1867,7 @@ describe('value-driven form fields (the form builder)', () => {
     p = { ...p, screens: p.screens.map((s) => ({ ...s, renderMode: 'ssr' as const })) }
     const server = emitStudioProject(p).find((f) => f.path === 'src/routes/returns/+page.server.ts')
     if (!server) return // shape not SSR-eligible in this project; covered elsewhere
-    expect(server.contents).toMatch(/import \{ validateAll, stripHiddenValues \}/)
+    expect(server.contents).toMatch(/import \{ validateAll, stripHiddenValues[ ,]/)
     expect(server.contents).toMatch(/stripHiddenValues\(returnsSchema, formToValues\(/)
   })
 

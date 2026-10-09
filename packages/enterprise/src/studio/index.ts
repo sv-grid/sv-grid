@@ -39,6 +39,12 @@ export {
   type ScaffoldOptions,
 } from './scaffold.js'
 export { scaffoldApp, type ScaffoldAppOptions } from './scaffold-app.js'
+export {
+  toSvelteKit3,
+  SVELTEKIT_3_DEV_DEPENDENCIES,
+  SVELTEKIT_3_ADAPTERS,
+  type KitVersion,
+} from './sveltekit3.js'
 export { emitStudioApp, emitEntityModules, entityScreenPage, prepareEntities } from './emit-schema.js'
 export { emitStudioProject, emitStudioAppBundle, emitStudioFragment, runtimeDeps, studioDeployInfo, screenHandles, screenDataset, ctxCompletions, componentHandleMembers, ctxAmbientDts, GRID_API_MEMBERS, type BlockHandle, type HandleTier } from './emit-project.js'
 export { sampleApps, getSampleApp, type SampleApp } from './samples/index.js'
@@ -223,6 +229,7 @@ export {
   insertBlock,
   setDataSource,
   setDeployTarget,
+  setKitVersion,
   setAuth,
   setDataLayer,
   seedUsers,

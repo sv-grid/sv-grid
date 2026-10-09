@@ -104,6 +104,35 @@ describe('customers screen data', () => {
 It is the same `ServerRequest` the grid sends at runtime, so a test that passes
 here is a screen that behaves.
 
+## In a Studio app
+
+A Studio-generated app holds its in-memory rows on the server. Three files carry
+it:
+
+- `src/lib/server/store.ts` - the seeded rows of every in-memory entity, one
+  `createInMemoryDataSource` each. Only server code imports it, so the seed data
+  stays out of the browser bundle.
+- `src/routes/api/<entity>/+server.ts` - `createKitHandlers` over that store,
+  with the same validation, access rules, triggers, and audit hook a SQL route
+  gets.
+- `src/lib/data.ts` - the browser side: a `createKitDataSource` client per
+  entity, pointed at its route.
+
+Server-rendered screens read through the same route (with SvelteKit's
+`event.fetch`), so every screen sees the same rows whichever way it renders.
+The server also assigns ids: a create that arrives with no id, or with one that
+is already taken, gets the next free one, so two open tabs cannot hand out the
+same id.
+
+What that means once the app is deployed:
+
+- Everyone using the app shares one copy of the data. An edit one person makes
+  is what the next person sees.
+- A restart, a redeploy, or a dev-server reload of `store.ts` puts the seed rows
+  back.
+- On a serverless host each instance holds its own copy, so two requests can
+  land on different data.
+
 ## When to move on
 
 The in-memory source keeps its data in the server process, so it resets on

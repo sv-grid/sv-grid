@@ -175,7 +175,7 @@ export const restaurant: SampleApp = {
         ]),
         // Resource scheduler: a column per table, reservations placed by time + tinted by
         // status, drag-to-reassign a table + a detail drawer (day view). Was a month calendar.
-        schedulerScreen(orders, { id: 'reservations', title: 'Reservations', order: 2 }, { startField: 'reservationTime', titleField: 'name', colorField: 'status', resourceField: 'tableId', initialView: 'day' }),
+        schedulerScreen(orders, { id: 'reservations', title: 'Reservations', order: 2 }, { startField: 'reservationTime', titleField: 'customerPhone', colorField: 'status', resourceField: 'tableId', initialView: 'day' }),
         detailScreen(tables, { id: 'table-detail', title: 'Table detail', order: 3 }, {
           titleField: 'name', statusField: 'section', metricFields: ['seats'],
           related: [{ entity: 'orders', foreignKey: 'tableId', label: 'Orders', titleField: 'customerPhone', subtitleField: 'total', dateField: 'reservationTime', statusField: 'status' }],

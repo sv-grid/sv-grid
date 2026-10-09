@@ -90,6 +90,8 @@ type Parsed = {
   dataset?: string
   theme?: string
   dark?: boolean
+  /** SvelteKit major for `init`: 2 (default) or 3. */
+  kit?: 2 | 3
   title?: string
   yes?: boolean
   force?: boolean
@@ -138,6 +140,11 @@ function parse(args: string[]): Parsed {
     else if (a === '--dataset') out.dataset = value(a)
     else if (a === '--theme') out.theme = value(a)
     else if (a === '--dark') out.dark = true
+    else if (a === '--kit') {
+      const k = Number(value(a))
+      if (k !== 2 && k !== 3) throw new Error(`--kit must be 2 or 3, got ${k}`)
+      out.kit = k
+    }
     else if (a === '--title') out.title = value(a)
     else if (a === '-f' || a === '--force') out.force = true
     else if (a === '-y' || a === '--yes') out.yes = true
@@ -234,6 +241,7 @@ Options:
   --api <path>     API route path (default: /api/<route>)
   --theme <id>     design-system preset (default: ember) - layered, so your own tokens win
   --dark           start in dark mode
+  --kit <2|3>      SvelteKit major (default: 2). 3 needs Vite 8, which StackBlitz cannot run yet
   -h, --help       Show this help
 
 Examples:
@@ -334,6 +342,7 @@ async function main(): Promise<void> {
       ...(opts.dataset ? { dataset: opts.dataset } : {}),
       ...(opts.theme ? { theme: opts.theme } : {}),
       ...(opts.dark ? { dark: true } : {}),
+      ...(opts.kit ? { kit: opts.kit } : {}),
       ...(opts.title ? { title: opts.title } : {}),
       ...(opts.yes ? { yes: true } : {}),
       ...(opts.force ? { force: true } : {}),

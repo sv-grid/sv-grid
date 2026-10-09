@@ -97,7 +97,7 @@ function rowType(schema: EntitySchema, derived: Set<string>): string {
 }
 
 /** Base (unwrapped) in-memory source variable, e.g. `userStore`. */
-const storeVar = (schema: EntitySchema) => `${camel(schema.name)}Store`
+export const storeVar = (schema: EntitySchema) => `${camel(schema.name)}Store`
 
 type RelationInfo = { fkField: string; displayField: string; related: EntitySchema }
 
@@ -345,6 +345,8 @@ type DataModuleNeeds = {
   supabaseKey?: string
   /** SQL-bound entities get a connected `+server.ts` API route each. */
   sqlRoutes: Array<{ schema: EntitySchema; table: string; dialect?: SqlDialectKind; dbSchema?: string }>
+  /** In-memory entities served from the server: a store each in $lib/server/store + an /api route. */
+  memoryRoutes: Array<{ schema: EntitySchema; rows: ReadonlyArray<Record<string, unknown>> }>
   /** Embedded-Postgres (PGlite) entities: one shared client + a table each. */
   pglite?: boolean
   pgliteTables?: Array<{ schema: EntitySchema; table: string; seed?: Record<string, unknown>[] }>
@@ -365,31 +367,21 @@ const SQL_DRIVERS: Record<'postgres' | 'mysql' | 'mssql' | 'sqlite' | 'turso', {
  *  the route imports the shared access policy and rejects unauthorized writes -
  *  server-enforced, so a tampered client can't bypass it. When audit is on, every
  *  successful write is recorded. */
-function sqlRouteFile(schema: EntitySchema, table: string, dialect?: SqlDialectKind, feat: { access?: boolean; audit?: boolean; screenIds?: string[]; triggers?: EntityTriggers; dbSchema?: string; tenantField?: string } = {}): GeneratedFile {
+type RouteFeatures = { access?: boolean; audit?: boolean; screenIds?: string[]; triggers?: EntityTriggers; dbSchema?: string; tenantField?: string }
+
+function sqlRouteFile(schema: EntitySchema, table: string, dialect?: SqlDialectKind, feat: RouteFeatures = {}): GeneratedFile {
   const n = namesFor(schema)
   const key = (dialect === 'supabase' ? 'postgres' : (dialect ?? 'postgres')) as 'postgres' | 'mysql' | 'mssql' | 'sqlite' | 'turso'
   const driver = SQL_DRIVERS[key]
   const dialectLiteral = sqlDialectExpr(dialect)
-  const accessImport = feat.access ? `\nimport { authorizeAction, getServerRole } from '$lib/access'` : ''
-  const auditImport = feat.audit ? `\nimport { recordAudit } from '$lib/audit'` : ''
-  const tenantImport = feat.tenantField ? `\nimport { requireTenant } from '$lib/server/tenant'` : ''
-  // Every connected route validates writes against the schema server-side, and
-  // (when enabled) authorizes them by role + records an audit entry.
-  const opts = [`schema: ${n.schemaVar}`, `source`, `validate: true`]
-  if (feat.access) opts.push(`// Server-enforced RBAC: the caller's role comes from the session (event.locals). Reads\n  // are allowed only if the role can open one of this entity's own screens.\n  authorize: ({ action, event }) => authorizeAction(getServerRole(event), action, ${JSON.stringify(feat.screenIds ?? [])})`)
-  if (feat.tenantField) opts.push(`// Multi-tenancy, enforced server-side: reads are filtered to the caller's tenant,\n  // creates are stamped with it, and update/delete re-read the target under the\n  // scope first - so a guessed id cannot reach another tenant's row.\n  scope: ({ event }) => ({ field: ${JSON.stringify(feat.tenantField)}, value: requireTenant(event) })`)
-  if (feat.audit) opts.push(`// Record every successful write to the audit trail.\n  audit: (e) => recordAudit({ entity: ${JSON.stringify(schema.name)}, action: e.action, recordId: e.id, values: e.values as Record<string, unknown> | undefined, actor: String(e.event.locals?.role ?? e.event.locals?.user ?? 'system') })`)
-  // Server-enforced business rules: the entity's triggers compiled to lifecycle hooks.
-  const hooks = triggerHooksOpt(feat.triggers)
-  if (hooks) opts.push(`// Business rules, enforced server-side (a client that skips them still can't write bad data).\n  ${hooks}`)
-  const handlers = `export const { POST } = createKitHandlers({\n  ${opts.join(',\n  ')},\n})`
+  const { imports, handlers } = kitHandlersBlock(schema, feat)
   return {
     path: `src/routes/api/${n.route}/+server.ts`,
     description: `Connected API route for ${n.label} (SQL via DATABASE_URL). Runs server-side.`,
     contents: `${driver.imports}
 import { env } from '$env/dynamic/private'
 import { createKitHandlers, createSqlDataSource } from '@svgrid/enterprise'
-import { ${n.schemaVar}, type ${n.type} } from '$lib/schemas'${accessImport}${auditImport}${tenantImport}
+import { ${n.schemaVar}, type ${n.type} } from '$lib/schemas'${imports}
 
 ${driver.setup}
 
@@ -404,6 +396,103 @@ const source = createSqlDataSource<${n.type}>({
 ${handlers}
 `,
   }
+}
+
+/**
+ * The API route for an in-memory entity. Same handlers as a SQL route
+ * (validation, RBAC, triggers, audit), over the one server-held copy of the
+ * rows in `$lib/server/store`. Routing memory through the server like this is
+ * what lets its screens render on the server: before, the rows were a module
+ * singleton, so a server-rendered screen and a browser-rendered one each held
+ * their own copy and never saw each other's writes.
+ */
+function memoryRouteFile(schema: EntitySchema, feat: RouteFeatures = {}): GeneratedFile {
+  const n = namesFor(schema)
+  const { imports, handlers } = kitHandlersBlock(schema, feat)
+  return {
+    path: `src/routes/api/${n.route}/+server.ts`,
+    description: `API route for ${n.label} (in-memory rows held on the server). Runs server-side.`,
+    contents: `import { createKitHandlers } from '@svgrid/enterprise'
+import { ${n.schemaVar} } from '$lib/schemas'
+import { ${storeVar(schema)} as source } from '$lib/server/store'${imports}
+
+${handlers}
+`,
+  }
+}
+
+/**
+ * `$lib/server/store.ts`: the seeded rows of every in-memory entity, held once
+ * per server process. Only server code imports it (the API routes, scheduled
+ * jobs), so the seed data stays out of the browser bundle.
+ *
+ * The server owns new ids. A browser's `nextId()` counter only knows its own
+ * tab, so two tabs (or two people) would hand out the same id; a create whose
+ * id is missing or already taken gets the next free one here instead.
+ */
+function serverStoreFile(entries: ReadonlyArray<{ schema: EntitySchema; rows: ReadonlyArray<Record<string, unknown>> }>): GeneratedFile {
+  const schemaImports = entries.map((e) => namesFor(e.schema).schemaVar).join(', ')
+  const typeImports = entries.map((e) => `type ${namesFor(e.schema).type}`).join(', ')
+  const stores = entries
+    .map(({ schema, rows }) => {
+      const n = namesFor(schema)
+      const idField = resolveIdField(schema)
+      const numeric = schema.fields.find((f) => f.field === idField)?.type === 'number'
+      return `export const ${storeVar(schema)} = serverHeld<${n.type}>(${JSON.stringify(rows)}, ${n.schemaVar}, ${JSON.stringify(idField)}, ${numeric ? 'null' : JSON.stringify(n.idPrefix)})`
+    })
+    .join('\n')
+  return {
+    path: 'src/lib/server/store.ts',
+    description: 'In-memory rows, held once on the server (seeded on start, reset on restart).',
+    contents: `/**
+ * The app's in-memory data, held once per server process and reached from the
+ * browser through each entity's /api route. Seeded on start, reset on restart:
+ * bind an entity to SQL in the Studio to keep its rows.
+ */
+import { createInMemoryDataSource } from '@svgrid/enterprise'
+import type { EntitySchema } from '@svgrid/enterprise'
+import { ${schemaImports}, ${typeImports} } from '$lib/schemas'
+
+/** An in-memory source that assigns a free id when a create brings none, or a
+ *  taken one. \`prefix\` null means the id is numeric (max + 1). */
+function serverHeld<T extends Record<string, unknown>>(rows: T[], schema: EntitySchema<T>, idField: string, prefix: string | null) {
+  const source = createInMemoryDataSource<T>(rows, schema)
+  let seq = rows.length
+  const freeId = (wanted: unknown): string | number => {
+    const taken = new Set(source.rows().map((r) => String(r[idField])))
+    if (wanted != null && wanted !== '' && !taken.has(String(wanted))) return wanted as string | number
+    if (prefix === null) return Math.max(0, ...source.rows().map((r) => Number(r[idField]) || 0)) + 1
+    let id = prefix + ++seq
+    while (taken.has(id)) id = prefix + ++seq
+    return id
+  }
+  return {
+    ...source,
+    createRow: (input: Partial<T>) => source.createRow({ ...input, [idField]: freeId(input[idField]) } as Partial<T>),
+  }
+}
+
+${stores}
+`,
+  }
+}
+
+/** The `createKitHandlers` call every entity route shares, plus the imports it needs. */
+function kitHandlersBlock(schema: EntitySchema, feat: RouteFeatures): { imports: string; handlers: string } {
+  const accessImport = feat.access ? `\nimport { authorizeAction, getServerRole } from '$lib/access'` : ''
+  const auditImport = feat.audit ? `\nimport { recordAudit } from '$lib/audit'` : ''
+  const tenantImport = feat.tenantField ? `\nimport { requireTenant } from '$lib/server/tenant'` : ''
+  // Every connected route validates writes against the schema server-side, and
+  // (when enabled) authorizes them by role + records an audit entry.
+  const opts = [`schema: ${namesFor(schema).schemaVar}`, `source`, `validate: true`]
+  if (feat.access) opts.push(`// Server-enforced RBAC: the caller's role comes from the session (event.locals). Reads\n  // are allowed only if the role can open one of this entity's own screens.\n  authorize: ({ action, event }) => authorizeAction(getServerRole(event), action, ${JSON.stringify(feat.screenIds ?? [])})`)
+  if (feat.tenantField) opts.push(`// Multi-tenancy, enforced server-side: reads are filtered to the caller's tenant,\n  // creates are stamped with it, and update/delete re-read the target under the\n  // scope first - so a guessed id cannot reach another tenant's row.\n  scope: ({ event }) => ({ field: ${JSON.stringify(feat.tenantField)}, value: requireTenant(event) })`)
+  if (feat.audit) opts.push(`// Record every successful write to the audit trail.\n  audit: (e) => recordAudit({ entity: ${JSON.stringify(schema.name)}, action: e.action, recordId: e.id, values: e.values as Record<string, unknown> | undefined, actor: String(e.event.locals?.role ?? e.event.locals?.user ?? 'system') })`)
+  // Server-enforced business rules: the entity's triggers compiled to lifecycle hooks.
+  const hooks = triggerHooksOpt(feat.triggers)
+  if (hooks) opts.push(`// Business rules, enforced server-side (a client that skips them still can't write bad data).\n  ${hooks}`)
+  const handlers = `export const { POST } = createKitHandlers({\n  ${opts.join(',\n  ')},\n})`
+  return { imports: `${accessImport}${auditImport}${tenantImport}`, handlers }
 }
 
 /** Map an EntityField type to a Postgres column type for PGlite DDL. */
@@ -533,6 +622,7 @@ function dataModule(
   seed: Map<string, Array<Record<string, unknown>>>,
   sources?: Record<string, EntityDataSource>,
   supabaseConn?: { url?: string; key?: string },
+  serverMemory = false,
 ): { file: GeneratedFile; needs: DataModuleNeeds } {
   const schemas = entries.map((e) => e.schema)
   // Each type gets its own `type` keyword - SvelteKit enables verbatimModuleSyntax.
@@ -540,7 +630,7 @@ function dataModule(
   const schemaImports = schemas.map((s) => namesFor(s).schemaVar).join(', ')
   const hasRelations = entries.some((e) => e.infos.length > 0)
   const entImports = new Set<string>()
-  const needs: DataModuleNeeds = { supabase: false, sqlRoutes: [] }
+  const needs: DataModuleNeeds = { supabase: false, sqlRoutes: [], memoryRoutes: [] }
 
   // 1. Base store per entity, branched on its bound data source (default: seeded
   //    in-memory, so the app runs with no backend).
@@ -576,11 +666,18 @@ function dataModule(
           return `const ${store} = createSqlDataSource<${T}>({ schema: ${sv}, table: ${sq(src.table)}, dialect: { placeholders: '$', ilike: true }, execute: async (text, params) => { await pgReady; return (await pg.query(text, params)).rows as Record<string, unknown>[] } })`
         }
         default: {
-          entImports.add('createInMemoryDataSource')
           // Prefer curated seed on the source (a sample app), else the realistic generator.
           const curated = src.kind === 'memory' ? src.seed : undefined
-          const rows = JSON.stringify(curated ?? seed.get(e.schema.name) ?? [])
-          return `const ${store} = createInMemoryDataSource<${T}>(${rows}, ${sv})`
+          const rowList = curated ?? seed.get(e.schema.name) ?? []
+          if (serverMemory) {
+            // The rows live on the server ($lib/server/store) and every screen,
+            // server-rendered or not, reaches them through /api/<entity>.
+            entImports.add('createKitDataSource')
+            needs.memoryRoutes.push({ schema: e.schema, rows: rowList })
+            return `const ${store} = createKitDataSource<${T}>({ endpoint: '/api/${namesFor(e.schema).route}' })`
+          }
+          entImports.add('createInMemoryDataSource')
+          return `const ${store} = createInMemoryDataSource<${T}>(${JSON.stringify(rowList)}, ${sv})`
         }
       }
     })
@@ -1122,10 +1219,10 @@ export function prepareEntities(schemas: EntitySchema[]): { entries: Prepared[];
 /** Emit the shared entity modules: `src/lib/schemas.ts` + `src/lib/data.ts` (+ `connections.ts`). */
 export function emitEntityModules(
   schemas: EntitySchema[],
-  opts: { sources?: Record<string, EntityDataSource>; accessEnabled?: boolean; auditEnabled?: boolean; screensByEntity?: Map<string, string[]>; triggers?: Record<string, EntityTriggers>; supabaseConn?: { url?: string; key?: string }; supabaseAuth?: boolean; tenantField?: string; tenantScoped?: (entity: string) => boolean } = {},
+  opts: { sources?: Record<string, EntityDataSource>; accessEnabled?: boolean; auditEnabled?: boolean; screensByEntity?: Map<string, string[]>; triggers?: Record<string, EntityTriggers>; supabaseConn?: { url?: string; key?: string }; supabaseAuth?: boolean; tenantField?: string; tenantScoped?: (entity: string) => boolean; serverMemory?: boolean } = {},
 ): { files: GeneratedFile[]; prepared: EntitySchema[] } {
   const { entries, seed } = prepareEntities(schemas)
-  const { file: data, needs } = dataModule(entries, seed, opts.sources, opts.supabaseConn)
+  const { file: data, needs } = dataModule(entries, seed, opts.sources, opts.supabaseConn, opts.serverMemory)
   const files: GeneratedFile[] = [schemasModule(entries), data]
   // Supabase Auth needs the shared client even with no Supabase-bound entity; seed
   // the .env paste hint from the project connection when nothing else did.
@@ -1142,6 +1239,19 @@ export function emitEntityModules(
     // A shared (reference-data) entity stays global - no scope on its route.
     tenantField: opts.tenantField && opts.tenantScoped?.(r.schema.name) !== false ? opts.tenantField : undefined,
   }))
+  if (needs.memoryRoutes.length) {
+    files.push(serverStoreFile(needs.memoryRoutes))
+    for (const r of needs.memoryRoutes) files.push(memoryRouteFile(r.schema, {
+      access: opts.accessEnabled,
+      audit: opts.auditEnabled,
+      screenIds: opts.screensByEntity?.get(r.schema.name) ?? [],
+      triggers: opts.triggers?.[r.schema.name],
+      // The server copy is shared by every user, so a tenant-scoped app scopes
+      // it too. Seeded rows carry no tenant, which hides them rather than
+      // showing one tenant's writes to another.
+      tenantField: opts.tenantField && opts.tenantScoped?.(r.schema.name) !== false ? opts.tenantField : undefined,
+    }))
+  }
   return { files, prepared: entries.map((e) => e.schema) }
 }
 

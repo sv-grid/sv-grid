@@ -876,6 +876,11 @@ export type StudioProject = {
   /** Deploy target: picks the SvelteKit adapter + provider config the bundle emits.
    *  Defaults to `auto` (@sveltejs/adapter-auto, which detects Vercel/Netlify/Cloudflare). */
   deploy?: DeployTarget
+  /** SvelteKit major the app targets. Absent means 2, the default: SvelteKit 3
+   *  needs Vite 8, whose Rolldown bundler does not run in StackBlitz's
+   *  WebContainer, so opting in trades that for v3. Saved in studio.config.json
+   *  so a v3 project is still v3 when it is reopened and regenerated. */
+  kit?: 3
   /** Server-side business-rule triggers, keyed by entity name. Enforced on the
    *  SQL route (compiled into createKitHandlers `hooks`). */
   triggers?: Record<string, EntityTriggers>
@@ -962,8 +967,8 @@ export function ssrScreenShape(project: StudioProject, screen: Screen): 'grid' |
   if (!screen.entity || screen.code) return null
   const source = project.dataSources?.[screen.entity]
   const kind = source?.kind ?? project.dataSource
-  // memory runs the source in-process; sql reuses the connected /api route via
-  // event.fetch; rest calls the remote API straight from the server, which needs
+  // memory and sql both reuse the entity's /api route via event.fetch (memory's
+  // rows are held on the server behind it); rest calls the remote API straight from the server, which needs
   // an absolute URL to resolve there. (supabase and pglite stay SPA: pglite only
   // exists in the browser, and a Supabase read carries the signed-in user's token,
   // which a server-side call with the anon key would silently drop.)
@@ -992,11 +997,12 @@ export function ssrEligible(project: StudioProject, screen: Screen): boolean {
   return ssrScreenShape(project, screen) !== null
 }
 
-/** Set a screen's render mode ('spa' clears back to the default). */
+/** Set a screen's render mode. Both modes are stored: a screen switched to
+ *  'spa' stays client-rendered even where `withSsrDefaults` would turn it on. */
 export function setScreenRenderMode(project: StudioProject, screenId: string, mode: 'ssr' | 'spa'): StudioProject {
   return {
     ...project,
-    screens: project.screens.map((s) => (s.id === screenId ? { ...s, renderMode: mode === 'ssr' ? 'ssr' : undefined } : s)),
+    screens: project.screens.map((s) => (s.id === screenId ? { ...s, renderMode: mode } : s)),
   }
 }
 
@@ -1006,19 +1012,19 @@ export function isSsrScreen(project: StudioProject, screen: Screen): boolean {
 }
 
 /**
- * Turn server rendering on for every screen that can support it, for entities
- * backed by a real database. Applied when a project is first generated, so a new
- * app reads as idiomatic SvelteKit (a `load` and form `actions`) rather than a
- * client SPA. Screens that already state a mode are left alone, so this never
- * overrides a choice somebody made.
+ * Turn server rendering on for every screen that can support it. Applied when a
+ * project is first generated, so a new app reads as idiomatic SvelteKit (a
+ * `load` and form `actions`) rather than a client SPA. Screens that already
+ * state a mode are left alone, so this never overrides a choice somebody made.
  *
- * Deliberately limited to sources that hold one copy of the data. In-memory and
- * PGlite sources are module singletons, so an SSR screen would read and write the
- * *server's* copy of the rows while the app's remaining SPA screens read the
- * browser's - create a row on one and the other never sees it. SQL and REST have
- * no such split: every path goes to the same database or the same remote API.
+ * Limited to sources that hold one copy of the data. SQL and REST always did:
+ * every path goes to the same database or the same remote API. In-memory rows
+ * are held once on the server ($lib/server/store) and every screen reaches them
+ * through the entity's /api route, so an SSR screen and an SPA screen see the
+ * same rows. PGlite lives in the browser's IndexedDB, which the server cannot
+ * read, so it stays client-rendered.
  */
-const SSR_DEFAULT_KINDS = new Set<DataSourceKind>(['sql', 'rest'])
+const SSR_DEFAULT_KINDS = new Set<DataSourceKind>(['sql', 'rest', 'memory'])
 
 export function withSsrDefaults(project: StudioProject): StudioProject {
   return {
@@ -2468,6 +2474,16 @@ export function setDataSource(project: StudioProject, dataSource: DataSourceKind
 }
 
 /** Set the deploy target (SvelteKit adapter + provider config the bundle emits). */
+/** Target a SvelteKit major. 2 is the default and is stored as the field's
+ *  absence, the same way `deploy: 'auto'` is. */
+export function setKitVersion(project: StudioProject, kit: 2 | 3): StudioProject {
+  if (kit === 2) {
+    const { kit: _drop, ...rest } = project
+    return rest
+  }
+  return { ...project, kit: 3 }
+}
+
 export function setDeployTarget(project: StudioProject, deploy: DeployTarget): StudioProject {
   if (deploy === 'auto') { const { deploy: _drop, ...rest } = project; return rest }
   return { ...project, deploy }
@@ -2701,6 +2717,9 @@ export function parseProject(json: string): StudioProject {
     ...(typeof p.audit === 'boolean' ? { audit: p.audit } : {}),
     ...(p.i18n && typeof p.i18n === 'object' ? { i18n: p.i18n as I18nConfig } : {}),
     ...(typeof p.deploy === 'string' && p.deploy !== 'auto' ? { deploy: p.deploy as DeployTarget } : {}),
+    // Without this a SvelteKit 3 project reopened in the designer would quietly
+    // regenerate as SvelteKit 2: parseProject keeps only the fields it lists.
+    ...(p.kit === 3 ? { kit: 3 as const } : {}),
     ...(p.triggers && typeof p.triggers === 'object' ? { triggers: p.triggers as Record<string, EntityTriggers> } : {}),
   })
 }

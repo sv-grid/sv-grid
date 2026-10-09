@@ -115,16 +115,21 @@ filter / page state, and progressive enhancement. A **`spa`** screen emits a
 client page where the browser talks to the API route through the data-source
 controller.
 
-**New apps built on a database or a REST API get `ssr` for free.** When you
-generate an app - `svgrid-studio init`, the designer's **New app** wizard, or
-`crudAppFromSchemas` - every screen that qualifies starts in `ssr`. You can still
-switch any screen either way in the [app designer](./app-designer.md).
+**New apps get `ssr` wherever a screen qualifies.** When you generate an app -
+`svgrid-studio init`, the designer's **New app** wizard, or `crudAppFromSchemas` -
+every qualifying screen on a SQL, REST, or in-memory entity starts in `ssr`. You
+can still switch any screen either way in the [app designer](./app-designer.md),
+and a screen you set to `spa` stays `spa`.
 
-In-memory and PGlite apps stay `spa`, on purpose. Those sources are module
-singletons, so a server-rendered screen would read and write the server's copy of
-the rows while the app's remaining client screens read the browser's: add a row
-on one and the other never sees it. SQL and REST have no such split, because
-every path goes to the same database or the same remote API.
+In-memory data is held once, on the server. The seeded rows live in
+`src/lib/server/store.ts`, and every screen reaches them through the entity's
+`/api/<entity>` route, the same way a SQL entity does. So a server-rendered screen
+and a client screen read and write the same rows, and the route's validation,
+access rules, and triggers apply to both. See
+[In-memory](./in-memory.md#in-a-studio-app) for what that means in a deployed app.
+
+PGlite apps stay `spa`: PGlite keeps its rows in the browser's IndexedDB, which
+the server cannot read.
 
 ### How the app is wired
 
@@ -146,8 +151,8 @@ Not every screen shape can emit as SSR. The rules:
 
 - The screen must be entity-bound, without a [code-behind](./code-behind.md)
   companion.
-- Its data source must be `memory` (runs in-process), `sql` (reuses the connected
-  `/api` route via `event.fetch`), or `rest` **on an absolute URL** (the server
+- Its data source must be `memory` or `sql` (both reuse the entity's `/api` route
+  via `event.fetch`), or `rest` **on an absolute URL** (the server
   calls the remote API directly; a relative URL has no origin to resolve against
   there, so it stays SPA). `supabase` and `pglite` screens stay SPA - PGlite only
   exists in the browser, and a Supabase read carries the signed-in user's token,

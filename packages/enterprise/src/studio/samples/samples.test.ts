@@ -70,11 +70,22 @@ describe('sample apps', () => {
         expect(again.dataSources).toEqual(project.dataSources)
       })
 
-      it('generates compiling Svelte pages + seeded data.ts', () => {
+      it('generates compiling Svelte pages + a seeded server store', () => {
         const files = emitStudioProject(project)
         const data = files.find((f) => f.path.endsWith('src/lib/data.ts'))!
-        // Curated seed is baked in (a recognizable value from each app).
-        expect(data.contents).toContain('createInMemoryDataSource')
+        const store = files.find((f) => f.path === 'src/lib/server/store.ts')!
+        // The curated seed is held on the server, and the browser reaches it
+        // through each entity's /api route - never a second copy in data.ts.
+        expect(store.contents).toContain('createInMemoryDataSource')
+        for (const e of project.entities) {
+          const seed = project.dataSources?.[e.name]
+          const first = seed?.kind === 'memory' ? seed.seed?.[0] : undefined
+          if (!first) continue
+          expect(store.contents, `${e.name} seed`).toContain(JSON.stringify(Object.values(first)[0]))
+        }
+        expect(files.some((f) => f.path.startsWith('src/routes/api/') && f.contents.includes(`from '$lib/server/store'`))).toBe(true)
+        expect(data.contents).not.toContain('createInMemoryDataSource')
+        expect(data.contents).toContain('createKitDataSource')
         for (const f of files.filter((f) => f.path.endsWith('.svelte'))) {
           expect(() => compile(f.contents, { filename: f.path, generate: 'client' }), f.path).not.toThrow()
         }
@@ -203,7 +214,10 @@ describe('sample apps', () => {
       const cases: Record<string, { title: string; resource?: string }> = {
         clinic: { title: 'patient', resource: 'doctor' },
         gym: { title: 'member', resource: 'class' },
-        restaurant: { title: 'name', resource: 'table' }, // title is a plain text field
+        // A plain text field on orders. It was 'name', which orders does not
+        // have, so every reservation rendered untitled; the generated app's
+        // type-check caught it once the scheduler config was typed per row.
+        restaurant: { title: 'customerPhone', resource: 'table' },
         fleet: { title: 'driver', resource: 'vehicle' },
       }
       for (const [id, { title, resource }] of Object.entries(cases)) {

@@ -23,7 +23,7 @@ import { emitStudioAppBundle } from './emit-project.js'
 import { mergeManaged, skipUserOwned } from './scaffold.js'
 import { getStudioTheme, studioThemes } from './themes.js'
 import { UserError } from './user-error.js'
-import { serializeProject, type DataSourceKind, type EntityDataSource, type ProjectTheme, type StudioProject } from './project.js'
+import { serializeProject, setKitVersion, type DataSourceKind, type EntityDataSource, type ProjectTheme, type StudioProject } from './project.js'
 
 /** Terminal I/O, injected so the flow can be scripted in tests. */
 export type PromptIO = {
@@ -64,6 +64,9 @@ export type InitFlags = {
   /** Theme preset id. */
   theme?: string
   dark?: boolean
+  /** SvelteKit major to target. 2 (the default) boots in StackBlitz; 3 needs
+   *  Vite 8, which does not run there yet. Saved into studio.config.json. */
+  kit?: 2 | 3
   /** App title (skips the question). */
   title?: string
   /** Take every default; ask nothing that has one. */
@@ -582,7 +585,7 @@ export async function runStudioInit(
   const outDir = flags.out ?? (flags.yes ? '.' : (await prompts.ask('Write it where?', '.')).trim() || '.')
   await confirmTargetFolder(outDir, flags, prompts, io, outDir === candidateDir ? markersBefore : null)
 
-  const project = crudAppFromSchemas(data.schemas, {
+  const built = crudAppFromSchemas(data.schemas, {
     title,
     dataSource: data.kind,
     sources: data.sources,
@@ -591,6 +594,9 @@ export async function runStudioInit(
     overviewDashboard: true,
     ...(theme ? { theme } : {}),
   })
+  // On the model, not only on this emit: studio.config.json is written from the
+  // same object below, so the designer reopens it as the same SvelteKit major.
+  const project = flags.kit === 3 ? setKitVersion(built, 3) : built
 
   const files = emitStudioAppBundle(project)
   const written = await writeAll(files, outDir, io)

@@ -239,7 +239,7 @@ export const projectTools: ProjectTool[] = [
   },
   {
     name: 'studio_update_screen',
-    description: 'Update a screen: title, route, nav entry, CSS class, or `renderMode`. Set renderMode "ssr" to emit idiomatic SvelteKit (a +page.server.ts `load` + form `actions`, progressive enhancement) instead of the default client-fetch SPA page; it applies to memory/sql-backed screens whose blocks are a single grid or read-only blocks, and falls back to "spa" otherwise.',
+    description: 'Update a screen: title, route, nav entry, CSS class, or `renderMode`. Set renderMode "ssr" to emit idiomatic SvelteKit (a +page.server.ts `load` + form `actions`, progressive enhancement) instead of the client-fetch SPA page; it applies to memory/sql-backed screens (and REST on an absolute URL) whose blocks are a single grid or read-only blocks, and falls back to "spa" otherwise. Generated apps start qualifying screens as "ssr"; set "spa" to keep one client-rendered.',
     inputSchema: {
       type: 'object',
       properties: {
