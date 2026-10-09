@@ -249,6 +249,8 @@ them.
 
 ## See also
 
+- [Figma design kit](./figma.md) - the same tokens as Figma variables, on
+  [Figma Community](https://www.figma.com/community/file/1689644521333526144)
 - [Tailwind integration](./tailwind.md) - how to wire tokens through
   Tailwind's theming layer
 - [Custom cells + themes](https://svgrid.com/demos/10-custom-cells-and-themes/) demo - the canonical token-override example

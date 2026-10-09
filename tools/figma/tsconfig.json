@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "lib": ["es2020"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noEmit": true,
+    "typeRoots": ["../../node_modules/@figma"],
+    "types": ["plugin-typings"]
+  },
+  "include": ["src/**/*.ts"]
+}

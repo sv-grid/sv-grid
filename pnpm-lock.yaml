@@ -23,12 +23,18 @@ importers:
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.8.1(jiti@2.7.0))
+      '@figma/plugin-typings':
+        specifier: ^1.141.0
+        version: 1.141.0
       '@playwright/test':
         specifier: ^1.60.0
         version: 1.60.0
       '@types/node':
         specifier: ^22.10.7
         version: 22.19.19
+      esbuild:
+        specifier: ^0.28.2
+        version: 0.28.2
       eslint:
         specifier: ^10.8.1
         version: 10.8.1(jiti@2.7.0)
@@ -856,6 +862,9 @@ packages:
     peerDependenciesMeta:
       '@noble/hashes':
         optional: true
+
+  '@figma/plugin-typings@1.141.0':
+    resolution: {integrity: sha512-i+6AsBmiwGNpH4I6sgIvj5RX1dMWExzS7h33HGrU++//wPKotlIzJuGhG15woCQY1V1ctG/k5uW9HgfkTyTaWg==}
 
   '@foliojs-fork/fontkit@1.9.2':
     resolution: {integrity: sha512-IfB5EiIb+GZk+77TRB86AHroVaqfq8JRFlUbz0WEwsInyCG0epX2tCPOy+UfaWPju30DeVoUAXfzWXmhn753KA==}
@@ -4101,6 +4110,8 @@ snapshots:
       levn: 0.4.1
 
   '@exodus/bytes@1.15.1': {}
+
+  '@figma/plugin-typings@1.141.0': {}
 
   '@foliojs-fork/fontkit@1.9.2':
     dependencies:

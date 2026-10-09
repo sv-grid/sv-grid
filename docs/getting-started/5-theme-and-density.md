@@ -8,6 +8,10 @@ Before hand-writing any tokens: 20 design-system presets ship with the package,
 each a single stylesheet with a full light + dark palette. One import re-themes
 the whole grid.
 
+> Designing in Figma? The [SvGrid Design Kit](https://www.figma.com/community/file/1689644521333526144)
+> has the Ember and shadcn/ui presets as variable modes, with every color named
+> after its `--sg-*` token. See [Figma design kit](../help/figma.md).
+
 The examples on this page run against these rows:
 
 ```svelte {preamble}
