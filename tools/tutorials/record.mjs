@@ -115,6 +115,28 @@ async function reachable(url) {
 }
 
 /**
+ * End a dev server and everything it spawned.
+ *
+ * child.kill() signals only the process we started. On Windows that is the
+ * npm or node shim; vite and its esbuild service keep running, keep a handle
+ * inside node_modules, and the next run fails to delete the app directory
+ * with EPERM - after leaking a dev server per take. taskkill /T ends the
+ * tree. Elsewhere a plain kill reaches the group.
+ */
+function killTree(child) {
+  if (!child || child.killed || child.exitCode !== null) return
+  if (process.platform === 'win32') {
+    try {
+      spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' })
+    } catch {
+      child.kill()
+    }
+  } else {
+    child.kill()
+  }
+}
+
+/**
  * Start the gallery for the run; returns a stop() that ends it. Vite's own
  * entry is spawned directly (no pnpm, no shell): through `pnpm dev` the
  * server is a grandchild behind a shell wrapper and outlives a tree kill on
@@ -137,13 +159,26 @@ async function serveApp(scaffold, { port = 5190, dir } = {}) {
   // The look is part of the directory name: a dark scaffold and a light one
   // are different apps, and reusing one path meant the second run tried to
   // delete a tree a previous dev server still held open.
-  const slug = [scaffold.studio ?? scaffold.template ?? 'app', scaffold.theme, scaffold.dark ? 'dark' : null]
+  const slug = [scaffold.studio ?? scaffold.template ?? 'app', scaffold.theme, scaffold.dark ? 'dark' : null, scaffold.kit ? `kit${scaffold.kit}` : null]
     .filter(Boolean)
     .join('-')
-  const appDir = dir ?? join(OUT_DIR, 'app', slug)
-  const base = `http://localhost:${port}`
-  if (!dir) {
-    rmSync(appDir, { recursive: true, force: true })
+  // `appScaffold.dir` records a directory that already exists in the repo
+  // rather than a freshly scaffolded app - the web component package serves its
+  // own demo page, and there is nothing to generate. Nothing is deleted or
+  // installed in that case: it is the working tree.
+  const existing = scaffold.dir ? join(ROOT, scaffold.dir) : null
+  const appDir = dir ?? existing ?? join(OUT_DIR, 'app', slug)
+  // A package that serves itself picks its own port in its own script, so the
+  // script can say which one to talk to instead of being handed one.
+  const servePort = scaffold.port ?? port
+  const base = `http://localhost:${servePort}`
+  if (!dir && !existing) {
+    // maxRetries, not a bare rm: on Windows a previous run's dev server, the
+    // file indexer or a virus scanner can still hold a handle inside
+    // node_modules for a moment, and the delete fails with EPERM. Node backs
+    // off and retries for exactly this case. Without it a second take of an
+    // `app:` script dies before it records anything.
+    rmSync(appDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 250 })
     mkdirSync(dirname(appDir), { recursive: true })
     // `theme` / `dark` reach both scaffolders: a video shot against the light
     // default looks nothing like the dark demos it sits next to.
@@ -152,7 +187,10 @@ async function serveApp(scaffold, { port = 5190, dir } = {}) {
       console.log(`scaffolding a Studio app (${scaffold.studio}${scaffold.dark ? ', dark' : ''}) ...`)
       const cli = join(ROOT, 'packages', 'studio', 'dist', 'cli.js')
       if (!existsSync(cli)) throw new Error(`${cli} not found: run \`pnpm --filter @svgrid/studio build\``)
-      run(process.execPath, [cli, 'init', '--dataset', scaffold.studio, '--out', appDir, ...look, '-y'])
+      // kit: 3 scaffolds the opt-in SvelteKit 3 shape through the same CLI flag a
+      // user would pass, so the recorded app is what `init --kit 3` produces.
+      const kitArgs = scaffold.kit ? ['--kit', String(scaffold.kit)] : []
+      run(process.execPath, [cli, 'init', '--dataset', scaffold.studio, '--out', appDir, ...look, ...kitArgs, '-y'])
     } else {
       console.log(`scaffolding the ${scaffold.template} template ...`)
       run('npm', ['create', '@svgrid@latest', appDir, '--', '--template', scaffold.template, ...look, '--force'])
@@ -161,20 +199,29 @@ async function serveApp(scaffold, { port = 5190, dir } = {}) {
     run('npm', ['install', '--no-audit', '--no-fund'], appDir)
   }
 
-  console.log(`starting the app on :${port} ...`)
-  const child = spawn('npm', ['run', 'dev', '--', '--port', String(port), '--strictPort'], {
+  // A scaffolded app is served by `dev` and told which port to use. A package
+  // that serves itself names its own script and pins its own port, so passing
+  // --port again would fight --strictPort.
+  const script = scaffold.script ?? 'dev'
+  const portArgs = scaffold.port ? [] : ['--', '--port', String(servePort), '--strictPort']
+  console.log(`starting the app on :${servePort} (npm run ${script}) ...`)
+  const child = spawn('npm', ['run', script, ...portArgs], {
     cwd: appDir,
     stdio: 'ignore',
     shell: process.platform === 'win32',
     windowsHide: true,
   })
   const stop = () => {
-    if (!child.killed) child.kill()
+    killTree(child)
   }
   const started = Date.now()
   while (Date.now() - started < 180_000) {
-    if (child.exitCode !== null) throw new Error(`the app exited with code ${child.exitCode} (is :${port} taken?)`)
-    if (await reachable(base)) return { stop, base, appDir }
+    if (child.exitCode !== null) throw new Error(`the app exited with code ${child.exitCode} (is :${servePort} taken?)`)
+    // Probe a path the server actually serves. A scaffolded app answers at
+    // /, but a package serving its own folder may have no index.html there -
+    // grid-wc has demo.html and nothing else, so / is a 404 and the app looks
+    // dead forever.
+    if (await reachable(base + (scaffold.readyPath ?? ''))) return { stop, base, appDir }
     await new Promise((r) => setTimeout(r, 1000))
   }
   stop()
@@ -202,7 +249,7 @@ async function serveGallery(base) {
   console.log(`starting the gallery on :${port} ...`)
   const child = spawn(process.execPath, [vite, '--port', port, '--strictPort'], { cwd: examples, stdio: 'ignore', windowsHide: true })
   const stop = () => {
-    if (!child.killed) child.kill()
+    killTree(child)
   }
   const started = Date.now()
   while (Date.now() - started < 120_000) {
@@ -236,7 +283,7 @@ async function serveSite(base) {
   }
   const child = spawn(process.execPath, [vite, '--port', port, '--strictPort'], { cwd: website, stdio: 'ignore', windowsHide: true })
   const stop = () => {
-    if (!child.killed) child.kill()
+    killTree(child)
   }
   const started = Date.now()
   while (Date.now() - started < 180_000) {

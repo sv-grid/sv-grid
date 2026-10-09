@@ -2491,6 +2491,70 @@
       ]
     },
     {
+      "id": "mk-svelte-gantt-chart",
+      "kind": "marketing",
+      "title": "A Gantt chart in Svelte, from the same data grid",
+      "description": "Nested phases, dependency arrows, a critical path and 640 tasks: the Gantt is one more renderer behind the SvGrid you already have.",
+      "demo": "474-gantt-intro",
+      "docsPage": null,
+      "tags": [
+        "svelte gantt chart",
+        "gantt chart svelte",
+        "svelte project plan",
+        "critical path",
+        "svelte 5",
+        "data grid"
+      ],
+      "duration": 136.9,
+      "width": 1920,
+      "height": 1080,
+      "recordedAt": "2026-10-07",
+      "youtubeId": null,
+      "publishedAt": null,
+      "files": {
+        "mp4": null,
+        "poster": null,
+        "vtt": null
+      },
+      "bytes": {
+        "mp4": 0,
+        "poster": 0,
+        "master": 13904928
+      },
+      "transcript": [
+        {
+          "start": 0.7,
+          "end": 16.47,
+          "text": "If you have gone looking for a Gantt chart in Svelte, you will have found wrappers around something written for another framework, or nothing at all. This is one that is native, and it is not a separate component: it is the data grid you already have, drawing its rows on a timeline."
+        },
+        {
+          "start": 18.33,
+          "end": 41.85,
+          "text": "Here is a fourteen week release plan. The table on the left is a normal grid, with the normal grid things: a tree of phases, columns you sort and edit. On the right those same rows are bars on a calendar. Phases nest their tasks and draw a rolled up summary bar above them, and the arrows between bars are real finish to start dependencies, not decoration."
+        },
+        {
+          "start": 43.67,
+          "end": 65.89,
+          "text": "Because the links are real, the chart can work out which chain of tasks has no slack in it. That is the critical path, marked here in red: the tasks where a day lost is a day lost on the whole project. There is a slack column beside it with the number of days each task can move before it starts to matter, and a baseline to compare the plan against what you first said it would be."
+        },
+        {
+          "start": 67.7,
+          "end": 88.53,
+          "text": "And it holds up at the size real programmes actually are. This is a fibre roll out: forty sites, sixteen linked tasks each, six hundred and forty tasks and six hundred links in one chart, scrolling. The same virtualization that makes the table fast is what is drawing the timeline, so the bars are only built for the rows you can see."
+        },
+        {
+          "start": 90.34,
+          "end": 115.12,
+          "text": "Which leads to the part that matters more than any single feature. This is one grid, one array of rows, and four renderers behind a switch: the plain table, the Gantt, a scheduler and a Kanban board. Watch the data stay put while the view changes. Nobody has to pick the right component up front, and nothing has to be kept in sync, because there is one source of rows and the view is a prop."
+        },
+        {
+          "start": 117.04,
+          "end": 134.43,
+          "text": "The Gantt renderer is part of the Enterprise pack, and like the rest of it you can install and run it without a key to see whether it fits. The grid underneath is MIT on npm. If you have been putting off a project plan screen because there was nothing to build it with in Svelte, there is now."
+        }
+      ]
+    },
+    {
       "id": "mk-svelte-headless-table",
       "kind": "marketing",
       "title": "A headless table in Svelte",
@@ -2921,6 +2985,71 @@
       ]
     },
     {
+      "id": "mk-sveltekit-ssr-proof",
+      "kind": "marketing",
+      "title": "SvelteKit data grid SSR: prove your rows render on the server",
+      "description": "How to prove a SvelteKit data grid really server-renders: turn JavaScript off and watch the rows stay, then run the SSR check suite for the rest.",
+      "demo": null,
+      "docsPage": null,
+      "tags": [
+        "sveltekit",
+        "sveltekit ssr",
+        "sveltekit data grid",
+        "svelte data grid",
+        "server side rendering",
+        "svelte 5",
+        "seo"
+      ],
+      "duration": 124.5,
+      "width": 1920,
+      "height": 1080,
+      "recordedAt": "2026-10-07",
+      "youtubeId": "h5Jos4DV0Y4",
+      "publishedAt": "2026-10-07",
+      "files": {
+        "mp4": null,
+        "poster": null,
+        "vtt": null
+      },
+      "bytes": {
+        "mp4": 0,
+        "poster": 0,
+        "master": 8485785
+      },
+      "transcript": [
+        {
+          "start": 0.71,
+          "end": 21.49,
+          "text": "Every component library says it supports server side rendering, and most of the time what that means is that it does not crash when you import it on the server. In SvelteKit the question that matters is different: when the browser receives the HTML, before a single line of JavaScript has run, are your rows in it? There is a very direct way to find out."
+        },
+        {
+          "start": 23.35,
+          "end": 43.9,
+          "text": "This is the page in question. The SvelteKit template, a grid of people, sortable and editable. Nothing unusual about it. The question is where these rows came from, and you cannot tell by looking: a grid that fetched them in the browser and a grid that was handed them by the server look exactly the same once they are on screen."
+        },
+        {
+          "start": 44.21,
+          "end": 65.31,
+          "text": "So ask the server directly. Request the same page the way a crawler would, with no browser rendering it, and look at the bytes that come back. The row elements are already in there. Nothing in the browser built them: they were in the HTML before any script ran, which is the whole difference between a table that is server-rendered and one that merely appears quickly."
+        },
+        {
+          "start": 67.14,
+          "end": 79.42,
+          "text": "That covers the thing you can see. The rest of it you cannot, so the repository checks it on every build. This renders the grid on the server with no browser anywhere and reads the string that comes back."
+        },
+        {
+          "start": 79.74,
+          "end": 100.01,
+          "text": "And this is the pair worth reading twice. Virtualization survives server rendering, which means it does not quietly serialise a hundred thousand rows into your page to look good on this test. And the summary row renders its real totals, computed on the server, rather than empty cells that fill in after hydration."
+        },
+        {
+          "start": 101.98,
+          "end": 122.11,
+          "text": "Run that test on your own application, whatever grid is in it. Switch scripting off and reload. If the table empties out, your rows are being drawn in the browser, and a crawler, a slow phone and your first paint all see what you just saw. The SvelteKit template has this wired already, and the grid is MIT on npm."
+        }
+      ]
+    },
+    {
       "id": "mk-sveltekit-studio-crud",
       "kind": "marketing",
       "title": "A SvelteKit CRUD app from a database, in one command",
@@ -2995,6 +3124,66 @@
       ]
     },
     {
+      "id": "mk-sveltekit-url-sorting",
+      "kind": "marketing",
+      "title": "SvelteKit server-side sorting: keep the grid sort in the URL",
+      "description": "Server-side sorting in SvelteKit: put the sort in the URL so a reload and a shared link land on the same view. externalSort and goto, wired end to end.",
+      "demo": null,
+      "docsPage": null,
+      "tags": [
+        "sveltekit",
+        "sveltekit data grid",
+        "sveltekit sorting",
+        "server side sorting",
+        "svelte data grid",
+        "url state",
+        "svelte 5"
+      ],
+      "duration": 98.9,
+      "width": 1920,
+      "height": 1080,
+      "recordedAt": "2026-10-07",
+      "youtubeId": "sjBXA0OGidQ",
+      "publishedAt": "2026-10-07",
+      "files": {
+        "mp4": null,
+        "poster": null,
+        "vtt": null
+      },
+      "bytes": {
+        "mp4": 0,
+        "poster": 0,
+        "master": 5113837
+      },
+      "transcript": [
+        {
+          "start": 0.7,
+          "end": 21.62,
+          "text": "Here is a small thing that separates a table widget from a page. Sort a data grid in SvelteKit, send someone the link, and they should see what you saw. Reload it yourself and it should still be sorted. That only works if the sort lives in the URL and the server does the sorting, and in SvelteKit it is about ten lines to wire up."
+        },
+        {
+          "start": 23.44,
+          "end": 39.25,
+          "text": "This is the SvelteKit template, and this grid does not sort itself. Clicking a header asks the server for the rows in that order, and the page navigates to a URL that carries the sort. The rows that come back were sorted by the server, not reordered in the browser."
+        },
+        {
+          "start": 39.57,
+          "end": 53.76,
+          "text": "And now the part that matters. Reload the page. Not a client side rerender, a full round trip to the server, the way a shared link arrives. The sort is still there, because it was never in the component in the first place."
+        },
+        {
+          "start": 55.57,
+          "end": 79.46,
+          "text": "This is all of it. Three props on the grid: external sort, which tells it not to sort the rows itself, the sort the server already applied, and a callback. The callback writes the sort into the URL and navigates. The load function on the server reads those two parameters back and returns the rows in that order. There is no store, no effect, and nothing to keep in sync."
+        },
+        {
+          "start": 81.45,
+          "end": 96.47,
+          "text": "The same shape works for filtering and paging: put the state in the URL, let the load function read it, and the grid becomes a view of a page rather than the owner of it. The template has this wired already, and the grid is MIT on npm."
+        }
+      ]
+    },
+    {
       "id": "mk-themes",
       "kind": "marketing",
       "title": "One grid, twenty themes",
@@ -3054,6 +3243,78 @@
           "start": 33.44,
           "end": 39.17,
           "text": "Start from a preset or set the tokens yourself in the theme builder at svgrid.com."
+        }
+      ]
+    },
+    {
+      "id": "mk-web-component",
+      "kind": "marketing",
+      "player": true,
+      "title": "A data grid web component: one script tag, any framework",
+      "description": "Install @svgrid/grid-wc from a CDN or npm, use <sv-grid> in plain HTML, and learn the attribute-versus-property rule that catches everyone first.",
+      "demo": null,
+      "docsPage": "docs/help/web-components.md",
+      "anchor": "## Start here",
+      "tags": [
+        "web component",
+        "custom element",
+        "data grid",
+        "sv-grid",
+        "javascript data grid",
+        "html data grid",
+        "framework agnostic"
+      ],
+      "duration": 132.7,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-10-08",
+      "youtubeId": "_zWVutDXlVY",
+      "publishedAt": "2026-10-08",
+      "files": {
+        "mp4": "/tutorials/mk-web-component.mp4",
+        "poster": "/tutorials/mk-web-component.poster.webp",
+        "vtt": "/tutorials/mk-web-component.vtt"
+      },
+      "bytes": {
+        "mp4": 1426735,
+        "poster": 12788,
+        "master": 5315653
+      },
+      "transcript": [
+        {
+          "start": 0.7,
+          "end": 20.41,
+          "text": "The grid is written in Svelte, but you do not have to be. It also ships as a custom element, which is a browser standard: one script tag, one HTML tag, and it works in React, Vue, Angular, Rails, Django, a static page, or whatever you already have. No bundler and no framework in your application."
+        },
+        {
+          "start": 22.24,
+          "end": 36.01,
+          "text": "There are two ways in. From npm, if you have a build step, where importing the package registers the element as a side effect. Or straight from a CDN with a script tag, if you do not, in which case there is nothing to install at all."
+        },
+        {
+          "start": 37.78,
+          "end": 51.83,
+          "text": "And this is the whole of it in a plain HTML file. A module script pointing at the package, the element itself with the features you want switched on as attributes, and then two properties set from JavaScript: the columns and the rows."
+        },
+        {
+          "start": 52.24,
+          "end": 74.14,
+          "text": "That split is the one rule worth learning first, and it is where everyone trips. Attributes are strings, so sortable and filterable work as attributes. Anything that is not a string is a property only. Set columns as an attribute and the browser turns your array into the text object Object, and you get an empty grid with no error to tell you why."
+        },
+        {
+          "start": 75.97,
+          "end": 93.92,
+          "text": "Here is that page running. This is the real custom element, not a Svelte component in disguise: the grid you see was created by the browser from an HTML tag. Sorting, the filter menus, currency formatting on a column, row selection. Everything the grid does, it does here."
+        },
+        {
+          "start": 94.24,
+          "end": 110.98,
+          "text": "And it talks back the way a browser element should. Click a row and it fires a DOM event you listen for with add event listener, like any other element on the page. No framework bindings, no adapter, nothing to import. That is what makes it work the same in all of them."
+        },
+        {
+          "start": 112.88,
+          "end": 130.27,
+          "text": "If you do use a framework, the package also ships thin wrappers for React, Vue and Angular, so props and events look native in each. The docs have a page per framework, the attribute and property reference, and what the shadow DOM build changes. The grid is MIT on npm."
         }
       ]
     },

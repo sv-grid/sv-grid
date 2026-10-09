@@ -12,6 +12,13 @@ and use `<sv-grid>` like any built-in element. If you searched for a "web
 component data grid" or a "framework-agnostic Svelte table", this is the
 integration path.
 
+<!-- tutorial:mk-web-component -->
+<figure class="docs-tutorial docs-tutorial-player" id="tutorial-mk-web-component" data-docs-tutorial="mk-web-component">
+<video class="docs-tutorial-video" src="/tutorials/mk-web-component.mp4" poster="/tutorials/mk-web-component.poster.webp" width="960" height="540" controls playsinline preload="none" aria-label="A data grid web component: one script tag, any framework, 133 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/mk-web-component.vtt">Your browser does not play embedded video. <a href="/tutorials/mk-web-component.mp4">Download the MP4</a>.</video>
+<figcaption><strong>A data grid web component: one script tag, any framework</strong> (2:13, with narration). <a href="https://www.youtube.com/watch?v=_zWVutDXlVY" rel="noopener">Watch on YouTube</a></figcaption>
+</figure>
+<!-- /tutorial:mk-web-component -->
+
 ## Start here
 
 | Page | What it covers |

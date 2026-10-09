@@ -57,7 +57,14 @@ export function youtubeMeta(t, { privacy = 'unlisted' } = {}) {
     'Install: npm i @svgrid/grid',
     '',
     '#Svelte #SvelteKit #DataGrid',
-  ].join('\n')
+  ]
+    .join('\n')
+    // YouTube rejects a description containing < or > outright, with a bare
+    // `invalidDescription` and no hint which character caused it. A video about
+    // a custom element naturally wants to write the tag, so the brackets are
+    // stripped here rather than left to fail at upload time, after the metadata
+    // has already printed and the take looks fine.
+    .replace(/[<>]/g, '')
   const tags = []
   for (const tag of [...t.tags, 'svelte', 'svelte 5', 'sveltekit', 'svelte data grid', 'svelte table', 'svgrid']) {
     const clean = normalizeNarration(tag).toLowerCase()

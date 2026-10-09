@@ -134,6 +134,12 @@ async function recordTake(def, { base, siteBase, appBase, outDir, view, log, war
       deviceScaleFactor: 1,
       recordVideo: { dir: rawDir, size: view },
       reducedMotion: 'no-preference',
+      // `noJs: true` records the page with JavaScript switched off. For an SSR
+      // claim that is the whole argument made visible: whatever is on screen
+      // was in the HTML the server sent, because nothing could have drawn it
+      // afterwards. Everything interactive is dead in such a segment - no
+      // clicks, no cursor overlay, no callouts - so use it for one still shot.
+      ...(def.noJs ? { javaScriptEnabled: false } : {}),
     })
     const contextCreatedAt = Date.now()
     await ctx.addInitScript(
@@ -185,7 +191,13 @@ async function recordTake(def, { base, siteBase, appBase, outDir, view, log, war
       if (other && def.demo && other[1] !== def.demo && !/reload/i.test(text)) return
       hmr.push(text)
     })
-    page.on('load', () => hmr.push('full page load'))
+    // A full page load normally means the dev server restarted the page under
+    // us and the take is contaminated. A segment that reloads ON PURPOSE - to
+    // show that state in the URL survives a real round trip - sets
+    // `allowReload` and takes responsibility for its own navigations. The HMR
+    // text events above are still fatal either way, so a genuine hot update
+    // during such a segment is still caught.
+    if (!def.allowReload) page.on('load', () => hmr.push('full page load'))
 
     try {
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 90_000 })
@@ -194,26 +206,33 @@ async function recordTake(def, { base, siteBase, appBase, outDir, view, log, war
       // segment that IS about licensing sets `watermark: true` and shows the
       // real thing - claiming "it runs unlicensed with a watermark" over a
       // frame with no watermark in it is the kind of gap a viewer notices.
-      await page.addStyleTag({ content: HIDE_DEV_OVERLAY })
-      if (!def.watermark) await page.addStyleTag({ content: HIDE_WATERMARK })
+      // addStyleTag evaluates script, so it throws outright in a `noJs` segment.
+      // Nothing it hides matters there anyway: a page with JavaScript off has no
+      // Vite overlay and no watermark, both of which are drawn at runtime.
+      const style = async (content) => {
+        if (def.noJs) return
+        await page.addStyleTag({ content })
+      }
+      await style(HIDE_DEV_OVERLAY)
+      if (!def.watermark) await style(HIDE_WATERMARK)
       if (target.kind === 'demo') {
-        await page.addStyleTag({ content: HIDE_CHROME })
+        await style(HIDE_CHROME)
         // CSS zoom, not deviceScaleFactor: the screencast frame is the viewport
         // size either way, so DSF only costs compositor work. Applied before any
         // measurement so boxes and clicks agree (capture-launch-assets proved it).
-        if (zoom !== 1) await page.addStyleTag({ content: `.demo-page > main { zoom: ${zoom}; }` })
+        if (zoom !== 1) await style(`.demo-page > main { zoom: ${zoom}; }`)
         await assertGallery(page, url)
         if (def.hideIntro) await h.hideIntro(def.hideIntro)
       } else if (target.kind === 'site') {
-        await page.addStyleTag({ content: HIDE_SITE_CHROME })
-        if (zoom !== 1) await page.addStyleTag({ content: `#root main { zoom: ${zoom}; }` })
+        await style(HIDE_SITE_CHROME)
+        if (zoom !== 1) await style(`#root main { zoom: ${zoom}; }`)
         await page.waitForSelector(readySelector, { timeout: 60_000 })
       } else if (target.kind === 'app') {
         // A real scaffolded app: no stage bridge, no gallery assertion. Wait
         // for SvelteKit to hydrate rather than for a marker that cannot exist.
         await page.waitForSelector(readySelector, { timeout: 60_000 })
         await page.waitForLoadState('networkidle').catch(() => {})
-        if (zoom !== 1) await page.addStyleTag({ content: `body { zoom: ${zoom}; }` })
+        if (zoom !== 1) await style(`body { zoom: ${zoom}; }`)
       } else {
         await page.waitForFunction(() => Boolean(window.__stage), null, { timeout: 60_000 })
       }
