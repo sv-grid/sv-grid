@@ -222,7 +222,7 @@
   {/if}
 
   {#if rows.length}
-    <div class="flex-1 min-h-0">
+    <div class="mr-grid flex-1 min-h-0">
       <SvGrid
       columnResize
         data={rows}
@@ -248,6 +248,11 @@
 </section>
 
 <style>
+  /* Text that fits the 18 px rows. The cells inherit the page's 16 px type
+     on a 24 px line, which needs a 25 px row; a row is exactly its
+     rowHeight, so that line would be cramped into 18 px. */
+  .mr-grid { font-size: 13px; line-height: 17px; }
+
   /* KPI strip */
   .mr-kpi-strip {
     display: grid;

@@ -11,6 +11,8 @@ function sameOptions(a: VirtualizerOptions, b: VirtualizerOptions) {
     a.count === b.count &&
     a.estimateSize === b.estimateSize &&
     (a.overscan ?? 6) === (b.overscan ?? 6) &&
+    a.overscanBehind === b.overscanBehind &&
+    a.overscanMin === b.overscanMin &&
     a.viewportHeight === b.viewportHeight &&
     (a.scrollOffset ?? 0) === (b.scrollOffset ?? 0)
   )
@@ -133,13 +135,14 @@ function buildVariableItems(
   return items
 }
 
-function createState(
+/** The items under the viewport at the current scroll offset, before any
+ *  overscan. */
+function visibleRange(
   options: VirtualizerOptions,
   /** Pre-built cumulative offsets for the variable-size path. */
   offsets: Array<number> | null,
-): VirtualizerState {
+) {
   const count = Math.max(options.count, 0)
-  const overscan = Math.max(options.overscan ?? 6, 0)
   const viewportHeight = Math.max(options.viewportHeight, 0)
 
   if (typeof options.estimateSize === 'function' && offsets) {
@@ -167,38 +170,59 @@ function createState(
       else hi = mid
     }
     const visibleEnd = Math.max(lo - 1, visibleStart)
-
-    const startIndex = count === 0 ? 0 : clamp(visibleStart - overscan, 0, count - 1)
-    const endIndex = count === 0 ? -1 : clamp(visibleEnd + overscan, 0, count - 1)
-
-    return {
-      items: endIndex >= startIndex ? buildVariableItems(startIndex, endIndex, offsets) : [],
-      totalSize,
-      startIndex,
-      endIndex,
-      scrollOffset,
-      viewportHeight,
-    }
+    return { count, viewportHeight, totalSize, scrollOffset, visibleStart, visibleEnd, uniformSize: 0 }
   }
 
   // Uniform-size fast path (original behavior).
-  const estimateSize = Math.max(
+  const uniformSize = Math.max(
     typeof options.estimateSize === 'number' ? options.estimateSize : 1,
     1,
   )
-  const totalSize = count * estimateSize
+  const totalSize = count * uniformSize
   const maxOffset = Math.max(totalSize - viewportHeight, 0)
   const scrollOffset = clamp(options.scrollOffset ?? 0, 0, maxOffset)
 
-  const visibleStart = Math.floor(scrollOffset / estimateSize)
-  const visibleCount = Math.ceil(viewportHeight / estimateSize)
+  const visibleStart = Math.floor(scrollOffset / uniformSize)
+  const visibleCount = Math.ceil(viewportHeight / uniformSize)
   const visibleEnd = Math.min(visibleStart + visibleCount, Math.max(count - 1, 0))
+  return { count, viewportHeight, totalSize, scrollOffset, visibleStart, visibleEnd, uniformSize }
+}
 
-  const startIndex = count === 0 ? 0 : clamp(visibleStart - overscan, 0, count - 1)
-  const endIndex = count === 0 ? -1 : clamp(visibleEnd + overscan, 0, count - 1)
+function createState(
+  options: VirtualizerOptions,
+  /** Pre-built cumulative offsets for the variable-size path. */
+  offsets: Array<number> | null,
+  /** The scroll moved on from the window already rendered. With
+   *  `overscanMin`, only then does the full `overscan` go ahead; a window
+   *  built at rest or after a jump carries `overscanMin`, so a thumb drag
+   *  that jumps every frame renders no more than it needs. */
+  scrolling = false,
+): VirtualizerState {
+  const full = Math.max(options.overscan ?? 6, 0)
+  const overscan =
+    options.overscanMin === undefined || scrolling ? full : clamp(options.overscanMin, 0, full)
+  // The overscan goes ahead of the scroll and `overscanBehind` behind it:
+  // items behind the movement were just scrolled past, and a horizontal
+  // scroll that kept three columns on each side drew ~40% more cells than it
+  // needed to (350 vs 275 in the wide benchmark).
+  const behind = Math.min(Math.max(options.overscanBehind ?? full, 0), overscan)
+  const direction = options.scrollDirection ?? 0
+  const overscanBefore = direction > 0 ? behind : overscan
+  const overscanAfter = direction < 0 ? behind : overscan
+  const { count, viewportHeight, totalSize, scrollOffset, visibleStart, visibleEnd, uniformSize } =
+    visibleRange(options, offsets)
 
+  const startIndex = count === 0 ? 0 : clamp(visibleStart - overscanBefore, 0, count - 1)
+  const endIndex = count === 0 ? -1 : clamp(visibleEnd + overscanAfter, 0, count - 1)
+
+  let items: Array<VirtualItem> = []
+  if (endIndex >= startIndex) {
+    items = uniformSize > 0
+      ? buildUniformItems(startIndex, endIndex, uniformSize)
+      : buildVariableItems(startIndex, endIndex, offsets!)
+  }
   return {
-    items: endIndex >= startIndex ? buildUniformItems(startIndex, endIndex, estimateSize) : [],
+    items,
     totalSize,
     startIndex,
     endIndex,
@@ -251,11 +275,50 @@ export function createVirtualizer(initial: VirtualizerOptions) {
     listeners.forEach((listener) => listener())
   }
 
-  function recalc() {
-    const next = createState(options, getOffsets())
+  function recalc(scrolling = false) {
+    const next = createState(options, getOffsets(), scrolling)
     if (sameState(state, next)) return
+    // Hand back the previous item object for a row whose index, offset, size
+    // and slot did not change. The grid's row {#each} is keyed by slot, so a
+    // row that stays in the window keeps its <tr>, but a new item object
+    // still invalidated everything that row and its cells derive from it:
+    // every scroll frame re-checked ~300 cells to render the two that came
+    // into view, and Svelte's dependency marking was most of the frame's
+    // script time (measured 4.8 of 8.3 ms on a 100k-row grid).
+    if (state.items.length > 0 && next.items.length > 0) {
+      const first = state.items[0]!.index
+      const items = next.items
+      for (let i = 0; i < items.length; i += 1) {
+        const item = items[i]!
+        const prev = state.items[item.index - first]
+        if (prev && prev.index === item.index && prev.start === item.start && prev.size === item.size && prev.key === item.key) {
+          items[i] = prev
+        }
+      }
+    }
     state = next
     emit()
+  }
+
+  /**
+   * What a scroll does to the window already rendered, with `overscanMin`:
+   * 'hold' while that window still covers the visible items plus
+   * `overscanMin` ahead of the scroll, 'move' once the scroll runs past that
+   * (the window moves on with the full overscan ahead), and 'jump' when the
+   * visible items are nowhere in it. Without `overscanMin` every scroll moves
+   * the window.
+   */
+  function scrollStep(): 'hold' | 'move' | 'jump' {
+    const min = options.overscanMin
+    if (min === undefined || state.items.length === 0) return 'move'
+    const ahead = clamp(min, 0, Math.max(options.overscan ?? 6, 0))
+    const { count, viewportHeight, totalSize, visibleStart, visibleEnd } = visibleRange(options, getOffsets())
+    if (count === 0 || viewportHeight !== state.viewportHeight || totalSize !== state.totalSize) return 'jump'
+    if (visibleStart > state.endIndex || visibleEnd < state.startIndex) return 'jump'
+    const direction = options.scrollDirection ?? 0
+    const needStart = Math.max(visibleStart - (direction < 0 ? ahead : 0), 0)
+    const needEnd = Math.min(visibleEnd + (direction > 0 ? ahead : 0), count - 1)
+    return state.startIndex <= needStart && state.endIndex >= needEnd ? 'hold' : 'move'
   }
 
   return {
@@ -278,9 +341,12 @@ export function createVirtualizer(initial: VirtualizerOptions) {
       recalc()
     },
     setScrollOffset(scrollOffset: number) {
-      if ((options.scrollOffset ?? 0) === scrollOffset) return
-      options = { ...options, scrollOffset }
-      recalc()
+      const previous = options.scrollOffset ?? 0
+      if (previous === scrollOffset) return
+      options = { ...options, scrollOffset, scrollDirection: scrollOffset > previous ? 1 : -1 }
+      const step = scrollStep()
+      if (step === 'hold') return
+      recalc(step === 'move')
     },
     setViewportHeight(viewportHeight: number) {
       if (options.viewportHeight === viewportHeight) return

@@ -320,7 +320,10 @@ describe('SvGrid interactions - cell pointer events', () => {
       if (!a || !c) return -1 // jsdom didn't lay the cells out; caller skips
       a.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, button: 0, pointerType }))
       await tick()
-      c.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true, pointerId: 1, pointerType }))
+      // What a browser fires as the pointer moves into the cell: `pointerover`
+      // (bubbles, from the cell the pointer left), then `pointerenter`.
+      c.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerId: 1, pointerType, relatedTarget: a }))
+      c.dispatchEvent(new PointerEvent('pointerenter', { bubbles: false, pointerId: 1, pointerType, relatedTarget: a }))
       await tick()
       return target.querySelectorAll('[data-selected-range="true"]').length
     } finally {

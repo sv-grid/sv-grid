@@ -14,10 +14,9 @@
    *   - Hover any middle-column header → click the ⋮ that appears →
    *     "Pin to left" / "Pin to right" / "Unpin column".
    *
-   * Note: column pinning requires `columnVirtualization={false}` because
-   * the virtualizer recycles DOM nodes (which breaks sticky positioning).
-   * The pin menu items are hidden when virtualization is on, so the
-   * gating is automatic.
+   * Pinning works with column virtualization on (the default): the pinned
+   * columns render on their own either side of the virtual window, so only
+   * the columns in view plus the pinned ones are in the DOM.
    *
    * A programmatic `api.setColumnPinning(id, side)` is on the v1.x
    * roadmap; today the `initialColumnPinning` prop covers the on-mount
@@ -93,7 +92,6 @@
       rowHeight={36}
       containerHeight="100%"
       fitColumns={false}
-      columnVirtualization={false}
       initialColumnPinning={{ left: ['company'], right: ['price'] }}
     />
   </div>

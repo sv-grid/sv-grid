@@ -15,6 +15,10 @@
 import { test, expect } from '@playwright/test'
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { trackPhases, type PhaseWork } from './bench-phases'
+
+// Recording video costs CPU during the measurement; the config records every test.
+test.use({ video: 'off' })
 
 type GridResult = {
   grid: string
@@ -28,17 +32,21 @@ type GridResult = {
   scrollDropped: number
   tickP95: number
   tickOverBudget: number
+  ticks: number
   tickSortHeld: boolean
   domRows: number
+  /** Main-thread work per scroll frame (bench-phases.ts); frame intervals sit at the refresh rate. */
+  scrollWork?: PhaseWork | null
   error?: string
 }
 
 const ROWS = Number(process.env.BENCH_ROWS ?? 100_000)
 const REPEATS = Number(process.env.BENCH_REPEATS ?? 3)
 const GRIDS = process.env.BENCH_GRIDS ?? 'svgrid,aggrid'
+const TICKS = Number(process.env.BENCH_TICKS ?? 180)
 
 test('grid comparison', async ({ page }) => {
-  test.setTimeout(900_000)
+  test.setTimeout(Number(process.env.BENCH_TIMEOUT_MS ?? 900_000))
 
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(String(e)))
@@ -50,7 +58,7 @@ test('grid comparison', async ({ page }) => {
   // examples/) when :5174 is held by a hand-started one whose Vite dep cache
   // reloads the page mid-run.
   const PORT = process.env.SVGRID_BENCH_PORT ?? '5174'
-  const url = `http://localhost:${PORT}/bench.html?rows=${ROWS}&repeats=${REPEATS}&grids=${GRIDS}`
+  const url = `http://localhost:${PORT}/bench.html?rows=${ROWS}&repeats=${REPEATS}&grids=${GRIDS}&ticks=${TICKS}`
 
   // Warm Vite's dependency optimizer before measuring anything. The adapters
   // import their grids lazily, so the first run discovers new dependencies
@@ -96,6 +104,7 @@ test('grid comparison', async ({ page }) => {
   for (const grid of GRIDS.split(',')) {
     const fresh = await page.context().newPage()
     fresh.on('pageerror', (e) => errors.push(String(e)))
+    const phases = await trackPhases(fresh)
     try {
       await fresh.goto(url)
       await fresh.locator('#run').waitFor({ timeout: 60_000 })
@@ -109,6 +118,7 @@ test('grid comparison', async ({ page }) => {
         }).__gridBench
         return bench.runAll(bench.host, { ...bench.DEFAULTS, grids: [key] })
       }, grid)) as GridResult[]
+      for (const r of one) r.scrollWork = phases.work('vscroll', 180)
       results.push(...one)
     } finally {
       await fresh.close()
@@ -122,7 +132,7 @@ test('grid comparison', async ({ page }) => {
   console.log(`\n  Grid comparison - ${ROWS.toLocaleString()} rows x 9 columns, median of ${REPEATS}\n`)
   console.log(
     `    ${pad('grid', 24)} ${rpad('mount', 9)} ${rpad('sort txt', 9)} ${rpad('sort num', 9)} ` +
-    `${rpad('filter', 8)} ${rpad('scroll p95', 11)} ${rpad('dropped', 8)} ${rpad('tick p95', 9)} ${rpad('over', 6)} ${rpad('DOM rows', 9)}`,
+    `${rpad('filter', 8)} ${rpad('scroll p95', 11)} ${rpad('dropped', 8)} ${rpad('tick p95', 9)} ${rpad('over', 6)} ${rpad('DOM rows', 9)} ${rpad('work/frame', 11)}`,
   )
   for (const r of results) {
     if (r.error) {
@@ -132,7 +142,8 @@ test('grid comparison', async ({ page }) => {
     console.log(
       `    ${pad(r.grid, 24)} ${rpad(num(r.mount), 9)} ${rpad(num(r.sortText), 9)} ` +
       `${rpad(num(r.sortNumber), 9)} ${rpad(num(r.filter), 8)} ${rpad(num(r.scrollP95), 11)} ` +
-      `${rpad(r.scrollDropped + '/180', 8)} ${rpad(num(r.tickP95) + (r.tickSortHeld ? '' : '!'), 9)} ${rpad(r.tickOverBudget, 6)} ${rpad(r.domRows, 9)}`,
+      `${rpad(r.scrollDropped + '/180', 8)} ${rpad(num(r.tickP95) + (r.tickSortHeld ? '' : '!'), 9)} ${rpad(r.tickOverBudget + '/' + r.ticks, 8)} ${rpad(r.domRows, 9)} ` +
+      `${rpad(num(r.scrollWork?.taskMs ?? NaN), 11)}`,
     )
   }
   for (const r of results) {
@@ -149,7 +160,7 @@ test('grid comparison', async ({ page }) => {
   // is a measurement, the ledger is the publication.
   writeFileSync(
     join(process.cwd(), 'tests', 'perf', '.last-compare.json'),
-    JSON.stringify({ measuredAt: new Date().toISOString(), rows: ROWS, repeats: REPEATS, grids: GRIDS.split(','), results }, null, 2) + '\n',
+    JSON.stringify({ measuredAt: new Date().toISOString(), rows: ROWS, repeats: REPEATS, ticks: TICKS, grids: GRIDS.split(','), results }, null, 2) + '\n',
   )
 
   // Assertions are about the harness working, not about who won. A grid that

@@ -70,11 +70,35 @@ describe('createSvGrid - getRowId', () => {
       },
     }).getRowModel().rows
     expect(rows).toHaveLength(data.length)
+    // Rows are made when read (a first build is lazy), so read each one.
+    expect(rows.map((r) => r.id)).toEqual(['ada', 'linus', 'grace'])
     expect(seen).toEqual([
       { id: 'ada',   index: 0 },
       { id: 'linus', index: 1 },
       { id: 'grace', index: 2 },
     ])
+  })
+
+  it('makes a row, and asks getRowId for it, only when the row is read', () => {
+    // A first build is lazy: a grid that only shows its first screen must not
+    // build a row object (or call getRowId) for every row of a large dataset.
+    const seen: number[] = []
+    const rows = createSvGrid<typeof features, Row>({
+      _features: features,
+      _rowModels: { coreRowModel: createCoreRowModel<Row>() },
+      columns,
+      data,
+      getRowId: (row, index) => {
+        seen.push(index)
+        return row.id
+      },
+    }).getRowModel().rows
+    expect(seen).toEqual([])
+    expect(rows[2]!.id).toBe('grace')
+    expect(seen).toEqual([2])
+    // The same object every time it is read.
+    expect(rows[2]).toBe(rows[2])
+    expect(seen).toEqual([2])
   })
 
   it('preserves the same id across `getRowModel()` invocations (stable identity)', () => {

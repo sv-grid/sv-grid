@@ -35,9 +35,36 @@ export function emitUnlicensedNudge(): void {
   queueMicrotask(() => attachToAllGrids())
   // Watch for grids that mount later (route changes, dynamic loads).
   if (!observer) {
-    observer = new MutationObserver(() => attachToAllGrids())
+    observer = new MutationObserver(onMutations)
     observer.observe(document.body, { childList: true, subtree: true })
   }
+}
+
+/**
+ * The observer sees every DOM change on the page, and a scrolling grid
+ * changes the DOM every frame (cells in, cells out). Changes inside a grid
+ * that already has its watermark cannot add a grid, so they are skipped, and
+ * the rest wait for one check per frame instead of a document-wide query per
+ * mutation batch - which had made an unlicensed grid scroll measurably slower.
+ */
+let checkScheduled = false
+function onMutations(records: MutationRecord[]): void {
+  for (const record of records) {
+    const target = record.target as Element
+    if (target.nodeType === 1 && target.closest?.(`.sv-grid-root[${NUDGED_ATTR}]`)) continue
+    scheduleCheck()
+    return
+  }
+}
+function scheduleCheck(): void {
+  if (checkScheduled) return
+  checkScheduled = true
+  const run = () => {
+    checkScheduled = false
+    attachToAllGrids()
+  }
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run)
+  else setTimeout(run, 16)
 }
 
 export function dismissUnlicensedNudge(): void {

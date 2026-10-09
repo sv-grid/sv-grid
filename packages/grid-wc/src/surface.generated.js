@@ -654,6 +654,12 @@ export const ELEMENT_PROPS = [
     "ts": "ReadonlyArray<{ rowIndex: number; colIndex: number; rowSpan: number; colSpan: number }>"
   },
   {
+    "name": "rowLayout",
+    "type": "String",
+    "attribute": "row-layout",
+    "ts": "\"flex\" | \"table\""
+  },
+  {
     "name": "pinnedBottomRows",
     "type": "Array",
     "attribute": null,

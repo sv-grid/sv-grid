@@ -12,6 +12,7 @@ node_modules/
 
 # Build output (CI rebuilds these; never commit)
 dist/
+dist-bench/
 build/
 
 # Internal go-to-market / SEO strategy docs + GSC exports + analysis tooling.
@@ -159,4 +160,5 @@ tools/bench/competitors/pnpm-lock.yaml
 tutorials-out/
 .tutorials-cache/
 tests/perf/.last-compare.json
+tests/perf/.last-compare-wide.json
 sv-grid/

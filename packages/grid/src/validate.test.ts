@@ -197,10 +197,10 @@ describe('gantt versus treeData', () => {
 })
 
 describe('pinning versus column virtualization', () => {
-  it('flags pinning while column virtualization is on by default', () => {
-    const msg = run({ initialColumnPinning: { left: ['name'] } })[0]!
-    expect(msg).toContain('will not stick')
-    expect(msg).toContain('columnVirtualization={false}')
+  // Pinned columns render as their own runs beside the virtual window, so
+  // pinning with column virtualization on (the default) is supported.
+  it('is silent for pinning with column virtualization on by default', () => {
+    expect(run({ initialColumnPinning: { left: ['name'], right: ['name'] } })).toEqual([])
   })
 
   it('is silent once column virtualization is off', () => {

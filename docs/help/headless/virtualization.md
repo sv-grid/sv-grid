@@ -101,6 +101,35 @@ const colVirtualizer = createColumnVirtualizer({
 })
 ```
 
+## Moving the window less often
+
+Two options shape how the window follows a scroll. `overscanBehind` keeps
+fewer items on the side the scroll is leaving, while the full `overscan`
+stays ahead of it. `overscanMin` keeps the window where it is while at least
+that many items are still rendered ahead of the scroll, and moves it only
+when the scroll runs past them, with the full `overscan` ahead again:
+
+```ts
+const colVirtualizer = createColumnVirtualizer({
+  count: leafColumns.length,
+  viewportWidth: containerWidth,
+  estimateSize: (i) => leafColumns[i].getSize(),
+  overscan: 5,        // ahead of the scroll right after a move
+  overscanBehind: 1,  // behind it
+  overscanMin: 2,     // never fewer ahead; the window moves 4 items at a time
+})
+```
+
+Moving a column window touches every rendered row, about the same work
+whether one column enters or four, so a few larger moves cost less than many
+one-column moves, and the scroll frames between moves change nothing.
+`<SvGrid>` runs its column window this way. A window built at rest, or after
+a jump to items outside the rendered window, carries `overscanMin`.
+
+While the window holds, `version` does not change and `getState().scrollOffset`
+keeps the offset of the last move. Read the scroll position from your
+container if something else has to follow it every frame.
+
 ## Which one to use
 
 | Export | Use when |

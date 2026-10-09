@@ -157,10 +157,25 @@ export function createColumns<
     );
   }
 
+  // id -> column for the current column list. Width math asks for every
+  // column's width in loops, so a linear `find` per call made those loops
+  // quadratic: ~1.2 s of a 5,000-column mount. Rebuilt when the list changes.
+  let columnsById: Map<string, any> = new Map();
+  let columnsByIdFor: unknown = null;
+  function columnById(columnId: string) {
+    const all = ctx.grid.getAllColumns();
+    if (all !== columnsByIdFor) {
+      columnsById = new Map();
+      for (const c of all as any[]) columnsById.set(c.id, c);
+      columnsByIdFor = all;
+    }
+    return columnsById.get(columnId);
+  }
+
   /** Width before fitColumns scaling - what the columnDef/user actually set. */
   function getColumnBaseWidth(columnId: string) {
     if (ctx.columnWidths[columnId] !== undefined) return ctx.columnWidths[columnId];
-    const column = ctx.grid.getAllColumns().find((c: any) => c.id === columnId);
+    const column = columnById(columnId);
     if (column?.columnDef.width !== undefined) return column.columnDef.width;
     return ctx.props.columnWidth ?? 140;
   }

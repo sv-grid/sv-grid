@@ -115,6 +115,7 @@
       frozenRows: { type: 'Number', attribute: 'frozen-rows' },
       stickyGroupRows: { type: 'Boolean', attribute: 'sticky-group-rows' },
       mergedCells: { type: 'Array' },
+      rowLayout: { type: 'String', attribute: 'row-layout' },
       pinnedBottomRows: { type: 'Array' },
       enableColumnReorder: { type: 'Boolean', attribute: 'enable-column-reorder' },
       columnOrder: { type: 'Array' },

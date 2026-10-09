@@ -472,8 +472,19 @@ export function createSelection<
 
   /** Look up a column by id without depending on `buildApi`'s private
    *  closure (those helpers don't exist at this scope). */
+  // id -> column, rebuilt when the column list changes. Called per header
+  // cell as columns scroll into view, so a linear `find` made every scroll
+  // frame cost more the more columns the grid has.
+  let columnsById: Map<string, any> = new Map();
+  let columnsByIdFor: unknown = null;
   function findColumnById(columnId: string) {
-    return ctx.allColumns.find((c: any) => c.id === columnId);
+    const all = ctx.allColumns;
+    if (all !== columnsByIdFor) {
+      columnsById = new Map();
+      for (const c of all as any[]) columnsById.set(c.id, c);
+      columnsByIdFor = all;
+    }
+    return columnsById.get(columnId);
   }
 
   function onCellPointerDown(

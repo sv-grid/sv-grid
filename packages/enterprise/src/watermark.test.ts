@@ -52,6 +52,28 @@ describe('unlicensed watermark', () => {
     expect(grid.style.position).toBe('relative')
   })
 
+  it('marks a grid that mounts after the nudge', async () => {
+    // The check waits for the next animation frame, which jsdom runs on real time.
+    vi.useRealTimers()
+    emitUnlicensedNudge()
+    await flushMicrotasks()
+    const later = makeGridRoot()
+    await vi.waitFor(() => expect(later.querySelector(`[${WATERMARK_ATTR}]`)).not.toBeNull(), { timeout: 1000 })
+  })
+
+  it('does not search the page for every change inside a marked grid', async () => {
+    const grid = makeGridRoot()
+    emitUnlicensedNudge()
+    await flushMicrotasks()
+    const spy = vi.spyOn(document, 'querySelectorAll')
+    // A scrolling grid adds and removes cells every frame.
+    for (let i = 0; i < 50; i += 1) grid.appendChild(document.createElement('span'))
+    await flushMicrotasks()
+    vi.advanceTimersByTime(50)
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
+  })
+
   it('fades out and removes the watermark after ~5 seconds', async () => {
     const grid = makeGridRoot()
     emitUnlicensedNudge()

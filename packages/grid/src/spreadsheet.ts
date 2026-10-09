@@ -156,6 +156,12 @@ const OVERLAY_CLASS = 'sv-cell-border-overlay'
  *  every relevant DOM mutation inside the grid, and whenever the action
  *  options update. */
 function apply(root: HTMLElement, opts: SpreadsheetActionOptions): void {
+  // Merges here are colspan / rowspan on the rendered cells, which only the
+  // table algorithm honours: keep this grid's rows in table layout (the
+  // flex-row rules in SvGrid.css skip a table marked this way).
+  for (const table of root.querySelectorAll<HTMLTableElement>('table.sv-grid-table')) {
+    if (table.getAttribute('data-row-layout') !== 'table') table.setAttribute('data-row-layout', 'table')
+  }
   // ---- 1. Clean up anything the LAST run added -----------------------
   for (const td of root.querySelectorAll<HTMLTableCellElement>(`td[${MARK}]`)) {
     td.removeAttribute('colspan')

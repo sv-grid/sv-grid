@@ -466,6 +466,9 @@
   const measuredRowHeightPx = $derived(ctrl.measuredRowHeightPx);
   // Under auto height the row must be free to grow, so it gets `min-height`
   // (the pre-measure estimate) instead of a fixed `height` that would clip it.
+  // Otherwise the row is exactly the height the virtualizer placed it at: a
+  // flex row's `height` is exact. (A table row's is a minimum, so under the
+  // table layout content taller than the row still grows it.)
   const rowHeightStyle = (size: number): string =>
     autoRowHeightOn ? `min-height: ${size}px;` : `height: ${size}px;`;
   // DOM-space spacer heights + capped total: identical to the logical
@@ -476,34 +479,40 @@
   const rowBottomSpacer = $derived(ctrl.rowBottomSpacer);
   const rowDomTotalSize = $derived(ctrl.rowDomTotalSize);
   const renderedColumns = $derived(ctrl.renderedColumns);
+  const columnRunOf = $derived(ctrl.columnRunOf);
   const totalColumnWidth = $derived(ctrl.totalColumnWidth);
 
   // ---- Built-in cell flash (ColumnDef `cellFlash`) ----------------------
   // Flashes a cell when its value changes (edits, streaming feeds, server
-  // pushes). Keyed by rowId so virtualization recycling a <td> into a new row
-  // on scroll does NOT trigger a spurious flash - only a same-row value change
-  // does. Inert (active:false) for columns without `cellFlash`.
+  // pushes). Keyed by rowId and columnId so virtualization recycling a <td>
+  // into a new row or column on scroll does NOT trigger a spurious flash - only
+  // a same-cell value change does. Inert (active:false) for columns without
+  // `cellFlash`.
   function cellFlashAction(
     node: HTMLElement,
     params: {
       rowId: string;
+      columnId: string;
       value: unknown;
       active: boolean;
       className: string;
     },
   ) {
     let prevRow = params.rowId;
+    let prevColumn = params.columnId;
     let prev = params.value;
     return {
       update(next: {
         rowId: string;
+        columnId: string;
         value: unknown;
         active: boolean;
         className: string;
       }) {
-        if (next.rowId !== prevRow) {
-          // A different row scrolled into this recycled slot - reset, no flash.
+        if (next.rowId !== prevRow || next.columnId !== prevColumn) {
+          // A different cell scrolled into this recycled slot - reset, no flash.
           prevRow = next.rowId;
+          prevColumn = next.columnId;
           prev = next.value;
           return;
         }
@@ -543,6 +552,15 @@
   const hasHorizontalOverflow = $derived(ctrl.hasHorizontalOverflow);
   const columnWindowStart = $derived(ctrl.columnWindowStart);
   const columnWindowRightSpacer = $derived(ctrl.columnWindowRightSpacer);
+  // The trailing spacer cell after the column window. A flex row is as wide
+  // as the table without it (the table carries the full width), and the
+  // spacer's area is always past the overscan, off screen; table layout
+  // needs it to give every row the same cells. Read as one boolean, so a
+  // column crossing - which changes the spacer's width - no longer re-runs
+  // a block and restyles a cell in every row.
+  const showRightSpacer = $derived(
+    columnVirtualizationEnabled && columnWindowRightSpacer > 0 && !ctrl.flexLayoutActive,
+  );
   const activeCell = $derived(ctrl.activeCell);
   const activeDescendantId = $derived(ctrl.activeDescendantId);
   const summaryByColumn = $derived(ctrl.summaryByColumn);
@@ -583,9 +601,36 @@
   const setActiveCell = $derived(ctrl.setActiveCell);
   const scrollActiveCellIntoView = $derived(ctrl.scrollActiveCellIntoView);
   const cellSelectionState = $derived(ctrl.cellSelectionState);
-  const getColumnWidth = $derived(ctrl.getColumnWidth);
   const isInFillPreview = $derived(ctrl.isInFillPreview);
   const fillMarqueeEdges = $derived(ctrl.fillMarqueeEdges);
+  /**
+   * A body cell's editing, selection and fill-drag state, read by the cell
+   * through one `{@const}`. `null` - the same value every time - for a cell
+   * in none of those states, which is nearly every cell, so the cell's
+   * attribute effect does not re-run when, say, the active cell moves
+   * elsewhere. It used to be four `{@const}`s per cell (cell edit, row edit,
+   * selection, fill edges): four deriveds created for every cell on mount,
+   * and dropping three of them took ~3.5 ms off a 100k-row mount of ~32 ms.
+   */
+  function cellUi(
+    rowIndex: number,
+    c: { cellRow: { id: string }; cellColumn: { id: string }; colIndex: number },
+  ) {
+    const ed = ctrl.editingCell;
+    const editing = !!ed && ed.rowId === c.cellRow.id && ed.columnId === c.cellColumn.id;
+    const rowEdit = !!fullRowEdit && fullRowEdit.rowId === c.cellRow.id && c.cellColumn.id in fullRowEdit.draft;
+    const sel = cellSelectionState(rowIndex, c.colIndex);
+    const fill = fillMarqueeEdges(rowIndex, c.colIndex);
+    if (!editing && !rowEdit && !sel && !fill) return null;
+    return { editing, rowEdit, sel, fill };
+  }
+  /** Whether a `pointerover`/`pointerout` on a cell crossed the cell's own
+   *  edge, as `pointerenter`/`pointerleave` would, rather than a move between
+   *  its children. */
+  function crossedCell(event: PointerEvent & { currentTarget: EventTarget }): boolean {
+    const other = event.relatedTarget as Node | null;
+    return !other || !(event.currentTarget as Node).contains(other);
+  }
   const startFillDrag = $derived(ctrl.startFillDrag);
   const onCellPointerDown = $derived(ctrl.onCellPointerDown);
   const onCellPointerEnter = $derived(ctrl.onCellPointerEnter);
@@ -594,6 +639,64 @@
   const onCellClick = $derived(ctrl.onCellClick);
   const emitCellDoubleClick = $derived(ctrl.emitCellDoubleClick);
   const openContextMenu = $derived(ctrl.openContextMenu);
+
+  /**
+   * Everything a body cell shows that depends on its data: the merge it
+   * belongs to, the row and column it draws (a merge continuation draws the
+   * origin's), the value, the user's class / tooltip / validity / note, and
+   * the width. One derived per cell for all of it - each `{@const}` is its own
+   * reactive node, and a cell that scrolls in used to create fifteen of them.
+   * Selection and editing stay separate: they change on every arrow key and
+   * must not re-run the value and the validators of every visible cell.
+   * Returns null for a cell a merge covers (nothing is drawn there).
+   */
+  /**
+   * The text of a cell that is only text, or null when the cell needs the full
+   * body snippet (a checkbox, chips, a sparkline, a custom `cell` template, a
+   * tree / group affordance or indent, or a visible conditional format). The
+   * full path walks about ten nested `{#if}` blocks to reach the same text
+   * node, each a reactive block of its own; most cells of a wide grid are
+   * plain text, and this is the per-cell cost a horizontal scroll pays.
+   * Produces exactly what `cellBody`'s last branch renders.
+   */
+  function plainCellText(row: Row<TData>, column: Column<TData>, value: unknown): string | null {
+    const def = column.columnDef;
+    if (def.cell != null || def.sparkline) return null;
+    const editor = def.editorType;
+    if (editor === "checkbox" || editor === "list" || editor === "chips" || typeof value === "boolean") return null;
+    if (groupColumnMode && isAutoGroupColumn(column.id)) return null;
+    if (treeData && column.id === treeColumnId) return null;
+    if (row.depth > 0 && column.id === allColumns[0]?.id && !treeData && !groupColumnMode) return null;
+    if (hasConditionalFormats) {
+      const cf = cellConditionalFormat(row, column, value);
+      if (cf && (cf.background || cf.dataBar || cf.icon || cf.color || cf.fontWeight != null)) return null;
+    }
+    return formatCellValue(column, value, row);
+  }
+
+  function bodyCellInfo(row: Row<TData>, rowIndex: number, rendered: (typeof renderedColumns)[number]) {
+    const colIndex = rendered.item.index;
+    const draw = mergeIndex
+      ? mergeDrawAt(mergeIndex, rowIndex, colIndex, { ...(rowIndex < frozenRowCount ? mergeFrozenWindow : mergeBodyWindow), ...columnRunOf(colIndex) })
+      : null;
+    if (draw?.kind === "skip") return null;
+    const cellRow = draw?.kind === "continuation" ? (allRows[draw.merge.rowIndex] ?? row) : row;
+    const cellColumn = draw?.kind === "continuation" ? (allColumns[draw.merge.colIndex] ?? rendered.column) : rendered.column;
+    const cellValue = getCellDisplayValue(cellRow.id, cellColumn.id, getColumnBaseValue(cellRow, cellColumn));
+    return {
+      colIndex,
+      draw,
+      cellRow,
+      cellColumn,
+      cellValue,
+      text: plainCellText(cellRow, cellColumn, cellValue),
+      userCellClass: computeCellClass(cellRow, cellColumn),
+      cellTooltip: computeCellTooltip(cellRow, cellColumn),
+      cellValidity: computeCellValidity(cellRow, cellColumn),
+      cellNote: computeCellNote(cellRow, cellColumn),
+      tdWidth: draw ? mergedWidth(colIndex, draw.colSpan, rendered.item.size) : rendered.item.size,
+    };
+  }
 
   const onHeaderSortClick = $derived(ctrl.onHeaderSortClick);
   const onGridKeyDown = $derived(ctrl.onGridKeyDown);
@@ -1334,18 +1437,22 @@
           getValue: () => cellValue,
         })}
         {#if rendered instanceof RenderSnippetConfig}
-          {@render rendered.snippet(rendered.params)}
+          <!-- A <td> is handed to another column when its column leaves the
+               column window (the body {#each} key), so a renderer of the app's
+               own is re-created per column rather than handed another
+               column's props with its old state. -->
+          {#key column.id}{@render rendered.snippet(rendered.params)}{/key}
         {:else if rendered instanceof RenderComponentConfig}
-          <rendered.component {...rendered.props ?? {}} />
+          {#key column.id}<rendered.component {...rendered.props ?? {}} />{/key}
         {:else if typeof rendered === "string" || typeof rendered === "number"}
-          {rendered}
+          <span class="sv-grid-cell-text">{rendered}</span>
         {:else}
-          {formatCellValue(column, cellValue, row)}
+          <span class="sv-grid-cell-text">{formatCellValue(column, cellValue, row)}</span>
         {/if}
       {:else if typeof cellTemplate === "string"}
-        {cellTemplate}
+        <span class="sv-grid-cell-text">{cellTemplate}</span>
       {:else}
-        {formatCellValue(column, cellValue, row)}
+        <span class="sv-grid-cell-text">{formatCellValue(column, cellValue, row)}</span>
       {/if}
     {/if}
   {/snippet}
@@ -1605,11 +1712,16 @@
         {#if showDetailToggleEffective}
           <td class="sv-grid-cell sv-grid-detail-toggle-cell"></td>
         {/if}
-        {#each allColumns as col (col.id)}
-          <td class="sv-grid-cell sv-grid-placeholder-cell">
+        <!-- Same slots as a data row (spacers + the rendered window), so the
+             skeleton lines up and a wide grid does not draw every column. -->
+        {#if columnVirtualizationEnabled && columnWindowStart > 0}{@render cellGap(columnWindowStart)}{/if}
+        {#each renderedColumns as rendered (rendered.key)}
+          {#if rendered.gap > 0}{@render cellGap(rendered.gap)}{/if}
+          <td class="sv-grid-cell sv-grid-placeholder-cell" style={`width: ${rendered.item.size}px; ${cellPinStyle(rendered.column.id)}`}>
             <span class="sv-grid-placeholder-skeleton" aria-hidden="true"></span>
           </td>
         {/each}
+        {#if showRightSpacer}{@render cellGap(columnWindowRightSpacer)}{/if}
       {/if}
     </tr>
   {/snippet}
@@ -1692,7 +1804,7 @@
                         <td
                           class="sv-grid-cell sv-grid-row-number-cell"
                           style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; inset-inline-start: 0;`}
-                          >{rowIndex + 1}</td
+                          ><span class="sv-grid-cell-line">{rowIndex + 1}</span></td
                         >
                       {/if}
                       {#if showRowSelectionEffective}
@@ -1701,22 +1813,24 @@
                           style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; inset-inline-start: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
                           onclick={() => toggleRowSelectionById(row.id)}
                         >
-                          <button
-                            type="button"
-                            class="sv-grid-checkbox"
-                            role="checkbox"
-                            aria-checked={isRowSelected(row.id)}
-                            aria-label="Select row"
-                            onclick={(event) => {
-                              event.stopPropagation();
-                              toggleRowSelectionById(row.id);
-                            }}
-                            onkeydown={(event) =>
-                              toggleCheckboxWithKeyboard(event, () => {
+                          <span class="sv-grid-cell-line"
+                            ><button
+                              type="button"
+                              class="sv-grid-checkbox"
+                              role="checkbox"
+                              aria-checked={isRowSelected(row.id)}
+                              aria-label="Select row"
+                              onclick={(event) => {
                                 event.stopPropagation();
                                 toggleRowSelectionById(row.id);
-                              })}
-                          ></button>
+                              }}
+                              onkeydown={(event) =>
+                                toggleCheckboxWithKeyboard(event, () => {
+                                  event.stopPropagation();
+                                  toggleRowSelectionById(row.id);
+                                })}
+                            ></button></span
+                          >
                         </td>
                       {/if}
                       {#if showDetailToggleEffective}
@@ -1726,15 +1840,17 @@
                           style={`width: ${detailToggleColumnWidth}px; min-width: ${detailToggleColumnWidth}px; max-width: ${detailToggleColumnWidth}px; left: ${detailToggleColumnLeft}px;`}
                         >
                           {#if dt}
-                            <button
-                              type="button"
-                              class="sv-grid-detail-toggle"
-                              aria-expanded={dt.open ? "true" : "false"}
-                              aria-label={dt.open ? messages.closeDetail : messages.openDetail}
-                              onclick={(event) => {
-                                event.stopPropagation();
-                                dt.toggle();
-                              }}>{@render icon("chevron-right")}</button
+                            <span class="sv-grid-cell-line"
+                              ><button
+                                type="button"
+                                class="sv-grid-detail-toggle"
+                                aria-expanded={dt.open ? "true" : "false"}
+                                aria-label={dt.open ? messages.closeDetail : messages.openDetail}
+                                onclick={(event) => {
+                                  event.stopPropagation();
+                                  dt.toggle();
+                                }}>{@render icon("chevron-right")}</button
+                              ></span
                             >
                           {/if}
                         </td>
@@ -1746,151 +1862,121 @@
                           style={`width: ${columnWindowStart}px; min-width: ${columnWindowStart}px; max-width: ${columnWindowStart}px;`}
                         ></td>
                       {/if}
-                      {#each renderedColumns as rendered (rendered.column.id)}
-                        {@const colIndex = rendered.item.index}
-                        {@const draw = mergeIndex
-                          ? mergeDrawAt(mergeIndex, rowIndex, colIndex, rowIndex < frozenRowCount ? mergeFrozenWindow : mergeBodyWindow)
-                          : null}
-                        {#if draw?.kind !== "skip"}
-                        {@const cellRow = draw?.kind === "continuation" ? (allRows[draw.merge.rowIndex] ?? row) : row}
-                        {@const cellColumn = draw?.kind === "continuation" ? (allColumns[draw.merge.colIndex] ?? rendered.column) : rendered.column}
-                        {@const baseValue = getColumnBaseValue(
-                          cellRow,
-                          cellColumn,
-                        )}
-                        {@const cellValue = getCellDisplayValue(
-                          cellRow.id,
-                          cellColumn.id,
-                          baseValue,
-                        )}
-                        {@const isEditing =
-                          ctrl.editingCell?.rowId === cellRow.id &&
-                          ctrl.editingCell?.columnId === cellColumn.id}
-                        {@const inRowEdit =
-                          !!fullRowEdit &&
-                          fullRowEdit.rowId === cellRow.id &&
-                          cellColumn.id in fullRowEdit.draft}
-                        {@const cellSel = cellSelectionState(rowIndex, colIndex)}
-                        {@const fillEdges = fillMarqueeEdges(rowIndex, colIndex)}
-                        {@const userCellClass = computeCellClass(
-                          cellRow,
-                          cellColumn,
-                        )}
-                        {@const cellTooltip = computeCellTooltip(
-                          cellRow,
-                          cellColumn,
-                        )}
-                        {@const cellValidity = computeCellValidity(
-                          cellRow,
-                          cellColumn,
-                        )}
-                        {@const cellNote = computeCellNote(
-                          cellRow,
-                          cellColumn,
-                        )}
-                        {@const tdWidth = draw ? mergedWidth(colIndex, draw.colSpan, rendered.item.size) : rendered.item.size}
+                      {#each renderedColumns as rendered (rendered.key)}
+                        {@const c = bodyCellInfo(row, rowIndex, rendered)}
+                        {#if rendered.gap > 0}{@render cellGap(rendered.gap)}{/if}
+                        {#if c}
+                        {@const ui = cellUi(rowIndex, c)}
                         <td
-                          rowspan={draw && draw.rowSpan > 1 ? draw.rowSpan : undefined}
-                          colspan={draw && draw.colSpan > 1 ? draw.colSpan : undefined}
-                          data-merge-origin={draw ? `${draw.merge.rowIndex}:${draw.merge.colIndex}` : undefined}
-                          class:sv-grid-cell-merged={!!draw}
-                          class={`sv-grid-cell ${userCellClass}`}
-                          class:sv-grid-cell-editing={isEditing || inRowEdit}
+                          rowspan={c.draw && c.draw.rowSpan > 1 ? c.draw.rowSpan : undefined}
+                          colspan={c.draw && c.draw.colSpan > 1 ? c.draw.colSpan : undefined}
+                          data-merge-origin={c.draw ? `${c.draw.merge.rowIndex}:${c.draw.merge.colIndex}` : undefined}
+                          class:sv-grid-cell-merged={!!c.draw}
+                          class={`sv-grid-cell ${c.userCellClass}`}
+                          class:sv-grid-cell-editing={!!ui && (ui.editing || ui.rowEdit)}
                           class:sv-grid-cell-collapsed={!!collapsedColumns[rendered.column.id]}
-                          class:sv-grid-cell-active={!!cellSel?.active}
-                          class:sv-grid-cell-has-fill-handle={!!cellSel?.fillHandle}
+                          class:sv-grid-cell-active={!!ui?.sel?.active}
+                          class:sv-grid-cell-has-fill-handle={!!ui?.sel?.fillHandle}
                           class:sv-grid-cell-cf={hasConditionalFormats}
-                          class:sv-grid-cell-invalid={cellValidity.invalid}
-                          class:sv-grid-cell-has-note={cellNote != null}
-                          aria-invalid={cellValidity.invalid ? "true" : undefined}
+                          class:sv-grid-cell-invalid={c.cellValidity.invalid}
+                          class:sv-grid-cell-has-note={c.cellNote != null}
+                          aria-invalid={c.cellValidity.invalid ? "true" : undefined}
                           data-svgrid-row={rowIndex}
-                          data-svgrid-col={colIndex}
+                          data-svgrid-col={c.colIndex}
                           data-col-id={rendered.column.id}
                           data-align={getColumnAlign(rendered.column)}
-                          data-pinned={isColumnPinned(rendered.column.id) ??
-                            undefined}
-                          data-selected-range={cellSel?.edges ? "true" : undefined}
-                          data-range-top={cellSel?.edges?.top ? "true" : undefined}
-                          data-range-bottom={cellSel?.edges?.bottom
+                          data-pinned={rendered.pinned ?? undefined}
+                          data-selected-range={ui?.sel?.edges ? "true" : undefined}
+                          data-range-top={ui?.sel?.edges?.top ? "true" : undefined}
+                          data-range-bottom={ui?.sel?.edges?.bottom
                             ? "true"
                             : undefined}
-                          data-range-left={cellSel?.edges?.left
+                          data-range-left={ui?.sel?.edges?.left
                             ? "true"
                             : undefined}
-                          data-range-right={cellSel?.edges?.right
+                          data-range-right={ui?.sel?.edges?.right
                             ? "true"
                             : undefined}
-                          data-fill-preview={isInFillPreview(rowIndex, colIndex)
+                          data-fill-preview={isInFillPreview(rowIndex, c.colIndex)
                             ? "true"
                             : undefined}
-                          data-fill-top={fillEdges?.top ? "true" : undefined}
-                          data-fill-bottom={fillEdges?.bottom ? "true" : undefined}
-                          data-fill-left={fillEdges?.left ? "true" : undefined}
-                          data-fill-right={fillEdges?.right ? "true" : undefined}
-                          style={`width: ${tdWidth}px; min-width: ${tdWidth}px; max-width: ${tdWidth}px; ${cellPinStyle(rendered.column.id)}`}
+                          data-fill-top={ui?.fill?.top ? "true" : undefined}
+                          data-fill-bottom={ui?.fill?.bottom ? "true" : undefined}
+                          data-fill-left={ui?.fill?.left ? "true" : undefined}
+                          data-fill-right={ui?.fill?.right ? "true" : undefined}
+                          style={`width: ${c.tdWidth}px; min-width: ${c.tdWidth}px; max-width: ${c.tdWidth}px; ${rendered.pinned ? cellPinStyle(rendered.column.id) : ""}`}
                           onpointerdown={(event) =>
-                            onCellPointerDown(rowIndex, colIndex, event)}
-                          onpointerenter={(event) => {
-                            onCellPointerEnter(rowIndex, colIndex);
+                            onCellPointerDown(rowIndex, c.colIndex, event)}
+                          onpointerover={(event) => {
+                            // `pointerover`/`pointerout` rather than enter/leave:
+                            // Svelte delegates them to one listener on the root,
+                            // where enter/leave added two listeners to every
+                            // cell on mount (~1.5 ms of a 100k-row mount). A
+                            // move between the cell's own children is not an
+                            // enter.
+                            if (!crossedCell(event)) return;
+                            onCellPointerEnter(rowIndex, c.colIndex);
                             // The column tooltip fires on whole-cell hover; a
                             // per-cell note waits for its corner below. A
                             // validation message wins over the column's tooltip.
                             const tip =
-                              cellValidity.invalid && cellValidity.message
-                                ? cellValidity.message
-                                : cellTooltip;
+                              c.cellValidity.invalid && c.cellValidity.message
+                                ? c.cellValidity.message
+                                : c.cellTooltip;
                             if (tip)
                               showTooltipFor(
                                 event.currentTarget as HTMLElement,
                                 tip,
                               );
                           }}
-                          onpointerleave={hideTooltip}
+                          onpointerout={(event) => {
+                            if (crossedCell(event)) hideTooltip();
+                          }}
                           ondblclick={() =>
-                            emitCellDoubleClick(rowIndex, colIndex)}
-                          onclick={() => onCellClick(rowIndex, colIndex)}
+                            emitCellDoubleClick(rowIndex, c.colIndex)}
+                          onclick={() => onCellClick(rowIndex, c.colIndex)}
                           oncontextmenu={(event) =>
                             openContextMenu(
                               event,
                               rowIndex,
-                              colIndex,
+                              c.colIndex,
                               rendered.column.id,
                             )}
                           use:cellFlashAction={{
-                            rowId: cellRow.id,
-                            value: cellValue,
-                            active: !!cellColumn.columnDef.cellFlash,
+                            rowId: c.cellRow.id,
+                            columnId: c.cellColumn.id,
+                            value: c.cellValue,
+                            active: !!c.cellColumn.columnDef.cellFlash,
                             className: flashClassFor(
-                              cellColumn.columnDef.cellFlash,
+                              c.cellColumn.columnDef.cellFlash,
                             ),
                           }}
                           role="gridcell"
-                          id={getGridCellDomId(ctrl.gridDomId, rowIndex, colIndex)}
-                          aria-colindex={colIndex + 1}
+                          id={getGridCellDomId(ctrl.gridDomId, rowIndex, c.colIndex)}
+                          aria-colindex={c.colIndex + 1}
                           aria-rowindex={rowIndex + 1}
                           aria-selected={isRowSelected(row.id)}
                         >
-                          {#if inRowEdit || isEditing}
+                          {#if ui && (ui.editing || ui.rowEdit)}
                             <!-- The editing cell stays empty until the lazy
                                  editor chunk lands, exactly as it already did
                                  for the dropdown / date editors. Falling back
                                  to the read-only value here would flash stale
                                  content into a cell the user is editing. -->
                             {#if CellEditor}
-                              <CellEditor {ctrl} column={cellColumn} row={cellRow} fullRow={inRowEdit} />
+                              <CellEditor {ctrl} column={c.cellColumn} row={c.cellRow} fullRow={!!ui?.rowEdit} />
                             {/if}
                           {:else}
-                            {#if plainCellBody}
-                              {@render cellBody(cellRow, cellColumn, cellValue)}
-                            {:else}
-                              {@render cellBodyWithFormat(
-                                cellRow,
-                                cellColumn,
-                                cellValue,
-                              )}
-                            {/if}
+                            <!-- One line box for the cell's content, as a table
+                                 cell has: centred in the cell, with inline content
+                                 (pills, chips, checkboxes) aligned in it the same
+                                 way under table or flex rows, and the ellipsis and
+                                 text-align applied to it. -->
+                            <span class="sv-grid-cell-line"
+                              >{#if c.text !== null}{c.text}{:else if plainCellBody}{@render cellBody(c.cellRow, c.cellColumn, c.cellValue)}{:else}{@render cellBodyWithFormat(c.cellRow, c.cellColumn, c.cellValue)}{/if}</span
+                            >
                           {/if}
-                          {#if !isEditing && cellSel?.fillHandle}
+                          {#if !ui?.editing && ui?.sel?.fillHandle}
                             <!-- Excel-style fill handle: drag down/right to
                            extend the selection and pattern-fill the new
                            cells on release. Rendered inside the bottom-
@@ -1903,7 +1989,7 @@
                               aria-label="Fill handle"
                               tabindex={-1}
                               onpointerdown={(event) =>
-                                startFillDrag(event, rowIndex, colIndex)}
+                                startFillDrag(event, rowIndex, c.colIndex)}
                               ondblclick={(event) => {
                                 // Not the cell's double-click: this fills
                                 // down as far as the neighbour column goes.
@@ -1913,16 +1999,16 @@
                               }}
                             ></div>
                           {/if}
-                          {#if cellValidity.invalid && cellValidity.message}
+                          {#if c.cellValidity.invalid && c.cellValidity.message}
                             <!-- The validation message, for assistive tech: the
                                  tooltip above is mouse-only, and unlike a title
                                  a visually-hidden span adds no second native
                                  tooltip competing with the custom one. -->
                             <span class="sv-grid-sr-only"
-                              >{cellValidity.message}</span
+                              >{c.cellValidity.message}</span
                             >
                           {/if}
-                          {#if cellNote != null && !isEditing}
+                          {#if c.cellNote != null && !ui?.editing}
                             <span
                               class="sv-grid-cell-note-corner"
                               aria-label="Note"
@@ -1930,7 +2016,7 @@
                                 event.stopPropagation();
                                 showTooltipFor(
                                   event.currentTarget as HTMLElement,
-                                  cellNote,
+                                  c.cellNote ?? "",
                                 );
                               }}
                               onpointerleave={(event) => {
@@ -1942,7 +2028,7 @@
                         </td>
                         {/if}
                       {/each}
-                      {#if columnVirtualizationEnabled && columnWindowRightSpacer > 0}
+                      {#if showRightSpacer}
                         <td
                           class="sv-grid-cell sv-grid-cell-spacer"
                           aria-hidden="true"
@@ -1957,6 +2043,23 @@
        outside the rendered window), so this one carries no cell ids, no
        row index attributes and is hidden from assistive tech; the group
        cell's own expander still works, since it is the same renderer. -->
+  <!-- The spacer for the columns skipped between two rendered runs (pinned
+       left, the virtual window, pinned right). Every row template draws it
+       before the same column, so the fixed table layout keeps its slots. -->
+  {#snippet cellGap(px: number)}
+    <td
+      class="sv-grid-cell sv-grid-cell-spacer"
+      aria-hidden="true"
+      style={`width: ${px}px; min-width: ${px}px; max-width: ${px}px;`}
+    ></td>
+  {/snippet}
+  {#snippet columnGap(px: number)}
+    <th
+      class="sv-grid-column sv-grid-column-spacer"
+      aria-hidden="true"
+      style={`width: ${px}px; min-width: ${px}px; max-width: ${px}px;`}
+    ></th>
+  {/snippet}
   {#snippet stickyGroupRow(row: Row<TData>, rowIndex: number, top: number, size: number, last: boolean)}
     {#if isGroupRow(row) && !groupColumnMode}
       <tr
@@ -1989,7 +2092,7 @@
           <td
             class="sv-grid-cell sv-grid-row-number-cell"
             style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; left: 0;`}
-            >{rowIndex + 1}</td
+            ><span class="sv-grid-cell-line">{rowIndex + 1}</span></td
           >
         {/if}
         {#if showRowSelectionEffective}
@@ -2012,6 +2115,7 @@
         {/if}
         {#each renderedColumns as rendered (rendered.column.id)}
           {@const cellValue = getCellDisplayValue(row.id, rendered.column.id, getColumnBaseValue(row, rendered.column))}
+          {#if rendered.gap > 0}{@render cellGap(rendered.gap)}{/if}
           <td
             class={`sv-grid-cell ${computeCellClass(row, rendered.column)}`}
             class:sv-grid-cell-cf={hasConditionalFormats}
@@ -2027,7 +2131,7 @@
             {/if}
           </td>
         {/each}
-        {#if columnVirtualizationEnabled && columnWindowRightSpacer > 0}
+        {#if showRightSpacer}
           <td
             class="sv-grid-cell sv-grid-cell-spacer"
             style={`width: ${columnWindowRightSpacer}px; min-width: ${columnWindowRightSpacer}px; max-width: ${columnWindowRightSpacer}px;`}
@@ -2050,7 +2154,9 @@
         <td
           class="sv-grid-cell sv-grid-row-number-cell"
           style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; inset-inline-start: 0;`}
-          >{#if where === "top"}{@render icon("pinned-row-top")}{:else}{@render icon("pinned-row-bottom")}{/if}</td
+          ><span class="sv-grid-cell-line"
+            >{#if where === "top"}{@render icon("pinned-row-top")}{:else}{@render icon("pinned-row-bottom")}{/if}</span
+          ></td
         >
       {/if}
       {#if showRowSelectionEffective}
@@ -2078,16 +2184,17 @@
           rowData,
           rendered.column,
         )}
+        {#if rendered.gap > 0}{@render cellGap(rendered.gap)}{/if}
         <td
           class={`sv-grid-cell ${userCellClass}`}
           data-col-id={rendered.column.id}
           data-align={getColumnAlign(rendered.column)}
           data-pinned={isColumnPinned(rendered.column.id) ?? undefined}
           style={`width: ${rendered.item.size}px; min-width: ${rendered.item.size}px; max-width: ${rendered.item.size}px; ${cellPinStyle(rendered.column.id)}`}
-          >{formatPinnedValue(rendered.column, value)}</td
+          ><span class="sv-grid-cell-text">{formatPinnedValue(rendered.column, value)}</span></td
         >
       {/each}
-      {#if columnVirtualizationEnabled && columnWindowRightSpacer > 0}
+      {#if showRightSpacer}
         <td
           class="sv-grid-cell sv-grid-cell-spacer"
           aria-hidden="true"
@@ -2204,7 +2311,9 @@
         <table
           bind:this={ctrl.gridRootEl}
           class="sv-grid-table"
+          class:sv-grid-table-flex={ctrl.flexRows}
           class:sv-grid-no-row-hover={opt.enableRowHover !== true}
+          class:sv-grid-numbers-beside-toggle={showDetailToggleEffective && !showRowSelectionEffective}
           {...getGridRootA11yProps({
             activeDescendantId,
             rowCount: allRows.length,
@@ -2213,7 +2322,7 @@
           })}
           onkeydown={onGridKeyDown}
           onpaste={onGridPaste}
-          style={`min-width: ${totalColumnWidth}px;`}
+          style={`min-width: ${totalColumnWidth + ctrl.systemColumnsWidth}px;`}
         >
           <!-- svelte-ignore a11y_no_redundant_roles -->
           <thead class="sv-grid-head" bind:this={ctrl.theadEl} role="rowgroup">
@@ -2258,6 +2367,7 @@
                   ></th>
                 {/if}
                 {#each row.cells as cell (cell.key)}
+                  {#if cell.gapBefore}{@render columnGap(cell.gapBefore)}{/if}
                   <th
                     class="sv-grid-column sv-grid-group-header-cell"
                     class:sv-grid-group-header-placeholder={cell.isPlaceholder}
@@ -2294,7 +2404,7 @@
                     {/if}
                   </th>
                 {/each}
-                {#if columnVirtualizationEnabled && columnWindowRightSpacer > 0}
+                {#if showRightSpacer}
                   <th
                     class="sv-grid-column sv-grid-column-spacer"
                     aria-hidden="true"
@@ -2362,8 +2472,9 @@
                     style={`width: ${columnWindowStart}px; min-width: ${columnWindowStart}px; max-width: ${columnWindowStart}px;`}
                   ></th>
                 {/if}
-                {#each renderedColumns as rendered (rendered.column.id)}
+                {#each renderedColumns as rendered (rendered.key)}
                   {@const header = headerGroup.headers[rendered.item.index]}
+                  {#if rendered.gap > 0}{@render columnGap(rendered.gap)}{/if}
                   {#if header}
                     {@const sortDirection =
                       sortDirectionByColumn[header.column.id]}
@@ -2456,9 +2567,12 @@
                               }}
                             >
                               {#if rendered instanceof RenderSnippetConfig}
-                                {@render rendered.snippet(rendered.params)}
+                                <!-- Header cells are handed between columns as the
+                                     window moves (slot-keyed, like body cells), so an
+                                     app's own header renderer is re-created per column. -->
+                                {#key header.column.id}{@render rendered.snippet(rendered.params)}{/key}
                               {:else if rendered instanceof RenderComponentConfig}
-                                <rendered.component {...rendered.props ?? {}} />
+                                {#key header.column.id}<rendered.component {...rendered.props ?? {}} />{/key}
                               {:else if typeof rendered === "string" || typeof rendered === "number"}
                                 {rendered}
                               {:else}
@@ -2570,7 +2684,7 @@
                     </th>
                   {/if}
                 {/each}
-                {#if columnVirtualizationEnabled && columnWindowRightSpacer > 0}
+                {#if showRightSpacer}
                   <th
                     class="sv-grid-column sv-grid-column-spacer"
                     aria-hidden="true"
@@ -2611,10 +2725,11 @@
                       style={`width: ${columnWindowStart}px; min-width: ${columnWindowStart}px; max-width: ${columnWindowStart}px;`}
                     ></th>
                   {/if}
-                  {#each renderedColumns as rendered (rendered.column.id)}
+                  {#each renderedColumns as rendered (rendered.key)}
                     {@const activeOperator =
                       filterMenuValues[rendered.column.id]?.operator ??
                       defaultOperatorFor(rendered.column)}
+                    {#if rendered.gap > 0}{@render columnGap(rendered.gap)}{/if}
                     <th
                       class="sv-grid-column"
                       data-pinned={isColumnPinned(rendered.column.id) ??
@@ -2794,7 +2909,7 @@
                       </div>
                     </th>
                   {/each}
-                  {#if columnVirtualizationEnabled && columnWindowRightSpacer > 0}
+                  {#if showRightSpacer}
                     <th
                       class="sv-grid-column sv-grid-column-spacer"
                       aria-hidden="true"
@@ -2937,17 +3052,18 @@
                     style={`width: ${columnWindowStart}px; min-width: ${columnWindowStart}px; max-width: ${columnWindowStart}px;`}
                   ></th>
                 {/if}
-                {#each renderedColumns as rendered (rendered.column.id)}
+                {#each renderedColumns as rendered (rendered.key)}
+                  {#if rendered.gap > 0}{@render columnGap(rendered.gap)}{/if}
                   <th
                     class="sv-grid-column sv-grid-summary-column"
                     data-pinned={isColumnPinned(rendered.column.id) ??
                       undefined}
                     style={`width: ${rendered.item.size}px; min-width: ${rendered.item.size}px; max-width: ${rendered.item.size}px; ${cellPinStyle(rendered.column.id)}`}
                   >
-                    {summaryByColumn[rendered.column.id] ?? ""}
+                    <span class="sv-grid-cell-text">{summaryByColumn[rendered.column.id] ?? ""}</span>
                   </th>
                 {/each}
-                {#if columnVirtualizationEnabled && columnWindowRightSpacer > 0}
+                {#if showRightSpacer}
                   <th
                     class="sv-grid-column sv-grid-column-spacer"
                     aria-hidden="true"
@@ -3124,10 +3240,12 @@
           <div class="sv-grid-skeleton" aria-hidden="true">
             {#each Array(opt.loadingSkeletonRows ?? 8) as _, r (r)}
               <div class="sv-grid-skeleton-row">
-                {#each allColumns as col (col.id)}
+                <!-- The rendered window, not every column: a 10,000-column grid
+                     drew 80,000 skeleton cells here while it loaded. -->
+                {#each renderedColumns as rendered (rendered.key)}
                   <div
                     class="sv-grid-skeleton-cell"
-                    style={`width:${getColumnWidth(col.id)}px`}
+                    style={`width:${rendered.item.size}px`}
                   >
                     <span class="sv-grid-skeleton-bar"></span>
                   </div>

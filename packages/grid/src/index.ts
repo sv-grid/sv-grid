@@ -802,6 +802,12 @@ export {
   type BlockState,
 } from './server-block-cache'
 export {
+  createWindowedData,
+  windowedSourceOf,
+  isWindowedData,
+  type WindowedSource,
+} from './windowed-data'
+export {
   toServerFilterColumns,
   type GridRowModel,
   type GridFilterState,

@@ -77,8 +77,9 @@ describe('SvGrid wrapper - cellClass + rowClass', () => {
     expect(source).toMatch(/function computeCellClass/)
     // The td that draws a merge shows the origin cell, so the class comes
     // from the cell that draws (cellRow / cellColumn): the row's own outside a merge.
-    expect(source).toMatch(/userCellClass = computeCellClass\(\s*cellRow,\s*cellColumn,?\s*\)/)
-    expect(source).toMatch(/class=\{`sv-grid-cell \$\{userCellClass\}`\}/)
+    // Computed once per cell in `bodyCellInfo`, which the td reads as `c`.
+    expect(source).toMatch(/userCellClass: computeCellClass\(\s*cellRow,\s*cellColumn,?\s*\)/)
+    expect(source).toMatch(/class=\{`sv-grid-cell \$\{c\.userCellClass\}`\}/)
   })
 })
 
@@ -99,12 +100,12 @@ describe('SvGrid wrapper - declarative cell validation (validate hook)', () => {
     // The virtualized window, the plain body and the frozen rows all render
     // `bodyRow`, so the class appears exactly once: the two copies the
     // render paths used to carry had drifted apart.
-    const hits = source.match(/class:sv-grid-cell-invalid=\{cellValidity\.invalid\}/g) ?? []
+    const hits = source.match(/class:sv-grid-cell-invalid=\{c\.cellValidity\.invalid\}/g) ?? []
     expect(hits.length).toBe(1)
     expect(source).toMatch(/\{#snippet bodyRow\(/)
     expect((source.match(/\{@render bodyRow\(/g) ?? []).length).toBe(3)
     // Message wins over the plain column tooltip when the cell is invalid.
-    expect(source).toMatch(/cellValidity\.invalid && cellValidity\.message/)
+    expect(source).toMatch(/c\.cellValidity\.invalid && c\.cellValidity\.message/)
   })
 
   it('forwards computeCellValidity through the controller so the wrapper can read it', () => {

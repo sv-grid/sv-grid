@@ -455,8 +455,62 @@ const BUDGET_KB = {
   //     before west of UTC. The screen and the exports both use it.
   //
   // #102 (the virtualizer re-measuring a stable size function) is +0.03.
-  'full render component (SvGrid)': 98.6,
-  'headless core (createGrid)': 3.0,
+  //
+  // 98.6 -> 100.6 for the wide-grid and large-data rendering work
+  // (2026-10-08). Measured 100.3. attribute-size.mjs against 81ebb59's source
+  // (git archive, not a checkout) charges +1.5 to files already on the
+  // static path; the lazy total did not move (183.6), so nothing left a lazy
+  // chunk:
+  //
+  //   - SvGrid.controller.svelte.ts (+0.67): pinned columns no longer turn
+  //     column virtualization off. The rendered columns are three runs
+  //     (pinned-left, window, pinned-right) with a spacer between them, and
+  //     a column group or merge that crosses a seam is split there. Plus the
+  //     body cells' slot keys (a cell is handed to the column entering the
+  //     window instead of destroyed and rebuilt) and the flex-row switch.
+  //   - SvGrid.svelte (+0.61): the spacer cell in every row template, the
+  //     cell line wrapper that keeps flex rows pixel-identical to table
+  //     layout, and the per-cell lookups folded into one bodyCellInfo().
+  //   - cell-render, selection, columns, conditional-formatting (+0.17):
+  //     id-map caches for per-cell column lookups, and scaled formats
+  //     skipping aggregate rows.
+  //   - windowed-brand.ts (+0.04): the "is this windowed data?" check. The
+  //     windowed row model itself is installed by createWindowedData() and
+  //     stays out of base (windowed-row-model.ts).
+  //
+  // All of it is the draw path every grid runs, so none of it can be lazy.
+  //
+  // 100.6 -> 101.9 for the speed work measured against the other grids
+  // (2026-10-08). Measured 101.6; attribute-size.mjs against the previous
+  // measurement charges +0.98, all on the static path:
+  //
+  //   - core.ts (+0.67): the sort orders that replaced the comparator for a
+  //     one-column sort of 20k+ rows - an LSD radix sort over float keys and
+  //     a counting sort over text ranks (1M rows: number sort 1,471 -> 84 ms,
+  //     text sort 2,951 -> 289 ms) - and the lazy first build of the row
+  //     model (rows made when read; a 100k-row mount 62 -> 26 ms), with
+  //     denseRows() handing full passes a plain array.
+  //   - filtering/excel-filters.ts (+0.10): text filters remember their
+  //     answer per distinct cell text.
+  //   - virtualization/virtualizer.ts (+0.08): unchanged rows keep their
+  //     item object, which took scroll script from 8.3 to 3.2 ms a frame.
+  //   - controller + template (+0.13): the scroll re-sync and viewport reads
+  //     that no longer force a layout.
+  // Then 101.6 -> 101.8 for the single-condition filter loop and the
+  // directional column overscan (virtualizer.ts), budget kept 0.3 KB above.
+  // Then 101.8 -> 102.1 for the wide-grid round: slot keys on the header,
+  // filter and summary rows, the table-layout marker observer that gates
+  // the trailing spacer, and the one-pass column width build.
+  // Then 102.1 -> 102.5 (2026-10-09), budget 102.4 -> 102.7: the column
+  // window's three-column steps (the virtualizer's overscanMin, 0.17 KB of
+  // the module alone; horizontal scroll work about halved), and the body
+  // cell's state read through one helper instead of four `{@const}`s plus
+  // delegated pointerover/pointerout in place of per-cell enter/leave
+  // listeners (~5 ms off a 100k-row mount of ~32 ms).
+  'full render component (SvGrid)': 102.7,
+  // 3.0 -> 3.5 (measured 3.2): the lazy first build of the row model above
+  // (lazyRows / denseRows in getRowModel). createGrid builds rows too.
+  'headless core (createGrid)': 3.5,
   // 5.0 -> 5.3 for the specialised single-clause sort comparators. Most sorts
   // are one column, and that comparator runs O(n log n) times - 1.66M calls for
   // 100k rows - so hoisting the clause lookup out of it and inlining the
@@ -485,7 +539,17 @@ const BUDGET_KB = {
   // 8.3 -> 8.6 (measured 8.35) for #104's sort comparators in core.ts, the
   // same +0.26 the full component's note above describes. The headless core
   // sorts with them too, so it pays the same.
-  'headless subpath (@svgrid/grid/core)': 8.6,
+  //
+  // 8.6 -> 9.7 (measured 9.4) for the same core.ts work as the full
+  // component's 2026-10-08 note: the radix and counting sort orders and the
+  // lazy first build. The headless core sorts and builds rows with them too.
+  //
+  // 9.7 -> 9.9 (measured 9.8) for the virtualizer's `overscanMin`, which
+  // moves the column window three columns at a time (2026-10-08): the hold
+  // check and the split between the overscan at rest and while scrolling.
+  // The virtualizer module alone went 1,581 -> 1,754 bytes gzip with it, and
+  // this entry exports the virtualizers, so it carries all of that.
+  'headless subpath (@svgrid/grid/core)': 9.9,
   // Measured 26.3 KB: SvGridChart.svelte plus the chart.ts engine it statically
   // imports. Nobody pays this unless they chart - SvGrid reaches both through
   // `import()` - but it is the biggest deferred thing in the package and until

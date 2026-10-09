@@ -201,6 +201,67 @@ describe('createSortedRowModel - equivalence with the original comparator', () =
       }
     })
 
+    // From 20,000 rows a one-column numeric sort orders indices with a radix
+    // sort over the float bits (and ranked text with a counting sort) instead
+    // of a comparator. Same order, ties included.
+    describe('large numeric columns (the radix path)', () => {
+      const values: unknown[] = [0, -0, -1, 1, 2.5, -2.5, 1e9, -1e9, null, undefined, '', 'n/a', Infinity, -Infinity, 7, 7, 7, 0.1, -0.1, '12']
+      const big = (count: number): Row[] =>
+        Array.from({ length: count }, (_, i) => ({ text: 't', num: values[(i * 31) % values.length], when: null, tie: i }))
+      for (const desc of [false, true]) {
+        it(`matches the comparator sort, desc=${desc}`, () => {
+          const rows = big(25_000)
+          const sorting: SortingState = [{ id: 'num', desc }]
+          expectSameOrder(actualSort(rows, COLUMNS, sorting), referenceSort(rows, COLUMNS, sorting))
+        })
+      }
+      it('matches on date keys', () => {
+        const dates = ['2020-01-01', '2021-05-05', null, 'junk', 1600000000000, '1999-12-31', '2020-01-01']
+        const rows: Row[] = Array.from({ length: 25_000 }, (_, i) => ({ text: 't', num: 0, when: dates[(i * 13) % dates.length], tie: i }))
+        for (const desc of [false, true]) {
+          const sorting: SortingState = [{ id: 'when', desc }]
+          expectSameOrder(actualSort(rows, COLUMNS, sorting), referenceSort(rows, COLUMNS, sorting))
+        }
+      })
+    })
+
+    // Past 2,048 rows the choice is made from a sample. A 256-row sample used
+    // to miss repetition at this shape - every value a dozen times over, but
+    // spread thin enough that 256 rows hardly repeat - so a 1M-row column of
+    // 80k values was collated row by row (20M collator calls, 1.75 s).
+    describe('sampled columns (more rows than the sample)', () => {
+      const tag = (i: number) => `w${(i * 7919) % 2500}`
+      function countCollations<T>(run: () => T): { result: T; calls: number } {
+        const original = String.prototype.localeCompare
+        let calls = 0
+        String.prototype.localeCompare = function (this: string, ...args: Parameters<typeof original>) {
+          calls++
+          return original.apply(this, args)
+        }
+        try {
+          return { result: run(), calls }
+        } finally {
+          String.prototype.localeCompare = original
+        }
+      }
+
+      it('ranks a column of repeated values, and the order is unchanged', () => {
+        // 30,000 rows over 2,500 values, each about 12 times.
+        const rows: Row[] = Array.from({ length: 30_000 }, (_, i) => ({ text: tag(i), num: i, when: null, tie: 'x' }))
+        const sorting: SortingState = [{ id: 'text', desc: false }]
+        const { result, calls } = countCollations(() => actualSort(rows, COLUMNS, sorting))
+        expectSameOrder(result, referenceSort(rows, COLUMNS, sorting))
+        // Ranked: the 2,500 distinct values are collated, not the 30,000 rows.
+        expect(calls).toBeLessThan(rows.length)
+      })
+
+      it('collates a mostly-unique column row by row, in the same order', () => {
+        const rows: Row[] = Array.from({ length: 30_000 }, (_, i) => ({ text: `u${(i * 7919) % 29_000}`, num: i, when: null, tie: 'x' }))
+        const sorting: SortingState = [{ id: 'text', desc: true }]
+        expectSameOrder(actualSort(rows, COLUMNS, sorting), referenceSort(rows, COLUMNS, sorting))
+      })
+    })
+
     it('agrees with the direct path on the same data at both cardinalities', () => {
       // 22 rows over 11 values takes the rank path (11 * 2 <= 22); 20 rows over
       // the same 11 values does not (11 * 2 > 20). Same inputs, same order.

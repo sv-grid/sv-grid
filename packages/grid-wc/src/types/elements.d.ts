@@ -226,6 +226,8 @@ export interface SvGridElement extends HTMLElement {
   stickyGroupRows: boolean
   /** property only - an attribute cannot hold this */
   mergedCells: readonly unknown[]
+  /** attribute `row-layout` */
+  rowLayout: "flex" | "table"
   /** property only - an attribute cannot hold this */
   pinnedBottomRows: readonly unknown[]
   /** attribute `enable-column-reorder` */

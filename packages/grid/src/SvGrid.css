@@ -955,6 +955,15 @@
 .sv-grid-container {
   scrollbar-width: auto;
   -ms-overflow-style: auto;
+  /* An opaque background is what lets Chrome scroll the body on the
+     compositor. Without one, at fractional display scaling (110-125%,
+     where Chrome keeps LCD text), it did not composite this scroller: every
+     scroll frame repainted the rows on the main thread while the compositor
+     placed the sticky header, and the two drifted apart - the header shook
+     a few pixels up and down during a vertical scroll and showed the tops of
+     the letters behind it. Composited, rows and header move together. A
+     theme that sets a transparent `--sg-bg` keeps the old behaviour. */
+  background-color: var(--sg-bg, #fff);
   /* Trap wheel scroll inside the grid. Without this, hitting the top
    * or bottom edge of the grid lets the wheel event chain to the
    * outer page (or any scrollable ancestor), so what feels like one
@@ -3213,9 +3222,14 @@ select.sv-grid-fr-editor {
   border-right-color: var(--sg-header-bg, #f1f5f9);
 }
 /* The detail-toggle gutter fuses with the row numbers the same way; only
-   its own right edge keeps a line, between the chrome and the data. */
-.sv-grid-row-number-cell:has(+ .sv-grid-detail-toggle-cell),
-.sv-grid-row-number-column:has(+ .sv-grid-detail-toggle-column) {
+   its own right edge keeps a line, between the chrome and the data. The
+   table carries a class for "row numbers directly before the toggle" (no
+   selection column between them). This was `:has(+ .sv-grid-detail-toggle-cell)`,
+   and a sibling `:has()` makes Chrome restyle every cell of a row whenever a
+   cell is added to or taken out of it: each horizontal column move restyled
+   ~1,500 elements (8 ms) instead of ~400 (3 ms) in a grid with row numbers. */
+.sv-grid-numbers-beside-toggle .sv-grid-row-number-cell,
+.sv-grid-numbers-beside-toggle .sv-grid-row-number-column {
   border-right-color: var(--sg-header-bg, #f1f5f9);
 }
 
@@ -3496,3 +3510,166 @@ select.sv-grid-fr-editor {
 .sv-grid-chart-tab.is-active .sv-grid-chart-tab-label { color: var(--sg-accent, #2563eb); }
 .sv-grid-chart-tab-x { border: 0; background: transparent; color: var(--sg-muted, #64748b); font-size: 14px; line-height: 1; padding: 0 6px 0 2px; cursor: pointer; }
 .sv-grid-chart-tab-x:hover { color: var(--sg-fg, #0f172a); }
+
+/* ===========================================================================
+   Flex rows (`.sv-grid-table-flex`, the default; see the `rowLayout` prop).
+   A table marked `data-row-layout="table"` (spreadsheetLayout, whose
+   merges are DOM colspan / rowspan) keeps table layout.
+
+   Every row is a flex line of fixed-width cells instead of a table row. The
+   cells already carry their width inline, so the columns line up the same;
+   what changes is the cost of a change. A table lays every row out again
+   when one cell is added or removed (a horizontal scroll adds a column of
+   cells per frame): ~7 ms of layout a frame on a wide grid. A flex row lays
+   out its own cells only: ~1.5 ms. Table layout stays available for what
+   only a table can draw - a merged cell spanning rows - and the grid picks it
+   automatically then.
+
+   Every selector walks the grid's own structure with child combinators
+   (table > section > tr > cell): a table inside a detail panel or a cell,
+   or a nested grid, keeps its own layout.
+   =========================================================================== */
+.sv-grid-table-flex:not([data-row-layout="table"]),
+.sv-grid-table-flex:not([data-row-layout="table"]) > :is(thead, tbody, tfoot) {
+  display: block;
+}
+.sv-grid-table-flex:not([data-row-layout="table"]) > :is(thead, tbody, tfoot) > tr {
+  display: flex;
+}
+/* Rows are not contained by default. Each body row used to be its own
+   layout and paint island (`contain: layout paint`), so a scroll frame
+   re-recorded only the rows that changed. Once the body scrolled on the
+   compositor (the scroller's own background) that saving was gone, and
+   every contained row was a separate clipped piece of paint Chrome sorted
+   into layers again on each frame: layerize took 4-7x longer, and a
+   horizontal wheel scroll of the 1M-row x 1,000-column demo about twice the
+   main-thread work. An app can still opt in with --sg-row-contain. */
+.sv-grid-table-flex:not([data-row-layout="table"]) > tbody > tr {
+  contain: var(--sg-row-contain, none);
+}
+/* Cells: a fixed-width flex item each, centring what they hold vertically
+   the way a table cell's `vertical-align: middle` did. */
+.sv-grid-table-flex:not([data-row-layout="table"]) > :is(thead, tbody, tfoot) > tr > :is(td, th) {
+  display: flex;
+  flex: none;
+}
+/* Zero specificity, so `.my-grid .sv-grid-cell { align-items: flex-start }`
+   re-aligns cells (docs/help/rows/styling-rows.md). */
+:where(.sv-grid-table-flex:not([data-row-layout="table"]) > :is(thead, tbody, tfoot) > tr > :is(td, th)) {
+  align-items: center;
+}
+/* What a cell holds may shrink below its content's width, so the cell clips
+   and ellipsizes it rather than overflowing. Named by class, not `> *`: a
+   universal right-hand selector is tested against every element on each
+   style recalc, which cost ~0.5 ms a frame of vertical scroll. Outside a flex
+   row `min-width: 0` is already the computed default, so these rules are
+   unscoped. */
+.sv-grid-header-cell,
+.sv-grid-filter-row-control,
+.sv-grid-row-number-head,
+.sv-grid-group-content,
+.sv-grid-cf-content {
+  min-width: 0;
+}
+/* `th` is centred by the user-agent sheet (`text-align: center`); flex items
+   follow `justify-content` instead. */
+.sv-grid-table-flex:not([data-row-layout="table"]) > :is(thead, tbody, tfoot) > tr > th {
+  justify-content: center;
+}
+/* A header cell's inline content used to sit on a line box, whose height
+   (the inherited line-height) set the cell's minimum height; a flex cell has
+   no line box, so a band like the column-group row shrank from 33px to 20px.
+   A zero-width text strut puts the line height back. `:where` keeps it at
+   the lowest specificity, so the drag-indicator ::before rules replace it. */
+:where(.sv-grid-table-flex:not([data-row-layout="table"]) > :is(thead, tbody, tfoot) > tr > th)::before {
+  content: "\200b";
+  width: 0;
+  overflow: hidden;
+}
+/* A cell's text sits in its own span so the ellipsis still works: a flex
+   container cannot clip and ellipsize a bare text node. The span takes the
+   cell's width, so `text-align` keeps aligning it. */
+.sv-grid-cell-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: inherit;
+}
+.sv-grid-table-flex:not([data-row-layout="table"]) > :is(thead, tbody, tfoot) > tr > :is(td, th) .sv-grid-cell-text,
+.sv-grid-table-flex:not([data-row-layout="table"]) > :is(thead, tbody, tfoot) > tr > td > .sv-grid-cf-content {
+  flex: 1 1 auto;
+}
+.sv-grid-table-flex:not([data-row-layout="table"]) > :is(thead, tbody, tfoot) > tr > td > .sv-grid-cf-content {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Non-text content (checkbox, chips, icons) follows the column alignment.
+   `right` is physical, like the `text-align: right` it stands beside, so a
+   right-aligned column stays right under `dir="rtl"`. */
+.sv-grid-table-flex:not([data-row-layout="table"]) > :is(thead, tbody, tfoot) > tr > .sv-grid-cell[data-align="right"] {
+  justify-content: right;
+}
+.sv-grid-table-flex:not([data-row-layout="table"]) > :is(thead, tbody, tfoot) > tr > :is(
+    .sv-grid-cell[data-align="center"],
+    .sv-grid-selection-cell,
+    .sv-grid-selection-column,
+    .sv-grid-detail-toggle-cell,
+    .sv-grid-detail-toggle-column
+  ) {
+  justify-content: center;
+}
+/* The header cell's content fills it, and so does the row-number corner, so
+   a `text-align` set on the header cell (an app re-centring its headers)
+   still places them. */
+.sv-grid-table-flex:not([data-row-layout="table"]) > thead > tr > th > :is(.sv-grid-header-cell, .sv-grid-row-number-head) {
+  flex: 1 1 auto;
+}
+/* A cell that spans the whole row (a group banner, a detail panel, a failed
+   block's message) has no width of its own: it fills the row. A merged cell
+   spans columns too, but carries its own width. */
+.sv-grid-table-flex:not([data-row-layout="table"]) > tbody > tr > td[colspan]:not([data-merge-origin]) {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.sv-grid-table-flex:not([data-row-layout="table"]) > tbody > tr > td.sv-grid-detail-cell {
+  display: block;
+}
+.sv-grid-table-flex:not([data-row-layout="table"]) > tbody > tr > td.sv-grid-group-cell > .sv-grid-group-content {
+  flex: 1 1 auto;
+}
+/* Pinned rows stick as a band: a sticky cell cannot leave its flex row, so
+   the band's body is the sticky box instead of each cell. */
+.sv-grid-table-flex:not([data-row-layout="table"]) > tbody.sv-grid-pinned-top-body {
+  position: sticky;
+  top: var(--sg-thead-h, 36px);
+  z-index: 4;
+}
+.sv-grid-table-flex:not([data-row-layout="table"]) > tbody.sv-grid-pinned-bottom-body {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+}
+.sv-grid-table-flex:not([data-row-layout="table"]) > tbody > .sv-grid-pinned-row > td {
+  top: auto;
+  bottom: auto;
+}
+/* A flex row is exactly as tall as its `height`, which is the row height the
+   virtualizer places it at. A rule here used to turn that into a minimum, as
+   a table row's is, so content taller than `rowHeight` grew the row; the
+   virtualizer still placed every row at `rowHeight`, so the rows drifted and
+   jumped while scrolling (the 1M-row demo: 25 px rows placed as 18). Taller
+   content is clipped by its cell now; `autoRowHeight` is the way to let rows
+   grow. */
+/* A body cell's content line (see the bodyRow snippet). Block-level, so the
+   inline content in it sits on one line box exactly as it did directly in a
+   table cell; it carries the ellipsis and takes the cell's text-align. */
+.sv-grid-cell-line {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: inherit;
+}
+.sv-grid-table-flex:not([data-row-layout="table"]) > :is(thead, tbody, tfoot) > tr > td > .sv-grid-cell-line {
+  flex: 1 1 auto;
+}

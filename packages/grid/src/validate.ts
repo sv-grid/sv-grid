@@ -228,20 +228,9 @@ export function validateGridConfig<
     )
   }
 
-  // ---- 7. Pinning that column virtualization will hide ----------------------
-  // Documented incompatibility: the virtualizer recycles column DOM nodes, so
-  // sticky pinning cannot survive it. `columnVirtualization` defaults to ON,
-  // which means the natural way to write this silently does nothing.
-  const pinned =
-    (input.initialColumnPinning?.left?.length ?? 0) +
-    (input.initialColumnPinning?.right?.length ?? 0)
-  if (pinned > 0 && input.columnVirtualization !== false) {
-    messages.push(
-      '[svgrid] `initialColumnPinning` is set while column virtualization is on ' +
-        '(its default), so the pinned columns will not stick - the virtualizer ' +
-        'recycles column nodes. Add `columnVirtualization={false}`.',
-    )
-  }
+  // (7. was "pinning versus column virtualization". Pinned columns now render
+  // as their own runs beside the virtual window, so the pair is supported and
+  // there is nothing to warn about.)
 
   // ---- 8. Server-mode contracts left half-wired -----------------------------
   // Each of these makes the grid hand control to the consumer. Miss the other

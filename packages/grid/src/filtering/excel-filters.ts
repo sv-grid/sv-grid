@@ -208,6 +208,39 @@ export {
 export type CompiledExcelFilter = (cellValue: unknown) => boolean
 
 /**
+ * A text test, remembered per distinct cell text.
+ *
+ * The text operators fold every cell (lowercase, and for non-ASCII text NFD
+ * plus diacritic stripping) before comparing, and a column the user filters
+ * is usually a category - region, status, owner - with a handful of distinct
+ * values over every row. Folding each row again was most of a 1M-row filter
+ * (417 ms). The answer depends only on the cell's text, so it is kept per
+ * text. A column that turns out mostly unique (more than half of the first
+ * 2,048 lookups missed) stops remembering and tests directly, and the memo
+ * never grows past MEMO_CAP entries.
+ */
+const MEMO_CAP = 16_384
+function memoText(test: (s: string) => boolean): CompiledExcelFilter {
+  let memo: Map<string, boolean> | null = new Map()
+  let lookups = 0
+  let hits = 0
+  return (cellValue) => {
+    const s = typeof cellValue === 'string' ? cellValue : String(cellValue ?? '')
+    if (memo === null) return test(s)
+    lookups++
+    const known = memo.get(s)
+    if (known !== undefined) {
+      hits++
+      return known
+    }
+    const result = test(s)
+    if (memo.size < MEMO_CAP) memo.set(s, result)
+    if (lookups >= 2048 && hits * 2 < lookups) memo = null
+    return result
+  }
+}
+
+/**
  * Compile a filter once, then test many rows against it.
  *
  * Everything that depends only on the FILTER - folding the needle, splitting
@@ -228,21 +261,21 @@ export function compileExcelFilter(
 
   switch (filter.operator) {
     case 'contains':
-      return (cellValue) => fold(cellValue).includes(needle)
+      return memoText((s) => fold(s).includes(needle))
     case 'notContains':
       // An empty needle is no constraint (mirrors `contains` returning true),
       // so nothing is excluded until the user types something.
       if (needle === '') return () => true
-      return (cellValue) => !fold(cellValue).includes(needle)
+      return memoText((s) => !fold(s).includes(needle))
     case 'equals':
-      return (cellValue) => fold(cellValue) === needle
+      return memoText((s) => fold(s) === needle)
     case 'notEquals':
       if (needle === '') return () => true
-      return (cellValue) => fold(cellValue) !== needle
+      return memoText((s) => fold(s) !== needle)
     case 'startsWith':
-      return (cellValue) => fold(cellValue).startsWith(needle)
+      return memoText((s) => fold(s).startsWith(needle))
     case 'endsWith':
-      return (cellValue) => fold(cellValue).endsWith(needle)
+      return memoText((s) => fold(s).endsWith(needle))
     case 'regex': {
       // Case-insensitive by default (matches the accent/case-folded feel of
       // the other text operators). An invalid pattern matches nothing rather

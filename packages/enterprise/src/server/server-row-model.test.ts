@@ -159,6 +159,23 @@ describe('createServerRowModel', () => {
     ctl.dispose()
   })
 
+  it('starts on the first viewport, with no refresh, sort or filter to start it', async () => {
+    // What the grid does on mount: it reports the rows on screen and nothing
+    // else. A model started only by the grid's mount-time sort report never
+    // loaded once the grid stopped reporting a mount as a sort change.
+    const be = backend({ perCountry: 10 })
+    const ctl = createServerRowModel<Sale>(be.source, { groupBy: ['region'], blockSize: 100 })
+    ctl.setViewport(0, 0)
+    await settle()
+    expect(be.trace()).toEqual(['[]:0-100'])
+    expect(ctl.getState().displayRows.map((r) => ('key' in r ? r.key : r.kind))).toEqual(['EMEA', 'APAC'])
+    // Later viewports scroll the same model; they do not start it over.
+    ctl.setViewport(0, 1)
+    await settle()
+    expect(be.trace()).toEqual(['[]:0-100'])
+    ctl.dispose()
+  })
+
   it('claims initialRowCount rows at a level before its first block, so a jump lands on placeholders', async () => {
     const be = backend({ hold: true, perCountry: 400 })
     const ctl = createServerRowModel<Sale>(be.source, {

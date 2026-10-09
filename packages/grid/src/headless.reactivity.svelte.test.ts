@@ -69,7 +69,7 @@ describe('headless state reactivity', () => {
     // `$derived(table.getRowModel().rows)` reads only the framework-free
     // engine and never recomputes, which is the bug this guards.
     const rows = $derived.by(() => {
-      sorting
+      void sorting
       return table.getRowModel().rows
     })
     expect(rows.map((r) => (r.original as Repo).name)).toEqual(['svelte', 'vite', 'sv-grid'])

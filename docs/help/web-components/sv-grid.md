@@ -35,7 +35,7 @@ attribute is the extra convenience, offered only where it can work.
 
 <!-- BEGIN generated reference - packages/grid-wc/scripts/generate-surface.mjs -->
 
-### Attributes (77)
+### Attributes (78)
 
 Primitives, so they work in plain HTML as well as through a property.
 
@@ -112,6 +112,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `show-detail-toggle` | `showDetailToggle` | `boolean` |
 | `frozen-rows` | `frozenRows` | `number` |
 | `sticky-group-rows` | `stickyGroupRows` | `boolean` |
+| `row-layout` | `rowLayout` | `"flex" \| "table"` |
 | `enable-column-reorder` | `enableColumnReorder` | `boolean` |
 | `infer-column-types` | `inferColumnTypes` | `boolean` |
 | `row-drag-managed` | `rowDragManaged` | `boolean` |

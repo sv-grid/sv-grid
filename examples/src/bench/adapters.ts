@@ -33,6 +33,12 @@ export type BenchRow = {
   note: string
 }
 
+/** A column as the harness describes it; every adapter maps it to its grid's own column type. */
+export type BenchColumn = { field: string; header: string; type: 'text' | 'number' }
+
+/** Any row the harness hands a grid: BenchRow for the main suite, numeric fields for the wide one. */
+export type AnyRow = Record<string, unknown>
+
 export type GridAdapter = {
   /** Display name, used in the results table. */
   name: string
@@ -40,8 +46,21 @@ export type GridAdapter = {
   version: string
   /** Licence, so the table says what a reader is allowed to reuse. */
   license: string
-  /** Create the grid inside `host` with `rows`. Resolves when rows are painted. */
-  mount(host: HTMLElement, rows: BenchRow[]): Promise<void>
+  /**
+   * Create the grid inside `host` with `rows` and `columns` (the nine
+   * COLUMNS when omitted). Resolves when rows are painted.
+   */
+  mount(host: HTMLElement, rows: AnyRow[], columns?: BenchColumn[]): Promise<void>
+  /**
+   * The element the body scrolls in. The harness scrolls it directly and
+   * checks that it moved, so an adapter pointing at the wrong element fails
+   * the run instead of reporting the frame rate of a grid standing still.
+   */
+  scroller?(): HTMLElement | null
+  /** Whether a body cell of column `field` is in the DOM. */
+  hasCellFor?(field: string): boolean
+  /** Body cells in the DOM. Proves column virtualization the way domRowCount proves row virtualization. */
+  domCellCount?(): number
   /** Sort by one column. Resolves when the new order is painted. */
   sort(field: keyof BenchRow, desc: boolean): Promise<void>
   /** Substring-filter one column. Resolves when the result is painted. */
@@ -62,6 +81,14 @@ export type GridAdapter = {
    * work than the others, and its tick time would say nothing.
    */
   firstRowAmounts?(count: number): number[]
+  /**
+   * The text of column `field` in the first `count` rows as the user sees
+   * them, top down. The harness waits on it after every timed step: an
+   * operation is done when the top row shows what it should, not when the
+   * grid first touches the DOM. A grid that paints in stages (rows first,
+   * cells later) was being timed at its first stage.
+   */
+  topValues?(field: string, count: number): string[]
   /** How many row elements are currently in the DOM. Proves virtualization. */
   domRowCount(): number
   /** Tear down and release. */
@@ -132,7 +159,7 @@ export async function settle(check: () => boolean, label: string, timeoutMs = 30
   }
 }
 
-export const COLUMNS: Array<{ field: keyof BenchRow; header: string; type: 'text' | 'number' }> = [
+export const COLUMNS: Array<BenchColumn & { field: keyof BenchRow }> = [
   { field: 'id', header: 'ID', type: 'number' },
   { field: 'name', header: 'Name', type: 'text' },
   { field: 'region', header: 'Region', type: 'text' },
@@ -175,14 +202,17 @@ export async function svgridAdapter(): Promise<GridAdapter> {
       ?? (pkg as { version?: string }).version
       ?? 'workspace',
     license: 'MIT',
-    async mount(el, rows) {
+    async mount(el, rows, columns = COLUMNS) {
       host = el
       app = mount(BenchSvGrid, {
         target: el,
-        props: { rows, columns: COLUMNS, rowHeight: ROW_HEIGHT, handle },
+        props: { rows, columns, rowHeight: ROW_HEIGHT, handle },
       }) as Record<string, unknown>
       await settle(() => el.querySelectorAll('tr.sv-grid-row').length > 0, 'sv-grid mount')
     },
+    scroller: () => handle.scroller?.() ?? null,
+    hasCellFor: (field) => !!host?.querySelector(`tbody td[data-col-id="${field}"]`),
+    domCellCount: () => host?.querySelectorAll('tbody td[data-col-id]').length ?? 0,
     async sort(field, desc) {
       handle.setSort?.(field as string, desc)
       await domSettled(host!)
@@ -202,6 +232,11 @@ export async function svgridAdapter(): Promise<GridAdapter> {
       // the ones that are not.
       handle.setRows?.(next)
       await domSettled(host!)
+    },
+    topValues(field, count) {
+      return Array.from(host?.querySelectorAll('tbody.sv-grid-body tr.sv-grid-row:not(.sv-grid-row-spacer)') ?? [])
+        .slice(0, count)
+        .map((tr) => (tr.querySelector(`td[data-col-id="${field}"]`)?.textContent ?? '').trim())
     },
     firstRowAmounts(count) {
       // Body rows only (the header is a .sv-grid-row too); the amount column
@@ -247,6 +282,7 @@ export async function agGridAdapter(): Promise<GridAdapter> {
 
   let api: { setGridOption: (k: string, v: unknown) => void; destroy: () => void } | null = null
   let host: HTMLElement | null = null
+  let cols: BenchColumn[] = COLUMNS
 
   // v36 restructured the body DOM: rows sit in `.ag-grid-scrolling-container`
   // and the vertical scroller is `.ag-grid-viewport`; v35 and earlier used
@@ -261,8 +297,9 @@ export async function agGridAdapter(): Promise<GridAdapter> {
       ?? (agPkg as { version?: string }).version
       ?? 'unknown',
     license: 'MIT',
-    async mount(el, rows) {
+    async mount(el, rows, columns = COLUMNS) {
       host = el
+      cols = columns
       el.style.height = '100%'
       api = createGrid(el, {
         theme: themeQuartz,
@@ -271,7 +308,7 @@ export async function agGridAdapter(): Promise<GridAdapter> {
         // Needed for applyTransaction updates to find their rows.
         getRowId: (p: { data: BenchRow }) => String(p.data.id),
         // Match sv-grid: both axes virtualized, no extra features enabled.
-        columnDefs: COLUMNS.map((c) => ({
+        columnDefs: columns.map((c) => ({
           field: c.field as string,
           headerName: c.header,
           sortable: true,
@@ -284,10 +321,15 @@ export async function agGridAdapter(): Promise<GridAdapter> {
       })
       await settle(() => rowNodes().length > 0, 'ag-grid mount')
     },
+    // v36 scrolls both axes in one viewport; v35 and earlier used
+    // .ag-body-viewport for rows (horizontal scroll was elsewhere there).
+    scroller: () => host?.querySelector<HTMLElement>('.ag-grid-viewport, .ag-body-viewport') ?? null,
+    hasCellFor: (field) => !!host?.querySelector(`.ag-row .ag-cell[col-id="${field}"]`),
+    domCellCount: () => host?.querySelectorAll('.ag-row .ag-cell').length ?? 0,
     async sort(field, desc) {
       api?.setGridOption(
         'columnDefs',
-        COLUMNS.map((c) => ({
+        cols.map((c) => ({
           field: c.field as string,
           headerName: c.header,
           sortable: true,
@@ -313,6 +355,15 @@ export async function agGridAdapter(): Promise<GridAdapter> {
       // rows, matched by getRowId.
       ;(api as unknown as { applyTransaction: (tx: { update: BenchRow[] }) => void } | null)?.applyTransaction({ update: changed })
       await domSettled(host!)
+    },
+    topValues(field, count) {
+      // DOM order is not visual order in AG Grid; read by row-index.
+      const out: string[] = []
+      for (let i = 0; i < count; i++) {
+        const cell = host?.querySelector(`.ag-grid-scrolling-container .ag-row[row-index="${i}"] .ag-cell[col-id="${field}"], .ag-center-cols-container .ag-row[row-index="${i}"] .ag-cell[col-id="${field}"]`)
+        if (cell) out.push((cell.textContent ?? '').trim())
+      }
+      return out
     },
     firstRowAmounts(count) {
       // DOM order is not visual order in AG Grid; read by row-index.
@@ -352,6 +403,12 @@ async function svelteComponentAdapter(opts: {
   rowSelector: string
   /** The `amount` cell inside a row, by the grid's own column attribute. */
   amountCellSelector: string
+  /** A body cell, without a column filter; `[data-col-id="x"]` is appended to find one column's. */
+  cellSelector: string
+  /** What the grid puts in front of a string column id in `data-col-id` ('' for none). */
+  colIdPrefix?: string
+  /** One column's cell inside a row (`rowSelector`). */
+  cellInRow: (field: string) => string
 }): Promise<GridAdapter> {
   const [{ mount, unmount }, pkg, mod] = await Promise.all([import('svelte'), opts.pkg, opts.component])
   const Component = mod.default as never
@@ -371,14 +428,17 @@ async function svelteComponentAdapter(opts: {
       ?? (pkg as { version?: string }).version
       ?? 'unknown',
     license: opts.license,
-    async mount(el, rows) {
+    async mount(el, rows, columns = COLUMNS) {
       host = el
       app = mount(Component, {
         target: el,
-        props: { rows, columns: COLUMNS, rowHeight: ROW_HEIGHT, handle },
+        props: { rows, columns, rowHeight: ROW_HEIGHT, handle },
       }) as Record<string, unknown>
       await settle(() => el.querySelectorAll(opts.rowSelector).length > 0, `${opts.name} mount`)
     },
+    scroller: () => handle.scroller?.() ?? null,
+    hasCellFor: (field) => !!host?.querySelector(`${opts.cellSelector}[data-col-id="${opts.colIdPrefix ?? ''}${field}"]`),
+    domCellCount: () => host?.querySelectorAll(opts.cellSelector).length ?? 0,
     async sort(field, desc) {
       handle.setSort?.(field as string, desc)
       await domSettled(host!)
@@ -395,6 +455,11 @@ async function svelteComponentAdapter(opts: {
     async update(next) {
       handle.setRows?.(next)
       await domSettled(host!)
+    },
+    topValues(field, count) {
+      return Array.from(host?.querySelectorAll(opts.rowSelector) ?? [])
+        .slice(0, count)
+        .map((row) => (row.querySelector(opts.cellInRow(field))?.textContent ?? '').trim())
     },
     firstRowAmounts(count) {
       return Array.from(host?.querySelectorAll(opts.rowSelector) ?? [])
@@ -420,7 +485,13 @@ export function svarAdapter(): Promise<GridAdapter> {
     pkg: import('../../node_modules/wx-svelte-grid/package.json'),
     component: import('./BenchSvar.svelte'),
     rowSelector: '.wx-row',
-    amountCellSelector: '.wx-cell[data-col-id="amount"]',
+    // SVAR writes a string column id as ":" + id (setID in @svar-ui/lib-dom).
+    // Without the colon this selector matched nothing, so the tick case could
+    // never confirm that SVAR kept its sort.
+    amountCellSelector: '.wx-cell[data-col-id=":amount"]',
+    cellSelector: '.wx-row .wx-cell',
+    colIdPrefix: ':',
+    cellInRow: (field) => `.wx-cell[data-col-id=":${field}"]`,
   })
 }
 
@@ -437,6 +508,8 @@ export function tanstackAdapter(): Promise<GridAdapter> {
     component: import('./BenchTanStack.svelte'),
     rowSelector: 'tr.tt-row',
     amountCellSelector: 'td:nth-child(5)',
+    cellSelector: 'tr.tt-row > td',
+    cellInRow: (field) => `td[data-col-id="${field}"]`,
   })
 }
 

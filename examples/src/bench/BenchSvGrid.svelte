@@ -11,6 +11,11 @@
    * `sorting` / `columnFilters` props - only `initialSorting`, which applies
    * once at mount. Every adapter has to be drivable the same way from plain
    * TypeScript, so the harness holds a handle and calls into it.
+   *
+   * `showRowSelection={false}`: the other grids here draw the nine harness
+   * columns and nothing else, and sv-grid's default checkbox column is a
+   * tenth, sticky one. It was measured with it until 2026-10-08, which made
+   * sv-grid render more than the grids it was compared with.
    */
   import {
     SvGrid,
@@ -57,10 +62,10 @@
   handle.setSort = (field, desc) => api?.setSort(field, desc ? 'desc' : 'asc')
   handle.setFilter = (field, value) =>
     api?.setFilter(field, value ? { operator: 'contains', value } : null)
-  handle.scroller = () =>
-    rootEl?.querySelector<HTMLElement>('.sv-grid-scroll') ??
-    rootEl?.querySelector<HTMLElement>('.sv-grid-body-wrap') ??
-    null
+  // The grid's body scrolls in .sv-grid-container (both axes). This used to
+  // look for .sv-grid-scroll / .sv-grid-body-wrap, neither of which the grid
+  // renders, so the harness's scroll step never moved sv-grid at all.
+  handle.scroller = () => rootEl?.querySelector<HTMLElement>('.sv-grid-container') ?? null
 </script>
 
 <div bind:this={rootEl} style="height:100%">
@@ -70,6 +75,7 @@
     {features}
     rowHeight={rowHeight}
     showPagination={false}
+    showRowSelection={false}
     virtualization={true}
     columnVirtualization={true}
     containerHeight="100%"

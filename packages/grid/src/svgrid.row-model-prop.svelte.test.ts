@@ -138,11 +138,23 @@ describe('the rowModel prop', () => {
     await tick()
 
     // The model was told; the grid did NOT reorder locally, because a model
-    // with `setSort` implies `externalSort`. (The grid also reports the
-    // empty initial sort on mount, as it does for any onSortingChange.)
-    expect(source.sorts.at(-1)).toEqual([{ id: 'name', desc: false }])
+    // with `setSort` implies `externalSort`. Mounting with no sort tells the
+    // model nothing - it used to get an empty sort, which made a server
+    // source refetch page 0 for no reason.
+    expect(source.sorts).toEqual([[{ id: 'name', desc: false }]])
     const firstRow = target.querySelector('tbody .sv-grid-row')!
     expect(firstRow.textContent).toContain('Zoe')
+    destroy()
+  })
+
+  it('hands initialSorting to the model once, since the model has no initial sort of its own', async () => {
+    const source = handWritten([
+      { id: 1, name: 'Zoe' },
+      { id: 2, name: 'Ada' },
+    ])
+    const { destroy } = await mountGrid({ rowModel: source.model, sortable: true, initialSorting: [{ id: 'name', desc: true }] })
+    await tick()
+    expect(source.sorts).toEqual([[{ id: 'name', desc: true }]])
     destroy()
   })
 

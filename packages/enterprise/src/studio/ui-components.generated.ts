@@ -6958,14 +6958,14 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "columnVirtualization",
         "label": "Column Virtualization",
         "type": "boolean",
-        "description": "Render only the columns in view, the horizontal counterpart of `virtualization`. **On by default**, which is what makes a 100-column grid scroll smoothly. It recycles column DOM nodes, so it cannot coexist with sticky pinned columns - turn it off if you need pinning to survive horizontal scrolling.",
+        "description": "Render only the columns in view, the horizontal counterpart of `virtualization`. **On by default**, which is what makes a 100-column grid scroll smoothly. Pinned columns stay rendered while it is on: the pinned-left and pinned-right columns are drawn as their own runs either side of the virtual window, so a wide grid with pinned edges still renders only the columns in view plus the pinned ones.",
         "group": "common"
       },
       {
         "key": "columnOverscan",
         "label": "Column Overscan",
         "type": "number",
-        "description": "Extra columns rendered either side of the viewport when `columnVirtualization` is on. Defaults to 3.",
+        "description": "Columns kept rendered beyond the viewport when `columnVirtualization` is on: this many ahead of a horizontal scroll at all times, one behind it. The rendered columns move three at a time, so right after a move up to `columnOverscan + 2` are rendered ahead. Defaults to 3.",
         "group": "common"
       },
       {
@@ -6979,7 +6979,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "initialColumnPinning",
         "label": "Initial Column Pinning",
         "type": "json",
-        "description": "Columns pinned to the left/right edge on mount. Each entry is a column id (matches `ColumnDef.field` when no explicit id is set). The internal pinning state is seeded once at mount; user-driven pinning via the column menu still works and overrides this default. Requires `columnVirtualization={false}` to be visible in the menu UI (sticky positioning can't co-exist with column virtualization since the virtualizer recycles DOM nodes).",
+        "description": "Columns pinned to the left/right edge on mount. Each entry is a column id (matches `ColumnDef.field` when no explicit id is set). The internal pinning state is seeded once at mount; user-driven pinning via the column menu still works and overrides this default. Works with column virtualization on (the default).",
         "group": "common"
       },
       {
@@ -7260,7 +7260,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "conditionalFormats",
         "label": "Conditional Formats",
         "type": "json",
-        "description": "Excel-style conditional formatting. A list of value-driven rules that color cells: `colorScale` (gradient across the column range), `dataBar` (in-cell proportional bar), `iconSet` (arrows / traffic / triangles by threshold), and `rule` (apply a style when a predicate matches). Scope a format to specific columns with `columns: [...]`, or omit it to apply to every column. Later entries win on conflict.",
+        "description": "Excel-style conditional formatting. A list of value-driven rules that color cells: `colorScale` (gradient across the column range), `dataBar` (in-cell proportional bar), `iconSet` (arrows / traffic / triangles by threshold), and `rule` (apply a style when a predicate matches). Scope a format to specific columns with `columns: [...]`, or omit it to apply to every column. Later entries win on conflict. `colorScale` and `dataBar` apply to data rows only: group, footer and grand-total rows carry subtotals on a different scale, so they keep the `rule` and `iconSet` formats and drop the scaled ones. On a server row model, give scaled formats `minValue` / `maxValue`; the grid does not scan rows it has not loaded for a range.",
         "group": "common"
       },
       {
@@ -7382,6 +7382,17 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Merged Cells",
         "type": "json",
         "description": "Merged cells: rectangles drawn as one cell, a spreadsheet's Merge & Center. Each entry is the top-left cell (display indices) and how many rows and columns it covers. The origin's td takes the span and shows the origin's value; the covered cells are not drawn, a selection grows to whole merges, the active cell inside a merge is its origin, and the arrow keys step over a merge as one cell. A merge that crosses the frozen boundary or the rendered window is drawn in parts, one per band. The grid does not write into covered cells on its own; a consumer that merges cells keeps them empty or marks them read-only through the column's `editable`.",
+        "group": "common"
+      },
+      {
+        "key": "rowLayout",
+        "label": "Row Layout",
+        "type": "select",
+        "options": [
+          "flex",
+          "table"
+        ],
+        "description": "How rows are laid out. `'flex'` (the default) draws each row as a line of fixed-width cells, so adding or removing cells in one row - what a horizontal scroll does every frame - lays out that row only. `'table'` uses the HTML table algorithm, which re-lays every row on such a change but can draw a merged cell spanning rows; the grid switches to it on its own when `mergedCells` has one.",
         "group": "common"
       },
       {

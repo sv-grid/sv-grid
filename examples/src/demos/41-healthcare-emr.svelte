@@ -350,7 +350,7 @@
       selectionMode="cell"
       enableInlineEditing={role !== 'viewer'}
       enableCellSelection={true}
-      rowHeight={48}
+      rowHeight={54}
       containerHeight="100%"
       fitColumns={false}
       onCellValueChange={onCellValueChange}

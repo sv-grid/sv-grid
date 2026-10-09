@@ -1,5 +1,5 @@
 {
-  "description": "Column pinning in the Svelte 5 data grid. A wide eight-column grid pins Company to the left and Unit price to the right through initialColumnPinning, so they stay sticky while the middle columns scroll under them; the header menu offers Pin to left, Pin to right and Unpin, and api.setColumnPinning does the same from code. Pinning needs columnVirtualization={false}, and the menu hides the pin items automatically when it is on.",
+  "description": "Column pinning in the Svelte 5 data grid. A wide eight-column grid pins Company to the left and Unit price to the right through initialColumnPinning, so they stay sticky while the middle columns scroll under them; the header menu offers Pin to left, Pin to right and Unpin, and api.setColumnPinning does the same from code. Pinning works with column virtualization on, so a wide grid still renders only the columns in view plus the pinned ones.",
   "keywords": [
     "svelte grid pin column",
     "svelte table frozen columns",
@@ -13,8 +13,8 @@
       "answer": "Pass initialColumnPinning={{ left: ['company'], right: ['price'] }} to <SvGrid>. Users can change it later from each header's menu, and api.setColumnPinning({ left, right }) sets it from code."
     },
     {
-      "question": "Why must column virtualization be off?",
-      "answer": "The column virtualizer recycles DOM nodes, which breaks position: sticky. Set columnVirtualization={false} on grids that pin; the pin menu items are hidden while it is on so the two cannot conflict."
+      "question": "Does pinning work with column virtualization?",
+      "answer": "Yes. Pinned cells use position: sticky, so they have to stay in the DOM; the grid renders the pinned-left columns, the virtual window and the pinned-right columns as separate runs, with a spacer cell for the columns between them. A 1,000-column grid with both edges pinned renders about twenty cells per row, not a thousand."
     },
     {
       "question": "Can pinned columns be resized?",

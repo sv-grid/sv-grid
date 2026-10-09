@@ -95,6 +95,55 @@ For one-cell tints, use `cellClass` on the column def - same shape,
 called per cell with the standard `CellContext`. See
 [Styling cells](../cells/styling-cells.md).
 
+## Row layout
+
+The markup is a `<table>`, but each `<tr>` is laid out as a flex row of
+fixed-width cells (`display: flex`), not by the table algorithm. On a
+horizontal scroll the grid adds and removes a column of cells every frame.
+A table re-lays every row for that; a flex row re-lays only its own cells.
+On the 503 big-data demo at 10,000 columns that is about 1 ms of layout a
+frame instead of 2.7 ms.
+
+What this changes for your CSS:
+
+- A body cell's content sits in `<span class="sv-grid-cell-line">`, a
+  block that fills the cell. `text-align` on the cell still aligns it, and
+  the ellipsis lives on that span.
+- `vertical-align` on a cell does nothing. Cells centre their content with
+  `align-items: center`; set `align-items` on the cell to change it.
+- A row's `height` is exact, not a minimum. A row is as tall as
+  `rowHeight` says, because that is where the virtualizer places it, and
+  content taller than that is clipped instead of growing the row. Raise
+  `rowHeight` for taller content, or set `autoRowHeight` to let each row
+  grow to fit.
+
+`rowLayout="table"` brings back table layout. The grid uses it on its own
+when `mergedCells` holds a merge with `rowSpan` above 1, since a cell
+spanning rows needs the table algorithm, and under the
+`use:spreadsheetLayout` action.
+
+```css
+/* Top-align the cells of one grid. */
+.my-grid .sv-grid-cell {
+  align-items: flex-start;
+}
+```
+
+Body rows are not CSS-contained by default. `--sg-row-contain` sets a
+`contain` value on every body row if your app wants one:
+
+```css
+.my-grid {
+  --sg-row-contain: layout paint;
+}
+```
+
+We measured `layout paint` and left it off: each contained row becomes a
+separate clipped piece of paint, and Chrome redoes its layer work for
+every one of them on each scroll frame, which doubled the main-thread
+work of a horizontal scroll on a 1,000-column grid. It also makes a row
+the containing block for `position: fixed` content inside it.
+
 ## CSS custom properties
 
 The gallery defines these tokens - override at `:root` or on the grid host:

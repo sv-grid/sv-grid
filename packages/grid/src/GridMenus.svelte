@@ -49,7 +49,6 @@
   const unpinColumn = $derived(ctrl.unpinColumn);
   const sortDirectionByColumn = $derived(ctrl.sortDirectionByColumn);
   const groupingColumns = $derived(ctrl.groupingColumns);
-  const columnVirtualizationEnabled = $derived(ctrl.columnVirtualizationEnabled);
   const updateFilterOperator = $derived(ctrl.updateFilterOperator);
   const updateFilterMenuValue = $derived(ctrl.updateFilterMenuValue);
   const updateFilterMenuValueTo = $derived(ctrl.updateFilterMenuValueTo);
@@ -644,7 +643,9 @@
           <span class="sv-grid-header-icon">{@render icon("x")}</span> Remove sort
         </button>
       {/if}
-      {#if !columnVirtualizationEnabled}
+      <!-- Pinning works with column virtualization on: the pinned columns render
+           as their own runs either side of the virtual window. -->
+      {#if menuColumnId}
         {@const menuPinSide = isColumnPinned(menuColumnId)}
         <div class="sv-grid-menu-sep"></div>
         <button

@@ -192,6 +192,16 @@ render:
 />
 ```
 
+`columnOverscan` is how many columns stay rendered ahead of a horizontal
+scroll at all times (default 3), with one kept behind it. The rendered
+columns don't move on every column boundary: they stay put while that
+many are left ahead, then move three at once. Each move updates every
+rendered row, whether one column comes in or four, so fewer, larger
+moves are less work, and the scroll frames in between change nothing.
+Right after a move, up to `columnOverscan + 2`
+columns are rendered ahead. Raise it if fast scrolling shows blank columns
+before they fill in; lower it for less work per scroll.
+
 See [examples/src/demos/06-large-dataset.svelte](../../../examples/src/demos/06-large-dataset.svelte)
 for a 100-column virtualized grid.
 

@@ -1,0 +1,81 @@
+/* Scale lab chrome. Scoped to .lab so it never reaches the rest of the gallery.
+   Colours read the grid's --sg-* tokens (the active gallery theme) with the
+   light-theme values as fallbacks; status colours are semantic. */
+.lab {
+  --lab-panel: var(--sg-bg, #ffffff);
+  --lab-fg: var(--sg-fg, #1c1917);
+  --lab-dim: var(--sg-muted, #78716c);
+  --lab-line: var(--sg-border, #e7e5e4);
+  --lab-soft: var(--sg-header-bg, #f5f5f4);
+  --lab-accent: var(--sg-accent, #ea580c);
+  --lab-bad: var(--sg-danger, #b91c1c);
+  --lab-bad-bg: color-mix(in srgb, var(--sg-danger, #b91c1c) 8%, transparent);
+  --lab-ok: #15803d;
+  --lab-warn: #a16207;
+
+  color: var(--lab-fg);
+  font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  max-width: 1240px;
+  padding: 4px 0 32px;
+}
+.lab *, .lab *::before, .lab *::after { box-sizing: border-box; }
+.lab code { font: 12.5px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+.lab h1 { font-size: 20px; margin: 0 0 4px; }
+.lab .lede { color: var(--lab-dim); margin: 0 0 16px; max-width: 80ch; }
+
+.lab .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--lab-line); margin-bottom: 16px; flex-wrap: wrap; }
+.lab .tabs button {
+  font: inherit; background: none; border: 0; padding: 8px 14px; cursor: pointer;
+  color: var(--lab-dim); border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.lab .tabs button[aria-selected='true'] { color: var(--lab-fg); border-bottom-color: var(--lab-accent); font-weight: 600; }
+
+.lab .panel { display: grid; gap: 14px; }
+.lab .panel .why { margin: 0; color: var(--lab-dim); max-width: 90ch; }
+.lab .panel .why b { color: var(--lab-fg); font-weight: 600; }
+
+.lab .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.lab .controls label { display: inline-flex; gap: 6px; align-items: center; color: var(--lab-dim); }
+.lab .controls select, .lab .controls input[type='number'] {
+  font: inherit; padding: 5px 8px; border-radius: 6px; border: 1px solid var(--lab-line);
+  background: var(--lab-panel); color: var(--lab-fg);
+}
+.lab .btn {
+  font: inherit; font-weight: 600; cursor: pointer; padding: 6px 14px; border-radius: 6px;
+  border: 1px solid var(--lab-line); background: var(--lab-panel); color: var(--lab-fg);
+}
+.lab .btn:disabled { opacity: 0.5; cursor: default; }
+.lab .btn:focus-visible, .lab .tabs button:focus-visible, .lab select:focus-visible { outline: 2px solid var(--lab-accent); outline-offset: 1px; }
+
+.lab .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+.lab .stat { background: var(--lab-panel); border: 1px solid var(--lab-line); border-radius: 8px; padding: 8px 12px; }
+.lab .stat .k { color: var(--lab-dim); font-size: 12px; }
+.lab .stat .v { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.lab .stat.bad { border-color: var(--lab-bad); background: var(--lab-bad-bg); }
+.lab .stat.bad .v { color: var(--lab-bad); }
+
+.lab table.results { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; background: var(--lab-panel); }
+.lab table.results th, .lab table.results td { border: 1px solid var(--lab-line); padding: 6px 10px; text-align: right; vertical-align: top; }
+.lab table.results th:first-child, .lab table.results td:first-child { text-align: left; }
+.lab table.results thead th { background: var(--lab-soft); font-size: 12px; color: var(--lab-dim); font-weight: 600; }
+.lab table.results td.bad { color: var(--lab-bad); font-weight: 600; }
+.lab table.results td.ok { color: var(--lab-ok); }
+.lab table.results td.note { text-align: left; color: var(--lab-dim); font-size: 12.5px; }
+
+/* The box takes its height from the grid inside it. Each grid sets its own
+   height with `containerHeight`; a fixed height here would clip the grid's
+   bottom edge and, with it, the scrollbars. */
+.lab .gridbox { border: 1px solid var(--lab-line); border-radius: 8px; overflow: hidden; background: var(--lab-panel); min-width: 0; }
+
+.lab .log {
+  max-height: 240px; overflow: auto; margin: 0; padding: 8px 10px; border: 1px solid var(--lab-line);
+  border-radius: 8px; background: var(--lab-panel); font: 12px/1.5 ui-monospace, Consolas, monospace; white-space: pre-wrap;
+}
+.lab .status { color: var(--lab-dim); min-height: 1.5em; }
+.lab .warn { color: var(--lab-warn); }
+.lab .err { color: var(--lab-bad); font-weight: 600; }
+
+@media (max-width: 640px) {
+  .lab .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

@@ -38,6 +38,9 @@ import {
   resolveMaxDomHeight,
 } from "./virtualization/scroll-scaling";
 import { buildPreMeasureItems } from "./virtualization/virtualizer";
+// Not on the public barrel: turns a lazy row list into a plain array before a full pass.
+import { denseRows } from "./core";
+import { isWindowedData } from "./windowed-brand";
 import { DEV } from "esm-env";
 import "./sv-grid-scrollbar";
 import {
@@ -150,6 +153,14 @@ import { untrack } from "svelte";
  * ~17.9M, Chrome/Safari ~33.5M) so it is always safe, if coarser than needed.
  */
 const MAX_DOM_SCROLL_HEIGHT_FALLBACK = 8_000_000;
+
+/** Columns the column window moves by during a horizontal scroll. */
+const COLUMN_WINDOW_STEP = 3;
+/** The default `columnOverscan`. A margin of 2 measured 6% less scroll work,
+ *  but the window at rest is `1 + columnOverscan` columns wide wherever the
+ *  viewport measures 0 px - jsdom, where apps test their grids - and 2 left
+ *  the fourth column out of tests that read it. */
+const COLUMN_OVERSCAN = 3;
 
 /**
  * The browser's actual maximum *scrollable* element height in CSS px. Browsers
@@ -300,6 +311,12 @@ export function createSvGridController<
    * Falls back to the historical literal for direct controller construction.
    */
   const gridDomId = domIdBase ?? "svgrid";
+
+  // Detect the browser's element-height cap now, while this grid has no DOM.
+  // The probe reads offsetHeight, which lays out the whole document; run
+  // mid-render it laid out this grid's first frame too, and on a wide grid
+  // that one layout was seconds. Cached, so later calls are free.
+  if (typeof document !== "undefined") getMaxDomScrollHeight();
 
   // Runtime option overrides set via the imperative api (`api.setOption(key, value)`).
   // Every controller read of a prop goes through the `props` proxy below (and the view
@@ -572,7 +589,11 @@ export function createSvGridController<
   /** When an edit starts: true selects all text, false places the caret at the end. */
   let editorSelectAll = true;
   /** Per-column width overrides set by the resize handles. */
-  let columnWidths = $state<Record<string, number>>({});
+  // Raw, like collapsedColumns and hiddenColumns below: every writer replaces
+  // the object, and a deep proxy allocated a reactive source for each column
+  // id anything asked about - every column, on every width rebuild, on a
+  // 10,000-column grid.
+  let columnWidths = $state.raw<Record<string, number>>({});
   /**
    * Columns folded to nothing, the way a sheet hides a column: the column
    * keeps its index, its cells and its width for later, and takes no room.
@@ -580,7 +601,7 @@ export function createSvGridController<
    * and shifts every index after it; a spreadsheet's formulas and formats
    * are keyed by index and could not follow that.
    */
-  let collapsedColumns = $state<Record<string, boolean>>({});
+  let collapsedColumns = $state.raw<Record<string, boolean>>({});
   function setColumnCollapsed(columnId: string, collapsed: boolean): void {
     if (!!collapsedColumns[columnId] === collapsed) return;
     if (collapsed) {
@@ -666,7 +687,10 @@ export function createSvGridController<
   let contextMenuPos = $state<MenuPosition>({ x: 0, y: 0 });
   // Editable comments: internal overlay (rowId -> columnId -> note) merged on
   // top of props.notes for immediate feedback, plus the open-editor state.
-  let noteOverrides = $state<Record<string, Record<string, string>>>({});
+  // Raw: writeNote replaces the object (and the row map) on every edit, and a
+  // deep proxy made every cell that asked about a note it does not have
+  // allocate a reactive source for that row id (0.3 ms of a far jump).
+  let noteOverrides = $state.raw<Record<string, Record<string, string>>>({});
   let commentEditFor = $state<{ rowId: string; columnId: string; x: number; y: number } | null>(null);
   let commentDraft = $state("");
   let valueFilters = $state<Record<string, Set<string>>>({});
@@ -727,18 +751,20 @@ export function createSvGridController<
     scrollHeight: 0,
     scrollWidth: 0,
   });
-  $effect(function scrollMetrics_e() {
-    scrollVersion;
-    viewportVersion;
-    virtualizer.version;
-    columnVirtualizerVersion;
+  // The four reads below need a clean layout. This effect runs right after a
+  // scroll flush has written the new rows and columns, so reading here forced
+  // a synchronous layout on every scroll frame (~8 ms a frame on a 10,000-
+  // column grid). Instead the read waits for the start of the next frame,
+  // when the browser has already laid out and painted; triggers in between
+  // collapse into that one read.
+  function readScrollMetrics() {
     const el = scrollContainer;
     if (!el) return;
     const scrollTop = el.scrollTop;
     const scrollLeft = el.scrollLeft;
     const scrollHeight = el.scrollHeight;
     const scrollWidth = el.scrollWidth;
-    const prev = untrack(() => scrollMetrics);
+    const prev = scrollMetrics;
     if (
       prev.scrollTop === scrollTop &&
       prev.scrollLeft === scrollLeft &&
@@ -748,6 +774,19 @@ export function createSvGridController<
       return;
     }
     scrollMetrics = { scrollTop, scrollLeft, scrollHeight, scrollWidth };
+  }
+  $effect(function scrollMetrics_e() {
+    scrollVersion;
+    viewportVersion;
+    virtualizer.version;
+    columnVirtualizerVersion;
+    if (!scrollContainer) return;
+    if (typeof requestAnimationFrame !== "function") {
+      untrack(readScrollMetrics);
+      return;
+    }
+    const raf = requestAnimationFrame(readScrollMetrics);
+    return () => cancelAnimationFrame(raf);
   });
   /** Vertical overflow from the virtualizer's authoritative total size,
    *  NOT from `scrollMetrics.scrollHeight` alone. Reading DOM dimensions
@@ -868,7 +907,7 @@ export function createSvGridController<
     resolveCols(props.columns),
   );
   // svelte-ignore state_referenced_locally
-  let hiddenColumns = $state<Record<string, boolean>>(
+  let hiddenColumns = $state.raw<Record<string, boolean>>(
     initialHiddenColumns(props.columns),
   );
   // The columns declared `visible: false` in the ColumnDefs. Kept separately so
@@ -918,7 +957,9 @@ export function createSvGridController<
     // A fresh array object, because `getRowModel` memoises on identity. The
     // elements are the same objects, so a row that did not move keeps its row
     // object and a field write still reaches its cell through the proxy.
-    internalData = length === 0 ? EMPTY_DATA : next.slice();
+    // Windowed data (a server row model's rows) is already a fresh array per
+    // change and copying it would read every one of its `length` entries.
+    internalData = length === 0 ? EMPTY_DATA : isWindowedData(next) ? next : next.slice();
     // When the consumer replaces `data` (e.g. a "Reset" button), drop any
     // accumulated cell-edit overrides - otherwise `getCellDisplayValue`
     // would keep returning the old edited values from `editedCellValues`
@@ -1217,16 +1258,28 @@ export function createSvGridController<
   }
 
   const allColumns = $derived.by(function allColumns_d() {
+    // Read the hidden set and the responsive flag once, not once per column.
+    // `hiddenColumns` is a deep proxy: asking it about an id it does not
+    // hold allocated a reactive source for that id, 10,000 of them on a
+    // 10,000-column mount, and `props.responsive` is a reactive read too.
+    // Iterating the proxy's own keys tracks additions with one dependency.
+    const hiddenIds = new Set<string>();
+    for (const id in hiddenColumns) if (hiddenColumns[id]) hiddenIds.add(id);
+    const responsiveOn = !!props.responsive;
+    // Derived values read once too: a read inside the filter is a tracked
+    // get per column.
+    const groupHidden = hiddenByGroupCollapse;
+    const foldedSources = autoGroupSpec.hiddenSourceIds;
     let raw = grid
       .getAllColumns()
       .filter(
         (column) =>
-          !hiddenColumns[column.id] &&
-          !hiddenByGroupCollapse[column.id] &&
-          !isHiddenByResponsive(column) &&
+          !hiddenIds.has(column.id) &&
+          !groupHidden[column.id] &&
+          !(responsiveOn && isHiddenByResponsive(column)) &&
           // In a column display mode the grouped columns are folded into the
           // auto column(s), so showing them too would just duplicate the value.
-          !autoGroupSpec.hiddenSourceIds.has(column.id),
+          !foldedSources.has(column.id),
       );
     // Auto-group columns lead, like a row header.
     if (autoGroupColumns.length) raw = [...autoGroupColumns, ...raw];
@@ -1319,6 +1372,10 @@ export function createSvGridController<
     groupId?: string;
     collapsible: boolean;
     collapsed: boolean;
+    /** Width of the unrendered columns before this cell when column
+     *  virtualization splits the window into pinned and centre runs; the
+     *  template draws a spacer of this width first. */
+    gapBefore?: number;
   };
   const groupHeaderRows = $derived.by(function groupHeaderRows_d() {
     const userCols: Array<ColumnDef<any, TData>> =
@@ -1509,6 +1566,10 @@ export function createSvGridController<
     const map = new Map<string, ColumnStat>();
     const formats = props.conditionalFormats;
     if (!formats?.length || !formatsNeedingStats(formats)) return map;
+    // Windowed data (a server row model) is mostly rows nobody has loaded;
+    // its range is the server's to know. Scanning it would read every row of
+    // the source. Give such formats `minValue` / `maxValue` instead.
+    if (isWindowedData(internalData)) return map;
     // `filtered` (default): every row that survives the filters, ignoring the
     // page slice - so a value keeps the same colour as you page through (#61).
     // `visible`: only the rows on screen, rescaling per page. `all`: the full
@@ -1653,16 +1714,32 @@ export function createSvGridController<
           ? compileCond(columnId, f.operator2 as FilterOperator, f.value2 ?? "", f.valueTo2)
           : null,
       }));
-      rows = rows.filter((row) =>
-        compiledMenuFilters.every(({ readValue, join, a, b }) => {
-          const cellValue = readValue(row);
-          const ra = a ? a(cellValue) : null;
-          const rb = b ? b(cellValue) : null;
-          if (ra === null) return rb ?? true;
-          if (rb === null) return ra;
-          return join === "OR" ? ra || rb : ra && rb;
-        }),
-      );
+      const only = compiledMenuFilters.length === 1 ? compiledMenuFilters[0]! : null;
+      if (only && !only.b && only.a) {
+        // One column, one condition - the common case. A plain loop over
+        // `test(read(row))`, without the per-row every() closure and the
+        // destructure: 1M rows spent most of their time in that wrapper.
+        const read = only.readValue;
+        const test = only.a;
+        const input = denseRows(rows);
+        const kept: Array<Row<TData>> = [];
+        for (let i = 0; i < input.length; i++) {
+          const row = input[i]!;
+          if (test(read(row))) kept.push(row);
+        }
+        rows = kept;
+      } else {
+        rows = denseRows(rows).filter((row) =>
+          compiledMenuFilters.every(({ readValue, join, a, b }) => {
+            const cellValue = readValue(row);
+            const ra = a ? a(cellValue) : null;
+            const rb = b ? b(cellValue) : null;
+            if (ra === null) return rb ?? true;
+            if (rb === null) return ra;
+            return join === "OR" ? ra || rb : ra && rb;
+          }),
+        );
+      }
     }
 
     const valueFilterEntries = Object.entries(valueFilters).filter(
@@ -1678,7 +1755,7 @@ export function createSvGridController<
         readValue: makeColumnReader(columnId),
         buckets: facetBucketsByColumn.get(columnId) ?? null,
       }));
-      rows = rows.filter((row) =>
+      rows = denseRows(rows).filter((row) =>
         bucketEntries.every(({ allowed, buckets, readValue }) => {
           const raw = readValue(row);
           if (buckets) {
@@ -1727,7 +1804,7 @@ export function createSvGridController<
       // `getCellValueByColumnId` read the same per-row values array, so the
       // answer is the same. The columns are the ones the rows were built with.
       const columnIds = grid.getAllColumns().map((c) => c.id);
-      rows = rows.filter((row) => {
+      rows = denseRows(rows).filter((row) => {
         for (const id of columnIds) {
           if (normalizeForFilter(String(row.getCellValueByColumnId(id) ?? ""), locale).includes(needle)) return true;
         }
@@ -1998,11 +2075,17 @@ export function createSvGridController<
   /** Whether the bar has anything to show: the model's count when it has one, else the loaded ticks. */
   const selectionBarVisible = $derived(selectionBarOn && selectionBarCount > 0);
 
-  // Forward selection changes to the consumer. Skips the very first invocation
-  // (the initial empty state) so consumers don't get a spurious callback on mount.
-  let lastSelectionSerialized = "";
+  // Forward selection changes to the consumer. The first run records the
+  // starting selection instead of reporting it, so consumers don't get a
+  // spurious callback on mount. (This was seeded with "", which never matched
+  // "{}", so the mount call this comment always promised to skip was made.)
+  let lastSelectionSerialized: string | null = null;
   $effect(() => {
     const serialized = JSON.stringify(rowSelectionState);
+    if (lastSelectionSerialized === null) {
+      lastSelectionSerialized = serialized;
+      return;
+    }
     if (serialized === lastSelectionSerialized) return;
     lastSelectionSerialized = serialized;
     const callback = props.onRowSelectionChange;
@@ -2021,19 +2104,27 @@ export function createSvGridController<
   // Forward cell-selection rectangle changes to the consumer. Same
   // dedupe pattern - fires only when the serialized rectangle changes
   // so consumers don't see spurious callbacks during re-renders.
-  let lastCellRangeSerialized = "";
-  $effect(() => {
-    // Every rectangle, the committed ones a Ctrl+click added and the
-    // active one last, the order getSelectionRects gives: a consumer's
-    // status bar and shading cover the whole selection, not only its last
-    // range. Depend on selectionRanges so a change to the committed set
-    // re-runs this too.
-    void selectionRanges;
-    const ranges: Array<[number, number, number, number]> = getSelectionRects().map(
+  // Every rectangle, the committed ones a Ctrl+click added and the active one
+  // last, the order getSelectionRects gives: a consumer's status bar and
+  // shading cover the whole selection, not only its last range.
+  const currentCellRanges = (): Array<[number, number, number, number]> =>
+    getSelectionRects().map(
       (r: { minRow: number; minCol: number; maxRow: number; maxCol: number }) =>
         [r.minRow, r.minCol, r.maxRow, r.maxCol] as [number, number, number, number],
     );
+  // `null` until the first run, which records the starting selection rather
+  // than reporting it: mounting is not a change. (Not seeded eagerly -
+  // getSelectionRects is bound further down this file.)
+  let lastCellRangeSerialized: string | null = null;
+  $effect(() => {
+    // Depend on selectionRanges so a change to the committed set re-runs this too.
+    void selectionRanges;
+    const ranges = currentCellRanges();
     const serialized = JSON.stringify(ranges);
+    if (lastCellRangeSerialized === null) {
+      lastCellRangeSerialized = serialized;
+      return;
+    }
     if (serialized === lastCellRangeSerialized) return;
     lastCellRangeSerialized = serialized;
     props.onCellSelectionChange?.(ranges);
@@ -2877,17 +2968,32 @@ export function createSvGridController<
 
   // Forward sort-clause changes to the consumer. Same dedupe pattern as the
   // selection callback above - fires only when the serialized clauses change.
-  let lastSortingSerialized = "";
+  // Seeded from the starting sort, so mounting is not reported as a change:
+  // it used to be, and a consumer that keeps the sort in the URL (reset the
+  // page on a new sort) navigated away from ?page=2 on every load, while a
+  // server data source refetched page 0 for nothing.
+  const currentSorting = () =>
+    (grid.getState().sorting ?? []) as Array<{ id: string; desc: boolean }>;
+  let lastSortingSerialized = JSON.stringify(untrack(currentSorting));
   $effect(() => {
     gridStateVersion;
-    const sorting = (grid.getState().sorting ?? []) as Array<{
-      id: string;
-      desc: boolean;
-    }>;
+    const sorting = currentSorting();
     const serialized = JSON.stringify(sorting);
     if (serialized === lastSortingSerialized) return;
     lastSortingSerialized = serialized;
     props.onSortingChange?.(sorting);
+  });
+
+  // A row model starts unsorted and takes no initial sort of its own. It
+  // learned `initialSorting` from the mount report above; now that there is
+  // none, hand the starting sort over directly - to each model the grid is
+  // given, and only when there is a sort to hand over.
+  $effect(() => {
+    const model = rawProps.rowModel;
+    untrack(() => {
+      const sorting = currentSorting();
+      if (model?.setSort && sorting.length) model.setSort(sorting);
+    });
   });
 
   // Forward filter-state changes to the consumer. Consolidates the three
@@ -2895,9 +3001,7 @@ export function createSvGridController<
   // facet checklists) into one shape so server-side consumers can build a
   // single query. Skipped entirely when no callback is registered to avoid
   // serializing on every keystroke.
-  let lastFiltersSerialized = "";
-  $effect(() => {
-    if (!props.onFiltersChange) return;
+  function currentFilters() {
     const menuEntries = Object.entries(filterMenuValues)
       .filter(([, f]) => {
         if (f.operator === "isBlank" || f.operator === "isNotBlank") return true;
@@ -2939,10 +3043,16 @@ export function createSvGridController<
           : entry,
       );
     }
-    const payload = {
+    return {
       global: globalFilter,
       columns: Array.from(merged.values()),
     };
+  }
+  // Seeded from the starting filters (empty), so mounting is not a change.
+  let lastFiltersSerialized = JSON.stringify(untrack(currentFilters));
+  $effect(() => {
+    if (!props.onFiltersChange) return;
+    const payload = currentFilters();
     const serialized = JSON.stringify(payload);
     if (serialized === lastFiltersSerialized) return;
     lastFiltersSerialized = serialized;
@@ -3124,6 +3234,34 @@ export function createSvGridController<
   const frozenRowList = $derived(frozenRowCount ? allRows.slice(0, frozenRowCount) : []);
   /** The merged cells, indexed; null (the usual case) costs nothing. */
   const mergeIndex = $derived(buildMergeIndex(props.mergedCells));
+  /**
+   * Rows laid out as flex lines rather than table rows (SvGrid.css,
+   * `.sv-grid-table-flex`): a change to one row's cells no longer lays out
+   * every other row. A merged cell spanning rows needs the table algorithm,
+   * so any such merge, or `rowLayout: 'table'`, keeps table layout.
+   */
+  const flexRows = $derived(
+    props.rowLayout !== "table" &&
+      !(props.mergedCells ?? []).some((m: { rowSpan?: number }) => (m.rowSpan ?? 1) > 1),
+  );
+  // The spreadsheetLayout action (a use: directive on a wrapper, outside this
+  // component) switches the table back to table layout on the DOM, with
+  // data-row-layout="table". Watch for it, so the shortcuts that only hold
+  // under flex rows (no right spacer) switch off with it.
+  let tableLayoutForced = $state(false);
+  $effect(() => {
+    const el = gridRootEl;
+    if (!el || typeof MutationObserver === "undefined") return;
+    const read = () => {
+      tableLayoutForced = el.getAttribute("data-row-layout") === "table";
+    };
+    read();
+    const observer = new MutationObserver(read);
+    observer.observe(el, { attributes: true, attributeFilter: ["data-row-layout"] });
+    return () => observer.disconnect();
+  });
+  /** Rows really are flex lines: flexRows, and no spreadsheetLayout forcing table layout. */
+  const flexLayoutActive = $derived(flexRows && !tableLayoutForced);
   const frozenBandHeight = $derived.by(() => {
     if (!frozenRowCount) return 0;
     rowResizeVersion;
@@ -3268,51 +3406,200 @@ export function createSvGridController<
     });
   };
 
+  /**
+   * The column window before any measurement: the columns that fit an
+   * estimated viewport (the measured width once known, else 1,920 px) plus the
+   * overscan, anchored at column 0. Deterministic, so a server render and the
+   * first client render agree. It used to be every column, which put 10,000
+   * columns' cells in the DOM for one frame and cost most of a wide mount.
+   */
+  const preMeasureColumnItems = () => {
+    const viewport = viewportWidth > 0 ? viewportWidth : 1920;
+    let extra = Math.max(props.columnOverscan ?? COLUMN_OVERSCAN, 0);
+    const items: Array<{ index: number; key: number; size: number; start: number; end: number }> = [];
+    let start = 0;
+    for (let i = 0; i < allColumns.length; i += 1) {
+      if (start >= viewport && extra-- <= 0) break;
+      const size = getColumnWidth(allColumns[i]!.id);
+      items.push({ index: i, key: i, size, start, end: start + size });
+      start += size;
+    }
+    return items;
+  };
+
   const renderedColumnItems = $derived.by(function renderedColumnItems_d() {
     if (!columnVirtualizationEnabled) return allColumnItems();
     // Column virtualization is ON by default and its virtualizer, like the row
     // one, only learns `count` from an effect - which never runs on a server.
-    // Without this the server emitted rows containing no data cells. Render the
-    // full set pre-measurement: it is what a crawler should see, it matches the
-    // first client render so hydration is clean, and the real window replaces
-    // it as soon as the measuring effect lands.
-    if (virtualColumns.length === 0 && allColumns.length > 0) return allColumnItems();
+    // Without this the server emitted rows containing no data cells. Before a
+    // measurement the window is the columns that fit an estimated viewport.
+    if (virtualColumns.length === 0 && allColumns.length > 0 && effectivePinning.left.length === 0 && effectivePinning.right.length === 0) {
+      return preMeasureColumnItems();
+    }
     // Pinned columns are position:sticky, so they only stay pinned while their
-    // cell is in the DOM. Plain column virtualization drops them once they leave
-    // the scroll window, and the pinned column vanishes. Because allColumns is
-    // ordered [pinnedLeft, unpinned, pinnedRight], we keep the rendered window
-    // CONTIGUOUS from the pinned-left prefix (index 0) through the pinned-right
-    // suffix (last index) whenever those exist. The pinned cells are then always
-    // rendered - the existing single-spacer layout positions everything, so no
-    // markup changes are needed. (Cost: with a pinned side, the columns between
-    // that edge and the window are also rendered; negligible for typical grids,
-    // and correctness beats shaving a few off-screen cells.)
-    const window = virtualColumns;
-    const hasLeft = effectivePinning.left.length > 0;
-    const hasRight = effectivePinning.right.length > 0;
-    if ((!hasLeft && !hasRight) || window.length === 0) return window;
+    // cell is in the DOM. allColumns is ordered [pinnedLeft, unpinned,
+    // pinnedRight], so the rendered set is three runs: the pinned-left prefix,
+    // the virtualizer's window, and the pinned-right suffix. Each run keeps its
+    // real offsets, and the templates draw a spacer cell for the columns
+    // between two runs (`gap` on `renderedColumns`), so the centre stays
+    // virtualized however many columns sit between the pinned edges.
+    const window = virtualColumns.length > 0 ? virtualColumns : preMeasureColumnItems();
+    const leftCount = effectivePinning.left.length;
+    const rightCount = effectivePinning.right.length;
+    if ((leftCount === 0 && rightCount === 0) || window.length === 0) return window;
 
-    const firstIdx = window[0]!.index;
-    const lastIdx = window[window.length - 1]!.index;
-    const startIndex = hasLeft ? 0 : firstIdx;
-    const endIndex = hasRight ? allColumns.length - 1 : lastIdx;
-    if (startIndex === firstIdx && endIndex === lastIdx) return window;
-
-    const items: Array<{ index: number; key: number; size: number; start: number; end: number }> = [];
+    const total = allColumns.length;
+    type PinnedItem = { index: number; key: number; size: number; start: number; end: number };
+    const items: Array<(typeof window)[number] | PinnedItem> = [];
+    // Pinned-left prefix: offsets from 0.
     let offset = 0;
-    for (let i = 0; i < startIndex; i += 1) offset += getColumnWidth(allColumns[i]!.id);
-    for (let i = startIndex; i <= endIndex; i += 1) {
+    for (let i = 0; i < Math.min(leftCount, total); i += 1) {
       const size = getColumnWidth(allColumns[i]!.id);
       items.push({ index: i, key: i, size, start: offset, end: offset + size });
       offset += size;
     }
+    // The window, minus any pinned column it already covers.
+    const firstRight = total - rightCount;
+    for (const item of window) {
+      if (item.index < leftCount || item.index >= firstRight) continue;
+      items.push(item);
+    }
+    // Pinned-right suffix: offsets measured back from the virtualizer's total,
+    // the same total the right spacer is computed against.
+    const right: PinnedItem[] = [];
+    let end = virtualColumnTotalSize;
+    if (end <= 0) {
+      // Not measured yet: the virtualizer has no total until its effect runs.
+      for (const column of allColumns) end += getColumnWidth(column.id);
+    }
+    for (let i = total - 1; i >= Math.max(firstRight, leftCount); i -= 1) {
+      const size = getColumnWidth(allColumns[i]!.id);
+      right.push({ index: i, key: i, size, start: end - size, end });
+      end -= size;
+    }
+    for (let i = right.length - 1; i >= 0; i -= 1) items.push(right[i]!);
     return items;
   });
-  const renderedColumns = $derived.by(() =>
-    renderedColumnItems
-      .map((item) => ({ item, column: allColumns[item.index] }))
-      .filter(hasRenderedColumn),
-  );
+  /**
+   * The rendered columns, each with `gap`: the width of the columns NOT
+   * rendered between it and the previous rendered column. Non-zero only at the
+   * seams of the pinned/centre runs above; every row template draws a spacer
+   * cell of that width before the column, so all rows keep the same slots.
+   */
+  // The entries handed out last time, by column id. A horizontal scroll moves
+  // the window by a column or two per frame; an entry whose column, offset,
+  // width and gap are unchanged is handed out again as the SAME object, so
+  // the keyed `{#each}` in every row leaves those cells alone and only the
+  // columns that entered the window are rendered. A fresh object per column
+  // per frame re-ran every visible cell's effects on every scroll frame.
+  let renderedColumnsPrev = new Map<string, { item: { index: number; start: number; size: number; end: number }; column: unknown; gap: number; key: string; pinned: "left" | "right" | null }>();
+  // The body cells' {#each} key. A virtualized window column is keyed by a
+  // slot, not by its id: a column keeps its slot (and so its <td>) while it
+  // stays in the window, and a column entering the window takes a slot a
+  // leaving column freed. A one-column scroll then hands one cell per row to
+  // the new column, and a thumb drag that jumps to columns far away updates
+  // every cell in place instead of destroying the window's cells and creating
+  // new ones (~800 at a time on a wide grid). There are as many slots as the
+  // widest window so far. Pinned columns, and every column without column
+  // virtualization, keep their id.
+  let columnSlots = new Map<string, number>();
+  let columnSlotOrder: number[] = [];
+  let columnSlotCount = 0;
+  const renderedColumns = $derived.by(() => {
+    const out: Array<{ item: (typeof renderedColumnItems)[number]; column: NonNullable<(typeof allColumns)[number]>; gap: number; key: string; pinned: "left" | "right" | null }> = [];
+    const next = new Map<string, (typeof out)[number]>();
+    const total = allColumns.length;
+    const leftCount = effectivePinning.left.length;
+    const firstRight = total - effectivePinning.right.length;
+    const inWindow = (index: number) => columnVirtualizationEnabled && index >= leftCount && index < firstRight;
+    // Window columns already holding a slot keep it; the others take the
+    // slots nobody kept, in the order those cells sat in the row, then new
+    // ones. In that order a jump to an unrelated window keeps the cells where
+    // they are, and a step moves only the cells that changed column: Svelte
+    // reorders keyed cells by key order.
+    const slots = new Map<string, number>();
+    const taken = new Set<number>();
+    for (const item of renderedColumnItems) {
+      const id = allColumns[item.index]?.id;
+      if (id === undefined || !inWindow(item.index)) continue;
+      const slot = columnSlots.get(id);
+      if (slot !== undefined) {
+        slots.set(id, slot);
+        taken.add(slot);
+      }
+    }
+    const free = columnSlotOrder.filter((slot) => !taken.has(slot));
+    let nextFree = 0;
+    const order: number[] = [];
+    for (const item of renderedColumnItems) {
+      const id = allColumns[item.index]?.id;
+      if (id === undefined || !inWindow(item.index)) continue;
+      let slot = slots.get(id);
+      if (slot === undefined) {
+        slot = nextFree < free.length ? free[nextFree++]! : columnSlotCount++;
+        slots.set(id, slot);
+      }
+      order.push(slot);
+    }
+    // Slots nobody took this time stay at the end, for the next window.
+    for (let i = nextFree; i < free.length; i += 1) order.push(free[i]!);
+    columnSlots = slots;
+    columnSlotOrder = order;
+    // What isColumnPinned answers, once per column here instead of once per
+    // cell in the template.
+    const pinnedLeft = new Set(effectivePinning.left);
+    const pinnedRight = new Set(effectivePinning.right);
+    let prevEnd: number | null = null;
+    for (const item of renderedColumnItems) {
+      const column = allColumns[item.index];
+      if (column === undefined) continue;
+      let gap = 0;
+      if (prevEnd !== null && item.start - prevEnd >= 0.5) gap = item.start - prevEnd;
+      prevEnd = item.end;
+      const slot = slots.get(column.id);
+      const key = slot !== undefined ? `s:${slot}` : `c:${column.id}`;
+      const pinned: "left" | "right" | null = pinnedLeft.has(column.id) ? "left" : pinnedRight.has(column.id) ? "right" : null;
+      const prev = renderedColumnsPrev.get(column.id) as (typeof out)[number] | undefined;
+      const entry =
+        prev &&
+        prev.column === column &&
+        prev.gap === gap &&
+        prev.key === key &&
+        prev.pinned === pinned &&
+        prev.item.index === item.index &&
+        prev.item.start === item.start &&
+        prev.item.size === item.size
+          ? prev
+          : { item, column, gap, key, pinned };
+      next.set(column.id, entry);
+      out.push(entry);
+    }
+    renderedColumnsPrev = next;
+    return out;
+  });
+  /**
+   * The contiguous runs of rendered column indices, for whoever must not span
+   * across a seam: a merged cell or a column-group header is clipped to the
+   * run it starts in. One run unless pinned columns split the window.
+   */
+  const renderedColumnRuns = $derived.by(function renderedColumnRuns_d() {
+    const runs: Array<{ first: number; last: number; gap: number }> = [];
+    for (const rendered of renderedColumns) {
+      const i = rendered.item.index;
+      const run = runs[runs.length - 1];
+      if (run && i === run.last + 1 && rendered.gap === 0) run.last = i;
+      else runs.push({ first: i, last: i, gap: runs.length === 0 ? 0 : rendered.gap });
+    }
+    return runs;
+  });
+  /** The run holding column `colIndex`, or the whole window if none does. */
+  function columnRunOf(colIndex: number): { firstCol: number; lastCol: number } {
+    const runs = renderedColumnRuns;
+    for (const run of runs) {
+      if (colIndex >= run.first && colIndex <= run.last) return { firstCol: run.first, lastCol: run.last };
+    }
+    return { firstCol: runs[0]?.first ?? 0, lastCol: runs[runs.length - 1]?.last ?? -1 };
+  }
   const totalColumnWidth = $derived.by(function totalColumnWidth_d() {
     if (columnVirtualizationEnabled) return virtualColumnTotalSize;
     let total = 0;
@@ -3361,22 +3648,34 @@ export function createSvGridController<
   const groupHeaderRowsWindowed = $derived.by(function groupHeaderRowsWindowed_d() {
     const base = groupHeaderRows;
     if (!columnVirtualizationEnabled || base.length === 0) return base;
-    const items = renderedColumnItems;
-    if (items.length === 0) return base;
-    const winFirst = items[0]!.index;
-    const winLast = items[items.length - 1]!.index; // inclusive
+    const runs = renderedColumnRuns;
+    if (runs.length === 0) return base;
+    // Clip each cell to every run it overlaps. With pinned columns the window
+    // is several runs, so a group spanning a seam becomes one cell per run,
+    // and the first cell of each later run carries the seam's gap.
     return base.map((row) => {
       const cells: GroupHeaderCell[] = [];
-      for (const cell of row.cells) {
-        const start = cell.firstLeafIndex;
-        const end = start + cell.colSpan; // exclusive
-        const from = Math.max(start, winFirst);
-        const to = Math.min(end, winLast + 1);
-        if (to <= from) continue; // cell is entirely outside the window
-        let widthPx = 0;
-        for (let i = from; i < to; i += 1) widthPx += getColumnWidth(allColumns[i]!.id);
-        cells.push({ ...cell, colSpan: to - from, widthPx, firstLeafIndex: from });
-      }
+      runs.forEach((run, runIndex) => {
+        let first = true;
+        for (const cell of row.cells) {
+          const start = cell.firstLeafIndex;
+          const end = start + cell.colSpan; // exclusive
+          const from = Math.max(start, run.first);
+          const to = Math.min(end, run.last + 1);
+          if (to <= from) continue; // cell is entirely outside this run
+          let widthPx = 0;
+          for (let i = from; i < to; i += 1) widthPx += getColumnWidth(allColumns[i]!.id);
+          cells.push({
+            ...cell,
+            key: runIndex === 0 ? cell.key : `${cell.key}@${runIndex}`,
+            colSpan: to - from,
+            widthPx,
+            firstLeafIndex: from,
+            gapBefore: first && runIndex > 0 ? run.gap : 0,
+          });
+          first = false;
+        }
+      });
       return { ...row, cells };
     });
   });
@@ -3762,10 +4061,14 @@ export function createSvGridController<
     // instead of `scrollVersion` so this effect does NOT re-run on every
     // scroll event - which would otherwise re-call setOptions hundreds of
     // times during a drag.
-    viewportVersion;
-    const viewportHeight =
+    // The measured height comes from the `viewportHeight` derived, which
+    // reads clientHeight only when viewportVersion moves. Reading it here
+    // directly did so on every run of this effect - each filter, sort or
+    // data change - in the middle of the DOM update, forcing a layout the
+    // frame then repeated (6 ms of a 100k-row filter).
+    const measuredHeight =
       typeof props.containerHeight === "string"
-        ? (scrollContainer?.clientHeight ?? 520)
+        ? (scrollContainer ? viewportHeight : 520)
         : (props.containerHeight ?? 520);
     const rh = props.rowHeight;
     // Auto height: read measured sizes, falling back to the fixed rowHeight as
@@ -3794,7 +4097,7 @@ export function createSvGridController<
       count: allRows.length,
       estimateSize,
       overscan: props.overscan ?? 8,
-      viewportHeight,
+      viewportHeight: measuredHeight,
     });
   });
 
@@ -3844,28 +4147,76 @@ export function createSvGridController<
 
   $effect(() => {
     // Reading columnWidths here registers it as a reactive dependency so
-    // the effect re-runs when the user resizes a column. We pass a fresh
-    // closure each run; the virtualizer sees a new function reference and
-    // re-derives its layout from the current per-column widths.
-    columnWidths;
-    collapsedColumns;
+    // the effect re-runs when the user resizes a column. The widths are read
+    // once into an array and the size function reads that: passing a size
+    // function makes the virtualizer rebuild every column's offset, and
+    // resolving each width through getColumnWidth inside that rebuild cost
+    // several reactive reads per column - 10,000 times on a wide grid.
+    // getColumnWidth's rules, with the maps read once: collapsed is 0, a
+    // fitted width wins unless the user resized the column, then the user's
+    // width, and otherwise getColumnBaseWidth (the definition or the default,
+    // exactly as the cells are sized).
+    const resized = columnWidths;
+    const collapsed = collapsedColumns;
+    const fitted = fittedColumnWidths;
+    const widths = new Float64Array(allColumns.length);
+    for (let i = 0; i < widths.length; i++) {
+      const id = allColumns[i]!.id;
+      const own = resized[id];
+      widths[i] = collapsed[id]
+        ? 0
+        : own !== undefined
+          ? own
+          : (fitted?.[id] ?? getColumnBaseWidth(id));
+    }
+    // `columnOverscan` columns stay rendered ahead of a scroll at all times.
+    // The window does not move on every column boundary: it stays put while
+    // that many columns are left ahead, then moves COLUMN_WINDOW_STEP
+    // columns at once (overscanMin). A move costs about the same whatever
+    // the number of columns entering, in every rendered row, so moving four
+    // at a time did the same scroll for about half the work (1,000 columns,
+    // 120 px per frame, interleaved A/B), and the frames in between change
+    // nothing. Three, not four: a move is one longer frame, and three gave
+    // the shortest longest frame of a wheel scroll (production build: 8.0 ms
+    // against 10.2 at four and 9.4 at two) for about the same total work.
+    const minAhead = Math.max(props.columnOverscan ?? COLUMN_OVERSCAN, 0);
     columnVirtualizer.setOptions({
-      count: allColumns.length,
-      estimateSize: (index: number) => {
-        const column = allColumns[index];
-        return column ? getColumnWidth(column.id) : (props.columnWidth ?? 140);
-      },
-      overscan: props.columnOverscan ?? 3,
-      viewportHeight: viewportWidth,
+      count: widths.length,
+      estimateSize: (index: number) => widths[index] ?? (props.columnWidth ?? 140),
+      overscan: minAhead + COLUMN_WINDOW_STEP - 1,
+      // One column behind the scroll: the columns the scroll is leaving were
+      // just passed, and a reversal needs one at most for the frame before
+      // the window turns around.
+      overscanBehind: Math.min(1, minAhead),
+      overscanMin: minAhead,
     });
   });
-
+  // The viewport on its own: a width change re-windows the columns without
+  // rebuilding their offsets.
   $effect(() => {
-    if (!scrollContainer) return;
+    columnVirtualizer.setViewportWidth(viewportWidth);
+  });
+
+  // Re-sync the virtualizers to the scroll position. This effect re-runs on
+  // anything domToLogicalRowOffset reads (the row count among them), and
+  // reading scrollTop / scrollLeft in the middle of that update forced a
+  // layout the frame then did again (5 ms of a 100k-row filter). The live
+  // position is read once per container; after that the last position the
+  // scroll handler or a programmatic scroll recorded (pendingScrollTop /
+  // pendingScrollLeft) is the same number without the layout.
+  let scrollSyncedContainer: HTMLDivElement | null = null;
+  $effect(() => {
+    const el = scrollContainer;
+    if (!el) return;
+    if (el !== scrollSyncedContainer) {
+      scrollSyncedContainer = el;
+      pendingScrollTop = el.scrollTop;
+      pendingScrollLeft = el.scrollLeft;
+    }
     if (rowVirtualizationEnabled)
-      virtualizer.setScrollOffset(domToLogicalRowOffset(scrollContainer.scrollTop));
+      virtualizer.setScrollOffset(domToLogicalRowOffset(pendingScrollTop));
     if (columnVirtualizationEnabled)
-      columnVirtualizer.setHorizontalOffset(scrollContainer.scrollLeft);
+      columnVirtualizer.setHorizontalOffset(pendingScrollLeft);
   });
 
   // Re-arms once the user scrolls away from the bottom, so a long lazy-load
@@ -4515,6 +4866,8 @@ export function createSvGridController<
     get columnWidths() { return columnWidths; },
     get collapsedColumns() { return collapsedColumns; },
     get mergeIndex() { return mergeIndex; },
+    get flexRows() { return flexRows; },
+    get flexLayoutActive() { return flexLayoutActive; },
     get setColumnCollapsed() { return setColumnCollapsed; },
     set columnWidths(v) { columnWidths = v as never; },
     get MIN_COLUMN_WIDTH() { return MIN_COLUMN_WIDTH; },
@@ -4984,6 +5337,8 @@ export function createSvGridController<
     get renderedColumnItems() { return renderedColumnItems; },
     get hasRenderedColumn() { return hasRenderedColumn; },
     get renderedColumns() { return renderedColumns; },
+    get renderedColumnRuns() { return renderedColumnRuns; },
+    get columnRunOf() { return columnRunOf; },
     get totalColumnWidth() { return totalColumnWidth; },
     get hasHorizontalOverflow() { return hasHorizontalOverflow; },
     get columnWindowStart() { return columnWindowStart; },

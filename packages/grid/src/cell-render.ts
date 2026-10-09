@@ -29,6 +29,7 @@ import {
 } from "./SvGrid.helpers";
 import {
   getPinnedCellValue,
+  isGroupRow,
 } from "./cell-values";
 import { parseEditorValue } from "./editors/cell-editors";
 
@@ -36,13 +37,34 @@ export function createCellRender<
   TFeatures extends TableFeatures = TableFeatures,
   TData extends RowData = RowData,
 >(ctx: any) {
+  // `colorScale` and `dataBar` are scaled to the data rows. A group, footer or
+  // grand-total row carries a subtotal on a different scale (a sum of a million
+  // rows against a range drawn from one), so those rows keep only the rule and
+  // icon formats. Filtered once per formats array.
+  let rowLevelFormatsFor: unknown = null;
+  let rowLevelFormats: ReadonlyArray<any> = [];
+  function aggregateRowFormats(formats: ReadonlyArray<any>): ReadonlyArray<any> {
+    if (formats !== rowLevelFormatsFor) {
+      rowLevelFormats = formats.filter((f) => f.type !== "colorScale" && f.type !== "dataBar");
+      rowLevelFormatsFor = formats;
+    }
+    return rowLevelFormats;
+  }
+  function isAggregateRow(row: Row<TData>): boolean {
+    const kind = (row.original as { __group?: { kind?: string } } | null)?.__group?.kind;
+    if (kind) return kind !== "leaf" && kind !== "detail";
+    return isGroupRow(row);
+  }
+
   function cellConditionalFormat(
     row: Row<TData>,
     column: Column<TData>,
     value: unknown,
   ): ResolvedCellFormat | null {
-    const formats = ctx.props.conditionalFormats;
-    if (!formats?.length) return null;
+    const all = ctx.props.conditionalFormats;
+    if (!all?.length) return null;
+    const formats = isAggregateRow(row) ? aggregateRowFormats(all) : all;
+    if (!formats.length) return null;
     return resolveCellFormat(
       value,
       row.original,

@@ -580,6 +580,35 @@ describe('SvGrid - external sort / filter', () => {
     }
   })
 
+  it('mounting is not a change: no sort, filter or selection callback fires on mount', async () => {
+    // These used to fire once on mount with the starting state. A consumer
+    // that keeps the sort in the URL and resets the page on a new sort then
+    // navigated from ?page=2 back to page 1 on every load.
+    const calls: string[] = []
+    const { api, destroy } = await mountGrid({
+      externalSort: true,
+      externalFilter: true,
+      initialSorting: [{ id: 'age', desc: true }],
+      onSortingChange: () => calls.push('sort'),
+      onFiltersChange: () => calls.push('filters'),
+      onRowSelectionChange: () => calls.push('rows'),
+      onCellSelectionChange: () => calls.push('cells'),
+    })
+    try {
+      await tick()
+      await tick()
+      expect(calls).toEqual([])
+      // ...and a real change still reports, once each.
+      api.setSort('age', 'asc')
+      api.setFilter('team', { operator: 'contains', value: 'Research' })
+      await tick()
+      expect(calls.filter((c) => c === 'sort')).toHaveLength(1)
+      expect(calls.filter((c) => c === 'filters')).toHaveLength(1)
+    } finally {
+      destroy()
+    }
+  })
+
   it('externalFilter + onFiltersChange fires when a filter is set', async () => {
     let calls = 0
     const { api, destroy } = await mountGrid({

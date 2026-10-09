@@ -1851,13 +1851,17 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * `virtualization`. **On by default**, which is what makes a 100-column grid
    * scroll smoothly.
    *
-   * It recycles column DOM nodes, so it cannot coexist with sticky pinned
-   * columns - turn it off if you need pinning to survive horizontal scrolling.
+   * Pinned columns stay rendered while it is on: the pinned-left and
+   * pinned-right columns are drawn as their own runs either side of the
+   * virtual window, so a wide grid with pinned edges still renders only the
+   * columns in view plus the pinned ones.
    */
   columnVirtualization?: boolean;
   /**
-   * Extra columns rendered either side of the viewport when
-   * `columnVirtualization` is on. Defaults to 3.
+   * Columns kept rendered beyond the viewport when `columnVirtualization`
+   * is on: this many ahead of a horizontal scroll at all times, one behind
+   * it. The rendered columns move three at a time, so right after a move up
+   * to `columnOverscan + 2` are rendered ahead. Defaults to 3.
    */
   columnOverscan?: number;
   /**
@@ -1870,9 +1874,7 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * column id (matches `ColumnDef.field` when no explicit id is set).
    * The internal pinning state is seeded once at mount; user-driven
    * pinning via the column menu still works and overrides this default.
-   * Requires `columnVirtualization={false}` to be visible in the menu
-   * UI (sticky positioning can't co-exist with column virtualization
-   * since the virtualizer recycles DOM nodes).
+   * Works with column virtualization on (the default).
    */
   initialColumnPinning?: {
     left?: ReadonlyArray<string>;
@@ -2302,6 +2304,12 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * triangles by threshold), and `rule` (apply a style when a predicate
    * matches). Scope a format to specific columns with `columns: [...]`,
    * or omit it to apply to every column. Later entries win on conflict.
+   *
+   * `colorScale` and `dataBar` apply to data rows only: group, footer and
+   * grand-total rows carry subtotals on a different scale, so they keep the
+   * `rule` and `iconSet` formats and drop the scaled ones. On a server row
+   * model, give scaled formats `minValue` / `maxValue`; the grid does not
+   * scan rows it has not loaded for a range.
    */
   conditionalFormats?: ReadonlyArray<ConditionalFormat<TData>>;
   /**
@@ -2600,6 +2608,15 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * through the column's `editable`.
    */
   mergedCells?: ReadonlyArray<{ rowIndex: number; colIndex: number; rowSpan: number; colSpan: number }>;
+  /**
+   * How rows are laid out. `'flex'` (the default) draws each row as a line
+   * of fixed-width cells, so adding or removing cells in one row - what a
+   * horizontal scroll does every frame - lays out that row only. `'table'`
+   * uses the HTML table algorithm, which re-lays every row on such a change
+   * but can draw a merged cell spanning rows; the grid switches to it on its
+   * own when `mergedCells` has one.
+   */
+  rowLayout?: "flex" | "table";
   /**
    * Rows to pin to the BOTTOM of the grid - rendered below the regular
    * rows and sticky-positioned (sticks to the bottom of the viewport

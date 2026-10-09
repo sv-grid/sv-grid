@@ -1,0 +1,32 @@
+{
+  "description": "A Svelte 5 data grid on up to 10,000,000 rows and 10,000 columns. The grid runs on the Enterprise server row model; a Web Worker plays the database, sorting with an exact radix sort, filtering, grouping with counts and sums, and applying edits over a generated dataset, then sending back only the ids of the rows on screen. The page builds just those rows, so the grid's memory and the work per scroll do not grow with the row count. Choose the size, sort, filter, group, search, edit a cell, or run the built-in benchmark; every figure on the page is measured live.",
+  "keywords": [
+    "svelte data grid 10 million rows",
+    "svelte grid large dataset performance",
+    "svelte data grid 10000 columns",
+    "svelte server side row model big data",
+    "fast svelte table virtualization"
+  ],
+  "faq": [
+    {
+      "question": "Does the browser hold 10 million rows?",
+      "answer": "No. The grid holds the rows on screen and a bounded cache of blocks around them. A Web Worker answers each request the way a server would, so the page's memory stays about the same at 10,000 rows and at 10,000,000. In a production app the worker would be your database or API."
+    },
+    {
+      "question": "How are sort, filter and group done at that size?",
+      "answer": "In the worker. Every sortable column maps to a small integer key, so a sort is an exact LSD radix sort over a typed array of row ids; a filter compiles to a lookup table where it can and makes one pass; grouping counts and sums in one pass. The result is cached, so scrolling through a sorted view reads slices of an array that already exists."
+    },
+    {
+      "question": "What happens when I edit a cell?",
+      "answer": "The edit goes to the worker as an overlay on the generated value. Cached sorted and filtered views that depend on the edited column are patched in place with a binary search and a move, and group totals are adjusted, so the edit does not trigger a re-sort of every row."
+    },
+    {
+      "question": "How does the grid stay fast with 10,000 columns?",
+      "answer": "Column virtualization renders only the columns in view, and the pinned Name and Total columns render as their own runs either side of that window, so a row carries a few dozen cells whatever the column count. The Cells in the DOM tile shows the live count."
+    },
+    {
+      "question": "Which parts need @svgrid/enterprise?",
+      "answer": "The server row model that the grid runs on. The grid itself, column virtualization, pinning, formatting and the data bars are in the MIT @svgrid/grid package; the worker and its dataset are this demo's own code."
+    }
+  ]
+}

@@ -386,10 +386,12 @@ export function resolveCellFormat<TData = unknown>(
  * on the same row (`compareColumn`) - those read the row, not column stats.
  */
 export function formatNeedsStats(f: ConditionalFormat<any>): boolean {
-  return (
-    (f.type === 'colorScale' || f.type === 'dataBar') &&
-    !('compareColumn' in f && f.compareColumn)
-  )
+  if (f.type !== 'colorScale' && f.type !== 'dataBar') return false
+  if ('compareColumn' in f && f.compareColumn) return false
+  // Both ends fixed in absolute units: the column's range is never read, so
+  // there is nothing to scan (and on a server-backed grid no way to scan it).
+  if (f.minValue != null && f.maxValue != null && (f.bounds ?? 'absolute') === 'absolute') return false
+  return true
 }
 
 export function formatsNeedingStats(

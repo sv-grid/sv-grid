@@ -7,6 +7,7 @@
    * (`api.exec('sort-rows')`, `api.exec('filter-rows')`), nothing else turned
    * on. SVAR virtualizes rows and columns by default, so no flag is needed.
    */
+  import { flushSync } from 'svelte'
   import { Grid, Willow } from 'wx-svelte-grid'
 
   type Row = Record<string, unknown>
@@ -32,6 +33,11 @@
   let lastSort: { field: string; desc: boolean } | null = null
   handle.setRows = (next) => {
     data = next
+    // Hand SVAR the new data before re-sorting. The prop reaches the grid on
+    // Svelte's next flush, so sorting right after the assignment sorted the
+    // OLD rows and the new ones then arrived unsorted: the order was lost and
+    // the tick never paid for a sort.
+    flushSync()
     if (lastSort) api?.exec('sort-rows', { key: lastSort.field, order: lastSort.desc ? 'desc' : 'asc' })
   }
 

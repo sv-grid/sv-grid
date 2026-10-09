@@ -57,7 +57,7 @@ The render component. One `<SvGrid>` element per grid instance.
 | `virtualization`       | `boolean` | `true`  | Row virtualization.                                |
 | `columnVirtualization` | `boolean` | `true`  | Column virtualization. Disable for sticky-column pinning. |
 | `overscan`             | `number`  | `8`     | Rows kept rendered above + below the viewport.     |
-| `columnOverscan`       | `number`  | `3`     | Columns kept rendered left + right of the viewport. |
+| `columnOverscan`       | `number`  | `3`     | Columns always kept rendered ahead of a horizontal scroll (one behind). The columns move three at a time, so up to `columnOverscan + 2` are rendered ahead right after a move. |
 
 ## Filter UI
 

@@ -126,7 +126,7 @@
         {#each visible as row (row.id)}
           <tr class="tt-row" style="height:{rowHeight}px">
             {#each fields as f (f)}
-              <td style="width:140px;padding:0 8px;overflow:hidden;white-space:nowrap">{row.original[f]}</td>
+              <td data-col-id={f} style="width:140px;padding:0 8px;overflow:hidden;white-space:nowrap">{row.original[f]}</td>
             {/each}
           </tr>
         {/each}

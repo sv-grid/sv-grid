@@ -181,8 +181,10 @@ column is the outermost.
 
 ## Gotchas
 
-- Pinning **plus** column virtualization is supported, but the pinned
-  columns are always rendered (they never enter the virtualized window).
+- Pinning **plus** column virtualization is supported. The pinned columns
+  are always rendered, as their own runs either side of the virtual window;
+  the columns between them stay virtualized, so a wide grid with pinned
+  edges renders only the columns in view plus the pinned ones.
 - If you have so many pinned columns that they exceed the viewport width
   there is no horizontal scrollbar within the pinned regions - the user
   loses access to the non-pinned middle. Pin only "anchor" columns

@@ -581,7 +581,9 @@ export function createServerDataSource<TData>(
    */
   function emitFromCache(): void {
     if (!cache || disposed) return
-    const rows = cache.rows()
+    // Windowed: the grid reads only the rows it shows, so a block landing
+    // costs the same at 100M rows as at 10K.
+    const rows = cache.windowedRows()
     state.rows = rows
     state.rowCount = cache.rowCount()
     state.lastRowKnown = cache.lastRowKnown()
