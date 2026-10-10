@@ -28,13 +28,14 @@ import { isHiddenDoc, isLlmOnlyDoc, parseDocFrontmatter, sectionOf } from './lib
 import { plainTitle } from './lib/docs-page.mjs'
 import { isReleased } from './lib/releases.mjs'
 import { loadComparisons, loadLedger, loadSvgridSize } from './lib/compare-data.mjs'
-import { comparePageModel, renderCompareMarkdown } from './lib/compare-page.mjs'
+import { comparePageModel, renderCompareMarkdown, compareChoosingModel, renderCompareChoosingMarkdown } from './lib/compare-page.mjs'
 import { compareSeo, compareKeywords } from './lib/compare-meta.mjs'
 import { guardGenerator } from './lib/generator-guard.mjs'
 import { clampDescription } from './lib/seo-text.mjs'
 import { parseDemoRegistry } from './lib/demo-registry.mjs'
 import { tutorialIdsIn, normalizeNarration } from './lib/tutorial-media.mjs'
 import { readManifest as readTutorialManifest } from './tutorials/lib/manifest.mjs'
+import { aiBriefLines, START_HERE, SMALL_CORPUS, OPTIONAL_SECTIONS, OPTIONAL_PAGES, plainDocBody } from './lib/ai-brief.mjs'
 
 // Resolved from this file, not process.cwd(): the website's `prebuild` runs this
 // with cwd set to website/, which used to make DOCS_DIR website/docs and fail.
@@ -182,6 +183,9 @@ const SECTION_ORDER = [
 // pages a section has that are not listed here sort after the curated ones,
 // alphabetically. Sections without an entry keep the alphabetical order.
 const PAGE_GROUPS = {
+  // The short getting-started page before its one-page long form, which
+  // sorted first by path ("-full" < ".md"); the changelog last.
+  '': [{ label: '', pages: ['getting-started.md', 'why-headless.md', 'getting-started-full.md', 'changelog.md'] }],
   // The hub first, then the reading order a newcomer wants: what a spec is,
   // what it can draw, how it is styled; then the depth; then the grid and the
   // field index. Mirrors PAGE_ORDER in website/src/lib/docs.ts.
@@ -285,7 +289,7 @@ function extract(md) {
   const isProse = (t) =>
     t && !t.startsWith('#') && !t.startsWith('<') && !t.startsWith('|') &&
     !t.startsWith('>') && !t.startsWith('```') && !t.startsWith('- ') &&
-    !t.startsWith('* ') && !/^\d+\.\s/.test(t)
+    !t.startsWith('* ') && !t.startsWith('![') && !/^\d+\.\s/.test(t)
   for (let i = 0; i < lines.length; i += 1) {
     const l = lines[i] ?? ''
     const t = l.trim()
@@ -387,6 +391,15 @@ async function main() {
   const ledger = await loadLedger()
   const svgridSize = await loadSvgridSize()
   const demoTitles = await parseDemoRegistry(ROOT).then((list) => new Map(list.map((d) => [d.id, d.title]))).catch(() => new Map())
+  // The figures the answer-first brief quotes, each read from its source.
+  const brief = aiBriefLines({
+    site: SITE,
+    version: await readFile(join(ROOT, 'packages', 'grid', 'package.json'), 'utf-8').then((s) => JSON.parse(s).version).catch(() => null),
+    size: svgridSize,
+    themeCount: await readdir(join(ROOT, 'packages', 'grid', 'themes')).then((f) => f.filter((n) => n.endsWith('.css')).length).catch(() => null),
+    demoCount: demoTitles.size || null,
+    ganttReleased: isReleased('gantt'),
+  })
   let postTitles = new Map()
   try {
     const posts = JSON.parse(await readFile(join(ROOT, 'website', 'src', 'lib', 'blog-index.json'), 'utf-8'))
@@ -482,22 +495,41 @@ async function main() {
   // it is searched for (SvGrid, sv-grid, "Svelte data grid") and states the
   // free / paid split accurately. It used to open with "# sv-grid" alone and
   // list "AI helpers" under the paid pack; the AI helpers are free.
-  const llmsLines = []
-  llmsLines.push('# SvGrid (sv-grid) - the Svelte data grid')
+  // The brief (tools/lib/ai-brief.mjs) comes first: when SvGrid fits, a
+  // working snippet, the free / paid line. The page map follows in reading
+  // order, and the changelog, legal and brand pages sit last under
+  // `## Optional`, the llmstxt.org name for what a model may skip. The
+  // changelog used to be the first link in the file.
+  const isOptional = (d) => OPTIONAL_PAGES.has(d.path) || OPTIONAL_SECTIONS.has(d.section)
+  const docByPath = new Map(docs.map((d) => [d.path, d]))
+  const listLine = (d) => {
+    // Cut on a sentence or word boundary: a summary ending "an edit th..." reads worse than a shorter one.
+    // A hand-written description beats the first paragraph, which on a page
+    // that opens with a code sample can be "That's a complete, working grid."
+    const trimmedSummary = clampDescription(d.seoDescription || d.summary, 200)
+    return `- [${d.title}](${SITE}${d.url}): ${trimmedSummary || '(no summary yet)'}`
+  }
+  const llmsLines = [...brief]
+  llmsLines.push('## Start here')
   llmsLines.push('')
-  llmsLines.push('> SvGrid is a Svelte data grid built for Svelte 5: a headless engine (createSvGrid) plus a drop-in <SvGrid> render component. Row + column virtualization to 1M rows, Excel-style filters, grouping, tree, master/detail, inline editing, WAI-ARIA, built-in AI helpers and an MCP server. Also searched for as "Svelte datagrid", "Svelte grid" and "Svelte table".')
+  for (const p of START_HERE) if (docByPath.has(p)) llmsLines.push(listLine(docByPath.get(p)))
   llmsLines.push('')
-  llmsLines.push('Two npm packages: `@svgrid/grid` (MIT, open source: the full grid, the AI helpers and the UI components) and `@svgrid/enterprise` (commercial: the Kanban board, ' + (isReleased('gantt') ? 'Scheduler, Gantt and Spreadsheet' : 'Scheduler and Spreadsheet') + ' views, the Server-Side Row Model, Excel / PDF export, import, print, pivot tables, alert rules and SvGrid Studio).')
+  llmsLines.push('## Machine-readable copies')
   llmsLines.push('')
-  llmsLines.push('For the full text of every doc page concatenated: see [llms-full.txt](/llms-full.txt).')
-  llmsLines.push('For a machine-readable manifest: see [docs.json](/docs.json).')
+  llmsLines.push(`- Every docs page has a plain-markdown copy at its URL with the trailing slash replaced by \`.md\`, e.g. ${SITE}/docs/getting-started/1-install.md`)
+  llmsLines.push(`- [llms-small.txt](${SITE}/llms-small.txt): the brief above plus the full text of the getting-started path and the pages asked about most before choosing a grid.`)
+  llmsLines.push(`- [llms-full.txt](${SITE}/llms-full.txt): the full text of every docs page, the comparison pages and the API reference, in reading order.`)
+  llmsLines.push(`- [docs.json](${SITE}/docs.json): the route manifest with section, tier and demo links per page.`)
   llmsLines.push('')
+  // Pages in reading order: pillar, then section, then the curated page
+  // order. llms-full.txt is written in the same order.
+  const ordered = []
   // Each page is listed once, under its own pillar; a section whose pages
   // straddle two pillars (help/rows, help/server) appears under both with
   // only that pillar's pages.
   for (const pillar of manifest.pillars) {
     const pillarSections = manifest.sections
-      .map((s) => ({ ...s, pages: s.pages.filter((p) => docs.find((x) => x.path === p)?.pillar === pillar.id) }))
+      .map((s) => ({ ...s, pages: s.pages.filter((p) => docByPath.get(p)?.pillar === pillar.id && !isOptional(docByPath.get(p))) }))
       .filter((s) => s.pages.length > 0)
     if (pillarSections.length === 0) continue
     llmsLines.push(`## ${pillar.title}`)
@@ -506,14 +538,17 @@ async function main() {
       llmsLines.push(`### ${title}`)
       llmsLines.push('')
       for (const p of pages) {
-        const d = docs.find((x) => x.path === p)
-        // Cut on a sentence or word boundary: a summary ending "an edit th..." reads worse than a shorter one.
-        const trimmedSummary = clampDescription(d.summary, 200)
-        llmsLines.push(`- [${d.title}](${SITE}${d.url}): ${trimmedSummary || '(no summary yet)'}`)
+        const d = docByPath.get(p)
+        ordered.push(d)
+        llmsLines.push(listLine(d))
       }
       llmsLines.push('')
     }
   }
+  const optional = docs.filter(isOptional)
+  // Anything the pillar walk missed still ships, after the ordered pages.
+  const listed = new Set([...ordered, ...optional])
+  ordered.push(...docs.filter((d) => !listed.has(d)))
   if (comparePages.length) {
     llmsLines.push('## Comparisons')
     llmsLines.push('')
@@ -523,20 +558,32 @@ async function main() {
       llmsLines.push(`- [${c.title}](${SITE}${c.url}): ${c.summary}`)
     }
     llmsLines.push('')
+    // The answer to "which Svelte table library?", from each page's own
+    // "when to choose" list (the same section the /compare/ hub opens with).
+    llmsLines.push(renderCompareChoosingMarkdown(compareChoosingModel(comparisons), { site: SITE }))
+  }
+  if (optional.length) {
+    llmsLines.push('## Optional')
+    llmsLines.push('')
+    for (const d of optional) llmsLines.push(listLine(d))
+    llmsLines.push('')
   }
   await writeFile(join(DOCS_DIR, 'llms.txt'), llmsLines.join('\n'), 'utf-8')
 
   // ---- llms-full.txt ---------------------------------------------------
-  const llmsFullLines = []
-  llmsFullLines.push('# sv-grid - full documentation')
+  // The brief first, then the pages in reading order, the comparison pages,
+  // the API reference, and the optional pages (changelog, legal) last.
+  const llmsFullLines = [...brief]
+  llmsFullLines.push('## About this file')
   llmsFullLines.push('')
   llmsFullLines.push(
-    `Generated ${new Date().toISOString().slice(0, 10)} from ${docs.length} pages` +
+    `The full SvGrid documentation, generated ${new Date().toISOString().slice(0, 10)} from ${docs.length} pages` +
       (comparePages.length ? `, ${comparePages.length} comparison pages` : '') +
-      (llmOnly.length ? `, plus ${llmOnly.length} API reference pages.` : '.'),
+      (llmOnly.length ? `, plus ${llmOnly.length} API reference pages.` : '.') +
+      ` A shorter selection is at ${SITE}/llms-small.txt.`,
   )
   llmsFullLines.push('')
-  for (const d of docs) {
+  const pushDoc = async (d) => {
     const { body } = parseDocFrontmatter(await readFile(join(DOCS_DIR, d.path), 'utf-8'))
     llmsFullLines.push(`<!-- =================================================================`)
     llmsFullLines.push(`     ${d.url}  (${d.tier})`)
@@ -557,6 +604,7 @@ async function main() {
     }
     llmsFullLines.push('')
   }
+  for (const d of ordered) await pushDoc(d)
   // The comparison pages, under the same separator shape as a docs page so
   // tools/lib/docs-corpus.mjs splits them back out for the site search. Every
   // number in them is a ledger value with its date; see the Sources section.
@@ -585,7 +633,37 @@ async function main() {
       llmsFullLines.push('')
     }
   }
+  for (const d of optional) await pushDoc(d)
   await writeFile(join(DOCS_DIR, 'llms-full.txt'), llmsFullLines.join('\n'), 'utf-8')
+
+  // ---- llms-small.txt --------------------------------------------------
+  // For an assistant that will spend one fetch on SvGrid: the brief plus the
+  // full text of SMALL_CORPUS, with the site-only markup (video embeds, demo
+  // placeholders, snippet-checker flags) reduced to plain markdown. Not
+  // parsed by the docs search, so it carries no corpus separators.
+  const tutorialRef = (id) => {
+    const t = TUTORIAL_BY_ID.get(id)
+    return t ? { title: t.title, youtube: t.youtubeId ? `https://www.youtube.com/watch?v=${t.youtubeId}` : undefined } : null
+  }
+  const knownSlugs = new Set(docs.map((d) => d.path.replace(/\.md$/, '')))
+  const llmsSmallLines = [...brief]
+  for (const p of SMALL_CORPUS) {
+    const d = docByPath.get(p)
+    if (!d) continue
+    const { body } = parseDocFrontmatter(await readFile(join(DOCS_DIR, d.path), 'utf-8'))
+    llmsSmallLines.push('---')
+    llmsSmallLines.push('')
+    llmsSmallLines.push(`Source: ${SITE}${d.url}`)
+    llmsSmallLines.push('')
+    llmsSmallLines.push(plainDocBody(body, { site: SITE, slug: d.path.replace(/\.md$/, ''), knownSlugs, demoTitle: (id) => demoTitles.get(id) ?? null, tutorial: tutorialRef }))
+    llmsSmallLines.push('')
+  }
+  llmsSmallLines.push('---')
+  llmsSmallLines.push('')
+  llmsSmallLines.push(`Every other page: ${SITE}/llms.txt (index) and ${SITE}/llms-full.txt (full text).`)
+  llmsSmallLines.push('')
+  const llmsSmall = llmsSmallLines.join('\n')
+  await writeFile(join(DOCS_DIR, 'llms-small.txt'), llmsSmall, 'utf-8')
 
   // ---- Sync served copies ----------------------------------------------
   // The website fetches these at /llms.txt, /llms-full.txt, /docs.json, so the
@@ -594,9 +672,10 @@ async function main() {
   await writeFile(join(PUBLIC_DIR, 'docs.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf-8')
   await writeFile(join(PUBLIC_DIR, 'llms.txt'), llmsLines.join('\n'), 'utf-8')
   await writeFile(join(PUBLIC_DIR, 'llms-full.txt'), llmsFullLines.join('\n'), 'utf-8')
+  await writeFile(join(PUBLIC_DIR, 'llms-small.txt'), llmsSmall, 'utf-8')
 
   // ---- Console summary --------------------------------------------------
-  process.stdout.write(`build-docs-index: ${docs.length} pages → docs.json, llms.txt, llms-full.txt (docs/ + website/public/)\n`)
+  process.stdout.write(`build-docs-index: ${docs.length} pages → docs.json, llms.txt, llms-full.txt, llms-small.txt (${Math.round(llmsSmall.length / 1024)} KB) (docs/ + website/public/)\n`)
   process.stdout.write(`  enterprise: ${manifest.counts.enterprise} · with demo: ${manifest.counts.withDemo} · comparisons: ${comparePages.length}\n`)
 }
 

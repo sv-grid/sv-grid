@@ -1,5 +1,5 @@
 import { test, expect, describe } from 'vitest'
-import addon from './index.mjs'
+import addon, { AGENTS_HEADING, AGENTS_SECTION, withAgentsSection } from './index.mjs'
 
 /** Minimal stand-in for the pieces of the sv workspace the add-on touches. */
 function makeWorkspace(overrides = {}) {
@@ -149,5 +149,27 @@ describe('@svgrid/sv add-on', () => {
       directory: { lib: 'src/lib' },
     })
     expect(ent.join(' ')).toContain('license key')
+  })
+
+  test('writes the tables section into a new AGENTS.md when asked', async () => {
+    const w = makeWorkspace({ options: { demo: false, enterprise: false, agents: true } })
+    await addon.run(w.ctx)
+    expect(w.files['AGENTS.md']).toContain(AGENTS_HEADING)
+    expect(w.files['AGENTS.md']).toContain('@svgrid/grid')
+    expect(w.files['AGENTS.md']).toContain('sortable filterable editable pageable')
+  })
+
+  test('appends to an existing AGENTS.md, once', () => {
+    const mine = '# My rules\n\nUse pnpm.\n'
+    const once = withAgentsSection(mine)
+    expect(once.startsWith(mine.trimEnd())).toBe(true)
+    expect(once).toContain(AGENTS_SECTION)
+    expect(withAgentsSection(once)).toBe(false)
+  })
+
+  test('leaves AGENTS.md alone when the option is off', async () => {
+    const w = makeWorkspace({ options: { demo: false, enterprise: false, agents: false } })
+    await addon.run(w.ctx)
+    expect(w.files['AGENTS.md']).toBeUndefined()
   })
 })

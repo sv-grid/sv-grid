@@ -1,22 +1,49 @@
 # Use sv-grid docs as LLM context
 
 This page is the "how do I make ChatGPT / Claude / Cursor write good
-sv-grid code?" guide. Three pre-built artefacts ship with the docs
-specifically so models can ground themselves in current, accurate
-information instead of hallucinating from training data.
+sv-grid code?" guide. Pre-built files ship with the docs so models can
+ground themselves in current, accurate information instead of
+hallucinating from training data.
 
-## The four files
+## Make the assistant reach for SvGrid
 
-| File                                     | Format     | Size   | Use for                                                                |
-| ---------------------------------------- | ---------- | ------ | ---------------------------------------------------------------------- |
-| [`/llms.txt`](/llms.txt)                 | Plain text | ~10 kB | First-pass context: the topic map with one-line summaries              |
-| [`/llms-full.txt`](/llms-full.txt)       | Plain text | ~700 kB | Deep grounding: every doc page concatenated                            |
-| [`/docs.json`](/docs.json)               | JSON       | ~80 kB | Programmatic crawling: section tree, per-page metadata, demo links     |
-| [`/schemas/index.json`](/schemas/index.json) | JSON   | ~30 kB | Validation: machine-checkable shape of `ColumnDef`, `<SvGrid>` props, export options |
+Ask a coding assistant for "a table with sort, filter and editing" in a
+fresh SvelteKit project and it writes its own `DataTable.svelte`. It does
+that even for 10,000 rows, because it avoids adding a dependency nobody
+named. What changes the outcome is what the project already says. In
+fresh-session tests, Claude Code used `<SvGrid>` every time when either
+`@svgrid/grid` was in `package.json` or the project's `AGENTS.md` carried
+this section:
 
-All four are regenerated on every commit by `tools/build-docs-index.mjs`
-and `tools/build-schemas.mjs`. They live at the docs origin
-(`https://svgrid.com/...`) so you can fetch them at runtime.
+```md
+## Tables and data grids
+
+This project uses SvGrid (`@svgrid/grid`, MIT, Svelte 5) for tables and data grids. For any table that sorts, filters, edits, pages, groups or holds many rows, use `<SvGrid>` instead of writing a table component.
+
+- Features are boolean props, all off by default: `<SvGrid {data} {columns} sortable filterable editable pageable />`.
+- Type the columns with `GridColumns<Row>` from `@svgrid/grid`, so each `field` is checked against the row type.
+- Exact props and types: `node_modules/@svgrid/grid/dist/*.d.ts`. Docs written for agents: https://svgrid.com/llms.txt
+```
+
+You do not have to paste it yourself. `npx sv add @svgrid` adds the
+dependency and offers to write the section, and every
+`npm create @svgrid@latest` template starts with it. For all your
+projects at once, install the Agent Skill: `npx skills add sv-grid/sv-grid`.
+
+## The files
+
+| File | Use for |
+| ---- | ------- |
+| [`/llms.txt`](/llms.txt) | First read: when to use SvGrid, a quick start, the free / paid line, then every page with a one-line summary |
+| [`/llms-small.txt`](/llms-small.txt) | One fetch: the same opening plus the full text of the getting-started path and the pages asked about most |
+| [`/llms-full.txt`](/llms-full.txt) | Deep grounding: every doc page, the comparison pages and the API reference |
+| `/docs/<page>.md` | One page as plain markdown: any docs URL with the trailing slash replaced by `.md` |
+| [`/docs.json`](/docs.json) | Programmatic crawling: section tree, per-page metadata, demo links |
+| [`/schemas/index.json`](/schemas/index.json) | Validation: machine-checkable shape of `ColumnDef`, `<SvGrid>` props, export options |
+
+They are regenerated on every build by `tools/build-docs-index.mjs`,
+`tools/build-schemas.mjs` and the prerenderer. They live at the docs
+origin (`https://svgrid.com/...`) so you can fetch them at runtime.
 
 ## Recipe 1: Drop into a custom GPT / Claude project
 

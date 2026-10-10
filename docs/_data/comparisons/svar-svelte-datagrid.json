@@ -353,7 +353,7 @@
   "whenToChooseCompetitor": [
     "You want a fully free grid with print included and no paid tier at all.",
     "You ship to React and Vue as well as Svelte and want one grid across them.",
-    "A smaller bundle matters more than the features above.",
+    "A smaller bundle matters more than grouping with aggregation, master/detail, range editing and the other features SvGrid adds.",
     "You are already adopting the wider SVAR suite: Gantt, Calendar, Kanban, File Manager."
   ],
   "migration": {

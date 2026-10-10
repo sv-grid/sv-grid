@@ -1,3 +1,7 @@
+---
+seoDescription: A first Svelte data grid in one component - a typed rows array, a GridColumns list and <SvGrid>, with keyboard navigation and ARIA roles out of the box.
+---
+
 # 2. First grid in 60 seconds
 
 > Step 2 of 6 · [← Install](./1-install.md) · [Next: Data and columns →](./3-data-and-columns.md)

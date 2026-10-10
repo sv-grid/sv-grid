@@ -856,8 +856,8 @@
     "date": "2026-09-03"
   },
   "/compare/": {
-    "hash": "8c61a0b43121",
-    "date": "2026-09-12"
+    "hash": "61df3208afb5",
+    "date": "2026-10-10"
   },
   "/compare/ag-grid/": {
     "hash": "d0963abcf30a",
@@ -936,8 +936,8 @@
     "date": "2026-09-03"
   },
   "/demos/": {
-    "hash": "4e03f365ebe3",
-    "date": "2026-10-08"
+    "hash": "50f1584eb984",
+    "date": "2026-10-10"
   },
   "/demos/00-trading-desk/": {
     "hash": "42bf6d0ba9c5",
@@ -976,12 +976,12 @@
     "date": "2026-09-15"
   },
   "/demos/09-server-side/": {
-    "hash": "d0d24441facb",
-    "date": "2026-09-20"
+    "hash": "fa044635b761",
+    "date": "2026-10-10"
   },
   "/demos/10-custom-cells-and-themes/": {
-    "hash": "d7883172f760",
-    "date": "2026-09-29"
+    "hash": "9465fd5bf9be",
+    "date": "2026-10-10"
   },
   "/demos/100-anomaly-highlights/": {
     "hash": "651828182df2",
@@ -2120,8 +2120,8 @@
     "date": "2026-09-10"
   },
   "/demos/41-healthcare-emr/": {
-    "hash": "d54acb1170d9",
-    "date": "2026-09-15"
+    "hash": "243b2fb932e6",
+    "date": "2026-10-10"
   },
   "/demos/410-typography-display/": {
     "hash": "a9cb8e185ca7",
@@ -2468,8 +2468,8 @@
     "date": "2026-10-06"
   },
   "/demos/503-big-data/": {
-    "hash": "3bc7d3619db1",
-    "date": "2026-10-07"
+    "hash": "55429f41bb0c",
+    "date": "2026-10-10"
   },
   "/demos/51-ai-assistant/": {
     "hash": "1841dc00af34",
@@ -2572,8 +2572,8 @@
     "date": "2026-10-06"
   },
   "/demos/78-million-rows/": {
-    "hash": "245cb6e9c6ba",
-    "date": "2026-09-10"
+    "hash": "e6c24eaac581",
+    "date": "2026-10-10"
   },
   "/demos/79-loading-from-rest/": {
     "hash": "486e82063a6b",
@@ -2660,8 +2660,8 @@
     "date": "2026-09-10"
   },
   "/docs/": {
-    "hash": "3a4ed0cf62f6",
-    "date": "2026-10-08"
+    "hash": "330a67d7f612",
+    "date": "2026-10-10"
   },
   "/docs/changelog/": {
     "hash": "4f7fd90c38b0",
@@ -2744,8 +2744,8 @@
     "date": "2026-08-12"
   },
   "/docs/enterprise/studio/code-generation/": {
-    "hash": "c502d5c95e1e",
-    "date": "2026-08-22"
+    "hash": "64d37db82bb2",
+    "date": "2026-10-10"
   },
   "/docs/enterprise/studio/concepts/": {
     "hash": "829b1ce386ff",
@@ -2792,8 +2792,8 @@
     "date": "2026-07-22"
   },
   "/docs/enterprise/studio/in-memory/": {
-    "hash": "fe5cec026d60",
-    "date": "2026-07-22"
+    "hash": "22331263a04e",
+    "date": "2026-10-10"
   },
   "/docs/enterprise/studio/launch/": {
     "hash": "beec5ac65049",
@@ -2888,8 +2888,8 @@
     "date": "2026-09-21"
   },
   "/docs/getting-started-full/": {
-    "hash": "d1e97b05747f",
-    "date": "2026-10-08"
+    "hash": "d40f4dcef147",
+    "date": "2026-10-10"
   },
   "/docs/getting-started/": {
     "hash": "16f29d3c3cce",
@@ -2900,8 +2900,8 @@
     "date": "2026-10-06"
   },
   "/docs/getting-started/2-first-grid/": {
-    "hash": "e5b05432fb79",
-    "date": "2026-10-06"
+    "hash": "5214b6f623ed",
+    "date": "2026-10-10"
   },
   "/docs/getting-started/3-data-and-columns/": {
     "hash": "b58d48f595d0",
@@ -3132,8 +3132,8 @@
     "date": "2026-10-08"
   },
   "/docs/help/columns/column-sizing/": {
-    "hash": "987399776079",
-    "date": "2026-09-15"
+    "hash": "3ab20019ac7d",
+    "date": "2026-10-10"
   },
   "/docs/help/columns/column-spanning/": {
     "hash": "fae4dc9dae1e",
@@ -3308,8 +3308,8 @@
     "date": "2026-10-08"
   },
   "/docs/help/headless/virtualization/": {
-    "hash": "735cfa44d980",
-    "date": "2026-10-08"
+    "hash": "de877a001e21",
+    "date": "2026-10-10"
   },
   "/docs/help/i18n-rtl/": {
     "hash": "4a1e072fef24",
@@ -3500,8 +3500,8 @@
     "date": "2026-10-06"
   },
   "/docs/help/rows/styling-rows/": {
-    "hash": "2d501d731ea9",
-    "date": "2026-10-08"
+    "hash": "658bbd4a6c81",
+    "date": "2026-10-10"
   },
   "/docs/help/rows/transactions/": {
     "hash": "f17ecdfa5897",
@@ -3564,8 +3564,8 @@
     "date": "2026-09-20"
   },
   "/docs/help/server/server-row-model/": {
-    "hash": "eb05377afc8b",
-    "date": "2026-10-05"
+    "hash": "121f01d68769",
+    "date": "2026-10-10"
   },
   "/docs/help/server/server-selection/": {
     "hash": "a233bb2ca49b",
@@ -4068,20 +4068,20 @@
     "date": "2026-06-16"
   },
   "/docs/help/web-components/": {
-    "hash": "4a1014e05cf1",
-    "date": "2026-10-08"
+    "hash": "821d28f08bd1",
+    "date": "2026-10-10"
   },
   "/docs/help/web-components/angular/": {
-    "hash": "902be2b1ff27",
-    "date": "2026-10-08"
+    "hash": "e0dcdb458bb5",
+    "date": "2026-10-10"
   },
   "/docs/help/web-components/enterprise/": {
     "hash": "f145fad29842",
     "date": "2026-10-08"
   },
   "/docs/help/web-components/frameworks/": {
-    "hash": "31e7d9abdfc9",
-    "date": "2026-10-08"
+    "hash": "48f33d1260fd",
+    "date": "2026-10-10"
   },
   "/docs/help/web-components/limitations/": {
     "hash": "8b0c26a09095",
@@ -4092,12 +4092,12 @@
     "date": "2026-09-05"
   },
   "/docs/help/web-components/react/": {
-    "hash": "aa36d1c1f974",
-    "date": "2026-10-08"
+    "hash": "204a405232eb",
+    "date": "2026-10-10"
   },
   "/docs/help/web-components/shadow-dom/": {
-    "hash": "529ec8bb27e6",
-    "date": "2026-09-29"
+    "hash": "2afcd95718ed",
+    "date": "2026-10-10"
   },
   "/docs/help/web-components/sv-chart/": {
     "hash": "b3ac7854b3fc",
@@ -4116,8 +4116,8 @@
     "date": "2026-09-29"
   },
   "/docs/help/web-components/vue/": {
-    "hash": "1d8b66313e2f",
-    "date": "2026-10-08"
+    "hash": "17a73b7adfb1",
+    "date": "2026-10-10"
   },
   "/docs/legal/EULA/": {
     "hash": "75c181def31f",
@@ -4324,8 +4324,8 @@
     "date": "2026-10-08"
   },
   "/svelte/data-table/": {
-    "hash": "b875e26876ad",
-    "date": "2026-10-08"
+    "hash": "b7b538abc6fe",
+    "date": "2026-10-10"
   },
   "/svelte/date-picker/": {
     "hash": "6f9b182744c7",

@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-10-10T07:41:06.523Z",
+  "generatedAt": "2026-10-10T15:53:53.797Z",
   "counts": {
     "pages": 406,
     "enterprise": 88,
@@ -78,11 +78,12 @@
       "title": "Overview",
       "pillar": "grid",
       "pages": [
-        "changelog.md",
-        "getting-started-full.md",
         "getting-started.md",
-        "why-headless.md"
-      ]
+        "why-headless.md",
+        "getting-started-full.md",
+        "changelog.md"
+      ],
+      "groups": []
     },
     {
       "id": "getting-started",
@@ -1594,13 +1595,13 @@
     {
       "path": "getting-started-full.md",
       "url": "/docs/getting-started-full/",
-      "title": "Getting Started with SvGrid",
+      "title": "Getting started: the complete guide on one page",
       "summary": "SvGrid is a modern, production-ready data grid for Svelte 5 - a headless core engine paired with a Svelte render component (<SvGrid>). It scales from a 10-row read-only table to a virtualized 100,000-row, 100-column editing surface with grouping, multi-column filtering, server-side data, and full keyboard and screen-reader support.",
       "section": "",
       "pillar": "grid",
       "tier": "community",
-      "words": 3603,
-      "lastUpdated": "2026-09-03",
+      "words": 3607,
+      "lastUpdated": "2026-10-10",
       "demoIds": []
     },
     {
@@ -1637,12 +1638,13 @@
       "path": "getting-started/2-first-grid.md",
       "url": "/docs/getting-started/2-first-grid/",
       "title": "2. First grid in 60 seconds",
-      "summary": "!Anatomy of the minimal example: a data rows array and a columns ColumnDef array flow into a SvGrid element that renders a small table with a header row and three body rows.",
+      "summary": "That's a complete, working grid.",
+      "seoDescription": "A first Svelte data grid in one component - a typed rows array, a GridColumns list and <SvGrid>, with keyboard navigation and ARIA roles out of the box.",
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
       "words": 888,
-      "lastUpdated": "2026-10-06",
+      "lastUpdated": "2026-10-10",
       "demoIds": [
         "01-quick-start"
       ],
@@ -1749,8 +1751,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 2262,
-      "lastUpdated": "2026-10-06",
+      "words": 2289,
+      "lastUpdated": "2026-10-10",
       "demoIds": [],
       "tutorialIds": [
         "learn-9-sveltekit"
@@ -3315,12 +3317,12 @@
       "path": "help/llm-grounding.md",
       "url": "/docs/help/llm-grounding/",
       "title": "Use sv-grid docs as LLM context",
-      "summary": "This page is the \"how do I make ChatGPT / Claude / Cursor write good sv-grid code?\" guide. Three pre-built artefacts ship with the docs specifically so models can ground themselves in current, accurate information instead of hallucinating from training data.",
+      "summary": "This page is the \"how do I make ChatGPT / Claude / Cursor write good sv-grid code?\" guide. Pre-built files ship with the docs so models can ground themselves in current, accurate information instead of hallucinating from training data.",
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 848,
-      "lastUpdated": "2026-09-07",
+      "words": 1084,
+      "lastUpdated": "2026-10-10",
       "demoIds": []
     },
     {

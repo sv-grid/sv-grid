@@ -333,6 +333,42 @@ function resolveTemplateDir(key) {
   return null
 }
 
+/**
+ * The AGENTS.md section a scaffolded project starts with. Without it a coding
+ * assistant asked for "a table with sort, filter and editing" writes its own
+ * table component even in a project that depends on @svgrid/grid less
+ * obviously (a template's grid lives on one route); with it, it reaches for
+ * <SvGrid>. Same text as AGENTS_SECTION in packages/svgrid-sv/index.mjs;
+ * tools/scaffold-templates.test.ts fails when the two drift.
+ */
+const AGENTS_HEADING = '## Tables and data grids'
+const AGENTS_SECTION = `${AGENTS_HEADING}
+
+This project uses SvGrid (\`@svgrid/grid\`, MIT, Svelte 5) for tables and data grids. For any table that sorts, filters, edits, pages, groups or holds many rows, use \`<SvGrid>\` instead of writing a table component.
+
+- Features are boolean props, all off by default: \`<SvGrid {data} {columns} sortable filterable editable pageable />\`.
+- Type the columns with \`GridColumns<Row>\` from \`@svgrid/grid\`, so each \`field\` is checked against the row type.
+- Exact props and types: \`node_modules/@svgrid/grid/dist/*.d.ts\`. Docs written for agents: https://svgrid.com/llms.txt
+`
+// The headless template renders its own <table> on purpose, so it points the
+// assistant at the engine instead of the component.
+const AGENTS_SECTION_HEADLESS = `${AGENTS_HEADING}
+
+This project uses the SvGrid engine (\`createSvGrid\` from \`@svgrid/grid\`, MIT, Svelte 5) under its own table markup. For new tables, reuse that engine for sorting, filtering, paging and selection rather than writing that logic by hand; \`<SvGrid>\` from the same package is the ready-made component if a table does not need custom markup.
+
+- Exact props and types: \`node_modules/@svgrid/grid/dist/*.d.ts\`. Docs written for agents: https://svgrid.com/llms.txt
+`
+
+/** Add the section to the project's AGENTS.md, keeping any the template shipped. */
+async function writeAgentsNotes(destDir, template) {
+  const path = join(destDir, 'AGENTS.md')
+  let content = ''
+  try { content = await readFile(path, 'utf8') } catch { /* none yet */ }
+  if (content.includes(AGENTS_HEADING)) return
+  const head = content.trim() ? content.replace(/\s*$/, '\n\n') : '# AGENTS.md\n\nNotes for AI coding assistants working in this project.\n\n'
+  await writeFile(path, head + (template === 'headless' ? AGENTS_SECTION_HEADLESS : AGENTS_SECTION))
+}
+
 async function copyTemplate(srcDir, destDir) {
   // Match only on the path RELATIVE to the template root. The absolute `src`
   // includes the install location (e.g. `.../node_modules/@svgrid/create/...`),
@@ -460,6 +496,7 @@ async function main() {
   await applyMode(destDir, themeChoice)
   await applyModeMinimal(destDir, themeChoice)
   await applyModeSvelteKit(destDir, themeChoice)
+  await writeAgentsNotes(destDir, template)
 
   // 5. Next steps.
   const rel = isAbsolute(target) || target.startsWith('.') ? target : `./${target}`

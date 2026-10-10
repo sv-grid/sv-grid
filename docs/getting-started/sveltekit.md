@@ -49,10 +49,12 @@ npx sv add @svgrid
 
 `sv add` resolves `@svgrid` to `@svgrid/sv`, adds `@svgrid/grid` to your
 dependencies, and - if you say yes to the demo - writes a working grid to
-`src/routes/svgrid-demo/+page.svelte`. To skip the prompts:
+`src/routes/svgrid-demo/+page.svelte`. It also offers to add a "Tables and data grids"
+section to `AGENTS.md`, so a coding assistant asked for a table uses `<SvGrid>`
+rather than writing one. To skip the prompts:
 
 ```bash
-npx sv add "@svgrid=demo:yes+enterprise:no" --no-download-check
+npx sv add "@svgrid=demo:yes+agents:yes+enterprise:no" --no-download-check
 ```
 
 Two things worth knowing. `sv add` must run **inside** a project - in an empty
@@ -237,7 +239,7 @@ with a theme picker already wired in. The files below are what it contains.
 ```bash
 npx sv create people --template minimal --types ts
 cd people
-npx sv add "@svgrid=demo:no+enterprise:no" --no-download-check
+npx sv add "@svgrid=demo:no+agents:yes+enterprise:no" --no-download-check
 npm install
 ```
 

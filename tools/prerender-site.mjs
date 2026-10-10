@@ -30,7 +30,7 @@ import { parseDemoRegistry, parseRenamedDemos, readDemoSource, readDemoMeta, EDI
 import { isHiddenDoc, parseDocFrontmatter, docSeoTitle, sectionOf, SECTION_TITLES } from './lib/doc-meta.mjs'
 import { isReleased, resolveSolution } from './lib/releases.mjs'
 import { compareSeo, compareKeywords, compareJsonLd, COMPARE_HUB } from './lib/compare-meta.mjs'
-import { comparePageModel, renderCompareHtml, compareHubModel, renderCompareHubHtml } from './lib/compare-page.mjs'
+import { comparePageModel, renderCompareHtml, compareHubModel, renderCompareHubHtml, compareChoosingModel, renderCompareChoosingHtml } from './lib/compare-page.mjs'
 import { loadComparisons, loadLedger, loadSvgridSize } from './lib/compare-data.mjs'
 import { buildTagHubs, postTags, tagSlug, tagLabel } from './lib/blog-tags.mjs'
 import { prerenderedRoutes, ROUTE_SEO } from './lib/route-seo.mjs'
@@ -39,6 +39,7 @@ import { productGraph } from './lib/product-ld.mjs'
 import { HOME_GUIDES } from './lib/home-guides.mjs'
 import { tutorialIdsIn, videoObjectLd, tutorialBlock } from './lib/tutorial-media.mjs'
 import { readManifest as readTutorialManifest } from './tutorials/lib/manifest.mjs'
+import { plainDocBody } from './lib/ai-brief.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..')
@@ -277,10 +278,15 @@ function extract(md) {
   let title = ''
   let summary = ''
   let seenTitle = false
+  let inFence = false
   for (let i = 0; i < lines.length; i += 1) {
     const l = (lines[i] ?? '').trim()
+    // A leading code fence or image is not the page's summary: the meta
+    // description of a page that opens with a diagram read "!Anatomy of...".
+    if (l.startsWith('```')) { inFence = !inFence; continue }
+    if (inFence) continue
     if (!title && l.startsWith('# ')) { title = l.slice(2).trim(); seenTitle = true; continue }
-    if (seenTitle && !summary && l && !l.startsWith('#') && !l.startsWith('<') && !l.startsWith('|') && !l.startsWith('>')) {
+    if (seenTitle && !summary && l && !l.startsWith('#') && !l.startsWith('<') && !l.startsWith('|') && !l.startsWith('>') && !l.startsWith('![')) {
       const para = []
       for (let j = i; j < lines.length; j += 1) {
         const t = (lines[j] ?? '').trim()
@@ -870,6 +876,7 @@ function compareIndexBody(comparisons, ledger) {
   // Same groups, cards and facts lines as CompareHub.svelte, from one model.
   const hub = compareHubModel(comparisons, { ledger })
   let html = `<main class="prerender-index" data-prerender="1"><h1>${escapeAttr(COMPARE_HUB.h1)}</h1><p>${escapeAttr(COMPARE_HUB.intro)}</p>`
+  html += renderCompareChoosingHtml(compareChoosingModel(comparisons), { href: (kind, slug) => `${BASE}${kind}/${slug}/`, escape: escapeAttr })
   html += renderCompareHubHtml(hub, { href: (kind, slug) => `${BASE}${kind}/${slug}/`, escape: escapeAttr })
   html += `<h2>${escapeAttr(COMPARE_HUB.why.heading)}</h2><p>${escapeAttr(COMPARE_HUB.why.body)}</p>`
   return html + `</main>`
@@ -1227,6 +1234,14 @@ async function main() {
       () => `    <link rel="alternate" type="application/rss+xml" title="SvGrid Blog" href="${escapeAttr(FEED_URL)}" />\n  </head>`,
     )
   }
+  // The llms.txt pointer, in the served HTML rather than only after
+  // hydration (seo.ts sets the same link), for crawlers that run no script.
+  if (!/<link\b[^>]*type=["']text\/plain["']/i.test(template)) {
+    template = template.replace(
+      '</head>',
+      () => `    <link rel="alternate" type="text/plain" title="llms.txt - AI ingest" href="${escapeAttr(`${CANON}/llms.txt`)}" />\n  </head>`,
+    )
+  }
 
   // marked renderer that adds heading ids (matches the Docs route) + rewrites
   // intra-doc .md links to clean URLs.
@@ -1283,6 +1298,32 @@ async function main() {
     return html
   }
 
+  /** A doc as standalone markdown: where it lives, the body with absolute
+   *  links and no site-only markup, and a line saying what SvGrid is for a
+   *  reader that fetched only this page. */
+  function docMarkdown(doc, url) {
+    const body = plainDocBody(doc.markdown, {
+      site: CANON,
+      slug: doc.slug,
+      knownSlugs,
+      demoTitle: (id) => demoById.get(id)?.title ?? null,
+      tutorial: (id) => {
+        const t = tutorialById.get(id)
+        return t ? { title: t.title, youtube: t.youtubeId ? `https://www.youtube.com/watch?v=${t.youtubeId}` : undefined } : null
+      },
+    })
+    return [
+      `<!-- ${url} - SvGrid documentation as markdown. Index of every page: ${CANON}/llms.txt -->`,
+      '',
+      body,
+      '',
+      '---',
+      '',
+      `SvGrid is the Svelte 5 data grid (\`npm install @svgrid/grid\`, MIT). This page: ${url} . All docs: ${CANON}/llms.txt`,
+      '',
+    ].join('\n')
+  }
+
   // 3. Prerender each doc page.
   let written = 0
   for (const doc of docs) {
@@ -1299,6 +1340,14 @@ async function main() {
 
     let html = applyHead(template, { title, description, canonical: url, ogType: 'article', keywords, image: `${CANON}/og/docs.svg`, imageAlt: `${doc.title} - SvGrid documentation` })
     if (doc.noindex) html = setMeta(html, 'name', 'robots', 'noindex,follow')
+    // The page as plain markdown, next to its folder: /docs/<slug>.md. An
+    // assistant fetching a doc gets the text without the SPA shell, and the
+    // alternate link tells a crawler on the HTML page where that copy is.
+    const mdUrl = `${CANON}/docs/${doc.slug}.md`
+    html = html.replace('</head>', () => `    <link rel="alternate" type="text/markdown" title="This page as markdown" href="${escapeAttr(mdUrl)}" />\n  </head>`)
+    const mdFile = join(DIST, 'docs', ...doc.slug.split('/')) + '.md'
+    await mkdir(dirname(mdFile), { recursive: true })
+    await writeFile(mdFile, docMarkdown(doc, url), 'utf-8')
     const docGraph = [
       {
         '@context': 'https://schema.org', '@type': 'TechArticle',

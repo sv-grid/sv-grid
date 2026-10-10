@@ -85,3 +85,11 @@ export function renderCompareMarkdown(model: ComparePageModel, opts: { site: str
 export function hubFactsLine(cmp: { npm?: string; verified?: string }, ledger: Ledger): string
 export function compareHubModel(comparisons: import('../../website/src/lib/comparisons').Comparison[], ctx: { ledger: Ledger }): CompareHubModel
 export function renderCompareHubHtml(hub: CompareHubModel, opts: { href: (kind: 'compare', slug: string) => string; escape?: (s: string) => string }): string
+
+export type CompareChoice = { name: string; slug: string | null; picks: string[] }
+export type CompareChoosingModel = { heading: string; intro: string; choices: CompareChoice[] }
+export const COMPARE_CHOOSING: { readonly heading: string; readonly intro: string; readonly svgrid: readonly string[]; readonly groups: readonly string[] }
+export function compareChoosingModel(comparisons: import('../../website/src/lib/comparisons').Comparison[]): CompareChoosingModel
+export function choiceLabel(c: CompareChoice): string
+export function renderCompareChoosingHtml(m: CompareChoosingModel, opts: { href: (kind: 'compare', slug: string) => string; escape?: (s: string) => string }): string
+export function renderCompareChoosingMarkdown(m: CompareChoosingModel, opts: { site: string }): string

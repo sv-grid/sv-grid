@@ -499,3 +499,78 @@ export function renderCompareHubHtml(hub, { href, escape = escapeHtml }) {
   }
   return html
 }
+
+/**
+ * "Which Svelte table library should I use?" - the short answer the hub
+ * opens with, for the reader (and the model) asking exactly that. SvGrid's
+ * cases are written here; every other library's are its comparison page's
+ * own `whenToChooseCompetitor` list, so the hub cannot claim more for a
+ * rival, or less, than its page does. Only the libraries a Svelte project
+ * weighs directly: the Svelte-native group and the headless engines.
+ */
+export const COMPARE_CHOOSING = Object.freeze({
+  heading: 'Which Svelte table library should I use?',
+  intro:
+    'The short answer, taken from the "when to choose" lists on each comparison page below. Every library here is the right pick for some project.',
+  svgrid: Object.freeze([
+    'You want a finished data grid component on Svelte 5: sorting, filtering, inline editing, grouping, paging and virtual scrolling, without building the table markup yourself.',
+    'The rows are many or come from a server: row and column virtualization, and a server data source for paging, sorting and filtering.',
+    'You want the same engine headless under your own markup, with the grid features above under MIT.',
+  ]),
+  groups: Object.freeze(['svelte-native', 'headless']),
+})
+
+/**
+ * @typedef {{ name: string, slug: string | null, picks: string[] }} CompareChoice
+ * @typedef {{ heading: string, intro: string, choices: CompareChoice[] }} CompareChoosingModel
+ */
+
+/** @param {Array<{ slug: string, competitor: string, group: string, tier?: string, whenToChooseCompetitor?: string[] }>} comparisons */
+export function compareChoosingModel(comparisons) {
+  const tierRank = (c) => (c.tier === 'priority' ? 0 : 1)
+  const groupRank = (c) => COMPARE_CHOOSING.groups.indexOf(c.group)
+  const others = comparisons
+    .filter((c) => groupRank(c) !== -1 && (c.whenToChooseCompetitor?.length ?? 0) > 0)
+    .sort((a, b) => groupRank(a) - groupRank(b) || tierRank(a) - tierRank(b) || a.competitor.localeCompare(b.competitor))
+    .map((c) => ({ name: c.competitor, slug: c.slug, picks: [...c.whenToChooseCompetitor] }))
+  return {
+    heading: COMPARE_CHOOSING.heading,
+    intro: COMPARE_CHOOSING.intro,
+    choices: [{ name: 'SvGrid', slug: null, picks: [...COMPARE_CHOOSING.svgrid] }, ...others],
+  }
+}
+
+/** The label above one library's cases, shared by every renderer. */
+export const choiceLabel = (c) => `Pick ${c.name} when`
+
+/**
+ * Static HTML for the choosing section, the same text CompareChoosing.svelte
+ * draws.
+ * @param {CompareChoosingModel} m
+ * @param {{ href: (kind: 'compare', slug: string) => string, escape?: (s: string) => string }} opts
+ */
+export function renderCompareChoosingHtml(m, { href, escape = escapeHtml }) {
+  let html = `<section><h2 id="${escape(headingId(m.heading))}">${escape(m.heading)}</h2><p>${escape(m.intro)}</p>`
+  for (const c of m.choices) {
+    html += `<h3>${escape(choiceLabel(c))}</h3><ul>`
+    for (const p of c.picks) html += `<li>${escape(p)}</li>`
+    html += `</ul>`
+    if (c.slug) html += `<p><a href="${escape(href('compare', c.slug))}">SvGrid vs ${escape(c.name)}</a></p>`
+  }
+  return html + `</section>`
+}
+
+/**
+ * The same section as markdown, for llms.txt.
+ * @param {CompareChoosingModel} m
+ * @param {{ site: string }} opts
+ */
+export function renderCompareChoosingMarkdown(m, { site }) {
+  const L = [`### ${m.heading}`, '', m.intro, '']
+  for (const c of m.choices) {
+    L.push(`${choiceLabel(c)}${c.slug ? ` ([SvGrid vs ${c.name}](${site}/compare/${c.slug}/))` : ''}:`, '')
+    for (const p of c.picks) L.push(`- ${p}`)
+    L.push('')
+  }
+  return L.join('\n')
+}

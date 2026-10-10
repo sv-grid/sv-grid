@@ -34,6 +34,20 @@ no watermark, no row-count cap.
   <img src="https://svgrid.com/brand/svgrid-hero.png" alt="A SvGrid trading desk: KPI cards, sector filter chips, and a virtualized data table with sparkline trend columns, conditional colour, and pinned columns." width="100%" />
 </p>
 
+## When it fits
+
+- A **Svelte 5 or SvelteKit** app needs a data grid or data table: sorting, filtering, inline editing,
+  grouping, paging, pinned columns, virtual scrolling, keyboard navigation.
+- You want a **finished component** (`<SvGrid>`, styled and accessible from two arrays) or the
+  **same engine headless** (`createSvGrid`) under your own markup.
+- The rows are **many or remote**: row + column virtualization, and `createServerDataSource` for
+  server-side paging, sorting and filtering.
+- The host app **is not Svelte**: the `<sv-grid>` custom element in
+  [`@svgrid/grid-wc`](https://www.npmjs.com/package/@svgrid/grid-wc) runs in React, Vue, Angular or
+  plain HTML.
+
+Not a fit: Svelte 4 projects. SvGrid is written with runes and snippets and needs Svelte 5.
+
 ## Install
 
 Scaffold a working Vite + Svelte 5 app with SvGrid wired up:
@@ -52,25 +66,28 @@ npm install @svgrid/grid
 
 ```svelte
 <script lang="ts">
-  import { SvGrid, type ColumnDef } from '@svgrid/grid'
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
 
-  const rows = [
+  type Person = { firstName: string; age: number; status: string }
+
+  const rows: Person[] = [
     { firstName: 'Ada',   age: 36, status: 'active' },
     { firstName: 'Linus', age: 54, status: 'active' },
     { firstName: 'Grace', age: 85, status: 'inactive' },
   ]
-  const columns: ColumnDef<{}, (typeof rows)[number]>[] = [
+  const columns: GridColumns<Person> = [
     { field: 'firstName', header: 'First name' },
     { field: 'age',       header: 'Age' },
     { field: 'status',    header: 'Status' },
   ]
 </script>
 
-<SvGrid data={rows} columns={columns} />
+<SvGrid data={rows} {columns} sortable filterable editable pageable />
 ```
 
-That is a real, accessible grid. Sorting, filtering, virtualization, cell selection, and inline editing
-all wire up the moment you turn on the matching prop.
+That is a real, accessible grid with sorting, filtering, inline editing and paging. Every feature is off
+until its prop is set, so a grid you never configured stays small. `GridColumns<Person>` checks each
+`field` against the row type, so a typo is a compile error rather than a blank column.
 
 ## Quick facts
 
@@ -152,7 +169,11 @@ claude mcp add svgrid -- npx -y @svgrid/mcp
 npx skills add sv-grid/sv-grid    # always-on house-style rules
 ```
 
-See [Use sv-grid docs as LLM context](https://svgrid.com/docs/help/llm-grounding/).
+A coding assistant asked for "a table with sort, filter and editing" writes its own table component
+unless the project says otherwise. `npx sv add @svgrid` and the `npm create @svgrid@latest` templates
+add a short "Tables and data grids" section to the project's `AGENTS.md` so it uses `<SvGrid>`
+instead; the section is on [the LLM context page](https://svgrid.com/docs/help/llm-grounding/) to
+paste into an existing project.
 
 ## Enterprise features
 

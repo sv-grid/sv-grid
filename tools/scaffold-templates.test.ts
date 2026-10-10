@@ -50,6 +50,21 @@ const templates = ['minimal', 'sveltekit', 'pivot-dashboard', 'admin-dashboard',
 const themedTemplates = ['minimal', 'sveltekit', 'pivot-dashboard', 'admin-dashboard']
 
 describe('create-sv-grid templates', () => {
+  // A coding assistant reads AGENTS.md before it decides to hand-write a table.
+  // The scaffolded section must say the same thing `npx sv add @svgrid` writes.
+  it.each(templates.filter((t) => t !== 'headless'))('%s tells coding assistants to use <SvGrid>', async (template) => {
+    const { AGENTS_SECTION } = await import('../packages/svgrid-sv/index.mjs')
+    const agents = readFileSync(join(scaffold(template), 'AGENTS.md'), 'utf8')
+    expect(agents).toContain(AGENTS_SECTION)
+    expect(agents.match(/## Tables and data grids/g)).toHaveLength(1)
+  })
+
+  it('headless points coding assistants at the engine instead', () => {
+    const agents = readFileSync(join(scaffold('headless'), 'AGENTS.md'), 'utf8')
+    expect(agents).toContain('## Tables and data grids')
+    expect(agents).toContain('createSvGrid')
+  })
+
   it.each(templates)('%s scaffolds with its dotfiles renamed back', (template) => {
     const app = scaffold(template)
     expect(existsSync(join(app, 'package.json'))).toBe(true)

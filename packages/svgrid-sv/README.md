@@ -22,6 +22,7 @@ On PowerShell, quote the argument: `npx sv add '@svgrid'`.
 | Prompt | Default | Effect |
 | --- | --- | --- |
 | Add a demo grid so you can see it working? | yes | Writes `src/routes/svgrid-demo/+page.svelte` in a SvelteKit project, or `src/lib/SvGridDemo.svelte` otherwise |
+| Tell AI coding assistants to use SvGrid for tables? | yes | Adds a "Tables and data grids" section to `AGENTS.md` (creates the file if there is none, appends once if there is), so an assistant asked for a table uses `<SvGrid>` instead of writing its own |
 | Add the Enterprise pack? | no | Also adds `@svgrid/enterprise` (Excel/PDF export, pivot, Kanban, scheduler in the Grid edition; the `<SvSheet>` spreadsheet and Studio in Suite). Runs unlicensed with a watermark; a [paid license key](https://svgrid.com/pricing/) clears it |
 
 The demo is written in whichever language the project already uses. It never

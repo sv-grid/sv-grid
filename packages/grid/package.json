@@ -1,7 +1,7 @@
 {
   "name": "@svgrid/grid",
   "version": "3.0.9",
-  "description": "Svelte 5-native data grid and data table. Headless-first engine with virtual scrolling for 100k+ rows, Excel-style filtering, inline editing, grouping, tree data, pivot, and server-side data. Drop-in <SvGrid> component. TypeScript, SSR-ready.",
+  "description": "Svelte 5 data grid and data table, MIT. Drop-in <SvGrid> component or the same engine headless: virtual scrolling for 100k+ rows, Excel-style filtering, inline editing, grouping, tree data and server-side data. TypeScript, SvelteKit SSR.",
   "author": "jQWidgets <boikom@jqwidgets.com>",
   "license": "MIT",
   "repository": {
@@ -48,7 +48,11 @@
     "svelte-headless-table",
     "svelte-headless-table-alternative",
     "typescript",
-    "svgrid"
+    "svgrid",
+    "sv-grid",
+    "svelte-grid-component",
+    "sveltekit-table",
+    "svelte-5-table"
   ],
   "type": "module",
   "sideEffects": [

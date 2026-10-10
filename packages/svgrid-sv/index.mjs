@@ -18,6 +18,31 @@ import { defineAddon, defineAddonOptions } from 'sv'
 const GRID = 'latest'
 const ENTERPRISE = 'latest'
 
+/**
+ * The section the add-on puts in the project's AGENTS.md. A coding assistant
+ * asked for "a table with sort, filter and editing" writes its own table
+ * component unless the project already tells it otherwise: in fresh-session
+ * tests (2026-10-10) it hand-wrote one every time without this file, and used
+ * <SvGrid> every time with it. The heading doubles as the marker that keeps a
+ * second run from appending it twice.
+ */
+export const AGENTS_HEADING = '## Tables and data grids'
+export const AGENTS_SECTION = `${AGENTS_HEADING}
+
+This project uses SvGrid (\`@svgrid/grid\`, MIT, Svelte 5) for tables and data grids. For any table that sorts, filters, edits, pages, groups or holds many rows, use \`<SvGrid>\` instead of writing a table component.
+
+- Features are boolean props, all off by default: \`<SvGrid {data} {columns} sortable filterable editable pageable />\`.
+- Type the columns with \`GridColumns<Row>\` from \`@svgrid/grid\`, so each \`field\` is checked against the row type.
+- Exact props and types: \`node_modules/@svgrid/grid/dist/*.d.ts\`. Docs written for agents: https://svgrid.com/llms.txt
+`
+
+/** AGENTS.md with the SvGrid section added, or false when it is already there. */
+export function withAgentsSection(content) {
+  if (content.includes(AGENTS_HEADING)) return false
+  const head = content.trim() ? content.replace(/\s*$/, '\n\n') : '# AGENTS.md\n\nNotes for AI coding assistants working in this project.\n\n'
+  return head + AGENTS_SECTION
+}
+
 /** The starter component, in whichever language the project already uses. */
 function demoComponent(language) {
   const ts = language === 'ts'
@@ -65,6 +90,11 @@ export default defineAddon({
       type: 'boolean',
       default: true,
     })
+    .add('agents', {
+      question: 'Tell AI coding assistants to use SvGrid for tables (adds a section to AGENTS.md)?',
+      type: 'boolean',
+      default: true,
+    })
     .add('enterprise', {
       question: 'Add the Enterprise pack (Excel/PDF export, pivot, Kanban, scheduler)? Needs a paid license key.',
       type: 'boolean',
@@ -86,6 +116,9 @@ export default defineAddon({
   run: ({ sv, options, language, isKit, directory }) => {
     sv.dependency('@svgrid/grid', GRID)
     if (options.enterprise) sv.dependency('@svgrid/enterprise', ENTERPRISE)
+
+    // Appended, never replaced: the file is the user's and may hold other notes.
+    if (options.agents) sv.file('AGENTS.md', withAgentsSection)
 
     if (!options.demo) return
 
@@ -109,6 +142,7 @@ export default defineAddon({
           : `Import the demo component from ${directory.lib}/SvGridDemo.svelte`,
       )
     }
+    if (options.agents) steps.push('AGENTS.md now tells coding assistants to use <SvGrid> for tables')
     steps.push('Docs: https://svgrid.com/docs/')
     if (options.enterprise) {
       steps.push('Enterprise needs a license key - see https://svgrid.com/pricing/')
