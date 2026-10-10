@@ -4392,15 +4392,15 @@
     "date": "2026-09-03"
   },
   "/tools/": {
-    "hash": "7debe9149a05",
-    "date": "2026-10-08"
+    "hash": "49fdf71f6d68",
+    "date": "2026-10-10"
   },
   "/tools/csv-viewer/": {
-    "hash": "b20d5d47cb7d",
-    "date": "2026-10-08"
+    "hash": "d945bba912fe",
+    "date": "2026-10-10"
   },
   "/tools/json-to-table/": {
-    "hash": "e6710c475922",
-    "date": "2026-10-08"
+    "hash": "2eb789e18f67",
+    "date": "2026-10-10"
   }
 }

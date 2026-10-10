@@ -28,8 +28,8 @@ export const FREE_TOOLS = [
     query: 'csv viewer online',
     title: 'CSV Viewer Online - Open, Sort, Filter and Edit CSV Free',
     description:
-      'Open a CSV file in your browser and sort, filter, search and edit it like a spreadsheet, then save it as CSV or JSON. Free, no sign-up, nothing uploaded.',
-    keywords: ['csv viewer online', 'csv editor online', 'open csv file online', 'csv file viewer', 'view csv online', 'csv to json'],
+      'Open a CSV file in your browser, sort, filter and edit it like a spreadsheet, then save it as CSV, JSON or Excel. Free, no sign-up, nothing uploaded.',
+    keywords: ['csv viewer online', 'csv editor online', 'open csv file online', 'csv file viewer', 'view csv online', 'csv to json', 'csv to excel', 'csv to xlsx'],
     cardText: 'Open, sort, filter and edit a CSV file.',
     lead:
       'Drop a CSV file on the page, or paste the text, and it opens as a table you can sort, filter, search and edit. Your browser reads the file; it is never uploaded anywhere.',
@@ -37,7 +37,7 @@ export const FREE_TOOLS = [
       'Drop a .csv, .tsv or .txt file on the drop zone, choose one with the file picker, or paste the text.',
       'The delimiter (comma, semicolon, tab or pipe) is detected for you. Change it, or turn off "First row is a header", if the guess is wrong.',
       'Click a header to sort, use the column menu to filter, or type in the search box to filter every column at once. Double-click a cell to edit it.',
-      'Download the rows you are looking at as CSV or JSON. The download follows your sort, filters and edits.',
+      'Download the rows you are looking at as CSV, JSON or an Excel .xlsx file. The download follows your sort, filters and edits.',
     ],
     faq: [
       {
@@ -66,6 +66,11 @@ export const FREE_TOOLS = [
           'Yes. "Download JSON" writes an array of objects keyed by the header row, with numeric columns written as numbers.',
       },
       {
+        question: 'Can I convert a CSV file to Excel?',
+        answer:
+          'Yes. "Excel" writes an .xlsx file with numbers stored as numbers, the header row frozen and your sort and filters applied. It is the export from @svgrid/enterprise, the same exportGrid call you would use in your own Svelte app.',
+      },
+      {
         question: 'Why does a column of IDs or ZIP codes stay as text?',
         answer:
           'A column is treated as numbers only when every value is a plain number. A value with a leading zero, like 00501, keeps the whole column as text so the zero is not lost.',
@@ -80,7 +85,7 @@ export const FREE_TOOLS = [
     title: 'JSON to Table - View JSON as a Sortable Table, Export CSV',
     description:
       'Paste JSON or drop a .json file and see it as a sortable, filterable table. Nested objects become columns; download the result as CSV. Free and private.',
-    keywords: ['json to table', 'json to csv', 'json viewer table', 'convert json to table', 'json table viewer online', 'json lines viewer'],
+    keywords: ['json to table', 'json to csv', 'json viewer table', 'convert json to table', 'json table viewer online', 'json lines viewer', 'json to excel'],
     cardText: 'See JSON as a table, export it as CSV.',
     lead:
       'Paste JSON or drop a .json file and it turns into a table you can sort, filter and search. Nested objects become their own columns, and the result downloads as CSV. Everything runs in your browser.',
@@ -88,7 +93,7 @@ export const FREE_TOOLS = [
       'Paste JSON into the box or drop a .json, .jsonl or .ndjson file on it.',
       'An array of objects becomes one row per object. If the array is wrapped, as in an API response like {"data": {"items": [...]}}, the largest array of objects inside is found and shown.',
       'Nested objects are flattened into dot-path columns such as user.address.city. A list of plain values becomes one comma-separated cell.',
-      'Sort, filter and search the table, then download what you see as CSV or as cleaned-up JSON.',
+      'Sort, filter and search the table, then download what you see as CSV, as cleaned-up JSON or as an Excel .xlsx file.',
     ],
     faq: [
       {
@@ -109,6 +114,11 @@ export const FREE_TOOLS = [
       {
         question: 'Does it read JSON Lines (NDJSON)?',
         answer: 'Yes. When the text is not one JSON document, each non-empty line is read as its own JSON value.',
+      },
+      {
+        question: 'Can I convert JSON to Excel?',
+        answer:
+          'Yes. Load the JSON and choose "Excel". Nested fields arrive as their own columns, numbers stay numbers, and the file follows your sort and filters. The export is the one @svgrid/enterprise adds to a Svelte app.',
       },
       {
         question: 'How do I convert JSON to CSV?',

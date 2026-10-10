@@ -1,8 +1,8 @@
 /**
  * Tests for the moment-of-intent PLG upgrade prompt. Unlike the passive
- * watermark, this card is triggered when a Pro feature is actually invoked
- * unlicensed, names that feature, links to a free trial, and shows at most
- * once per session.
+ * watermark, this card is triggered when an Enterprise feature is actually
+ * invoked unlicensed, names that feature, links to the plans and to how
+ * evaluation works, and shows at most once per session.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -24,18 +24,31 @@ describe('upgrade prompt (moment-of-intent PLG nudge)', () => {
     dismissUpgradePrompt()
   })
 
-  it('renders a card naming the feature, with a trial CTA', () => {
+  it('renders a card naming the feature, with a plans CTA', () => {
     showUpgradePrompt('Export')
     const el = card()
     expect(el).not.toBeNull()
     expect(el!.textContent).toContain('Export')
-    expect(el!.textContent).toContain('Unlock SvGrid Pro')
+    expect(el!.textContent).toContain('SvGrid Enterprise')
 
-    const trial = el!.querySelector('a[data-act="trial"]') as HTMLAnchorElement
-    expect(trial).not.toBeNull()
-    expect(trial.href).toContain('svgrid.com/pricing')
-    expect(trial.href).toContain('ref=in-app')
-    expect(trial.target).toBe('_blank')
+    const plans = el!.querySelector('a[data-act="plans"]') as HTMLAnchorElement
+    expect(plans).not.toBeNull()
+    expect(plans.href).toContain('svgrid.com/pricing')
+    expect(plans.href).toContain('ref=in-app')
+    expect(plans.target).toBe('_blank')
+
+    const evaluation = el!.querySelector('a[data-act="evaluation"]') as HTMLAnchorElement
+    expect(evaluation.href).toContain('svgrid.com/docs/enterprise/evaluation/')
+  })
+
+  // The one-key license has no trial keys: unlicensed use runs with a
+  // watermark. A card promising a "free trial" sent people looking for one.
+  it('promises no trial and does not use the old Pro name', () => {
+    showUpgradePrompt('Export')
+    const text = card()!.textContent ?? ''
+    expect(text).not.toMatch(/trial/i)
+    expect(text).not.toMatch(/\bPro\b/)
+    expect(text).toContain('watermark')
   })
 
   it('shows at most once per session', () => {
@@ -66,6 +79,6 @@ describe('upgrade prompt (moment-of-intent PLG nudge)', () => {
 
   it('falls back to a generic message when no feature is named', () => {
     showUpgradePrompt()
-    expect(card()!.textContent).toContain('Pro')
+    expect(card()!.textContent).toContain('SvGrid Enterprise feature')
   })
 })

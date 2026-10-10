@@ -1,8 +1,13 @@
 // Product-led-growth (PLG) upgrade nudge, shown at the *moment of intent*: the
-// instant a developer actually calls a Pro feature (export / import / print /
-// AI) without a license key set. Unlike the passive corner watermark
+// instant a developer actually calls an Enterprise feature (export / import /
+// print / pivot) without a license key set. Unlike the passive corner watermark
 // (watermark.ts), this is a one-click contextual card that names the feature
-// they just used and links straight to a free trial.
+// they just used and links to the plans.
+//
+// The copy follows the one-key license (2026-10-07): there are no trial keys,
+// unlicensed use simply runs with a watermark, and the product is "SvGrid
+// Enterprise". The card used to say "Unlock SvGrid Pro" and "Start free trial",
+// which promised a trial that does not exist.
 //
 // Rules of the road:
 //   - Soft, never blocking. The feature already ran; this only nudges.
@@ -20,14 +25,14 @@
 import { isFirstPartySite } from './first-party'
 
 const CARD_ATTR = 'data-svgrid-enterprise-upgrade'
-const PRICING_URL = 'https://svgrid.com/pricing'
-// ?ref=in-app lets us measure how many trials start from this exact prompt
+// ?ref=in-app lets us measure how many purchases start from this exact prompt
 // vs. the pricing page itself - the whole point of a moment-of-intent CTA.
-const TRIAL_URL = 'https://svgrid.com/pricing?ref=in-app&utm_source=svgrid-enterprise&utm_medium=upgrade-prompt'
+const PLANS_URL = 'https://svgrid.com/pricing?ref=in-app&utm_source=svgrid-enterprise&utm_medium=upgrade-prompt'
+const EVALUATION_URL = 'https://svgrid.com/docs/enterprise/evaluation/?utm_source=svgrid-enterprise&utm_medium=upgrade-prompt'
 
 let shownThisSession = false
 
-/** Human-readable labels for the Pro surfaces that gate behind a license. */
+/** Human-readable labels for the Enterprise surfaces that gate behind a license. */
 export type EnterpriseFeatureLabel =
   | 'Export'
   | 'Import'
@@ -41,7 +46,7 @@ export type EnterpriseFeatureLabel =
 /**
  * Show the contextual upgrade prompt for `feature`. No-ops if one has already
  * been shown this session, a card is already up, or we're on the server. Safe
- * to call on every Pro feature invocation - it self-throttles.
+ * to call on every Enterprise feature invocation - it self-throttles.
  */
 export function showUpgradePrompt(
   feature?: EnterpriseFeatureLabel | string,
@@ -85,7 +90,7 @@ function buildCard(feature?: EnterpriseFeatureLabel | string, expired = false): 
   const card = document.createElement('div')
   card.setAttribute(CARD_ATTR, '1')
   card.setAttribute('role', 'dialog')
-  card.setAttribute('aria-label', expired ? 'Your trial has ended' : 'Unlock SvGrid Pro')
+  card.setAttribute('aria-label', expired ? 'Your evaluation has ended' : 'SvGrid Enterprise')
   Object.assign(card.style, {
     position: 'fixed',
     bottom: '16px',
@@ -110,19 +115,19 @@ function buildCard(feature?: EnterpriseFeatureLabel | string, expired = false): 
 
   const featureName = feature ? String(feature) : 'This'
   const featurePhrase = feature
-    ? `<strong style="color:#fff">${escapeHtml(featureName)}</strong> is a Pro feature.`
-    : `You just used a <strong style="color:#fff">Pro</strong> feature.`
+    ? `<strong style="color:#fff">${escapeHtml(featureName)}</strong> is part of SvGrid Enterprise.`
+    : `You just used a <strong style="color:#fff">SvGrid Enterprise</strong> feature.`
 
-  // An expired trial is a different message from "you never had a licence":
-  // they already evaluated, so the ask is to convert, not to start over.
-  const badge = expired ? 'TRIAL ENDED' : 'PRO'
-  const heading = expired ? 'Your trial has ended' : 'Unlock SvGrid Pro'
+  // An expired evaluation is a different message from "you never had a
+  // license": they already evaluated, so the ask is to convert.
+  const badge = expired ? 'EVALUATION ENDED' : 'ENTERPRISE'
+  const heading = expired ? 'Your evaluation has ended' : 'SvGrid Enterprise'
   const body = expired
-    ? `${featurePhrase} Your evaluation period is over - everything still works,
-       but this notice stays until a licence key is set.`
-    : `${featurePhrase} It runs in evaluation with a watermark - start a free trial
-       to remove it and ship to production.`
-  const cta = expired ? 'Buy a licence' : 'Start free trial'
+    ? `${featurePhrase} Everything still works, but this notice stays until a
+       license key is set.`
+    : `${featurePhrase} It keeps working as it is, here and in production. A
+       license key removes the watermark and this notice.`
+  const cta = expired ? 'Buy a license' : 'See plans'
 
   card.innerHTML = `
     <button type="button" data-act="x" aria-label="Dismiss"
@@ -138,11 +143,11 @@ function buildCard(feature?: EnterpriseFeatureLabel | string, expired = false): 
       ${body}
     </p>
     <div style="display:flex;gap:8px;align-items:center;">
-      <a data-act="trial" href="${TRIAL_URL}" target="_blank" rel="noopener noreferrer"
+      <a data-act="plans" href="${PLANS_URL}" target="_blank" rel="noopener noreferrer"
         style="flex:1;text-align:center;background:#6366f1;color:#fff;font-weight:600;
         text-decoration:none;padding:8px 12px;border-radius:8px;">${cta}</a>
-      <a data-act="pricing" href="${PRICING_URL}" target="_blank" rel="noopener noreferrer"
-        style="color:#a5b4fc;text-decoration:none;padding:8px 6px;font-weight:600;">Pricing</a>
+      <a data-act="evaluation" href="${EVALUATION_URL}" target="_blank" rel="noopener noreferrer"
+        style="color:#a5b4fc;text-decoration:none;padding:8px 6px;font-weight:600;">How evaluation works</a>
     </div>
     <p style="margin:10px 0 0;font-size:11px;color:#64748b;">
       Already licensed? Call <code style="color:#94a3b8;">setLicenseKey()</code> at startup to hide this.
@@ -150,10 +155,10 @@ function buildCard(feature?: EnterpriseFeatureLabel | string, expired = false): 
   `
 
   card.querySelector('[data-act="x"]')?.addEventListener('click', () => close(card))
-  // Clicking through to a trial / pricing also counts as "handled" - close the
-  // card, but let the link open in its new tab first.
-  card.querySelector('[data-act="trial"]')?.addEventListener('click', () => close(card))
-  card.querySelector('[data-act="pricing"]')?.addEventListener('click', () => close(card))
+  // Clicking through to the plans or the evaluation page also counts as
+  // "handled" - close the card, but let the link open in its new tab first.
+  card.querySelector('[data-act="plans"]')?.addEventListener('click', () => close(card))
+  card.querySelector('[data-act="evaluation"]')?.addEventListener('click', () => close(card))
 
   return card
 }
