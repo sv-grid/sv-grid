@@ -219,10 +219,19 @@ const dist = join(here, '..', 'dist')
  * grid's base grew 0.5 KB (measure-size.mjs: the sort comparators
  * that no longer return NaN, and local-day parsing of 'YYYY-MM-DD'),
  * reaching the elements at 1:1. No surface change. The eighth time.
+ *
+ * 113.2 -> 117.6 and 113.8 -> 118.2 for the speed and wide-grid rounds
+ * (2026-10-08 to 2026-10-10). Measured 117.43 / 117.97: the grid's base went
+ * 98.1 -> 102.7 (measure-size.mjs has the breakdown: radix and counting
+ * sorts, lazy row build, flex rows, recycled cells, the column window's
+ * steps), reaching the elements at 1:1, plus one surface entry (115 -> 116
+ * properties, 77 -> 78 attributes: rowLayout). CI stopped at a type error
+ * before this check, so the overrun went unseen for two pushes. The ninth
+ * time.
  */
 const BUDGET_KIB = {
-  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 113.2 },
-  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 113.8 },
+  '<sv-grid>': { file: join(dist, 'sv-grid-element.js'), budget: 117.6 },
+  '<sv-grid-shadow>': { file: join(dist, 'shadow', 'sv-grid-shadow-element.js'), budget: 118.2 },
   '<sv-chart>': { file: join(dist, 'chart', 'sv-chart-element.js'), budget: 68.6 },
 }
 

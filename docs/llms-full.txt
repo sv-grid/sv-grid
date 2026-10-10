@@ -1,6 +1,6 @@
 # sv-grid - full documentation
 
-Generated 2026-10-09 from 406 pages, 18 comparison pages, plus 72 API reference pages.
+Generated 2026-10-10 from 406 pages, 18 comparison pages, plus 72 API reference pages.
 
 <!-- =================================================================
      /docs/changelog/  (community)
@@ -57199,6 +57199,12 @@ backend built for it needs no rewrite:
 
 ## More examples
 
+### Big data: 10M rows x 10K columns
+
+Up to 10,000,000 rows and 10,000 columns in one SvGrid on the Enterprise server row model. A Web Worker sorts (radix, exact), filters, groups and edits a generated dataset and sends back only the rows on screen; the grid builds just those, so its memory and scroll cost stay flat as the row count grows. Pick a size, sort, filter, group, edit a cell, or run the benchmark: every number on the page is measured live in your browser.
+
+<div data-docs-demo="503-big-data" data-height="560"></div>
+
 ### Server-side pivot
 
 The pivot designer in server mode over a million rows: Rows become groupBy, Columns pivotBy, Values aggregations, and every applied layout is one request.
@@ -81527,7 +81533,7 @@ project, with no local setup.
   `<sv-grid>` like any built-in element.
 - **One bundle, no framework lock-in.** Ship a single file to a CDN; consumers
   add one `<script type="module">` and a tag.
-- **The whole grid.** 115 properties and 27 events, so virtualization,
+- **The whole grid.** 116 properties and 27 events, so virtualization,
   Excel-style filters, inline editing, grouping, tree data, pinning, pagination
   and the enterprise features are all reachable - not a hand-picked subset. The
   surface is **generated** from `<SvGrid>`'s own `Props` type and CI fails if
@@ -82371,7 +82377,7 @@ local setup, nothing to configure.
 | Vue | `import { SvGrid } from '@svgrid/grid-wc/vue'` | `<SvGrid :data="rows" :columns="cols" sortable filterable />` |
 | Angular | `import { SvGridComponent } from '@svgrid/grid-wc/angular'` | `<sv-grid [data]="rows" [columns]="cols" [sortable]="true" />` |
 
-That is the whole integration. All 115 properties and 27 events of the grid are
+That is the whole integration. All 116 properties and 27 events of the grid are
 typed props on every one of them.
 
 **Or skip step 1** and open a working project right now:
@@ -82721,7 +82727,7 @@ export default function Screen() {
 ```
 
 That is the whole integration. The component is generated from `<SvGrid>`'s
-own types, so all 115 properties and 27 events are typed props, and it works the
+own types, so all 116 properties and 27 events are typed props, and it works the
 same on React 17, 18 and 19.
 
 ## Why the wrapper rather than the raw element
@@ -83335,7 +83341,7 @@ flag can switch it, so no attribute can either.
 </script>
 ```
 
-Everything else is identical: the same 115 properties, the same 77 attributes,
+Everything else is identical: the same 116 properties, the same 78 attributes,
 the same 27 events. Events are dispatched `composed: true`, so
 `addEventListener` on the host works exactly as it does on `<sv-grid>`.
 

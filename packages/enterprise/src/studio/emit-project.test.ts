@@ -396,6 +396,7 @@ describe('SSR-native screens (renderMode: ssr)', () => {
     const body = store.slice(store.indexOf('function serverHeld'), store.indexOf('\nexport const'))
     const js = ts.transpileModule(body, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText
     const { createInMemoryDataSource } = await import('../sveltekit/in-memory.js')
+    // eslint-disable-next-line no-new-func -- runs the generated source itself
     const serverHeld = new Function('createInMemoryDataSource', `${js}; return serverHeld`)(createInMemoryDataSource)
     const schema = { name: 'c', idField: 'id', fields: [{ field: 'id', type: 'text' }, { field: 'name', type: 'text' }] }
     const s = serverHeld([{ id: 'c1', name: 'a' }, { id: 'c2', name: 'b' }], schema, 'id', 'c')

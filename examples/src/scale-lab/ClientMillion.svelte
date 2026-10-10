@@ -140,7 +140,7 @@
 
   <div class="gridbox">
     {#if mounted}
-      <SvGrid {data} {columns} {features} getRowId={(r) => String(r.id)} showGlobalFilter enableRowSelection enableCellSelection containerHeight={420} onApiReady={onReady} />
+      <SvGrid {data} {columns} {features} getRowId={(r) => String(r.id)} showGlobalFilter showRowSelection enableCellSelection containerHeight={420} onApiReady={onReady} />
     {/if}
   </div>
 </section>

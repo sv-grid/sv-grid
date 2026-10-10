@@ -75,6 +75,17 @@ pnpm demos:count        # re-count live demos (fails if registry and files disag
 
 ### Rules that are easy to violate
 
+- **CI must pass before you push.** Pushes to main keep breaking the Test
+  workflow. Before pushing, run `pnpm test:types` (every package, not only
+  the one you edited), `pnpm lint`, `pnpm test`, the enterprise tests, the
+  other steps listed in `.github/workflows/test.yml` (size budgets, docs
+  guardrails, website tests, SSR and Node checks, MCP checks), and the e2e
+  specs covering what changed (`npx playwright test <spec> --project=chromium`).
+  CI stops at the first red step, so a type error hides every later failure. A grid CSS
+  change reaches the spreadsheet and the server row model; a file under
+  `examples/src/shared/` is loaded by the website. If a local e2e run times
+  out across the board, a stale website dev server is likely holding :5180;
+  set `SVGRID_E2E_PORT=5191` for a fresh one instead of pushing anyway.
 - **Never write an em-dash character.** Use a plain hyphen. This applies to
   docs, code comments, commit messages, and generated content.
 - **Do not write in recognizable LLM style.** No booster adjectives, no

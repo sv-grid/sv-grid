@@ -312,6 +312,12 @@ backend built for it needs no rewrite:
 
 ## More examples
 
+### Big data: 10M rows x 10K columns
+
+Up to 10,000,000 rows and 10,000 columns in one SvGrid on the Enterprise server row model. A Web Worker sorts (radix, exact), filters, groups and edits a generated dataset and sends back only the rows on screen; the grid builds just those, so its memory and scroll cost stay flat as the row count grows. Pick a size, sort, filter, group, edit a cell, or run the benchmark: every number on the page is measured live in your browser.
+
+<div data-docs-demo="503-big-data" data-height="560"></div>
+
 ### Server-side pivot
 
 The pivot designer in server mode over a million rows: Rows become groupBy, Columns pivotBy, Values aggregations, and every applied layout is one request.

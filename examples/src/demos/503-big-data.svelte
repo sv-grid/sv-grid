@@ -26,7 +26,7 @@
     type ConditionalFormat,
     type SvGridApi,
   } from '@svgrid/grid'
-  import { createServerRowModel, serverGroupText, SvGroupCell } from '@svgrid/enterprise'
+  import { createServerRowModel, serverGroupText, SvGroupCell, type ServerRowModelGridRow } from '@svgrid/enterprise'
   import { createBigDataClient, type Activity, type BigRow } from '../shared/bigdata/client'
   import {
     columnsFor,
@@ -37,6 +37,9 @@
     STATUSES,
     type BigColumn,
   } from '../shared/bigdata/data'
+
+  // What the grid holds: a data row or a group row, each carrying __group.
+  type GridRow = ServerRowModelGridRow<BigRow>
 
   const ROW_OPTIONS = [10_000, 100_000, 1_000_000, 10_000_000]
   const COL_OPTIONS = [10, 25, 100, 1_000, 10_000]
@@ -62,9 +65,9 @@
   let search = $state('')
   let activity = $state<Activity>({})
   let ctl = $state<ReturnType<typeof createServerRowModel<BigRow>> | null>(null)
-  let columns = $state<ColumnDef<any, BigRow>[]>([])
+  let columns = $state<ColumnDef<any, GridRow>[]>([])
   let pinning = $state<{ left: string[]; right: string[] }>({ left: [], right: [] })
-  let api: SvGridApi<any, BigRow> | null = null
+  let api: SvGridApi<any, GridRow> | null = null
   let gridKey = $state(0)
   let readyMs = $state<number | null>(null)
   let editNote = $state('')
@@ -73,16 +76,19 @@
 
   // ---- columns ---------------------------------------------------------------
 
-  const chip = (labels: readonly string[]) => ({ value }: { value: unknown }) => {
+  const chip = (labels: readonly string[]) => ({ getValue }: { getValue: () => unknown }) => {
+    const value = getValue()
     const i = labels.indexOf(String(value))
     return i < 0 ? 'bd-chip' : `bd-chip bd-c${i % 8}`
   }
-  const moneyClass = ({ value }: { value: unknown }) => {
+  const moneyClass = ({ getValue }: { getValue: () => unknown }) => {
+    const value = getValue()
     const n = Number(value)
     if (!Number.isFinite(n)) return ''
     return n < 0 ? 'bd-neg' : n >= 15_000 ? 'bd-pos3' : n >= 8_000 ? 'bd-pos2' : n >= 2_000 ? 'bd-pos1' : ''
   }
-  const heatClass = ({ value }: { value: unknown }) => {
+  const heatClass = ({ getValue }: { getValue: () => unknown }) => {
+    const value = getValue()
     const n = Number(value)
     return Number.isFinite(n) ? `bd-h${Math.min(9, Math.max(0, Math.floor(n / 100)))}` : ''
   }
@@ -101,8 +107,8 @@
       isLeaf(row) ? fmt(value) : ''
   const editableLeaf = (ctx: { row: { original?: unknown } }) => isLeaf(ctx.row)
 
-  function toColumnDef(c: BigColumn): ColumnDef<any, BigRow> {
-    const base = { field: c.field, header: c.header, width: c.width } as ColumnDef<any, BigRow>
+  function toColumnDef(c: BigColumn): ColumnDef<any, GridRow> {
+    const base = { field: c.field, header: c.header, width: c.width } as ColumnDef<any, GridRow>
     switch (c.field) {
       case 'id':
         return { ...base, align: 'right', cellClass: 'bd-id', editable: false, formatter: leafOnly((v) => full.format(Number(v))) }
@@ -148,7 +154,7 @@
       case 'balance':
         return { ...base, align: 'right', editable: editableLeaf, editorType: 'number', formatter: ({ value }) => (value == null ? '' : usd.format(Number(value))) }
       case 'status':
-        return { ...base, editable: editableLeaf, editorType: 'select', editorOptions: [...STATUSES], cellClass: ({ value }) => (value ? `bd-pill bd-s-${String(value).toLowerCase()}` : ''), formatter: leafOnly((v) => String(v)) }
+        return { ...base, editable: editableLeaf, editorType: 'select', editorOptions: [...STATUSES], cellClass: ({ getValue }) => { const value = getValue(); return value ? `bd-pill bd-s-${String(value).toLowerCase()}` : '' }, formatter: leafOnly((v) => String(v)) }
       case 'joined':
         return { ...base, editable: false, cellClass: 'bd-muted', formatter: leafOnly((v) => String(v)) }
       case 'total':
@@ -175,7 +181,7 @@
 
   // Data bars with fixed ranges: the grid never scans the 10M rows for a min
   // and max, it scales each cell against the range the data is drawn from.
-  const conditionalFormats: ConditionalFormat<BigRow>[] = [
+  const conditionalFormats: ConditionalFormat<GridRow>[] = [
     { type: 'dataBar', columns: ['balance'], color: '#3b82f6', gradient: true, minValue: 0, maxValue: 999_999 },
     { type: 'dataBar', columns: ['total'], color: '#10b981', negativeColor: '#ef4444', minValue: -60_000, maxValue: 240_000 },
   ]
@@ -229,7 +235,7 @@
     }, 250)
   }
 
-  async function onEdit(e: { row: BigRow; columnId: string; newValue: unknown; oldValue: unknown }) {
+  async function onEdit(e: { row: GridRow; columnId: string; newValue: unknown; oldValue: unknown }) {
     const meta = (e.row as Record<string, unknown>).__group as { kind?: string } | undefined
     if (meta && meta.kind !== 'leaf') return
     if (Object.is(e.newValue, e.oldValue)) return

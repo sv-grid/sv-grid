@@ -20,7 +20,6 @@ import {
   cellKey,
   cellValue,
   columnByField,
-  columnsFor,
   COUNTRY_BY_NAME,
   DOMAINS,
   FIRST,
