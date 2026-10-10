@@ -1027,7 +1027,11 @@ export function createServerRowModel<TData>(
     d: ServerRowModelDisplayRow<TData>
     g: ServerRowModelGridRow<TData>
   }
-  const lazyMemo = new WeakMap<Store<TData>, Map<number, LazyEntry>>()
+  // Replaced when a write settles (see `saving`): the grid writes a cell edit
+  // into the row object it was handed, so a row the server refused would keep
+  // showing the refused value while its child, which nothing changed, still
+  // matched the memo.
+  let lazyMemo = new WeakMap<Store<TData>, Map<number, LazyEntry>>()
   const LAZY_MEMO_CAP = 20_000
   /** Row `index` of a lazy leaf level, built once per child object it holds. */
   function lazyLeafAt(store: Store<TData>, index: number): LazyEntry {
@@ -1845,6 +1849,9 @@ export function createServerRowModel<TData>(
       return await write()
     } finally {
       writesInFlight -= 1
+      // Rows are rebuilt from the cache on the next read, so an edit the
+      // server refused (and the model never applied) is gone from the grid.
+      lazyMemo = new WeakMap()
       scheduleEmit()
     }
   }

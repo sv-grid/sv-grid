@@ -424,6 +424,20 @@ describe('updateRowData and source-backed CRUD', () => {
     ctl.dispose()
   })
 
+  it('a refused update drops the edit the grid wrote into its row object', async () => {
+    const { be, ctl } = await opened()
+    const gridRow = (id: string) => (ctl.getRows() as unknown as Order[]).find((r) => r && r.id === id)!
+    const before = gridRow('EMEA-1').item
+    // The grid commits a cell edit by writing it into the row it was handed,
+    // then calls updateRow; the server refuses and the model applies nothing.
+    gridRow('EMEA-1').item = 'refused'
+    be.source.updateRow = async () => { throw new Error('qty: a whole number of at least 1') }
+    await expect(ctl.updateRow('EMEA-1', { item: 'refused' })).rejects.toThrow(/whole number/)
+    await settle()
+    expect(gridRow('EMEA-1').item).toBe(before)
+    ctl.dispose()
+  })
+
   it('optimistic: shows an update at once, keeps the server answer, and restores the row when it rejects', async () => {
     const be = backend()
     const ctl = createServerRowModel<Order>(be.source, {
