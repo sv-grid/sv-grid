@@ -208,10 +208,10 @@ function rewriteKitImports(src: string): string {
   // `json` really is the kit helper - a file importing it from somewhere else,
   // or calling res.json(), is not touched.
   const kitImport = /import\s*\{([^}]*)\}\s*from\s*(['"])@sveltejs\/kit\2/
-  const m = s.match(kitImport)
-  if (m && m[1].split(',').map((x) => x.trim()).includes('json')) {
+  const names = (s.match(kitImport)?.[1] ?? '').split(',').map((x) => x.trim())
+  if (names.includes('json')) {
     s = s.replace(/(?<![.\w])json\(/g, 'Response.json(')
-    const rest = m[1].split(',').map((x) => x.trim()).filter((x) => x && x !== 'json')
+    const rest = names.filter((x) => x && x !== 'json')
     s = s.replace(kitImport, rest.length ? `import { ${rest.join(', ')} } from '@sveltejs/kit'` : '')
   }
   return s
