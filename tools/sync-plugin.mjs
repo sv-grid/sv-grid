@@ -101,6 +101,10 @@ for (const rel of files) {
   )
 }
 wanted.set(join('.claude-plugin', 'plugin.json'), Buffer.from(JSON.stringify(manifest, null, 2) + '\n'))
+// The plugin directories (Claude's, cursor.directory) want a LICENSE in the
+// plugin folder itself, and the repository root's says "mixed". The skill and
+// the MCP server it points at are both MIT, so it is the MCP package's text.
+wanted.set('LICENSE', readFileSync(join(ROOT, 'packages', 'mcp', 'LICENSE')))
 wanted.set(
   'README.md',
   Buffer.from(

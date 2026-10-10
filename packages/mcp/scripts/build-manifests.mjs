@@ -111,6 +111,9 @@ const examples = readAll(demosDir, '.svelte').filter((path) => !pendingDemos.has
 
 const routedDocs = readAll(docsDir, '.md')
   .filter((p) => !p.includes('examples-plan'))
+  // docs/_internal/ is planning notes. The site and llms files skip it; the
+  // server shipped it, so a model could quote a plan as if it were the docs.
+  .filter((p) => !relative(docsDir, p).replaceAll('\\', '/').startsWith('_internal/'))
   .filter((p) => !isPendingDoc(relative(docsDir, p).replaceAll('\\', '/').replace(/\.md$/, '')))
   .map((path) => {
     // Search-facing frontmatter (seoTitle etc.) is for the website; the model
