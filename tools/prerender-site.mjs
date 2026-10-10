@@ -1905,7 +1905,7 @@ async function main() {
     return t ? [t] : undefined
   }
   push(`${CANON}/`, '1.0', routeVideos(''))
-  for (const [route] of STATIC_ROUTES) push(`${CANON}/${route}`, '0.8', routeVideos(route))
+  for (const [route] of STATIC_ROUTES) if (ROUTE_SEO[route]?.sitemap !== false) push(`${CANON}/${route}`, '0.8', routeVideos(route))
   for (const c of comparisons) push(`${CANON}/compare/${c.slug}`, '0.7')
   for (const s of solutions) push(`${CANON}/svelte/${s.slug}`, '0.8')
   for (const h of tagHubs) push(`${CANON}/blog/tag/${h.slug}`, '0.5')

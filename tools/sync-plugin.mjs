@@ -38,6 +38,9 @@ const manifest = {
   homepage: 'https://svgrid.com/docs/help/mcp-server/',
   repository: 'https://github.com/sv-grid/sv-grid',
   license: 'MIT',
+  // Required by the plugin directory because mcpServers points at a remote
+  // server; the page says what that server logs.
+  privacyPolicyUrl: 'https://svgrid.com/privacy/',
   keywords: [
     'svelte',
     'svelte5',
@@ -105,6 +108,13 @@ wanted.set(join('.claude-plugin', 'plugin.json'), Buffer.from(JSON.stringify(man
 // plugin folder itself, and the repository root's says "mixed". The skill and
 // the MCP server it points at are both MIT, so it is the MCP package's text.
 wanted.set('LICENSE', readFileSync(join(ROOT, 'packages', 'mcp', 'LICENSE')))
+// The directory listing icon: a square PNG, 512-2048 px, at this exact path.
+// The brand mark lives in the private website submodule, so a checkout without
+// it keeps the copy already committed rather than dropping the icon.
+const ICON_SRC = join(ROOT, 'website', 'public', 'brand', 'svgrid-logo-icon-1200.png')
+const ICON_KEPT = join(PLUGIN_DIR, '.claude-plugin', 'icon.png')
+if (existsSync(ICON_SRC)) wanted.set(join('.claude-plugin', 'icon.png'), readFileSync(ICON_SRC))
+else if (existsSync(ICON_KEPT)) wanted.set(join('.claude-plugin', 'icon.png'), readFileSync(ICON_KEPT))
 wanted.set(
   'README.md',
   Buffer.from(
@@ -130,6 +140,9 @@ wanted.set(
       'The hosted server needs no Node and no key. For the Svelte compiler pass and',
       'the 27 Studio tools, point the server at `npx @svgrid/mcp` instead - see',
       '<https://svgrid.com/docs/help/mcp-server/>.',
+      '',
+      'Privacy: the hosted server logs the tool name, timing, search text and the',
+      'size of checked code, never the code itself - <https://svgrid.com/privacy/>.',
       '',
     ].join('\n'),
   ),

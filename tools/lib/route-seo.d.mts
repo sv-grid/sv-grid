@@ -6,6 +6,8 @@ export type RouteSeoEntry = {
   path: string
   /** Default true. False keeps the route client-side only. */
   prerender?: boolean
+  /** Default true. False keeps a prerendered route out of the sitemap. */
+  sitemap?: boolean
 }
 export const ROUTE_SEO: Record<string, RouteSeoEntry>
 /** `[section, title, description]` tuples, table order, prerendered routes only. */

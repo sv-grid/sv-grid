@@ -856,7 +856,7 @@
     "date": "2026-09-03"
   },
   "/compare/": {
-    "hash": "61df3208afb5",
+    "hash": "cb278d317c2f",
     "date": "2026-10-10"
   },
   "/compare/ag-grid/": {
@@ -904,8 +904,8 @@
     "date": "2026-10-08"
   },
   "/compare/svar-svelte-datagrid/": {
-    "hash": "097c960cbb2b",
-    "date": "2026-10-08"
+    "hash": "3b454bad84e8",
+    "date": "2026-10-10"
   },
   "/compare/svelte-headless-table/": {
     "hash": "2f2294142cad",
@@ -2928,8 +2928,8 @@
     "date": "2026-10-06"
   },
   "/docs/getting-started/sveltekit/": {
-    "hash": "0b7b77935c3b",
-    "date": "2026-10-08"
+    "hash": "57cc2f402efb",
+    "date": "2026-10-10"
   },
   "/docs/help/accessibility/": {
     "hash": "b6085f786382",
@@ -3328,8 +3328,8 @@
     "date": "2026-09-22"
   },
   "/docs/help/llm-grounding/": {
-    "hash": "522b03543d21",
-    "date": "2026-09-10"
+    "hash": "9af63e1db25e",
+    "date": "2026-10-10"
   },
   "/docs/help/mcp-server/": {
     "hash": "105226487af4",
@@ -4299,6 +4299,10 @@
     "hash": "dce9a536957e",
     "date": "2026-10-08"
   },
+  "/privacy/": {
+    "hash": "3c3d71a53421",
+    "date": "2026-10-10"
+  },
   "/roadmap/": {
     "hash": "d3db64f6857b",
     "date": "2026-09-19"
@@ -4378,6 +4382,10 @@
   "/svelte/tree-grid/": {
     "hash": "9e83f6cf31e6",
     "date": "2026-10-08"
+  },
+  "/terms/": {
+    "hash": "51991cdb7508",
+    "date": "2026-10-10"
   },
   "/theme-builder/": {
     "hash": "1af8e19bcfd2",

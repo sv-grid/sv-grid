@@ -10,6 +10,7 @@
   "homepage": "https://svgrid.com/docs/help/mcp-server/",
   "repository": "https://github.com/sv-grid/sv-grid",
   "license": "MIT",
+  "privacyPolicyUrl": "https://svgrid.com/privacy/",
   "keywords": [
     "svelte",
     "svelte5",

@@ -16,8 +16,9 @@
  * different titles, one in the served HTML and another after render.
  *
  * `prerender: false` marks a route the prerenderer skips: the homepage gets a
- * richer body-injection step of its own, and the legal pages are deliberately
- * kept out of the sitemap.
+ * richer body-injection step of its own. `sitemap: false` keeps a prerendered
+ * route out of the sitemap: the legal pages, which must answer 200 (the Claude
+ * plugin directory fetches the privacy policy) but are not search landings.
  *
  * `description` is clamped to a meta budget by both consumers, and `path` is
  * page-relative with no trailing slash except on the homepage.
@@ -190,13 +191,13 @@ export const ROUTE_SEO = {
     description:
       'SvGrid privacy policy. The marketing site uses cookieless Umami analytics and Google Analytics 4 (with Google Ads) for conversion measurement. No tracking ships in the @svgrid/* npm packages - they make no network calls at runtime.',
     path: '/privacy',
-    prerender: false,
+    sitemap: false,
   },
   terms: {
     title: 'Terms of Use - SvGrid',
     description: 'SvGrid website terms of use and software license summary.',
     path: '/terms',
-    prerender: false,
+    sitemap: false,
   },
 }
 
