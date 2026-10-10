@@ -1,6 +1,6 @@
 {
   "name": "@svgrid/grid",
-  "version": "3.0.9",
+  "version": "3.0.10",
   "description": "Svelte 5 data grid and data table, MIT. Drop-in <SvGrid> component or the same engine headless: virtual scrolling for 100k+ rows, Excel-style filtering, inline editing, grouping, tree data and server-side data. TypeScript, SvelteKit SSR.",
   "author": "jQWidgets <boikom@jqwidgets.com>",
   "license": "MIT",

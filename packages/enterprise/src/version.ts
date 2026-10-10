@@ -24,4 +24,4 @@ export const SVGRID_VERSION = '3.1.5'
  *
  * `version.test.ts` asserts this matches packages/grid/package.json.
  */
-export const GRID_VERSION = '3.0.9'
+export const GRID_VERSION = '3.0.10'
