@@ -1752,7 +1752,7 @@
                     {@const stickyTop = stickyTopOfRow(rowIndex)}
                     <tr
                       class="sv-grid-row sv-grid-group-row"
-                      class:sv-grid-row-selected={isRowSelected(row.id)}
+                      class:sv-grid-row-selected={isRowSelected(row.id, row.original)}
                       class:sv-grid-row-frozen={rowIndex < frozenRowCount}
                       class:sv-grid-row-frozen-last={frozenRowCount > 0 && rowIndex === frozenRowCount - 1}
                       class:sv-grid-row-sticky-group={stickyTop !== undefined}
@@ -1781,7 +1781,7 @@
                     {@const stickyTop = stickyTopOfRow(rowIndex)}
                     <tr
                       class={`sv-grid-row ${userRowClass} ${rowDropClass(rowIndex)}`}
-                      class:sv-grid-row-selected={isRowSelected(row.id)}
+                      class:sv-grid-row-selected={isRowSelected(row.id, row.original)}
                       class:sv-grid-row-alt={opt.zebraRows &&
                         rowIndex % 2 === 1}
                       class:sv-grid-row-draggable={rowDragManagedEffective}
@@ -1811,23 +1811,23 @@
                         <td
                           class="sv-grid-cell sv-grid-selection-cell"
                           style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; inset-inline-start: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
-                          onclick={() => toggleRowSelectionById(row.id)}
+                          onclick={() => toggleRowSelectionById(row.id, row.original)}
                         >
                           <span class="sv-grid-cell-line"
                             ><button
                               type="button"
                               class="sv-grid-checkbox"
                               role="checkbox"
-                              aria-checked={isRowSelected(row.id)}
+                              aria-checked={isRowSelected(row.id, row.original)}
                               aria-label="Select row"
                               onclick={(event) => {
                                 event.stopPropagation();
-                                toggleRowSelectionById(row.id);
+                                toggleRowSelectionById(row.id, row.original);
                               }}
                               onkeydown={(event) =>
                                 toggleCheckboxWithKeyboard(event, () => {
                                   event.stopPropagation();
-                                  toggleRowSelectionById(row.id);
+                                  toggleRowSelectionById(row.id, row.original);
                                 })}
                             ></button></span
                           >
@@ -1955,7 +1955,7 @@
                           id={getGridCellDomId(ctrl.gridDomId, rowIndex, c.colIndex)}
                           aria-colindex={c.colIndex + 1}
                           aria-rowindex={rowIndex + 1}
-                          aria-selected={isRowSelected(row.id)}
+                          aria-selected={isRowSelected(row.id, row.original)}
                         >
                           {#if ui && (ui.editing || ui.rowEdit)}
                             <!-- The editing cell stays empty until the lazy

@@ -3536,6 +3536,12 @@ select.sv-grid-fr-editor {
 .sv-grid-table-flex:not([data-row-layout="table"]) > :is(thead, tbody, tfoot) > tr {
   display: flex;
 }
+/* A collapsed row (a sheet's hidden or filtered row) leaves the flow, as it
+   does in table layout. The rule above outranks .sv-grid-row-collapsed, and
+   a 0px flex row still paints its cells' bottom border 1px into the next. */
+.sv-grid-table-flex:not([data-row-layout="table"]) > tbody > tr.sv-grid-row-collapsed {
+  display: none;
+}
 /* Rows are not contained by default. Each body row used to be its own
    layout and paint island (`contain: layout paint`), so a scroll frame
    re-recorded only the rows that changed. Once the body scrolled on the

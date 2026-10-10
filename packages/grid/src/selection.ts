@@ -20,21 +20,33 @@ export function createSelection<
   TFeatures extends TableFeatures = TableFeatures,
   TData extends RowData = RowData,
 >(ctx: any) {
-  function isRowSelected(rowId: string) {
+  /**
+   * A selection model needs the row's data. The body passes the row it is
+   * drawing as `original`; without it the row is looked up by id, a scan of
+   * every row - on a server model's windowed million rows, once per drawn
+   * row, that scan held the page for seconds after a sort.
+   */
+  function rowOriginal(rowId: string): { found: boolean; original?: unknown } {
+    const row = ctx.allRows.find((r: any) => r.id === rowId);
+    return row ? { found: true, original: row.original } : { found: false };
+  }
+
+  function isRowSelected(rowId: string, original?: unknown) {
     const model = ctx.props.rowSelectionModel;
     if (model) {
-      const row = ctx.allRows.find((r: any) => r.id === rowId);
-      return row ? model.isSelected(rowId, row.original) : false;
+      if (original !== undefined) return model.isSelected(rowId, original);
+      const hit = rowOriginal(rowId);
+      return hit.found ? model.isSelected(rowId, hit.original) : false;
     }
     return Boolean(ctx.rowSelectionState[rowId]);
   }
 
-  function toggleRowSelectionById(rowId: string) {
+  function toggleRowSelectionById(rowId: string, original?: unknown) {
     const model = ctx.props.rowSelectionModel;
     if (model) {
-      const row = ctx.allRows.find((r: any) => r.id === rowId);
-      if (!row) return;
-      model.toggle(rowId, row.original, !model.isSelected(rowId, row.original));
+      const hit = original !== undefined ? { found: true, original } : rowOriginal(rowId);
+      if (!hit.found) return;
+      model.toggle(rowId, hit.original, !model.isSelected(rowId, hit.original));
       return;
     }
     ctx.grid.setRowSelection((prev: any) => ({ ...prev, [rowId]: !prev[rowId] }));

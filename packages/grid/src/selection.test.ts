@@ -100,6 +100,20 @@ describe('createSelection - row selection', () => {
     expect(sel.isRowSelected('missing')).toBe(false)
   })
 
+  it('with a selection model, a drawn row is answered from its own data, not a scan of every row', () => {
+    const find = vi.fn(() => makeDataRow('r1', { id: 'r1' }))
+    const model = { isSelected: vi.fn((id: string, data: any) => data?.id === id), toggle: vi.fn() }
+    const ctx = makeCtx({ allRows: { find }, props: { rowSelectionModel: model } })
+    const sel = createSelection(ctx)
+    expect(sel.isRowSelected('r1', { id: 'r1' })).toBe(true)
+    sel.toggleRowSelectionById('r1', { id: 'r1' })
+    expect(model.toggle).toHaveBeenCalledWith('r1', { id: 'r1' }, false)
+    expect(find).not.toHaveBeenCalled()
+    // Without the data (an API caller) it still finds the row by id.
+    expect(sel.isRowSelected('r1')).toBe(true)
+    expect(find).toHaveBeenCalledTimes(1)
+  })
+
   it('toggleRowSelectionById flips the single row', () => {
     const ctx = makeCtx({ rowSelectionState: { r1: false } })
     const sel = createSelection(ctx)

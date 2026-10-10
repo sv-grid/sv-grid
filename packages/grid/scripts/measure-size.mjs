@@ -507,7 +507,11 @@ const BUDGET_KB = {
   // cell's state read through one helper instead of four `{@const}`s plus
   // delegated pointerover/pointerout in place of per-cell enter/leave
   // listeners (~5 ms off a 100k-row mount of ~32 ms).
-  'full render component (SvGrid)': 102.7,
+  // Then 102.70 -> 102.701 (2026-10-10), budget 102.7 -> 102.8: the body
+  // passes each row's data to isRowSelected / toggleRowSelectionById, so a
+  // rowSelectionModel no longer scans every row per drawn row (a sort on the
+  // 1M-row server demo held the page ~17 s; now under 100 ms).
+  'full render component (SvGrid)': 102.8,
   // 3.0 -> 3.5 (measured 3.2): the lazy first build of the row model above
   // (lazyRows / denseRows in getRowModel). createGrid builds rows too.
   'headless core (createGrid)': 3.5,
