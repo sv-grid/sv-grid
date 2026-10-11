@@ -2475,6 +2475,9 @@ function emitSsrGridScreen(schema: EntitySchema, screen: Screen, routed: RoutedE
   const facetPanel = screen.blocks.find((b) => b.config.kind === 'filter')?.config as FilterPanelConfig | undefined
   const pageSize = grid.pageSize && grid.pageSize > 0 ? grid.pageSize : 25
   const wantsFilter = grid.filterable !== false
+  // externalSort alone only renders the indicator; without `sortable` a header
+  // click never reaches onSortingChange, so the URL (and the load) never sorts.
+  const wantsSort = grid.sortable !== false
   const idField = schema.idField ?? schema.fields.find((f) => f.primaryKey)?.field ?? 'id'
   const isFormHidden = (f: EntityField) => f.hidden === true || (typeof f.hidden === 'object' && !!f.hidden.form)
   const editable = schema.fields.filter(
@@ -2840,7 +2843,7 @@ ${wantsFilter ? `
 ${facetForm}
 <SvGrid
   data={data.rows}
-  {columns}
+  {columns}${wantsSort ? '\n  sortable' : ''}
   externalSort
   initialSorting={data.sort}
   showPagination
@@ -5178,13 +5181,28 @@ function randomSecret(bytes = 32): string {
   return Array.from(buf, (b) => b.toString(16).padStart(2, '0')).join('')
 }
 
+/** The Supabase project the app connects to, when the model holds one: the
+ *  project-wide connection, else the first Supabase-bound entity's. */
+function supabaseConnOf(project: StudioProject): { url: string; key: string } | null {
+  const candidates = [project.supabase, ...Object.values(project.dataSources ?? {}).filter((s) => s.kind === 'supabase')] as Array<{ url?: string; key?: string } | undefined>
+  const hit = candidates.find((c) => c?.url && c?.key)
+  return hit ? { url: hit.url!, key: hit.key! } : null
+}
+
 /** A ready-to-run, git-ignored `.env`: the `.env.example` template with a real
  *  random `SESSION_SECRET` filled in, so the app is secure out of the box (no
- *  hardcoded dev secret). Only emitted when the app actually signs sessions. */
-function envDotFile(allSource: string): string | null {
+ *  hardcoded dev secret), and the Supabase URL + anon key the model already
+ *  holds, so a Supabase app runs as generated instead of failing on an empty
+ *  URL. Only emitted when there is something to fill in. */
+function envDotFile(allSource: string, project: StudioProject): string | null {
   const example = envExample(allSource)
-  if (!example || !allSource.includes('SESSION_SECRET')) return null
-  return example.replace('SESSION_SECRET=change-me-to-a-long-random-string', `SESSION_SECRET=${randomSecret()}`)
+  if (!example) return null
+  const supa = allSource.includes('PUBLIC_SUPABASE_URL') ? supabaseConnOf(project) : null
+  if (!allSource.includes('SESSION_SECRET') && !supa) return null
+  let env = example.replace('SESSION_SECRET=change-me-to-a-long-random-string', `SESSION_SECRET=${randomSecret()}`)
+  // The anon key is public / browser-safe; access is governed by RLS.
+  if (supa) env = env.replace(/^PUBLIC_SUPABASE_URL=$/m, `PUBLIC_SUPABASE_URL=${supa.url}`).replace(/^PUBLIC_SUPABASE_ANON_KEY=$/m, `PUBLIC_SUPABASE_ANON_KEY=${supa.key}`)
+  return env
 }
 
 /** A `.env.example` listing the env vars the generated code reads, when any. */
@@ -5467,7 +5485,7 @@ export function emitStudioAppBundle(project: StudioProject): GeneratedFile[] {
     rootLayoutModule(project),
     ...SCAFFOLD_STATIC,
     ...(envExample(allSource) ? [{ path: '.env.example', description: 'Environment variables the app reads (copy to .env and fill in).', contents: envExample(allSource)! }] : []),
-    ...(envDotFile(allSource) ? [{ path: '.env', description: 'Local env (git-ignored): a real random SESSION_SECRET is pre-filled so sessions are secure out of the box; fill in the rest.', contents: envDotFile(allSource)! }] : []),
+    ...(envDotFile(allSource, project) ? [{ path: '.env', description: 'Local env (git-ignored): a real random SESSION_SECRET and the Supabase connection the design holds are pre-filled, so the app runs as generated; fill in the rest.', contents: envDotFile(allSource, project)! }] : []),
     { path: 'src/app.css', description: 'App theme tokens + page styles.', contents: appCss(project) },
     // Your styles: a dedicated CSS file the layout imports AFTER app.css, so its rules
     // win. Edited in the designer's Styles panel; regenerated from the model.

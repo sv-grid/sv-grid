@@ -57,7 +57,8 @@ export type KitVersion = 2 | 3
 export function toSvelteKit3(files: readonly GeneratedFile[]): GeneratedFile[] {
   const paths = new Set(files.map((f) => f.path))
   const adapter = adapterOf(files)
-  const envNames = new Set<string>()
+  // Every env var a source reads, and whether it is public (client-side).
+  const envNames = new Map<string, boolean>()
 
   const out: GeneratedFile[] = []
   for (const file of files) {
@@ -82,7 +83,7 @@ export function toSvelteKit3(files: readonly GeneratedFile[]): GeneratedFile[] {
     }
     out.push(file)
   }
-  if (envNames.size) out.push(envModule([...envNames].sort()))
+  if (envNames.size) out.push(envModule([...envNames].sort(([a], [b]) => a.localeCompare(b))))
   return out
 }
 
@@ -134,7 +135,7 @@ const TSCONFIG_3 = `{
 
 /* --------------------------------------------------------------- sources */
 
-function rewriteSource(src: string, paths: ReadonlySet<string>, envNames: Set<string>): string {
+function rewriteSource(src: string, paths: ReadonlySet<string>, envNames: Map<string, boolean>): string {
   let s = src
   s = rewriteLibImports(s, paths)
   s = rewriteEnv(s, envNames)
@@ -177,21 +178,26 @@ function rewriteLibImports(src: string, paths: ReadonlySet<string>): string {
 /**
  * `import { env } from '$env/dynamic/private'` + `env.X`
  *   -> `import { X } from '$app/env/private'` + `X`
- * Every name read is collected so src/env.ts can declare it, which v3 requires.
+ * and the same for `$env/dynamic/public` -> `$app/env/public` (the Supabase
+ * client reads PUBLIC_SUPABASE_* this way). Every name read is collected so
+ * src/env.ts can declare it, which v3 requires; public ones are declared
+ * `public: true`, or `$app/env/public` would not export them.
  */
-function rewriteEnv(src: string, envNames: Set<string>): string {
-  if (!/from\s+['"]\$env\/dynamic\/private['"]/.test(src)) return src
+function rewriteEnv(src: string, envNames: Map<string, boolean>): string {
+  const kind = /from\s+['"]\$env\/dynamic\/private['"]/.test(src) ? 'private'
+    : /from\s+['"]\$env\/dynamic\/public['"]/.test(src) ? 'public' : null
+  if (!kind) return src
   const used = new Set<string>()
   // `(?<![.\w])` keeps `process.env.X` untouched; only the imported `env` changes.
   const body = src.replace(/(?<![.\w])env\.([A-Z_][A-Z0-9_]*)/g, (_m, name: string) => {
     used.add(name)
     return name
   })
-  for (const n of used) envNames.add(n)
+  for (const n of used) envNames.set(n, kind === 'public' || envNames.get(n) === true)
   const names = [...used].sort()
   return body.replace(
-    /import\s*\{\s*env\s*\}\s*from\s*(['"])\$env\/dynamic\/private\1/,
-    names.length ? `import { ${names.join(', ')} } from '$app/env/private'` : '',
+    new RegExp(`import\\s*\\{\\s*env\\s*\\}\\s*from\\s*(['"])\\$env\\/dynamic\\/${kind}\\1`),
+    names.length ? `import { ${names.join(', ')} } from '$app/env/${kind}'` : '',
   )
 }
 
@@ -219,8 +225,8 @@ function rewriteKitImports(src: string): string {
 
 /* ------------------------------------------------------------------- env */
 
-function envModule(names: readonly string[]): GeneratedFile {
-  const decls = names.map((n) => `  ${n}: { schema: (input) => input ?? '' },`).join('\n')
+function envModule(names: ReadonlyArray<readonly [string, boolean]>): GeneratedFile {
+  const decls = names.map(([n, pub]) => `  ${n}: { ${pub ? 'public: true, ' : ''}schema: (input) => input ?? '' },`).join('\n')
   return {
     path: 'src/env.ts',
     description: 'Environment variables the app reads (SvelteKit 3 requires declaring them).',

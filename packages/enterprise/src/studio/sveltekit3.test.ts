@@ -94,6 +94,26 @@ describe('toSvelteKit3', () => {
     expect(envTs).toContain('SMTP_HOST:')
   })
 
+  it('rewrites $env/dynamic/public to $app/env/public and declares those names public', () => {
+    // The Supabase client reads its URL + key this way. Left as $env/dynamic/public,
+    // a Kit 3 app type-fails and the client gets '' ("supabaseUrl is required").
+    const conn = f('src/lib/connections.ts', [
+      `import { createClient } from '@supabase/supabase-js'`,
+      `import { env } from '$env/dynamic/public'`,
+      `export const c = createClient(env.PUBLIC_SUPABASE_URL ?? '', env.PUBLIC_SUPABASE_ANON_KEY ?? '')`,
+    ].join('\n'))
+    const auth = f('src/lib/server/session.ts', `import { env } from '$env/dynamic/private'\nconst s = env.SESSION_SECRET\n`)
+    const out = toSvelteKit3(v2Bundle([conn, auth]))
+    const src = byPath(out, 'src/lib/connections.ts')!.contents
+    expect(src).toContain(`import { PUBLIC_SUPABASE_ANON_KEY, PUBLIC_SUPABASE_URL } from '$app/env/public'`)
+    expect(src).not.toContain('$env/')
+    const envTs = byPath(out, 'src/env.ts')!.contents
+    expect(envTs).toMatch(/PUBLIC_SUPABASE_URL: \{ public: true,/)
+    expect(envTs).toMatch(/PUBLIC_SUPABASE_ANON_KEY: \{ public: true,/)
+    // A private name stays private: `public: true` would hand it to the browser.
+    expect(envTs).toMatch(/SESSION_SECRET: \{ schema:/)
+  })
+
   it('leaves process.env alone, including in drizzle.config.ts which runs outside Vite', () => {
     const drizzle = f('drizzle.config.ts', `export default { dbCredentials: { url: process.env.DATABASE_URL! } }\n`)
     const mixed = f('src/lib/server/db.ts', [

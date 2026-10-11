@@ -109,6 +109,18 @@ describe('SSR-native screens (renderMode: ssr)', () => {
     expect(() => compile(page, { generate: 'client' })).not.toThrow()
   })
 
+  it('SSR grid passes sortable, or a header click never reaches onSortingChange', () => {
+    // externalSort without sortable rendered an indicator that no click could
+    // change: the generated page (the default since SSR became the default)
+    // could only be sorted by typing ?sort= into the address bar.
+    const pageOf = (p: StudioProject) => emitStudioProject(p).find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    const grid = (page: string) => page.slice(page.indexOf('<SvGrid'), page.indexOf('/>', page.indexOf('<SvGrid')))
+    expect(grid(pageOf(ssrProject()))).toMatch(/^\s*sortable$/m)
+    let off = ssrProject()
+    off = updateBlock(off, off.screens[0]!.id, off.screens[0]!.blocks[0]!.id, { config: { sortable: false } as Partial<GridConfig> })
+    expect(grid(pageOf(off))).not.toMatch(/^\s*sortable$/m)
+  })
+
   it('SSR grid honors filterable: URL-driven filter (q + f_<col>) via applyFilters; off when not filterable', () => {
     const p0 = createProject([customers])
     const withFilter: StudioProject = {
@@ -2191,6 +2203,21 @@ describe('data-source codegen', () => {
     const envEx = emitStudioAppBundle(p).find((f) => f.path === '.env.example')!.contents
     expect(envEx).toContain('PUBLIC_SUPABASE_URL=')
     expect(envEx).toContain('PUBLIC_SUPABASE_ANON_KEY=')
+  })
+
+  it('ships a .env holding the Supabase connection the design knows, so the app runs as generated', () => {
+    // Without it the client starts with an empty URL and every page throws
+    // "supabaseUrl is required", although `init --supabase-url/--supabase-key` had both.
+    let p = createProject([customers])
+    p = setEntityDataSource(p, 'customers', { kind: 'supabase', table: 'customers', url: 'https://x.supabase.co', key: 'anon123' })
+    const env = emitStudioAppBundle(p).find((f) => f.path === '.env')
+    expect(env, 'a Supabase app with a known connection should ship a .env').toBeTruthy()
+    expect(env!.contents).toMatch(/^PUBLIC_SUPABASE_URL=https:\/\/x\.supabase\.co$/m)
+    expect(env!.contents).toMatch(/^PUBLIC_SUPABASE_ANON_KEY=anon123$/m)
+    // Without a known connection there is nothing to fill in, so no .env.
+    let q = createProject([customers])
+    q = setEntityDataSource(q, 'customers', { kind: 'supabase', table: 'customers' })
+    expect(emitStudioAppBundle(q).find((f) => f.path === '.env')).toBeUndefined()
   })
 
   it('still emits an env-var Supabase client without designer url/key', () => {
