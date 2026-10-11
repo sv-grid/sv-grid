@@ -273,7 +273,7 @@
         next.setGroupBy(groupBy)
         // Expand the first group on mount so the demo lands on data,
         // not on a row of collapsed group headers.
-        queueMicrotask(() => next.setRowExpanded(`team:${TEAMS[0]}`, true))
+        queueMicrotask(() => next.setRowExpanded(`group_team_${TEAMS[0]}`, true))
       }}
     />
   </div>

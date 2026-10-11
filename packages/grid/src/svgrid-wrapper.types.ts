@@ -579,7 +579,9 @@ export type SvGridApi<
   /**
    * Set whether a row (group node or expandable leaf) is expanded.
    * The `id` is the engine's row id - for grouped rows that's the
-   * synthetic group key (e.g. `"department:Engineering"`).
+   * synthetic group key, `group_<field>_<value>` (e.g.
+   * `"group_department_Engineering"`; a second level appends
+   * `_<field>_<value>`). An id that matches no row is ignored silently.
    */
   setRowExpanded(id: string, expanded: boolean): void
   /** Expand every group node in the current grouped row model. */

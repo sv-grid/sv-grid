@@ -306,7 +306,7 @@
         api = next
         next.setGroupBy(groupBy)
         // Expand the first line so the demo opens with rows visible.
-        queueMicrotask(() => next.setRowExpanded(`line:${LINES[0]}`, true))
+        queueMicrotask(() => next.setRowExpanded(`group_line_${LINES[0]}`, true))
       }}
     />
   </div>

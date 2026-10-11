@@ -96,7 +96,7 @@
         // then auto-expand the first group so the data isn't hidden behind a
         // single closed row on first paint.
         next.setGroupBy(groupBy)
-        queueMicrotask(() => next.setRowExpanded(`department:Engineering`, true))
+        queueMicrotask(() => next.setRowExpanded(`group_department_Engineering`, true))
       }}
     />
   </div>
