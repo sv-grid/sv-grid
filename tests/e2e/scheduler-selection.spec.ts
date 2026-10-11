@@ -66,6 +66,25 @@ test.describe('scheduler selection (real browser)', () => {
     await expect(page.locator('.sv-drawer')).toBeVisible()
   })
 
+  // The menu opens at the pointer. Opened at the bottom-right corner it used to
+  // run off the screen, leaving Delete unclickable ("outside of the viewport").
+  test('an event menu opened at the screen edge stays on screen', async ({ page }) => {
+    const ev = events(page).filter({ hasText: 'Standup' }).first()
+    const vp = page.viewportSize()!
+    // A real MouseEvent: Playwright's dispatchEvent('contextmenu') builds a
+    // plain Event, which has no clientX / clientY to open the menu at.
+    await ev.evaluate((el, at) => {
+      el.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2, clientX: at.x, clientY: at.y }))
+    }, { x: vp.width - 4, y: vp.height - 4 })
+    const menu = page.locator('.sv-sched-menu')
+    await expect(menu.locator('.sv-menu__item').filter({ hasText: 'Delete' })).toBeVisible()
+    const box = (await menu.boundingBox())!
+    expect(box.y).toBeGreaterThanOrEqual(0)
+    expect(box.x).toBeGreaterThanOrEqual(0)
+    expect(box.y + box.height).toBeLessThanOrEqual(vp.height)
+    expect(box.x + box.width).toBeLessThanOrEqual(vp.width)
+  })
+
   test('dragging empty slots marks a range; Enter creates the event', async ({ page }) => {
     const before = await events(page).count()
     // Use the visible scroll viewport for Y (the grid body is taller than it).

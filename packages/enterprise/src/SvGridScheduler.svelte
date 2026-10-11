@@ -81,6 +81,7 @@
   import { arrowHeadPath, dependencyArrows, type Arrow } from "./gantt/timeline-arrows";
   import { expandAssignments, resourceLoad, type SchedulerAssignment } from "./scheduler-assignments";
   import { columnSummaries } from "./scheduler-summary";
+  import { keepOnScreen } from "./keep-on-screen";
   import { buildAxis, timeToX, xToTime, resolveZoom, zoomPresets, type Axis, type ZoomLevel } from "./scheduler-axis";
   import { buildResourceRows, visibleResourceIds, type ResourceRow } from "./scheduler-resource-tree";
   import { heatCells, heatPeak, type HeatCell } from "./scheduler-heatmap";
@@ -2029,6 +2030,16 @@
     menuPos = { x: e.clientX, y: e.clientY };
     menuOpen = true;
   }
+  // Keep the menu on screen (keep-on-screen.ts). It opens at the pointer, so a
+  // right-click near the bottom or right edge put its lower items outside the
+  // viewport, where they could not be clicked; e2e caught it once the demo
+  // header grew a line.
+  $effect(() => {
+    if (!menuOpen || !menuPanel || typeof window === "undefined") return;
+    const r = menuPanel.getBoundingClientRect();
+    const fit = keepOnScreen(menuPos, r, { width: window.innerWidth, height: window.innerHeight });
+    if (fit.x !== menuPos.x || fit.y !== menuPos.y) menuPos = fit;
+  });
   $effect(() => {
     if (!menuOpen) return;
     const layer = createDismissableLayer({
@@ -2081,6 +2092,13 @@
     listOpen = false;
     openEvent(ev);
   }
+  // The "+N more" list opens at the pointer too; same edge rule as the menu.
+  $effect(() => {
+    if (!listOpen || !listPanel || typeof window === "undefined") return;
+    const r = listPanel.getBoundingClientRect();
+    const fit = keepOnScreen(listPos, r, { width: window.innerWidth, height: window.innerHeight });
+    if (fit.x !== listPos.x || fit.y !== listPos.y) listPos = fit;
+  });
   $effect(() => {
     if (!listOpen) return;
     const layer = createDismissableLayer({

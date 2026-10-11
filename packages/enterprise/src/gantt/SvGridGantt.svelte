@@ -43,6 +43,7 @@
     type SchedulerDependency,
   } from "../scheduler-dependencies";
   import { criticalPath, slackDays } from "./gantt-critical-path";
+  import { keepOnScreen } from "../keep-on-screen";
   import { arrowHeadPath, dependencyArrows, nearestArrow, type BarRect } from "./timeline-arrows";
   import {
     ganttAxis,
@@ -1786,6 +1787,13 @@
     menuPos = { x: e.clientX, y: e.clientY };
     menuOpen = true;
   }
+  // Opened at the pointer: keep the whole menu on screen (keep-on-screen.ts).
+  $effect(() => {
+    if (!menuOpen || !menuPanel || typeof window === "undefined") return;
+    const r = menuPanel.getBoundingClientRect();
+    const fit = keepOnScreen(menuPos, r, { width: window.innerWidth, height: window.innerHeight });
+    if (fit.x !== menuPos.x || fit.y !== menuPos.y) menuPos = fit;
+  });
   $effect(() => {
     if (!menuOpen) return;
     const layer = createDismissableLayer({
