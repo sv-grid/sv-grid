@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-10-10T23:21:31.870Z",
+  "generatedAt": "2026-10-11T21:32:14.483Z",
   "counts": {
     "pages": 406,
     "enterprise": 88,
@@ -1524,9 +1524,12 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Connect to data",
-      "words": 1454,
-      "lastUpdated": "2026-08-15",
-      "demoIds": []
+      "words": 1573,
+      "lastUpdated": "2026-10-11",
+      "demoIds": [],
+      "tutorialIds": [
+        "mk-studio-supabase-friday"
+      ]
     },
     {
       "path": "enterprise/studio/testing.md",

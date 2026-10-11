@@ -16,6 +16,23 @@ Supabase project to a live CRUD screen, step by step. No backend to run.
 > grid page with create / edit / delete, start to finish. This page is the deeper
 > reference behind it.
 
+**Or let Studio write the whole app.** One command reads the tables you name
+and writes a SvelteKit 3 app with list and edit screens for each one (see the
+[Studio CLI](./cli.md)):
+
+```bash
+npx @svgrid/studio init --kit 3 --supabase-url <url> --supabase-key <anon key>
+```
+
+The short below runs it against the [Northwind sample](./supabase-sample.md).
+
+<!-- tutorial:mk-studio-supabase-friday -->
+<figure class="docs-tutorial docs-tutorial-player docs-tutorial-portrait" id="tutorial-mk-studio-supabase-friday" data-docs-tutorial="mk-studio-supabase-friday">
+<video class="docs-tutorial-video" src="/tutorials/mk-studio-supabase-friday.mp4" poster="/tutorials/mk-studio-supabase-friday.poster.webp" width="540" height="960" controls playsinline preload="none" aria-label="Friday, 5:47 PM: a Supabase admin panel by Monday, 47 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/mk-studio-supabase-friday.vtt">Your browser does not play embedded video. <a href="/tutorials/mk-studio-supabase-friday.mp4">Download the MP4</a>.</video>
+<figcaption><strong>Friday, 5:47 PM: a Supabase admin panel by Monday</strong> (47 s, with narration). <a href="https://www.youtube.com/watch?v=OsR_dvtlbbM" rel="noopener">Watch on YouTube</a></figcaption>
+</figure>
+<!-- /tutorial:mk-studio-supabase-friday -->
+
 **All the Supabase pages, one map.** This guide is the canonical entry point -
 connect, keys, and Row-Level Security. From here:
 

@@ -125,9 +125,11 @@ export function tutorialBlock(t) {
     : ''
   const cues = (t.transcript ?? []).map((c) => `<p>${escapeHtml(normalizeNarration(c.text))}</p>`)
   const playback = t.player ? 'controls playsinline preload="none"' : 'muted loop playsinline preload="none"'
+  // A vertical short (9:16) gets its own frame; the default one is 16:9.
+  const portrait = t.height > t.width ? ' docs-tutorial-portrait' : ''
   return [
     `<!-- tutorial:${t.id} -->`,
-    `<figure class="docs-tutorial${t.player ? ' docs-tutorial-player' : ''}" id="tutorial-${t.id}" data-docs-tutorial="${t.id}">`,
+    `<figure class="docs-tutorial${t.player ? ' docs-tutorial-player' : ''}${portrait}" id="tutorial-${t.id}" data-docs-tutorial="${t.id}">`,
     `<video class="docs-tutorial-video" src="${t.files.mp4}" poster="${t.files.poster}" width="${t.width}" height="${t.height}" ${playback} aria-label="${title}, ${secs} second tutorial">` +
       `<track kind="captions" srclang="en" label="English" src="${t.files.vtt}"${t.player ? '' : ' default'}>` +
       `Your browser does not play embedded video. <a href="${t.files.mp4}">Download the MP4</a>.</video>`,
