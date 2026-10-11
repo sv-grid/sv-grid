@@ -155,6 +155,13 @@ export type BlockCache<TData> = {
   setViewport(startIndex: number, endIndex: number): void
   /** The dense row array to hand the grid. Placeholders fill unloaded slots. */
   rows(): ReadonlyArray<TData>
+  /**
+   * The same rows as windowed data (see windowed-data.ts): `length` is the
+   * row count and each entry is read through `getRow` when the grid asks for
+   * it, so handing it over costs O(1) whatever the count. A new array per
+   * change, like `rows()`.
+   */
+  windowedRows(): ReadonlyArray<TData>
   /** One row, without building the array. Returns a placeholder when unloaded. */
   getRow(index: number): TData | typeof LOADING_ROW | typeof FAILED_ROW
   rowCount(): number | null
@@ -243,6 +250,7 @@ export function createBlockCache<TData>(options: BlockCacheOptions<TData>): Bloc
 
   let emitScheduled = false
   let rowsCache: TData[] | null = null
+  let windowedCache: TData[] | null = null
 
   const blockOf = (rowIndex: number): number => Math.floor(rowIndex / blockSize)
   const startOf = (blockIndex: number): number => blockIndex * blockSize
@@ -297,7 +305,7 @@ export function createBlockCache<TData>(options: BlockCacheOptions<TData>): Bloc
    * mutations notifies once. Every mutating path ends here.
    */
   function emit(): void {
-    rowsCache = null // rebuilt lazily, on the next read
+    rowsCache = windowedCache = null // rebuilt lazily, on the next read
     if (disposed || emitScheduled) return
     emitScheduled = true
     schedule(() => {
@@ -415,6 +423,14 @@ export function createBlockCache<TData>(options: BlockCacheOptions<TData>): Bloc
     }
   }
 
+  function rowAt(index: number): TData | typeof LOADING_ROW | typeof FAILED_ROW {
+    const block = blocks.get(blockOf(index))
+    if (!block) return LOADING_ROW
+    if (block.status === 'failed') return FAILED_ROW
+    const row = block.rows[index - startOf(blockOf(index))]
+    return row ?? LOADING_ROW
+  }
+
   function abortAll(): void {
     for (const block of blocks.values()) block.controller?.abort()
     inFlight = 0
@@ -461,13 +477,13 @@ export function createBlockCache<TData>(options: BlockCacheOptions<TData>): Bloc
       return out
     },
 
-    getRow(index) {
-      const block = blocks.get(blockOf(index))
-      if (!block) return LOADING_ROW
-      if (block.status === 'failed') return FAILED_ROW
-      const row = block.rows[index - startOf(blockOf(index))]
-      return row ?? LOADING_ROW
+    windowedRows() {
+      if (windowedCache) return windowedCache
+      windowedCache = createWindowedData<TData>(currentLength(), (i) => rowAt(i) as TData)
+      return windowedCache
     },
+
+    getRow: rowAt,
 
     rowCount: () => (countKnown ? count : null),
     lastRowKnown: () => countKnown,
@@ -507,7 +523,7 @@ export function createBlockCache<TData>(options: BlockCacheOptions<TData>): Bloc
       blocks.clear()
       count = null
       countKnown = false
-      rowsCache = null
+      rowsCache = windowedCache = null
       fetchViewport()
       emit()
     },
@@ -651,7 +667,7 @@ export function createBlockCache<TData>(options: BlockCacheOptions<TData>): Bloc
         controller: null,
       })
     }
-    rowsCache = null
+    rowsCache = windowedCache = null
   }
 
   /** Forget every block from `fromBlock` on, aborting any in flight. */
@@ -661,7 +677,7 @@ export function createBlockCache<TData>(options: BlockCacheOptions<TData>): Bloc
       block.controller?.abort()
       blocks.delete(index)
     }
-    rowsCache = null
+    rowsCache = windowedCache = null
   }
 }
 ```

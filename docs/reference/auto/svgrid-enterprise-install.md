@@ -150,7 +150,7 @@ export function installEnterprise<
   }
   // Surface the unlicensed state at install time so the watermark appears
   // alongside the grid, not just after the user clicks Export.
-  if (!isLicenseKeySet()) emitUnlicensedNudge()
+  if (!hasValidLicense()) emitUnlicensedNudge()
   return pro
 }
 ```

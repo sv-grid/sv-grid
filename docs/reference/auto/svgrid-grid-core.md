@@ -898,13 +898,9 @@ text; set a column's type or supply your own comparator to override.
 
 ```ts
 export const sortFns = {
-  auto: (a: unknown, b: unknown) => String(a).localeCompare(String(b)),
-  number: (a: unknown, b: unknown) => Number(a ?? 0) - Number(b ?? 0),
-  date: (a: unknown, b: unknown) => {
-    const aa = new Date(a as any).getTime()
-    const bb = new Date(b as any).getTime()
-    return aa - bb
-  },
+  auto: (a: unknown, b: unknown) => compareAutoValues(a, b),
+  number: (a: unknown, b: unknown) => compareNumericKeys(numberSortKey(a), numberSortKey(b)),
+  date: (a: unknown, b: unknown) => compareNumericKeys(dateSortKey(a), dateSortKey(b)),
 }
 ```
 
@@ -918,6 +914,157 @@ export const filterFns = {
   includesString: (value: unknown, query: string) =>
     String(value).toLowerCase().includes(query.toLowerCase()),
   equals: (value: unknown, query: unknown) => value === query,
+}
+```
+
+### `type BaseRowCtx`
+
+Everything a base row needs that is the same for every row in the table.
+
+One object per table, referenced by every row, instead of one closure scope
+per row. See {@link BASE_ROW_METHODS}.
+
+```ts
+export type BaseRowCtx<TData extends RowData> = {
+  grid: SvGrid<TData>
+  store: { state: Record<string, any> }
+  columns: Array<Column<TData>>
+  columnCount: number
+  columnIndexById: Map<string, number>
+}
+```
+
+### `const ROW_VALUES`
+
+A base row's cached cell values. @internal
+
+```ts
+export const ROW_VALUES = Symbol('svgrid.row.values')
+```
+
+### `const ROW_CELLS`
+
+A base row's cached cells. @internal
+
+```ts
+export const ROW_CELLS = Symbol('svgrid.row.cells')
+```
+
+### `const ROW_FILTER_POS`
+
+The row's index in the last full filter's output (see ROW_FILTER_GEN). @internal
+
+```ts
+export const ROW_FILTER_POS = Symbol('svgrid.row.filterPos')
+```
+
+### `function denseRows`
+
+The rows as a plain dense array. For a lazyRows() list, makes the rows not
+made yet and returns its backing array - the same row objects, without the
+Proxy in front. Anything that reads every row (a sort, a filter) should go
+through this first: a trap per read, over several passes of a million rows,
+cost more than building the rows did.
+
+```ts
+export function denseRows<T>(rows: T[]): T[] {
+  const fill = (rows as unknown as Record<symbol, (() => T[]) | undefined>)[LAZY_FILL]
+  return fill ? fill() : rows
+}
+```
+
+### `type WindowedRowModel`
+
+The row model for windowed data (windowed-data.ts), or null when `data` is
+an ordinary array. It lives in windowed-row-model.ts and is installed by the
+first createWindowedData() call, so a grid that is never handed windowed
+data does not bundle it: this file imports nothing from either module.
+
+```ts
+export type WindowedRowModel<TData extends RowData> = (data: unknown, columns: Array<Column<TData>>) => RowModel<TData> | null
+```
+
+### `type WindowedRowModelInstall`
+
+How windowed-row-model.ts builds its row model from the base row helpers. @internal
+
+```ts
+export type WindowedRowModelInstall =<TData extends RowData>(ctx: {
+  rowCtxFor: (columns: Array<Column<TData>>) => BaseRowCtx<TData>
+  getRowId: () => ((row: TData, index: number) => string) | undefined
+}) => WindowedRowModel<TData>
+```
+
+### `function registerWindowedRowModel`
+
+Internal: windowed-row-model.ts installs itself here.
+
+```ts
+export function registerWindowedRowModel(install: WindowedRowModelInstall): void {
+  installWindowedRowModel = install
+}
+```
+
+### `type BaseRowState`
+
+A base row's private fields, on top of the public {@link Row} surface.
+
+```ts
+export type BaseRowState<TData extends RowData> = Row<TData> & {
+  [ROW_CTX]: BaseRowCtx<TData>
+  [ROW_VALUES]: Array<unknown> | null
+  [ROW_CELLS]: Array<Cell<TData>> | null
+  [ROW_FILTER_GEN]: number
+  [ROW_FILTER_POS]: number
+  [ROW_SORT_DROPPED]: number
+  [ROW_SORT_KEY]: unknown
+}
+```
+
+### `const BASE_ROW_METHODS`
+
+The methods every base row carries, defined ONCE and assigned by reference.
+
+Rows used to be built as object literals whose methods were closures, which
+meant a 100k-row grid allocated 700k closures and a closure scope per row
+before painting anything. Measured at 100k x 9: 13.8 ms and 56.5 MB to build,
+against 2.0 ms and 14.5 MB for this shape - the single largest cost in
+mounting a large grid.
+
+They read their row through `this` rather than a captured variable, which is
+why they can be shared. Note they are assigned as OWN properties rather than
+put on a prototype: `Row` is public, several row models legitimately do
+`{ ...row, depth }`, and a spread copies own properties but not a prototype.
+A class here would silently strip every method off a cloned row.
+
+```ts
+export const BASE_ROW_METHODS = {
+  getCanExpand(this: BaseRowState<RowData>) {
+    return false
+  },
+  getIsExpanded(this: BaseRowState<RowData>) {
+    return Boolean((this[ROW_CTX].store.state.expanded ?? {})[this.id])
+  },
+  toggleExpanded(this: BaseRowState<RowData>) {
+    const id = this.id
+    this[ROW_CTX].grid.setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))
+  },
+  getIsSelected(this: BaseRowState<RowData>) {
+    return Boolean((this[ROW_CTX].store.state.rowSelection ?? {})[this.id])
+  },
+  toggleSelected(this: BaseRowState<RowData>) {
+    const id = this.id
+    this[ROW_CTX].grid.setRowSelection((prev) => ({ ...prev, [id]: !prev[id] }))
+  },
+  getAllCells(this: BaseRowState<RowData>) {
+    return this[ROW_CELLS] ?? buildBaseRowCells(this)
+  },
+  getCellValueByColumnId(this: BaseRowState<RowData>, columnId: string) {
+    const idx = this[ROW_CTX].columnIndexById.get(columnId)
+    if (idx === undefined) return undefined
+    if (!this[ROW_VALUES]) this[ROW_VALUES] = baseRowValues(this)
+    return this[ROW_VALUES][idx]
+  },
 }
 ```
 
@@ -1440,6 +1587,8 @@ export function createSortedRowModel<TData extends RowData>(
       desc: boolean
       compare: (a: any, b: any) => number
       keyOf: (row: Row<TData>) => any
+      /** Set when every key is an integer rank in [0, rankCount): the text rank path. */
+      rankCount?: number
     }> = []
 
     for (const clause of sorting) {
@@ -1469,15 +1618,36 @@ export function createSortedRowModel<TData extends RowData>(
       let keys: Array<any> = new Array(n)
       let compare: (a: any, b: any) => number
       let keyOf: (row: Row<TData>) => any
+      let autoMode: 'number' | 'mixed' | 'text' | undefined
+      let rankCount: number | undefined
 
       if (comparator === sortFns.number) {
-        keyOf = (row) => Number(row.getCellValueByColumnId(columnId) ?? 0)
+        keyOf = (row) => numberSortKey(row.getCellValueByColumnId(columnId))
         for (let i = 0; i < n; i++) keys[i] = keyOf(rows[i]!)
         compare = compareNumericKeys
       } else if (comparator === sortFns.date) {
-        keyOf = (row) => new Date(row.getCellValueByColumnId(columnId) as any).getTime()
+        keyOf = (row) => dateSortKey(row.getCellValueByColumnId(columnId))
         for (let i = 0; i < n; i++) keys[i] = keyOf(rows[i]!)
         compare = compareNumericKeys
+      } else if (comparator === sortFns.auto && (autoMode = autoSortMode(rows, columnId)) === 'number') {
+        // A column with no declared type whose values are all numbers. Sorting
+        // it as text put 10 before 2 (#104).
+        keyOf = (row) => {
+          const value = row.getCellValueByColumnId(columnId)
+          // A text value arriving in a tick changes the mode; only a full sort
+          // can place it.
+          return typeof value === 'number' || isBlankSortValue(value)
+            ? numberSortKey(value)
+            : MISSING_KEY
+        }
+        for (let i = 0; i < n; i++) keys[i] = keyOf(rows[i]!)
+        compare = compareNumericKeys
+      } else if (autoMode === 'mixed') {
+        // Numbers and text in one column. Rare, so no key tricks: the raw
+        // values through the pairwise comparator, which orders by kind first.
+        keyOf = (row) => row.getCellValueByColumnId(columnId)
+        for (let i = 0; i < n; i++) keys[i] = keyOf(rows[i]!)
+        compare = compareAutoValues
       } else if (comparator === sortFns.auto) {
         const strings: string[] = new Array(n)
         // Decide whether ranking is worth attempting BEFORE paying for it.
@@ -1493,26 +1663,51 @@ export function createSortedRowModel<TData extends RowData>(
         // column. Reading every k-th row is no more expensive and does not care
         // how the rows are arranged.
         const rankLimit = n >> 1
-        let distinct: Set<string> | null = null
+        // Each distinct value's id (its insertion order), when ranking.
+        let idOf: Map<string, number> | null = null
         if (n > 0) {
-          const sampleTarget = Math.min(n, 256)
+          // Ranking pays when the column has at most n/2 distinct values. A
+          // small sample cannot see that by asking whether half of it repeats:
+          // 1M rows of 80k values, each one 12 times over, gave 256 samples
+          // with almost no repeats, so ranking was skipped and the sort made
+          // 20M collator calls (1.75 s; ranked, it is a fraction of that).
+          // Count the repeats in a larger sample instead. S samples from u
+          // equally common values repeat about S^2 / 2u times, so u <= n/2
+          // shows as at least S^2 / n repeats. Up to SAMPLE rows the whole
+          // column is the sample and the test is exact.
+          const SAMPLE = 2048
+          const sampleTarget = Math.min(n, SAMPLE)
           const stride = Math.max(1, Math.floor(n / sampleTarget))
           const sample = new Set<string>()
           let sampled = 0
           for (let i = 0; i < n; i += stride) {
-            sample.add(String(rows[i]!.getCellValueByColumnId(columnId)))
+            sample.add(autoTextKey(rows[i]!.getCellValueByColumnId(columnId)))
             sampled++
           }
-          // Only attempt ranking when the sample suggests real repetition.
-          if (sample.size * 2 <= sampled) distinct = new Set()
+          const repeats = sampled - sample.size
+          const worthRanking = stride === 1 ? sample.size <= rankLimit : repeats * n >= sampled * sampled
+          if (worthRanking) idOf = new Map()
         }
 
+        // One hash per row: the value's id is looked up (or assigned) as the
+        // row is read, and the rank lookup further down is an array read by
+        // id. It used to add every value to a Set and then look every value up
+        // again in a rank Map, two hashes per row.
+        const ids: Int32Array | null = idOf ? new Int32Array(n) : null
         for (let i = 0; i < n; i++) {
-          const s = String(rows[i]!.getCellValueByColumnId(columnId))
+          const s = autoTextKey(rows[i]!.getCellValueByColumnId(columnId))
           strings[i] = s
-          if (distinct) {
-            distinct.add(s)
-            if (distinct.size > rankLimit) distinct = null
+          if (idOf) {
+            let id = idOf.get(s)
+            if (id === undefined) {
+              id = idOf.size
+              idOf.set(s, id)
+              if (idOf.size > rankLimit) {
+                idOf = null
+                continue
+              }
+            }
+            ids![i] = id
           }
         }
 
@@ -1529,19 +1724,32 @@ export function createSortedRowModel<TData extends RowData>(
         // Guarded on the uniqueness ratio: when nearly every value is distinct
         // the ranking pass cannot save any collator calls and would just add an
         // O(n) Map build, so that case keeps comparing directly.
-        if (distinct) {
-          const ordered = Array.from(distinct).sort(compareCollatedKeys)
-          const rankOf = new Map<string, number>()
-          for (let i = 0; i < ordered.length; i++) rankOf.set(ordered[i]!, i)
-          for (let i = 0; i < n; i++) keys[i] = rankOf.get(strings[i]!)!
+        if (idOf) {
+          // Map keys come back in insertion order, which is id order.
+          const values = Array.from(idOf.keys())
+          const byRank = values.map((_, id) => id).sort((a, b) => compareCollatedKeys(values[a]!, values[b]!))
+          const rankById = new Int32Array(values.length)
+          for (let r = 0; r < byRank.length; r++) rankById[byRank[r]!] = r
+          for (let i = 0; i < n; i++) keys[i] = rankById[ids![i]!]!
+          const rankIds = idOf
+          rankCount = values.length
           compare = compareNumericKeys
           // A replacement whose text is not among the ranked values has no
           // rank; the repair path treats that as "sort everything again".
-          keyOf = (row) => rankOf.get(String(row.getCellValueByColumnId(columnId))) ?? MISSING_KEY
+          keyOf = (row) => {
+            const value = row.getCellValueByColumnId(columnId)
+            // A number arriving in a tick makes the column mixed; resort fully.
+            if (typeof value === 'number') return MISSING_KEY
+            const id = rankIds.get(autoTextKey(value))
+            return id === undefined ? MISSING_KEY : rankById[id]!
+          }
         } else {
           keys = strings
           compare = compareCollatedKeys
-          keyOf = (row) => String(row.getCellValueByColumnId(columnId))
+          keyOf = (row) => {
+            const value = row.getCellValueByColumnId(columnId)
+            return typeof value === 'number' ? MISSING_KEY : autoTextKey(value)
+          }
         }
       } else {
         keyOf = (row) => row.getCellValueByColumnId(columnId)
@@ -1549,7 +1757,7 @@ export function createSortedRowModel<TData extends RowData>(
         compare = comparator
       }
 
-      clauses.push({ keys, desc: clause.desc, compare, keyOf })
+      clauses.push({ keys, desc: clause.desc, compare, keyOf, rankCount })
     }
 
     if (!clauses.length) return null
@@ -1557,8 +1765,10 @@ export function createSortedRowModel<TData extends RowData>(
     // Sort an index array, then materialise. `Array.prototype.sort` is stable,
     // so equal keys keep their original relative order exactly as the previous
     // `[...rows].sort(...)` did.
-    const order = new Array<number>(rows.length)
-    for (let i = 0; i < order.length; i++) order[i] = i
+    // An index array the comparator sorts in place, or a typed array from
+    // countingOrder / radixOrder for a large one-column numeric sort.
+    let order: ArrayLike<number> = new Array<number>(rows.length)
+    for (let i = 0; i < order.length; i++) (order as number[])[i] = i
 
     // Single-clause sorts get a specialised comparator.
     //
@@ -1574,22 +1784,26 @@ export function createSortedRowModel<TData extends RowData>(
     // which the spec coerces to 0, and they differ only in producing 0 versus
     // -0 for equal keys, which sorts identically.
     if (clauses.length === 1) {
-      const { keys, compare, desc } = clauses[0]!
-      if (compare === compareNumericKeys) {
-        order.sort(
+      const { keys, compare, desc, rankCount } = clauses[0]!
+      if (rankCount !== undefined && rows.length >= STABLE_NUMERIC_SORT_MIN) {
+        order = countingOrder(keys as number[], rankCount, desc)
+      } else if (compare === compareNumericKeys && rows.length >= STABLE_NUMERIC_SORT_MIN) {
+        order = radixOrder(keys as number[], desc)
+      } else if (compare === compareNumericKeys) {
+        ;(order as number[]).sort(
           desc
             ? function compareOneNumericDesc(ia, ib) { return keys[ib] - keys[ia] }
             : function compareOneNumericAsc(ia, ib) { return keys[ia] - keys[ib] },
         )
       } else {
-        order.sort(
+        ;(order as number[]).sort(
           desc
             ? function compareOneDesc(ia, ib) { return -compare(keys[ia], keys[ib]) }
             : function compareOneAsc(ia, ib) { return compare(keys[ia], keys[ib]) },
         )
       }
     } else {
-      order.sort(function compareRowsByClauses(ia, ib) {
+      ;(order as number[]).sort(function compareRowsByClauses(ia, ib) {
         for (let k = 0; k < clauses.length; k++) {
           const clause = clauses[k]!
           const result = clause.compare(clause.keys[ia], clause.keys[ib])
@@ -1861,6 +2075,24 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
   /** Old row -> new row for the rebuild the next pipeline run follows; see `replacedRowsOf`. */
   let replacedRows: Map<Row<TData>, Row<TData>> | null = null
   let cachedRowCtx: BaseRowCtx<TData> | null = null
+  /** This grid's windowed-data row model, made on first use from the installed hook. */
+  let windowedRowModel: WindowedRowModel<TData> | null = null
+
+  /** The shared row context for `columns`, reused while they are the same. */
+  function rowCtxFor(columns: Array<Column<TData>>): BaseRowCtx<TData> {
+    if (cachedRowCtx && cachedRowCtx.columns === columns) return cachedRowCtx
+    const columnIndexById = new Map<string, number>()
+    for (let i = 0; i < columns.length; i++) columnIndexById.set(columns[i]!.id, i)
+    cachedRowCtx = {
+      grid: grid as SvGrid<TData>,
+      store,
+      columns,
+      columnCount: columns.length,
+      columnIndexById,
+    }
+    return cachedRowCtx
+  }
+
   let cachedRowModel: RowModel<TData> | null = null
   let cachedRowModelBaseRows: Array<Row<TData>> | null = null
   let cachedPipeline = options._rowModels
@@ -2073,6 +2305,11 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
       // (a $state.raw signal), and the rebuild below touched it twice per row:
       // 200k tracked reads per 100k-row tick, 11 ms of a 65 ms tick.
       const data = options.data
+      if (installWindowedRowModel) {
+        windowedRowModel ??= installWindowedRowModel<TData>({ rowCtxFor, getRowId: () => options.getRowId })
+        const model = windowedRowModel(data, columns)
+        if (model) return model
+      }
       if (cachedBaseRowsInput !== data || cachedBaseRowsColumns !== columns) {
         // Same columns as last time: the shared context still describes them,
         // and a row whose data object sits at the same index can keep its
@@ -2082,7 +2319,10 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
         // landing. The reused row drops its memoised values and cells, since
         // an app may have changed the object in place before passing a new
         // array - that is the case the old rebuild covered by accident.
-        const previous = cachedBaseRowsColumns === columns && cachedRowCtx ? cachedBaseRows : null
+        // A lazy row list (lazyRows below) is read through its backing array,
+        // so reusing rows never makes the ones nobody looked at.
+        const previous = cachedBaseRowsColumns === columns && cachedRowCtx ? (lazyRowsBacking(cachedBaseRows) ?? cachedBaseRows) : null
+        const previousInput = cachedBaseRowsInput
         // Same length as last time: a replacement, not an add or remove, so
         // each new row stands in for the old row at its index and the stages
         // can repair rather than recompute. Anything else is structural.
@@ -2109,7 +2349,6 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
           cachedRowCtx = rowCtx
         }
 
-        cachedBaseRows = new Array(data.length)
         const getRowId = options.getRowId
         const m = BASE_ROW_METHODS as unknown as {
           getCanExpand: Row<TData>['getCanExpand']
@@ -2120,22 +2359,12 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
           getAllCells: Row<TData>['getAllCells']
           getCellValueByColumnId: Row<TData>['getCellValueByColumnId']
         }
-        for (let index = 0; index < data.length; index++) {
+        // `_values` and `_cells` stay null until something reads them - a
+        // 100k-row grid showing twenty rows must not materialise every row's
+        // values or cell objects to paint.
+        const makeRow = (index: number): BaseRowState<TData> => {
           const original = data[index]!
-          const kept = previous?.[index] as BaseRowState<TData> | undefined
-          if (kept && kept.original === original) {
-            kept[ROW_VALUES] = null
-            kept[ROW_CELLS] = null
-            cachedBaseRows[index] = kept
-            continue
-          }
-          // Past a quarter of the rows the merge stops being cheaper than a
-          // sort with the ranking pass; let the stages do the full work.
-          if (replacedRows && replacedRows.size * 4 >= data.length) replacedRows = null
-          // `_values` and `_cells` stay null until something reads them - a
-          // 100k-row grid showing twenty rows must not materialise every row's
-          // values or cell objects to paint.
-          const row: BaseRowState<TData> = {
+          return {
             id: getRowId ? getRowId(original, index) : String(index),
             index,
             original,
@@ -2155,6 +2384,36 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
             getAllCells: m.getAllCells,
             getCellValueByColumnId: m.getCellValueByColumnId,
           }
+        }
+        if (!previous) {
+          // A first build has nothing to reuse or repair: make each row the
+          // first time something reads it. A grid that only shows the first
+          // screen makes ~40 row objects, not 100k; a sort or a filter reads
+          // every row and makes them then. Building them all up front was
+          // most of a 100k-row mount (~24 ms, plus the garbage).
+          cachedBaseRows = lazyRows(data.length, makeRow)
+        } else cachedBaseRows = new Array(data.length)
+        for (let index = 0; previous && index < data.length; index++) {
+          const original = data[index]!
+          const kept = previous[index] as BaseRowState<TData> | undefined
+          if (kept && kept.original === original) {
+            // Read before writing: a row nobody rendered (a million off-screen
+            // placeholders under a row model) has nothing memoised, and a
+            // store per row was a measurable share of each block landing.
+            if (kept[ROW_VALUES] !== null) kept[ROW_VALUES] = null
+            if (kept[ROW_CELLS] !== null) kept[ROW_CELLS] = null
+            cachedBaseRows[index] = kept
+            continue
+          }
+          // Past a quarter of the rows the merge stops being cheaper than a
+          // sort with the ranking pass; let the stages do the full work.
+          if (replacedRows && replacedRows.size * 4 >= data.length) replacedRows = null
+          const row = makeRow(index)
+          // The previous list was lazy and never made this row, but its data
+          // object is the same one: hand the old list this row too, so a
+          // caller still holding it gets the same object for the same data,
+          // as when every row was built up front.
+          if (kept === undefined && previousInput?.[index] === original) previous[index] = row
           cachedBaseRows[index] = row
           if (replacedRows && kept) replacedRows.set(kept, row)
         }
@@ -2200,7 +2459,14 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
         return cachedRowModel
       }
 
-      let rows: Array<Row<TData>> = cachedBaseRows
+      // A stage with work to do reads every row; give it the dense array.
+      const anyStageActive =
+        (currentSlices.sorting?.length ?? 0) > 0 ||
+        (currentSlices.columnFilters?.length ?? 0) > 0 ||
+        (currentSlices.grouping?.length ?? 0) > 0 ||
+        (currentSlices.expanded as unknown) === true ||
+        Object.keys(currentSlices.expanded ?? {}).length > 0
+      let rows: Array<Row<TData>> = anyStageActive ? denseRows(cachedBaseRows) : cachedBaseRows
 
       const pipeline = options._rowModels ?? {}
       const ordered: Array<RowModelFactory<TData> | undefined> = [

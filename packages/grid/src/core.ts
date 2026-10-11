@@ -832,22 +832,36 @@ export type BaseRowCtx<TData extends RowData> = {
  * legitimately do `{ ...row, depth }` and the clone needs these to work.
  * Non-enumerable string keys would have hidden them from JSON but also from the
  * spread, silently breaking every cloned row.
+ *
+ * Exported for windowed-row-model.ts only; index.ts does not re-export them.
+ * @internal
  */
-// Exported for windowed-row-model.ts only; index.ts does not re-export them.
 export const ROW_CTX = Symbol('svgrid.row.ctx')
+/** A base row's cached cell values. @internal */
 export const ROW_VALUES = Symbol('svgrid.row.values')
+/** A base row's cached cells. @internal */
 export const ROW_CELLS = Symbol('svgrid.row.cells')
-// Where the filtered stage last put this row: the generation of that full
-// filter and the row's index in its output. Lets a tick swap a replaced row
-// into place without re-filtering everything (see createFilteredRowModel).
+/**
+ * Where the filtered stage last put this row: the generation of that full
+ * filter and the row's index in its output. Lets a tick swap a replaced row
+ * into place without re-filtering everything (see createFilteredRowModel).
+ * @internal
+ */
 export const ROW_FILTER_GEN = Symbol('svgrid.row.filterGen')
+/** The row's index in the last full filter's output (see ROW_FILTER_GEN). @internal */
 export const ROW_FILTER_POS = Symbol('svgrid.row.filterPos')
-// Stamped on the rows a sort repair drops, so the merge skips them with one
-// property read per row instead of a Set lookup (3 ms per 100k rows).
+/**
+ * Stamped on the rows a sort repair drops, so the merge skips them with one
+ * property read per row instead of a Set lookup (3 ms per 100k rows).
+ * @internal
+ */
 export const ROW_SORT_DROPPED = Symbol('svgrid.row.sortDropped')
-// The key(s) the last full sort computed for a row: the key itself for a
-// one-clause sort, an array for several. Read by the repair path so a tick
-// never recomputes a kept row's key.
+/**
+ * The key(s) the last full sort computed for a row: the key itself for a
+ * one-clause sort, an array for several. Read by the repair path so a tick
+ * never recomputes a kept row's key.
+ * @internal
+ */
 export const ROW_SORT_KEY = Symbol('svgrid.row.sortKey')
 let sortDropGeneration = 0
 
@@ -925,7 +939,8 @@ function lazyRowsBacking<T>(rows: T[] | null): Array<T | undefined> | null {
  * data does not bundle it: this file imports nothing from either module.
  */
 export type WindowedRowModel<TData extends RowData> = (data: unknown, columns: Array<Column<TData>>) => RowModel<TData> | null
-export type WindowedRowModelInstall = <TData extends RowData>(ctx: {
+/** How windowed-row-model.ts builds its row model from the base row helpers. @internal */
+export type WindowedRowModelInstall =<TData extends RowData>(ctx: {
   rowCtxFor: (columns: Array<Column<TData>>) => BaseRowCtx<TData>
   getRowId: () => ((row: TData, index: number) => string) | undefined
 }) => WindowedRowModel<TData>

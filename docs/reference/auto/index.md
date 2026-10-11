@@ -7,7 +7,7 @@ see [the main reference index](../index.md).
 
 ## @svgrid/grid
 
-- [`@svgrid/grid/core.ts`](./svgrid-grid-core.md) - 58 exports
+- [`@svgrid/grid/core.ts`](./svgrid-grid-core.md) - 68 exports
 - [`@svgrid/grid/svgrid-wrapper.types.ts`](./svgrid-grid-svgrid-wrapper.types.md) - 10 exports
 - [`@svgrid/grid/ai.ts`](./svgrid-grid-ai.md) - 33 exports
 - [`@svgrid/grid/scheduler-model.ts`](./svgrid-grid-scheduler-model.md) - 30 exports
@@ -49,7 +49,7 @@ see [the main reference index](../index.md).
 - [`@svgrid/grid/chart-pivot.ts`](./svgrid-grid-chart-pivot.md) - 6 exports
 - [`@svgrid/grid/chart-table.ts`](./svgrid-grid-chart-table.md) - 3 exports
 - [`@svgrid/grid/grid-icons.ts`](./svgrid-grid-grid-icons.md) - 4 exports
-- [`@svgrid/grid/cell-formatting.ts`](./svgrid-grid-cell-formatting.md) - 4 exports
+- [`@svgrid/grid/cell-formatting.ts`](./svgrid-grid-cell-formatting.md) - 5 exports
 - [`@svgrid/grid/positioning.ts`](./svgrid-grid-positioning.md) - 10 exports
 - [`@svgrid/grid/toast-store.svelte.ts`](./svgrid-grid-toast-store.svelte.md) - 14 exports
 - [`@svgrid/grid/spreadsheet.ts`](./svgrid-grid-spreadsheet.md) - 7 exports

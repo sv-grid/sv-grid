@@ -173,6 +173,15 @@ export type ServerRowModelOptions<TData> = {
    * grid's pinned rows so it stays in view.
    */
   grandTotalRow?: 'top' | 'bottom' | 'pinnedTop' | 'pinnedBottom'
+  /**
+   * Milliseconds to keep the rows on screen after a sort, a filter or a
+   * regroup while the new answer loads. If its first block lands in that
+   * time, the grid goes straight from the old rows to the new ones: no
+   * frame of skeletons between them, and one update instead of two. A fast
+   * source (a worker, a local database) never shows a skeleton; a slow one
+   * shows them once the time is up. Default 0: skeletons at once.
+   */
+  keepRowsWhileLoading?: number
   /** Drop a group's cached children when it is collapsed. Default false. */
   purgeClosedGroups?: boolean
   /**
@@ -883,21 +892,164 @@ export function createServerRowModel<TData>(
 
   // ---------------------------------------------------------- flatten
 
+  /**
+   * A level's rows as display and grid rows, kept from one emit to the next.
+   *
+   * A level of leaves maps each cached row to one display row that depends on
+   * nothing but that row, so the mapping only has to be redone where the
+   * cache changed - and every cache write (a landed block, a patch, a purge)
+   * puts a new object at the index it touches. Comparing identities is a
+   * tight loop; mapping a million rows per landed block of a hundred was most
+   * of what a block cost on the main thread. Keeping the grid row objects also
+   * lets the grid keep its own row objects for them.
+   *
+   * Null for a level holding groups (a group row's display depends on what is
+   * expanded beneath it) and while any detail is open (a detail adds a row).
+   */
+  type LeafRun = {
+    rows: ReadonlyArray<Child<TData>>
+    display: Array<ServerRowModelDisplayRow<TData>>
+    grid: Array<ServerRowModelGridRow<TData>>
+  }
+  const leafRuns = new WeakMap<Store<TData>, LeafRun>()
+
+  function leafRun(store: Store<TData>, rows: ReadonlyArray<Child<TData>>): LeafRun | null {
+    if (openDetails.size) return null
+    const prev = leafRuns.get(store)
+    if (prev && prev.rows === rows) return prev
+    const n = rows.length
+    // Same length (a block landed, a row was patched): update the kept
+    // arrays in place. The flatten only ever copies out of them.
+    const inPlace = !!prev && prev.rows.length === n
+    const display = inPlace ? prev!.display : new Array<ServerRowModelDisplayRow<TData>>(n)
+    const grid = inPlace ? prev!.grid : new Array<ServerRowModelGridRow<TData>>(n)
+    const old = prev?.rows
+    const oldLength = old ? old.length : 0
+    for (let i = 0; i < n; i += 1) {
+      const child = rows[i]!
+      if (i < oldLength && old![i] === child) {
+        if (!inPlace) {
+          display[i] = prev!.display[i]!
+          grid[i] = prev!.grid[i]!
+        }
+        continue
+      }
+      const ph = rowPlaceholderState(child)
+      if (ph) {
+        const d = ph === 'failed' ? FAILED_ROW : LOADING_ROW
+        display[i] = d
+        grid[i] = toGridRow(d)
+        continue
+      }
+      if (child.kind !== 'leaf') {
+        // Written in place up to here, so the kept run is no longer whole.
+        leafRuns.delete(store)
+        return null
+      }
+      const d: ServerLeafRow<TData> = { kind: 'leaf', id: child.id, level: store.level, route: store.route, data: child.data }
+      display[i] = d
+      grid[i] = toGridRow(d, child.data)
+    }
+    const run = { rows, display, grid }
+    leafRuns.set(store, run)
+    return run
+  }
+
+  /**
+   * A level made only of data rows maps one to one: its i-th display row is
+   * its i-th child. Such a level is not walked or copied - the flatten records
+   * it as one lazy piece and `lazyLeafAt` builds a row when the grid reads it,
+   * so a 100M-row level costs the rows on screen, not 100M. Groups, tree
+   * data, pivot, load-more, detail rows and child-row paging still walk.
+   */
+  function isLazyLeafLevel(store: Store<TData>): boolean {
+    return (
+      !treeData &&
+      !pivotMode &&
+      store.level >= groupBy.length &&
+      !store.loadMore &&
+      openDetails.size === 0 &&
+      !paging?.paginateChildRows
+    )
+  }
+  type LazyEntry = {
+    child: unknown
+    d: ServerRowModelDisplayRow<TData>
+    g: ServerRowModelGridRow<TData>
+  }
+  // Replaced when a write settles (see `saving`): the grid writes a cell edit
+  // into the row object it was handed, so a row the server refused would keep
+  // showing the refused value while its child, which nothing changed, still
+  // matched the memo.
+  let lazyMemo = new WeakMap<Store<TData>, Map<number, LazyEntry>>()
+  const LAZY_MEMO_CAP = 20_000
+  /** Row `index` of a lazy leaf level, built once per child object it holds. */
+  function lazyLeafAt(store: Store<TData>, index: number): LazyEntry {
+    const child = store.cache.getRow(index) as Child<TData>
+    const ph = rowPlaceholderState(child)
+    if (ph) {
+      const d = ph === 'failed' ? FAILED_ROW : LOADING_ROW
+      return { child, d, g: toGridRow(d) }
+    }
+    let memo = lazyMemo.get(store)
+    if (!memo) {
+      memo = new Map()
+      lazyMemo.set(store, memo)
+    }
+    const hit = memo.get(index)
+    if (hit && hit.child === child) return hit
+    const leaf = child as Extract<Child<TData>, { kind: 'leaf' }>
+    const d: ServerLeafRow<TData> = { kind: 'leaf', id: leaf.id, level: store.level, route: store.route, data: leaf.data }
+    const entry: LazyEntry = { child, d, g: toGridRow(d, leaf.data) }
+    memo.set(index, entry)
+    if (memo.size > LAZY_MEMO_CAP) {
+      let drop = LAZY_MEMO_CAP / 4
+      for (const key of memo.keys()) {
+        if (drop-- <= 0) break
+        memo.delete(key)
+      }
+    }
+    return entry
+  }
+
   function flatten(): {
     display: ServerRowModelDisplayRow<TData>[]
     grid: ServerRowModelGridRow<TData>[]
   } {
-    const display: ServerRowModelDisplayRow<TData>[] = []
-    const grid: ServerRowModelGridRow<TData>[] = []
+    // The output is a list of pieces: explicit rows (group rows, footers, a
+    // walked level) and lazy leaf levels. Small or walked lists come back as
+    // plain arrays; a list with a lazy piece comes back windowed.
+    type Piece = {
+      start: number
+      length: number
+      display?: ServerRowModelDisplayRow<TData>[]
+      grid?: ServerRowModelGridRow<TData>[]
+      store?: Store<TData>
+      from?: number
+    }
+    const pieces: Piece[] = []
+    let total = 0
+    let open: Piece | null = null
     segments = []
 
     const pushRow = (d: ServerRowModelDisplayRow<TData>, data?: TData): void => {
-      display.push(d)
-      grid.push(toGridRow(d, data))
+      if (!open) {
+        open = { start: total, length: 0, display: [], grid: [] }
+        pieces.push(open)
+      }
+      open.display!.push(d)
+      open.grid!.push(toGridRow(d, data))
+      open.length += 1
+      total += 1
+    }
+    const pushPiece = (piece: Piece): void => {
+      open = null
+      pieces.push(piece)
+      total += piece.length
     }
 
     if (grandTotalRow === 'top' && grandTotal) pushRow(grandTotalDisplay(grandTotal), grandTotal)
-    const bodyStart = display.length
+    const bodyStart = total
 
     /**
      * A `loadMore` level shows its loaded prefix and a "more" row; rows
@@ -910,10 +1062,34 @@ export function createServerRowModel<TData>(
     }
 
     const walk = (store: Store<TData>, from = 0, to = Number.POSITIVE_INFINITY): void => {
+      if (isLazyLeafLevel(store)) {
+        // A pure leaf level: one lazy piece, nothing copied.
+        const end = Math.min(store.cache.windowedRows().length, to)
+        if (end > from) {
+          segments.push({ store, displayStart: total, storeStart: from, length: end - from })
+          pushPiece({ start: total, length: end - from, store, from })
+        }
+        return
+      }
       const rows = store.cache.rows()
+      const run = store.loadMore ? null : leafRun(store, rows)
+      if (run) {
+        // A level of leaves maps one to one: copy the range out of the run.
+        const end = Math.min(rows.length, to)
+        if (end > from) {
+          segments.push({ store, displayStart: total, storeStart: from, length: end - from })
+          pushPiece({
+            start: total,
+            length: end - from,
+            display: run.display.slice(from, end),
+            grid: run.grid.slice(from, end),
+          })
+        }
+        return
+      }
       const end = Math.min(rows.length, to, store.loadMore ? loadedPrefix(rows) : Number.POSITIVE_INFINITY)
       let segStart = from
-      let dispStart = display.length
+      let dispStart = total
       const flushSegment = (upTo: number): void => {
         if (upTo > segStart) {
           segments.push({ store, displayStart: dispStart, storeStart: segStart, length: upTo - segStart })
@@ -989,7 +1165,7 @@ export function createServerRowModel<TData>(
             )
           }
           segStart = i + 1
-          dispStart = display.length
+          dispStart = total
         }
       }
       flushSegment(end)
@@ -1015,7 +1191,7 @@ export function createServerRowModel<TData>(
         // A page of top-level rows. The root rows array is already sized to
         // the count (placeholders for what has not loaded), so the page
         // exists before its block does.
-        const count = root.cache.rowCount() ?? root.cache.rows().length
+        const count = root.cache.rowCount() ?? root.cache.windowedRows().length
         pagerRowCount = count
         const start = Math.min(pageIndex * pageSize, Math.max(0, count - 1))
         walk(root, start, start + pageSize)
@@ -1024,7 +1200,32 @@ export function createServerRowModel<TData>(
       }
     }
 
+    /** Every piece as plain arrays. Lazy pieces read through `lazyLeafAt`. */
+    const materialize = (): { display: ServerRowModelDisplayRow<TData>[]; grid: ServerRowModelGridRow<TData>[] } => {
+      if (pieces.length === 1 && pieces[0]!.display) return { display: pieces[0]!.display, grid: pieces[0]!.grid! }
+      const display: ServerRowModelDisplayRow<TData>[] = []
+      const grid: ServerRowModelGridRow<TData>[] = []
+      for (const p of pieces) {
+        if (p.display) {
+          for (let i = 0; i < p.length; i += 1) {
+            display.push(p.display[i]!)
+            grid.push(p.grid![i]!)
+          }
+          continue
+        }
+        for (let i = 0; i < p.length; i += 1) {
+          const e = lazyLeafAt(p.store!, p.from! + i)
+          display.push(e.d)
+          grid.push(e.g)
+        }
+      }
+      return { display, grid }
+    }
+
     if (paging?.paginateChildRows) {
+      // Child-row paging cuts the flattened body, so it works on plain
+      // arrays; no level is lazy in this mode (see isLazyLeafLevel).
+      const { display, grid } = materialize()
       // A page of the flattened tree. Cut the body and re-base the segments
       // that cross into the page; the grand total stays on every page.
       const bodyLength = display.length - bodyStart
@@ -1048,11 +1249,42 @@ export function createServerRowModel<TData>(
         })
       }
       segments = cut
+      if (grandTotalRow === 'bottom' && grandTotal) {
+        const d = grandTotalDisplay(grandTotal)
+        display.push(d)
+        grid.push(toGridRow(d, grandTotal))
+      }
+      return { display, grid }
     }
 
     if (grandTotalRow === 'bottom' && grandTotal) pushRow(grandTotalDisplay(grandTotal), grandTotal)
 
-    return { display, grid }
+    if (!pieces.some((p) => p.store)) return materialize()
+    // At least one lazy piece: hand out windowed arrays that find the piece
+    // holding an index by binary search on the piece starts.
+    const pieceAt = (index: number): Piece | undefined => {
+      let lo = 0
+      let hi = pieces.length - 1
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1
+        const p = pieces[mid]!
+        if (index < p.start) hi = mid - 1
+        else if (index >= p.start + p.length) lo = mid + 1
+        else return p
+      }
+      return undefined
+    }
+    const entryAt = (index: number): { d: ServerRowModelDisplayRow<TData>; g: ServerRowModelGridRow<TData> } | undefined => {
+      const p = pieceAt(index)
+      if (!p) return undefined
+      const offset = index - p.start
+      if (p.display) return { d: p.display[offset]!, g: p.grid![offset]! }
+      return lazyLeafAt(p.store!, p.from! + offset)
+    }
+    return {
+      display: createWindowedData(total, (i) => entryAt(i)?.d),
+      grid: createWindowedData(total, (i) => entryAt(i)?.g),
+    }
   }
 
   function pagination(): ServerRowModelPagination | null {
@@ -1144,13 +1376,88 @@ export function createServerRowModel<TData>(
     }
   }
 
+  // `keepRowsWhileLoading`: after a sort, a filter or a regroup, the rows on
+  // screen stay until the new answer's first block lands or the time runs
+  // out. `holdUntil` is that deadline, 0 when nothing is held.
+  let holdUntil = 0
+  let holdTimer: ReturnType<typeof setTimeout> | null = null
+  let held = false
+
+  function holdRows(): void {
+    const ms = options.keepRowsWhileLoading ?? 0
+    if (ms > 0 && current.displayRows.length > 0) {
+      holdUntil = Date.now() + ms
+      freezeCurrent()
+    }
+  }
+
+  /**
+   * Held rows must not change under the user, but a lazy list reads the live
+   * caches, which the sort or filter that started the hold is about to purge.
+   * Copy the rows around the last viewport into a snapshot and serve the held
+   * lists from it. Only the grid's subscription is told (so it re-reads);
+   * `onChange` still fires once, when the hold ends.
+   */
+  function freezeCurrent(): void {
+    if (!isWindowedData(current.gridRows)) return // plain arrays are a snapshot already
+    const n = current.gridRows.length
+    const MARGIN = 200
+    const from = Math.max(0, lastViewport[0] - MARGIN)
+    const to = Math.min(n - 1, lastViewport[1] + MARGIN)
+    const display = new Map<number, ServerRowModelDisplayRow<TData>>()
+    const grid = new Map<number, ServerRowModelGridRow<TData>>()
+    for (let i = from; i <= to; i += 1) {
+      display.set(i, current.displayRows[i]!)
+      grid.set(i, current.gridRows[i]!)
+    }
+    current = {
+      ...current,
+      displayRows: createWindowedData(n, (i) => display.get(i) ?? LOADING_ROW),
+      gridRows: createWindowedData(n, (i) => grid.get(i) ?? toGridRow(LOADING_ROW)),
+    }
+    for (const notify of subscribers) notify()
+  }
+
+  /** Whether the rows on screen should stay a little longer. */
+  function holding(): boolean {
+    if (!holdUntil) return false
+    const root = stores.get(routeKey([]))
+    // A failed block ends the hold too: its Retry is the answer to show.
+    const rootAnswered = !!root && root.cache.getCacheState().some((b) => b.status !== 'loading')
+    let pending = false
+    for (const s of stores.values()) if (s.refreshPending) pending = true
+    if (Date.now() >= holdUntil || rootError || (rootAnswered && !pending)) {
+      holdUntil = 0
+      return false
+    }
+    return true
+  }
+
   function scheduleEmit(): void {
     if (disposed || emitScheduled) return
     emitScheduled = true
     queueMicrotask(() => {
       emitScheduled = false
       if (disposed) return
+      if (holding()) {
+        held = true
+        holdTimer ??= setTimeout(() => {
+          holdTimer = null
+          scheduleEmit()
+        }, Math.max(0, holdUntil - Date.now()))
+        return
+      }
+      if (holdTimer) {
+        clearTimeout(holdTimer)
+        holdTimer = null
+      }
       current = buildState()
+      // While rows were held the grid kept reporting positions in the old
+      // list, mapped through the old segments; map them through the new.
+      if (held) {
+        held = false
+        applyViewport()
+      }
       options.onChange?.(current)
       for (const notify of subscribers) notify()
     })
@@ -1272,6 +1579,7 @@ export function createServerRowModel<TData>(
 
   function setSort(next: ServerSortModel): void {
     sortModel = next
+    holdRows()
     for (const store of storesAffectedBySort(next)) {
       if (options.clientSideSort && sortLocally(store)) continue
       store.refreshPending = true
@@ -1282,6 +1590,7 @@ export function createServerRowModel<TData>(
 
   function setFilter(next: ServerFilterModel | GridFilterState): void {
     const previous = filterModel
+    holdRows()
     filterModel = Array.isArray(next.columns)
       ? { global: next.global, columns: toServerFilterColumns(next as GridFilterState) }
       : (next as ServerFilterModel)
@@ -1418,7 +1727,7 @@ export function createServerRowModel<TData>(
 
     if (tx.add && tx.add.length) {
       const total = store.cache.rowCount()
-      const at = tx.addIndex ?? (total ?? store.cache.rows().length)
+      const at = tx.addIndex ?? (total ?? store.cache.windowedRows().length)
       const children = toChildren(route, at, tx.add)
       const placed = store.cache.insert(at, children)
       if (placed) for (const c of children) result.add.push(childId(c))
@@ -1490,6 +1799,9 @@ export function createServerRowModel<TData>(
       return await write()
     } finally {
       writesInFlight -= 1
+      // Rows are rebuilt from the cache on the next read, so an edit the
+      // server refused (and the model never applied) is gone from the grid.
+      lazyMemo = new WeakMap()
       scheduleEmit()
     }
   }
@@ -1720,6 +2032,7 @@ export function createServerRowModel<TData>(
         expanded.clear()
         seenGroups.clear()
       }
+      holdRows()
       rebuild()
     },
     toggleGroup(row) {
@@ -1746,6 +2059,9 @@ export function createServerRowModel<TData>(
     expandAll(opts) {
       autoExpand = !!opts?.includeUnloaded
       for (const store of [...stores.values()]) {
+        // A pure leaf level holds no groups to open; reading it would walk
+        // every row it has.
+        if (isLazyLeafLevel(store)) continue
         for (const child of store.cache.rows()) {
           if (rowPlaceholderState(child) || child.kind !== 'group') continue
           expandGroup([...store.route, child.key])
@@ -1843,6 +2159,15 @@ export function createServerRowModel<TData>(
     },
     setViewport(startIndex, endIndex) {
       lastViewport = [Math.max(0, startIndex), Math.max(startIndex, endIndex)]
+      // The first viewport starts the model. Its first load used to come from
+      // the grid reporting its starting sort on mount (setSort -> rebuild);
+      // the grid no longer reports a mount as a sort change, and a model that
+      // nothing else touched (no sort, no filter, a layout equal to the one
+      // it was built with) then never asked for a single block.
+      if (!disposed && !stores.has(routeKey([]))) {
+        rebuild()
+        return
+      }
       applyViewport()
     },
     setPage(next) {
@@ -1908,6 +2233,8 @@ export function createServerRowModel<TData>(
       generation += 1
       if (asyncTimer) clearTimeout(asyncTimer)
       asyncTimer = null
+      if (holdTimer) clearTimeout(holdTimer)
+      holdTimer = null
       asyncQueue.length = 0
       for (const s of stores.values()) s.cache.dispose()
       stores.clear()
