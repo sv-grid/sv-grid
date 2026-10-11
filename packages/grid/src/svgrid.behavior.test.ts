@@ -562,6 +562,26 @@ describe('SvGrid - row number column', () => {
       destroy()
     }
   })
+
+  it('widens the row-number column to fit the largest row number', async () => {
+    // A flat 56px cut row 73,393 to "734..." in the default theme. Four digits
+    // keep 56px; each digit past that adds 9px.
+    const widthOf = (t: HTMLElement) => (t.querySelector('.sv-grid-row-number-cell') as HTMLElement).style.width
+    const many = Array.from({ length: 12_345 }, (_, i) => ({ ...people[i % people.length]!, id: i }))
+    const small = await mountGrid({ showRowNumbers: true })
+    const big = await mountGrid({ showRowNumbers: true, data: many, virtualization: true })
+    const pinned = await mountGrid({ showRowNumbers: true, data: many, virtualization: true, rowNumberWidth: 90 })
+    try {
+      await tick()
+      expect(widthOf(small.target)).toBe('56px')
+      expect(widthOf(big.target)).toBe(`${18 + 9 * 5}px`)
+      expect(widthOf(pinned.target)).toBe('90px')
+    } finally {
+      small.destroy()
+      big.destroy()
+      pinned.destroy()
+    }
+  })
 })
 
 describe('SvGrid - external sort / filter', () => {

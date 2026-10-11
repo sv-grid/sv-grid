@@ -2158,9 +2158,10 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    */
   zebraRows?: boolean;
   /**
-   * Width (px) of the row-number column. Defaults to 56, which fits up
-   * to "99,999"; bump this when the dataset crosses six digits so the
-   * largest row number stays fully visible at the bottom of a scroll.
+   * Width (px) of the row-number column. By default it fits the largest
+   * row number: 56px up to four digits, then 9px wider per digit (from
+   * `data.length`, or `rowCount` on a server-paged grid). Set it to pin a
+   * width, for example when a theme uses a much larger font.
    */
   rowNumberWidth?: number;
   /** Receives the imperative grid API once the component has mounted. */

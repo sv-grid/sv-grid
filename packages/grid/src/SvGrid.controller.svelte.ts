@@ -628,7 +628,16 @@ export function createSvGridController<
   let dataStateVersion = $state(0);
   const selectionColumnWidth = 44;
   const detailToggleColumnWidth = 36;
-  const rowNumberColumnWidth = $derived(props.rowNumberWidth ?? 56);
+  // Wide enough for the largest row number. A flat 56px leaves 39px for the
+  // text, which at the default theme's 16px font holds four digits: from row
+  // 10,000 the number was cut to "734..." - it was documented as fitting
+  // "99,999". 9px per digit (a digit there measures ~8.6px) plus the 16px of
+  // padding and a little slack; four digits or fewer keep the old 56.
+  const rowNumberColumnWidth = $derived.by(function rowNumberColumnWidth_d() {
+    if (props.rowNumberWidth != null) return props.rowNumberWidth;
+    const largest = Math.max(props.data?.length ?? 0, props.rowCount ?? 0);
+    return Math.max(56, 18 + 9 * String(largest).length);
+  });
   const showDetailToggleEffective = $derived(props.showDetailToggle === true);
   /**
    * What the chevron on a row does, or null when the row has no detail to
