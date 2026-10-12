@@ -362,6 +362,9 @@ function push(ctx: Ctx, d: Diagnostic) {
   ctx.out.push(d)
 }
 
+/** Package names that are not SvGrid but read like it (see AGENTS.md). */
+const LOOKALIKE_PACKAGE = /^(?:svelte-grid|sv-grid|svgrid|@sv-grid\/[\w.-]+)$/
+
 /** Imports: unknown symbols, unknown subpaths, wrong package, missing themes. */
 function checkImports(ctx: Ctx) {
   const { scan, raw, surface } = ctx
@@ -376,6 +379,28 @@ function checkImports(ctx: Ctx) {
     const specStart = m.index + m[0].length - m[4].length - 1
     const spec = raw.slice(specStart, specStart + m[4].length)
     const line = lineAt(raw, m.index)
+    // Look-alike packages a model reaches for (svelte-grid, sv-grid, @sv-grid/*)
+    // are unrelated projects. Only an import of a name SvGrid exports is flagged:
+    // code that really uses one of those libraries keeps its own names.
+    if (LOOKALIKE_PACKAGE.test(spec)) {
+      const names = (/\{([\s\S]*)\}/.exec(clause)?.[1] ?? '')
+        .split(',')
+        .map((n) => /^\s*(?:type\s+)?([A-Za-z_$][\w$]*)/.exec(n)?.[1])
+        .filter((n): n is string => !!n)
+      const has = (s: typeof surface.grid, n: string) => s.values.includes(n) || s.types.includes(n)
+      const ours = names.filter((n) => has(surface.grid, n) || has(surface.enterprise, n))
+      if (ours.length) {
+        const from = ours.every((n) => !has(surface.grid, n)) ? '@svgrid/enterprise' : '@svgrid/grid'
+        push(ctx, {
+          rule: 'svgrid/lookalike-package',
+          severity: 'error',
+          line,
+          message: `"${spec}" is an unrelated project; \`${ours[0]}\` comes from ${from}.`,
+          fix: `import { ${ours.join(', ')} } from '${from}'`,
+        })
+      }
+      continue
+    }
     if (!spec.startsWith('@svgrid/')) continue
 
     ctx.importedFrom.add(spec)

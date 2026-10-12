@@ -316,6 +316,19 @@ describe.skipIf(!hasDist)('check_svgrid_code catches what a model gets wrong', (
     expect(body.checkedAgainst).toMatch(/^@svgrid\/grid@\d+\.\d+\.\d+$/)
   }, 30_000)
 
+  it('flags SvGrid names imported from a look-alike package, and leaves that library alone otherwise', async () => {
+    const lookalike = "<script>\n  import { SvGrid } from 'svelte-grid'\n</script>\n\n<SvGrid data={[]} />"
+    const body = await callJson('check_svgrid_code', { source: lookalike, filename: 'Wrong.svelte' })
+    const d = body.diagnostics.find((x: { rule: string }) => x.rule === 'svgrid/lookalike-package')
+    expect(d, JSON.stringify(body.diagnostics)).toBeTruthy()
+    expect(d.fix).toBe("import { SvGrid } from '@svgrid/grid'")
+    expect(body.ok).toBe(false)
+    // The unrelated library used with its own names is not our business.
+    const theirs = "<script>\n  import Grid from 'svelte-grid'\n</script>\n\n<Grid />"
+    const quiet = await callJson('check_svgrid_code', { source: theirs, filename: 'Theirs.svelte' })
+    expect(quiet.diagnostics.map((x: { rule: string }) => x.rule)).not.toContain('svgrid/lookalike-package')
+  }, 30_000)
+
   it('reports a parse error from the real compiler, not just the static rules', async () => {
     const broken = '<script lang="ts">\n  let a = $state(1)\n</script>\n\n{#if a}\n  <p>yes</p>\n'
     const body = await callJson('check_svgrid_code', { source: broken, filename: 'Broken.svelte' })
