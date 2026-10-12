@@ -1,6 +1,9 @@
 export type OrderStatus = 'paid' | 'pending' | 'refunded' | 'failed'
 
-export interface Order {
+// Type aliases, not interfaces: SvGrid's rows are `Record<string, unknown>`, and
+// TypeScript only lets a type alias stand in for that (an interface has no
+// implicit index signature, so `SvGrid<Order>` would not type-check).
+export type Order = {
   id: string
   customer: string
   email: string
@@ -12,7 +15,7 @@ export interface Order {
   date: string // ISO yyyy-mm-dd
 }
 
-export interface Customer {
+export type Customer = {
   id: string
   name: string
   email: string
