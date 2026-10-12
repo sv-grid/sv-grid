@@ -269,17 +269,33 @@ async function renameBack(dir) {
   }
 }
 
-/**
- * The @svgrid/enterprise version this scaffolder was published alongside, read
- * from the copy npm actually installed next to it.
- */
-async function svgridVersion() {
+/** A package's package.json as npm installed it next to this scaffolder, or null. */
+async function installedPackage(name) {
   try {
     const require = createRequire(import.meta.url)
-    const pkg = JSON.parse(await readFile(require.resolve('@svgrid/enterprise/package.json'), 'utf8'))
-    return typeof pkg.version === 'string' && /^\d+\.\d+\.\d+/.test(pkg.version) ? pkg.version : null
+    return JSON.parse(await readFile(require.resolve(`${name}/package.json`), 'utf8'))
   } catch {
     return null
+  }
+}
+
+/**
+ * The version range to pin each SvGrid package to: the version npm installed
+ * next to this scaffolder. The two packages are versioned separately (the grid
+ * can be on 3.0.x while enterprise is on 3.1.x), so each reads its own; pinning
+ * both to the enterprise version asked npm for a grid release that does not
+ * exist and the app failed to install. When the grid is not resolvable on its
+ * own, enterprise's peer range for it is the next best answer.
+ */
+async function svgridVersions() {
+  const semver = (v) => (typeof v === 'string' && /^\d+\.\d+\.\d+/.test(v) ? v : null)
+  const ent = await installedPackage('@svgrid/enterprise')
+  const grid = await installedPackage('@svgrid/grid')
+  const entVersion = semver(ent?.version)
+  const gridVersion = semver(grid?.version)
+  return {
+    '@svgrid/enterprise': entVersion ? `^${entVersion}` : null,
+    '@svgrid/grid': gridVersion ? `^${gridVersion}` : (ent?.peerDependencies?.['@svgrid/grid'] ?? null),
   }
 }
 
@@ -293,10 +309,10 @@ async function setProjectName(destDir, name) {
     // scaffolded app pins to the version this scaffolder was built against.
     // Left as "latest", `npm install` resolves it fresh on every machine and
     // every day, so an unrelated publish can break an app nobody touched.
-    const version = await svgridVersion()
-    if (version && pkg.dependencies) {
-      for (const dep of ['@svgrid/grid', '@svgrid/enterprise']) {
-        if (pkg.dependencies[dep] === 'latest') pkg.dependencies[dep] = `^${version}`
+    const versions = await svgridVersions()
+    if (pkg.dependencies) {
+      for (const [dep, range] of Object.entries(versions)) {
+        if (range && pkg.dependencies[dep] === 'latest') pkg.dependencies[dep] = range
       }
     }
     await writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
