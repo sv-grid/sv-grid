@@ -99,7 +99,10 @@ const PACKAGES = [
   },
   {
     dir: 'create-sv-grid',
-    watch: ['packages/create-sv-grid/index.mjs', 'packages/create-sv-grid/templates', 'packages/create-sv-grid/package.json'],
+    // templates/admin-dashboard is gitignored here: sync-templates.mjs copies it
+    // from templates/sveltekit-admin-dashboard on prepack, so a fix to that source
+    // ships in this tarball and has to count as a change to it.
+    watch: ['packages/create-sv-grid/index.mjs', 'packages/create-sv-grid/templates', 'packages/create-sv-grid/sync-templates.mjs', 'templates/sveltekit-admin-dashboard', 'packages/create-sv-grid/package.json'],
   },
   {
     dir: 'create-studio',
