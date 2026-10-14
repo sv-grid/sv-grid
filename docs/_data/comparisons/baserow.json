@@ -20,8 +20,8 @@
   "seoTitle": "Baserow Alternative for Svelte Apps - SvGrid Base vs Baserow",
   "seoDescription": "A table database inside your own Svelte app instead of a read-only Baserow iframe: SvGrid Base vs Baserow on embedding, views, your database and pricing.",
   "tagline": "Baserow is an open-source table-database app with an application builder and automations, run on its cloud or self-hosted with Docker on PostgreSQL.",
-  "oneLineVerdict": "Baserow is the pick for a team that wants an open-source app to sign into, self-hosted for free. SvGrid Base is the pick when the table database has to be part of your own Svelte app: editable in your pages, on your database, with Kanban, calendar, Gantt and comments in the one licence.",
-  "alternativeIntro": "People searching for a Baserow alternative usually want the Baserow experience somewhere Baserow does not go: inside their own product. Baserow can show a public view in an iframe, read-only except for forms, or publish an app made in its application builder on its own domain. SvGrid Base is a Svelte component instead: <SvBase> renders editable grid, Kanban, calendar, gallery, Gantt, chart and form views in your pages, behind your login, and writes every change to your Postgres, MySQL, SQLite, Supabase or REST API.",
+  "oneLineVerdict": "Baserow is the pick for a team that wants an open-source app to sign into, self-hosted for free. SvGrid Base is the pick when the table database has to be part of your own Svelte app: editable in your pages, on your database, with Kanban, calendar, charts and comments in the one licence.",
+  "alternativeIntro": "People searching for a Baserow alternative usually want the Baserow experience somewhere Baserow does not go: inside their own product. Baserow can show a public view in an iframe, read-only except for forms, or publish an app made in its application builder on its own domain. SvGrid Base is a Svelte component instead: <SvBase> renders editable grid, Kanban, calendar, gallery, chart and form views in your pages, behind your login, and writes every change to your Postgres, MySQL, SQLite, Supabase or REST API.",
   "intro": [
     "Baserow gives a team tables of typed fields with grid, form and gallery views for free, and Kanban, calendar, timeline and survey views on paid plans. It has linked records with lookups, rollups and counts, formulas, an automation builder with email, HTTP and AI actions, an application builder for portals and internal tools, a REST API and real-time collaboration. The core is MIT; premium and enterprise features need a subscription, self-hosted or on cloud.",
     "SvGrid Base is a table database you ship as part of your own Svelte 5 app. It comes in @svgrid/enterprise: your users get typed fields, saved views, filters, groups, row colors, linked records, automations and an expanded record with comments, and you keep the data in the database you already run. Nothing runs beside your app; the base is a component in it."
@@ -36,7 +36,7 @@
   ],
   "svgridAdvantages": [
     "It is a component, not an app: <SvBase> renders inside your own Svelte pages and edits records there, where Baserow's embed is a read-only iframe of a public view.",
-    "Kanban, calendar, Gantt, chart, row colors and record comments are all in the one Suite licence; Baserow puts Kanban, calendar, timeline, comments and row coloring on paid plans.",
+    "Kanban, calendar, chart, row colors and record comments are all in the one Suite licence; Baserow puts Kanban, calendar, comments and row coloring on paid plans.",
     "Works on your own tables: it reads your schema, columns and foreign keys and writes back to them, where Baserow keeps data in its own database and syncs other sources in.",
     "No vendor branding to remove: the base takes your app's look from --sg-* tokens.",
     "Automations run in the browser or on your server with no credits to count, and their secrets stay on your server.",
@@ -57,7 +57,6 @@
     { "feature": "Works on your existing database", "svgrid": { "status": "yes", "note": "Postgres, MySQL, SQLite, Supabase or a REST API" }, "competitor": { "status": "partial", "note": "data lives in Baserow's PostgreSQL; a PostgreSQL table syncs in, two-way optional, not real time", "source": "br-datasync" } },
     { "feature": "Grid, form and gallery views", "svgrid": { "status": "yes" }, "competitor": { "status": "yes", "note": "every plan", "source": "br-pricing" } },
     { "feature": "Kanban and calendar views", "svgrid": { "status": "yes" }, "competitor": { "status": "paid", "note": "Premium and up", "source": "br-pricing" } },
-    { "feature": "Gantt or timeline view", "svgrid": { "status": "yes", "note": "Gantt view with dependencies and progress" }, "competitor": { "status": "paid", "note": "timeline view on Premium and up", "source": "br-pricing" } },
     { "feature": "Linked records, lookup, rollup, count and formula fields", "svgrid": { "status": "yes" }, "competitor": { "status": "yes", "source": "br-fields" } },
     { "feature": "Autonumber, created and last-modified fields", "svgrid": { "status": "yes" }, "competitor": { "status": "yes", "source": "br-fields" } },
     { "feature": "Automations", "svgrid": { "status": "yes", "note": "in the browser or on your server, no credits" }, "competitor": { "status": "yes", "note": "credits per month on cloud, unlimited self-hosted", "source": "br-automations" } },
@@ -73,7 +72,7 @@
   ],
   "whenToChooseSvGrid": [
     "The table database has to appear, editable, inside your own Svelte or SvelteKit app, under your login and your look.",
-    "You want Kanban, calendar, Gantt, comments and row colors without per-user paid plans.",
+    "You want Kanban, calendar, comments and row colors without per-user paid plans.",
     "Your data already lives in Postgres, MySQL, SQLite, Supabase or behind your API and should stay in those tables.",
     "You would rather pay per developer than per user."
   ],
@@ -117,7 +116,7 @@
     "airtable",
     "nocodb"
   ],
-  "bottomLine": "Baserow is a good open-source table database for a team that will sign into it, and free to self-host. When the table database belongs inside your own product, SvGrid Base fits better: it renders editable views in your Svelte pages instead of a read-only iframe, keeps the data in the tables you already run, and includes Kanban, calendar, Gantt, comments and row colors in one licence priced per developer.",
+  "bottomLine": "Baserow is a good open-source table database for a team that will sign into it, and free to self-host. When the table database belongs inside your own product, SvGrid Base fits better: it renders editable views in your Svelte pages instead of a read-only iframe, keeps the data in the tables you already run, and includes Kanban, calendar, comments and row colors in one licence priced per developer.",
   "faq": [
     {
       "question": "Can I embed Baserow in my own app?",
@@ -133,7 +132,7 @@
     },
     {
       "question": "Which Baserow paid features are included in SvGrid Base?",
-      "answer": "Kanban and calendar views, a timeline (SvGrid Base has a Gantt view with dependencies), row colors and record comments are paid on Baserow and part of SvGrid Base. Role, field and view permissions are Advanced on Baserow; in SvGrid Base they are rules you write in your server or your database."
+      "answer": "Kanban and calendar views, row colors and record comments are paid on Baserow and part of SvGrid Base. Role, field and view permissions are Advanced on Baserow; in SvGrid Base they are rules you write in your server or your database."
     },
     {
       "question": "How is SvGrid Base priced compared with Baserow?",

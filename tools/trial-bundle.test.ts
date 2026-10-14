@@ -215,6 +215,85 @@ describe.skipIf(!DatabaseSync)('trial worker: storage (node:sqlite)', () => {
     expect((db.prepare('SELECT COUNT(*) AS n FROM trial_requests').get() as { n: number }).n).toBe(0)
   })
 
+  it('founding: claims take places, a repeat claim does not, and the last place closes the offer', async () => {
+    const { db, binding } = d1()
+    const env = { DB: binding, ALLOWED_ORIGIN: 'https://svgrid.com', FOUNDING_PLACES: '2', FOUNDING_ENDS: '2099-01-01T00:00:00Z' }
+    const claimBody = (email: string) => ({
+      name: 'Ada', email, company: 'AE', role: 'CTO', building: 'An order desk', developers: 3, agree: true, logoUrl: 'acme.example/logo.svg',
+      quote: 'We moved our order desk grid over in an afternoon.', caseStudy: true,
+    })
+    const status = async () => (await worker.fetch(new Request('https://t/founding/status'), env, ctx)).json()
+    expect(await status()).toMatchObject({ open: true, placesTotal: 2, placesLeft: 2 })
+
+    const claim = (email: string, ip = '10.0.0.1') =>
+      worker.fetch(new Request('https://t/founding/claim', { method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://svgrid.com', 'cf-connecting-ip': ip }, body: JSON.stringify(claimBody(email)) }), env, ctx)
+    expect(await (await claim('a@example.com')).json()).toMatchObject({ ok: true, placesLeft: 1 })
+    expect(await (await claim('A@example.com')).json()).toMatchObject({ ok: true, placesLeft: 1 })
+    expect(await (await claim('b@example.com')).json()).toMatchObject({ ok: true, placesLeft: 0 })
+    expect(await status()).toMatchObject({ open: false, placesLeft: 0 })
+    expect((await claim('c@example.com', '10.0.0.2')).status).toBe(409)
+
+    const row = db.prepare("SELECT * FROM founding_claims WHERE email = 'a@example.com'").get() as Record<string, unknown>
+    expect(row).toMatchObject({ status: 'pending', developers: 3, logo_url: 'https://acme.example/logo.svg' })
+    // Every claim carries its testimonial; a company's keeps the role and the logo.
+    expect(db.prepare("SELECT role, company, logo_url, case_study FROM founding_testimonials WHERE email = 'b@example.com'").get())
+      .toEqual({ role: 'CTO', company: 'AE', logo_url: 'https://acme.example/logo.svg', case_study: 0 })
+
+    // Rejecting a claim gives its place back.
+    db.prepare("UPDATE founding_claims SET status = 'rejected' WHERE email = 'b@example.com'").run()
+    expect((await claim('c@example.com', '10.0.0.2')).status).toBe(200)
+  })
+
+  it('founding: a freelancer claims without a company, for one seat and no logo; a company still needs its name', async () => {
+    const { db, binding } = d1()
+    const env = { DB: binding, ALLOWED_ORIGIN: 'https://svgrid.com', FOUNDING_ENDS: '2099-01-01T00:00:00Z' }
+    const send = (body: unknown) =>
+      worker.fetch(new Request('https://t/founding/claim', { method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://svgrid.com' }, body: JSON.stringify(body) }), env, ctx)
+    const base = { name: 'Ada', building: 'A client dashboard', agree: true }
+    // A company needs its name, and like everyone a testimonial.
+    expect((await send({ ...base, kind: 'company', email: 'c@example.com', developers: 2, quote: 'Good grid, used it on a pilot.' })).status).toBe(400)
+    expect((await send({ ...base, kind: 'company', company: 'AE', email: 'c@example.com', developers: 2 })).status).toBe(400)
+    // A freelancer sends the testimonial with the claim.
+    expect((await send({ ...base, kind: 'freelancer', email: 'f@example.com' })).status).toBe(400)
+    const quote = 'Tried the free grid on a client project; editing and filters just worked.'
+    expect((await send({ ...base, kind: 'freelancer', email: 'f@example.com', developers: 40, logoUrl: 'x.example/l.svg', quote })).status).toBe(200)
+    expect(db.prepare("SELECT kind, company, developers, logo_url FROM founding_claims").all())
+      .toEqual([{ kind: 'freelancer', company: '', developers: 1, logo_url: '' }])
+    expect(db.prepare('SELECT email, role, quote FROM founding_testimonials').all())
+      .toEqual([{ email: 'f@example.com', role: 'Freelance developer', quote }])
+    // Testimonials from solo developers need no company either.
+    const t = await worker.fetch(new Request('https://t/founding/testimonial', { method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://svgrid.com' },
+      body: JSON.stringify({ name: 'Ada', email: 'f@example.com', quote: 'Shipped the dashboard in two weeks with it.', publish: true }) }), env, ctx)
+    expect(t.status).toBe(200)
+  })
+
+  it('founding: the offer closes at its deadline, and a claim must accept the terms', async () => {
+    const { binding } = d1()
+    const env = { DB: binding, ALLOWED_ORIGIN: 'https://svgrid.com', FOUNDING_ENDS: '2020-01-01T00:00:00Z' }
+    const send = (body: unknown) =>
+      worker.fetch(new Request('https://t/founding/claim', { method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://svgrid.com' }, body: JSON.stringify(body) }), env, ctx)
+    const base = { name: 'Ada', email: 'a@example.com', company: 'AE', building: 'x', developers: 1, quote: 'Used the free grid on a pilot; it held up.' }
+    expect((await send({ ...base, agree: false })).status).toBe(400)
+    expect((await send({ ...base, agree: true })).status).toBe(410)
+    expect(await (await worker.fetch(new Request('https://t/founding/status'), env, ctx)).json()).toMatchObject({ open: false, ended: true })
+  })
+
+  it('founding: testimonials are stored with permission, and both lists export for the admin only', async () => {
+    const { db, binding } = d1()
+    const env = { DB: binding, ALLOWED_ORIGIN: 'https://svgrid.com', ADMIN_TOKEN: 'secret-token' }
+    const send = (body: unknown) =>
+      worker.fetch(new Request('https://t/founding/testimonial', { method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://svgrid.com' }, body: JSON.stringify(body) }), env, ctx)
+    const quote = 'We replaced three wrapped grids with SvGrid in a week.'
+    expect((await send({ name: 'Ada', email: 'a@example.com', company: 'AE', quote, publish: false })).status).toBe(400)
+    expect((await send({ name: 'Ada', email: 'a@example.com', company: 'AE', role: 'CTO', quote, publish: true, caseStudy: true })).status).toBe(200)
+    expect(db.prepare('SELECT name, role, case_study FROM founding_testimonials').all()).toEqual([{ name: 'Ada', role: 'CTO', case_study: 1 }])
+
+    const get = (path: string, token: string) => worker.fetch(new Request(`https://t${path}`, { headers: { authorization: `Bearer ${token}` } }), env, ctx)
+    expect((await get('/founding/testimonials.csv', 'wrong-token!')).status).toBe(401)
+    expect(await (await get('/founding/testimonials.csv', 'secret-token')).text()).toContain('three wrapped grids')
+    expect((await get('/founding/claims.csv', 'secret-token')).status).toBe(200)
+  })
+
   it('exports CSV only with the admin token', async () => {
     const { binding } = d1()
     const env = { DB: binding, ALLOWED_ORIGIN: 'https://svgrid.com', ADMIN_TOKEN: 'secret-token' }

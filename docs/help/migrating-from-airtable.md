@@ -20,7 +20,7 @@ renders the views inside your app, and every edit goes back to your tables.
 | A base | A `<SvBase tables>` with one tab per table |
 | A table | A table in your database, opened as a `BaseTable` |
 | A linked record field | A foreign key (link to one) or a junction table (link to many) |
-| A view | A `FieldView`: `grid`, `kanban`, `calendar`, `gallery`, `gantt`, `chart` or `form` |
+| A view | A `FieldView`: `grid`, `kanban`, `calendar`, `gallery`, `chart` or `form` |
 | An automation | An automation in the view bar, or `createAutomationServer` on your server |
 | Collaborators and permissions | Your app's login, and `authorize` on the endpoint |
 | Comments | `setRecordComments`, stored where your app stores them |

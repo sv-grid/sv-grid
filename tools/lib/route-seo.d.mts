@@ -8,6 +8,8 @@ export type RouteSeoEntry = {
   prerender?: boolean
   /** Default true. False keeps a prerendered route out of the sitemap. */
   sitemap?: boolean
+  /** Default false. True marks the page noindex for search engines. */
+  noindex?: boolean
 }
 export const ROUTE_SEO: Record<string, RouteSeoEntry>
 /** `[section, title, description]` tuples, table order, prerendered routes only. */

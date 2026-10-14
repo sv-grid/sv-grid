@@ -163,3 +163,6 @@ tests/perf/.last-compare.json
 tests/perf/.last-compare-wide.json
 sv-grid/
 tools/figma/dist/
+
+# Wrangler local dev state (local D1 / KV / cache) - never commit
+.wrangler/

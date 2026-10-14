@@ -30,6 +30,7 @@ import { join, dirname, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { gunzipSync } from 'node:zlib'
 import { createZip } from './lib/zip.mjs'
+import { isReleased } from './lib/releases.mjs'
 
 /** package.json from inside an npm tarball (gzip of a ustar archive). */
 function packageJsonOf(tgz) {
@@ -48,7 +49,9 @@ function packageJsonOf(tgz) {
  *  README never names a module the customer cannot import. */
 function enterpriseFeatures(exports) {
   const has = (sub) => Object.prototype.hasOwnProperty.call(exports ?? {}, `./${sub}`)
-  const parts = ['export, import and print', 'pivot tables', 'the Kanban board, Scheduler and Gantt views', 'the Server-Side Row Model']
+  // The Gantt view is not named before its public date (tools/lib/releases.mjs).
+  const views = isReleased('gantt') ? 'the Kanban board, Scheduler and Gantt views' : 'the Kanban board and Scheduler views'
+  const parts = ['export, import and print', 'pivot tables', views, 'the Server-Side Row Model']
   if (has('sheet')) parts.push('the Spreadsheet')
   if (has('base')) parts.push('SvGrid Base')
   if (has('studio')) parts.push('Studio')

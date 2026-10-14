@@ -28,8 +28,7 @@ change is written back to those tables.
 | --- | --- |
 | A database | A `<SvBase tables>` with one tab per table |
 | A table | A table in your database, opened as a `BaseTable` |
-| A view | A `FieldView`: `grid`, `kanban`, `calendar`, `gallery`, `gantt`, `chart` or `form` |
-| A timeline view | A `gantt` view with `dateField` and `endField` |
+| A view | A `FieldView`: `grid`, `kanban`, `calendar`, `gallery`, `chart` or `form` |
 | An automation | An automation in the view bar, or `createAutomationServer` on your server |
 | Workspace roles | Your app's login, and `authorize` on the endpoint |
 | Row comments | `setRecordComments`, stored where your app stores them |
@@ -111,8 +110,8 @@ a few values becomes a single select with a color per value. See
 
 ## 4. Views, automations and access
 
-Recreate the views you used, including the Kanban, calendar and timeline
-views that were paid on Baserow:
+Recreate the views you used, including the Kanban and calendar views that
+were paid on Baserow:
 
 ```ts
 import type { FieldView } from '@svgrid/enterprise/base'

@@ -22,7 +22,7 @@
   "seoDescription": "Host an Airtable-style table database inside your own Svelte app: SvGrid Base vs Airtable on embedding, your own database, views, automations and pricing.",
   "tagline": "Airtable is a hosted table-database app: bases of linked tables with views, interfaces, automations and AI, sold per seat as a cloud service.",
   "oneLineVerdict": "Airtable is the pick when a team wants the finished service and is happy to work in it. SvGrid Base is the pick when the same experience has to live inside your own Svelte app, on your servers and your database, with no per-seat bill and no Airtable branding.",
-  "alternativeIntro": "Most searches for an Airtable alternative come from developers who like what Airtable does but cannot use it where they need it: inside their own product, for their own customers, on data that has to stay in their database. Airtable is cloud-only and its embed is a read-only iframe. SvGrid Base gives you the parts people know from it (typed fields, linked records, grid, Kanban, calendar, gallery, Gantt and form views, automations, an expanded record with comments) as one Svelte component, <SvBase>, that you host in your app and point at Postgres, MySQL, SQLite, Supabase or your REST API.",
+  "alternativeIntro": "Most searches for an Airtable alternative come from developers who like what Airtable does but cannot use it where they need it: inside their own product, for their own customers, on data that has to stay in their database. Airtable is cloud-only and its embed is a read-only iframe. SvGrid Base gives you the parts people know from it (typed fields, linked records, grid, Kanban, calendar, gallery and form views, automations, an expanded record with comments) as one Svelte component, <SvBase>, that you host in your app and point at Postgres, MySQL, SQLite, Supabase or your REST API.",
   "intro": [
     "Airtable organizes data into bases of linked tables with typed fields, and shows them through grid, form, calendar, gallery, Kanban, list, timeline and Gantt views. On top of a base it offers Interface Designer for app-like pages, automations with record, schedule, form and webhook triggers, Omni and other AI features, comments, revision history and native mobile apps. It is a cloud service only: Airtable says it does not plan to offer a self-hosted version.",
     "SvGrid Base is that kind of table database shipped as a Svelte 5 component in @svgrid/enterprise. You add <SvBase> to a page, give it tables or let it read your database, and your users work with typed fields, saved views, filters, groups, row colors, linked records, automations and records with comments, inside your app and under your login. The records stay in the database you already run."
@@ -30,7 +30,7 @@
   "similarities": [
     "Bases of several tables, linked to each other, with lookup, rollup and count fields.",
     "Typed fields: single and multiple select, user, date, attachment, rating, barcode, button, formula, autonumber, created and last-modified.",
-    "Grid, form, calendar, gallery, Kanban and Gantt views, each with its own filters, sorts, groups and hidden fields.",
+    "Grid, form, calendar, gallery and Kanban views, each with its own filters, sorts, groups and hidden fields.",
     "Automations triggered by a new record, a change, a matching condition, a form, a button or a schedule.",
     "An expanded record with every field and its comments.",
     "Row colors driven by a field or by conditions."
@@ -57,7 +57,6 @@
     { "feature": "Runs on your own servers", "svgrid": { "status": "yes", "note": "it is part of your app" }, "competitor": { "status": "no", "note": "cloud SaaS only, no self-hosted option planned", "source": "at-tech" } },
     { "feature": "Data stays in your own database", "svgrid": { "status": "yes", "note": "Postgres, MySQL, SQLite, Supabase or a REST API" }, "competitor": { "status": "no", "note": "stored in Airtable's cloud; region choice on Enterprise Scale", "source": "at-residency" } },
     { "feature": "Grid, form, gallery, Kanban and calendar views", "svgrid": { "status": "yes" }, "competitor": { "status": "yes", "note": "every plan", "source": "at-views" } },
-    { "feature": "Gantt and timeline views", "svgrid": { "status": "yes", "note": "Gantt view with dependencies and progress" }, "competitor": { "status": "paid", "note": "Team plan and up", "source": "at-plans" } },
     { "feature": "Linked records, lookup, rollup, count and formula fields", "svgrid": { "status": "yes" }, "competitor": { "status": "yes", "source": "at-fields" } },
     { "feature": "Barcode, button and autonumber fields", "svgrid": { "status": "yes" }, "competitor": { "status": "yes", "source": "at-fields" } },
     { "feature": "Automations", "svgrid": { "status": "yes", "note": "in the browser or on your server, no run quota" }, "competitor": { "status": "partial", "note": "runs metered per month by plan", "source": "at-automations" } },
@@ -131,7 +130,7 @@
     },
     {
       "question": "Which Airtable features does SvGrid Base have?",
-      "answer": "Several linked tables per base; single and multiple select, user, date, attachment, rating, barcode, button, formula, autonumber, lookup, rollup and count fields; grid, Kanban, calendar, gallery, Gantt, chart and form views with their own filters, sorts and groups; row colors; automations with record, form, button and schedule triggers and update, create, email and webhook actions; and an expanded record with comments."
+      "answer": "Several linked tables per base; single and multiple select, user, date, attachment, rating, barcode, button, formula, autonumber, lookup, rollup and count fields; grid, Kanban, calendar, gallery, chart and form views with their own filters, sorts and groups; row colors; automations with record, form, button and schedule triggers and update, create, email and webhook actions; and an expanded record with comments."
     },
     {
       "question": "How do I move a base from Airtable to SvGrid Base?",

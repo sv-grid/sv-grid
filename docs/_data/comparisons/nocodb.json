@@ -22,7 +22,7 @@
   "seoDescription": "A table database inside your own Svelte app instead of a NocoDB iframe: SvGrid Base vs NocoDB on licence, embedding, views, automations and your Postgres.",
   "tagline": "NocoDB is a table-database app with a spreadsheet interface, run on its cloud or self-hosted with Docker, that can sit on top of an existing PostgreSQL or MySQL database.",
   "oneLineVerdict": "NocoDB is the pick when you want a finished app your team signs into. SvGrid Base is the pick when the table database has to live inside your own Svelte app, under your login, your branding and your licence terms, on the database you already run.",
-  "alternativeIntro": "People searching for a NocoDB alternative usually hit one of three walls: the app has to appear inside their own product rather than in a NocoDB tab or iframe, the January 2026 licence change rules out offering it to customers without a commercial agreement, or the views they need (timeline, Gantt) sit on the Business plan. SvGrid Base answers all three by being a component: <SvBase> renders the grid, Kanban, calendar, gallery, Gantt, chart and form views inside your Svelte app and reads and writes your Postgres, MySQL, SQLite, Supabase or REST API through your own server.",
+  "alternativeIntro": "People searching for a NocoDB alternative usually hit one of three walls: the app has to appear inside their own product rather than in a NocoDB tab or iframe, the January 2026 licence change rules out offering it to customers without a commercial agreement, or the dashboards and autonumber fields they need sit on the Business plan. SvGrid Base answers all three by being a component: <SvBase> renders the grid, Kanban, calendar, gallery, chart and form views inside your Svelte app and reads and writes your Postgres, MySQL, SQLite, Supabase or REST API through your own server.",
   "intro": [
     "NocoDB turns database tables into a collaborative app: grid, form, gallery, Kanban, calendar and map views, linked records with lookups and rollups, record comments, webhooks and workflows. It runs on NocoDB Cloud, priced per seat, or self-hosted with Docker, where the Community edition has no record or storage limits. It can store data in its own database or connect to an existing PostgreSQL or MySQL database. Since January 2026 the source is under the Sustainable Use License rather than AGPL.",
     "SvGrid Base is the same kind of tool shipped as a Svelte 5 component in @svgrid/enterprise. You install it, give it your tables (or point it at your database), and your users get typed fields, saved views, filters, groups, linked records, automations and an expanded record with comments, all inside your app. There is no separate server to run and no second login: the base talks to your database through the endpoint you already have."
@@ -38,7 +38,7 @@
   "svgridAdvantages": [
     "It is a component, not an app: <SvBase> renders inside your own Svelte pages, under your login and your design tokens, with no iframe and no second product for users to sign into.",
     "Built to ship to customers: an Enterprise Suite licence covers unlimited apps and end users, so putting the base inside a product your customers use needs no separate agreement.",
-    "Gantt, chart and autonumber are part of the base itself, with no plan above them.",
+    "Chart views and autonumber are part of the base itself, with no plan above them.",
     "Automations run in the browser or on your server with no monthly run quota, and their secrets stay on your server.",
     "Reads and writes Postgres, MySQL, SQLite, Supabase or any REST API through the data source your app already uses, with one parameterized endpoint and an authorize hook you write.",
     "Priced per developer, not per editor: the people who use the app do not need seats."
@@ -57,7 +57,6 @@
     { "feature": "Source licence", "svgrid": { "status": "paid", "note": "commercial (Enterprise Suite); the grid underneath is MIT" }, "competitor": { "status": "partial", "note": "Sustainable Use License since January 2026, not OSI-approved", "source": "noco-license" } },
     { "feature": "Works on your existing database", "svgrid": { "status": "yes", "note": "Postgres, MySQL, SQLite, Supabase or a REST API" }, "competitor": { "status": "yes", "note": "external PostgreSQL or MySQL; SQL Server is an Enterprise add-on", "source": "noco-datasource" } },
     { "feature": "Grid, form, gallery, Kanban and calendar views", "svgrid": { "status": "yes" }, "competitor": { "status": "yes", "note": "every plan", "source": "noco-views" } },
-    { "feature": "Gantt or timeline view", "svgrid": { "status": "yes", "note": "Gantt view with dependencies and progress" }, "competitor": { "status": "paid", "note": "Business plan and above", "source": "noco-timeline" } },
     { "feature": "Chart view", "svgrid": { "status": "yes", "note": "bar, line, pie and donut, per view" }, "competitor": { "status": "paid", "note": "dashboards on Business and above", "source": "noco-pricing" } },
     { "feature": "Linked records, lookup, rollup and formula fields", "svgrid": { "status": "yes" }, "competitor": { "status": "yes", "source": "noco-editions" } },
     { "feature": "Autonumber field", "svgrid": { "status": "yes" }, "competitor": { "status": "paid", "note": "Business plan and above, PostgreSQL only", "source": "noco-autonumber" } },
@@ -75,7 +74,7 @@
   "whenToChooseSvGrid": [
     "The table database has to appear inside your own Svelte or SvelteKit app, under your login and your look.",
     "You want to offer it to your customers without a separate commercial agreement for the table tool.",
-    "You need Gantt, charts and autonumber without moving everyone to a higher plan.",
+    "You need charts and autonumber without moving everyone to a higher plan.",
     "Your data already lives in Postgres, MySQL, SQLite, Supabase or behind your API and should stay there, reached through your own server.",
     "You would rather pay per developer than per editor seat."
   ],
@@ -119,7 +118,7 @@
     "airtable",
     "baserow"
   ],
-  "bottomLine": "NocoDB is a strong self-hosted table database for a team that wants a finished app and will sign into it. When the table database is part of your own product, SvGrid Base fits better: it renders inside your Svelte app with your login and branding, works on the database you already run, ships Gantt, charts and server-side automations without plan gates, and its licence already covers putting it in front of your customers.",
+  "bottomLine": "NocoDB is a strong self-hosted table database for a team that wants a finished app and will sign into it. When the table database is part of your own product, SvGrid Base fits better: it renders inside your Svelte app with your login and branding, works on the database you already run, ships charts, autonumber and server-side automations without plan gates, and its licence already covers putting it in front of your customers.",
   "faq": [
     {
       "question": "Can I embed NocoDB inside my own app?",
@@ -132,10 +131,6 @@
     {
       "question": "Can SvGrid Base use the same database NocoDB is connected to?",
       "answer": "Yes, if NocoDB was connected to your own PostgreSQL or MySQL database. createBaseEndpoint reads the tables, columns and foreign keys from that database and <SvBase> opens them as tabs with typed fields and links. Tables NocoDB created in its own metadata database are better exported to CSV and loaded into your database first; the migration guide walks through both."
-    },
-    {
-      "question": "Does SvGrid Base have a Gantt view like NocoDB's paid plans?",
-      "answer": "Yes. A view of type gantt takes a start and end date field, an optional progress field and a link field for dependencies. NocoDB lists its Gantt and timeline views on the Business plan and above."
     },
     {
       "question": "How is SvGrid Base priced compared with NocoDB?",

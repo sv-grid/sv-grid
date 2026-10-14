@@ -1,4 +1,5 @@
-// svgrid-trial: records who started an SvGrid Enterprise trial.
+// svgrid-trial: records who started an SvGrid Enterprise trial, and who claims
+// a place in the founding-customer offer (src/founding.js).
 //
 // The site is static (GitHub Pages), so the trial dialog posts here. One row
 // per email in D1: name, company, where on the site the trial started, the
@@ -10,15 +11,18 @@
 //   POST /trial        { name, email, company?, source?, website? }  ->  { ok, supportUntil }
 //   GET  /trials.csv   Authorization: Bearer <ADMIN_TOKEN>             ->  every row, as CSV
 //   GET  /health                                                       ->  ok
+//   /founding/*        see src/founding.js
 //
-// `website` is a honeypot: a person never sees the field, a form-filling bot
-// fills it, and its request is answered as a success and stored nowhere.
+// `website` is a honeypot on every form: a person never sees the field, a
+// form-filling bot fills it, and its request is answered as a success and
+// stored nowhere.
+
+import { EMAIL, json, clip, readJson, rateLimit, notify, csv, exportCsv } from './shared.js'
+import { handleFounding } from './founding.js'
 
 const SUPPORT_DAYS = 30
-const MAX_PER_HOUR = 5
-
-const EMAIL = /^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+\.[^\s@<>()[\]\\,;:"]{2,}$/
 const SOURCE = /^[a-z0-9:_-]{1,60}$/
+const TRIAL_COLS = ['created_at', 'name', 'email', 'company', 'source', 'country', 'downloads', 'last_download_at', 'support_until']
 
 export default {
   async fetch(request, env, ctx) {
@@ -28,7 +32,13 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors })
     if (url.pathname === '/health') return new Response('ok', { headers: cors })
     if (url.pathname === '/trial' && request.method === 'POST') return handleTrial(request, env, ctx, cors)
-    if (url.pathname === '/trials.csv' && request.method === 'GET') return handleExport(request, env)
+    if (url.pathname === '/trials.csv' && request.method === 'GET') {
+      return exportCsv(request, env, 'SELECT * FROM trials ORDER BY created_at DESC', TRIAL_COLS, 'svgrid-trials.csv')
+    }
+    if (url.pathname.startsWith('/founding/')) {
+      const res = await handleFounding(url, request, env, ctx, cors)
+      if (res) return res
+    }
     return json({ ok: false, error: 'not found' }, 404, cors)
   },
 
@@ -59,12 +69,6 @@ export function corsHeaders(request, env) {
   return headers
 }
 
-function json(body, status, headers) {
-  return new Response(JSON.stringify(body), { status, headers: { ...headers, 'content-type': 'application/json' } })
-}
-
-const clip = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '')
-
 /** Validate the posted form; returns the clean fields or an error message. */
 export function parseTrial(body) {
   if (!body || typeof body !== 'object') return { error: 'bad request' }
@@ -82,18 +86,13 @@ export function supportUntil(from, days = SUPPORT_DAYS) {
   return new Date(from.getTime() + days * 86_400_000).toISOString().slice(0, 10)
 }
 
-async function sha256(text) {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')
+export function toCsv(rows) {
+  return csv(rows, TRIAL_COLS)
 }
 
 async function handleTrial(request, env, ctx, cors) {
-  let body
-  try {
-    body = await request.json()
-  } catch {
-    return json({ ok: false, error: 'bad request' }, 400, cors)
-  }
+  const body = await readJson(request)
+  if (body === null) return json({ ok: false, error: 'bad request' }, 400, cors)
   const form = parseTrial(body)
   if (form.error) return json({ ok: false, error: form.error }, 400, cors)
 
@@ -102,20 +101,14 @@ async function handleTrial(request, env, ctx, cors) {
   // A bot that filled the hidden field gets the same answer as a person.
   if (form.honeypot) return json({ ok: true, supportUntil: until }, 200, cors)
 
-  // The IP is kept only as a salted hash, for the hourly limit.
-  const ip = request.headers.get('cf-connecting-ip') ?? ''
-  const ipHash = await sha256(`${env.IP_SALT ?? 'svgrid-trial'}:${ip}`)
-  const hourAgo = new Date(now.getTime() - 3_600_000).toISOString()
-  const recent = await env.DB.prepare('SELECT COUNT(*) AS n FROM trial_requests WHERE ip_hash = ? AND created_at > ?')
-    .bind(ipHash, hourAgo)
-    .first()
-  if ((recent?.n ?? 0) >= MAX_PER_HOUR) return json({ ok: false, error: 'too many requests, try again later' }, 429, cors)
+  const record = await rateLimit(request, env, now)
+  if (!record) return json({ ok: false, error: 'too many requests, try again later' }, 429, cors)
 
   const country = request.cf?.country ?? ''
   const userAgent = clip(request.headers.get('user-agent') ?? '', 300)
   const stamp = now.toISOString()
   await env.DB.batch([
-    env.DB.prepare('INSERT INTO trial_requests (created_at, ip_hash) VALUES (?, ?)').bind(stamp, ipHash),
+    record,
     env.DB.prepare(
       `INSERT INTO trials (email, name, company, source, country, user_agent, created_at, last_download_at, downloads, support_until)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
@@ -128,47 +121,9 @@ async function handleTrial(request, env, ctx, cors) {
   ])
   const row = await env.DB.prepare('SELECT support_until, downloads FROM trials WHERE email = ?').bind(form.email).first()
 
-  if (env.NOTIFY_WEBHOOK && row?.downloads === 1) {
+  if (row?.downloads === 1) {
     const who = `${form.name} <${form.email}>${form.company ? ` (${form.company})` : ''}`
-    const text = `New SvGrid trial: ${who}, from ${form.source}${country ? `, ${country}` : ''}. Support until ${row.support_until}.`
-    ctx.waitUntil(
-      fetch(env.NOTIFY_WEBHOOK, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        // `text` for Slack and Teams-style hooks, `content` for Discord.
-        body: JSON.stringify({ text, content: text }),
-      }).catch(() => {}),
-    )
+    notify(env, ctx, `New SvGrid trial: ${who}, from ${form.source}${country ? `, ${country}` : ''}. Support until ${row.support_until}.`)
   }
   return json({ ok: true, supportUntil: row?.support_until ?? until }, 200, cors)
-}
-
-/** Constant-time comparison, so the token cannot be guessed by timing. */
-function sameToken(a, b) {
-  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length || !a) return false
-  let diff = 0
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
-  return diff === 0
-}
-
-const csvCell = (v) => {
-  const s = v == null ? '' : String(v)
-  // A leading = + - @ would run as a formula when the file opens in a spreadsheet.
-  const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s
-  return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe
-}
-
-export function toCsv(rows) {
-  const cols = ['created_at', 'name', 'email', 'company', 'source', 'country', 'downloads', 'last_download_at', 'support_until']
-  return [cols.join(','), ...rows.map((r) => cols.map((c) => csvCell(r[c])).join(','))].join('\r\n') + '\r\n'
-}
-
-async function handleExport(request, env) {
-  const auth = request.headers.get('authorization') ?? ''
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : ''
-  if (!sameToken(token, env.ADMIN_TOKEN)) return new Response('unauthorized', { status: 401 })
-  const { results } = await env.DB.prepare('SELECT * FROM trials ORDER BY created_at DESC').all()
-  return new Response(toCsv(results ?? []), {
-    headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="svgrid-trials.csv"' },
-  })
 }

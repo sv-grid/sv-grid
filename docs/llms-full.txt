@@ -43,7 +43,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## Key facts
 
-- Package: `@svgrid/grid` 3.0.11, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
+- Package: `@svgrid/grid` 3.0.13, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
 - Peer dependency: `svelte` ^5. Works in SvelteKit, including server-side rendering.
 - Size (gzip, Svelte external, measured 2026-09-22 on 3.0.4): 97.6 KB for the full `<SvGrid>` entry plus 10.5 KB CSS; 2.7 KB for the headless entry. Features load on demand.
 - Styling: `--sg-*` CSS custom properties, and 20 theme stylesheets, each with a light and a dark palette. No CSS framework is required; Tailwind and shadcn-svelte setups are documented.
@@ -10632,7 +10632,7 @@ renders the views inside your app, and every edit goes back to your tables.
 | A base | A `<SvBase tables>` with one tab per table |
 | A table | A table in your database, opened as a `BaseTable` |
 | A linked record field | A foreign key (link to one) or a junction table (link to many) |
-| A view | A `FieldView`: `grid`, `kanban`, `calendar`, `gallery`, `gantt`, `chart` or `form` |
+| A view | A `FieldView`: `grid`, `kanban`, `calendar`, `gallery`, `chart` or `form` |
 | An automation | An automation in the view bar, or `createAutomationServer` on your server |
 | Collaborators and permissions | Your app's login, and `authorize` on the endpoint |
 | Comments | `setRecordComments`, stored where your app stores them |
@@ -10872,8 +10872,7 @@ change is written back to those tables.
 | --- | --- |
 | A database | A `<SvBase tables>` with one tab per table |
 | A table | A table in your database, opened as a `BaseTable` |
-| A view | A `FieldView`: `grid`, `kanban`, `calendar`, `gallery`, `gantt`, `chart` or `form` |
-| A timeline view | A `gantt` view with `dateField` and `endField` |
+| A view | A `FieldView`: `grid`, `kanban`, `calendar`, `gallery`, `chart` or `form` |
 | An automation | An automation in the view bar, or `createAutomationServer` on your server |
 | Workspace roles | Your app's login, and `authorize` on the endpoint |
 | Row comments | `setRecordComments`, stored where your app stores them |
@@ -10955,8 +10954,8 @@ a few values becomes a single select with a color per value. See
 
 ## 4. Views, automations and access
 
-Recreate the views you used, including the Kanban, calendar and timeline
-views that were paid on Baserow:
+Recreate the views you used, including the Kanban and calendar views that
+were paid on Baserow:
 
 ```ts
 import type { FieldView } from '@svgrid/enterprise/base'
@@ -12415,8 +12414,7 @@ inside your own app, on your own database, and writes every change back.
 | --- | --- |
 | A base | A `<SvBase tables>` with one tab per table |
 | A table | A table in your database, opened as a `BaseTable` |
-| A view | A `FieldView`: `grid`, `kanban`, `calendar`, `gallery`, `gantt`, `chart` or `form` |
-| A timeline or Gantt view | A `gantt` view with `dateField`, `endField` and `dependencyField` |
+| A view | A `FieldView`: `grid`, `kanban`, `calendar`, `gallery`, `chart` or `form` |
 | A workflow or webhook | An automation in the view bar, or `createAutomationServer` on your server |
 | Roles | Your app's login, and `authorize` on the endpoint |
 | Record comments | `setRecordComments`, stored where your app stores them |
@@ -12485,8 +12483,7 @@ you name.
 
 ## 3. Views, automations and access
 
-Recreate the views, including a Gantt for the timeline and Gantt views that
-were on NocoDB's Business plan:
+Recreate the views you used:
 
 ```ts
 import type { FieldView } from '@svgrid/enterprise/base'
@@ -12494,7 +12491,7 @@ import type { FieldView } from '@svgrid/enterprise/base'
 const views: FieldView[] = [
   { id: 'all', name: 'All tasks', type: 'grid', color: { mode: 'field', field: 'status' } },
   { id: 'board', name: 'Board', type: 'kanban', stackBy: 'status' },
-  { id: 'plan', name: 'Plan', type: 'gantt', dateField: 'start', endField: 'due' },
+  { id: 'due', name: 'Due dates', type: 'calendar', dateField: 'due' },
 ]
 ```
 
@@ -95332,13 +95329,13 @@ SvGrid Base is that kind of table database shipped as a Svelte 5 component in @s
 
 ## Looking for an Airtable alternative for Svelte?
 
-Most searches for an Airtable alternative come from developers who like what Airtable does but cannot use it where they need it: inside their own product, for their own customers, on data that has to stay in their database. Airtable is cloud-only and its embed is a read-only iframe. SvGrid Base gives you the parts people know from it (typed fields, linked records, grid, Kanban, calendar, gallery, Gantt and form views, automations, an expanded record with comments) as one Svelte component, <SvBase>, that you host in your app and point at Postgres, MySQL, SQLite, Supabase or your REST API.
+Most searches for an Airtable alternative come from developers who like what Airtable does but cannot use it where they need it: inside their own product, for their own customers, on data that has to stay in their database. Airtable is cloud-only and its embed is a read-only iframe. SvGrid Base gives you the parts people know from it (typed fields, linked records, grid, Kanban, calendar, gallery and form views, automations, an expanded record with comments) as one Svelte component, <SvBase>, that you host in your app and point at Postgres, MySQL, SQLite, Supabase or your REST API.
 
 ## What they have in common
 
 - Bases of several tables, linked to each other, with lookup, rollup and count fields.
 - Typed fields: single and multiple select, user, date, attachment, rating, barcode, button, formula, autonumber, created and last-modified.
-- Grid, form, calendar, gallery, Kanban and Gantt views, each with its own filters, sorts, groups and hidden fields.
+- Grid, form, calendar, gallery and Kanban views, each with its own filters, sorts, groups and hidden fields.
 - Automations triggered by a new record, a change, a matching condition, a form, a button or a schedule.
 - An expanded record with every field and its comments.
 - Row colors driven by a field or by conditions.
@@ -95372,7 +95369,6 @@ Yes: shipped in the package. Partial: needs extra work or a companion package. P
 | Runs on your own servers | Yes - it is part of your app | No - cloud SaaS only, no self-hosted option planned |
 | Data stays in your own database | Yes - Postgres, MySQL, SQLite, Supabase or a REST API | No - stored in Airtable's cloud; region choice on Enterprise Scale |
 | Grid, form, gallery, Kanban and calendar views | Yes | Yes - every plan |
-| Gantt and timeline views | Yes - Gantt view with dependencies and progress | Paid tier - Team plan and up |
 | Linked records, lookup, rollup, count and formula fields | Yes | Yes |
 | Barcode, button and autonumber fields | Yes | Yes |
 | Automations | Yes - in the browser or on your server, no run quota | Partial - runs metered per month by plan |
@@ -95435,7 +95431,7 @@ Not from Airtable: its technical requirements page says it is a cloud SaaS produ
 
 ### Which Airtable features does SvGrid Base have?
 
-Several linked tables per base; single and multiple select, user, date, attachment, rating, barcode, button, formula, autonumber, lookup, rollup and count fields; grid, Kanban, calendar, gallery, Gantt, chart and form views with their own filters, sorts and groups; row colors; automations with record, form, button and schedule triggers and update, create, email and webhook actions; and an expanded record with comments.
+Several linked tables per base; single and multiple select, user, date, attachment, rating, barcode, button, formula, autonumber, lookup, rollup and count fields; grid, Kanban, calendar, gallery, chart and form views with their own filters, sorts and groups; row colors; automations with record, form, button and schedule triggers and update, create, email and webhook actions; and an expanded record with comments.
 
 ### How do I move a base from Airtable to SvGrid Base?
 
@@ -95451,7 +95447,7 @@ It is not a hosted service and needs a developer to add it to an app. There are 
 
 ### Is SvGrid a good Airtable alternative for Svelte?
 
-Most searches for an Airtable alternative come from developers who like what Airtable does but cannot use it where they need it: inside their own product, for their own customers, on data that has to stay in their database. Airtable is cloud-only and its embed is a read-only iframe. SvGrid Base gives you the parts people know from it (typed fields, linked records, grid, Kanban, calendar, gallery, Gantt and form views, automations, an expanded record with comments) as one Svelte component, <SvBase>, that you host in your app and point at Postgres, MySQL, SQLite, Supabase or your REST API.
+Most searches for an Airtable alternative come from developers who like what Airtable does but cannot use it where they need it: inside their own product, for their own customers, on data that has to stay in their database. Airtable is cloud-only and its embed is a read-only iframe. SvGrid Base gives you the parts people know from it (typed fields, linked records, grid, Kanban, calendar, gallery and form views, automations, an expanded record with comments) as one Svelte component, <SvBase>, that you host in your app and point at Postgres, MySQL, SQLite, Supabase or your REST API.
 
 ## Related comparisons and docs
 
@@ -95497,7 +95493,7 @@ Baserow is an open-source table-database app with an application builder and aut
 
 ## Verdict
 
-Baserow is the pick for a team that wants an open-source app to sign into, self-hosted for free. SvGrid Base is the pick when the table database has to be part of your own Svelte app: editable in your pages, on your database, with Kanban, calendar, Gantt and comments in the one licence.
+Baserow is the pick for a team that wants an open-source app to sign into, self-hosted for free. SvGrid Base is the pick when the table database has to be part of your own Svelte app: editable in your pages, on your database, with Kanban, calendar, charts and comments in the one licence.
 
 Migration guide: moving from Baserow to SvGrid: https://svgrid.com/docs/help/migrating-from-baserow/
 
@@ -95516,7 +95512,7 @@ SvGrid Base is a table database you ship as part of your own Svelte 5 app. It co
 
 ## Looking for a Baserow alternative for Svelte?
 
-People searching for a Baserow alternative usually want the Baserow experience somewhere Baserow does not go: inside their own product. Baserow can show a public view in an iframe, read-only except for forms, or publish an app made in its application builder on its own domain. SvGrid Base is a Svelte component instead: <SvBase> renders editable grid, Kanban, calendar, gallery, Gantt, chart and form views in your pages, behind your login, and writes every change to your Postgres, MySQL, SQLite, Supabase or REST API.
+People searching for a Baserow alternative usually want the Baserow experience somewhere Baserow does not go: inside their own product. Baserow can show a public view in an iframe, read-only except for forms, or publish an app made in its application builder on its own domain. SvGrid Base is a Svelte component instead: <SvBase> renders editable grid, Kanban, calendar, gallery, chart and form views in your pages, behind your login, and writes every change to your Postgres, MySQL, SQLite, Supabase or REST API.
 
 ## What they have in common
 
@@ -95530,7 +95526,7 @@ People searching for a Baserow alternative usually want the Baserow experience s
 ## Where SvGrid is stronger
 
 - It is a component, not an app: <SvBase> renders inside your own Svelte pages and edits records there, where Baserow's embed is a read-only iframe of a public view.
-- Kanban, calendar, Gantt, chart, row colors and record comments are all in the one Suite licence; Baserow puts Kanban, calendar, timeline, comments and row coloring on paid plans.
+- Kanban, calendar, chart, row colors and record comments are all in the one Suite licence; Baserow puts Kanban, calendar, comments and row coloring on paid plans.
 - Works on your own tables: it reads your schema, columns and foreign keys and writes back to them, where Baserow keeps data in its own database and syncs other sources in.
 - No vendor branding to remove: the base takes your app's look from --sg-* tokens.
 - Automations run in the browser or on your server with no credits to count, and their secrets stay on your server.
@@ -95557,7 +95553,6 @@ Yes: shipped in the package. Partial: needs extra work or a companion package. P
 | Works on your existing database | Yes - Postgres, MySQL, SQLite, Supabase or a REST API | Partial - data lives in Baserow's PostgreSQL; a PostgreSQL table syncs in, two-way optional, not real time |
 | Grid, form and gallery views | Yes | Yes - every plan |
 | Kanban and calendar views | Yes | Paid tier - Premium and up |
-| Gantt or timeline view | Yes - Gantt view with dependencies and progress | Paid tier - timeline view on Premium and up |
 | Linked records, lookup, rollup, count and formula fields | Yes | Yes |
 | Autonumber, created and last-modified fields | Yes | Yes |
 | Automations | Yes - in the browser or on your server, no credits | Yes - credits per month on cloud, unlimited self-hosted |
@@ -95574,7 +95569,7 @@ Yes: shipped in the package. Partial: needs extra work or a companion package. P
 ## When to choose SvGrid
 
 - The table database has to appear, editable, inside your own Svelte or SvelteKit app, under your login and your look.
-- You want Kanban, calendar, Gantt, comments and row colors without per-user paid plans.
+- You want Kanban, calendar, comments and row colors without per-user paid plans.
 - Your data already lives in Postgres, MySQL, SQLite, Supabase or behind your API and should stay in those tables.
 - You would rather pay per developer than per user.
 
@@ -95604,7 +95599,7 @@ Project tracker: open it in the gallery for the source and the full-size version
 
 ## The bottom line
 
-Baserow is a good open-source table database for a team that will sign into it, and free to self-host. When the table database belongs inside your own product, SvGrid Base fits better: it renders editable views in your Svelte pages instead of a read-only iframe, keeps the data in the tables you already run, and includes Kanban, calendar, Gantt, comments and row colors in one licence priced per developer.
+Baserow is a good open-source table database for a team that will sign into it, and free to self-host. When the table database belongs inside your own product, SvGrid Base fits better: it renders editable views in your Svelte pages instead of a read-only iframe, keeps the data in the tables you already run, and includes Kanban, calendar, comments and row colors in one licence priced per developer.
 
 ## Frequently asked questions
 
@@ -95622,7 +95617,7 @@ Not on Baserow's internal tables, which belong to Baserow. Export each table to 
 
 ### Which Baserow paid features are included in SvGrid Base?
 
-Kanban and calendar views, a timeline (SvGrid Base has a Gantt view with dependencies), row colors and record comments are paid on Baserow and part of SvGrid Base. Role, field and view permissions are Advanced on Baserow; in SvGrid Base they are rules you write in your server or your database.
+Kanban and calendar views, row colors and record comments are paid on Baserow and part of SvGrid Base. Role, field and view permissions are Advanced on Baserow; in SvGrid Base they are rules you write in your server or your database.
 
 ### How is SvGrid Base priced compared with Baserow?
 
@@ -95634,7 +95629,7 @@ There are no workspaces, roles or sharing screen, no application builder, no fil
 
 ### Is SvGrid a good Baserow alternative for Svelte?
 
-People searching for a Baserow alternative usually want the Baserow experience somewhere Baserow does not go: inside their own product. Baserow can show a public view in an iframe, read-only except for forms, or publish an app made in its application builder on its own domain. SvGrid Base is a Svelte component instead: <SvBase> renders editable grid, Kanban, calendar, gallery, Gantt, chart and form views in your pages, behind your login, and writes every change to your Postgres, MySQL, SQLite, Supabase or REST API.
+People searching for a Baserow alternative usually want the Baserow experience somewhere Baserow does not go: inside their own product. Baserow can show a public view in an iframe, read-only except for forms, or publish an app made in its application builder on its own domain. SvGrid Base is a Svelte component instead: <SvBase> renders editable grid, Kanban, calendar, gallery, chart and form views in your pages, behind your login, and writes every change to your Postgres, MySQL, SQLite, Supabase or REST API.
 
 ## Related comparisons and docs
 
@@ -96768,7 +96763,7 @@ SvGrid Base is the same kind of tool shipped as a Svelte 5 component in @svgrid/
 
 ## Looking for a NocoDB alternative for Svelte?
 
-People searching for a NocoDB alternative usually hit one of three walls: the app has to appear inside their own product rather than in a NocoDB tab or iframe, the January 2026 licence change rules out offering it to customers without a commercial agreement, or the views they need (timeline, Gantt) sit on the Business plan. SvGrid Base answers all three by being a component: <SvBase> renders the grid, Kanban, calendar, gallery, Gantt, chart and form views inside your Svelte app and reads and writes your Postgres, MySQL, SQLite, Supabase or REST API through your own server.
+People searching for a NocoDB alternative usually hit one of three walls: the app has to appear inside their own product rather than in a NocoDB tab or iframe, the January 2026 licence change rules out offering it to customers without a commercial agreement, or the dashboards and autonumber fields they need sit on the Business plan. SvGrid Base answers all three by being a component: <SvBase> renders the grid, Kanban, calendar, gallery, chart and form views inside your Svelte app and reads and writes your Postgres, MySQL, SQLite, Supabase or REST API through your own server.
 
 ## What they have in common
 
@@ -96783,7 +96778,7 @@ People searching for a NocoDB alternative usually hit one of three walls: the ap
 
 - It is a component, not an app: <SvBase> renders inside your own Svelte pages, under your login and your design tokens, with no iframe and no second product for users to sign into.
 - Built to ship to customers: an Enterprise Suite licence covers unlimited apps and end users, so putting the base inside a product your customers use needs no separate agreement.
-- Gantt, chart and autonumber are part of the base itself, with no plan above them.
+- Chart views and autonumber are part of the base itself, with no plan above them.
 - Automations run in the browser or on your server with no monthly run quota, and their secrets stay on your server.
 - Reads and writes Postgres, MySQL, SQLite, Supabase or any REST API through the data source your app already uses, with one parameterized endpoint and an authorize hook you write.
 - Priced per developer, not per editor: the people who use the app do not need seats.
@@ -96808,7 +96803,6 @@ Yes: shipped in the package. Partial: needs extra work or a companion package. P
 | Source licence | Paid tier - commercial (Enterprise Suite); the grid underneath is MIT | Partial - Sustainable Use License since January 2026, not OSI-approved |
 | Works on your existing database | Yes - Postgres, MySQL, SQLite, Supabase or a REST API | Yes - external PostgreSQL or MySQL; SQL Server is an Enterprise add-on |
 | Grid, form, gallery, Kanban and calendar views | Yes | Yes - every plan |
-| Gantt or timeline view | Yes - Gantt view with dependencies and progress | Paid tier - Business plan and above |
 | Chart view | Yes - bar, line, pie and donut, per view | Paid tier - dashboards on Business and above |
 | Linked records, lookup, rollup and formula fields | Yes | Yes |
 | Autonumber field | Yes | Paid tier - Business plan and above, PostgreSQL only |
@@ -96827,7 +96821,7 @@ Yes: shipped in the package. Partial: needs extra work or a companion package. P
 
 - The table database has to appear inside your own Svelte or SvelteKit app, under your login and your look.
 - You want to offer it to your customers without a separate commercial agreement for the table tool.
-- You need Gantt, charts and autonumber without moving everyone to a higher plan.
+- You need charts and autonumber without moving everyone to a higher plan.
 - Your data already lives in Postgres, MySQL, SQLite, Supabase or behind your API and should stay there, reached through your own server.
 - You would rather pay per developer than per editor seat.
 
@@ -96857,7 +96851,7 @@ Project tracker: open it in the gallery for the source and the full-size version
 
 ## The bottom line
 
-NocoDB is a strong self-hosted table database for a team that wants a finished app and will sign into it. When the table database is part of your own product, SvGrid Base fits better: it renders inside your Svelte app with your login and branding, works on the database you already run, ships Gantt, charts and server-side automations without plan gates, and its licence already covers putting it in front of your customers.
+NocoDB is a strong self-hosted table database for a team that wants a finished app and will sign into it. When the table database is part of your own product, SvGrid Base fits better: it renders inside your Svelte app with your login and branding, works on the database you already run, ships charts, autonumber and server-side automations without plan gates, and its licence already covers putting it in front of your customers.
 
 ## Frequently asked questions
 
@@ -96873,10 +96867,6 @@ Its source is public, but since January 2026 it is under the Sustainable Use Lic
 
 Yes, if NocoDB was connected to your own PostgreSQL or MySQL database. createBaseEndpoint reads the tables, columns and foreign keys from that database and <SvBase> opens them as tabs with typed fields and links. Tables NocoDB created in its own metadata database are better exported to CSV and loaded into your database first; the migration guide walks through both.
 
-### Does SvGrid Base have a Gantt view like NocoDB's paid plans?
-
-Yes. A view of type gantt takes a start and end date field, an optional progress field and a link field for dependencies. NocoDB lists its Gantt and timeline views on the Business plan and above.
-
 ### How is SvGrid Base priced compared with NocoDB?
 
 NocoDB charges per seat on cloud and on its paid self-hosted plans; the prices it listed on the day we read them are in the pricing line at the top of this page. SvGrid Base ships in Enterprise Suite at $999 per developer per year, for unlimited apps and unlimited end users, so the number of people using the app does not change the price.
@@ -96887,7 +96877,7 @@ There is no roles and sharing screen (access rules live in your server or databa
 
 ### Is SvGrid a good NocoDB alternative for Svelte?
 
-People searching for a NocoDB alternative usually hit one of three walls: the app has to appear inside their own product rather than in a NocoDB tab or iframe, the January 2026 licence change rules out offering it to customers without a commercial agreement, or the views they need (timeline, Gantt) sit on the Business plan. SvGrid Base answers all three by being a component: <SvBase> renders the grid, Kanban, calendar, gallery, Gantt, chart and form views inside your Svelte app and reads and writes your Postgres, MySQL, SQLite, Supabase or REST API through your own server.
+People searching for a NocoDB alternative usually hit one of three walls: the app has to appear inside their own product rather than in a NocoDB tab or iframe, the January 2026 licence change rules out offering it to customers without a commercial agreement, or the dashboards and autonumber fields they need sit on the Business plan. SvGrid Base answers all three by being a component: <SvBase> renders the grid, Kanban, calendar, gallery, chart and form views inside your Svelte app and reads and writes your Postgres, MySQL, SQLite, Supabase or REST API through your own server.
 
 ## Related comparisons and docs
 

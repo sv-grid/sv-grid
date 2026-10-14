@@ -1398,6 +1398,7 @@ async function main() {
     const ogImg = OG_SECTIONS[route] ? `${CANON}/og/${route}.svg` : undefined
     // The full text stays in the crawlable body; the meta tag gets the clamp.
     let html = applyHead(template, { title, description: clampDescription(description), canonical: url, ogType: 'website', image: ogImg, imageAlt: title })
+    if (ROUTE_SEO[route]?.noindex) html = setMeta(html, 'name', 'robots', 'noindex,nofollow')
 
     // Index routes get a crawlable link list + a CollectionPage/ItemList (or
     // FAQPage) graph so the collection - and every item it links - is

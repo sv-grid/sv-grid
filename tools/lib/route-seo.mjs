@@ -193,6 +193,24 @@ export const ROUTE_SEO = {
     path: '/privacy',
     sitemap: false,
   },
+  // The founding-customer offer: reached from the email we send, so it answers
+  // 200 (prerendered) but stays out of the sitemap and the index.
+  founding: {
+    title: 'Founding Customers - Free SvGrid Enterprise Suite License',
+    description:
+      'Fifteen teams and freelancers building with Svelte get a free perpetual SvGrid Enterprise Suite license with a year of updates and support, in exchange for an honest testimonial.',
+    path: '/founding',
+    sitemap: false,
+    noindex: true,
+  },
+  'founding/testimonial': {
+    title: 'Send Your Testimonial - SvGrid Founding Customers',
+    description:
+      'Tell us how SvGrid worked for your team. Founding customers send their testimonial or offer a short case study here once they have shipped.',
+    path: '/founding/testimonial',
+    sitemap: false,
+    noindex: true,
+  },
   terms: {
     title: 'Terms of Use - SvGrid',
     description: 'SvGrid website terms of use and software license summary.',

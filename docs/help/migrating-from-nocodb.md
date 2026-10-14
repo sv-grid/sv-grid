@@ -29,8 +29,7 @@ inside your own app, on your own database, and writes every change back.
 | --- | --- |
 | A base | A `<SvBase tables>` with one tab per table |
 | A table | A table in your database, opened as a `BaseTable` |
-| A view | A `FieldView`: `grid`, `kanban`, `calendar`, `gallery`, `gantt`, `chart` or `form` |
-| A timeline or Gantt view | A `gantt` view with `dateField`, `endField` and `dependencyField` |
+| A view | A `FieldView`: `grid`, `kanban`, `calendar`, `gallery`, `chart` or `form` |
 | A workflow or webhook | An automation in the view bar, or `createAutomationServer` on your server |
 | Roles | Your app's login, and `authorize` on the endpoint |
 | Record comments | `setRecordComments`, stored where your app stores them |
@@ -99,8 +98,7 @@ you name.
 
 ## 3. Views, automations and access
 
-Recreate the views, including a Gantt for the timeline and Gantt views that
-were on NocoDB's Business plan:
+Recreate the views you used:
 
 ```ts
 import type { FieldView } from '@svgrid/enterprise/base'
@@ -108,7 +106,7 @@ import type { FieldView } from '@svgrid/enterprise/base'
 const views: FieldView[] = [
   { id: 'all', name: 'All tasks', type: 'grid', color: { mode: 'field', field: 'status' } },
   { id: 'board', name: 'Board', type: 'kanban', stackBy: 'status' },
-  { id: 'plan', name: 'Plan', type: 'gantt', dateField: 'start', endField: 'due' },
+  { id: 'due', name: 'Due dates', type: 'calendar', dateField: 'due' },
 ]
 ```
 

@@ -65,6 +65,47 @@ Support runs from `support@jqwidgets.com`: a person writing from an email in
 this table with `support_until` on or after today is a trial user in their
 30 days.
 
+## Founding customers
+
+`src/founding.js` runs the founding-customer offer behind
+https://svgrid.com/founding/ (claim a place) and
+https://svgrid.com/founding/testimonial/ (send a testimonial after shipping).
+Both pages are noindex and out of the sitemap; people reach them from the
+email. The offer closes at `FOUNDING_ENDS` (2026-10-31 23:59:59 UTC) or when
+the 15 places are taken, whichever comes first. The worker enforces both; the
+page only shows them. Override either with `[vars]` `FOUNDING_ENDS` and
+`FOUNDING_PLACES` in `wrangler.toml` (keep `website/src/lib/founding.ts` in
+step).
+
+After deploying this version, run `npm run schema` once more: it adds the
+`founding_claims` and `founding_testimonials` tables and leaves the trial
+tables alone.
+
+Each new claim posts to `NOTIFY_WEBHOOK`. To review:
+
+```bash
+# Pending claims
+npx wrangler d1 execute svgrid-trials --remote --command "SELECT created_at, name, email, company, company_url, developers, building, logo_url FROM founding_claims WHERE status = 'pending'"
+
+# Approve: issue the license file and email it (welcome email), then
+node ../../tools/issue-license.mjs --tenant "Acme Corp" --seats 3 --expires 2027-10 --plan suite
+npx wrangler d1 execute svgrid-trials --remote --command "UPDATE founding_claims SET status = 'approved' WHERE email = 'person@example.com'"
+
+# Reject (gives the place back)
+npx wrangler d1 execute svgrid-trials --remote --command "UPDATE founding_claims SET status = 'rejected' WHERE email = 'person@example.com'"
+```
+
+Exports, with the admin token:
+
+```bash
+curl -H "Authorization: Bearer $ADMIN_TOKEN" https://trial.svgrid.com/founding/claims.csv > claims.csv
+curl -H "Authorization: Bearer $ADMIN_TOKEN" https://trial.svgrid.com/founding/testimonials.csv > testimonials.csv
+```
+
+Every claim carries its testimonial, and the form's checkbox is the permission
+to publish it with the person's name. Founding customers got their license free: mark that next to every quote
+(the site's testimonial list needs a disclosure line for it).
+
 ## Privacy
 
 Name, email and company are personal data. `website/src/routes/Privacy.svelte`
