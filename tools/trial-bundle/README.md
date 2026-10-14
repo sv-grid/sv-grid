@@ -20,8 +20,10 @@ You need [Node.js](https://nodejs.org) 18 or newer.
 - macOS and Linux: run `./start-demos.sh` in a terminal.
 - Or, anywhere: `node serve.mjs`.
 
-Your browser opens the gallery at `http://localhost:5175/`. Pick a demo on
-the left; the Source tab shows the Svelte code that draws it, ready to copy.
+Your browser opens the gallery at `http://localhost:5175/demos/`, the same
+page as https://svgrid.com/demos. Pick a demo on the left; the Source button
+shows the Svelte code that draws it, ready to copy. Links to the docs,
+pricing and the playground open on svgrid.com.
 Opening `demos/index.html` directly does not work: browsers block module
 scripts and WebAssembly on `file://` addresses, which is why the small
 server is there.

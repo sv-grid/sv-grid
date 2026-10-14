@@ -48,12 +48,21 @@ const server = createServer(async (req, res) => {
       res.writeHead(403).end()
       return
     }
-    const info = await stat(path).catch(() => null)
-    if (!info) {
-      res.writeHead(404, { 'content-type': 'text/plain' }).end('Not found')
-      return
+    let info = await stat(path).catch(() => null)
+    if (info?.isDirectory()) {
+      path = join(path, 'index.html')
+      info = await stat(path).catch(() => null)
     }
-    if (info.isDirectory()) path = join(path, 'index.html')
+    if (!info) {
+      // A route such as /demos/01-quick-start/ is a page of the app, not a
+      // file: answer it with the app, as svgrid.com does. A missing file
+      // (it has an extension) stays a 404.
+      if (extname(url.pathname)) {
+        res.writeHead(404, { 'content-type': 'text/plain' }).end('Not found')
+        return
+      }
+      path = join(ROOT, 'index.html')
+    }
     const body = await readFile(path)
     res.writeHead(200, {
       'content-type': TYPES[extname(path).toLowerCase()] ?? 'application/octet-stream',
@@ -76,7 +85,7 @@ function listen(attempt = 0) {
     }
   })
   server.listen(port, '127.0.0.1', () => {
-    const address = `http://localhost:${port}/`
+    const address = `http://localhost:${port}/demos/`
     console.log(`SvGrid demos: ${address}`)
     console.log('Press Ctrl+C to stop.')
     if (open) openBrowser(address)

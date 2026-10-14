@@ -137,8 +137,8 @@ jobs:
           VITE_TRIAL_API: ${{ vars.TRIAL_API || secrets.TRIAL_API }}
 
       # The "Start a 30-day trial" download: the published @svgrid/grid and
-      # @svgrid/enterprise tarballs from npm, the demo gallery built to run from
-      # a folder, and a README. Served at /downloads/svgrid-trial.zip.
+      # @svgrid/enterprise tarballs from npm, the site's /demos page built from
+      # website/trial.html to run offline, and a README. Served at /downloads/svgrid-trial.zip.
       - name: Build the trial download
         run: node tools/build-trial-bundle.mjs --out website/dist/downloads
 

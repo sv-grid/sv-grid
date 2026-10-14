@@ -4,7 +4,7 @@
  * svgrid.com:
  *
  *   packages/   @svgrid/grid and @svgrid/enterprise as npm tarballs
- *   demos/      the demo gallery, built to run from a folder
+ *   demos/      the svgrid.com/demos page, built to run offline
  *   serve.mjs, start-demos.cmd, start-demos.sh   start the gallery offline
  *   README.md   install steps and the trial's terms
  *
@@ -23,7 +23,7 @@
  * Writes <out>/svgrid-trial.zip and <out>/svgrid-trial.json (versions, size).
  */
 import { spawnSync } from 'node:child_process'
-import { mkdtemp, mkdir, readdir, readFile, writeFile, copyFile, rm } from 'node:fs/promises'
+import { mkdtemp, mkdir, readdir, readFile, writeFile, copyFile, cp, rename, rm } from 'node:fs/promises'
 import { existsSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, dirname, relative, resolve, sep } from 'node:path'
@@ -115,10 +115,23 @@ function packPackages(dest) {
   return out
 }
 
+/** What the website's demos page reads from public/ besides the bundle. */
+const SITE_FILES = ['thumbs', 'demo-related.json', 'llms-full.txt', 'docs-media/studio-hero.png', 'favicon-16.png', 'favicon-32.png', 'favicon.ico']
+
+/**
+ * The website's own /demos page and header (`vite build --mode trial`, entry
+ * website/trial.html), so the zip's gallery is the one on svgrid.com/demos.
+ * Absolute base: serve.mjs serves it at the root and answers every route
+ * with index.html, as the site does.
+ */
 async function buildDemos(dest) {
-  const vite = join(ROOT, 'examples', 'node_modules', 'vite', 'bin', 'vite.js')
-  if (!existsSync(vite)) fail('examples/node_modules is missing; run pnpm install')
-  run(process.execPath, [vite, 'build', '--base', './', '--outDir', dest, '--emptyOutDir', '--logLevel', 'warn'], { cwd: join(ROOT, 'examples') })
+  const site = join(ROOT, 'website')
+  const vite = join(site, 'node_modules', 'vite', 'bin', 'vite.js')
+  if (!existsSync(join(site, 'trial.html'))) fail('website/ is missing; check out the submodule (git submodule update --init website)')
+  if (!existsSync(vite)) fail('website/node_modules is missing; run pnpm install')
+  run(process.execPath, [vite, 'build', '--mode', 'trial', '--base', '/', '--outDir', dest, '--emptyOutDir', '--logLevel', 'warn'], { cwd: site })
+  await rename(join(dest, 'trial.html'), join(dest, 'index.html'))
+  for (const f of SITE_FILES) await cp(join(site, 'public', f), join(dest, f), { recursive: true })
   let dropped = 0
   for (const f of await walk(join(dest, 'assets'))) {
     if (f.endsWith('.mp3')) {
