@@ -71,6 +71,9 @@ export { enableSchedulerView, SvGridScheduler } from './scheduler'
 // Kanban board view (Pro). `enableBoardView()` registers the renderer so
 // `<SvGrid board={...}>` shows lanes of cards. Config types live in @svgrid/grid.
 export { enableBoardView, SvGridBoard } from './board'
+// Gallery view (Pro). `enableGalleryView()` registers the renderer so
+// `<SvGrid gallery={...}>` shows rows as cards. Config types live in @svgrid/grid.
+export { enableGalleryView, SvGridGallery } from './gallery'
 // Gantt view (Pro). `enableGanttView()` registers the renderer so
 // `<SvGrid gantt={...}>` shows a task table beside a time chart. The `gantt`
 // prop and its config types live in @svgrid/grid; the layout model, the
@@ -903,6 +906,9 @@ export type {
   EvalContext,
   ExprRow,
 } from './expressions/expression-types'
+// A module's own condition kind: the `ext` node (SvGrid Base's field filter).
+export { registerPredicateKind, getPredicateKind, type PredicateKind, type PredicateKindContext } from './expressions/kinds'
+export { setAlertConditionEditor, type AlertConditionEditor } from './alerts/condition-editor'
 export { default as SvExpressionEditor } from './SvExpressionEditor.svelte'
 
 // Alert Rules engine (Pro). Declarative "when this holds / this moves -> toast /

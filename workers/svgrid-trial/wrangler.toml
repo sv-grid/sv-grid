@@ -1,0 +1,31 @@
+name = "svgrid-trial"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+# Origins allowed to post the trial form (comma-separated).
+ALLOWED_ORIGIN = "https://svgrid.com,https://www.svgrid.com,http://localhost:5173"
+
+# Secrets, set with `npx wrangler secret put <NAME>` and never committed:
+#   ADMIN_TOKEN     a long random string; unlocks GET /trials.csv
+#   IP_SALT         a long random string; salts the stored IP hashes
+#   NOTIFY_WEBHOOK  optional: a Slack, Teams or Discord incoming-webhook URL that
+#                   hears about each new trial
+
+[[d1_databases]]
+binding = "DB"
+database_name = "svgrid-trials"
+# From `npx wrangler d1 create svgrid-trials`.
+database_id = "212741b8-9e36-4680-86c6-972b5ef7dd12"
+
+[observability]
+enabled = true
+
+# Daily clean-up: rows 12 months after the last download (the privacy policy's
+# promise) and the hourly-limit rows after a day.
+[triggers]
+crons = ["17 3 * * *"]
+
+[[routes]]
+pattern = "trial.svgrid.com"
+custom_domain = true

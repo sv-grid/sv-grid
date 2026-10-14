@@ -1,0 +1,20 @@
+{
+  "description": "A Svelte 5 data grid gallery over 5,000 rows. The cards are drawn in batches of 120 as the wall scrolls, so the first paint costs the same as a small table; search narrows all 5,000 rows and starts the wall from the top. The cover is a computed column, drawn per card from the row.",
+  "keywords": [
+    "svelte gallery 5000 items",
+    "svelte large card grid performance",
+    "svelte infinite scroll cards",
+    "svelte data grid gallery virtualization",
+    "svelte computed column image"
+  ],
+  "faq": [
+    {
+      "question": "Does the gallery mount every card?",
+      "answer": "No. It draws the first 120 cards and adds the next 120 a little before the end of the wall comes into view. A new search or filter starts again from the first batch."
+    },
+    {
+      "question": "Can the cover be computed instead of stored?",
+      "answer": "Yes. coverField can name a column with a fieldFn; the gallery reads its value per row, so the rows here hold a hue and the image is drawn from it when its card is drawn."
+    }
+  ]
+}

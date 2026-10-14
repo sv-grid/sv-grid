@@ -1,54 +1,35 @@
 # Cell data types
 
-The `editorType` field on a column tags the column with a type. This drives
-three different behaviours:
+A column has a data type and an editor, set separately. `cellDataType` says
+what the values are; `editorType` says what edits them.
 <div data-docs-demo="01-quick-start" data-height="540"></div>
 
-| Effect | Driven by `editorType` |
-| ------ | --------------------- |
-| Which inline editor opens on `F2` / double-click | yes - `text` / `number` / `date` / `datetime` / `checkbox` |
-| Which sort comparator is used | yes - `number` and `date`/`datetime` pick non-default `sortFns` |
-| Which filter operators the column menu offers | yes - text / number / date / checkbox sets differ |
+| Effect | Driven by |
+| ------ | --------- |
+| Which sort comparator is used | `cellDataType`: `number` and `date` / `dateString` pick non-default `sortFns` |
+| Which filter operators the column menu offers | `cellDataType`: text / number / date / boolean sets differ |
+| Default alignment | `cellDataType`: numbers and dates right, booleans centered |
+| Which inline editor opens on `F2` / double-click | `editorType` |
 
-## Setting it
+So a number column can be edited in a plain text box, a number input, or
+any editor registered with `registerCellEditor`, and still sort, filter and
+align as numbers:
 
 ```ts
 const columns: GridColumns<Person> = [
-  { field: 'firstName',  header: 'First',    editorType: 'text' },
-  { field: 'age',        header: 'Age',      editorType: 'number' },
-  { field: 'joinedAt',   header: 'Joined',   editorType: 'date' },
-  { field: 'startTime',  header: 'Start',    editorType: 'datetime' },
-  { field: 'active',     header: 'Active',   editorType: 'checkbox' },
+  { field: 'firstName', header: 'First',  cellDataType: 'text' },
+  { field: 'age',       header: 'Age',    cellDataType: 'number' },                       // number input
+  { field: 'salary',    header: 'Salary', cellDataType: 'number', editorType: 'text' },   // typed as text
+  { field: 'rating',    header: 'Rating', cellDataType: 'number', editorType: 'stars' },  // a registered editor
+  { field: 'joined',    header: 'Joined', cellDataType: 'date' },
+  { field: 'due',       header: 'Due',    cellDataType: 'dateString' },                   // ISO date strings
+  { field: 'active',    header: 'Active', cellDataType: 'boolean' },
 ]
 ```
 
-Even if you do not enable inline editing, set `editorType` so sort and
-filter behave correctly for the column's data type. Without it, sorting
-falls back to the `auto` comparator: a column whose values are all numbers
-still sorts numerically, but numbers stored as strings (`'10'`, `'9'`) sort
-as text, and a column mixing numbers and text puts the numbers first.
+A column with no `editorType` gets the usual editor for its data type:
 
-Every built-in comparator sorts blanks (`null`, `undefined`, `''`) first in
-ascending order and last in descending. The `number` and `date` comparators
-treat values they cannot parse (`'n/a'`, an invalid date) the same way.
-
-## `cellDataType` shorthand
-
-`cellDataType` is a higher-level alias that resolves to the right `editorType`,
-alignment, date `format`, and filter operators in one word - so you don't hand-set
-each:
-
-```ts
-const columns = [
-  { field: 'name',   cellDataType: 'text' },
-  { field: 'age',    cellDataType: 'number' },     // number editor, right-aligned, numeric filters
-  { field: 'active', cellDataType: 'boolean' },    // checkbox editor, centered
-  { field: 'joined', cellDataType: 'date' },       // Date values, `{ type: 'date' }` format
-  { field: 'due',    cellDataType: 'dateString' }, // ISO date STRINGS ('2026-06-27')
-]
-```
-
-| `cellDataType` | resolves to `editorType` | + format |
+| `cellDataType` | default `editorType` | + format |
 | --- | --- | --- |
 | `text` | `text` | - |
 | `number` | `number` | - |
@@ -56,14 +37,28 @@ const columns = [
 | `date` | `date` | `{ type: 'date' }` |
 | `dateString` | `date` | - |
 
-Anything you set explicitly (`editorType`, `align`, `format`) always wins -
-`cellDataType` only fills the gaps.
+Anything you set explicitly (`editorType`, `align`, `format`) always wins.
+
+A column that sets only a built-in `editorType` (`number`, `date`,
+`datetime`, `checkbox`) and no `cellDataType` takes its data type from it, as
+it always has: `{ editorType: 'number' }` still sorts and filters as numbers.
+
+Set a data type even if you do not enable inline editing. Without one,
+sorting falls back to the `auto` comparator: a column whose values are all
+numbers still sorts numerically, but numbers stored as strings (`'10'`,
+`'9'`) sort as text, and a column mixing numbers and text puts the numbers
+first.
+
+Every built-in comparator sorts blanks (`null`, `undefined`, `''`) first in
+ascending order and last in descending. The `number` and `date` comparators
+treat values they cannot parse (`'n/a'`, an invalid date) the same way.
 
 ## Inferring types from the data
 
-Set `inferColumnTypes` on the grid and any column that declares **neither**
-`editorType` **nor** `cellDataType` has its type inferred from the first data
-row (number / boolean / `Date` / ISO date-string / text):
+Set `inferColumnTypes` on the grid and any column without a data type (no
+`cellDataType`, and no `number` / `date` / `checkbox` editor) has it inferred
+from the first data row (number / boolean / `Date` / ISO date-string / text),
+whatever edits it:
 
 ```svelte
 <SvGrid {data} {columns} inferColumnTypes />

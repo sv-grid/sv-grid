@@ -20,6 +20,7 @@ import {
   rowSortingFeature,
 } from './index'
 import type { ColumnDef, SvGridApi } from './index'
+import { operatorsForColumn } from './filter-operators'
 
 type Row = { id: number; name: string; score: number }
 
@@ -35,7 +36,7 @@ const cols: ColumnDef<typeof features, Row>[] = [
 ]
 
 
-function mountGrid() {
+function mountGrid(columns: ColumnDef<typeof features, Row>[] = cols) {
   return new Promise<{ api: SvGridApi<typeof features, Row>; target: HTMLElement; destroy: () => void }>(
     (res, rej) => {
       const target = document.createElement('div')
@@ -44,7 +45,7 @@ function mountGrid() {
         target,
         props: {
           data: rows,
-          columns: cols,
+          columns,
           features,
           _rowModels: {
             coreRowModel: createCoreRowModel(),
@@ -68,6 +69,36 @@ function mountGrid() {
 
 afterEach(() => {
   unregisterCellEditor('stars')
+})
+
+describe('the data type and the editor are separate', () => {
+  it('a number column edited by a custom editor still aligns and filters as numbers', async () => {
+    // `cellDataType` decides sorting, filter operators and alignment;
+    // `editorType` only picks what edits the cell.
+    let seen: Record<string, unknown> = {}
+    registerCellEditor('stars', {
+      component: SvRating,
+      props: (ctx) => {
+        seen = ctx as unknown as Record<string, unknown>
+        return { value: ctx.value }
+      },
+    })
+    const numberCols: ColumnDef<typeof features, Row>[] = [
+      { field: 'name', header: 'Name', width: 200, editorType: 'text' },
+      { field: 'score', header: 'Score', width: 160, cellDataType: 'number', editorType: 'stars' },
+    ]
+    const { api, target, destroy } = await mountGrid(numberCols)
+    try {
+      expect(target.querySelector('td[data-col-id="score"]')?.getAttribute('data-align')).toBe('right')
+      expect(operatorsForColumn({ columnDef: numberCols[1] } as never).map((o) => o.value)).toContain('between')
+      api.startEditing(0, 'score')
+      await vi.waitFor(() => expect(target.querySelector('.sv-rating')).not.toBeNull())
+      // The editor context carries the grid, for editors that change the column.
+      expect(seen.grid).toBeTruthy()
+    } finally {
+      destroy()
+    }
+  })
 })
 
 describe('registry wiring in SvGrid', () => {

@@ -448,6 +448,30 @@ describe('SvGridGantt - the task table', () => {
     destroy()
   })
 
+  it('shows a cell as its column formats it, and a computed column its computed value', () => {
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    const app = mount(SvGridGantt as any, {
+      target,
+      props: {
+        data: rows,
+        columns: [
+          { field: 'name', header: 'Task', width: 180 },
+          { field: 'owner', header: 'Owner', width: 100, formatter: (c: { value: unknown }) => (c.value ? `@${String(c.value)}` : '') },
+          { field: 'span', header: 'Span', width: 100, fieldFn: (r: Task) => `${r.start ?? ''}..${r.end ?? ''}` },
+        ],
+        gantt: { ...baseConfig, tableColumns: ['name', 'owner', 'span'] },
+        getRowId: (r: Task) => r.id,
+      } as any,
+    })
+    flushSync()
+    const cells = tableRows(target)[1]!.querySelectorAll('.sv-gantt-td')
+    expect(cells[1]!.textContent?.trim()).toBe('@Ada')
+    expect(cells[2]!.textContent?.trim()).toBe('2026-09-07..2026-09-08')
+    unmount(app)
+    target.remove()
+  })
+
   it("reports a PARENT's rolled-up span in the duration column", () => {
     // A phase row carries no dates of its own, so reading its raw task made
     // every phase report 0 days - visible only once the column was on screen.
@@ -1023,6 +1047,44 @@ describe('SvGridGantt - the context menu', () => {
     expect(menu()!.textContent).toContain('Edit')
     expect(menu()!.textContent).toContain('Add subtask')
     expect(menu()!.textContent).toContain('Delete')
+    destroy()
+  })
+
+  it('offers no Add subtask without a tree to hang it in', () => {
+    const { target, destroy } = mountGantt({ editable: true, onTaskAdd: vi.fn(), parentField: undefined })
+    open(target, 't1')
+    expect(menu()?.textContent ?? '').not.toContain('Add subtask')
+    destroy()
+  })
+
+  it('opens a task through onTaskOpen: a bar click, the menu and the name in the table', () => {
+    const onTaskOpen = vi.fn()
+    const { target, destroy } = mountGantt({ drawer: true, onTaskOpen } as never)
+    barFor(target, 't1')!.click()
+    flushSync()
+    expect(onTaskOpen).toHaveBeenLastCalledWith(expect.objectContaining({ id: 't1' }))
+    expect(document.querySelector('.sv-drawer, [role="dialog"]')).toBeNull()
+    open(target, 't2')
+    expect(menu()!.textContent).toContain('Open')
+    expect(menu()!.textContent).not.toContain('Edit')
+    ;(target.querySelectorAll<HTMLElement>('.sv-gantt-open')[2])!.click()
+    expect(onTaskOpen).toHaveBeenLastCalledWith(expect.objectContaining({ id: 't2' }))
+    destroy()
+  })
+
+  it('draws arrows from predecessors listed on the task that waits, and reads progress through progressValue', () => {
+    const data: Task[] = rows.map((r) => (r.id === 't2' ? { ...r, deps: ['t1'] } : r.id === 't3' ? { ...r, deps: 't2' } : r)) as never
+    const { target, destroy } = mountGantt({ predecessorField: 'deps', progressValue: (r: Task) => (r.pct ?? 0) / 2 } as never, data)
+    expect(target.querySelectorAll('.sv-gantt-dep-line').length).toBe(2)
+    // Interviews is 100% in the data; progressValue halves it.
+    expect(barFor(target, 't1')!.querySelector<HTMLElement>('.sv-gantt-progress')!.style.width).toBe('50%')
+    destroy()
+  })
+
+  it('sizes table columns by tableColumnWidths over their own width', () => {
+    const { target, destroy } = mountGantt({ tableColumns: ['name', 'owner'], tableColumnWidths: { owner: 64 } } as never)
+    const owner = target.querySelectorAll<HTMLElement>('.sv-gantt-th')[1]!
+    expect(owner.style.width).toBe('64px')
     destroy()
   })
 

@@ -7,7 +7,7 @@
  * ignores the page slice; `visible` keeps the old per-page behaviour for anyone
  * who wants it.
  */
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, unmount } from 'svelte'
 import SvGrid from './SvGrid.svelte'
 import {
@@ -91,8 +91,10 @@ describe('conditionalStatScope', () => {
     cleanup = destroy
     await tick()
 
-    // Page 1: 0 and 50 against the full 0..100 range.
-    expect(barWidths(target)).toEqual(['0%', '50%'])
+    // Page 1: 0 and 50 against the full 0..100 range. The formatting engine
+    // and the pager each load on demand, so wait for both.
+    await vi.waitFor(() => expect(barWidths(target)).toEqual(['0%', '50%']))
+    await vi.waitFor(() => expect(target.querySelector('.sv-grid-pagination')).toBeTruthy())
     await nextPage(target)
     // Page 2: 0 and 100 against the same range.
     expect(barWidths(target)).toEqual(['0%', '100%'])
@@ -104,7 +106,8 @@ describe('conditionalStatScope', () => {
     await tick()
 
     // Page 1's own max is 50, so 50 fills the bar.
-    expect(barWidths(target)).toEqual(['0%', '100%'])
+    await vi.waitFor(() => expect(barWidths(target)).toEqual(['0%', '100%']))
+    await vi.waitFor(() => expect(target.querySelector('.sv-grid-pagination')).toBeTruthy())
     await nextPage(target)
     expect(barWidths(target)).toEqual(['0%', '100%'])
   })

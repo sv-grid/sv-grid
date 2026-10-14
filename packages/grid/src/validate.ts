@@ -102,8 +102,9 @@ export function validateGridConfig<
     for (const col of cols) {
       const field = col.field as string | undefined
       // `fieldFn` computes its value, and an id-only column (actions, buttons)
-      // never reads the row - neither needs a matching key.
-      if (!field || col.fieldFn) continue
+      // never reads the row - neither needs a matching key. A `fieldType`
+      // column starts empty when the field is added to existing records.
+      if (!field || col.fieldFn || col.fieldType) continue
       if (known.has(field)) continue
       const guess = nearest(field, [...known])
       messages.push(

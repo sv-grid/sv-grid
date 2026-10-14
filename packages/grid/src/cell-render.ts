@@ -17,10 +17,7 @@ import {
   getDateFormatter,
   resolveDatePattern,
 } from "./cell-formatting";
-import {
-  resolveCellFormat,
-  type ResolvedCellFormat,
-} from "./conditional-formatting";
+import type { ResolvedCellFormat } from "./conditional-formatting";
 import {
   getCellKey,
   resolveClassList,
@@ -63,9 +60,12 @@ export function createCellRender<
   ): ResolvedCellFormat | null {
     const all = ctx.props.conditionalFormats;
     if (!all?.length) return null;
+    // Loaded on demand by the controller; null for the frame before it lands.
+    const cf = ctx.conditionalFormatting as typeof import("./conditional-formatting") | null;
+    if (!cf) return null;
     const formats = isAggregateRow(row) ? aggregateRowFormats(all) : all;
     if (!formats.length) return null;
-    return resolveCellFormat(
+    return cf.resolveCellFormat(
       value,
       row.original,
       column.id,

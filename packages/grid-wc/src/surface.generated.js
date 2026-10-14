@@ -30,6 +30,12 @@ export const ELEMENT_PROPS = [
     "ts": "BoardConfig<TFeatures, TData>"
   },
   {
+    "name": "gallery",
+    "type": "Object",
+    "attribute": null,
+    "ts": "GalleryConfig<TFeatures, TData>"
+  },
+  {
     "name": "scheduler",
     "type": "Object",
     "attribute": null,
@@ -70,6 +76,48 @@ export const ELEMENT_PROPS = [
     "type": "Boolean",
     "attribute": "selection-bar",
     "ts": "| boolean | ReadonlyArray<SelectionBarAction<TData> | SelectionBarBuiltin> | SelectionBarConfig<TData>"
+  },
+  {
+    "name": "rowAdder",
+    "type": "Boolean",
+    "attribute": "row-adder",
+    "ts": "boolean | RowAdderConfig<TData>"
+  },
+  {
+    "name": "rowColor",
+    "type": "Object",
+    "attribute": null,
+    "ts": "RowColorConfig<TData>"
+  },
+  {
+    "name": "columnAdder",
+    "type": "Boolean",
+    "attribute": "column-adder",
+    "ts": "boolean | ColumnAdderConfig"
+  },
+  {
+    "name": "fieldMenu",
+    "type": "Boolean",
+    "attribute": "field-menu",
+    "ts": "boolean"
+  },
+  {
+    "name": "expandRows",
+    "type": "Boolean",
+    "attribute": "expand-rows",
+    "ts": "boolean"
+  },
+  {
+    "name": "pinSplitter",
+    "type": "Boolean",
+    "attribute": "pin-splitter",
+    "ts": "boolean"
+  },
+  {
+    "name": "primaryField",
+    "type": "String",
+    "attribute": "primary-field",
+    "ts": "string"
   },
   {
     "name": "features",
@@ -717,6 +765,54 @@ export const ELEMENT_EVENTS = [
       "on"
     ],
     "detail": "boolean"
+  },
+  {
+    "callback": "onRowAdd",
+    "event": "rowadd",
+    "params": [
+      "event"
+    ],
+    "detail": "{ row: Record<string, unknown> }"
+  },
+  {
+    "callback": "onColumnAdd",
+    "event": "columnadd",
+    "params": [
+      "event"
+    ],
+    "detail": "unknown"
+  },
+  {
+    "callback": "onColumnChange",
+    "event": "columnchange",
+    "params": [
+      "event"
+    ],
+    "detail": "unknown"
+  },
+  {
+    "callback": "onColumnRemove",
+    "event": "columnremove",
+    "params": [
+      "event"
+    ],
+    "detail": "unknown"
+  },
+  {
+    "callback": "onRowsDelete",
+    "event": "rowsdelete",
+    "params": [
+      "event"
+    ],
+    "detail": "{ rows: Record<string, unknown>[]; ids: string[]; data: Record<string, unknown>[] }"
+  },
+  {
+    "callback": "onRowColorChange",
+    "event": "rowcolorchange",
+    "params": [
+      "config"
+    ],
+    "detail": "unknown"
   },
   {
     "callback": "onExpandedChange",

@@ -1,12 +1,13 @@
-// cellDataType resolution. A column's `cellDataType` (or grid-level
-// `inferColumnTypes`) is a high-level shorthand that fills in `editorType`,
-// `format`, and - transitively, via `getColumnAlign` and the filter-operator
-// tables, which both key off `editorType` - alignment and filter operators.
+// Column data types. `cellDataType` (declared, or inferred with the grid's
+// `inferColumnTypes`) is what the values are: sorting, filter operators,
+// alignment and bucketing read it through `columnDataType`. `editorType` is
+// only what edits them, so a number column can use any editor. A column
+// with no `editorType` gets the usual one for its type, and a `format` for
+// dates.
 //
 // Anything set explicitly on the ColumnDef always wins; this only fills gaps.
 // Resolution happens once when columns are ingested, producing plain ColumnDef
-// objects, so every downstream reader (editing, filtering, formatting,
-// alignment) sees a normal column with no new code paths.
+// objects.
 export type CellDataType = "text" | "number" | "boolean" | "date" | "dateString";
 
 type TypeDefaults = {
@@ -30,6 +31,28 @@ function defaultsFor(dt: CellDataType): TypeDefaults {
       return { editorType: "text" };
   }
 }
+
+/**
+ * The column's data type: what sorting, filter operators, alignment and
+ * bucketing go by, whatever edits the cell (a text box, a number input, a
+ * registered editor). Declared with `cellDataType`; a column without one
+ * keeps what its built-in `editorType` meant before: `number`, `date` /
+ * `datetime`, `checkbox`.
+ */
+export function columnDataType(
+  def: { cellDataType?: string; editorType?: string } | undefined,
+): CellDataType | undefined {
+  if (!def) return undefined;
+  if (def.cellDataType) return def.cellDataType as CellDataType;
+  const e = def.editorType;
+  if (e === "number") return "number";
+  if (e === "date" || e === "datetime") return "date";
+  if (e === "checkbox") return "boolean";
+  return undefined;
+}
+
+/** Date or ISO date string: sorts, filters and buckets as a date. */
+export const isDateDataType = (t: CellDataType | undefined): boolean => t === "date" || t === "dateString";
 
 /** Best-effort inference of a column's data type from a sample value. */
 export function inferCellDataType(value: unknown): CellDataType | undefined {
@@ -61,10 +84,11 @@ export function resolveColumnTypes(
     if (col.columns && col.columns.length) {
       return { ...col, columns: resolveColumnTypes(col.columns, sampleRow, infer) };
     }
-    // An explicit editorType means the author already chose - don't override.
-    const hasExplicitEditor = col.editorType != null;
+    // Infer only what is unknown: no `cellDataType`, and no built-in editor
+    // that implies one (`number`, `date`, `checkbox`). A column edited in a
+    // text box or a custom editor still gets its data type from the data.
     let dt: CellDataType | undefined = col.cellDataType;
-    if (!dt && infer && !hasExplicitEditor && sampleRow != null) {
+    if (!dt && infer && !columnDataType(col) && sampleRow != null) {
       const field = col.field;
       const raw =
         col.fieldFn?.(sampleRow) ??
@@ -75,6 +99,8 @@ export function resolveColumnTypes(
     const d = defaultsFor(dt);
     return {
       ...col,
+      // Kept on the column: sorting, filtering and alignment read it.
+      cellDataType: dt,
       editorType: col.editorType ?? d.editorType,
       format: col.format ?? d.format,
     };

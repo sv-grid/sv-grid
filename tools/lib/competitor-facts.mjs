@@ -32,7 +32,7 @@
 
 /** SvGrid's own prices, mirrored by website/src/routes/Pricing.svelte and seo.ts.
  *  Both editions cover unlimited apps; the line between them is the feature
- *  set. `grid` is the enterprise grid, `suite` adds the spreadsheet and Studio.
+ *  set. `grid` is the enterprise grid, `suite` adds the spreadsheet, SvGrid Base and Studio.
  *  `indie` (added 2026-10-07) is the grid edition for freelancers and
  *  companies under $1M revenue, without support. */
 export const SVGRID_PRICING = Object.freeze({
@@ -42,12 +42,18 @@ export const SVGRID_PRICING = Object.freeze({
   unit: 'per developer per year',
   url: 'https://svgrid.com/pricing/',
   summary: 'MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise',
+  /** What the table-database pages quote: SvGrid Base is a Suite product. */
+  baseSummary: 'SvGrid Base ships in Enterprise Suite of @svgrid/enterprise, $999 per developer per year, unlimited apps and end users; the grid it runs on is MIT',
 })
+
+/** The pricing line a comparison quotes for SvGrid: Base for the table databases, the grid for the rest. */
+export const svgridPricingSummary = (cmp) => (cmp?.group === 'table-database' ? SVGRID_PRICING.baseSummary : SVGRID_PRICING.summary)
 
 /** Framework ids in the comparison JSON, as they read on the page. */
 const FRAMEWORK_LABELS = {
   javascript: 'JavaScript', react: 'React', angular: 'Angular', vue: 'Vue', svelte: 'Svelte', solid: 'Solid',
   qwik: 'Qwik', lit: 'Lit', jquery: 'jQuery', blazor: 'Blazor', 'web components': 'Web Components',
+  hosted: 'Hosted web app (cloud)', 'self-hosted': 'Self-hosted web app (Docker)',
 }
 
 /** ['javascript', 'react'] -> 'JavaScript, React'. */
@@ -200,9 +206,13 @@ export function factsForComparison(cmp, ledger, size) {
         `${cmp.npm} ${bundle.version} entry \`${bundle.entry}\` measured ${formatDate(bundle.measuredAt)} with packages/grid/scripts/measure-competitor-bundles.mjs.`,
     )
   }
-  rows.push({ label: 'Frameworks', svgrid: 'Svelte 5', competitor: frameworkList(cmp.framework), checked: cmp.verified })
+  if (cmp.group === 'table-database') {
+    rows.push({ label: 'What it is', svgrid: 'A Svelte 5 component (<SvBase>) inside your own app, on your database', competitor: frameworkList(cmp.framework), checked: cmp.verified })
+  } else {
+    rows.push({ label: 'Frameworks', svgrid: 'Svelte 5', competitor: frameworkList(cmp.framework), checked: cmp.verified })
+  }
   if (cmp.pricing?.summary) {
-    rows.push({ label: 'Pricing', svgrid: SVGRID_PRICING.summary, competitor: cmp.pricing.summary, checked: cmp.pricing.verified })
+    rows.push({ label: 'Pricing', svgrid: svgridPricingSummary(cmp), competitor: cmp.pricing.summary, checked: cmp.pricing.verified })
   }
   return { rows, footnotes, verified: cmp.verified }
 }

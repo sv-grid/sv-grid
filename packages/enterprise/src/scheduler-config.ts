@@ -116,6 +116,17 @@ export type SchedulerProConfig<
    */
   calendars?: ReadonlyArray<{ id: string; title: string; color?: string; hidden?: boolean }>;
   calendarField?: keyof TData & string;
+  /**
+   * Open an event where the app keeps it (a record view) instead of the
+   * built-in drawer: a click on the event calls it.
+   */
+  onEventOpen?: (row: TData) => void;
+  /**
+   * `false`: events move but keep their length - no edge grips. For records
+   * with one date (a start or a due date) there is no end to change.
+   * Default `true`.
+   */
+  resizable?: boolean;
 
   // --- Free/busy availability (for find-a-time) -------------------------------
   /**

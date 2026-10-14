@@ -19,6 +19,7 @@ import {
   toolPanelHeaderLabel,
 } from "./cell-values";
 import { pushHistory, nextGroupId, runHistoryGroup, type HistoryStep } from "./history";
+import { getGridExtension } from "./grid-extension.svelte";
 
 export function createClipboard<
   TFeatures extends TableFeatures = TableFeatures,
@@ -67,6 +68,7 @@ export function createClipboard<
     const rowId = ctx.allRows[rowIndex]?.id;
     const next = ctx.internalData.slice() as Array<TData>;
     next[dataIndex] = { ...row, [field]: value } as TData;
+    getGridExtension()?.cellEdited?.(ctx, { row: next[dataIndex], columnId });
     ctx.internalData = next;
     if (rowId) {
       const key = getCellKey(rowId, columnId);
@@ -760,6 +762,7 @@ export function createClipboard<
     const nextValue = !currentValue;
     (row.original as Record<string, unknown>)[column.columnDef.field] =
       nextValue;
+    getGridExtension()?.cellEdited?.(ctx, { row: row.original, columnId: column.id });
 
     const key = getCellKey(row.id, column.id);
     ctx.editedCellValues = {

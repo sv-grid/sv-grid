@@ -2,7 +2,7 @@
  * DOM: `localeText` translates the grid's chrome strings (empty state, pager,
  * tool panel) while leaving everything else English.
  */
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, unmount } from 'svelte'
 import SvGrid from './SvGrid.svelte'
 import {
@@ -67,7 +67,8 @@ describe('localeText', () => {
     cleanup = destroy
     await tick()
     await tick()
-    expect(target.textContent).toContain('Taille de page :')
+    // The footer is its own chunk, loaded once the grid paginates.
+    await vi.waitFor(() => expect(target.textContent).toContain('Taille de page :'))
     expect(target.textContent).toContain('Page FR')
   })
 })

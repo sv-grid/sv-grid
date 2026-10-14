@@ -12,7 +12,7 @@
  * any load, and clicking it must actually open the list rather than requiring
  * a second click once the chunk arrives.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount, unmount } from 'svelte'
 import SvGrid from './SvGrid.svelte'
 import { createCoreRowModel, rowPaginationFeature, tableFeatures } from './index'
@@ -49,10 +49,10 @@ describe('footer page-size control', () => {
     const host = document.createElement('div')
     document.body.appendChild(host)
     const app = mountGrid(host)
-    await tick()
+    // The footer is its own chunk, loaded once the grid paginates.
+    await vi.waitFor(() => expect(trigger(host)).not.toBeNull())
 
     const btn = trigger(host)
-    expect(btn).not.toBeNull()
     // Same classes and ARIA as the real component's closed state, so swapping
     // it in causes no visual change and no layout shift.
     expect(btn!.getAttribute('aria-haspopup')).toBe('listbox')
@@ -70,7 +70,8 @@ describe('footer page-size control', () => {
     const host = document.createElement('div')
     document.body.appendChild(host)
     const app = mountGrid(host)
-    await tick()
+    // The footer is its own chunk, loaded once the grid paginates.
+    await vi.waitFor(() => expect(trigger(host)).not.toBeNull())
 
     trigger(host)!.click()
     // The component is fetched here; give the dynamic import a turn to settle.

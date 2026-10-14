@@ -14,6 +14,7 @@ import {
 } from "./SvGrid.helpers";
 import {
   formatSummaryNumeric,
+  isGroupRow,
 } from "./cell-values";
 
 export function createSummaries<
@@ -38,6 +39,7 @@ export function createSummaries<
     rows: ReadonlyArray<Row<TData>>,
     columns: ReadonlyArray<Column<TData>>,
   ): Record<string, string> {
+    rows = recordsOf(rows, ctx.advancedKeep);
     const summary: Record<string, string> = {};
     const rowCount = rows.length;
     const hasEdits = Object.keys(ctx.editedCellValues).length > 0;
@@ -94,6 +96,44 @@ export function createSummaries<
           : `Count: ${rowCount}`;
     }
     return summary;
+  }
+
+  /**
+   * Grouped, the footer totals the records, not the banners: an expanded group's
+   * records follow it in the list, a collapsed one's are read from its subRows
+   * (through the advanced filter, which tested only what was in the list).
+   */
+  function recordsOf(rows: ReadonlyArray<Row<TData>>, keep: ((row: Row<TData>) => boolean) | null): ReadonlyArray<Row<TData>> {
+    let grouped = false;
+    for (const row of rows) {
+      if (isGroupRow(row)) {
+        grouped = true;
+        break;
+      }
+    }
+    if (!grouped) return rows;
+    const out: Array<Row<TData>> = [];
+    const leaves = (row: Row<TData>) => {
+      for (const sub of row.subRows ?? []) {
+        if (isGroupRow(sub)) leaves(sub);
+        else if (!keep || keep(sub)) out.push(sub);
+      }
+    };
+    for (let i = 0; i < rows.length; i += 1) {
+      const row = rows[i]!;
+      // Subtotal rows (a clone of their banner, or a row model's own) are not records.
+      if ((row as { __groupFooter?: boolean }).__groupFooter || (row.original as { __groupFooter?: boolean } | null)?.__groupFooter) continue;
+      if (!isGroupRow(row)) {
+        out.push(row);
+        continue;
+      }
+      const next = rows[i + 1];
+      if (next && (next.depth ?? 0) > (row.depth ?? 0)) continue;
+      // A group whose rows are not loaded (a server row model) totals as itself.
+      if (row.subRows) leaves(row);
+      else out.push(row);
+    }
+    return out;
   }
 
   function hasRenderedColumn(entry: {

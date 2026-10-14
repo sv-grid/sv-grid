@@ -41,6 +41,7 @@ export type EnterpriseFeatureLabel =
   | 'Pivot'
   | 'Server-side row model'
   | 'Spreadsheet'
+  | 'SvGrid Base'
   | 'Studio'
 
 /**

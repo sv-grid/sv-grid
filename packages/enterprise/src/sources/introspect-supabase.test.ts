@@ -93,6 +93,25 @@ describe('introspectSupabaseTable', () => {
     ])
   })
 
+  it('works with the default fetch, which a browser refuses to call as a method', async () => {
+    // The browser's fetch throws "Illegal invocation" when its receiver is
+    // not the window. Called as `options.fetch(...)` it got the options
+    // object, every path caught that as "no answer", and baseFromSupabase
+    // found no table at all unless the caller passed a fetch of their own.
+    const real = globalThis.fetch
+    const sample = fetchFor({ openapiStatus: 401, sample: [{ id: 1, name: 'Chai' }] })
+    globalThis.fetch = function (this: unknown, url: string | URL, init?: RequestInit) {
+      if (this !== undefined && this !== globalThis) throw new TypeError("Failed to execute 'fetch' on 'Window': Illegal invocation")
+      return sample(url, init)
+    } as typeof globalThis.fetch
+    try {
+      const s = await introspectSupabaseTable({ url: 'https://x.supabase.co', key: 'anon', table: 'products' })
+      expect(s?.fields.map((f) => f.field)).toEqual(['id', 'name'])
+    } finally {
+      globalThis.fetch = real
+    }
+  })
+
   it('returns null when nothing can determine the columns', async () => {
     const schema = await introspectSupabaseTable(opts(fetchFor({ openapiStatus: 404, sample: [], csv: '' })))
     expect(schema).toBeNull()

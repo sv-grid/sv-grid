@@ -44,6 +44,11 @@ Every component has its own tutorial page - what it is, a live demo, the full
 props table, common patterns, and accessibility notes. The overview link on each
 group heading is the at-a-glance rollup.
 
+### [The grid](../../getting-started.md)
+
+[SvGrid](../../getting-started.md) - the data grid and the hero component of the
+suite. Every component below also works as a cell editor inside it.
+
 ### [Buttons & toggles](./buttons.md)
 
 [SvButton](./sv-button.md) · [SvButtonGroup](./sv-button-group.md) ·

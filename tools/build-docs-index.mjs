@@ -66,6 +66,7 @@ const SECTION_TITLES = {
   'help/charts':       'Charts',
   'help/gantt':        'Gantt',
   'help/sheet':        'Spreadsheet',
+  'help/base':         'SvGrid Base',
   'help/export':       'Import & export',
   'help/pivot':        'Pivot grid',
   'help/kanban':       'Kanban',
@@ -84,13 +85,14 @@ const SECTION_TITLES = {
 
 // Product pillars — the top-level split a developer picks first, rendered as a
 // header dropdown on the site (the demos gallery's product switcher: the free
-// grid and its UI kit, then the three Enterprise products). Order here is the
+// grid and its UI kit, then the Enterprise products). Order here is the
 // dropdown order. Mirrors PILLARS in website/src/lib/docs.ts.
 const PILLARS = [
   { id: 'grid',       title: 'SvGrid',             blurb: 'The Svelte 5 data grid.' },
   { id: 'ui',         title: 'SvGrid UI',          blurb: 'The Svelte component suite.' },
   { id: 'enterprise', title: 'SvGrid Enterprise',  blurb: 'The paid modules on the grid; licensing, support, compliance, legal.' },
   { id: 'sheet',      title: 'SvGrid Spreadsheet', blurb: 'The grid as an Excel-like spreadsheet.' },
+  { id: 'base',       title: 'SvGrid Base',        blurb: 'A table database: fields, views, forms and records.' },
   { id: 'studio',     title: 'SvGrid Studio',      blurb: 'Turn a database or schema into a CRUD data-app.' },
 ]
 
@@ -111,6 +113,7 @@ const SECTION_PILLAR = {
   'help/charts':       'grid',
   'help/gantt':        'enterprise',
   'help/sheet':        'sheet',
+  'help/base':         'base',
   'help/export':       'enterprise',
   'help/pivot':        'enterprise',
   'help/kanban':       'enterprise',
@@ -147,9 +150,11 @@ const PAGE_PILLAR = {
   'help/import':                    'enterprise',
   'help/pivot':                     'enterprise',
   'help/rows/kanban-board':         'enterprise',
+  'help/rows/gallery':              'enterprise',
   'help/rows/scheduler':            'enterprise',
   'help/rows/gantt':                'enterprise',
   'help/gantt':                     'enterprise',
+  'help/fields':                    'base',
   'help/alerts':                    'enterprise',
   'help/scheduling':                'enterprise',
   'help/cells/spreadsheet-shell':   'sheet',
@@ -166,7 +171,7 @@ const SECTION_ORDER = [
   '', 'getting-started', 'help',
   'help/cells', 'help/columns', 'help/rows',
   'help/editing', 'help/filtering', 'help/grouping',
-  'help/headless', 'help/server', 'help/state', 'help/charts', 'help/gantt', 'help/sheet',
+  'help/headless', 'help/server', 'help/state', 'help/charts', 'help/gantt', 'help/sheet', 'help/base',
   'help/export', 'help/pivot', 'help/kanban', 'help/scheduler', 'help/alerts',
   // Before recipes, matching CATEGORY_ORDER in website/src/lib/docs.ts - this
   // list drives docs.json and llms.txt, that one drives the visible sidebar,
@@ -212,6 +217,16 @@ const PAGE_GROUPS = {
     { label: 'Reference', pages: ['help/export.md', 'help/import.md'] },
   ],
   'help/pivot': [{ label: '', pages: ['start', 'help/pivot.md'] }],
+  // SvGrid Base: the tutorial, the ready-to-use bases, a base on a database,
+  // then the field types
+  // reference routed in from help/ (SECTION_OVERRIDE in doc-meta.mjs).
+  'help/base': [
+    { label: 'Start here', pages: ['quick-start', 'start', 'templates'] },
+    { label: 'Build it out', pages: ['linked-records', 'formulas', 'views', 'forms', 'collaboration', 'custom-field-type'] },
+    { label: 'Automate', pages: ['automations'] },
+    { label: 'Connect your data', pages: ['data', 'supabase', 'postgres', 'rest-api'] },
+    { label: 'Reference', pages: ['help/fields.md'] },
+  ],
   'help/kanban': [{ label: '', pages: ['sprint-board', 'help/rows/kanban-board.md'] }],
   'help/scheduler': [{ label: '', pages: ['booking-calendar', 'help/rows/scheduler.md'] }],
   'help/alerts': [{ label: '', pages: ['start', 'help/alerts.md', 'help/scheduling.md'] }],
@@ -226,6 +241,21 @@ const PAGE_GROUPS = {
     { label: 'Planning', pages: ['critical-path', 'resources'] },
     { label: 'Beyond the chart', pages: ['customizing', 'views', 'api'] },
   ],
+  // The suite overview first, then the component families in the sidebar's
+  // order (UI_FAMILIES in website/src/lib/docs.ts). Alphabetical put "Buttons"
+  // ahead of the overview. No labels, so docs.json gets no extra groups.
+  'help/ui-components': [{ label: '', pages: [
+    'index', 'cli', 'headless-editors', 'i18n-rtl',
+    'buttons', 'sv-button', 'sv-button-group', 'sv-repeat-button', 'sv-toggle-button', 'sv-switch-button', 'sv-check-box', 'sv-radio-group', 'sv-segmented', 'sv-rating',
+    'inputs', 'sv-text-input', 'sv-text-area', 'sv-number-input', 'sv-password-input', 'sv-masked-input', 'sv-phone-input', 'sv-color-input', 'sv-otp-input', 'sv-duration-input', 'sv-tags-input',
+    'selection', 'sv-list-box', 'sv-drop-down-list', 'sv-combo-box', 'sv-auto-complete', 'sv-multi-select', 'sv-tree-select', 'sv-grid-select', 'sv-grid-dropdown', 'sv-country-input',
+    'date-time', 'sv-calendar', 'sv-time-picker', 'sv-date-time-picker', 'sv-date-range-input',
+    'range', 'sv-slider', 'sv-gauge', 'sv-progress', 'sv-circular-progress', 'sv-sparkline', 'sv-stat',
+    'overlays', 'sv-popover', 'sv-hover-card', 'sv-tooltip', 'sv-popconfirm', 'sv-modal', 'sv-drawer', 'sv-toaster', 'sv-context-menu', 'sv-menu', 'sv-menu-list', 'sv-menubar',
+    'layout', 'sv-layout-primitives', 'sv-tabs', 'sv-accordion', 'sv-collapsible', 'sv-splitter', 'sv-dock-layout', 'sv-dock-manager', 'sv-card', 'sv-divider', 'sv-scroll-area', 'sv-grid-chart', 'sv-chart-panes', 'sv-form', 'sv-field', 'sv-file-upload',
+    'feedback', 'sv-badge', 'sv-skeleton', 'sv-spinner', 'sv-loading-overlay', 'sv-alert', 'sv-empty-state', 'sv-result', 'sv-chip', 'sv-timeline', 'sv-avatar', 'sv-avatar-group', 'sv-carousel', 'sv-typography', 'sv-display-primitives',
+    'navigation', 'sv-breadcrumb', 'sv-pagination', 'sv-stepper', 'sv-nav-pane', 'sv-tree', 'sv-command', 'sv-tour', 'sv-rich-text',
+  ] }],
   // Reading order, not alphabetical: the attribute-vs-property rule in
   // `quick-start` is the thing every reader needs before anything else, and
   // `limitations` reads as a conclusion rather than an opening.
@@ -266,7 +296,7 @@ for (const [sectionId, groups] of Object.entries(PAGE_GROUPS)) {
 
 // Whole sections that are part of the commercial tier regardless of page title.
 const ENTERPRISE_SECTIONS = new Set([
-  'legal', 'enterprise', 'enterprise/studio', 'help/sheet', 'help/export', 'help/pivot', 'help/kanban', 'help/scheduler', 'help/alerts'])
+  'legal', 'enterprise', 'enterprise/studio', 'help/sheet', 'help/base', 'help/export', 'help/pivot', 'help/kanban', 'help/scheduler', 'help/alerts'])
 
 /** Walk a directory recursively, yielding absolute file paths. */
 async function* walk(dir) {
@@ -534,6 +564,15 @@ async function main() {
     if (pillarSections.length === 0) continue
     llmsLines.push(`## ${pillar.title}`)
     llmsLines.push('')
+    // The component list opens on the grid: <SvGrid> is the suite's hero
+    // component and the reason the rest of it exists, so a model reading the
+    // UI section should not meet "Buttons & toggles" first.
+    if (pillar.id === 'ui') {
+      llmsLines.push('### The hero component')
+      llmsLines.push('')
+      llmsLines.push(`- [<SvGrid>](${SITE}/docs/getting-started/): the Svelte 5 data grid, and the component the rest of SvGrid UI is built around. Every editor below doubles as a cell editor inside it. \`import { SvGrid } from '@svgrid/grid'\`. Live demos with source: ${SITE}/demos/`)
+      llmsLines.push('')
+    }
     for (const { title, pages } of pillarSections) {
       llmsLines.push(`### ${title}`)
       llmsLines.push('')

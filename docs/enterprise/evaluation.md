@@ -6,6 +6,15 @@ a console message, and that is the only difference.
 
 ![The evaluation: install, try every feature while the watermark and the console message show, then set a license key when ready, with no gated-off code paths.](/docs-media/enterprise-evaluation.svg)
 
+## Start a 30-day trial
+
+One download has both packages, the demo browser to run offline with every
+example's source, and a README with the steps. It also starts 30 days of
+email support: write to support@jqwidgets.com and an engineer who works on
+SvGrid answers. The features are the same as installing from npm below.
+
+<div data-docs-trial="docs-evaluation"></div>
+
 ## 1. Install
 
 ```bash
@@ -79,7 +88,7 @@ need to ask anyone for a trial key. When you buy a license, call
   freelancers and companies under $1M revenue, without support.
 - **Grid Developer License**, $599 per developer: the enterprise grid.
 - **Suite Developer License**, $999 per developer: adds the spreadsheet
-  (`<SvSheet>`) and Studio.
+  (`<SvSheet>`), SvGrid Base (`<SvBase>`) and Studio.
 
 All three cover unlimited apps and are perpetual, with a year of updates
 (and support, except Indie). For 5+ developers, a PO, or redistribution as an SDK, contact

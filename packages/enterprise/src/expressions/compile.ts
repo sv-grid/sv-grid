@@ -22,6 +22,7 @@
  */
 import { compileExcelFilter } from '@svgrid/grid/filtering'
 import type { PredicateExpr, ScalarExpr, ComparisonOp } from './expression-types'
+import { getPredicateKind } from './kinds'
 
 type Scalar = number | string | boolean | null
 
@@ -263,6 +264,14 @@ function compileInternal<TRow>(
     case 'not': {
       const inner = compileInternal(expr.expr, opts, aggs)
       return (row) => !inner(row)
+    }
+    case 'ext': {
+      // Another module's condition, compiled once by that module. A type no
+      // module registered matches nothing, like an unknown node kind below.
+      const kind = getPredicateKind(expr.type)
+      if (!kind) return () => false
+      const test = kind.compile(expr.payload, { getValue: opts.getValue, locale: opts.locale })
+      return test ?? (() => true)
     }
     case 'cmp': {
       // The needle-side work happens once, here.

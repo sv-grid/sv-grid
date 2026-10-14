@@ -141,6 +141,9 @@ importers:
 
   packages/enterprise:
     devDependencies:
+      '@electric-sql/pglite':
+        specifier: ^0.5.4
+        version: 0.5.4
       '@sveltejs/package':
         specifier: ^2.5.7
         version: 2.5.7(svelte@5.55.9(@typescript-eslint/types@8.67.0))(typescript@6.0.3)

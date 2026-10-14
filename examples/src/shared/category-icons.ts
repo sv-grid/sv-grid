@@ -35,10 +35,14 @@ export const CATEGORY_ICON_PATHS: Record<string, string> = {
   'Data Export & Import': 'M12 3v12 M8 11l4 4 4-4 M4 17v3h16v-3',
   'Studio': 'M3 4h18v4H3z M3 12h6v8H3z M13 12h8v8h-8z',
   'Alerts': 'M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z M10 21h4',
+  // A table of typed fields: a header row over columns.
+  'Base': 'M3 5h18v14H3z M3 10h18 M9 10v9 M15 10v9',
   // An application window: a sidebar beside a content area under a title bar.
   'App Templates': 'M3 4h18v16H3z M3 8h18 M8 8v12',
   'Pivot Grid': 'M3 3h8v8H3z M13 7h8 M18 4l3 3-3 3 M7 13v8 M4 18l3 3 3-3',
   'Kanban': 'M4 4h4v16H4z M10 4h4v10h-4z M16 4h4v7h-4z',
+  // A wall of cards, each with a cover.
+  'Gallery': 'M4 4h7v7H4z M13 4h7v7h-7z M4 13h7v7H4z M13 13h7v7h-7z M4 8h7 M13 8h7',
   'Scheduler': 'M7 2v3 M17 2v3 M3 9h18 M4 5h16v16H4z M9 14l2 2 4-4',
   'Gantt': 'M3 5h9v3H3z M8 10.5h10v3H8z M13 16h8v3h-8z',
   'Community': 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M22 21v-2a4 4 0 0 0-3-3.9 M16 3.1a4 4 0 0 1 0 7.8',
@@ -69,6 +73,7 @@ export const PRODUCT_ICON_PATHS = {
   ui: 'M4 4h7v7H4z M13 4h7v7h-7z M4 13h7v7H4z M13 13h7v7h-7z',
   enterprise: 'M12 4.5 3 9.5l9 5 9-5-9-5z M3 14.5l9 5 9-5',
   sheet: CATEGORY_ICON_PATHS['Spreadsheet']!,
+  base: CATEGORY_ICON_PATHS['Base']!,
   studio: CATEGORY_ICON_PATHS['Studio']!,
 } as const
 

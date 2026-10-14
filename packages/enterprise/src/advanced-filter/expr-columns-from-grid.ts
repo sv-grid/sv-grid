@@ -12,6 +12,7 @@ type GridColumnInfo = {
   field?: string
   header: string
   visible: boolean
+  cellDataType?: string
   editorType?: string
 }
 
@@ -21,16 +22,19 @@ type GridColumnInfo = {
  */
 const NON_DATA_IDS = new Set(['__select', '__selection', '__rowNumber', '__autoGroup', '__actions'])
 
-/** Map a grid editorType onto the coarse type the operator catalogue uses. */
-function toExprType(editorType: string | undefined): ExprColumnType {
-  switch (editorType) {
+/**
+ * The coarse type the operator catalogue uses, from the column's data type
+ * (whatever edits it). A datetime editor keeps the time in the filter.
+ */
+function toExprType(col: GridColumnInfo): ExprColumnType {
+  if (col.editorType === 'datetime') return 'datetime'
+  switch (col.cellDataType) {
     case 'number':
       return 'number'
     case 'date':
+    case 'dateString':
       return 'date'
-    case 'datetime':
-      return 'datetime'
-    case 'checkbox':
+    case 'boolean':
       return 'boolean'
     default:
       return 'text'
@@ -62,7 +66,7 @@ export function exprColumnsFromGrid(
       // Fall back to the id so a column with no header is still addressable
       // in the `[Bracketed Name]` reference syntax.
       name: col.header || col.id,
-      type: toExprType(col.editorType),
+      type: toExprType(col),
     })
   }
   return out

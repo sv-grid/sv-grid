@@ -1,0 +1,29 @@
+{
+  "description": "An inventory built with SvGrid Base, a table database component for Svelte 5: an Items table and a Suppliers table as tabs, linked both ways. Items have photos, a category, a location, a supplier, quantity, unit cost and a stock value formula; each supplier lists its items and units in stock. Views for stock grouped by category, a photo gallery, items by location, a reorder list and an add-item form.",
+  "keywords": [
+    "svelte inventory management component",
+    "svelte asset tracker",
+    "svelte stock list grid",
+    "svelte table database component",
+    "svelte formula field",
+    "svelte supplier database"
+  ],
+  "faq": [
+    {
+      "question": "Is this a template or a component?",
+      "answer": "A component: <SvBase> with your rows and columns. Most of the demo is sample data; the views, the field editor, the record view and the form come with the component."
+    },
+    {
+      "question": "How is the stock value computed?",
+      "answer": "Stock value is a formula field, {Qty} * {Unit cost}, shown as currency. It is parsed once into functions, never evaluated as code, and its footer sums the column."
+    },
+    {
+      "question": "How does the Reorder view work?",
+      "answer": "A saved filter keeps items with three or fewer in stock, sorted by quantity, and condition colors mark them: red at zero, amber at three or fewer."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

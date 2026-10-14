@@ -1,0 +1,29 @@
+{
+  "description": "A content calendar built with SvGrid Base, a table database component for Svelte 5: a Posts table and a Campaigns table as tabs, linked both ways. Posts have a stage, channels, an author, a publish date, a cover and a brief; each campaign lists its posts and adds up their words. Views for the content plan, the pipeline as a Kanban, the publishing calendar, a wall of covers and a pitch form.",
+  "keywords": [
+    "svelte content calendar component",
+    "svelte editorial calendar",
+    "svelte table database component",
+    "svelte kanban calendar gallery views",
+    "svelte content planning tool",
+    "svelte linked tables"
+  ],
+  "faq": [
+    {
+      "question": "Is this a template or a component?",
+      "answer": "A component: <SvBase> with your rows and columns. The demo is about 150 lines, most of it sample data. The views, the field editor, the record view and the form come with the component."
+    },
+    {
+      "question": "Can editors move a post along the pipeline?",
+      "answer": "Yes. In the Pipeline view, dragging a card to another stage changes the Stage field through the grid's edit path, so undo and onCellValueChange work the same as an edit in the grid."
+    },
+    {
+      "question": "How does a post get onto the calendar?",
+      "answer": "Its Publish date places it. Dragging it to another day changes the date; picking an empty day adds a post on it and opens it to fill in."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

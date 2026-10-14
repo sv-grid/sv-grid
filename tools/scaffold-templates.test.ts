@@ -43,11 +43,11 @@ function shellOf(app: string) {
 }
 
 // Keep in step with TEMPLATES in packages/create-sv-grid/index.mjs.
-const templates = ['minimal', 'sveltekit', 'pivot-dashboard', 'admin-dashboard', 'headless']
+const templates = ['minimal', 'sveltekit', 'base', 'pivot-dashboard', 'admin-dashboard', 'headless']
 // The subset that renders <SvGrid> and therefore has a --sg-* palette to write
 // a theme into. `headless` ships the engine and no CSS, so it is deliberately
 // never asked and never told which preset to use.
-const themedTemplates = ['minimal', 'sveltekit', 'pivot-dashboard', 'admin-dashboard']
+const themedTemplates = ['minimal', 'sveltekit', 'base', 'pivot-dashboard', 'admin-dashboard']
 
 describe('create-sv-grid templates', () => {
   // A coding assistant reads AGENTS.md before it decides to hand-write a table.
@@ -104,13 +104,36 @@ describe('create-sv-grid templates', () => {
 
   // Asking for a preset is not asking for a mode. minimal and sveltekit follow
   // the OS when nobody said, and pinning one silently would take that away.
-  it.each(['minimal', 'sveltekit'])(
+  it.each(['minimal', 'sveltekit', 'base'])(
     '%s still follows the OS when no mode was asked for',
     (template) => {
       const shell = shellOf(scaffold(template, ['--theme', 'dracula']))
       expect(shell).toContain("matchMedia('(prefers-color-scheme: dark)')")
     },
   )
+
+  // base: where the data lives decides the files; the tables come from a sample.
+  it.each([
+    ['browser', ['src/lib/db.ts'], '@electric-sql/pglite'],
+    ['postgres', ['src/routes/api/base/+server.ts', 'src/lib/server/db.ts', 'scripts/db-setup.mjs', '.env.example'], 'pg'],
+    ['supabase', ['src/lib/supabase.ts', 'db/policies.sql', '.env.example'], '@supabase/supabase-js'],
+  ])('base with --data %s ships its own way to the data', (data, files, dep) => {
+    const app = scaffold('base', ['--data', data as string, '--sample', 'sales-crm'])
+    for (const f of files as string[]) expect(existsSync(join(app, f)), f).toBe(true)
+    expect(existsSync(join(app, 'variants'))).toBe(false)
+    const pkg = JSON.parse(readFileSync(join(app, 'package.json'), 'utf8'))
+    expect(pkg.dependencies[dep as string]).toBeTruthy()
+    expect(pkg.dependencies['@svgrid/enterprise']).toBeTruthy()
+    expect(readFileSync(join(app, 'db', 'schema.sql'), 'utf8')).toContain('create table "deals"')
+    const readme = readFileSync(join(app, 'README.md'), 'utf8')
+    expect(readme).toContain('## Your data')
+    expect(readme).not.toContain('svgrid-base-data')
+  })
+
+  it('base starts from an empty schema with --sample none', () => {
+    const app = scaffold('base', ['--sample', 'none'])
+    expect(readFileSync(join(app, 'db', 'schema.sql'), 'utf8')).toMatch(/^-- Your tables\./)
+  })
 
   it('sveltekit seeds its runtime picker with the scaffolded theme', () => {
     const app = scaffold('sveltekit', ['--theme', 'dracula', '--dark'])

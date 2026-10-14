@@ -48,3 +48,5 @@ export type GridPredicateExpr =
   | { kind: 'cmp'; column: string; op: ExcelFilterOperator; value?: unknown; valueTo?: unknown }
   | { kind: 'scalarCmp'; left: GridScalarExpr; op: GridComparisonOp; right: GridScalarExpr }
   | { kind: 'const'; value: boolean }
+  /** A condition a module evaluates with its own meaning (Enterprise `registerPredicateKind`). */
+  | { kind: 'ext'; type: string; payload: unknown }

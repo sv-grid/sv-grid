@@ -61,6 +61,10 @@
     storageKey?: string
     getValue?: (row: TRow, columnId: string) => unknown
     locale?: string | ReadonlyArray<string>
+    /** A message token the built-in ones do not cover, as text (`{Due date}` in SvGrid Base). */
+    token?: (row: TRow, name: string) => string | undefined
+    /** The rules changed in the manager: added, edited, turned on or off, deleted. */
+    onRulesChange?: (rules: AlertRule[]) => void
     /**
      * Reactively scan `data` for changes (default). Set `false` when a consumer
      * drives evaluation through `pushChanged` (large / streaming feeds) - the
@@ -92,6 +96,8 @@
     storageKey,
     getValue,
     locale,
+    token,
+    onRulesChange,
     watch = true,
     onReady,
     toastCooldownMs = 0,
@@ -131,6 +137,7 @@
     getRowId: rowIdOf,
     get getValue() { return getValue },
     get locale() { return locale },
+    get token() { return token },
   })
 
   // The observer owns all scheduling + change tracking. It runs evaluation on a
@@ -239,6 +246,7 @@
   function onRulesChanged(next: AlertRule[]) {
     rules = next
     rulesVersion += 1
+    onRulesChange?.(next)
   }
 </script>
 

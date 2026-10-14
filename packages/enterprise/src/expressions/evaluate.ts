@@ -4,6 +4,7 @@
  * exactly; scalar maths and change detection are handled here.
  */
 import { applyExcelFilter } from '@svgrid/grid/filtering'
+import { getPredicateKind } from './kinds'
 import type {
   ChangeExpr,
   ComparisonOp,
@@ -193,7 +194,24 @@ export function evaluatePredicate<TData = ExprRow>(
         expr.op,
         evaluateScalar(expr.right, ctx),
       )
+    case 'ext':
+      return extTest(expr, ctx)(ctx.row)
   }
+}
+
+// An `ext` node compiled once per node and value reader: the walk above runs
+// per row, the module's compile should not.
+const extCache = new WeakMap<object, { getValue: unknown; test: (row: never) => boolean }>()
+function extTest<TData>(expr: Extract<PredicateExpr, { kind: 'ext' }>, ctx: EvalContext<TData>): (row: TData) => boolean {
+  const hit = extCache.get(expr)
+  if (hit && hit.getValue === ctx.getValue) return hit.test as (row: TData) => boolean
+  const kind = getPredicateKind(expr.type)
+  const getValue = ctx.getValue ?? ((row: TData, id: string) => (row as Record<string, unknown>)?.[id])
+  const compiled = kind ? kind.compile<TData>(expr.payload, { getValue, locale: ctx.locale }) : null
+  // Unknown kind: matches nothing. An empty condition: matches everything.
+  const test = !kind ? () => false : (compiled ?? (() => true))
+  extCache.set(expr, { getValue: ctx.getValue, test: test as (row: never) => boolean })
+  return test
 }
 
 /**

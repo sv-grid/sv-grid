@@ -13,7 +13,7 @@
  *   4. unmount
  */
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount, unmount } from 'svelte'
 import SvGrid from './SvGrid.svelte'
 import {
@@ -344,7 +344,7 @@ describe('SvGrid - capability shortcuts', () => {
     const on = await mountGrid({ features: undefined, pageable: true })
     try {
       await tick()
-      expect(on.target.querySelector('.sv-grid-pagination')).toBeTruthy()
+      await vi.waitFor(() => expect(on.target.querySelector('.sv-grid-pagination')).toBeTruthy())
     } finally {
       on.destroy()
     }
@@ -359,6 +359,8 @@ describe('SvGrid - capability shortcuts', () => {
       try {
         await tick()
         expect(g.api).toBeTruthy()
+        // The footer is its own chunk; wait for it except where no bottom pager is expected.
+        if (paginationPosition !== 'top') await vi.waitFor(() => expect(g.target.querySelector('.sv-grid-pagination')).toBeTruthy())
         const bottoms = [...g.target.querySelectorAll('.sv-grid-pagination')].filter((el) => !el.classList.contains('sv-grid-pagination-top'))
         expect(bottoms.length).toBe(paginationPosition === 'top' ? 0 : 1) // no bottom pager when position is 'top'
       } finally {
@@ -371,7 +373,7 @@ describe('SvGrid - capability shortcuts', () => {
     const g = await mountGrid({ showPagination: true, pageSizeOptions: [5, 15, 45] })
     try {
       await tick()
-      expect(g.target.querySelector('.sv-grid-pagination')).toBeTruthy()
+      await vi.waitFor(() => expect(g.target.querySelector('.sv-grid-pagination')).toBeTruthy())
     } finally {
       g.destroy()
     }

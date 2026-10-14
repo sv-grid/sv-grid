@@ -1,9 +1,9 @@
 # Row dragging
 
 Managed row dragging lets users **reorder rows** within a grid and **move rows
-between grids**. Turn on `rowDragManaged` and every row becomes a drag source
-(grab cursor + a grip in the row-number cell); a glowing line shows where the
-row will land, and the grid splices its own data on drop.
+between grids**. Turn on `rowDragManaged` and every row can be dragged by its
+row-number cell (a grip shows while the pointer is over it); a glowing line
+shows where the row will land, and the grid splices its own data on drop.
 <div data-docs-demo="180-row-dragging" data-height="560"></div>
 
 ## Reorder within one grid
@@ -177,9 +177,10 @@ against.
 - **Row matching.** Rows are moved by object identity, so `getRowId` is not
   required - though setting it is still recommended for stable selection and
   keyed rendering.
-- **Discoverability.** The grip is drawn in the row-number cell, so pair
-  `rowDragManaged` with `showRowNumbers`. Without row numbers the whole row is
-  still draggable (grab cursor).
+- **The handle.** With `showRowNumbers` the row-number cell is the handle:
+  its grip shows while it is hovered, and a press in a data cell (a pinned
+  one too) selects or edits as it does anywhere else. Without row numbers
+  the whole row is the handle (grab cursor).
 
 ## See also
 

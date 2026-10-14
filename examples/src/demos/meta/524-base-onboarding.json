@@ -1,0 +1,23 @@
+{
+  "description": "Employee onboarding built with SvGrid Base for Svelte 5: People, their Checklist and Departments as linked tables. A hiring pipeline, a photo directory, start dates on a calendar and a new hire form; each new hire gets a checklist for IT, HR and their manager automatically.",
+  "keywords": [
+    "svelte employee onboarding app",
+    "svelte hr directory",
+    "svelte onboarding checklist",
+    "svelte people directory gallery"
+  ],
+  "faq": [
+    {
+      "question": "What happens when someone is added?",
+      "answer": "An automation on People runs when a record is created, from Add row or from the form: it sets the status, creates three checklist items for IT, HR and the manager, each linked back to the person, and shows a notice."
+    },
+    {
+      "question": "Can the checklist change?",
+      "answer": "Yes: open 3 automations in the view bar and edit the items, their owners and due dates, or add more actions."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

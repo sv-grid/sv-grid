@@ -130,7 +130,10 @@ export async function listSupabaseTables(url: string, key: string, fetchFn: type
 export async function introspectSupabaseTable<TData extends RowData = RowData>(
   options: IntrospectSupabaseOptions,
 ): Promise<EntitySchema<TData> | null> {
-  const o: Required<IntrospectSupabaseOptions> = { fetch: globalThis.fetch, ...options }
+  // A wrapper, not `globalThis.fetch` itself: called as `o.fetch(...)` the
+  // browser's fetch gets `o` as its receiver and throws "Illegal invocation",
+  // which the paths below catch as "no answer", so no table was ever found.
+  const o: Required<IntrospectSupabaseOptions> = { fetch: (...args: Parameters<typeof fetch>) => globalThis.fetch(...args), ...options }
   const base = o.url.replace(/\/+$/, '')
   const columns =
     (await viaOpenApi(o, base)) ?? (await viaSample(o, base)) ?? (await viaCsv(o, base))

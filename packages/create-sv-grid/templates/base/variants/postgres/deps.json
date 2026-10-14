@@ -1,0 +1,1 @@
+{ "dependencies": { "pg": "^8.13.1" }, "devDependencies": { "@types/pg": "^8.11.10" }, "scripts": { "db:setup": "node --env-file=.env scripts/db-setup.mjs" } }

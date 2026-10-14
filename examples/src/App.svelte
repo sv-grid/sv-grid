@@ -1,6 +1,7 @@
 ﻿<script lang="ts">
   import { demos, demoGroups, findDemo, landingDemo, isEnterpriseCategory, isEditorCategory, categoryIcon } from './shared/registry'
   import SourceModal from './shared/SourceModal.svelte'
+  import Zazo, { type ZazoMeta } from './zazo/Zazo.svelte'
   import './index.css'
 
   function readHash(): string {
@@ -286,6 +287,21 @@
       .map((r) => r.demo)
   })
 
+  // Each demo's meta json (description, keywords, FAQ): Zazo answers from its
+  // FAQ, loaded when he needs it.
+  const DEMO_META = import.meta.glob('./demos/meta/*.json', { import: 'default' }) as Record<string, () => Promise<ZazoMeta>>
+  const loadDemoMeta = (id: string): Promise<ZazoMeta> => DEMO_META[`./demos/meta/${id}.json`]?.() ?? Promise.resolve(null)
+
+  // Zazo searches every demo, not only the open product's.
+  function zazoSearch(q: string) {
+    const toks = tokens(q)
+    return demos
+      .map((d) => ({ demo: d, score: scoreDemo(d, toks) }))
+      .filter((r) => r.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map((r) => r.demo)
+  }
+
   function highlight(text: string, toks: string[]): string {
     if (toks.length === 0) return text
     const pattern = toks
@@ -478,7 +494,8 @@
       </select>
     </label>
 
-    <div class="demo-search-wrap mb-4">
+    <!-- Zazo sits on this box: the top margin is the room above it for him. -->
+    <div class="demo-search-wrap mb-4" style="margin-top: 44px">
       <svg class="demo-search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="11" cy="11" r="7" />
         <path d="M21 21l-4.3-4.3" />
@@ -702,6 +719,21 @@
     onClose={() => (showSource = false)}
   />
 {/if}
+
+<Zazo
+  demo={current}
+  perch={{ bar: '.demo-search-wrap', seat: 'top', inset: 40 }}
+  enterprise={current.source.includes('@svgrid/enterprise')}
+  startHref="https://svgrid.com/docs/getting-started/"
+  pricingHref="https://svgrid.com/pricing/"
+  search={zazoSearch}
+  onOpenDemo={go}
+  onShowSource={() => (showSource = true)}
+  onFind={() => searchEl?.focus()}
+  loadMeta={loadDemoMeta}
+  onEvent={(e) => console.debug('[zazo]', e)}
+  hidden={fullscreen || showSource}
+/>
 
 <style>
   /* The blurb "More" toggle exists only for the mobile clamp below, so it is

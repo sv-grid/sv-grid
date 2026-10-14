@@ -335,14 +335,44 @@ export type SelectionBarAction<TData extends RowData = RowData> = {
  * - `'selectAll'` selects every row in the current view.
  * - `'editFields'` opens the bulk-edit dialog: pick a field, set one value,
  *   apply it to every selected row in a single undo step.
+ * - `'deleteRows'` deletes the selected rows after an inline "Delete N rows?"
+ *   confirm and fires `onRowsDelete` (not offered over a server row model).
  * - `'separator'` draws a divider.
  */
-export type SelectionBarBuiltin = "selectAll" | "editFields" | "separator";
+export type SelectionBarBuiltin = "selectAll" | "editFields" | "deleteRows" | "separator";
 
 /**
  * Full form of the {@link SvGridProps.selectionBar} prop, for when the array
  * shorthand is not enough.
  */
+/** Where a row color shows: the row header (default), a bar in the first cell, or a tint on the row. */
+export type RowColorTarget = 'header' | 'bar' | 'row';
+/** Options for the `rowColor` prop (drawn by `@svgrid/enterprise/fields`). */
+export type RowColorConfig<TData extends RowData = RowData> =
+  | {
+      /** A field whose column has colored options (`fieldType: 'singleSelect'` or `editorOptions`). */
+      field: string;
+      target?: RowColorTarget;
+    }
+  | {
+      /** Checked in order; the first match colors the row. */
+      rules: ReadonlyArray<{ when: (row: TData) => boolean; color: string; label?: string }>;
+      target?: RowColorTarget;
+    };
+
+/** Options for the `columnAdder` prop (drawn by `@svgrid/enterprise/fields`). */
+export type ColumnAdderConfig = {
+  /** Field type ids to offer, in order. Default: every registered type. */
+  types?: ReadonlyArray<string>;
+};
+/** Options for the `rowAdder` prop (drawn by `@svgrid/enterprise/fields`). */
+export type RowAdderConfig<TData extends RowData = RowData> = {
+  /** The line's text (set it to localize). Default "Add row". */
+  label?: string;
+  /** The new row's values. Default: an empty object. */
+  defaults?: () => Partial<TData>;
+};
+
 export type SelectionBarConfig<TData extends RowData = RowData> = {
   /**
    * The buttons, left to right. Strings are {@link SelectionBarBuiltin} keys,
@@ -381,6 +411,8 @@ export type BoardLane = {
    * always shown.
    */
   wipLimit?: number;
+  /** Draw the lane only while a card is in it (an "Uncategorized" lane, say). */
+  hideWhenEmpty?: boolean;
 };
 
 /** A checklist item inside a card. See {@link BoardConfig.subtasks}. */
@@ -516,6 +548,48 @@ export type ChartViewConfig<
   searchPlaceholder?: string;
 };
 
+/**
+ * Gallery mode: the grid's rows as a wall of cards, each with a cover image,
+ * a title and a few fields. The rows are the grid's filtered and sorted rows,
+ * so the search box, the filters and the sort carry over. The renderer ships
+ * in `@svgrid/enterprise` (`enableGalleryView()`).
+ */
+export type GalleryConfig<TFeatures extends TableFeatures = TableFeatures, TData extends RowData = RowData> = {
+  /**
+   * Field whose value is the card's cover: an image URL, or a list of files
+   * (`{ url, type }`, the first image is used). Omit for cards without a cover.
+   */
+  coverField?: keyof TData & string;
+  /** How the cover fills its box: `'cover'` crops to fill (default), `'contain'` shows the whole image. */
+  coverFit?: 'cover' | 'contain';
+  /** Field shown as the card's title. Defaults to the first column's field. */
+  titleField?: keyof TData & string;
+  /**
+   * Fields shown under the title, in order. Defaults to the next columns (up
+   * to six), leaving out the title and the cover.
+   */
+  cardFields?: ReadonlyArray<keyof TData & string>;
+  /** Card width: `'small'` (180px), `'medium'` (240px, default), `'large'` (320px), or pixels. */
+  cardSize?: 'small' | 'medium' | 'large' | number;
+  /** Each value under its field's name. Default true. */
+  showLabels?: boolean;
+  /** Draw each card yourself (the row is the argument). */
+  card?: Snippet<[TData]>;
+  /** A card was clicked, or opened with Enter. */
+  onCardClick?: (row: TData) => void;
+  /** A search box above the cards. Default true. */
+  searchable?: boolean;
+  /** Placeholder for the search box. */
+  searchPlaceholder?: string;
+  /** Text when no row is shown. Default "No records". */
+  emptyText?: string;
+  /**
+   * The grid a field type's cell on a card reads, given the card's width.
+   * Default: an object with `getColumnWidth` only.
+   */
+  cellGrid?: (width: number) => unknown;
+};
+
 export type BoardConfig<TFeatures extends TableFeatures = TableFeatures, TData extends RowData = RowData> = {
   /** Field whose value buckets each row into a lane. */
   groupBy: keyof TData & string;
@@ -613,6 +687,21 @@ export type BoardConfig<TFeatures extends TableFeatures = TableFeatures, TData e
   onCommentAdd?: (row: TData, text: string) => void;
   /** Fired when a comment's delete button is pressed; remove it from your data. */
   onCommentDelete?: (row: TData, commentId: string | number) => void;
+  /**
+   * Comments kept outside the row (a record's discussion in your app): the
+   * count the badge shows. Overrides the count read from `commentsField`.
+   */
+  commentCount?: (row: TData) => number;
+  /**
+   * A click on the comment badge, in place of opening the inline thread: open
+   * the card's discussion where your app keeps it.
+   */
+  onCommentsOpen?: (row: TData) => void;
+  /**
+   * The grid a field type's cell on a card reads, given the card's width.
+   * Default: an object with `getColumnWidth` only.
+   */
+  cellGrid?: (width: number) => unknown;
   /**
    * Field holding a card's attachments - an array or a number. Renders an
    * attachment-count badge on the default card.
@@ -847,6 +936,13 @@ export type SchedulerConfig<
   endField?: keyof TData & string;
   /** Boolean field marking an event as all-day (rendered in the all-day row). */
   allDayField?: keyof TData & string;
+  /**
+   * Every event is all-day: the start (and end) fields hold days, not times,
+   * and a bare `'2026-10-14'` is that day where the user is, not midnight UTC.
+   * An end given as a day is the event's last day: `onEventMove` and
+   * `onEventResize` report the exclusive end (the next midnight).
+   */
+  allDay?: boolean;
   /** Field for the event title. Defaults to the first column's field. */
   titleField?: keyof TData & string;
   /** Field holding a per-event accent color (any CSS color). Else `color`. */
@@ -1391,6 +1487,11 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    */
   board?: BoardConfig<TFeatures, TData>;
   /**
+   * Gallery mode. When set, the grid renders its rows as cards (a cover
+   * image, a title, a few fields) instead of a table. See {@link GalleryConfig}.
+   */
+  gallery?: GalleryConfig<TFeatures, TData>;
+  /**
    * Scheduler / calendar mode. When set, the grid renders its rows as events on
    * a Month / Week / Day / Agenda calendar instead of a table. See
    * {@link SchedulerConfig}.
@@ -1460,6 +1561,95 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
     | boolean
     | ReadonlyArray<SelectionBarAction<TData> | SelectionBarBuiltin>
     | SelectionBarConfig<TData>;
+  /**
+   * A "+ Add row" line under the last row. Clicking it (or Enter on it)
+   * appends a row, scrolls to it and starts editing its first editable cell.
+   * `true` uses the defaults; pass {@link RowAdderConfig} for the label and
+   * the new row's values.
+   *
+   * **The prop and its types are free; the row adder is drawn by the
+   * Enterprise `@svgrid/enterprise/fields` module** (`enableFields()`).
+   * Without it the prop does nothing.
+   */
+  rowAdder?: boolean | RowAdderConfig<TData>;
+  /** Fires after the row adder appended a row, with that row. Persist it here. */
+  onRowAdd?: (event: { row: TData }) => void;
+  /**
+   * Color rows by a status: by a select field (each row takes its option's
+   * `color`) or by rules (first match wins). The color shows on the row
+   * header by default (a 3px stripe at the start of the row-number cell);
+   * `target` moves it to a stripe in the first cell or a tint across the row. The row
+   * header also gets the status as its title, so the color is never the
+   * only signal. Computed for rendered rows only.
+   *
+   * **The prop and its types are free; the colors are drawn by the Enterprise
+   * `@svgrid/enterprise/fields` module** (`enableFields()`).
+   */
+  rowColor?: RowColorConfig<TData>;
+  /**
+   * A "+" header cell after the last column that opens the field editor: a
+   * name, a field type and that type's properties. Creating adds the column
+   * and fires `onColumnAdd`; the grid never stores a schema, the app does.
+   * `{ types }` limits the types offered.
+   *
+   * **Drawn by the Enterprise `@svgrid/enterprise/fields` module.**
+   */
+  columnAdder?: boolean | ColumnAdderConfig;
+  /**
+   * Field actions in each column's menu: Edit field, Insert left / right,
+   * Duplicate, Delete, Hide. Edit can change the type; values are converted
+   * where they can be and the editor says how many cells would be cleared.
+   *
+   * **Drawn by the Enterprise `@svgrid/enterprise/fields` module.**
+   */
+  fieldMenu?: boolean;
+  /**
+   * The row-number cell becomes the row's handle: on hover it shows a
+   * checkbox that selects the row and an expand button that opens the row
+   * as a record, every field with its label and its editor. With
+   * `showRowNumbers`.
+   *
+   * **Drawn by the Enterprise `@svgrid/enterprise/fields` module.**
+   */
+  expandRows?: boolean;
+  /**
+   * A divider at the edge of the left-pinned columns: drag it right to pin
+   * the columns it passes, left to unpin them. It snaps to column edges and
+   * keeps the columns where they are on screen; with the keyboard, focus it
+   * and use the arrow keys. Its words come from `localization.text`
+   * (`pinSplitterLabel`, `pinSplitterHint`, `pinSplitterNone`,
+   * `pinSplitterOne`, `pinSplitterMany`). Loaded only when set.
+   */
+  pinSplitter?: boolean;
+  /**
+   * The table's primary field (a column id or field): always the first
+   * column and pinned, never hidden or deleted, and the name of a record (the
+   * expanded record's title, a gallery card's title).
+   *
+   * **Kept by the Enterprise `@svgrid/enterprise/fields` module.**
+   */
+  primaryField?: string;
+  /**
+   * A field was added (column adder, Insert, Duplicate). `columns` is the
+   * whole column list after the change, as declared (store it as your
+   * `columns`); `data` is set when values were written too.
+   */
+  onColumnAdd?: (event: { column: ColumnDef<TFeatures, TData>; columns: ColumnDef<TFeatures, TData>[]; data?: TData[] }) => void;
+  /** A field was edited. `columns` as in `onColumnAdd`; `data` is set when a type change converted its values. */
+  onColumnChange?: (event: { column: ColumnDef<TFeatures, TData>; previous: ColumnDef<TFeatures, TData>; columns: ColumnDef<TFeatures, TData>[]; data?: TData[] }) => void;
+  /** A field was deleted from the column menu (its values stay in the rows). `columns` as in `onColumnAdd`. */
+  onColumnRemove?: (event: { columnId: string; columns: ColumnDef<TFeatures, TData>[] }) => void;
+  /**
+   * Rows were deleted from the selection bar's Delete (`deleteRows`):
+   * the rows and their ids, and the data without them, to store.
+   */
+  onRowsDelete?: (event: { rows: TData[]; ids: string[]; data: TData[] }) => void;
+  /**
+   * The rows were set to be colored by another field, or no longer colored,
+   * from a single select's column menu ("Color rows by this field" with
+   * `fieldMenu`). Store it and pass it back as `rowColor`.
+   */
+  onRowColorChange?: (config: RowColorConfig<TData> | null) => void;
   /**
    * The feature set built with `tableFeatures({ ... })`. Optional - the
    * `sortable` / `filterable` / `groupable` shortcuts below inject the
@@ -2651,9 +2841,10 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    */
   inferColumnTypes?: boolean;
   /**
-   * Enables managed row dragging. When `true`, every row becomes a drag
-   * source (grab cursor + a grip in the row-number cell) and a drop
-   * indicator paints between rows during a drag. On drop the grid mutates
+   * Enables managed row dragging. When `true`, a row is dragged by its
+   * row-number cell (a grip shows while it is hovered), or by any cell when
+   * row numbers are off, and a drop indicator paints between rows during a
+   * drag. On drop the grid mutates
    * its own internal data - reordering within the grid, or moving the row
    * across grids that share the same {@link rowDragGroup}. Defaults to
    * `false`.
@@ -2746,6 +2937,8 @@ export type CellEditState = {
    * being silently dropped.
    */
   rowRef?: unknown;
+  /** The edit started from a typed character: `value` is that text, not the cell's value. */
+  typed?: boolean;
 } | null;
 export type FilterOperator =
   | "contains"

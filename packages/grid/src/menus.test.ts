@@ -1,5 +1,15 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createMenus } from './menus'
+import { createMenus as createBaseMenus } from './menus'
+import { createMenuActions } from './menu-actions'
+
+// The grid splits the menus in two: menus.ts (in the base bundle) and
+// menu-actions.ts (loaded with the menu overlay). The controller hands its
+// closeMenus to both through ctx; the tests do the same and check them as one.
+function createMenus(ctx: any) {
+  const base = createBaseMenus(ctx)
+  ctx.closeMenus ??= base.closeMenus
+  return { ...base, ...createMenuActions(ctx) }
+}
 
 // ---------------------------------------------------------------------------
 // Fake controller (`ctx`) for the menus factory. The factory reads/writes

@@ -1,0 +1,24 @@
+{
+  "description": "A CRM in SvGrid Base over a JSON API, built from the API description of its tables with baseTablesFromSchemas. Enums become single selects, foreign keys become links with a field that links back, and every edit is a PATCH, POST or DELETE in the request log. A value the API refuses goes back with the API's reason.",
+  "keywords": [
+    "svelte rest api table editor",
+    "svelte crud grid rest",
+    "svelte admin table from api",
+    "svelte schema to table",
+    "svelte json api grid"
+  ],
+  "faq": [
+    {
+      "question": "What does the API need to answer?",
+      "answer": "GET /api/deals?offset=0&limit=10000 with { rows, rowCount } or a plain array, POST to create, PATCH /api/deals/:id to update and DELETE /api/deals/:id to delete. Other shapes plug in through the buildQuery and parse options of createRestDataSource."
+    },
+    {
+      "question": "Where do the fields come from?",
+      "answer": "baseTablesFromSchemas reads each table's description (an EntitySchema, written out here or read with introspectSupabaseTable, introspectDatabase or introspectOpenApi) and makes the Base fields, links and the fields that link back. The result is plain BaseTable objects you can adjust, as the demo does with Amount."
+    },
+    {
+      "question": "How does the API reject a value?",
+      "answer": "Answer the write with a 4xx status and { error: 'reason' }. The base puts the cell back and shows the reason in the tab bar and a notice."
+    }
+  ]
+}

@@ -69,6 +69,12 @@ describe('createRestDataSource reads', () => {
     const src = createRestDataSource<Row>({ url: '/api/customers', fetch })
     await expect(src.getRows(req({}))).rejects.toThrow(/500/)
   })
+
+  it("says the endpoint's own reason for a refused write", async () => {
+    const { fetch } = mockFetch(() => jsonResponse({ error: 'Amount must be 0 or more' }, { status: 422 }))
+    const src = createRestDataSource<Row>({ url: '/api/deals', fetch })
+    await expect(src.updateRow!('d1', { name: 'x' })).rejects.toThrow(/422 OK: Amount must be 0 or more$/)
+  })
 })
 
 describe('createRestDataSource writes', () => {

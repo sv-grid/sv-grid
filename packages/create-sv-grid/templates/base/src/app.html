@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="text-scale" content="scale" />
+		<script>
+			// Settle the theme before the first paint. Without this the server-rendered
+			// HTML shows one palette and the picker in +layout.svelte swaps it a frame
+			// later. With nothing saved yet we follow the OS.
+			try {
+				var saved = JSON.parse(localStorage.getItem('svgrid-theme') || 'null')
+				var fallback = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+				document.documentElement.dataset.theme = (saved && saved.mode) || fallback
+			} catch (e) {}
+		</script>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+</html>

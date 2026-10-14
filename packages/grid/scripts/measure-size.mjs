@@ -511,7 +511,27 @@ const BUDGET_KB = {
   // passes each row's data to isRowSelected / toggleRowSelectionById, so a
   // rowSelectionModel no longer scans every row per drawn row (a sort on the
   // 1M-row server demo held the page ~17 s; now under 100 ms).
-  'full render component (SvGrid)': 102.8,
+  //
+  // 102.70 -> 97.10 (2026-10-12), budget 102.8 -> 100.0, and 100.0 is the
+  // line: @svgrid/grid's base stays under 100 KB (owner's decision). New
+  // feature families go to an opt-in Enterprise module, not this graph.
+  // Four things left the base for chunks loaded when first needed:
+  //   - menu-actions.ts (-1.71): the column menu's sort / group / facet
+  //     actions, the right-click items and the comment editor, split out of
+  //     menus.ts and created by GridMenus.svelte, which already loads on the
+  //     first menu open.
+  //   - GridFooter.svelte (-1.67): loaded when the grid paginates or shows a
+  //     status bar; it draws nothing else.
+  //   - conditional-formatting.ts + sparkline.ts (-2.22): loaded with the
+  //     first `conditionalFormats` / sparkline column. Cells draw plain for
+  //     the frame before the module lands.
+  // Then 97.10 -> 97.65 for the grid-extension seam (registerGridExtension):
+  // the slots @svgrid/enterprise/fields plugs into (field cells and a column
+  // fill that sees every column, header / body end, row marks, a root class,
+  // and cellEdited from the edit, paste, fill, clear and toggle paths), each
+  // one null check when nothing is registered. Everything the module draws
+  // ships with it.
+  'full render component (SvGrid)': 100.0,
   // 3.0 -> 3.5 (measured 3.2): the lazy first build of the row model above
   // (lazyRows / denseRows in getRowModel). createGrid builds rows too.
   'headless core (createGrid)': 3.5,

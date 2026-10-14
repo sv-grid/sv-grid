@@ -18,7 +18,7 @@
  *
  * Dependency-free so the test, the sync script and the prerenderer share it.
  */
-import { formatDate, formatDownloads, bundleText, licenseLabel, SVGRID_PRICING, SVGRID_SIZE_ENTRY } from './competitor-facts.mjs'
+import { formatDate, formatDownloads, bundleText, licenseLabel, SVGRID_PRICING, SVGRID_SIZE_ENTRY, svgridPricingSummary } from './competitor-facts.mjs'
 
 /** `<!-- facts:start <slug>[,<slug>] [pkg:<npm>[,<npm>]] -->`: the comparison
  *  slugs the block covers, plus registry packages to list that no comparison
@@ -85,7 +85,10 @@ export function guideFactsBlock(slugs, { comparisons, ledger, size }, packages =
       const ext = b.external.length ? `, ${b.external.join(' + ')} external` : ''
       return `\`${c.npm}\` ${b.version} ${bundleText(b.jsGzipKb, b.cssGzipKb)}${ext} (measured ${formatDate(b.measuredAt)})`
     })
-  if (ownSize) {
+  // A table-database guide compares products, not packages: the grid's
+  // bundle size answers nothing its reader asked.
+  const productsOnly = cmps.every((c) => c.group === 'table-database')
+  if (ownSize && !productsOnly) {
     const parts = [`SvGrid ${size.version} ${bundleText(ownSize.baseGzipKb, ownSize.cssGzipKb)} (measured ${formatDate(size.measuredAt)})`, ...bundles]
     sentences.push(`Bundle, minified and gzipped, each package built alone with Svelte external: ${parts.join('; ')}.`)
   }
@@ -94,7 +97,7 @@ export function guideFactsBlock(slugs, { comparisons, ledger, size }, packages =
       sentences.push(`${shortName(c)} pricing, as its site states it: ${c.pricing.summary.replace(/\.$/, '')} (${c.pricing.url}, read ${formatDate(c.pricing.verified)}).`)
     }
   }
-  sentences.push(`SvGrid: ${SVGRID_PRICING.summary}.`)
+  sentences.push(`SvGrid: ${productsOnly ? svgridPricingSummary(cmps[0]) : SVGRID_PRICING.summary}.`)
   const links = cmps.map((c) => `[SvGrid vs ${c.competitor}](https://svgrid.com/compare/${c.slug}/)`)
   sentences.push(`Side by side, with sources: ${links.join(', ')}.`)
   lines.push(`> **Facts, checked ${checked ? formatDate(checked) : 'never'}.** ${sentences.join(' ')}`)

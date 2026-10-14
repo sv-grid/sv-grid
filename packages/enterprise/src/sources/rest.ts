@@ -155,7 +155,12 @@ export function createRestDataSource<TData extends RowData>(
 
   const send = async (url: string, init?: RequestInit): Promise<unknown> => {
     const res = await doFetch(url, init)
-    if (!res.ok) throw new Error(`REST ${init?.method ?? 'GET'} ${url} -> ${res.status} ${res.statusText}`)
+    if (!res.ok) {
+      // The endpoint's own words, when it sent any (`{ error }` or `{ message }`): a
+      // validation message reads better to the user than the status line.
+      const said = await res.json().then((b: { error?: unknown; message?: unknown } | null) => b?.error ?? b?.message, () => undefined)
+      throw new Error(`REST ${init?.method ?? 'GET'} ${url} -> ${res.status} ${res.statusText}${typeof said === 'string' && said ? `: ${said}` : ''}`)
+    }
     const parsed = res.status === 204 ? undefined : await res.json().catch(() => undefined)
     return { body: parsed, res }
   }

@@ -137,11 +137,11 @@ setLicenseKey('YOUR-LICENSE-KEY') // the key from your order
 ```
 
 The pack comes in two editions, both covering unlimited production apps.
-**Grid** is everything on this page except the spreadsheet and Studio;
+**Grid** is everything on this page except the spreadsheet, SvGrid Base and Studio;
 **Suite** is all of it. The Indie license is the Grid edition at a lower
 price for freelancers and companies under $1M revenue, without support.
 A key names its edition, and a key that predates
-editions reads as Suite. A Grid key that opens `<SvSheet>` is treated the
+editions reads as Suite. A Grid key that opens `<SvSheet>` or `<SvBase>` is treated the
 same way as an unlicensed build: the feature runs, with the watermark and a
 console notice naming the edition that covers it.
 

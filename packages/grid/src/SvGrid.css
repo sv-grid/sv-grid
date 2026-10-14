@@ -767,11 +767,13 @@
 @keyframes sg-drop-pulse { from { opacity: 0.55; } to { opacity: 1; } }
 
 /* Managed row dragging ----------------------------------------------------- */
-/* The whole row is the drag source; the row-number cell shows a grip so the
- * affordance is discoverable. Pair `rowDragManaged` with `showRowNumbers` for
- * the grip; without row numbers the grab cursor still hints it. */
-.sv-grid-row-draggable { cursor: grab; }
-.sv-grid-row-draggable:active { cursor: grabbing; }
+/* With row numbers the row header is the drag handle and shows a grip while
+ * the pointer is over it; the data cells keep their own cursor. Without row
+ * numbers the whole row is the source and the grab cursor hints it. */
+.sv-grid-row-draggable:not(.sv-grid-row-drag-by-header),
+.sv-grid-row-drag-by-header .sv-grid-row-number-cell { cursor: grab; }
+.sv-grid-row-draggable:not(.sv-grid-row-drag-by-header):active,
+.sv-grid-row-drag-by-header .sv-grid-row-number-cell:active { cursor: grabbing; }
 /* Touch drag (#66): once the long press has promoted the gesture to a drag, stop
    the row text being selected under the finger. Scrolling is suppressed from JS
    with a non-passive touchmove listener rather than `touch-action` here -
@@ -782,24 +784,28 @@
   -webkit-user-select: none;
   user-select: none;
 }
+/* No `position: relative` here: the cell is already positioned (sticky, so it
+   stays put when the grid scrolls sideways), which is all the grip needs. */
 .sv-grid-row-draggable .sv-grid-row-number-cell {
-  position: relative;
   padding-left: 14px;
 }
+/* The grip clears the row header's leading edge, where a row color draws
+   its 3px stripe, and shows only while that header is hovered or focused. */
 .sv-grid-row-draggable .sv-grid-row-number-cell::before {
   content: "\2807"; /* braille grip glyph */
   position: absolute;
-  left: 3px;
+  left: 6px;
   top: 50%;
   transform: translateY(-50%);
   font-size: 13px;
   line-height: 1;
   color: var(--sg-muted, #94a3b8);
-  opacity: 0.4;
+  opacity: 0;
   transition: opacity 120ms ease;
   pointer-events: none;
 }
-.sv-grid-row-draggable:hover .sv-grid-row-number-cell::before { opacity: 1; }
+.sv-grid-row-draggable .sv-grid-row-number-cell:hover::before,
+.sv-grid-row-draggable .sv-grid-row-number-cell:focus-within::before { opacity: 1; }
 
 /* Default highlight for an external drop zone (use:rowDropZone) while a
    matching row is dragged over it. Consumers can override the class. */
@@ -858,6 +864,12 @@
    cell's shadow never paints over its neighbour. The cells sit at z-index 4,
    above the rows and under the floating bar. */
 .sv-grid-root[data-selbar$='bottom'] .sv-grid-pinned-row-bottom[data-pinned-index="0"] td {
+  box-shadow: 0 calc(var(--sg-selbar-reserve) / 2) 0 calc(var(--sg-selbar-reserve) / 2) var(--sg-bg, #fff);
+  clip-path: inset(0 0 calc(-1 * var(--sg-selbar-reserve)) 0);
+}
+/* The sticky footer (summary row) holds above the same strip: it paints it,
+   so no body row shows below the footer while the bar is up. */
+.sv-grid-root[data-selbar$='bottom'] .sv-grid-foot {
   box-shadow: 0 calc(var(--sg-selbar-reserve) / 2) 0 calc(var(--sg-selbar-reserve) / 2) var(--sg-bg, #fff);
   clip-path: inset(0 0 calc(-1 * var(--sg-selbar-reserve)) 0);
 }
@@ -941,7 +953,10 @@
 .sv-grid-foot {
   position: sticky;
   bottom: 0;
-  z-index: 6;
+  /* Above pinned body cells (z-index 30 via cellPinStyle), as the header
+     is: rows scrolling behind the footer must not paint their pinned
+     cells over the summary row. */
+  z-index: 35;
   background: var(--sg-header-bg, #f5f7fb);
 }
 
@@ -2201,6 +2216,37 @@ select.sv-grid-fr-editor {
   outline: none;
 }
 
+/* Find (Ctrl+F): every match is tinted while the bar is open, the current
+   one more strongly. A layer, not the background, so a cell's own colour
+   (a status tint, a stripe) shows through. */
+.sv-grid-cell.sv-grid-cell-find-hit {
+  background-image: linear-gradient(
+    var(--sg-find-hit-bg, color-mix(in srgb, #facc15 26%, transparent)),
+    var(--sg-find-hit-bg, color-mix(in srgb, #facc15 26%, transparent))
+  );
+}
+.sv-grid-cell.sv-grid-cell-find-current {
+  background-image: linear-gradient(
+    var(--sg-find-current-bg, color-mix(in srgb, #facc15 55%, transparent)),
+    var(--sg-find-current-bg, color-mix(in srgb, #facc15 55%, transparent))
+  );
+}
+
+/* An extension's icon before the label (a field's type). It stays whole; in
+   a narrow column the label truncates, as a label always does. */
+.sv-grid-header-type-icon {
+  flex: none;
+  margin-inline-end: 6px;
+  color: var(--sg-muted, #64748b);
+}
+/* An extension's note after the label (a field's description), read on hover. */
+.sv-grid-header-note {
+  display: inline-flex;
+  flex: none;
+  margin-inline-start: 4px;
+  color: var(--sg-muted, #64748b);
+  cursor: help;
+}
 .sv-grid-header-label {
   /* min-width:0 lets this flex item shrink below its text width so a long
      label truncates to a single line with an ellipsis instead of overflowing

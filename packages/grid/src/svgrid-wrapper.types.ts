@@ -464,8 +464,11 @@ export type SvGridApi<
     format?: CellFormatConfig
     /** Effective horizontal alignment ('left' | 'center' | 'right'). */
     align?: 'left' | 'center' | 'right'
-    /** The column's declared `editorType`, when set. Lets a filter or
-     *  expression UI offer type-appropriate operators. */
+    /** The column's data type: `cellDataType`, or the one a built-in
+     *  `editorType` implies. Lets a filter or expression UI offer
+     *  type-appropriate operators whatever edits the cell. */
+    cellDataType?: 'text' | 'number' | 'boolean' | 'date' | 'dateString'
+    /** The column's `editorType`, when set: what edits it. */
     editorType?: string
   }>
 

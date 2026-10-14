@@ -4,11 +4,13 @@
    * severity / scope, the trigger (data change, relative change, validation,
    * scheduled), the predicate (embedded SvExpressionEditor), and the actions
    * (toast / badge / highlight / flash / prevent-edit / log). Reuses the grid
-   * UI kit so it matches the rest of the app.
+   * UI kit so it matches the rest of the app. Under an SvGrid Base table the
+   * condition is written with the Base's filter instead (`condition-editor.ts`).
    */
   import { SvModal, SvField, SvTextInput, SvDropDownList, SvColorInput, SvTagsInput } from '@svgrid/grid'
   import SvExpressionEditor from './SvExpressionEditor.svelte'
   import { CRON_PRESETS } from './scheduling'
+  import { getAlertConditionEditor } from './alerts/condition-editor'
   import type { ExprColumn } from './expressions/expression-columns'
   import type { PredicateExpr } from './expressions/expression-types'
   import type {
@@ -61,6 +63,10 @@
     { value: 'crossed', label: 'crossed a threshold' },
   ]
 
+  const custom = getAlertConditionEditor()
+  const DEFAULT_TOKENS = ['{value}', '{column}', '{field}']
+  const tokens = $derived(custom?.tokens?.() ?? DEFAULT_TOKENS)
+
   // --- Draft state ---------------------------------------------------------
 
   let name = $state('')
@@ -100,7 +106,7 @@
     severity = rule?.severity ?? 'warning'
     scope = rule?.scope ?? 'row'
     triggerType = rule?.trigger.type ?? 'dataChange'
-    predicate = rule?.predicate ?? { kind: 'const', value: true }
+    predicate = rule?.predicate ?? custom?.initial() ?? { kind: 'const', value: true }
     selected = new Set(rule?.actions.map((a) => a.kind) ?? ['toast'])
     message = rule?.actions.find((a) => a.message)?.message ?? ''
     const styled = rule?.actions.find((a) => a.style)
@@ -133,6 +139,7 @@
     selected = next
   }
 
+  const ownEditor = $derived(custom && custom.accepts(predicate) ? custom : null)
   const showStyle = $derived(selected.has('highlight') || selected.has('badge'))
   const showTargets = $derived(showStyle || selected.has('cellFlash') || scope === 'cell')
 
@@ -230,7 +237,11 @@
     {/if}
 
     <SvField label={triggerType === 'validation' ? 'Reject the edit when' : 'Condition'}>
-      <SvExpressionEditor {columns} bind:value={predicate} {rows} />
+      {#if ownEditor}
+        <ownEditor.component value={predicate} onChange={(next) => (predicate = next)} />
+      {:else}
+        <SvExpressionEditor {columns} bind:value={predicate} {rows} />
+      {/if}
     </SvField>
 
     <fieldset class="ar-fieldset">
@@ -244,8 +255,8 @@
         {/each}
       </div>
       <div class="ar-message">
-        <SvField label="Message (tokens: {'{value}'}, {'{column}'}, {'{field}'})">
-          <SvTextInput value={message} onChange={(v) => (message = v)} placeholder="e.g. {'{'}region{'}'} price hit {'{'}value{'}'}" />
+        <SvField label="Message" hint={`Tokens: ${tokens.slice(0, 4).join(', ')}`}>
+          <SvTextInput value={message} onChange={(v) => (message = v)} placeholder={custom ? `e.g. ${tokens[0] ?? ''} is overdue` : 'e.g. {region} price hit {value}'} />
         </SvField>
       </div>
       {#if showStyle}

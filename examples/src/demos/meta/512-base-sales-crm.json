@@ -1,0 +1,29 @@
+{
+  "description": "A sales CRM built with SvGrid Base, a table database component for Svelte 5: three linked tables as tabs. Deals link to an account and a contact, accounts list their deals and contacts and roll up the pipeline value, and linking a record on one side shows it on the other. Saved views for all deals, a Kanban pipeline, a closing calendar, open deals grouped by owner and a new-lead form.",
+  "keywords": [
+    "svelte crm component",
+    "svelte sales pipeline kanban",
+    "svelte deal tracker",
+    "svelte table database component",
+    "svelte linked records",
+    "svelte related tables"
+  ],
+  "faq": [
+    {
+      "question": "Is this a template or a component?",
+      "answer": "A component: <SvBase> with your rows and columns. Most of the demo is sample data; the views, the field editor, the record view and the form come with the component."
+    },
+    {
+      "question": "How are deals, accounts and contacts related?",
+      "answer": "Each is a table of the base, one tab each. The Account field on a deal is a link field; the Accounts table has a Deals field that links back, and the two stay in step: link a deal to an account and the account lists it. Add a link field to relate two tables, point it at another table to move the relation, or delete it to remove both sides."
+    },
+    {
+      "question": "Does the footer total the pipeline?",
+      "answer": "Yes. Each field picks its own summary: Value sums, Probability averages. Grouped by owner, every group header shows its own totals."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

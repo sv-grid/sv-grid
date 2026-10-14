@@ -6,7 +6,7 @@
  * gain an expander plus indentation in the tree column. Grouping's banners are
  * synthetic full-width rows - a tree row must never be rendered like one.
  */
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, unmount } from 'svelte'
 import SvGrid from './SvGrid.svelte'
 import {
@@ -70,6 +70,44 @@ const bodyRows = (t: HTMLElement) =>
   )
 const toggles = (t: HTMLElement) =>
   [...t.querySelectorAll<HTMLButtonElement>('.sv-grid-tree-toggle')]
+
+describe('treeData editing', () => {
+  it.each([
+    ['all rows rendered', false],
+    ['virtualized', true],
+  ] as const)('writes an edit to the row that was edited, not its neighbour (%s)', async (_label, virtualization) => {
+    // A tree row is a real data row: an edit on a grandchild, with the rows
+    // above it expanded, writes to that row and reports that row.
+    const rows: Node[] = data.map((r) => ({ ...r }))
+    const changes: Array<{ name: unknown; value: unknown }> = []
+    const { target, destroy } = mountGrid({
+      data: rows,
+      columns: columns.map((c) => ({ ...c, editorType: 'text' })),
+      editable: true,
+      virtualization,
+      onCellValueChange: (e: { row: Node; newValue: unknown }) => changes.push({ name: e.row.name, value: e.newValue }),
+    })
+    cleanup = destroy
+    await tick()
+    toggles(target)[0]!.click() // Ada
+    await tick()
+    toggles(target)[1]!.click() // Grace
+    await tick()
+    const alan = bodyRows(target).find((r) => r.textContent?.includes('Alan'))!
+    const teamCell = [...alan.querySelectorAll('td')].find((td) => td.textContent?.trim() === 'Eng')!
+    teamCell.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
+    // The editor is a lazy chunk.
+    await vi.waitFor(() => expect(target.querySelector('tbody input'), 'the editor opens').not.toBeNull())
+    const input = target.querySelector<HTMLInputElement>('tbody input')!
+    input.value = 'Platform'
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    await tick()
+    expect(rows.find((r) => r.name === 'Alan')!.team).toBe('Platform')
+    expect(rows.find((r) => r.name === 'Linus')!.team).toBe('Ops')
+    expect(changes).toEqual([{ name: 'Alan', value: 'Platform' }])
+  })
+})
 
 describe('treeData', () => {
   it('shows only roots until expanded', async () => {

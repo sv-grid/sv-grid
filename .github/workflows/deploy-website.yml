@@ -26,6 +26,10 @@ on:
       - 'tools/twitter/build-tips-pages.mjs'
       - 'tools/twitter/tips-data.mjs'
       - 'tools/indexnow.mjs'
+      # The trial zip (built in the deploy) and what goes into it.
+      - 'tools/build-trial-bundle.mjs'
+      - 'tools/trial-bundle/**'
+      - 'packages/enterprise/**'
   # Instant deploy: the PRIVATE website repo (sv-grid/website) fires this via a
   # repository_dispatch on every push to its main (see its notify-monorepo
   # workflow), since website content changes no longer land in this repo.
@@ -125,6 +129,18 @@ jobs:
           # deployed voting worker (see workers/svgrid-vote/README.md). When
           # unset, the Upvote control simply links out to the GitHub discussion.
           # VITE_VOTE_API: https://vote.svgrid.com
+          # The trial dialog records sign-ups at the trial worker
+          # (workers/svgrid-trial/README.md). Unset, it still downloads the zip
+          # and fires the analytics event, but stores nothing. Read from either
+          # a variable or a secret of that name: the URL is public (it ends up
+          # in the client bundle), but it was first added as a secret.
+          VITE_TRIAL_API: ${{ vars.TRIAL_API || secrets.TRIAL_API }}
+
+      # The "Start a 30-day trial" download: the published @svgrid/grid and
+      # @svgrid/enterprise tarballs from npm, the demo gallery built to run from
+      # a folder, and a README. Served at /downloads/svgrid-trial.zip.
+      - name: Build the trial download
+        run: node tools/build-trial-bundle.mjs --out website/dist/downloads
 
       - name: Add .nojekyll
         run: touch website/dist/.nojekyll

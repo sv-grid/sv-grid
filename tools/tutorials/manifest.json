@@ -4000,6 +4000,107 @@
           "text": "SvGrid Studio. Supabase in, SvelteKit three out."
         }
       ]
+    },
+    {
+      "id": "mk-meet-svgrid-base",
+      "kind": "marketing",
+      "player": true,
+      "title": "Meet SvGrid Base: tables inside your Svelte app, on your own database",
+      "description": "Zazo presents SvGrid Base: field types, views, records, automations, and an app built from a Supabase project or any SQL database.",
+      "demo": null,
+      "docsPage": "docs/help/base/quick-start.md",
+      "anchor": "![From a database to an app",
+      "tags": [
+        "svgrid base",
+        "airtable alternative",
+        "svelte database app",
+        "supabase",
+        "table database",
+        "no-code tables"
+      ],
+      "duration": 107.71,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-10-14",
+      "files": {
+        "mp4": "/tutorials/mk-meet-svgrid-base.mp4",
+        "poster": "/tutorials/mk-meet-svgrid-base.poster.webp",
+        "vtt": "/tutorials/mk-meet-svgrid-base.vtt"
+      },
+      "bytes": {
+        "mp4": 2854260,
+        "poster": 18116,
+        "master": 20900854
+      },
+      "transcript": [
+        {
+          "start": 0.85,
+          "end": 3.41,
+          "text": "Zazo: Hi, I'm Zazo. Let me show you what we've been building."
+        },
+        {
+          "start": 4.21,
+          "end": 11.89,
+          "text": "Zazo: Your team runs on tables. Projects, customers, hiring, inventory. Maybe you keep them in Airtable."
+        },
+        {
+          "start": 12.69,
+          "end": 19.33,
+          "text": "Zazo: That works. But the data sits in someone else's cloud, and your team works next to your app, not inside it."
+        },
+        {
+          "start": 20.13,
+          "end": 26.85,
+          "text": "Zazo: So meet SvGrid Base. An Airtable alternative that runs inside your Svelte app, on your own database."
+        },
+        {
+          "start": 28,
+          "end": 37.76,
+          "text": "Zazo: Tables with more than twenty field types. Selects, people, dates, files, links, lookups, rollups and formulas."
+        },
+        {
+          "start": 38.56,
+          "end": 44.64,
+          "text": "Zazo: And every table can be a grid, a Kanban board, a calendar, a gallery, or a form."
+        },
+        {
+          "start": 45.44,
+          "end": 51.92,
+          "text": "Zazo: Filter, group, sort and color any view. Open a record to see all of it, with comments."
+        },
+        {
+          "start": 52.72,
+          "end": 64.88,
+          "text": "Zazo: Now the best part. Point Base at your Supabase project, and it builds the app for you. Every table, its fields, its records, and views to work in. Automatically."
+        },
+        {
+          "start": 66.03,
+          "end": 74.19,
+          "text": "Zazo: And it stays in sync. Every edit is written straight to your database. When a colleague changes a record, you see it live, through Supabase Realtime."
+        },
+        {
+          "start": 74.99,
+          "end": 81.07,
+          "text": "Zazo: Not on Supabase? Point it at Postgres, MySQL, SQLite, SQL Server, or your own API."
+        },
+        {
+          "start": 81.87,
+          "end": 88.35,
+          "text": "Zazo: Starting from scratch? Design your base in the page, then download it as SQL, and that creates the tables."
+        },
+        {
+          "start": 89.15,
+          "end": 95.47,
+          "text": "Zazo: Add automations, too. When a record changes, update another one, call a webhook, or send an email."
+        },
+        {
+          "start": 96.27,
+          "end": 104.51,
+          "text": "Zazo: SvGrid Base. Your tables, your database, your app. It is part of SvGrid Suite, and you can try it free."
+        }
+      ],
+      "youtubeId": "rB-K65XMm7M",
+      "publishedAt": "2026-10-14"
     }
   ]
 }

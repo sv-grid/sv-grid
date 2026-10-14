@@ -14,6 +14,32 @@ Live demo - pin Company left, Price right, scroll the middle:
 Every column header has a menu (the `⋮` button). The menu has "Pin left" /
 "Pin right" / "Unpin" items.
 
+## Drag to pin
+
+`pinSplitter` draws a divider at the right edge of the left-pinned columns
+(or of the row numbers when none are pinned). Drag it right to pin the
+columns it passes, left to unpin them; it snaps to column edges and shows how
+many columns it will pin.
+
+<div data-docs-demo="510-column-pin-splitter" data-height="520"></div>
+
+```svelte
+<SvGrid {data} {columns} showRowNumbers pinSplitter
+  initialColumnPinning={{ left: ['order'], right: [] }} />
+```
+
+- The columns stay where they are on screen: a column you unpin does not
+  jump back to where it was declared, and `onColumnOrderChange` reports the
+  order when it changes.
+- It leaves 120px for the columns that scroll and never pins every column.
+- Escape drops a drag. From the keyboard, Tab to the divider: the arrow keys
+  pin or unpin one column, Home unpins them all. It is a `separator` that says
+  how many columns are pinned.
+- Its words come from `localization.text`: `pinSplitterLabel`,
+  `pinSplitterHint`, `pinSplitterNone`, `pinSplitterOne` and
+  `pinSplitterMany` (`{count}` is the number of pinned columns).
+- The grid loads it only when the prop is on.
+
 ## Programmatically
 
 `SvGridApi` exposes `setColumnPinning` and `getColumnPinning` for

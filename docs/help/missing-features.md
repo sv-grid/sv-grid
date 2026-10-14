@@ -42,7 +42,7 @@ can see both the trajectory and the (short) list of real gaps.
 | ~~Per-cell number formats and styles~~ | **shipped** - an Excel format-string compiler (`compileNumberFormat`) plus a store keyed on row id so formatting survives a sort, wired to Ctrl+1, Ctrl+Shift+1..6 and Ctrl+B/I/U. Demo `453` | ✓ |
 | ~~AutoSum~~ | **shipped** - Alt+= over the run Excel would guess | ✓ |
 | ~~Reference highlighting~~ | **shipped** - the sheet shell outlines every cell a formula in progress refers to, each in its own colour, whether the formula is typed in the cell or in the bar | ✓ |
-| ~~Find-in-grid~~ | **shipped** - Ctrl+F; demo `87-find-in-grid` | ✓ |
+| ~~Find-in-grid~~ | **shipped** - Ctrl+F marks every match (the current one more strongly) and matches what a cell shows as well as its value; demo `87-find-in-grid` | ✓ |
 | ~~Excel keyboard shortcuts~~ | **shipped** - `enableSheet()` binds Ctrl+Arrow (a run-boundary search, so it hops gaps), Ctrl+Shift+Arrow, Ctrl+A region-then-sheet, Ctrl+Space / Shift+Space, Ctrl+D / Ctrl+R, Ctrl+; and Ctrl+'; demo `452-excel-shortcuts`. Bind your own through the free `registerGridShortcuts` seam | ✓ |
 | ~~Reference-aware fill~~ | **shipped** - `enableSheet()` wires `translateFormula` into Ctrl+D / Ctrl+R, so a filled formula shifts its relative refs and keeps its pinned ones | ✓ |
 | ~~Paste Special~~ | **shipped** - values / formulas / formats / transpose / add-subtract-multiply-divide / skip-blanks, plus a `text/html` clipboard flavour so formats and formulas survive a round trip through Excel. `Ctrl+Shift+V` | ✓ |

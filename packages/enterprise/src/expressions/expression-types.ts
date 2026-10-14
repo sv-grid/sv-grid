@@ -50,6 +50,12 @@ export type PredicateExpr =
   | { kind: 'cmp'; column: string; op: ExcelFilterOperator; value?: unknown; valueTo?: unknown }
   | { kind: 'scalarCmp'; left: ScalarExpr; op: ComparisonOp; right: ScalarExpr }
   | { kind: 'const'; value: boolean }
+  /**
+   * A condition another module evaluates (`registerPredicateKind`): SvGrid
+   * Base's field conditions are `{ kind: 'ext', type: 'fieldFilter', payload }`.
+   * An unregistered type compiles to nothing, so a rule never fires on it.
+   */
+  | { kind: 'ext'; type: string; payload: unknown }
 
 /**
  * A change (observable) expression - true when a value moves between the

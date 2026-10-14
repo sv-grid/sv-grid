@@ -1,0 +1,28 @@
+{
+  "description": "Plain SQL tables in, a working app out: SvGrid Base reads a Postgres database with one call and shows every table as a tab, with typed fields, colored selects from repeated values, links from foreign keys, a link to many from a junction table, and Kanban and calendar views.",
+  "keywords": [
+    "svelte database admin ui",
+    "postgres to app svelte",
+    "instant crud app from database",
+    "svelte table editor for postgres",
+    "generate ui from database schema"
+  ],
+  "faq": [
+    {
+      "question": "What does baseFromDatabase read?",
+      "answer": "Every table (or the ones you list), its columns and types, its foreign keys, which tables only pair two others, whether the database makes the keys, and the values each text column repeats. From those it makes the fields, links, selects and views; nothing is configured by hand."
+    },
+    {
+      "question": "Does the page need the database password?",
+      "answer": "No. In an app the database is behind your server: createBaseEndpoint({ execute }) in a SvelteKit route serves the tables, and baseFromEndpoint('/api/base') in the page reads them. The demo runs Postgres in the page with PGlite so it needs no server."
+    },
+    {
+      "question": "How do I start a new app like this?",
+      "answer": "npm create @svgrid@latest my-base -- --template base. The wizard asks where your data is (Postgres in the browser, your Postgres, or Supabase) and which sample tables to start from."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

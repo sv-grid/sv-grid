@@ -128,6 +128,10 @@
       value: cell?.value,
       rowId: cell?.rowId ?? "",
       columnId: cell?.columnId ?? "",
+      columnDef: column.columnDef as Record<string, unknown>,
+      row: row.original,
+      typed: cell?.typed === true,
+      grid: ctrl,
       onChange: (v: unknown) => updateEditingCellValue(v),
       onCommit: (v?: unknown) => {
         if (v !== undefined) updateEditingCellValue(v);
@@ -143,6 +147,11 @@
       onCommitAndMove: (v: unknown, direction: 1 | -1) => {
         if (v !== undefined) updateEditingCellValue(v);
         ctrl.commitAndMoveByTab(direction === -1);
+      },
+      // Enter, as in the built-in editors: commit, then a row down.
+      onCommitAndMoveDown: (v: unknown, up?: boolean) => {
+        if (v !== undefined) updateEditingCellValue(v);
+        ctrl.commitAndMoveByEnter(up === true);
       },
       // Close a popover editor without committing. Same effect as cancel today;
       // named separately so an editor can distinguish "dismiss my panel" from
@@ -639,7 +648,7 @@
       {#if DateEditor}
         <DateEditor
           value={ctrl.editingCell?.value as string | number | Date | null}
-          formatString="yyyy-MM-dd"
+          formatString={column.columnDef.editorFormatString ?? "yyyy-MM-dd"}
           dropDownDisplayMode="calendar"
           autoOpen
           block
@@ -655,7 +664,7 @@
       {#if DateEditor}
         <DateEditor
           value={ctrl.editingCell?.value as string | number | Date | null}
-          formatString="yyyy-MM-dd HH:mm"
+          formatString={column.columnDef.editorFormatString ?? "yyyy-MM-dd HH:mm"}
           dropDownDisplayMode="both"
           autoOpen
           block

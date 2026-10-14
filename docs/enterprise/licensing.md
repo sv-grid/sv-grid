@@ -30,8 +30,8 @@ version released during your paid term.
 | License                            | What it covers                                                     | Price (per developer) | Support                                   |
 | ---------------------------------- | ------------------------------------------------------------------ | --------------------- | ----------------------------------------- |
 | **Indie Developer License**        | Grid features, for freelancers and companies under $1M revenue     | **$299**              | None (GitHub issues only), updates only   |
-| **Grid Developer License**         | Enterprise grid features. No spreadsheet, no Studio                 | **$599**              | Email (next business day) + private Slack |
-| **Suite Developer License**        | Everything in Grid, plus the spreadsheet and Studio                 | **$999**              | Email (next business day) + private Slack |
+| **Grid Developer License**         | Enterprise grid features. No spreadsheet, no Base, no Studio        | **$599**              | Email (next business day) + private Slack |
+| **Suite Developer License**        | Everything in Grid, plus the spreadsheet, Base and Studio           | **$999**              | Email (next business day) + private Slack |
 | **Enterprise / volume**            | Suite, site or organisation-wide                                    | Custom quote          | Priority + named contact, NDA / PO        |
 | **OEM / redistribution**           | Shipping SvGrid to third parties as a component or app builder      | Custom quote          | Priority + named contact, NDA / PO        |
 
@@ -131,7 +131,7 @@ console message until a key is set. Once you're sold, drop in a key.
 ## A Grid key on a Suite feature
 
 The same rule, for the same reason. A Grid Developer License that opens
-`<SvSheet>`, calls the formula engine, or reaches a Studio data source gets the
+`<SvSheet>` or `<SvBase>`, calls the formula engine, or reaches a Studio data source gets the
 watermark and a one-time console notice naming the feature. Nothing stops
 working and nothing is hidden, so a Grid-tier team can try the spreadsheet in
 their own app before deciding to upgrade, exactly as an unlicensed team can.
@@ -140,6 +140,7 @@ their own app before deciding to upgrade, exactly as an unlicensed team can.
 import { licenseCovers } from '@svgrid/enterprise'
 
 licenseCovers('spreadsheet') // false on a GRID key, true on SUITE
+licenseCovers('base')        // SvGrid Base: the same
 ```
 
 Use `licenseCovers` if you want to hide a Suite-only entry point in your own UI

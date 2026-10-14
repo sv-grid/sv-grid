@@ -489,3 +489,30 @@ describe('selectionBar - accessibility', () => {
     destroy()
   })
 })
+
+describe('selectionBar - deleteRows', () => {
+  it('asks on the bar first, then deletes the selection and reports the data left', async () => {
+    const deleted: any[] = []
+    const { api, target, destroy } = await mountGrid(['deleteRows'], { onRowsDelete: (e: unknown) => deleted.push(e) })
+    await tick()
+    const bar = await select(target, api, ['1', '3'])
+    ;[...bar.querySelectorAll<HTMLButtonElement>('.sv-selbar-btn')].find((b) => b.textContent?.trim() === 'Delete')!.click()
+    await vi.waitFor(() => expect(bar.querySelector('.sv-selbar-confirm')?.textContent).toBe('Delete 2 rows?'))
+    // Cancel leaves everything as it was.
+    ;[...bar.querySelectorAll<HTMLButtonElement>('.sv-selbar-btn')].find((b) => b.textContent?.trim() === 'Cancel')!.click()
+    await vi.waitFor(() => expect(bar.querySelector('.sv-selbar-confirm')).toBeNull())
+    expect(deleted).toHaveLength(0)
+
+    ;[...bar.querySelectorAll<HTMLButtonElement>('.sv-selbar-btn')].find((b) => b.textContent?.trim() === 'Delete')!.click()
+    await vi.waitFor(() => expect(bar.querySelector('.sv-selbar-btn.is-solid')).not.toBeNull())
+    ;(bar.querySelector('.sv-selbar-btn.is-solid') as HTMLButtonElement).click()
+    expect(deleted).toHaveLength(1)
+    expect(deleted[0].ids).toEqual(['1', '3'])
+    expect(deleted[0].data.map((r: Row) => r.name)).toEqual(['Grace'])
+    // The selection is gone with the rows, and so is the bar.
+    await vi.waitFor(() => expect(target.querySelector(BAR)).toBeNull())
+    await vi.waitFor(() => expect(target.querySelectorAll('tbody tr.sv-grid-row')).toHaveLength(1))
+    destroy()
+  })
+
+})

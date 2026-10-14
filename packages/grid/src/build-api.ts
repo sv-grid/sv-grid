@@ -28,6 +28,8 @@ import {
 import { hasAdvancedFilterEngine } from "./advanced-filter.svelte";
 import { undoHistory, redoHistory, peekUndoHistory, peekRedoHistory } from "./history";
 import { buildCommandContext } from "./command-context";
+import { applyFieldColumns } from "./grid-extension.svelte";
+import { columnDataType } from "./column-types";
 
 type OrientedRange = {
   from: { row: number; col: number }
@@ -322,6 +324,8 @@ export function createGridApi<
         this.addColumns([column], position);
       },
       addColumns(columns, position = "right") {
+        // A field-type column is filled in the same way as one passed as a prop.
+        columns = applyFieldColumns(columns, [...ctx.internalColumns, ...columns]);
         const next = ctx.internalColumns.slice();
         if (position === "left") next.unshift(...columns);
         else if (position === "right") next.push(...columns);
@@ -351,23 +355,27 @@ export function createGridApi<
         return !ctx.hiddenColumns[columnId];
       },
       setSort(columnId, direction) {
-        // Honour the column's `sortable` opt-out. Asking the engine
-        // whether the column can sort folds in both the feature toggle
-        // AND the per-column flag.
-        const col = ctx.allColumns.find((c: any) => c.id === columnId);
-        if (col && !col.getCanSort?.()) return;
-        const clauses = direction
-          ? [{ id: columnId, desc: direction === "desc" }]
-          : (ctx.grid.getState().sorting ?? []).filter(
-              (entry: { id: string }) => entry.id !== columnId,
-            );
-        ctx.grid.store.setState((prev: any) => ({ ...prev, sorting: clauses }));
+        // `untrack`, as in `setFilter`: called from a consumer's `$effect`,
+        // the reads here would make that effect depend on the state it writes.
+        untrack(() => {
+          // Honour the column's `sortable` opt-out. Asking the engine
+          // whether the column can sort folds in both the feature toggle
+          // AND the per-column flag.
+          const col = ctx.allColumns.find((c: any) => c.id === columnId);
+          if (col && !col.getCanSort?.()) return;
+          const clauses = direction
+            ? [{ id: columnId, desc: direction === "desc" }]
+            : (ctx.grid.getState().sorting ?? []).filter(
+                (entry: { id: string }) => entry.id !== columnId,
+              );
+          ctx.grid.store.setState((prev: any) => ({ ...prev, sorting: clauses }));
+        });
       },
       clearSort() {
-        ctx.grid.store.setState((prev: any) => ({ ...prev, sorting: [] }));
+        untrack(() => ctx.grid.store.setState((prev: any) => ({ ...prev, sorting: [] })));
       },
       setGroupBy(columnIds) {
-        ctx.grid.setGrouping([...columnIds]);
+        untrack(() => ctx.grid.setGrouping([...columnIds]));
       },
       setOption(key, value) {
         // Runtime prop override. Writes into the controller's `optionOverrides`
@@ -580,12 +588,13 @@ export function createGridApi<
           // Surface the format + alignment so exporters can reproduce the
           // on-screen display value (currency symbol, date pattern, etc.)
           // instead of dumping raw values. `getColumnAlign` applies the same
-          // editorType-based default the body uses.
+          // data-type default the body uses.
           format: c.columnDef.format,
           align: getColumnAlign(c),
-          // The column's declared value type. Lets a filter or expression UI
-          // offer the right operators (numeric ranges vs text matching) without
-          // re-walking the columnDef tree.
+          // The column's data type, declared or implied by a built-in editor.
+          // Lets a filter or expression UI offer the right operators (numeric
+          // ranges vs text matching) whatever edits the cell.
+          cellDataType: columnDataType(c.columnDef),
           editorType: (c.columnDef as { editorType?: string }).editorType,
         });
         // Visible columns first, in their current visual order...

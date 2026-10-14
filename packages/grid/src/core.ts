@@ -1,5 +1,6 @@
 ﻿import type { SparklineConfig } from './sparkline'
 import { resolveColumnId } from './column-id'
+import { columnDataType, isDateDataType } from './column-types'
 
 /**
  * The constraint every row type satisfies: an object keyed by string. Your own
@@ -295,6 +296,15 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
   header?: ColumnDefTemplate<HeaderContext<TData>>
   footer?: ColumnDefTemplate<HeaderContext<TData>>
   cell?: ColumnDefTemplate<CellContext<TData>>
+  /**
+   * A field type registered by `@svgrid/enterprise/fields` (`'attachment'`,
+   * `'rating'`, `'url'`, ...). With the module enabled the cell is drawn by
+   * that type; a column's own `cell` still wins. Without it the column draws
+   * as an ordinary one.
+   */
+  fieldType?: string
+  /** Properties of `fieldType` (options, precision, max files, ...). */
+  fieldProps?: Record<string, unknown>
   columns?: Array<ColumnDef<TFeatures, TData>>
   /**
    * Declarative cell spanning (merged cells). Return how many COLUMNS this
@@ -309,17 +319,20 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    */
   rowSpan?: (params: CellSpanParams<TData>) => number
   /**
-   * High-level data type for the column. A convenience that resolves to the
-   * right `editorType`, alignment, date `format`, and filter operators without
-   * setting each by hand:
-   *   'text' → text editor, left-aligned
-   *   'number' → number editor, right-aligned, numeric filter operators
-   *   'boolean' → checkbox editor, centered
-   *   'date' → date editor (Date values), right-aligned, `{ type: 'date' }` format
-   *   'dateString' → date editor for ISO date STRINGS (e.g. '2026-06-27')
-   * Anything you set explicitly (`editorType`, `align`, `format`) still wins -
-   * `cellDataType` only fills the gaps. Grid-level `inferColumnTypes` infers
-   * this from the first data row for columns that declare neither.
+   * What the column's values are. It decides sorting, filter operators and
+   * alignment, whatever edits the cell: `editorType` only picks the editor,
+   * so a number column can be typed in a text box or a custom editor and
+   * still sort, filter and align as numbers.
+   *   'text' → left-aligned, text filters (text editor by default)
+   *   'number' → right-aligned, numeric sort and filters (number editor)
+   *   'boolean' → centered, true / false filter (checkbox editor)
+   *   'date' → Date values, right-aligned, date sort and filters (date
+   *     editor, `{ type: 'date' }` format)
+   *   'dateString' → ISO date STRINGS (e.g. '2026-06-27'), as a date
+   * Anything you set explicitly (`editorType`, `align`, `format`) still wins.
+   * Without it, a built-in `editorType` (`number`, `date`, `datetime`,
+   * `checkbox`) implies the type, as before; grid-level `inferColumnTypes`
+   * infers it from the first data row for columns with neither.
    */
   cellDataType?: 'text' | 'number' | 'boolean' | 'date' | 'dateString'
   /**
@@ -375,6 +388,13 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    * `editorType` is treated as a hint for parsing the saved value.
    */
   cellEditor?: ColumnDefTemplate<EditorContext<TData>>
+  /**
+   * The text format of the date / datetime editor's box, in date-format
+   * tokens (`'MMMM d, yyyy'`, `'MM/dd/yyyy h:mm tt'`), so an edit shows the
+   * date the way the cell does. Default `'yyyy-MM-dd'`, with time
+   * `'yyyy-MM-dd HH:mm'`.
+   */
+  editorFormatString?: string
   /**
    * Per-column tooltip. String shows as a native `title=`; `(ctx) => string`
    * runs per cell so the tooltip can reflect the value. Returning an empty
@@ -490,6 +510,12 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
   editorSeparator?: string
   format?: CellFormatConfig
   formatter?: CellFormatter<TData>
+  /**
+   * The number this column sorts a value by, in place of the value: a status
+   * option's position in its list, say, so "To do" comes before "Done".
+   * Blanks and anything not a number sort first, as in a number column.
+   */
+  sortValue?: (value: unknown) => number | null | undefined
   /**
    * Aggregate this column's values into the group row when grouping is
    * active. `'sum' | 'avg' | 'min' | 'max' | 'count' | 'countDistinct' |
@@ -1563,11 +1589,13 @@ export function createSortedRowModel<TData extends RowData>(
     for (const clause of sorting) {
       const column = allColumns.find((col) => col.id === clause.id)
       if (!column) continue
-      const editorType = column.columnDef.editorType
+      // By the column's data type, not by what edits it: a number column
+      // edited in a text box still sorts as numbers.
+      const dataType = columnDataType(column.columnDef)
       const comparator =
-        editorType === 'number'
+        dataType === 'number'
           ? localSortFns.number
-          : editorType === 'date' || editorType === 'datetime'
+          : isDateDataType(dataType)
             ? localSortFns.date
             : localSortFns.auto
 
@@ -1590,7 +1618,12 @@ export function createSortedRowModel<TData extends RowData>(
       let autoMode: 'number' | 'mixed' | 'text' | undefined
       let rankCount: number | undefined
 
-      if (comparator === sortFns.number) {
+      const sortValue = column.columnDef.sortValue
+      if (typeof sortValue === 'function') {
+        keyOf = (row) => numberSortKey(sortValue(row.getCellValueByColumnId(columnId)))
+        for (let i = 0; i < n; i++) keys[i] = keyOf(rows[i]!)
+        compare = compareNumericKeys
+      } else if (comparator === sortFns.number) {
         keyOf = (row) => numberSortKey(row.getCellValueByColumnId(columnId))
         for (let i = 0; i < n; i++) keys[i] = keyOf(rows[i]!)
         compare = compareNumericKeys
@@ -2324,7 +2357,11 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
             c.field === prev.field &&
             c.id === prev.id &&
             c.header === prev.header &&
-            c.editorType === prev.editorType
+            c.editorType === prev.editorType &&
+            // A field's options and format live in fieldProps; a reused
+            // column would keep drawing the old ones.
+            c.fieldType === prev.fieldType &&
+            c.fieldProps === prev.fieldProps
           )
         })
       ) {

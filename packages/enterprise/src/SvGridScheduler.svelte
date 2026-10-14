@@ -132,6 +132,21 @@
     return d ? toZonedLocal(d, tz) : undefined;
   };
   const fromZ = (d: Date): Date => fromZonedLocal(d, tz);
+  // `allDay`: a value is a day. A bare 'YYYY-MM-DD' is that local day (new Date()
+  // reads it as midnight UTC, the evening before west of Greenwich).
+  const toDay = (v: unknown): Date | undefined => {
+    const m = typeof v === "string" ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(v) : null;
+    if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    const d = toZ(v);
+    return d ? new Date(d.getFullYear(), d.getMonth(), d.getDate()) : undefined;
+  };
+  const readDate = (v: unknown): Date | undefined => (scheduler.allDay ? toDay(v) : toZ(v));
+  // An all-day end written as a day ('2026-10-14') is the event's LAST day; the
+  // calendar's ends are exclusive, so it ends at the next midnight.
+  const readEnd = (v: unknown): Date | undefined => {
+    const d = readDate(v);
+    return d && scheduler.allDay && typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? addDays(d, 1) : d;
+  };
   // Emit boundary: user edits are computed in pseudo-local time; convert their
   // start/end back to real instants before handing them to consumer callbacks.
   type MoveEv = Parameters<NonNullable<typeof scheduler.onEventMove>>[0];
@@ -232,12 +247,12 @@
     void tz; // re-resolve events (their positions) when the display zone changes
     return {
     getKey: (r) => key(r),
-    getStart: (r) => startOfE[key(r)] ?? (toZ(fieldValue(r, scheduler.startField)) as never),
+    getStart: (r) => startOfE[key(r)] ?? (readDate(fieldValue(r, scheduler.startField)) as never),
     getEnd: (r) =>
       endOfE[key(r)] ??
-      (scheduler.endField ? (toZ(fieldValue(r, scheduler.endField)) as never) : undefined),
+      (scheduler.endField ? (readEnd(fieldValue(r, scheduler.endField)) as never) : undefined),
     getAllDay: (r) =>
-      allDayOf[key(r)] ?? (scheduler.allDayField ? !!fieldValue(r, scheduler.allDayField) : false),
+      allDayOf[key(r)] ?? (scheduler.allDay ? true : scheduler.allDayField ? !!fieldValue(r, scheduler.allDayField) : false),
     getTitle: (r) => (titleField ? String(fieldValue(r, titleField) ?? "") : ""),
     getColor: (r) =>
       scheduler.colorField
@@ -306,6 +321,8 @@
   // derivations below read it, and a `const` used above its declaration is a type
   // error even though `$derived` is lazy enough to work at runtime.
   const pcfg = $derived(scheduler as unknown as SchedulerProConfig<TFeatures, TData>);
+  // Off, events move but keep their length: no edge grips (a record with one date has none to change).
+  const resizable = $derived(pcfg.resizable !== false);
   // --- multi-calendar overlay ---
   const calendars = $derived(pcfg.calendars ?? []);
   const calField = $derived(pcfg.calendarField);
@@ -2404,6 +2421,11 @@
     rangeSel = null; // opening an event dismisses any pending cell selection
     tlRangeSel = null;
     monthRangeSel = null;
+    // The app opens events itself (a record view): that wins over the drawer.
+    if (pcfg.onEventOpen) {
+      pcfg.onEventOpen(ev.row);
+      return;
+    }
     if (scheduler.drawer) {
       const row = ev.row;
       const next: Record<string, unknown> = {};
@@ -3364,7 +3386,7 @@
                     onmouseleave={onEventLeave}
                     title={s.event.title}
                   >
-                    {#if canEditBar && !s.continuesLeft}
+                    {#if canEditBar && resizable && !s.continuesLeft}
                       <!-- svelte-ignore a11y_no_static_element_interactions -->
                       <span
                         class="sv-sched-chip-resize sv-sched-chip-resize-start"
@@ -3373,7 +3395,7 @@
                       ></span>
                     {/if}
                     {#if scheduler.event}{@render scheduler.event(s.event.row)}{:else}{#if !s.event.allDay && !s.continuesLeft}<span class="sv-sched-dot"></span><span class="sv-sched-bar-time">{fmtTime(s.event.start)}</span>{/if}<span class="sv-sched-bar-title">{s.event.title}</span>{/if}
-                    {#if canEditBar && !s.continuesRight}
+                    {#if canEditBar && resizable && !s.continuesRight}
                       <!-- svelte-ignore a11y_no_static_element_interactions -->
                       <span
                         class="sv-sched-chip-resize sv-sched-chip-resize-end"
@@ -3569,14 +3591,14 @@
                     onmouseleave={onEventLeave}
                     title={it.event.title}
                   >
-                    {#if canEdit && !g.continuesLeft}
+                    {#if canEdit && resizable && !g.continuesLeft}
                       <!-- svelte-ignore a11y_no_static_element_interactions -->
                       <span class="sv-sched-chip-resize sv-sched-chip-resize-start" aria-hidden="true" onpointerdown={(e) => startTlDrag(e, it.event, "resize-start")}></span>
                     {/if}
                     {#if wpx >= 22}
                       {#if scheduler.event}{@render scheduler.event(it.event.row)}{:else}{#if view === "timelineDay" && !it.event.allDay && !g.continuesLeft}<span class="sv-sched-bar-time">{fmtTime(it.event.start)}</span>{/if}<span class="sv-sched-bar-title">{it.event.title}</span>{/if}
                     {/if}
-                    {#if canEdit && !g.continuesRight}
+                    {#if canEdit && resizable && !g.continuesRight}
                       <!-- svelte-ignore a11y_no_static_element_interactions -->
                       <span class="sv-sched-chip-resize sv-sched-chip-resize-end" aria-hidden="true" onpointerdown={(e) => startTlDrag(e, it.event, "resize-end")}></span>
                     {/if}
@@ -3709,7 +3731,7 @@
                   onmouseleave={onEventLeave}
                   title={s.event.title}
                 >
-                  {#if canEditBar && !s.continuesLeft}
+                  {#if canEditBar && resizable && !s.continuesLeft}
                     <!-- svelte-ignore a11y_no_static_element_interactions -->
                     <span
                       class="sv-sched-chip-resize sv-sched-chip-resize-start"
@@ -3718,7 +3740,7 @@
                     ></span>
                   {/if}
                   {#if scheduler.event}{@render scheduler.event(s.event.row)}{:else}<span class="sv-sched-bar-title">{s.event.title}</span>{/if}
-                  {#if canEditBar && !s.continuesRight}
+                  {#if canEditBar && resizable && !s.continuesRight}
                     <!-- svelte-ignore a11y_no_static_element_interactions -->
                     <span
                       class="sv-sched-chip-resize sv-sched-chip-resize-end"
@@ -3825,7 +3847,7 @@
                   onmouseenter={(e) => onEventEnter(e, p.event)}
                   onmouseleave={onEventLeave}
                 >
-                  {#if canEdit}
+                  {#if canEdit && resizable}
                     <!-- svelte-ignore a11y_no_static_element_interactions -->
                     <span
                       class="sv-sched-resize sv-sched-resize-top"
@@ -3834,7 +3856,7 @@
                     ></span>
                   {/if}
                   {#if scheduler.event}{@render scheduler.event(p.event.row)}{:else}<span class="sv-sched-event-time">{fmtTime(isResize ? drag!.previewStart : p.event.start)}{isResize ? ` - ${fmtTime(drag!.previewEnd)}` : ""}</span><span class="sv-sched-event-title">{p.event.title}</span>{/if}
-                  {#if canEdit}
+                  {#if canEdit && resizable}
                     <!-- svelte-ignore a11y_no_static_element_interactions -->
                     <span
                       class="sv-sched-resize sv-sched-resize-bottom"

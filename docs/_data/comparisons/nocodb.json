@@ -1,0 +1,166 @@
+{
+  "slug": "nocodb",
+  "competitor": "NocoDB",
+  "url": "https://nocodb.com/",
+  "aliases": [
+    "nocodb",
+    "noco db",
+    "nocodb alternative",
+    "nocodb embed",
+    "self-hosted airtable",
+    "open source airtable"
+  ],
+  "framework": [
+    "hosted",
+    "self-hosted"
+  ],
+  "group": "table-database",
+  "tier": "priority",
+  "published": "2026-10-14",
+  "verified": "2026-10-14",
+  "seoTitle": "NocoDB Alternative for Svelte Apps - SvGrid Base vs NocoDB",
+  "seoDescription": "A table database inside your own Svelte app instead of a NocoDB iframe: SvGrid Base vs NocoDB on licence, embedding, views, automations and your Postgres.",
+  "tagline": "NocoDB is a table-database app with a spreadsheet interface, run on its cloud or self-hosted with Docker, that can sit on top of an existing PostgreSQL or MySQL database.",
+  "oneLineVerdict": "NocoDB is the pick when you want a finished app your team signs into. SvGrid Base is the pick when the table database has to live inside your own Svelte app, under your login, your branding and your licence terms, on the database you already run.",
+  "alternativeIntro": "People searching for a NocoDB alternative usually hit one of three walls: the app has to appear inside their own product rather than in a NocoDB tab or iframe, the January 2026 licence change rules out offering it to customers without a commercial agreement, or the views they need (timeline, Gantt) sit on the Business plan. SvGrid Base answers all three by being a component: <SvBase> renders the grid, Kanban, calendar, gallery, Gantt, chart and form views inside your Svelte app and reads and writes your Postgres, MySQL, SQLite, Supabase or REST API through your own server.",
+  "intro": [
+    "NocoDB turns database tables into a collaborative app: grid, form, gallery, Kanban, calendar and map views, linked records with lookups and rollups, record comments, webhooks and workflows. It runs on NocoDB Cloud, priced per seat, or self-hosted with Docker, where the Community edition has no record or storage limits. It can store data in its own database or connect to an existing PostgreSQL or MySQL database. Since January 2026 the source is under the Sustainable Use License rather than AGPL.",
+    "SvGrid Base is the same kind of tool shipped as a Svelte 5 component in @svgrid/enterprise. You install it, give it your tables (or point it at your database), and your users get typed fields, saved views, filters, groups, linked records, automations and an expanded record with comments, all inside your app. There is no separate server to run and no second login: the base talks to your database through the endpoint you already have."
+  ],
+  "similarities": [
+    "A grid of typed fields with saved views: grid, form, gallery, Kanban and calendar.",
+    "Linked records between tables, with lookup and rollup fields and formulas.",
+    "Can work on top of an existing PostgreSQL or MySQL database instead of a private store.",
+    "Automations that react to record changes, send email and call webhooks.",
+    "Record comments in an expanded record view.",
+    "Filters, sorts, groups and hidden fields saved per view."
+  ],
+  "svgridAdvantages": [
+    "It is a component, not an app: <SvBase> renders inside your own Svelte pages, under your login and your design tokens, with no iframe and no second product for users to sign into.",
+    "Built to ship to customers: an Enterprise Suite licence covers unlimited apps and end users, so putting the base inside a product your customers use needs no separate agreement.",
+    "Gantt, chart and autonumber are part of the base itself, with no plan above them.",
+    "Automations run in the browser or on your server with no monthly run quota, and their secrets stay on your server.",
+    "Reads and writes Postgres, MySQL, SQLite, Supabase or any REST API through the data source your app already uses, with one parameterized endpoint and an authorize hook you write.",
+    "Priced per developer, not per editor: the people who use the app do not need seats."
+  ],
+  "competitorAdvantages": [
+    "A finished product: sign up or run one Docker command and a team is working, with no developer involved.",
+    "Roles out of the box (owner, creator, editor, commenter, viewer) with a sharing screen, and table and field permissions on paid plans.",
+    "Realtime presence shows who else is in a table, and record revision history is kept for days to a year on cloud and without limit self-hosted.",
+    "A REST API, an SDK, an MCP server and a workflow builder with integration nodes (Slack, Gmail, GitHub and more).",
+    "A map view and file import (CSV, Excel, JSON, and Airtable bases) in the free edition.",
+    "No record limit per table when self-hosted; SvGrid Base keeps each table's records in the page, up to a configurable limit."
+  ],
+  "features": [
+    { "feature": "Runs inside your own app's pages", "svgrid": { "status": "yes", "note": "a Svelte 5 component, <SvBase>" }, "competitor": { "status": "no", "note": "shared views and bases embed as an iframe; no UI component or front-end SDK found", "source": "noco-share" } },
+    { "feature": "Offered to your customers inside your product", "svgrid": { "status": "yes", "note": "unlimited apps and end users on the Suite licence" }, "competitor": { "status": "paid", "note": "commercial licence needed to embed NocoDB where customers use it", "source": "noco-license" } },
+    { "feature": "Source licence", "svgrid": { "status": "paid", "note": "commercial (Enterprise Suite); the grid underneath is MIT" }, "competitor": { "status": "partial", "note": "Sustainable Use License since January 2026, not OSI-approved", "source": "noco-license" } },
+    { "feature": "Works on your existing database", "svgrid": { "status": "yes", "note": "Postgres, MySQL, SQLite, Supabase or a REST API" }, "competitor": { "status": "yes", "note": "external PostgreSQL or MySQL; SQL Server is an Enterprise add-on", "source": "noco-datasource" } },
+    { "feature": "Grid, form, gallery, Kanban and calendar views", "svgrid": { "status": "yes" }, "competitor": { "status": "yes", "note": "every plan", "source": "noco-views" } },
+    { "feature": "Gantt or timeline view", "svgrid": { "status": "yes", "note": "Gantt view with dependencies and progress" }, "competitor": { "status": "paid", "note": "Business plan and above", "source": "noco-timeline" } },
+    { "feature": "Chart view", "svgrid": { "status": "yes", "note": "bar, line, pie and donut, per view" }, "competitor": { "status": "paid", "note": "dashboards on Business and above", "source": "noco-pricing" } },
+    { "feature": "Linked records, lookup, rollup and formula fields", "svgrid": { "status": "yes" }, "competitor": { "status": "yes", "source": "noco-editions" } },
+    { "feature": "Autonumber field", "svgrid": { "status": "yes" }, "competitor": { "status": "paid", "note": "Business plan and above, PostgreSQL only", "source": "noco-autonumber" } },
+    { "feature": "Automations", "svgrid": { "status": "yes", "note": "in the browser or on your server, no run quota" }, "competitor": { "status": "partial", "note": "2 workflows per base in Community; cloud runs metered by plan", "source": "noco-workflows" } },
+    { "feature": "Email and webhook actions", "svgrid": { "status": "yes", "note": "email sent by your server; secrets stay server-side" }, "competitor": { "status": "yes", "source": "noco-workflows" } },
+    { "feature": "Record comments", "svgrid": { "status": "yes", "note": "stored wherever your app stores them" }, "competitor": { "status": "yes", "note": "every plan; mentions on paid plans", "source": "noco-comments" } },
+    { "feature": "Record change history", "svgrid": { "status": "partial", "note": "this session's changes in the record; a server audit hook logs every write" }, "competitor": { "status": "yes", "note": "kept by plan on cloud, unlimited self-hosted", "source": "noco-pricing" } },
+    { "feature": "Who can see and edit what", "svgrid": { "status": "partial", "note": "your server's authorize hook or the database's row level security; no roles screen" }, "competitor": { "status": "yes", "note": "five roles free; table and field permissions paid", "source": "noco-roles" } },
+    { "feature": "Changes from other users appear live", "svgrid": { "status": "partial", "note": "through a realtime source (Supabase Realtime, a WebSocket, a poll); no presence" }, "competitor": { "status": "yes", "note": "realtime presence on every plan", "source": "noco-presence" } },
+    { "feature": "Import CSV or Excel files", "svgrid": { "status": "partial", "note": "paste a range, or load the file into your database and open it" }, "competitor": { "status": "yes", "note": "CSV, Excel, JSON and Airtable", "source": "noco-import" } },
+    { "feature": "Your branding only", "svgrid": { "status": "yes", "note": "your app's look through --sg-* tokens" }, "competitor": { "status": "paid", "note": "white-label is a self-hosted Enterprise add-on", "source": "noco-whitelabel" } },
+    { "feature": "Records per table", "svgrid": { "status": "partial", "note": "the page holds a table's records, up to a limit you set (10,000 by default)" }, "competitor": { "status": "yes", "note": "unlimited self-hosted; capped by plan on cloud", "source": "noco-pricing" } },
+    { "feature": "Usable with no developer", "svgrid": { "status": "no", "note": "a developer adds it to an app" }, "competitor": { "status": "yes", "note": "cloud sign-up or a Docker install", "source": "noco-install" } }
+  ],
+  "whenToChooseSvGrid": [
+    "The table database has to appear inside your own Svelte or SvelteKit app, under your login and your look.",
+    "You want to offer it to your customers without a separate commercial agreement for the table tool.",
+    "You need Gantt, charts and autonumber without moving everyone to a higher plan.",
+    "Your data already lives in Postgres, MySQL, SQLite, Supabase or behind your API and should stay there, reached through your own server.",
+    "You would rather pay per developer than per editor seat."
+  ],
+  "whenToChooseCompetitor": [
+    "You want a finished app a team can use today, with no developer.",
+    "You need roles, sharing links and per-table or per-field permissions managed from a screen.",
+    "You want long record revision history and presence without building anything.",
+    "You want workflows with ready-made Slack, Gmail or GitHub nodes."
+  ],
+  "migration": {
+    "slug": "migrating-from-nocodb",
+    "effort": "1-2 hours per base on PostgreSQL or MySQL; more to rebuild workflows",
+    "youLose": [
+      "The roles screen and sharing links; who may do what moves into your server's authorize hook or your database's row level security.",
+      "Long record revision history; the base shows a session's changes and your audit hook keeps the rest.",
+      "Workflow integration nodes; SvGrid Base automations call webhooks, send email and run actions you register in code.",
+      "A no-code setup path: someone has to add <SvBase> to a Svelte app."
+    ]
+  },
+  "pricing": {
+    "summary": "NocoDB self-hosted Community is $0 under the Sustainable Use License. nocodb.com/pricing lists cloud Plus at $12 per seat per month billed annually ($15 monthly), Business at $24 per seat per month billed annually ($30 monthly), Scale at $45 per seat per month billed annually with 3 minimum seats, and Enterprise on request; self-hosted Business and Scale are priced the same per seat",
+    "amount": 12,
+    "unit": "USD per seat per month, billed annually (cloud Plus)",
+    "url": "https://nocodb.com/pricing",
+    "verified": "2026-10-14"
+  },
+  "demos": [
+    "504-project-tracker",
+    "519-base-from-database",
+    "516-base-postgres",
+    "512-base-sales-crm"
+  ],
+  "docs": [
+    "help/base/start",
+    "help/base/quick-start",
+    "help/base/data",
+    "help/base/automations",
+    "help/fields"
+  ],
+  "related": [
+    "airtable",
+    "baserow"
+  ],
+  "bottomLine": "NocoDB is a strong self-hosted table database for a team that wants a finished app and will sign into it. When the table database is part of your own product, SvGrid Base fits better: it renders inside your Svelte app with your login and branding, works on the database you already run, ships Gantt, charts and server-side automations without plan gates, and its licence already covers putting it in front of your customers.",
+  "faq": [
+    {
+      "question": "Can I embed NocoDB inside my own app?",
+      "answer": "Only as an iframe: NocoDB lets you embed a shared base or a read-only shared view with an HTML iframe, and its licence page says embedding NocoDB in a platform where customers interact with it needs a commercial licence. SvGrid Base is a Svelte component, so it renders in your own pages, edits records in place and uses your app's login."
+    },
+    {
+      "question": "Is NocoDB still open source?",
+      "answer": "Its source is public, but since January 2026 it is under the Sustainable Use License, which NocoDB's own docs say is not OSI-approved; before that it was AGPL-3.0. SvGrid Base is commercial (Enterprise Suite of @svgrid/enterprise); the grid it is built on, @svgrid/grid, is MIT."
+    },
+    {
+      "question": "Can SvGrid Base use the same database NocoDB is connected to?",
+      "answer": "Yes, if NocoDB was connected to your own PostgreSQL or MySQL database. createBaseEndpoint reads the tables, columns and foreign keys from that database and <SvBase> opens them as tabs with typed fields and links. Tables NocoDB created in its own metadata database are better exported to CSV and loaded into your database first; the migration guide walks through both."
+    },
+    {
+      "question": "Does SvGrid Base have a Gantt view like NocoDB's paid plans?",
+      "answer": "Yes. A view of type gantt takes a start and end date field, an optional progress field and a link field for dependencies. NocoDB lists its Gantt and timeline views on the Business plan and above."
+    },
+    {
+      "question": "How is SvGrid Base priced compared with NocoDB?",
+      "answer": "NocoDB charges per seat on cloud and on its paid self-hosted plans; the prices it listed on the day we read them are in the pricing line at the top of this page. SvGrid Base ships in Enterprise Suite at $999 per developer per year, for unlimited apps and unlimited end users, so the number of people using the app does not change the price."
+    },
+    {
+      "question": "What does SvGrid Base not do that NocoDB does?",
+      "answer": "There is no roles and sharing screen (access rules live in your server or database), no presence indicator, no long revision history kept for you, no map view and no file import dialog in the base itself, and every table's records are held in the page up to a limit you set. It also needs a developer to add it to an app."
+    }
+  ],
+  "sources": [
+    { "id": "noco-pricing", "url": "https://nocodb.com/pricing", "evidences": "Plan cards: Free $0 for up to 3 users with 1,000 records; Plus $12 per seat per month billed annually or $15 monthly; Business $24 annually or $30 monthly; Scale $45 annually or $54 monthly with 3 minimum seats; Enterprise schedule a call; self-hosted Community $0 with unlimited records and storage; dashboards on Business; record revision history from 3 days on Free to 365 days on Enterprise, unlimited self-hosted", "verified": "2026-10-14" },
+    { "id": "noco-license", "url": "https://nocodb.com/docs/self-hosting/license", "evidences": "From January 09, 2026 NocoDB changes from AGPL-3.0 to a Sustainable Use License, not OSI-approved; a commercial licence is needed to embed NocoDB in a platform where customers interact with NocoDB itself", "verified": "2026-10-14" },
+    { "id": "noco-share", "url": "https://nocodb.com/docs/product/projects/share-project", "evidences": "A shared project can be embedded in another application with an HTML iframe; shared views are read-only", "verified": "2026-10-14" },
+    { "id": "noco-datasource", "url": "https://nocodb.com/docs/product/integrations/data-sources/connect-to-data-source", "evidences": "Connect an external PostgreSQL or MySQL database as a data source; Microsoft SQL Server is an add-on for Enterprise customers", "verified": "2026-10-14" },
+    { "id": "noco-views", "url": "https://nocodb.com/docs/product/tables/views", "evidences": "View types: grid, form, gallery, Kanban, calendar, map, with list, timeline and Gantt marked for paid plans", "verified": "2026-10-14" },
+    { "id": "noco-timeline", "url": "https://nocodb.com/docs/product/tables/views/view-types/timeline", "evidences": "Timeline view is available on NocoDB Cloud Business plan and above and licensed self-hosted deployments Business plan and above; the Gantt view page says the same", "verified": "2026-10-14" },
+    { "id": "noco-editions", "url": "https://nocodb.com/docs/product/account-settings/cloud-enterprise-edition/community-vs-paid-editions", "evidences": "Community edition includes link, lookup, rollup, formula, attachment, rating, user, barcode, QR code and button fields, Airtable import and CSV and Excel export", "verified": "2026-10-14" },
+    { "id": "noco-autonumber", "url": "https://nocodb.com/docs/product/tables/fields/field-types/identifier-types/auto-number", "evidences": "Auto Number is available on NocoDB Cloud plans and licensed self-hosted deployments Business plan and above, PostgreSQL only", "verified": "2026-10-14" },
+    { "id": "noco-workflows", "url": "https://nocodb.com/docs/workflows", "evidences": "The Community Edition includes 2 workflows per project with record and manual triggers; workflow actions include send email, HTTP request and integration nodes; cloud automation runs are metered per plan", "verified": "2026-10-14" },
+    { "id": "noco-comments", "url": "https://nocodb.com/docs/product/tables/records/expand-record", "evidences": "Record comments on every plan; mentions and the comment-resolve workflow need cloud Plus or self-hosted Business and above", "verified": "2026-10-14" },
+    { "id": "noco-roles", "url": "https://nocodb.com/docs/product/collaboration/roles-and-permissions", "evidences": "Owner, creator, editor, commenter and viewer roles on every plan; table and field permissions on cloud Plus or self-hosted Business and above; record level security on Scale", "verified": "2026-10-14" },
+    { "id": "noco-presence", "url": "https://nocodb.com/docs/product/tables/table-operations/realtime-presence", "evidences": "Realtime presence shows who else works in a table; it does not lock anything", "verified": "2026-10-14" },
+    { "id": "noco-import", "url": "https://nocodb.com/docs/product/tables/create-table-via-import", "evidences": "Create a table by importing a CSV, Excel or JSON file, maximum file size 5 MB", "verified": "2026-10-14" },
+    { "id": "noco-whitelabel", "url": "https://nocodb.com/docs/self-hosting/white-label", "evidences": "White-label is available on self-hosted instances as an add-on to the Enterprise plan and not on NocoDB Cloud", "verified": "2026-10-14" },
+    { "id": "noco-install", "url": "https://nocodb.com/docs/self-hosting/installation/quickstart", "evidences": "One command makes a Docker Compose stack with NocoDB, a worker, Postgres and Redis", "verified": "2026-10-14" }
+  ]
+}

@@ -64,7 +64,7 @@ function referenceSort(
 
 function actualSort(
   rows: Row[],
-  columns: Array<{ field: string; editorType?: string }>,
+  columns: Array<{ field: string; editorType?: string; sortValue?: (value: unknown) => number | null | undefined }>,
   sorting: SortingState,
   fns: typeof sortFns = sortFns,
 ): Row[] {
@@ -363,6 +363,15 @@ describe('built-in comparators keep the Array.sort contract (#104)', () => {
     const rows: Row[] = [10, 'b', 2, null, 'a', 1].map((v) => ({ v }))
     const sorted = actualSort(rows, [{ field: 'v' }], [{ id: 'v', desc: false }])
     expect(sorted.map((r) => r.v)).toEqual([null, 1, 2, 10, 'a', 'b'])
+  })
+
+  it('sorts by the sortValue of a column, blanks first', () => {
+    const order = ['To do', 'Doing', 'Done']
+    const rank = (v: unknown) => (v == null ? null : order.indexOf(String(v)))
+    const rows: Row[] = ['Done', null, 'To do', 'Doing', 'Done'].map((status) => ({ status }))
+    const cols = [{ field: 'status', sortValue: rank }]
+    expect(actualSort(rows, cols, [{ id: 'status', desc: false }]).map((r) => r.status)).toEqual([null, 'To do', 'Doing', 'Done', 'Done'])
+    expect(actualSort(rows, cols, [{ id: 'status', desc: true }]).map((r) => r.status)).toEqual(['Done', 'Done', 'Doing', 'To do', null])
   })
 
   it('lets the next clause decide when two blanks tie on a numeric clause', () => {

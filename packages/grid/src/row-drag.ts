@@ -102,6 +102,14 @@ export function createRowDrag<TFeatures, TData>(ctx: any) {
     try {
       e.dataTransfer?.setData("text/plain", String(rowIndex));
       if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
+      // Dragged by its header cell, the ghost is still the whole row, held
+      // where the pointer took it.
+      const handle = e.currentTarget as HTMLElement | null;
+      const tr = handle && handle.tagName !== "TR" ? handle.closest?.("tr") : null;
+      if (tr && e.dataTransfer?.setDragImage) {
+        const r = tr.getBoundingClientRect();
+        e.dataTransfer.setDragImage(tr, e.clientX - r.left, e.clientY - r.top);
+      }
     } catch {
       // Some environments (tests) provide a partial dataTransfer.
     }

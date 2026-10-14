@@ -1,0 +1,29 @@
+{
+  "description": "A product roadmap built with SvGrid Base, a table database component for Svelte 5: a Features table and a Feedback table as tabs, linked both ways. Features have a quarter, status, teams, lead, impact, effort, dates and votes; each one lists the customer requests about it. Views for the roadmap grouped by quarter, a status board, a timeline, work in progress and a request form.",
+  "keywords": [
+    "svelte product roadmap component",
+    "svelte roadmap kanban timeline",
+    "svelte feature request form",
+    "svelte table database component",
+    "svelte group by quarter",
+    "svelte customer feedback tracker"
+  ],
+  "faq": [
+    {
+      "question": "Is this a template or a component?",
+      "answer": "A component: <SvBase> with your rows and columns. Most of the demo is sample data; the views, the field editor, the record view and the form come with the component."
+    },
+    {
+      "question": "How is the roadmap grouped?",
+      "answer": "The first view groups by Quarter and sorts by Impact. Each group header shows its count and the totals the fields pick (effort and votes); \"+\" in a group adds a feature already in that quarter."
+    },
+    {
+      "question": "What does the Now view show?",
+      "answer": "A saved filter: Status is any of In progress, In beta or Blocked, sorted by target date. Each view keeps its own filter, sorts and colors."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

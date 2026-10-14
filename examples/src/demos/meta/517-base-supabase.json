@@ -1,0 +1,28 @@
+{
+  "description": "Two people on one Supabase project, side by side, each in their own SvGrid Base on createSupabaseDataSource with Supabase Realtime. Change a task on one side and the other shows it. A new record gets its uuid from the database, and a window taken offline shows a failed save putting the cell back.",
+  "keywords": [
+    "svelte supabase table editor",
+    "svelte supabase realtime grid",
+    "svelte supabase crud component",
+    "supabase svelte data grid",
+    "svelte collaborative table"
+  ],
+  "faq": [
+    {
+      "question": "Does this need a Supabase account?",
+      "answer": "Not for the demo: the project is simulated in the page, so it runs anywhere. In an app, pass a real client from createClient(url, anonKey) to createSupabaseDataSource and createSupabaseRealtime; nothing else changes."
+    },
+    {
+      "question": "How do changes from other users arrive?",
+      "answer": "The realtime option of baseSource subscribes to the table with createSupabaseRealtime. When a change arrives, the base reads the table again and takes what moved, without writing anything back. Turn on Realtime for the table in Supabase for it to send changes."
+    },
+    {
+      "question": "What about row level security?",
+      "answer": "The base talks to Supabase with the signed in user's client, so your policies decide what each person reads and writes. A write a policy refuses comes back as an error, and the base puts the cell back and shows the message."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base and the Supabase source are part of the Suite edition of @svgrid/enterprise. Without a key they run with a watermark, so they can be evaluated as is."
+    }
+  ]
+}

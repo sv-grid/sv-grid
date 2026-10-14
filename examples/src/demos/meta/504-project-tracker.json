@@ -1,0 +1,36 @@
+{
+  "description": "A project tracker built with SvGrid Base for Svelte 5: a Tasks table and a Milestones table as tabs, linked both ways. Every task column is declared by field type: single and multiple select, date, rating, URL, email, currency, a checkbox and attachments. Each milestone lists its tasks with their average progress and budget. A thin status stripe marks each row, + after the last column creates fields, + Add task appends a row, and five automations close finished tasks, start work from a button, triage requests and flag overdue and blocked tasks.",
+  "keywords": [
+    "svelte data grid attachment field",
+    "svelte grid add column dynamically",
+    "svelte table field types",
+    "svelte data grid add row button",
+    "svelte grid row color by status"
+  ],
+  "faq": [
+    {
+      "question": "Where do uploaded files go?",
+      "answer": "Wherever your uploader puts them. setAttachmentUploader (or fieldProps.upload on one column) receives each file with an abort signal and a progress callback and returns the attachment's URL. With no uploader, as in this demo, files stay in the page as blob: URLs and are gone on reload."
+    },
+    {
+      "question": "What happens to the data when I change a field's type?",
+      "answer": "The values are converted where they can be: a number typed as text stays a number, a comma list becomes multiple-select values, URLs in text become attachments. Before applying, the field editor says how many cells would be cleared. The converted rows come back in the onColumnChange event so the app can store them."
+    },
+    {
+      "question": "Does the grid store the schema?",
+      "answer": "No. Every field change fires an event with the whole column list after the change, as declared, and the app stores it as its columns. This demo does exactly that in a few lines."
+    },
+    {
+      "question": "Can a URL column show a javascript: link?",
+      "answer": "No. URL, email and phone cells become links only for http(s), mailto and tel values; row 4's javascript:alert(1) stays plain text."
+    },
+    {
+      "question": "How do the automations work?",
+      "answer": "Each table has its own automations: when a record is created, changes, starts matching a condition, is sent with a form or has its button pressed, they update the record, create records, show notices or color it. Set a task to Done and it ticks Done and sets Progress to 100%; press Start and it moves to In progress from today. \"5 automations\" in the view bar edits them and lists every run."
+    },
+    {
+      "question": "Which parts need @svgrid/enterprise?",
+      "answer": "The field types, the attachment dialog, the add-column and add-row controls, row colors and the column-menu field actions are the @svgrid/enterprise/fields module. The grid itself, editing, sorting and the column menu are in the MIT @svgrid/grid package."
+    }
+  ]
+}

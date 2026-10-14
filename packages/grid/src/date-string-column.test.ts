@@ -69,19 +69,24 @@ describe('toIsoDateLocal', () => {
 describe('usesRichDateFilter', () => {
   it('is on for the date-ish editors', () => {
     for (const t of ['date', 'datetime', 'time'] as const) {
-      expect(usesRichDateFilter(t), t).toBe(true)
+      expect(usesRichDateFilter({ editorType: t }), t).toBe(true)
     }
+  })
+
+  it('is on for a date column whatever edits it', () => {
+    expect(usesRichDateFilter({ cellDataType: 'dateString', editorType: 'text' })).toBe(true)
+    expect(usesRichDateFilter({ cellDataType: 'date' })).toBe(true)
   })
 
   it('honours the -native opt-out, same as the cell editor', () => {
     for (const t of ['date-native', 'datetime-native', 'time-native'] as const) {
-      expect(usesRichDateFilter(t), t).toBe(false)
+      expect(usesRichDateFilter({ editorType: t, cellDataType: 'date' }), t).toBe(false)
     }
   })
 
   it('is off for everything else', () => {
     for (const t of ['text', 'number', 'list', 'checkbox', undefined] as const) {
-      expect(usesRichDateFilter(t as never), String(t)).toBe(false)
+      expect(usesRichDateFilter({ editorType: t as never }), String(t)).toBe(false)
     }
   })
 })

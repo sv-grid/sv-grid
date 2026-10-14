@@ -1,0 +1,16 @@
+{
+  "name": "svgrid-trial",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Cloudflare Worker: records SvGrid Enterprise trial sign-ups in D1.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "schema": "wrangler d1 execute svgrid-trials --remote --file schema.sql",
+    "export": "node -e \"fetch('https://trial.svgrid.com/trials.csv',{headers:{authorization:'Bearer '+process.env.ADMIN_TOKEN}}).then(r=>r.text()).then(t=>process.stdout.write(t))\""
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

@@ -1,0 +1,161 @@
+{
+  "slug": "baserow",
+  "competitor": "Baserow",
+  "url": "https://baserow.io/",
+  "aliases": [
+    "baserow",
+    "base row",
+    "baserow alternative",
+    "baserow embed",
+    "open source airtable alternative"
+  ],
+  "framework": [
+    "hosted",
+    "self-hosted"
+  ],
+  "group": "table-database",
+  "tier": "priority",
+  "published": "2026-10-14",
+  "verified": "2026-10-14",
+  "seoTitle": "Baserow Alternative for Svelte Apps - SvGrid Base vs Baserow",
+  "seoDescription": "A table database inside your own Svelte app instead of a read-only Baserow iframe: SvGrid Base vs Baserow on embedding, views, your database and pricing.",
+  "tagline": "Baserow is an open-source table-database app with an application builder and automations, run on its cloud or self-hosted with Docker on PostgreSQL.",
+  "oneLineVerdict": "Baserow is the pick for a team that wants an open-source app to sign into, self-hosted for free. SvGrid Base is the pick when the table database has to be part of your own Svelte app: editable in your pages, on your database, with Kanban, calendar, Gantt and comments in the one licence.",
+  "alternativeIntro": "People searching for a Baserow alternative usually want the Baserow experience somewhere Baserow does not go: inside their own product. Baserow can show a public view in an iframe, read-only except for forms, or publish an app made in its application builder on its own domain. SvGrid Base is a Svelte component instead: <SvBase> renders editable grid, Kanban, calendar, gallery, Gantt, chart and form views in your pages, behind your login, and writes every change to your Postgres, MySQL, SQLite, Supabase or REST API.",
+  "intro": [
+    "Baserow gives a team tables of typed fields with grid, form and gallery views for free, and Kanban, calendar, timeline and survey views on paid plans. It has linked records with lookups, rollups and counts, formulas, an automation builder with email, HTTP and AI actions, an application builder for portals and internal tools, a REST API and real-time collaboration. The core is MIT; premium and enterprise features need a subscription, self-hosted or on cloud.",
+    "SvGrid Base is a table database you ship as part of your own Svelte 5 app. It comes in @svgrid/enterprise: your users get typed fields, saved views, filters, groups, row colors, linked records, automations and an expanded record with comments, and you keep the data in the database you already run. Nothing runs beside your app; the base is a component in it."
+  ],
+  "similarities": [
+    "Typed fields with grid, form and gallery views, and saved filters, sorts and groups per view.",
+    "Linked records between tables, with lookup, rollup and count fields and formulas.",
+    "Autonumber, created and last-modified fields, and collaborator fields.",
+    "Automations triggered by record changes, a schedule or a webhook, with email and HTTP actions.",
+    "Data kept in PostgreSQL.",
+    "Real-time updates when other people change records."
+  ],
+  "svgridAdvantages": [
+    "It is a component, not an app: <SvBase> renders inside your own Svelte pages and edits records there, where Baserow's embed is a read-only iframe of a public view.",
+    "Kanban, calendar, Gantt, chart, row colors and record comments are all in the one Suite licence; Baserow puts Kanban, calendar, timeline, comments and row coloring on paid plans.",
+    "Works on your own tables: it reads your schema, columns and foreign keys and writes back to them, where Baserow keeps data in its own database and syncs other sources in.",
+    "No vendor branding to remove: the base takes your app's look from --sg-* tokens.",
+    "Automations run in the browser or on your server with no credits to count, and their secrets stay on your server.",
+    "Priced per developer, not per user: the people who use the app do not need seats."
+  ],
+  "competitorAdvantages": [
+    "Open source with an MIT core, and free to self-host with unlimited rows and storage.",
+    "A finished product with sign-in, workspaces, roles and sharing; no developer needed to start.",
+    "An application builder for portals and internal tools on top of the data, with custom domains.",
+    "Long row change history, audit logs on Advanced, and a REST API and MCP server.",
+    "File import (CSV, Excel, JSON, XML, and Airtable bases) and AI fields and an AI assistant.",
+    "No record limit per table when self-hosted; SvGrid Base keeps each table's records in the page, up to a configurable limit."
+  ],
+  "features": [
+    { "feature": "Runs inside your own app's pages", "svgrid": { "status": "yes", "note": "a Svelte 5 component, <SvBase>" }, "competitor": { "status": "no", "note": "public views embed as an iframe; no UI component or SDK found", "source": "br-sharing" } },
+    { "feature": "Edit records from the embedded view", "svgrid": { "status": "yes" }, "competitor": { "status": "no", "note": "shared views are read-only except forms", "source": "br-sharing" } },
+    { "feature": "Source licence", "svgrid": { "status": "paid", "note": "commercial (Enterprise Suite); the grid underneath is MIT" }, "competitor": { "status": "yes", "note": "MIT core; premium and enterprise code needs a subscription in production", "source": "br-license" } },
+    { "feature": "Works on your existing database", "svgrid": { "status": "yes", "note": "Postgres, MySQL, SQLite, Supabase or a REST API" }, "competitor": { "status": "partial", "note": "data lives in Baserow's PostgreSQL; a PostgreSQL table syncs in, two-way optional, not real time", "source": "br-datasync" } },
+    { "feature": "Grid, form and gallery views", "svgrid": { "status": "yes" }, "competitor": { "status": "yes", "note": "every plan", "source": "br-pricing" } },
+    { "feature": "Kanban and calendar views", "svgrid": { "status": "yes" }, "competitor": { "status": "paid", "note": "Premium and up", "source": "br-pricing" } },
+    { "feature": "Gantt or timeline view", "svgrid": { "status": "yes", "note": "Gantt view with dependencies and progress" }, "competitor": { "status": "paid", "note": "timeline view on Premium and up", "source": "br-pricing" } },
+    { "feature": "Linked records, lookup, rollup, count and formula fields", "svgrid": { "status": "yes" }, "competitor": { "status": "yes", "source": "br-fields" } },
+    { "feature": "Autonumber, created and last-modified fields", "svgrid": { "status": "yes" }, "competitor": { "status": "yes", "source": "br-fields" } },
+    { "feature": "Automations", "svgrid": { "status": "yes", "note": "in the browser or on your server, no credits" }, "competitor": { "status": "yes", "note": "credits per month on cloud, unlimited self-hosted", "source": "br-automations" } },
+    { "feature": "Record comments", "svgrid": { "status": "yes", "note": "stored wherever your app stores them" }, "competitor": { "status": "paid", "note": "paid plans", "source": "br-comments" } },
+    { "feature": "Row colors", "svgrid": { "status": "yes", "note": "by a field or by conditions, per view" }, "competitor": { "status": "paid", "note": "Premium and up", "source": "br-pricing" } },
+    { "feature": "Row change history", "svgrid": { "status": "partial", "note": "this session's changes in the record; a server audit hook logs every write" }, "competitor": { "status": "yes", "note": "kept by plan on cloud", "source": "br-history" } },
+    { "feature": "Who can see and edit what", "svgrid": { "status": "partial", "note": "your server's authorize hook or the database's row level security; no roles screen" }, "competitor": { "status": "paid", "note": "role, field and view permissions on Advanced and Enterprise", "source": "br-permissions" } },
+    { "feature": "Changes from other users appear live", "svgrid": { "status": "partial", "note": "through a realtime source (Supabase Realtime, a WebSocket, a poll)" }, "competitor": { "status": "yes", "source": "br-faq" } },
+    { "feature": "Import CSV or Excel files", "svgrid": { "status": "partial", "note": "paste a range, or load the file into your database and open it" }, "competitor": { "status": "yes", "note": "CSV, Excel, JSON, XML and Airtable", "source": "br-import" } },
+    { "feature": "Your branding only", "svgrid": { "status": "yes", "note": "your app's look through --sg-* tokens" }, "competitor": { "status": "paid", "note": "logo removal on paid plans", "source": "br-sharing" } },
+    { "feature": "Records per table", "svgrid": { "status": "partial", "note": "the page holds a table's records, up to a limit you set (10,000 by default)" }, "competitor": { "status": "yes", "note": "unlimited self-hosted; capped per workspace on cloud", "source": "br-pricing" } },
+    { "feature": "Usable with no developer", "svgrid": { "status": "no", "note": "a developer adds it to an app" }, "competitor": { "status": "yes", "note": "cloud sign-up or a Docker install", "source": "br-docker" } }
+  ],
+  "whenToChooseSvGrid": [
+    "The table database has to appear, editable, inside your own Svelte or SvelteKit app, under your login and your look.",
+    "You want Kanban, calendar, Gantt, comments and row colors without per-user paid plans.",
+    "Your data already lives in Postgres, MySQL, SQLite, Supabase or behind your API and should stay in those tables.",
+    "You would rather pay per developer than per user."
+  ],
+  "whenToChooseCompetitor": [
+    "You want an open-source app a team can self-host and use today, with no developer.",
+    "You need roles, workspaces and sharing managed from a screen.",
+    "You want an application builder for portals on your own domain without writing a front end.",
+    "You want file import, AI fields and long row history built in."
+  ],
+  "migration": {
+    "slug": "migrating-from-baserow",
+    "effort": "1-3 hours per database, plus rebuilding automations",
+    "youLose": [
+      "Workspaces, roles and the sharing screen; who may do what moves into your server's authorize hook or your database's row level security.",
+      "The application builder; the screens around the base are your own Svelte pages.",
+      "Long row change history and audit logs kept for you; the base shows a session's changes and your audit hook keeps the rest.",
+      "File import, AI fields and the AI assistant inside the tool."
+    ]
+  },
+  "pricing": {
+    "summary": "Baserow's self-hosted open-source edition is free with unlimited rows. baserow.io/pricing lists Premium at $10 per user per month billed yearly ($12 monthly), Advanced at $18 per user per month billed yearly ($22 monthly) and Enterprise on request, at the same prices on cloud and self-hosted; cloud Free is $0 with 3,000 rows per workspace",
+    "amount": 10,
+    "unit": "USD per user per month, billed yearly (Premium)",
+    "url": "https://baserow.io/pricing",
+    "verified": "2026-10-14"
+  },
+  "demos": [
+    "504-project-tracker",
+    "512-base-sales-crm",
+    "516-base-postgres",
+    "519-base-from-database"
+  ],
+  "docs": [
+    "help/base/start",
+    "help/base/templates",
+    "help/base/data",
+    "help/base/automations",
+    "help/fields"
+  ],
+  "related": [
+    "airtable",
+    "nocodb"
+  ],
+  "bottomLine": "Baserow is a good open-source table database for a team that will sign into it, and free to self-host. When the table database belongs inside your own product, SvGrid Base fits better: it renders editable views in your Svelte pages instead of a read-only iframe, keeps the data in the tables you already run, and includes Kanban, calendar, Gantt, comments and row colors in one licence priced per developer.",
+  "faq": [
+    {
+      "question": "Can I embed Baserow in my own app?",
+      "answer": "Baserow can embed any publicly shared view with an iframe, and shared views are read-only except form views. Its application builder publishes apps on a domain rather than inside your pages. SvGrid Base is a Svelte component, so its views render and edit records in your own pages, behind your app's login."
+    },
+    {
+      "question": "Is SvGrid Base open source like Baserow?",
+      "answer": "No. SvGrid Base is commercial and ships in Enterprise Suite of @svgrid/enterprise; the grid it is built on, @svgrid/grid, is MIT. Baserow's core is MIT, and its premium and enterprise directories are under licences that need a subscription in production."
+    },
+    {
+      "question": "Can SvGrid Base work on the PostgreSQL database Baserow uses?",
+      "answer": "Not on Baserow's internal tables, which belong to Baserow. Export each table to CSV, load it into your own PostgreSQL tables, and point createBaseEndpoint at them: it reads the columns and foreign keys and opens the tables with typed fields and links. If your data already lives in your own PostgreSQL and is synced into Baserow, point the base at the source tables directly."
+    },
+    {
+      "question": "Which Baserow paid features are included in SvGrid Base?",
+      "answer": "Kanban and calendar views, a timeline (SvGrid Base has a Gantt view with dependencies), row colors and record comments are paid on Baserow and part of SvGrid Base. Role, field and view permissions are Advanced on Baserow; in SvGrid Base they are rules you write in your server or your database."
+    },
+    {
+      "question": "How is SvGrid Base priced compared with Baserow?",
+      "answer": "Baserow's paid plans are per user per month; the prices it listed on the day we read them are in the pricing line at the top of this page. SvGrid Base ships in Enterprise Suite at $999 per developer per year, for unlimited apps and unlimited end users, so the number of people using the app does not change the price."
+    },
+    {
+      "question": "What does SvGrid Base not do that Baserow does?",
+      "answer": "There are no workspaces, roles or sharing screen, no application builder, no file import dialog or AI fields in the base itself, no long row history kept for you, and every table's records are held in the page up to a limit you set. It also needs a developer to add it to an app."
+    }
+  ],
+  "sources": [
+    { "id": "br-pricing", "url": "https://baserow.io/pricing", "evidences": "Cloud Free $0 with 3,000 rows per workspace and grid, form and gallery views; Premium $10 per user per month billed yearly or $12 monthly with all views; Advanced $18 billed yearly or $22 monthly with role based permissions and audit logs; Enterprise on request; Kanban, survey, calendar and timeline views and row comments and coloring on Premium and up; the self-hosted tab lists the open source plan free with unlimited rows and storage", "verified": "2026-10-14" },
+    { "id": "br-license", "url": "https://gitlab.com/baserow/baserow/-/raw/develop/LICENSE", "evidences": "Content outside the premium and enterprise directories is under the MIT Expat license; premium code may only be used in production with a valid Baserow Premium Edition subscription", "verified": "2026-10-14" },
+    { "id": "br-sharing", "url": "https://baserow.io/user-docs/public-sharing", "evidences": "Any publicly shared view can be embedded with an iframe; shared views are read-only except form views; paid subscribers can hide the Baserow logo from shared views", "verified": "2026-10-14" },
+    { "id": "br-datasync", "url": "https://baserow.io/user-docs/data-sync-in-baserow", "evidences": "External sources sync into Baserow tables; real-time sync is not available; PostgreSQL sync supports optional two-way sync", "verified": "2026-10-14" },
+    { "id": "br-fields", "url": "https://baserow.io/user-docs/baserow-field-overview", "evidences": "Field types include link-to-table, lookup, count, rollup, formula, autonumber, UUID, created on, last modified, created by, last modified by, duration, file, collaborator, rating and AI prompt", "verified": "2026-10-14" },
+    { "id": "br-automations", "url": "https://baserow.io/user-docs/automation-triggers", "evidences": "Automation triggers include periodic, rows created, updated or deleted, an incoming HTTP request and a manual trigger; actions include sending an email and an HTTP request; cloud automation credits are counted per plan and self-hosted is unlimited", "verified": "2026-10-14" },
+    { "id": "br-comments", "url": "https://baserow.io/user-docs/row-commenting", "evidences": "Row comments and mentions are available on paid plans", "verified": "2026-10-14" },
+    { "id": "br-history", "url": "https://baserow.io/user-docs/row-change-history", "evidences": "Row change history is on every plan with retention that varies by plan", "verified": "2026-10-14" },
+    { "id": "br-permissions", "url": "https://baserow.io/user-docs/permissions-overview", "evidences": "Free and Premium plans offer two workspace-level roles without table-level restrictions; Advanced and Enterprise add roles with granular permissions", "verified": "2026-10-14" },
+    { "id": "br-faq", "url": "https://baserow.io/faq", "evidences": "Collaborate in real time with changes immediately visible; the self-hosted version has no row, storage or API request limits", "verified": "2026-10-14" },
+    { "id": "br-import", "url": "https://baserow.io/user-docs/create-a-table-via-import", "evidences": "Tables can be created by pasting or importing CSV, JSON, XML and Excel files; a separate guide imports Airtable bases from a share link", "verified": "2026-10-14" },
+    { "id": "br-docker", "url": "https://baserow.io/docs/installation/install-with-docker", "evidences": "Baserow runs from a Docker image with PostgreSQL and Redis inside by default; DATABASE_URL points it at an external PostgreSQL", "verified": "2026-10-14" }
+  ]
+}

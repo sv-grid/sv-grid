@@ -1,0 +1,23 @@
+{
+  "description": "Expense approvals built with SvGrid Base for Svelte 5: Expenses and Budgets as linked tables with receipts, approval statuses and what is left of each budget. An approvals board, spend by category, receipts and a submit form, with automations that route big expenses and an Approve button.",
+  "keywords": [
+    "svelte expense tracker",
+    "expense approval app",
+    "svelte receipts gallery",
+    "svelte budget tracker"
+  ],
+  "faq": [
+    {
+      "question": "How do approvals work?",
+      "answer": "An expense over 1,000 dollars moves to Needs approval with a notice. Approve in the Review column sets it Approved and records who approved it and when. Budgets show Spent as a rollup and Left as a formula, and a category over budget raises a notice."
+    },
+    {
+      "question": "Can it run on my database?",
+      "answer": "Yes. Give each table a source (baseSource over Postgres, Supabase or your API) and the base loads the records from it and writes every change back; or start from npm create @svgrid@latest -- -t base with your own tables."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

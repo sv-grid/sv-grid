@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte 5 data grid whose gallery cards draw each field the way its cell does: single and multiple select pills in their colors, rating stars, a person with an avatar and a currency amount, with each field type's icon beside its name. The cover is the first image of an attachment field.",
+  "keywords": [
+    "svelte gallery field types",
+    "svelte card view select pills",
+    "svelte grid attachment cover image",
+    "svelte gallery view with select pills",
+    "svelte data grid rating stars cards"
+  ],
+  "faq": [
+    {
+      "question": "Why do the cards show pills and stars instead of text?",
+      "answer": "The columns are declared by field type (@svgrid/enterprise/fields). A card draws a field-typed value with the same cell the table uses, so a single select is a colored pill and a rating is stars."
+    },
+    {
+      "question": "Can the cover come from an attachment field?",
+      "answer": "Yes. When the cover field holds a list of files, the gallery uses the first image in it, at its thumbnail URL when it has one."
+    },
+    {
+      "question": "Which modules does this need?",
+      "answer": "enableGalleryView() from @svgrid/enterprise for the cards, and enableFields() from @svgrid/enterprise/fields for the field types. The grid is the MIT @svgrid/grid package."
+    }
+  ]
+}

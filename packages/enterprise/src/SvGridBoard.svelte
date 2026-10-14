@@ -33,6 +33,7 @@
     popIn,
     createDismissableLayer,
     onScrollOutside,
+    getGridExtension,
   } from "@svgrid/grid";
 
   let {
@@ -258,6 +259,36 @@
   const fieldColumns = $derived(
     columns.filter((c) => typeof c.field === "string"),
   );
+  // Columns with a `fieldType` (the fields module) filled in as the grid fills
+  // them, so a card shows a select as its pill, files as thumbnails, a date
+  // in its format - not the raw value.
+  const gridExt = $derived(getGridExtension());
+  const filledByField = $derived.by(() => {
+    const fill = gridExt?.column;
+    const out = new Map<string, Record<string, any>>();
+    for (const c of fieldColumns as Array<Record<string, any>>) {
+      out.set(c.field as string, c.fieldType && fill ? fill(c, fieldColumns) : c);
+    }
+    return out;
+  });
+  // What a field cell reads off the grid it is in (the grid itself when the
+  // board hands it over); a card has a width of its own.
+  // `board` is gone for a moment while the view switches away: cells still read it.
+  const CARD_CELL_GRID = $derived(board?.cellGrid?.(220) ?? { getColumnWidth: () => 220 });
+  function drawsFieldCell(field: string): Record<string, any> | null {
+    const def = filledByField.get(field);
+    if (!def?.fieldType || def.cell != null || !gridExt?.cell || gridExt.hasCell?.(def) === false) return null;
+    return def;
+  }
+  function cardText(row: TData, field: string): string {
+    const def = filledByField.get(field);
+    const value = fieldValue(row, field);
+    const f = def?.formatter as ((x: { value: unknown; row: unknown; column: unknown }) => unknown) | undefined;
+    // The row as a grid cell hands it to a formatter: its id and the record.
+    if (f) return String(f({ value, row: { id: key(row), original: row }, column: { id: def?.id ?? field, columnDef: def } }) ?? "");
+    return fmt(value);
+  }
+  const isBlank = (v: unknown) => v == null || v === "" || (Array.isArray(v) && v.length === 0);
   function headerLabel(field: string): string {
     const col = fieldColumns.find((c) => c.field === field);
     return col && typeof col.header === "string" ? col.header : field;
@@ -646,6 +677,11 @@
           base.push({ id: k, title: k === "" ? "(empty)" : k });
         }
       }
+    }
+    // A lane marked hideWhenEmpty shows only while a card is in it.
+    if (base.some((l) => l.hideWhenEmpty)) {
+      const used = new Set(data.map((r) => effectiveLane(r)));
+      base = base.filter((l) => !l.hideWhenEmpty || used.has(l.id));
     }
     if (!laneOrder.length) return base;
     // Apply the drag-reorder overlay: ordered ids first, then any new lanes.
@@ -1445,12 +1481,23 @@
               {#if metaFields.length}
                 <dl class="sv-board-card-meta">
                   {#each metaFields as field (field)}
-                    {@const v = fmt(fieldValue(row, field))}
-                    {#if v !== ""}
-                      <div class="sv-board-card-metarow">
-                        <dt>{headerLabel(field)}</dt>
-                        <dd>{v}</dd>
-                      </div>
+                    {@const cellDef = drawsFieldCell(field)}
+                    {#if cellDef && gridExt?.cell}
+                      {#if !isBlank(fieldValue(row, field))}
+                        {@const FieldCellView = gridExt.cell}
+                        <div class="sv-board-card-metarow">
+                          <dt>{headerLabel(field)}</dt>
+                          <dd class="sv-board-card-fieldcell"><FieldCellView ctrl={CARD_CELL_GRID} row={{ id: key(row), original: row }} column={{ id: cellDef.id ?? field, columnDef: cellDef }} value={fieldValue(row, field)} /></dd>
+                        </div>
+                      {/if}
+                    {:else}
+                      {@const v = cardText(row, field)}
+                      {#if v !== ""}
+                        <div class="sv-board-card-metarow">
+                          <dt>{headerLabel(field)}</dt>
+                          <dd>{v}</dd>
+                        </div>
+                      {/if}
                     {/if}
                   {/each}
                 </dl>
@@ -1583,7 +1630,7 @@
   {@const labels = labelsOf(row)}
   {@const due = dueOf(row)}
   {@const asg = assigneesOf(row)}
-  {@const comments = countOf(row, board.commentsField)}
+  {@const comments = board.commentCount ? board.commentCount(row) : countOf(row, board.commentsField)}
   {@const attachments = countOf(row, board.attachmentsField)}
   {@const age = ageOf(row)}
   {@const blocked = isFlagged(row)}
@@ -1608,9 +1655,11 @@
           type="button"
           class="sv-board-badge is-meta is-btn"
           title="Comments"
+          aria-label={`${comments} ${comments === 1 ? "comment" : "comments"}`}
           onclick={(e) => {
             e.stopPropagation();
-            commentsOpen[key(row)] = !commentsOpen[key(row)];
+            if (board.onCommentsOpen) board.onCommentsOpen(row);
+            else commentsOpen[key(row)] = !commentsOpen[key(row)];
           }}
         >
           <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true"><path d="M2 3h12v8H8l-3 2v-2H2z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
@@ -1943,10 +1992,10 @@
     line-height: 1.3;
   }
   .sv-board-card-meta {
-    margin: 6px 0 0;
+    margin: 8px 0 0;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 6px;
   }
   .sv-board-card-metarow {
     display: flex;
@@ -1963,6 +2012,16 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  /* A field drawn as its cell draws it (pills, avatars, thumbnails), on one line. */
+  .sv-board-card-metarow {
+    align-items: center;
+  }
+  .sv-board-card-fieldcell {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    flex: 1;
   }
   .sv-board-lane-empty {
     text-align: center;

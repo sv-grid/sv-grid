@@ -45,6 +45,10 @@ describe('unknown field', () => {
     expect(run({ columns: [{ id: 'full', fieldFn: (r: unknown) => (r as Row).name }] })).toEqual([])
   })
 
+  it('ignores a field-type column, which starts empty when added to existing rows', () => {
+    expect(run({ columns: [{ field: 'notes', fieldType: 'longText' }] })).toEqual([])
+  })
+
   it('ignores an id-only column, like an actions column', () => {
     expect(run({ columns: [{ id: 'actions', header: '' }] })).toEqual([])
   })

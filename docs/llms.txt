@@ -43,15 +43,15 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## Key facts
 
-- Package: `@svgrid/grid` 3.0.10, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
+- Package: `@svgrid/grid` 3.0.11, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
 - Peer dependency: `svelte` ^5. Works in SvelteKit, including server-side rendering.
 - Size (gzip, Svelte external, measured 2026-09-22 on 3.0.4): 97.6 KB for the full `<SvGrid>` entry plus 10.5 KB CSS; 2.7 KB for the headless entry. Features load on demand.
 - Styling: `--sg-*` CSS custom properties, and 20 theme stylesheets, each with a light and a dark palette. No CSS framework is required; Tailwind and shadcn-svelte setups are documented.
 - Accessibility: the WAI-ARIA grid pattern with full keyboard navigation and screen-reader announcements.
 - AI helpers ship free in `@svgrid/grid` and work with any model: `setAIProvider`, `aiFilter`, `aiSmartFill`, `aiSummarize`, `aiClassify`, `aiFindAnomalies`.
 - For coding assistants: an MCP server (`npx -y @svgrid/mcp`, MIT) serves the version-pinned API and demo sources; an Agent Skill installs with `npx skills add sv-grid/sv-grid`.
-- Paid add-on, not needed for anything above: `@svgrid/enterprise` adds Excel / PDF export, import, print, pivot tables, the Server-Side Row Model, alert rules and the Kanban board, Scheduler and Spreadsheet views. Prices: https://svgrid.com/pricing/
-- 430 live demos, each with its source: https://svgrid.com/demos/ . Source code: https://github.com/sv-grid/sv-grid
+- Paid add-on, not needed for anything above: `@svgrid/enterprise` adds Excel / PDF export, import, print, pivot tables, the Server-Side Row Model, alert rules and the Kanban board, Scheduler and Spreadsheet views. Prices start at $299 per developer: https://svgrid.com/pricing/ . A 30-day trial (one download with both packages and the demos to run offline, plus email support for the 30 days) starts from that page; without it, the package runs in full with a watermark until a key is set.
+- 451 live demos, each with its source: https://svgrid.com/demos/ . Source code: https://github.com/sv-grid/sv-grid
 
 ## Start here
 
@@ -119,6 +119,8 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - [Use sv-grid docs as LLM context](https://svgrid.com/docs/help/llm-grounding/): This page is the "how do I make ChatGPT / Claude / Cursor write good sv-grid code?" guide. Pre-built files ship with the docs so models can ground themselves in current, accurate information...
 - [MCP server](https://svgrid.com/docs/help/mcp-server/): The SvGrid MCP server does two things for an AI client (Claude Code, Claude Desktop, Cursor, Zed, Codex, custom agents): it answers questions about SvGrid from the files this repository ships, and...
 - [Migrating from AG Grid to SvGrid](https://svgrid.com/docs/help/migrating-from-ag-grid/): If you tried AG Grid on a Svelte 5 project - via ag-grid-svelte, the old ag-grid-community/svelte, or a hand-rolled wrapper - you probably hit the same friction everyone hits: the bridge between...
+- [Migrating from Airtable](https://svgrid.com/docs/help/migrating-from-airtable/): Airtable is a cloud service: the base, its views and its records live on Airtable, and the most you can put in your own app is a read-only iframe.
+- [Migrating from Baserow](https://svgrid.com/docs/help/migrating-from-baserow/): Baserow is an app your team signs into; outside it, a view shows up only as a read-only iframe. SvGrid Base is the same kind of table database shipped as a Svelte 5 component.
 - [Migrating from DevExtreme DataGrid (DevExpress)](https://svgrid.com/docs/help/migrating-from-devextreme/): DevExtreme DataGrid is a deep, commercial multi-framework grid from DevExpress (jQuery, React, Vue, Angular).
 - [Migrating from Glide Data Grid](https://svgrid.com/docs/help/migrating-from-glide/): Glide Data Grid is the canvas-rendered, ultra-high-performance choice for very wide datasets (100k+ rows, 100+ columns).
 - [Migrating from Grid.js](https://svgrid.com/docs/help/migrating-from-gridjs/): Grid.js is a small vanilla-JS table for search, sort, and pagination that you render into a DOM element.
@@ -126,6 +128,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - [Migrating from jqxGrid (jQWidgets)](https://svgrid.com/docs/help/migrating-from-jqxgrid/): jqxGrid and SvGrid come from the same team. jqxGrid is the mature, multi-framework grid (jQuery core with Angular, React, and Vue integrations); SvGrid is the Svelte-5-native member of the family.
 - [Migrating from Kendo UI Grid (Telerik)](https://svgrid.com/docs/help/migrating-from-kendo-grid/): Kendo UI Grid is the polished, commercial enterprise grid from Telerik / Progress, available for jQuery, React, Vue, and Angular.
 - [Migrating from MUI X DataGrid](https://svgrid.com/docs/help/migrating-from-mui-x/): MUI X DataGrid is the most common starting point for teams already on Material UI. Its MIT Community edition plus paid Pro and Premium tiers is a split similar to sv-grid's, except that column...
+- [Migrating from NocoDB](https://svgrid.com/docs/help/migrating-from-nocodb/): NocoDB is an app your team signs into, and outside it a shared view shows up only as an iframe.
 - [Migrating from PrimeVue / PrimeNG / PrimeReact DataTable](https://svgrid.com/docs/help/migrating-from-primevue-datatable/): The Prime DataTable is the grid in the Prime UI suites for Vue, Angular, and React. Its columns are declared as <Column> children with field / header props - a shape that maps cleanly onto...
 - [Migrating from React Data Grid (adazzle)](https://svgrid.com/docs/help/migrating-from-react-data-grid/): react-data-grid is a fast, Excel-like React grid with a clean column API. SvGrid mirrors its shape - virtualized DOM, typed columns, inline editing, custom cells - on Svelte 5 runes instead of...
 - [Migrating from the shadcn-svelte data table](https://svgrid.com/docs/help/migrating-from-shadcn-data-table/): The shadcn-svelte Data Table is not the same thing as its <Table> component. <Table> is presentation only.
@@ -161,7 +164,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 ### Cells
 
 - [Cell components](https://svgrid.com/docs/help/cells/cell-components/): For any cell whose content is more than a string, use cell: with renderSnippet or renderComponent.
-- [Cell data types](https://svgrid.com/docs/help/cells/cell-data-types/): The editorType field on a column tags the column with a type. This drives three different behaviours:
+- [Cell data types](https://svgrid.com/docs/help/cells/cell-data-types/): A column has a data type and an editor, set separately. cellDataType says what the values are; editorType says what edits them.
 - [Cell text selection](https://svgrid.com/docs/help/cells/cell-text-selection/): By default the grid has cell-range selection (drag across cells, range highlight, copy as TSV).
 - [Conditional formatting](https://svgrid.com/docs/help/cells/conditional-formatting/): Conditional formatting colors a cell by its value. SvGrid ships it as a declarative engine prop, conditionalFormats, so you describe the rules once and the grid paints every cell - no per-cell...
 - [Expressions](https://svgrid.com/docs/help/cells/expressions/): SvGrid does not ship a formula / expression language for cells. Computed values are JavaScript - either via fieldFn or inside a cell callback.
@@ -199,7 +202,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - [Full-width rows](https://svgrid.com/docs/help/rows/full-width-rows/): "Full-width rows" are rows whose content takes the entire grid width instead of being cell-by-cell - useful for inline editors, banner ads, section dividers, and detail-row expansions.
 - [Master / detail (nested grids)](https://svgrid.com/docs/help/rows/master-detail/): Master/detail is the pattern where each master row expands to reveal a detail panel - most often a nested grid of the row's child records. SvGrid builds it from two props on <SvGrid>:
 - [Row data](https://svgrid.com/docs/help/rows/row-data/): Row data is whatever you pass to <SvGrid data={...}>. It is a ReadonlyArray<TData> where TData is your row type. Any shape works; the grid does not require a base class or interface.
-- [Row dragging](https://svgrid.com/docs/help/rows/row-dragging/): Managed row dragging lets users reorder rows within a grid and move rows between grids. Turn on rowDragManaged and every row becomes a drag source (grab cursor + a grip in the row-number cell); a...
+- [Row dragging](https://svgrid.com/docs/help/rows/row-dragging/): Managed row dragging lets users reorder rows within a grid and move rows between grids. Turn on rowDragManaged and every row can be dragged by its row-number cell (a grip shows while the pointer...
 - [Row height](https://svgrid.com/docs/help/rows/row-height/): Row height is a single integer in pixels.
 - [Row pagination](https://svgrid.com/docs/help/rows/row-pagination/): Pagination is opt-in. Register the feature, register the row model, then either turn it on with showPagination or drive its state from outside.
 - [Row pinning (top / bottom)](https://svgrid.com/docs/help/rows/row-pinning/): Pin specific rows to the top or bottom of the grid so they stay visible while the rest of the data scrolls. Typical use cases:
@@ -283,7 +286,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - [<sv-grid> reference](https://svgrid.com/docs/help/web-components/sv-grid/): Every property, attribute and event of the custom element.
 - [<sv-chart> reference](https://svgrid.com/docs/help/web-components/sv-chart/): Every property, attribute and event of the chart custom element.
 - [Shadow DOM: <sv-grid-shadow>](https://svgrid.com/docs/help/web-components/shadow-dom/): Two elements ship, and which one you want is a styling decision:
-- [SvGrid in React](https://svgrid.com/docs/help/web-components/react/): That is the whole integration. The component is generated from <SvGrid>'s own types, so all 116 properties and 27 events are typed props, and it works the same on React 17, 18 and 19.
+- [SvGrid in React](https://svgrid.com/docs/help/web-components/react/): That is the whole integration. The component is generated from <SvGrid>'s own types, so all 124 properties and 33 events are typed props, and it works the same on React 17, 18 and 19.
 - [SvGrid in Vue](https://svgrid.com/docs/help/web-components/vue/): The component is generated from <SvGrid>'s own types, and it removes the two things a raw custom element needs in Vue: the isCustomElement build config, and a .prop modifier on every object binding.
 - [SvGrid in Angular](https://svgrid.com/docs/help/web-components/angular/): A standalone component, compiled with ng-packagr in partial-Ivy mode, generated from <SvGrid>'s own types: every property is an @Input and every event an @Output.
 - [TypeScript with the custom element](https://svgrid.com/docs/help/web-components/typescript/): The element is plain JavaScript at the boundary, so TypeScript needs to be told it exists. Two declarations get completion and checking back.
@@ -335,112 +338,117 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## SvGrid UI
 
+### The hero component
+
+- [<SvGrid>](https://svgrid.com/docs/getting-started/): the Svelte 5 data grid, and the component the rest of SvGrid UI is built around. Every editor below doubles as a cell editor inside it. `import { SvGrid } from '@svgrid/grid'`. Live demos with source: https://svgrid.com/demos/
+
 ### UI components
 
-- [Buttons & toggles](https://svgrid.com/docs/help/ui-components/buttons/): Press and toggle primitives. All take a size (sm | md | lg) and theme from --sg-*.
+- [SvGrid UI](https://svgrid.com/docs/help/ui-components/index/): SvGrid UI is the Svelte 5 component suite that ships in the free @svgrid/grid package - 70+ buttons, inputs, pickers, overlays, and layout primitives, each with its own tutorial page.
 - [Add components with the CLI](https://svgrid.com/docs/help/ui-components/cli/): @svgrid/ui gets a SvGrid UI component into your app - and lets you *see* it - in one command.
-- [Date & time](https://svgrid.com/docs/help/ui-components/date-time/): Four date/time controls built on a shared, framework-free date engine (date-core, date-format, date-selection, date-restrict).
-- [Feedback & display](https://svgrid.com/docs/help/ui-components/feedback/): Status, identity, loading and surface primitives for dashboards and detail panels. All are theme-token driven (light / dark + presets) and reduced-motion aware.
 - [Headless editors](https://svgrid.com/docs/help/ui-components/headless-editors/): Every editor is headless-first, exactly like the grid (createSvGrid / <SvGrid>). Each Sv* component is a thin styled renderer over a framework-free runes core named create<Editor>.
 - [Internationalization & RTL](https://svgrid.com/docs/help/ui-components/i18n-rtl/): Every editor in the kit shares one localization + direction contract, so you wire it the same way everywhere.
-- [SvGrid UI](https://svgrid.com/docs/help/ui-components/index/): SvGrid UI is the Svelte 5 component suite that ships in the free @svgrid/grid package - 70+ buttons, inputs, pickers, overlays, and layout primitives, each with its own tutorial page.
-- [Inputs](https://svgrid.com/docs/help/ui-components/inputs/): Typed text controls. Each emits a clean value and themes from --sg-*.
-- [Layout & composite](https://svgrid.com/docs/help/ui-components/layout/): Add any component with the CLI (drops a ready-to-edit starter into your app) - or add the whole family at once:
-- [Navigation](https://svgrid.com/docs/help/ui-components/navigation/): Wayfinding components for admin apps and Studio-generated screens. Pure, keyboard-accessible, theme-token driven.
-- [Overlays](https://svgrid.com/docs/help/ui-components/overlays/): App-chrome overlays built on the kit's shared accessibility primitives - createFocusTrap, lockScroll and createDismissableLayer - so focus, scroll locking and Escape / outside-click dismissal...
-- [Range & feedback](https://svgrid.com/docs/help/ui-components/range/): Add any component with the CLI (drops a ready-to-edit starter into your app) - or add the whole family at once:
-- [Selection](https://svgrid.com/docs/help/ui-components/selection/): List and overlay pickers. The overlay controls portal their panel to <body> (carrying theme tokens) so they never clip, and share a common option shape:
-- [SvAccordion](https://svgrid.com/docs/help/ui-components/sv-accordion/): A WAI-ARIA accordion of collapsible sections, with single- or multiple-expand and roving header focus.
-- [SvAlert](https://svgrid.com/docs/help/ui-components/sv-alert/): An inline, persistent contextual message - info, success, warning, danger, or neutral - with an icon, optional title, dismiss button, and trailing actions.
-- [SvAutoComplete](https://svgrid.com/docs/help/ui-components/sv-auto-complete/): A free-text input with a live-filtered suggestion list. Unlike SvComboBox, it accepts any value - the suggestions are just shortcuts - and it emits the raw text string.
-- [SvAvatarGroup](https://svgrid.com/docs/help/ui-components/sv-avatar-group/): Overlapping, stacked avatars with a "+N" overflow pill - the "assigned to" and "members" row for cards, tables, and detail panels.
-- [SvAvatar](https://svgrid.com/docs/help/ui-components/sv-avatar/): A user or entity avatar: an image with an automatic initials-and-color fallback, plus an optional presence status dot.
-- [SvBadge](https://svgrid.com/docs/help/ui-components/sv-badge/): A small status pill or count label - the quiet workhorse for statuses, counts, and tags across tables and cards.
-- [SvBreadcrumb](https://svgrid.com/docs/help/ui-components/sv-breadcrumb/): A navigation trail that shows where the current page sits in your app's hierarchy.
-- [SvButtonGroup](https://svgrid.com/docs/help/ui-components/sv-button-group/): A segmented button bar - a single-select view switcher, a multi-select toggle set, or a plain row of action buttons.
+- [Buttons & toggles](https://svgrid.com/docs/help/ui-components/buttons/): Press and toggle primitives. All take a size (sm | md | lg) and theme from --sg-*.
 - [SvButton](https://svgrid.com/docs/help/ui-components/sv-button/): The press primitive for the whole UI kit - a themeable button with variants, sizes, a built-in loading state, an icon slot, and automatic anchor rendering when you pass an href.
-- [SvCalendar](https://svgrid.com/docs/help/ui-components/sv-calendar/): A themeable, accessible month / year / decade calendar with every selection mode - the date surface the whole date/time family is built on.
-- [SvCard](https://svgrid.com/docs/help/ui-components/sv-card/): A themed surface container with an optional header, body, and footer - the building block for dashboards and Studio-generated app screens.
-- [SvCarousel](https://svgrid.com/docs/help/ui-components/sv-carousel/): A slideshow: a sliding track with prev/next arrows, dot indicators, optional autoplay that pauses on hover, and touch swipe.
-- [SvChartPanes](https://svgrid.com/docs/help/ui-components/sv-chart-panes/): A price chart with indicator panes stacked under it, the way a trading terminal lays them out: one shared x axis labelled on the last pane only, one value-axis gutter width so the plots line up,...
+- [SvButtonGroup](https://svgrid.com/docs/help/ui-components/sv-button-group/): A segmented button bar - a single-select view switcher, a multi-select toggle set, or a plain row of action buttons.
+- [SvRepeatButton](https://svgrid.com/docs/help/ui-components/sv-repeat-button/): A button that keeps firing while you hold it down - after an initial delay, then at a steady interval.
+- [SvToggleButton](https://svgrid.com/docs/help/ui-components/sv-toggle-button/): A button with a sticky pressed on/off state, exposed to assistive tech via aria-pressed.
+- [SvSwitchButton](https://svgrid.com/docs/help/ui-components/sv-switch-button/): An on/off sliding switch with the ARIA switch role - the control for settings that take effect immediately.
 - [SvCheckBox](https://svgrid.com/docs/help/ui-components/sv-check-box/): A themed checkbox with a true indeterminate state and an optional inline label.
-- [SvChip](https://svgrid.com/docs/help/ui-components/sv-chip/): A compact, interactive pill for a selected value, filter token, or entity: an optional leading avatar or icon, a label, and an optional remove button.
-- [SvCircularProgress](https://svgrid.com/docs/help/ui-components/sv-circular-progress/): A circular ring progress indicator - determinate or spinning - with color intents, sizing and thickness, and an optional center label or custom center content.
-- [SvCollapsible](https://svgrid.com/docs/help/ui-components/sv-collapsible/): A single show/hide section: a header that toggles one region of content open and closed, with a smooth height animation. The standalone building block behind an accordion.
+- [SvRadioGroup](https://svgrid.com/docs/help/ui-components/sv-radio-group/): An accessible single-select radio group following the WAI-ARIA radiogroup pattern, with roving tabindex and arrow-key navigation.
+- [SvSegmented](https://svgrid.com/docs/help/ui-components/sv-segmented/): A segmented control: a compact row of mutually-exclusive options in a shared track - the modern alternative to a small radio group or a tab strip for a setting.
+- [SvRating](https://svgrid.com/docs/help/ui-components/sv-rating/): A star rating control built on the WAI-ARIA slider pattern - with hover preview, keyboard support, optional half steps, and a read-only mode.
+- [Inputs](https://svgrid.com/docs/help/ui-components/inputs/): Typed text controls. Each emits a clean value and themes from --sg-*.
+- [SvTextInput](https://svgrid.com/docs/help/ui-components/sv-text-input/): The base single-line text editor for the whole kit - one control for text, email, url, tel, and search.
+- [SvTextArea](https://svgrid.com/docs/help/ui-components/sv-text-area/): The multi-line text editor - with optional auto-grow and a character counter.
+- [SvNumberInput](https://svgrid.com/docs/help/ui-components/sv-number-input/): A numeric input with min/max/step, spinner buttons, thousands grouping, precision, and prefix/suffix.
+- [SvPasswordInput](https://svgrid.com/docs/help/ui-components/sv-password-input/): A password field with a reveal toggle and an optional 4-level strength meter.
+- [SvMaskedInput](https://svgrid.com/docs/help/ui-components/sv-masked-input/): A pattern-masked text input that formats as you type and reports both the masked and the raw value.
+- [SvPhoneInput](https://svgrid.com/docs/help/ui-components/sv-phone-input/): A country dial-code selector plus a national number field that emits an E.164-style string.
 - [SvColorInput](https://svgrid.com/docs/help/ui-components/sv-color-input/): A color swatch that opens a portalled popover with a hex field, the native picker, and a preset palette.
+- [SvOtpInput](https://svgrid.com/docs/help/ui-components/sv-otp-input/): Segmented one-time-code / PIN entry - N single-character cells that advance themselves and accept a pasted code.
+- [SvDurationInput](https://svgrid.com/docs/help/ui-components/sv-duration-input/): A duration editor whose value is a number of minutes but which accepts the human forms people actually type.
+- [SvTagsInput](https://svgrid.com/docs/help/ui-components/sv-tags-input/): An editable token / chips input - type to add, click x or Backspace to remove.
+- [Selection](https://svgrid.com/docs/help/ui-components/selection/): List and overlay pickers. The overlay controls portal their panel to <body> (carrying theme tokens) so they never clip, and share a common option shape:
+- [SvListBox](https://svgrid.com/docs/help/ui-components/sv-list-box/): An inline single or multi-select list - a WAI-ARIA listbox with a roving highlight, full keyboard, type-ahead and optional windowing for huge option sets.
+- [SvDropDownList](https://svgrid.com/docs/help/ui-components/sv-drop-down-list/): A single-select dropdown: a trigger button plus a portalled option list, with no typing. Pick with the mouse or the keyboard (type-ahead included); the panel escapes any scroll container so it is...
 - [SvComboBox](https://svgrid.com/docs/help/ui-components/sv-combo-box/): An editable combobox: type to filter a portalled option list and pick a value. Unlike an autocomplete, the value must come from the list - unmatched text reverts on blur.
-- [SvCommand](https://svgrid.com/docs/help/ui-components/sv-command/): A Cmd+K command palette: a fuzzy-searchable list of actions in a centered, focus-trapped dialog, with an optional global hotkey.
-- [SvContextMenu](https://svgrid.com/docs/help/ui-components/sv-context-menu/): Wraps a region and opens a menu at the pointer on right-click or long-press.
+- [SvAutoComplete](https://svgrid.com/docs/help/ui-components/sv-auto-complete/): A free-text input with a live-filtered suggestion list. Unlike SvComboBox, it accepts any value - the suggestions are just shortcuts - and it emits the raw text string.
+- [SvMultiSelect](https://svgrid.com/docs/help/ui-components/sv-multi-select/): A multi-select dropdown: the trigger shows the picked items as chips (collapsing to "+N"), and a portalled panel holds an optional search box over a checkbox list.
+- [SvTreeSelect](https://svgrid.com/docs/help/ui-components/sv-tree-select/): A single-select dropdown that shows an indented, collapsible tree in its panel - the cascader / tree-select pattern. Pick a node from a hierarchy, optionally showing its full path in the trigger.
+- [SvGridSelect](https://svgrid.com/docs/help/ui-components/sv-grid-select/): A "grid in a dropdown" single-select: the panel shows the options as a compact multi-column table with a header row and search, so you can pick by more than a single label.
+- [SvGridDropdown](https://svgrid.com/docs/help/ui-components/sv-grid-dropdown/): The themeable dropdown / listbox that powers the grid's list and chips cell editors. It is a deliberate replacement for the native <select>, whose option list cannot be styled to match the grid...
 - [SvCountryInput](https://svgrid.com/docs/help/ui-components/sv-country-input/): A searchable country picker showing a flag, name, and dial code. It emits the ISO 3166-1 alpha-2 code, so your model stores a stable 'US' / 'GB' rather than a display string.
-- [SvDateRangeInput](https://svgrid.com/docs/help/ui-components/sv-date-range-input/): A compact start/end field that opens a two-month range calendar with one-click presets (Today, Last 7 days, This month, ...). Emits an inclusive [start, end] tuple or null.
+- [Date & time](https://svgrid.com/docs/help/ui-components/date-time/): Four date/time controls built on a shared, framework-free date engine (date-core, date-format, date-selection, date-restrict).
+- [SvCalendar](https://svgrid.com/docs/help/ui-components/sv-calendar/): A themeable, accessible month / year / decade calendar with every selection mode - the date surface the whole date/time family is built on.
+- [SvTimePicker](https://svgrid.com/docs/help/ui-components/sv-time-picker/): An analog clock-dial time picker - 12- or 24-hour, minute snapping, and an hour-to-minute auto-switch. Drag the hand or click a number.
 - [SvDateTimePicker](https://svgrid.com/docs/help/ui-components/sv-date-time-picker/): A formatted text input plus a portalled dropdown with DATE / TIME tabs - type a masked value or pick it from a calendar and clock.
-- [Display primitives - SvKbd, SvCode, SvAspectRatio, SvVisuallyHidden](https://svgrid.com/docs/help/ui-components/sv-display-primitives/): The small display helpers you reach for constantly in docs, command palettes, and media layouts - each themed from the shared --sg-* tokens and dependency-free.
-- [SvDivider](https://svgrid.com/docs/help/ui-components/sv-divider/): A theme-driven separator line - horizontal or vertical, solid or dashed, with an optional centered, start, or end label.
+- [SvDateRangeInput](https://svgrid.com/docs/help/ui-components/sv-date-range-input/): A compact start/end field that opens a two-month range calendar with one-click presets (Today, Last 7 days, This month, ...). Emits an inclusive [start, end] tuple or null.
+- [Range & feedback](https://svgrid.com/docs/help/ui-components/range/): Add any component with the CLI (drops a ready-to-edit starter into your app) - or add the whole family at once:
+- [SvSlider](https://svgrid.com/docs/help/ui-components/sv-slider/): A single or dual-thumb range slider with steps, ticks, scale labels, and full keyboard plus pointer control.
+- [SvGauge](https://svgrid.com/docs/help/ui-components/sv-gauge/): A radial arc gauge that renders a value within a range, with optional colored threshold bands, a needle, and a center label.
+- [SvProgress](https://svgrid.com/docs/help/ui-components/sv-progress/): A linear progress bar - determinate or indeterminate - with color intents, sizes, an optional percentage label, a striped fill, and a secondary buffer track.
+- [SvCircularProgress](https://svgrid.com/docs/help/ui-components/sv-circular-progress/): A circular ring progress indicator - determinate or spinning - with color intents, sizing and thickness, and an optional center label or custom center content.
+- [SvSparkline](https://svgrid.com/docs/help/ui-components/sv-sparkline/): A tiny inline chart - line, area, bar, or win/loss - drawn from a plain number array, with no chart library.
+- [SvStat](https://svgrid.com/docs/help/ui-components/sv-stat/): A KPI / metric card: a label, a big value, and an optional delta with an auto-colored up/down trend, plus slots for an icon and an inline chart.
+- [Overlays](https://svgrid.com/docs/help/ui-components/overlays/): App-chrome overlays built on the kit's shared accessibility primitives - createFocusTrap, lockScroll and createDismissableLayer - so focus, scroll locking and Escape / outside-click dismissal...
+- [SvPopover](https://svgrid.com/docs/help/ui-components/sv-popover/): A floating panel anchored to a trigger, portalled to <body> so it escapes any overflow:hidden ancestor.
+- [SvHoverCard](https://svgrid.com/docs/help/ui-components/sv-hover-card/): A rich preview card that opens when the pointer rests on its anchor and closes shortly after it leaves.
+- [SvTooltip](https://svgrid.com/docs/help/ui-components/sv-tooltip/): A small hover and focus tooltip anchored to its child, portalled to <body> so it is never clipped by a scroll container.
+- [SvPopconfirm](https://svgrid.com/docs/help/ui-components/sv-popconfirm/): A quick confirm step in a popover anchored to its trigger, for a low-stakes destructive action where a full modal dialog would be too heavy.
+- [SvModal](https://svgrid.com/docs/help/ui-components/sv-modal/): An accessible modal dialog: a backdrop, a focus trap, Escape and backdrop close, and a scale-in animation.
+- [SvDrawer](https://svgrid.com/docs/help/ui-components/sv-drawer/): An edge-anchored side sheet - right, left, top, or bottom - with a backdrop and the full dialog accessibility contract.
+- [SvToaster](https://svgrid.com/docs/help/ui-components/sv-toaster/): The host that renders the shared toast queue. Mount it once near your app root; call toast() from anywhere to push a notification.
+- [SvContextMenu](https://svgrid.com/docs/help/ui-components/sv-context-menu/): Wraps a region and opens a menu at the pointer on right-click or long-press.
+- [SvMenu](https://svgrid.com/docs/help/ui-components/sv-menu/): A dropdown / actions menu: a trigger opens a portalled, animated menu surface with submenus, separators, icons, shortcuts, and full keyboard support.
+- [SvMenuList](https://svgrid.com/docs/help/ui-components/sv-menu-list/): The recursive menu surface behind SvMenu and SvContextMenu: a WAI-ARIA menu with roving focus, submenus, separators, icons, and shortcuts.
+- [SvMenubar](https://svgrid.com/docs/help/ui-components/sv-menubar/): An application menu bar: a horizontal row of menu buttons (File / Edit / View ...) that each open a dropdown.
+- [Layout & composite](https://svgrid.com/docs/help/ui-components/layout/): Add any component with the CLI (drops a ready-to-edit starter into your app) - or add the whole family at once:
+- [Layout primitives - SvStack, SvGroup, SvSimpleGrid](https://svgrid.com/docs/help/ui-components/sv-layout-primitives/): Three tiny flex/grid wrappers that cover the layouts you reach for constantly, so you stop hand-writing display: flex; gap: … on every wrapper div.
+- [SvTabs](https://svgrid.com/docs/help/ui-components/sv-tabs/): A WAI-ARIA tabs widget with roving-tabindex arrow-key navigation, four tab positions, and optional closable tabs.
+- [SvAccordion](https://svgrid.com/docs/help/ui-components/sv-accordion/): A WAI-ARIA accordion of collapsible sections, with single- or multiple-expand and roving header focus.
+- [SvCollapsible](https://svgrid.com/docs/help/ui-components/sv-collapsible/): A single show/hide section: a header that toggles one region of content open and closed, with a smooth height animation. The standalone building block behind an accordion.
+- [SvSplitter](https://svgrid.com/docs/help/ui-components/sv-splitter/): Two resizable panes divided by a draggable WAI-ARIA separator, with pointer drag and arrow-key resize.
 - [SvDockLayout](https://svgrid.com/docs/help/ui-components/sv-dock-layout/): A basic docking layout: nested resizable split groups and tabbed leaves, with drag-to-dock.
 - [SvDockManager](https://svgrid.com/docs/help/ui-components/sv-dock-manager/): A full docking manager built on top of SvDockLayout. It keeps everything the tiled layout does - nested resizable splits, tabbed leaves, drag-to-dock - and adds the three features a real IDE...
-- [SvDrawer](https://svgrid.com/docs/help/ui-components/sv-drawer/): An edge-anchored side sheet - right, left, top, or bottom - with a backdrop and the full dialog accessibility contract.
-- [SvDropDownList](https://svgrid.com/docs/help/ui-components/sv-drop-down-list/): A single-select dropdown: a trigger button plus a portalled option list, with no typing. Pick with the mouse or the keyboard (type-ahead included); the panel escapes any scroll container so it is...
-- [SvDurationInput](https://svgrid.com/docs/help/ui-components/sv-duration-input/): A duration editor whose value is a number of minutes but which accepts the human forms people actually type.
-- [SvEmptyState](https://svgrid.com/docs/help/ui-components/sv-empty-state/): A centered placeholder for empty lists, no-results screens, and blank panels: an icon or illustration, a title, a description, and an action slot.
+- [SvCard](https://svgrid.com/docs/help/ui-components/sv-card/): A themed surface container with an optional header, body, and footer - the building block for dashboards and Studio-generated app screens.
+- [SvDivider](https://svgrid.com/docs/help/ui-components/sv-divider/): A theme-driven separator line - horizontal or vertical, solid or dashed, with an optional centered, start, or end label.
+- [SvScrollArea](https://svgrid.com/docs/help/ui-components/sv-scroll-area/): A scroll container with the kit's themed custom scrollbars, so any panel matches the grid and demos without hand-rolling scrollbar CSS.
+- [SvGridChart](https://svgrid.com/docs/help/ui-components/sv-grid-chart/): An inline-SVG chart that renders a ChartSpec with no external charting dependency, built to bind to your grid's data.
+- [SvChartPanes](https://svgrid.com/docs/help/ui-components/sv-chart-panes/): A price chart with indicator panes stacked under it, the way a trading terminal lays them out: one shared x axis labelled on the last pane only, one value-axis gutter width so the plots line up,...
+- [SvForm](https://svgrid.com/docs/help/ui-components/sv-form/): A schema-driven form that renders the SvGrid UI-kit controls from a FormField[], with labels, required and custom validation, and a submit handler.
 - [SvField](https://svgrid.com/docs/help/ui-components/sv-field/): The shared field chrome for every value-bearing editor in the kit - the label, hint, and error line that make any control behave consistently.
 - [SvFileUpload](https://svgrid.com/docs/help/ui-components/sv-file-upload/): A drag-and-drop file field with click-to-browse fallback, accept / size / count validation, and a selected-files list.
-- [SvForm](https://svgrid.com/docs/help/ui-components/sv-form/): A schema-driven form that renders the SvGrid UI-kit controls from a FormField[], with labels, required and custom validation, and a submit handler.
-- [SvGauge](https://svgrid.com/docs/help/ui-components/sv-gauge/): A radial arc gauge that renders a value within a range, with optional colored threshold bands, a needle, and a center label.
-- [SvGridChart](https://svgrid.com/docs/help/ui-components/sv-grid-chart/): An inline-SVG chart that renders a ChartSpec with no external charting dependency, built to bind to your grid's data.
-- [SvGridDropdown](https://svgrid.com/docs/help/ui-components/sv-grid-dropdown/): The themeable dropdown / listbox that powers the grid's list and chips cell editors. It is a deliberate replacement for the native <select>, whose option list cannot be styled to match the grid...
-- [SvGridSelect](https://svgrid.com/docs/help/ui-components/sv-grid-select/): A "grid in a dropdown" single-select: the panel shows the options as a compact multi-column table with a header row and search, so you can pick by more than a single label.
-- [SvHoverCard](https://svgrid.com/docs/help/ui-components/sv-hover-card/): A rich preview card that opens when the pointer rests on its anchor and closes shortly after it leaves.
-- [Layout primitives - SvStack, SvGroup, SvSimpleGrid](https://svgrid.com/docs/help/ui-components/sv-layout-primitives/): Three tiny flex/grid wrappers that cover the layouts you reach for constantly, so you stop hand-writing display: flex; gap: … on every wrapper div.
-- [SvListBox](https://svgrid.com/docs/help/ui-components/sv-list-box/): An inline single or multi-select list - a WAI-ARIA listbox with a roving highlight, full keyboard, type-ahead and optional windowing for huge option sets.
-- [SvLoadingOverlay](https://svgrid.com/docs/help/ui-components/sv-loading-overlay/): A cover-a-container loading scrim: a translucent overlay with a centred spinner that sits on top of any positioned parent while its content loads or saves.
-- [SvMaskedInput](https://svgrid.com/docs/help/ui-components/sv-masked-input/): A pattern-masked text input that formats as you type and reports both the masked and the raw value.
-- [SvMenuList](https://svgrid.com/docs/help/ui-components/sv-menu-list/): The recursive menu surface behind SvMenu and SvContextMenu: a WAI-ARIA menu with roving focus, submenus, separators, icons, and shortcuts.
-- [SvMenu](https://svgrid.com/docs/help/ui-components/sv-menu/): A dropdown / actions menu: a trigger opens a portalled, animated menu surface with submenus, separators, icons, shortcuts, and full keyboard support.
-- [SvMenubar](https://svgrid.com/docs/help/ui-components/sv-menubar/): An application menu bar: a horizontal row of menu buttons (File / Edit / View ...) that each open a dropdown.
-- [SvModal](https://svgrid.com/docs/help/ui-components/sv-modal/): An accessible modal dialog: a backdrop, a focus trap, Escape and backdrop close, and a scale-in animation.
-- [SvMultiSelect](https://svgrid.com/docs/help/ui-components/sv-multi-select/): A multi-select dropdown: the trigger shows the picked items as chips (collapsing to "+N"), and a portalled panel holds an optional search box over a checkbox list.
-- [SvNavPane](https://svgrid.com/docs/help/ui-components/sv-nav-pane/): An Outlook-style navigation pane: collapsible sections, items with icons and badge counts, one level of nested sub-items, and an optional bottom module strip.
-- [SvNumberInput](https://svgrid.com/docs/help/ui-components/sv-number-input/): A numeric input with min/max/step, spinner buttons, thousands grouping, precision, and prefix/suffix.
-- [SvOtpInput](https://svgrid.com/docs/help/ui-components/sv-otp-input/): Segmented one-time-code / PIN entry - N single-character cells that advance themselves and accept a pasted code.
-- [SvPagination](https://svgrid.com/docs/help/ui-components/sv-pagination/): A standalone pager: page numbers with an ellipsis, plus prev/next and optional first/last controls.
-- [SvPasswordInput](https://svgrid.com/docs/help/ui-components/sv-password-input/): A password field with a reveal toggle and an optional 4-level strength meter.
-- [SvPhoneInput](https://svgrid.com/docs/help/ui-components/sv-phone-input/): A country dial-code selector plus a national number field that emits an E.164-style string.
-- [SvPopconfirm](https://svgrid.com/docs/help/ui-components/sv-popconfirm/): A quick confirm step in a popover anchored to its trigger, for a low-stakes destructive action where a full modal dialog would be too heavy.
-- [SvPopover](https://svgrid.com/docs/help/ui-components/sv-popover/): A floating panel anchored to a trigger, portalled to <body> so it escapes any overflow:hidden ancestor.
-- [SvProgress](https://svgrid.com/docs/help/ui-components/sv-progress/): A linear progress bar - determinate or indeterminate - with color intents, sizes, an optional percentage label, a striped fill, and a secondary buffer track.
-- [SvRadioGroup](https://svgrid.com/docs/help/ui-components/sv-radio-group/): An accessible single-select radio group following the WAI-ARIA radiogroup pattern, with roving tabindex and arrow-key navigation.
-- [SvRating](https://svgrid.com/docs/help/ui-components/sv-rating/): A star rating control built on the WAI-ARIA slider pattern - with hover preview, keyboard support, optional half steps, and a read-only mode.
-- [SvRepeatButton](https://svgrid.com/docs/help/ui-components/sv-repeat-button/): A button that keeps firing while you hold it down - after an initial delay, then at a steady interval.
-- [SvResult](https://svgrid.com/docs/help/ui-components/sv-result/): A full result page: a centred icon, title, description, and actions for the outcome of a flow - success, error, warning, info, or not-found. The whole-screen counterpart to a toast.
-- [SvRichText](https://svgrid.com/docs/help/ui-components/sv-rich-text/): A lightweight WYSIWYG editor: a formatting toolbar over a contentEditable region that emits HTML through a bindable value.
-- [SvScrollArea](https://svgrid.com/docs/help/ui-components/sv-scroll-area/): A scroll container with the kit's themed custom scrollbars, so any panel matches the grid and demos without hand-rolling scrollbar CSS.
-- [SvSegmented](https://svgrid.com/docs/help/ui-components/sv-segmented/): A segmented control: a compact row of mutually-exclusive options in a shared track - the modern alternative to a small radio group or a tab strip for a setting.
+- [Feedback & display](https://svgrid.com/docs/help/ui-components/feedback/): Status, identity, loading and surface primitives for dashboards and detail panels. All are theme-token driven (light / dark + presets) and reduced-motion aware.
+- [SvBadge](https://svgrid.com/docs/help/ui-components/sv-badge/): A small status pill or count label - the quiet workhorse for statuses, counts, and tags across tables and cards.
 - [SvSkeleton](https://svgrid.com/docs/help/ui-components/sv-skeleton/): A shimmering loading placeholder that stands in for content while data is in flight - text lines, rectangles, and circles that echo the shape of what is coming.
-- [SvSlider](https://svgrid.com/docs/help/ui-components/sv-slider/): A single or dual-thumb range slider with steps, ticks, scale labels, and full keyboard plus pointer control.
-- [SvSparkline](https://svgrid.com/docs/help/ui-components/sv-sparkline/): A tiny inline chart - line, area, bar, or win/loss - drawn from a plain number array, with no chart library.
 - [SvSpinner](https://svgrid.com/docs/help/ui-components/sv-spinner/): An indeterminate spinner: a small spinning ring for "something is happening" when you cannot show real progress.
-- [SvSplitter](https://svgrid.com/docs/help/ui-components/sv-splitter/): Two resizable panes divided by a draggable WAI-ARIA separator, with pointer drag and arrow-key resize.
-- [SvStat](https://svgrid.com/docs/help/ui-components/sv-stat/): A KPI / metric card: a label, a big value, and an optional delta with an auto-colored up/down trend, plus slots for an icon and an inline chart.
-- [SvStepper](https://svgrid.com/docs/help/ui-components/sv-stepper/): A progress stepper for wizards and multi-step forms. It lays out completed, active, and upcoming steps so the user always knows where they are.
-- [SvSwitchButton](https://svgrid.com/docs/help/ui-components/sv-switch-button/): An on/off sliding switch with the ARIA switch role - the control for settings that take effect immediately.
-- [SvTabs](https://svgrid.com/docs/help/ui-components/sv-tabs/): A WAI-ARIA tabs widget with roving-tabindex arrow-key navigation, four tab positions, and optional closable tabs.
-- [SvTagsInput](https://svgrid.com/docs/help/ui-components/sv-tags-input/): An editable token / chips input - type to add, click x or Backspace to remove.
-- [SvTextArea](https://svgrid.com/docs/help/ui-components/sv-text-area/): The multi-line text editor - with optional auto-grow and a character counter.
-- [SvTextInput](https://svgrid.com/docs/help/ui-components/sv-text-input/): The base single-line text editor for the whole kit - one control for text, email, url, tel, and search.
-- [SvTimePicker](https://svgrid.com/docs/help/ui-components/sv-time-picker/): An analog clock-dial time picker - 12- or 24-hour, minute snapping, and an hour-to-minute auto-switch. Drag the hand or click a number.
+- [SvLoadingOverlay](https://svgrid.com/docs/help/ui-components/sv-loading-overlay/): A cover-a-container loading scrim: a translucent overlay with a centred spinner that sits on top of any positioned parent while its content loads or saves.
+- [SvAlert](https://svgrid.com/docs/help/ui-components/sv-alert/): An inline, persistent contextual message - info, success, warning, danger, or neutral - with an icon, optional title, dismiss button, and trailing actions.
+- [SvEmptyState](https://svgrid.com/docs/help/ui-components/sv-empty-state/): A centered placeholder for empty lists, no-results screens, and blank panels: an icon or illustration, a title, a description, and an action slot.
+- [SvResult](https://svgrid.com/docs/help/ui-components/sv-result/): A full result page: a centred icon, title, description, and actions for the outcome of a flow - success, error, warning, info, or not-found. The whole-screen counterpart to a toast.
+- [SvChip](https://svgrid.com/docs/help/ui-components/sv-chip/): A compact, interactive pill for a selected value, filter token, or entity: an optional leading avatar or icon, a label, and an optional remove button.
 - [SvTimeline](https://svgrid.com/docs/help/ui-components/sv-timeline/): A vertical activity or history feed: a connecting rail with a colored marker per entry, plus a title, timestamp, and description.
-- [SvToaster](https://svgrid.com/docs/help/ui-components/sv-toaster/): The host that renders the shared toast queue. Mount it once near your app root; call toast() from anywhere to push a notification.
-- [SvToggleButton](https://svgrid.com/docs/help/ui-components/sv-toggle-button/): A button with a sticky pressed on/off state, exposed to assistive tech via aria-pressed.
-- [SvTooltip](https://svgrid.com/docs/help/ui-components/sv-tooltip/): A small hover and focus tooltip anchored to its child, portalled to <body> so it is never clipped by a scroll container.
-- [SvTour](https://svgrid.com/docs/help/ui-components/sv-tour/): A guided product tour: it spotlights each target element in turn, anchors a popover with the step's copy, and walks the user through Back / Next / Done.
-- [SvTreeSelect](https://svgrid.com/docs/help/ui-components/sv-tree-select/): A single-select dropdown that shows an indented, collapsible tree in its panel - the cascader / tree-select pattern. Pick a node from a hierarchy, optionally showing its full path in the trigger.
-- [SvTree](https://svgrid.com/docs/help/ui-components/sv-tree/): A WAI-ARIA tree view: expand/collapse, single-select highlight, cascading tri-state checkboxes, keyboard navigation, and - for large or remote data - fixed-row virtualization and lazy loading.
+- [SvAvatar](https://svgrid.com/docs/help/ui-components/sv-avatar/): A user or entity avatar: an image with an automatic initials-and-color fallback, plus an optional presence status dot.
+- [SvAvatarGroup](https://svgrid.com/docs/help/ui-components/sv-avatar-group/): Overlapping, stacked avatars with a "+N" overflow pill - the "assigned to" and "members" row for cards, tables, and detail panels.
+- [SvCarousel](https://svgrid.com/docs/help/ui-components/sv-carousel/): A slideshow: a sliding track with prev/next arrows, dot indicators, optional autoplay that pauses on hover, and touch swipe.
 - [Typography - SvTitle, SvText, SvAnchor, SvBlockquote, SvMark, SvList](https://svgrid.com/docs/help/ui-components/sv-typography/): A small set of prose primitives so headings, body copy, links, quotes, highlights, and lists all pull from one type scale and the shared --sg-* tokens - instead of scattering ad-hoc font sizes and...
+- [Display primitives - SvKbd, SvCode, SvAspectRatio, SvVisuallyHidden](https://svgrid.com/docs/help/ui-components/sv-display-primitives/): The small display helpers you reach for constantly in docs, command palettes, and media layouts - each themed from the shared --sg-* tokens and dependency-free.
+- [Navigation](https://svgrid.com/docs/help/ui-components/navigation/): Wayfinding components for admin apps and Studio-generated screens. Pure, keyboard-accessible, theme-token driven.
+- [SvBreadcrumb](https://svgrid.com/docs/help/ui-components/sv-breadcrumb/): A navigation trail that shows where the current page sits in your app's hierarchy.
+- [SvPagination](https://svgrid.com/docs/help/ui-components/sv-pagination/): A standalone pager: page numbers with an ellipsis, plus prev/next and optional first/last controls.
+- [SvStepper](https://svgrid.com/docs/help/ui-components/sv-stepper/): A progress stepper for wizards and multi-step forms. It lays out completed, active, and upcoming steps so the user always knows where they are.
+- [SvNavPane](https://svgrid.com/docs/help/ui-components/sv-nav-pane/): An Outlook-style navigation pane: collapsible sections, items with icons and badge counts, one level of nested sub-items, and an optional bottom module strip.
+- [SvTree](https://svgrid.com/docs/help/ui-components/sv-tree/): A WAI-ARIA tree view: expand/collapse, single-select highlight, cascading tri-state checkboxes, keyboard navigation, and - for large or remote data - fixed-row virtualization and lazy loading.
+- [SvCommand](https://svgrid.com/docs/help/ui-components/sv-command/): A Cmd+K command palette: a fuzzy-searchable list of actions in a centered, focus-trapped dialog, with an optional global hotkey.
+- [SvTour](https://svgrid.com/docs/help/ui-components/sv-tour/): A guided product tour: it spotlights each target element in turn, anchors a popover with the step's copy, and walks the user through Back / Next / Done.
+- [SvRichText](https://svgrid.com/docs/help/ui-components/sv-rich-text/): A lightweight WYSIWYG editor: a formatting toolbar over a contentEditable region that emits HTML through a bindable value.
 
 ## SvGrid Enterprise
 
 ### Rows
 
+- [Gallery mode](https://svgrid.com/docs/help/rows/gallery/): Set the gallery prop and the grid renders its rows as cards instead of a table: a cover image, a title and a few fields per row, in a wall that fills the width.
 - [Gantt chart mode](https://svgrid.com/docs/help/rows/gantt/): The Gantt view of the Svelte data grid is in progress and due on 1 November 2026. What it will do, and what to use for a project timeline until then.
 
 ### Server data
@@ -507,6 +515,26 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - [Workbooks: several sheets that read each other](https://svgrid.com/docs/help/cells/workbooks/): The formula engine parsed Orders!A1 and 'Price list'!A1:C9 from the day it was promoted. This is the model those references point at.
 - [Tables and structured references](https://svgrid.com/docs/help/cells/tables/): A table is a named region with a header row, so a formula can say Orders[Amount] instead of D2:D57.
 
+## SvGrid Base
+
+### SvGrid Base
+
+- [From a database to an app](https://svgrid.com/docs/help/base/quick-start/): You have a database. One call reads its tables and <SvBase> turns them into an app your team can use: a tab per table, fields typed from the columns, links from the foreign keys, colored selects,...
+- [Build a project tracker](https://svgrid.com/docs/help/base/start/): SvGrid Base is a table database you put inside your own Svelte app: typed fields, saved views (a grid, a Kanban board, a calendar, a gallery, a form), filters, groups, row colors, linked records,...
+- [Ready-to-use bases](https://svgrid.com/docs/help/base/templates/): Each base below is one <SvBase> with sample data: the fields, the saved views and the forms a team would set up on day one.
+- [Link tables: lookups, rollups and counts](https://svgrid.com/docs/help/base/linked-records/): A base holds several tables, and a link field relates their records: a deal names its account, the account lists its deals.
+- [Computed fields with formulas](https://svgrid.com/docs/help/base/formulas/): A formula field works out its value from the other fields of the same record: a stock value from quantity and unit cost, a status from a reorder level, a date 90 days after the last count.
+- [Views for every team](https://svgrid.com/docs/help/base/views/): One table of records, many ways to look at it. Product reads the roadmap grouped by quarter, engineering works off a status board, the leads check a timeline, and anyone in the company files a...
+- [Collect records with forms](https://svgrid.com/docs/help/base/forms/): A form view asks for some of a table's fields and adds a record when it is sent. Use it for records other people start: a bug report, an expense, a job application.
+- [People, comments and files](https://svgrid.com/docs/help/base/collaboration/): A tracker one person fills in needs a status column and little else. Once a team uses it, people want to see who a task is assigned to, who changed the status and when, a thread of comments on the...
+- [Build your own field type](https://svgrid.com/docs/help/base/custom-field-type/): A field type decides what a column holds and how it behaves: what the cell shows, which editor opens, how pasted text is read, what the footer can sum.
+- [Automations](https://svgrid.com/docs/help/base/automations/): An automation does something on its own when something happens to a record: a task set to Done ticks its Done box, a new request goes to Todo, a blocked task tells its owner, a button starts the...
+- [Keep a base in a database](https://svgrid.com/docs/help/base/data/): A base can keep its records in your database instead of the page. Give a table a source and <SvBase> loads the records from it when it opens, then writes every change back: a cell edit, a pasted...
+- [Build a base on Supabase](https://svgrid.com/docs/help/base/supabase/): This tutorial puts a project tracker in a Svelte app with its records in Supabase: two tables, Projects and Tasks, a link between them stored as a foreign key, and edits from other people arriving...
+- [Build a base on Postgres](https://svgrid.com/docs/help/base/postgres/): This tutorial keeps a base in your own Postgres database, behind your own SvelteKit server.
+- [Build a base on your API](https://svgrid.com/docs/help/base/rest-api/): When your data sits behind an API you already have, a base can use it as it is: it reads a table with one GET, and writes each change with POST, PATCH or DELETE.
+- [Field types](https://svgrid.com/docs/help/fields/): A column can say what it is - a rating, a URL, a single select with colored options, a list of files - with fieldType, and set that type's properties with fieldProps.
+
 ## SvGrid Studio
 
 ### Studio
@@ -563,6 +591,8 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 ### SvGrid vs other data grids
 
 - [SvGrid vs AG Grid (community + enterprise)](https://svgrid.com/compare/ag-grid/): SvGrid vs AG Grid for Svelte 5: features AG Grid sells as Enterprise that SvGrid ships MIT, measured bundle sizes, benchmark timings and a migration guide.
+- [SvGrid vs Airtable](https://svgrid.com/compare/airtable/): Host an Airtable-style table database inside your own Svelte app: SvGrid Base vs Airtable on embedding, your own database, views, automations and pricing.
+- [SvGrid vs Baserow](https://svgrid.com/compare/baserow/): A table database inside your own Svelte app instead of a read-only Baserow iframe: SvGrid Base vs Baserow on embedding, views, your database and pricing.
 - [SvGrid vs DevExtreme DataGrid (DevExpress)](https://svgrid.com/compare/devextreme-datagrid/): DevExtreme is a deep, commercial multi-framework grid with strong vendor support. SvGrid is Svelte-5-native with an MIT core and a far lower-cost paid...
 - [SvGrid vs Glide Data Grid](https://svgrid.com/compare/glide-data-grid/): Glide wins on raw canvas FPS for hundreds of thousands of visible cells. SvGrid renders accessible, selectable DOM with virtualization and is...
 - [SvGrid vs Grid.js](https://svgrid.com/compare/gridjs/): Grid.js is a lovely lightweight pick for search / sort / paginate. SvGrid is the fuller, Svelte-native grid when you need virtualization, editing,...
@@ -570,6 +600,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - [SvGrid vs jqxGrid (jQWidgets)](https://svgrid.com/compare/jqxgrid/): Same team, same engineering DNA. Choose jqxGrid for jQuery / Angular / React / Vue or a multi-framework codebase; choose SvGrid for a Svelte-5-native...
 - [SvGrid vs Kendo UI Grid (Telerik)](https://svgrid.com/compare/kendo-ui-grid/): Kendo is a polished enterprise suite with full vendor support - and a commercial license to match.
 - [SvGrid vs MUI X DataGrid](https://svgrid.com/compare/mui-x-datagrid/): Moving a MUI X DataGrid to Svelte 5: what SvGrid ships MIT that MUI X sells as Pro or Premium, measured bundle sizes, dated pricing, and a migration guide.
+- [SvGrid vs NocoDB](https://svgrid.com/compare/nocodb/): A table database inside your own Svelte app instead of a NocoDB iframe: SvGrid Base vs NocoDB on licence, embedding, views, automations and your Postgres.
 - [SvGrid vs PrimeVue / PrimeNG / PrimeReact DataTable](https://svgrid.com/compare/primevue-datatable/): Prime DataTable is the natural pick inside the Prime suites for Vue, Angular and React, and since PrimeVue 5 it is a commercial product with a...
 - [SvGrid vs React Data Grid (adazzle)](https://svgrid.com/compare/react-data-grid/): react-data-grid is a strong, lightweight React grid with great editing. SvGrid is the Svelte-5-native equivalent, with a similar feature set and no...
 - [SvGrid vs Smart.Grid (Smart Web Components)](https://svgrid.com/compare/smart-grid/): Same team again. Smart.Grid is a great framework-agnostic web component that even works inside Svelte; SvGrid is the runes-native option, with Svelte...

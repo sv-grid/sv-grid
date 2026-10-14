@@ -32,6 +32,34 @@ export type GanttProConfig<
   TData extends RowData = RowData,
 > = GanttConfig<TFeatures, TData> & {
   /**
+   * A bar's color from its row (a status option's color, say). Wins over
+   * `colorField` and `color`; return nothing to fall back to them.
+   */
+  colorOf?: (row: TData) => string | null | undefined;
+  /**
+   * Open a task where the app keeps it (a record view, a page) instead of
+   * the built-in drawer: a click or Enter on a bar, the task's name in the
+   * table, and "Open" in the bar's menu call it.
+   */
+  onTaskOpen?: (row: TData) => void;
+  /**
+   * Field holding the ids of the tasks this one DEPENDS ON (its predecessors),
+   * drawn as finish-to-start arrows into it. The other direction from
+   * `dependencyField`, which lists a task's successors.
+   */
+  predecessorField?: keyof TData & string;
+  /**
+   * A task's progress, 0 to 100, from its row: for a field that holds
+   * something else (a fraction, a status). Wins over `progressField` when
+   * drawing; the grip still reports 0 to 100 through `onProgressChange`.
+   */
+  progressValue?: (row: TData) => number | null | undefined;
+  /**
+   * Widths (px) of task-table columns by id, over the columns' own `width`:
+   * a grid column sized for a wide table can sit narrower beside the bars.
+   */
+  tableColumnWidths?: Record<string, number>;
+  /**
    * Highlight the critical path: the chain of linked tasks with no slack,
    * where any slip moves the project's finish. Needs `dependencies`.
    */

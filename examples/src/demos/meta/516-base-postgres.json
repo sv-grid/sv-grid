@@ -1,0 +1,32 @@
+{
+  "description": "SvGrid Base, a table database component for Svelte 5, on a real Postgres database running in the page with PGlite. Tasks, Projects and Tags load from SQL tables, and every edit runs as an UPDATE, INSERT or DELETE that shows in the log. Task to project is a foreign key, task to tag a junction table, and Run SQL changes the data while the base is open.",
+  "keywords": [
+    "svelte postgres table editor",
+    "svelte database grid crud",
+    "svelte pglite",
+    "svelte foreign key link field",
+    "svelte sql backed spreadsheet"
+  ],
+  "faq": [
+    {
+      "question": "How does a base table connect to Postgres?",
+      "answer": "Give the table a source: baseSource(createSqlDataSource({ schema, table, execute })). The base loads every record through it and writes each change back as parameterized SQL. On a server, execute runs the query with your Postgres driver or Drizzle; here it runs on PGlite in the page."
+    },
+    {
+      "question": "How are link fields stored?",
+      "answer": "A link to one record is a foreign key column, named in the links option: { project: { column: 'project_id' } }. A link to many records goes through a junction table: { tags: { through: junctionSource, from: 'task_id', to: 'tag_id' } }. The field that links back, such as a project's Tasks, is worked out in the page from the other side and never stored."
+    },
+    {
+      "question": "Can automations run on the server?",
+      "answer": "Yes. An automation set to run on the server is run by createAutomationServer in your backend, for every change to the database whoever made it. It can call webhooks with secrets the page never sees and send email. In the demo a server runs in the page: set a task to Blocked and its chat message shows under Sent by the server."
+    },
+    {
+      "question": "What happens when the database refuses a change?",
+      "answer": "The base puts the cell back as the database has it, and the tab bar and a notice give the database's message. Add a check constraint with Run SQL and break it to see it."
+    },
+    {
+      "question": "How many records can a base table hold?",
+      "answer": "A base filters, groups and totals in the page, so a table loads in full, up to 10,000 records by default (the limit option). Past that, the tab bar says the table shows the first records only. For tables of millions of rows, use the grid with a server row model instead."
+    }
+  ]
+}

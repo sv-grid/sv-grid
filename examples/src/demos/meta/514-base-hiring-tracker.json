@@ -1,0 +1,29 @@
+{
+  "description": "A hiring tracker built with SvGrid Base, a table database component for Svelte 5: a Candidates table and a Roles table as tabs, linked both ways. Candidates have a photo, the role, the stage, a recruiter, a rating, an interview date, a salary ask and a resume; each role lists its candidates. Views for the hiring pipeline as a Kanban, all candidates, a gallery of faces, the interview calendar and an application form.",
+  "keywords": [
+    "svelte applicant tracking component",
+    "svelte hiring pipeline kanban",
+    "svelte recruiting tracker",
+    "svelte table database component",
+    "svelte job application form",
+    "svelte applicant tracking"
+  ],
+  "faq": [
+    {
+      "question": "Is this a template or a component?",
+      "answer": "A component: <SvBase> with your rows and columns. Most of the demo is sample data; the views, the field editor, the record view and the form come with the component."
+    },
+    {
+      "question": "Can candidates apply through it?",
+      "answer": "The Apply view is a form over the same fields: name, email, role, resume and notes. Submitting adds a candidate in the Applied stage, the way + Add row does."
+    },
+    {
+      "question": "Where do interviewers leave feedback?",
+      "answer": "Open a candidate (Space on a row, or click a card): the record lists every field and, beside them, the changes made and the comments, with a box for a new one."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createCellRender } from './cell-render'
+import * as conditionalFormatting from './conditional-formatting'
 
 // --- minimal fakes -------------------------------------------------------
 //
 // createCellRender only reaches into a small slice of the controller: it
 // reads `ctx.props`, `ctx.grid`, `ctx.conditionalColumnStats`,
+// `ctx.conditionalFormatting` (the module the controller loads on demand),
 // `ctx.noteOverrides` and `ctx.editorOptionsCache`. We build a row/column
 // shape that mirrors the @svgrid/grid runtime closely enough to exercise
 // every branch.
@@ -51,6 +53,7 @@ function makeCtx(overrides: Partial<any> = {}): any {
     props: {},
     grid: { id: 'grid' },
     conditionalColumnStats: new Map(),
+    conditionalFormatting,
     noteOverrides: {},
     editorOptionsCache: {},
     // Async `editorOptions` bookkeeping: resolved lists (reactive in the real
@@ -91,6 +94,12 @@ describe('createCellRender / cellConditionalFormat', () => {
 
     const miss = cr.cellConditionalFormat(makeRow('r', { amt: 1 }), makeColumn('amt'), 1)
     expect(miss).toEqual({})
+  })
+
+  it('draws no format until the controller has loaded the formatting module', () => {
+    const formats = [{ type: 'rule', when: () => true, background: '#ff0000' }]
+    const cr = createCellRender(makeCtx({ props: { conditionalFormats: formats }, conditionalFormatting: null }))
+    expect(cr.cellConditionalFormat(makeRow('r', { amt: 20 }), makeColumn('amt'), 20)).toBeNull()
   })
 
   it('passes the precomputed column stat through to colorScale formats', () => {

@@ -27,6 +27,7 @@
     portalToBody,
     popIn,
     createDismissableLayer,
+    getGridExtension,
     onScrollOutside,
     SvDrawer,
     SvForm,
@@ -161,7 +162,16 @@
   }
 
   // --- columns lookup + default title field ---
-  const fieldColumns = $derived(columns.filter((c) => typeof c.field === "string"));
+  // Columns declared by field type are filled in as the grid fills them
+  // (formatter, computed value), so the task table shows what the grid shows.
+  const fieldColumns = $derived.by(() => {
+    const own = columns.filter((c) => typeof c.field === "string");
+    const fill = getGridExtension()?.column;
+    if (!fill) return own;
+    type Def = Record<string, unknown>;
+    const defs = own as unknown as Def[];
+    return defs.map((c) => (c.fieldType ? fill(c, defs) : c)) as unknown as typeof own;
+  });
   const titleField = $derived(
     gantt.titleField ?? (fieldColumns[0]?.field as string | undefined),
   );
@@ -178,7 +188,11 @@
     getTitle: (r) => (titleField ? String(fieldValue(r, titleField) ?? "") : ""),
     getProgress: (r) =>
       progressOf[key(r)] ??
-      (gantt.progressField ? (fieldValue(r, gantt.progressField) as never) : undefined),
+      (pcfg.progressValue
+        ? (pcfg.progressValue(r) as never)
+        : gantt.progressField
+          ? (fieldValue(r, gantt.progressField) as never)
+          : undefined),
     getParent: (r) =>
       gantt.parentField
         ? (fieldValue(r, gantt.parentField) as string | null | undefined)
@@ -186,9 +200,10 @@
     getMilestone: (r) =>
       gantt.milestoneField ? !!fieldValue(r, gantt.milestoneField) : false,
     getColor: (r) =>
-      gantt.colorField
+      pcfg.colorOf?.(r) ??
+      (gantt.colorField
         ? ((fieldValue(r, gantt.colorField) as string | undefined) ?? gantt.color)
-        : gantt.color,
+        : gantt.color),
   }));
 
   const tasks = $derived(resolveTasks(data, spec, cal));
@@ -323,6 +338,9 @@
     (pct: number) => new Date(axis.start.getTime() + (pct / 100) * axis.totalMs),
   );
   const bodyH = $derived(Math.max(rowH, nodes.length * rowH));
+  // The chart fills the pane below the last row too: the weekend shading runs
+  // to the bottom, and a double-click there adds a task.
+  let axisH = $state(0);
 
   // Non-working columns, as day bands. Under a day-granular axis these are
   // whole days; a tick coarser than a day (week / month) is never wholly
@@ -419,6 +437,16 @@
       });
     };
     for (const d of gantt.dependencies ?? []) push(d);
+    // Predecessors listed on the task that waits for them.
+    const pf = pcfg.predecessorField;
+    if (pf) {
+      for (const row of data) {
+        const raw = fieldValue(row, pf);
+        const ids = Array.isArray(raw) ? raw : raw == null || raw === "" ? [] : [raw];
+        const to = key(row);
+        for (const from of ids) push({ id: `${String(from)}->${to}`, from: String(from), to });
+      }
+    }
     const f = gantt.dependencyField;
     if (f) {
       for (const row of data) {
@@ -780,7 +808,7 @@
     // The hover card describes the bar as it was grabbed; after a move it
     // would go on showing those dates until the pointer left the bar.
     clearTimeout(tipTimer);
-    tipBar = null;
+    tipKey = null;
     window.addEventListener("pointermove", onDragMove);
     window.addEventListener("pointerup", onDragEnd, { once: true });
     window.addEventListener("pointercancel", onDragCancel, { once: true });
@@ -1332,6 +1360,8 @@
     kind: "field" | "duration" | "progress" | "slack";
     field?: string;
     numeric?: boolean;
+    /** The column itself, so a cell reads its value and shows it as the grid does. */
+    def?: ColumnDef<TFeatures, TData>;
   };
   /** Two columns a consumer can name in `tableColumns` without defining them. */
   const BUILT_IN: Record<string, TableCol> = {
@@ -1346,9 +1376,10 @@
     const fromDef = (c: ColumnDef<TFeatures, TData>): TableCol => ({
       id: colId(c),
       label: typeof c.header === "string" ? c.header : ((c.field as string) ?? ""),
-      width: c.width ?? 140,
+      width: pcfg.tableColumnWidths?.[colId(c)] ?? c.width ?? 140,
       kind: "field",
       field: c.field as string | undefined,
+      def: c,
     });
     const want = gantt.tableColumns;
     if (!want) return fieldColumns.map(fromDef);
@@ -1397,7 +1428,9 @@
     if (tableWFitted || tableWTouched || gantt.tableWidth != null || viewportW <= 0) return;
     tableWFitted = true;
     const trailing = tableColsWidth - (tableCols[0]?.width ?? 0);
-    tableW = Math.max(180, trailing + 120, Math.min(tableW, Math.floor(viewportW * 0.4)));
+    // Never more than 60% of the container either: with many columns the
+    // trailing ones clip (the splitter shows them), the chart keeps its room.
+    tableW = Math.min(Math.floor(viewportW * 0.6), Math.max(180, trailing + 120, Math.min(tableW, Math.floor(viewportW * 0.4))));
   });
   const showTable = $derived(tableCols.length > 0 && tableW > 0);
 
@@ -1428,8 +1461,27 @@
       }
       return String(slackDays(cpm, n.task.key));
     }
-    if (col.kind === "field" && col.field) return fmt(fieldValue(n.task.row, col.field));
+    if (col.kind === "field" && col.field) return fieldText(col, n.task.row);
     return "";
+  }
+
+  /**
+   * A field cell as the grid shows it: the column's computed value
+   * (`fieldFn`) through its `formatter` (a select's label, a person's name, a
+   * date in the column's format), else the plain value.
+   */
+  function fieldText(col: TableCol, row: TData): string {
+    const def = col.def as { fieldFn?: (r: TData) => unknown; formatter?: (c: { value: unknown; row: TData; column: unknown }) => unknown } | undefined;
+    const value = def?.fieldFn ? def.fieldFn(row) : fieldValue(row, col.field!);
+    if (def?.formatter) {
+      try {
+        return String(def.formatter({ value, row, column: { id: col.id, columnDef: def } }) ?? "");
+      } catch {
+        return fmt(value);
+      }
+    }
+    if (Array.isArray(value)) return value.map(fmt).join(", ");
+    return fmt(value);
   }
 
   // --- splitter -------------------------------------------------------------
@@ -1460,6 +1512,8 @@
   let scrollEl = $state<HTMLElement | null>(null);
   let scrollTop = $state(0);
   let viewportH = $state(0);
+  // Below viewportH, which it reads (see axisH above).
+  const fillH = $derived(Math.max(bodyH, viewportH - axisH - 1));
   function onScroll() {
     if (scrollEl) scrollTop = scrollEl.scrollTop;
   }
@@ -1573,22 +1627,25 @@
   const tooltipCfg = $derived(gantt.tooltip);
   const hasTooltip = $derived(!!tooltipCfg);
   const tooltipSnippet = $derived(typeof tooltipCfg === "function" ? tooltipCfg : undefined);
-  let tipBar = $state<Bar | null>(null);
+  // The hovered bar by key, read from the bars as drawn now: a bar object
+  // kept from the hover would show the dates it had then (mid-drag, say).
+  let tipKey = $state<string | null>(null);
+  const tipBar = $derived(tipKey ? (bars.find((b) => b.key === tipKey) ?? null) : null);
   let tipPos = $state({ x: 0, y: 0 });
   let tipTimer: ReturnType<typeof setTimeout> | undefined;
   function onBarEnter(e: MouseEvent, bar: Bar) {
-    if (!hasTooltip) return;
+    if (!hasTooltip || drag) return;
     clearTimeout(tipTimer);
     const target = e.currentTarget as HTMLElement;
     tipTimer = setTimeout(() => {
       const r = target.getBoundingClientRect();
       tipPos = { x: Math.round(r.left + r.width / 2), y: Math.round(r.top) };
-      tipBar = bar;
+      tipKey = bar.key;
     }, gantt.tooltipDelay ?? 400);
   }
   function onBarLeave() {
     clearTimeout(tipTimer);
-    tipBar = null;
+    tipKey = null;
   }
   $effect(() => () => clearTimeout(tipTimer));
 
@@ -1682,6 +1739,11 @@
       suppressClick = false;
       return;
     }
+    // The app opens tasks itself (a record view): that wins over the drawer.
+    if (pcfg.onTaskOpen) {
+      pcfg.onTaskOpen(bar.row);
+      return;
+    }
     if (!hasDrawer) return;
     const next: Record<string, unknown> = {
       __start: dayInput(bar.start),
@@ -1743,8 +1805,11 @@
   let menuPanel = $state<HTMLElement | null>(null);
   function openMenu(e: MouseEvent, bar: Bar) {
     const items: MenuItem[] = [];
-    if (hasDrawer) items.push({ label: "Edit", onSelect: () => openDrawer(bar) });
-    if (editable && gantt.onTaskAdd) {
+    if (pcfg.onTaskOpen) items.push({ label: "Open", onSelect: () => pcfg.onTaskOpen?.(bar.row) });
+    else if (hasDrawer) items.push({ label: "Edit", onSelect: () => openDrawer(bar) });
+    // A subtask needs a tree to hang in: without parentField it would be
+    // just another task.
+    if (editable && gantt.onTaskAdd && gantt.parentField) {
       items.push({
         label: "Add subtask",
         onSelect: () => gantt.onTaskAdd?.(bar.start, addDays(bar.start, 1), bar.key),
@@ -1937,6 +2002,8 @@
                         ></span>
                       </span>
                       <span class="sv-gantt-meter-pct">{Math.round(drawnSpan(node).progress)}%</span>
+                    {:else if ci === 0 && pcfg.onTaskOpen}
+                      <button type="button" class="sv-gantt-cell-text sv-gantt-open" title={`Open ${node.task.title}`} onclick={() => pcfg.onTaskOpen?.(node.task.row)}>{cellText(col, node)}</button>
                     {:else}
                       <span class="sv-gantt-cell-text">{cellText(col, node)}</span>
                     {/if}
@@ -1957,7 +2024,7 @@
       {/if}
 
       <div class="sv-gantt-chart" style={`width:${axisPx}px`}>
-        <div class="sv-gantt-axis" style={`width:${axisPx}px`}>
+        <div class="sv-gantt-axis" style={`width:${axisPx}px`} bind:clientHeight={axisH}>
           <div class="sv-gantt-majors">
             {#each axis.majors as m (m.leftPct)}
               <div
@@ -1982,7 +2049,7 @@
         <div
           class="sv-gantt-body"
           bind:this={bodyEl}
-          style={`width:${axisPx}px; height:${bodyH}px`}
+          style={`width:${axisPx}px; height:${fillH}px`}
           ondblclick={onBodyDblClick}
           oncontextmenu={onBodyContextMenu}
         >
@@ -2400,6 +2467,11 @@
   }
   .sv-gantt-parent { font-weight: 600; }
   .sv-gantt-cell-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sv-gantt-open {
+    min-width: 0; padding: 0; border: 0; background: none; font: inherit; color: inherit; text-align: start; cursor: pointer;
+  }
+  .sv-gantt-open:hover { text-decoration: underline; text-underline-offset: 2px; }
+  .sv-gantt-open:focus-visible { outline: 2px solid var(--sg-focus, var(--sg-accent, #2563eb)); outline-offset: 1px; border-radius: 3px; }
   .sv-gantt-chevron {
     flex: none;
     width: 16px;

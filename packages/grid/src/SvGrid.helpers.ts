@@ -4,6 +4,7 @@
 import type { CellEditorType, CellEditorOption } from "./index";
 import type { ResolvedCellFormat } from "./conditional-formatting";
 import { parseDateValue } from "./cell-formatting";
+import { columnDataType, isDateDataType } from "./column-types";
 
 export function cfTextStyle(cf: ResolvedCellFormat): string {
   let s = "";
@@ -177,11 +178,16 @@ export function fromIsoDateLocal(value: string | null | undefined): Date | null 
   return Number.isNaN(local.getTime()) ? null : local;
 }
 
-export function usesRichDateFilter(editorType: CellEditorType | undefined): boolean {
-  if (!editorType) return false;
-  if (String(editorType).endsWith("-native")) return false;
-  const base = baseEditor(editorType);
-  return base === "date" || base === "datetime" || base === "time";
+/**
+ * Whether a column's filter uses the date picker: its data type is a date
+ * (whatever edits it), or its editor is the date / time picker. A `-native`
+ * editor keeps the browser's own input.
+ */
+export function usesRichDateFilter(def: { editorType?: CellEditorType; cellDataType?: string } | undefined): boolean {
+  const editorType = def?.editorType;
+  if (editorType && String(editorType).endsWith("-native")) return false;
+  const base = editorType ? baseEditor(editorType) : "";
+  return base === "date" || base === "datetime" || base === "time" || isDateDataType(columnDataType(def));
 }
 
 export function getCellEditorInputType(editorType: CellEditorType) {

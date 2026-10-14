@@ -180,6 +180,7 @@ import AdminTemplate from '../demos/22-admin-template.svelte'
 import BulkActions from '../demos/23-bulk-actions.svelte'
 import Validation from '../demos/24-validation.svelte'
 import ColumnPinning from '../demos/25-column-pinning.svelte'
+import ColumnPinSplitter510 from '../demos/510-column-pin-splitter.svelte'
 import ListChipsEditors from '../demos/26-list-chips-editors.svelte'
 import SpreadsheetRibbon from '../demos/27-spreadsheet-ribbon.svelte'
 import OrgChartTree from '../demos/28-org-chart-tree.svelte'
@@ -401,6 +402,26 @@ import SheetBoundTabs498         from '../demos/498-sheet-bound-tabs.svelte'
 import SheetEngineeringStats499  from '../demos/499-sheet-engineering-stats.svelte'
 import WorkerDataSource500       from '../demos/500-worker-data-source.svelte'
 import BigData503                from '../demos/503-big-data.svelte'
+import ProjectTracker504         from '../demos/504-project-tracker.svelte'
+import BaseInventory515         from '../demos/515-base-inventory.svelte'
+import BasePostgres516          from '../demos/516-base-postgres.svelte'
+import BaseSupabase517          from '../demos/517-base-supabase.svelte'
+import BaseRestApi518           from '../demos/518-base-rest-api.svelte'
+import BaseFromDatabase519      from '../demos/519-base-from-database.svelte'
+import BaseBugTracker520        from '../demos/520-base-bug-tracker.svelte'
+import BaseEventPlanning521     from '../demos/521-base-event-planning.svelte'
+import BaseOkrs522              from '../demos/522-base-okrs.svelte'
+import BaseExpenses523          from '../demos/523-base-expenses.svelte'
+import BaseOnboarding524        from '../demos/524-base-onboarding.svelte'
+import BaseHiring514            from '../demos/514-base-hiring-tracker.svelte'
+import BaseRoadmap513           from '../demos/513-base-product-roadmap.svelte'
+import BaseCrm512               from '../demos/512-base-sales-crm.svelte'
+import BaseContent511           from '../demos/511-base-content-calendar.svelte'
+import GalleryCatalog505        from '../demos/505-gallery-catalog.svelte'
+import GalleryTeam506           from '../demos/506-gallery-team-directory.svelte'
+import GalleryListings507       from '../demos/507-gallery-listings.svelte'
+import GalleryFieldTypes508     from '../demos/508-gallery-field-types.svelte'
+import GalleryScale509          from '../demos/509-gallery-at-scale.svelte'
 import MailApp501                from '../demos/501-mail-app.svelte'
 import OpsWorkspace502           from '../demos/502-ops-workspace.svelte'
 import RealtimeCollaboration     from '../demos/149-realtime-collaboration.svelte'
@@ -484,6 +505,8 @@ export type DemoCategory =
   | 'Spreadsheet'
   | 'Charts'
   | 'Kanban'
+  // Rows as a wall of cards: the grid `gallery` prop.
+  | 'Gallery'
   | 'Gantt'
   | 'Scheduler'
   | 'Themes & Styling'
@@ -498,6 +521,8 @@ export type DemoCategory =
   | 'Studio'
   | 'AI'
   | 'Alerts'
+  // SvGrid Base (Suite): a table database - fields, views, records.
+  | 'Base'
   // Whole application screens composed from the grid, the UI kit and the
   // Enterprise renderers. Every demo in it needs @svgrid/enterprise.
   | 'App Templates'
@@ -526,11 +551,13 @@ export const ENTERPRISE_CATEGORIES = new Set<DemoCategory>([
   'Data Export & Import',
   'Pivot Grid',
   'Kanban',
+  'Gallery',
   'Spreadsheet',
   'Scheduler',
   'Gantt',
   'Studio',
   'Alerts',
+  'Base',
   // Only templates that use a paid feature (scheduler, export, alerts, board)
   // belong here. One built from free parts goes in 'Industry Templates'.
   'App Templates',
@@ -578,6 +605,7 @@ export const CATEGORY_ORDER: DemoCategory[] = [
   'Charts',
   'Server-Side Row Model',
   'Kanban',
+  'Gallery',
   'Scheduler',
   'Gantt',
   'Themes & Styling',
@@ -590,6 +618,7 @@ export const CATEGORY_ORDER: DemoCategory[] = [
   'Pivot Grid',
   'Studio',
   'Alerts',
+  'Base',
   'App Templates',
   // SvGrid Editors product
   'Date & Time',
@@ -868,6 +897,7 @@ const baseDemos: Demo[] = [
 
   // ----- Columns
   demo('25-column-pinning',         'Column pinning + freezing',   'Wide 13-column grid. Pin Company left and Price right via the column menu; the middle scrolls under sticky edges.', 'Columns', ColumnPinning),
+  demo('510-column-pin-splitter',   'Drag to pin columns',         'Drag the line at the edge of the pinned columns to pin more or fewer: pinSplitter snaps to column edges, shows how many it will pin, keeps the columns where they are on screen and leaves room for the ones that scroll. Escape cancels; Tab to it and use the arrow keys. Free, and loaded only when the prop is on.', 'Columns', ColumnPinSplitter510),
   demo('54-columns-hierarchy',      'Columns hierarchy + manager', 'Side-panel tree of grouped columns: drag leaves to reorder, click a chevron to collapse a group into one summary column, toggle visibility per leaf or whole group.', 'Columns', ColumnsHierarchy),
   demo('63-column-layout-api',      'Column layout API',           'setColumnWidth + setColumnPinning + getColumnWidths + getColumnPinning. Save the snapshot to localStorage, restore on reload, drive widths and pins from buttons.', 'Columns', ColumnLayoutApi),
   demo('146-tool-panel',            'Tool panel (Columns + Filters)','The docked enterprise sidebar, two tabs. Columns: toggle visibility, reorder up/down, group by a column. Filters: an operator + value control per column (numeric operators come free via cellDataType), kept in sync with the column menu. Enable with the toolPanel prop.', 'Columns', ToolPanel),
@@ -932,6 +962,26 @@ const baseDemos: Demo[] = [
   demo('483-server-master-detail', 'Server row model: master-detail', 'A detail panel under a leaf of a grouped server row model: the chevron on an order asks the model to open its detail (toggleDetail), the model puts a detail row under the leaf, the grid draws it through renderDetailRow at a height the virtualizer knows (detailRowHeight), and the panel fetches the order\'s line items from a second endpoint the moment it appears. The tree stays virtualized, and the region row holds under the header (stickyGroupRows) while the panels scroll past.', 'Server-Side Row Model', ServerMasterDetail483, { pro: true }),
   demo('500-worker-data-source', 'Worker data source: queries off the main thread', 'Up to a million orders in two grids. The free grid sorts, filters, searches and groups every row on the page; the Enterprise grid does the same work in a Web Worker, where a columnar engine answers each request, and the server row model brings back one block of 100 rows at a time. Compare the two meters, the slowest request and the longest frame.', 'Server-Side Row Model', WorkerDataSource500, { pro: true }),
   demo('503-big-data', 'Big data: 10M rows x 10K columns', 'Up to 10,000,000 rows and 10,000 columns in one SvGrid on the Enterprise server row model. A Web Worker sorts (radix, exact), filters, groups and edits a generated dataset and sends back only the rows on screen; the grid builds just those, so its memory and scroll cost stay flat as the row count grows. Pick a size, sort, filter, group, edit a cell, or run the benchmark: every number on the page is measured live in your browser.', 'Server-Side Row Model', BigData503, { pro: true }),
+  demo('504-project-tracker', 'Project tracker', 'A project tracker, ready to use: Tasks and Milestones as two linked tables. Tasks have status, tags, assignee, dates, estimate, progress, budget and files; each milestone lists its tasks with their progress and budget. Views for all tasks, the board by status, due dates on a calendar, a gallery and a request form. Automations close finished tasks, start work from a button and flag overdue ones.', 'Base', ProjectTracker504, { pro: true }),
+  demo('511-base-content-calendar', 'Content calendar', 'An editorial content calendar, ready to use: Posts and Campaigns as two linked tables. Posts have stage, channels, author, publish date, cover and brief. Views for the plan, the pipeline as a Kanban, the publishing calendar, a wall of covers and a pitch form.', 'Base', BaseContent511, { pro: true }),
+  demo('512-base-sales-crm', 'Sales CRM', 'A sales CRM, ready to use: Deals, Accounts and Contacts as three linked tables. Link a deal to an account and the account lists it. Views for all deals, the pipeline as a Kanban, the closing calendar, open deals by owner and a new-lead form.', 'Base', BaseCrm512, { pro: true }),
+  demo('513-base-product-roadmap', 'Product roadmap', 'A product roadmap, ready to use: Features and customer Feedback as two linked tables. Features have quarter, status, teams, lead, impact, effort and votes. Views for the roadmap grouped by quarter, a status board, a timeline, the work in progress now and a request form.', 'Base', BaseRoadmap513, { pro: true }),
+  demo('514-base-hiring-tracker', 'Hiring tracker', 'A hiring tracker, ready to use: Candidates and Roles as two linked tables. Candidates have photo, role, stage, recruiter, rating, interview date and resume; each role lists its candidates. Views for the pipeline as a Kanban, all candidates, a gallery of faces, interviews and an application form.', 'Base', BaseHiring514, { pro: true }),
+  demo('515-base-inventory', 'Inventory', 'An inventory, ready to use: Items and Suppliers as two linked tables. Items have photos, category, location, quantity, unit cost and a stock value formula; each supplier lists its items and units in stock. Views for stock by category, photos, items by location, a reorder list and an add-item form.', 'Base', BaseInventory515, { pro: true }),
+  demo('516-base-postgres', 'Base on Postgres', 'SvGrid Base on a real Postgres database running in the page (PGlite). Tasks, Projects and Tags load from SQL tables; every edit runs as an UPDATE, INSERT or DELETE you can watch in the log. Each task links to its project through a foreign key and to its tags through a junction table, and Run SQL changes the data while the base is open.', 'Base', BasePostgres516, { pro: true }),
+  demo('517-base-supabase', 'Base on Supabase, live', 'Two people on one Supabase project, side by side. Each window is its own SvGrid Base on createSupabaseDataSource with realtime: change a task on one side and the other shows it. Turn a window offline to see a failed save put the cell back.', 'Base', BaseSupabase517, { pro: true }),
+  demo('518-base-rest-api', 'Base on your API', 'A CRM base over a JSON API, built from the API description of its tables with baseTablesFromSchemas: an enum becomes a single select, a foreign key a link with a field that links back. Every edit is a PATCH, POST or DELETE in the request log, and the API refusing a negative amount puts the cell back with its reason.', 'Base', BaseRestApi518, { pro: true }),
+  demo('519-base-from-database', 'Database to app', 'Plain SQL tables in, a working app out. Pick a sample database or edit its SQL, press Make the app, and baseFromDatabase reads the tables from Postgres in the page: typed fields, colored selects from repeated values, links from foreign keys, and Kanban and calendar views, with every edit written back as SQL.', 'Base', BaseFromDatabase519, { pro: true }),
+  demo('520-base-bug-tracker', 'Bug tracker', 'A bug tracker, ready to use: Bugs and Releases as two linked tables. Bugs have severity, status, areas, reporter, assignee, release and steps to reproduce. Views for triage, a board by status, what is critical now, bugs by area and a report form, with automations that flag critical bugs and stamp fix dates.', 'Base', BaseBugTracker520, { pro: true }),
+  demo('521-base-event-planning', 'Event planning', 'Event planning, ready to use: Events, Attendees and a Checklist as linked tables. Events count who registered and the seats left. Views for the calendar, a planning board, the guest list, tickets by type and an RSVP form, with automations that build a checklist for a confirmed event and flag a full one.', 'Base', BaseEventPlanning521, { pro: true }),
+  demo('522-base-okrs', 'OKRs', 'Objectives and key results, ready to use: key results measure progress from start to target with a formula, and each objective averages them with a rollup. Views by objective, a confidence board, a weekly check-in and progress by objective, with automations for off-track and achieved results.', 'Base', BaseOkrs522, { pro: true }),
+  demo('523-base-expenses', 'Expense approvals', 'Expense approvals, ready to use: Expenses and Budgets as linked tables, with receipts, approval statuses and what is left of each budget. Views for this month, an approvals board, spend by category, receipts and a submit form, with automations that route big expenses for approval and an Approve button.', 'Base', BaseExpenses523, { pro: true }),
+  demo('524-base-onboarding', 'Employee onboarding', 'Employee onboarding, ready to use: People, their Checklist and Departments as linked tables. Views for the hiring pipeline, a photo directory, start dates on a calendar and a new hire form, with an automation that creates the checklist for IT, HR and the manager of each new hire.', 'Base', BaseOnboarding524, { pro: true }),
+  demo('505-gallery-catalog', 'Product catalog (gallery)', 'One <SvGrid> as a storefront: the `gallery` prop shows the rows as product cards drawn by a card snippet (photo, brand, rating, sale price, a badge), and Table shows the same rows. The category filter, search and sort are the grid, so both views agree; a click opens the product in a panel with Add to cart.', 'Gallery', GalleryCatalog505, { pro: true }),
+  demo('506-gallery-team-directory', 'Team directory (custom cards)', 'A gallery whose cards you draw yourself: `gallery.card` is a snippet that gets each row, so a person shows as a profile card with photo, role, team and a mail link. The search box and the Team filter buttons narrow the same rows the Table view shows.', 'Gallery', GalleryTeam506, { pro: true }),
+  demo('507-gallery-listings', 'Real estate listings', 'Listings drawn by a card snippet: the photo with its status and a save button, the price, beds, baths and size, the address and the agent. The cards are the grid filtered and sorted rows: status buttons and a beds filter set column filters, the sort menu calls api.setSort, the search box is the quick filter.', 'Gallery', GalleryListings507, { pro: true }),
+  demo('508-gallery-field-types', 'Cards from field types', 'With the fields module on, a gallery card draws each field as its cell does: select pills, stars, avatars, currency, with each field type icon by its name. The cover is the first image of an attachment field.', 'Gallery', GalleryFieldTypes508, { pro: true }),
+  demo('509-gallery-at-scale', 'Gallery at scale (5,000 cards)', '5,000 rows as cards, drawn in batches as the wall scrolls, so the first paint costs the same as a small table. Search narrows all of them; the cover is a computed column (fieldFn), so no image is stored in the rows.', 'Gallery', GalleryScale509, { pro: true }),
   demo('497-live-rest-dummyjson',   'Live REST (public API)',      'Real rows over the network from dummyjson.com via the enterprise createRestDataSource + a shape adapter (dummyJsonAdapter): skip/limit paging and sortBy/order sorting mapped to the API dialect. Swap URL + adapter (jsonServerAdapter / offsetLimitAdapter) to point at any public API. Includes an error/retry surface.', 'Server-Side Row Model', LiveRestDummyJson, { pro: true }),
   demo('467-server-row-model-1m',  'Server-Side Row Model: 1,000,000 rows', 'One grid, one rowModel prop, a million rows that stay on the server. Sort, filter, global search, grouping to any depth (Region > Country > Rep), infinite scroll or paging, inline edits applied back as transactions with the subtotal following, add and delete, select-all across rows the grid never loaded with a bulk edit by rule, failed blocks with Retry, a request log that shows every call to the columnar warehouse behind it, and a live map of the block cache per level. The row model ships in @svgrid/enterprise; the datasource contract is free.', 'Server-Side Row Model', ServerRowModel1m467, { pro: true }),
 

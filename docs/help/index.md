@@ -62,6 +62,10 @@ real-world scale:
   [Syncfusion](./migrating-from-syncfusion.md) ·
   [jqxGrid](./migrating-from-jqxgrid.md) ·
   [Smart.Grid](./migrating-from-smart-grid.md)
+- **Moving a table database into your app** - from a hosted or self-hosted table-database app to SvGrid Base:
+  [Airtable](./migrating-from-airtable.md) ·
+  [Baserow](./migrating-from-baserow.md) ·
+  [NocoDB](./migrating-from-nocodb.md)
 
 ## Patterns & playbooks
 

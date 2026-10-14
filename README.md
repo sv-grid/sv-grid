@@ -210,6 +210,7 @@ Guides: [Migrating from AG Grid](https://svgrid.com/docs/help/migrating-from-ag-
 | A data grid in a Svelte 5 / SvelteKit app | `@svgrid/grid` | MIT |
 | Excel / PDF export, import, pivot tables, print, advanced filter builder, alert rules, Kanban + scheduler + Gantt renderers, server-side row model | `+ @svgrid/enterprise` | Commercial, Grid |
 | A real spreadsheet: `<SvSheet>`, the built-in formula engine, `.xlsx` / `.xls` / `.ods` / `.csv` read and write | `+ @svgrid/enterprise` | Commercial, Suite |
+| A table database for your users: `<SvBase>` with field types, saved views (grid, Kanban, calendar, gallery, form) and records | `+ @svgrid/enterprise` | Commercial, Suite |
 | The grid in React, Vue, Angular, or plain HTML | `@svgrid/grid-wc` | MIT |
 | Accurate SvGrid answers from Claude / Cursor / Zed | `@svgrid/mcp` | MIT |
 | To copy one UI component into your app, shadcn-style | `npx @svgrid/ui add <name>` | MIT |
@@ -217,7 +218,7 @@ Guides: [Migrating from AG Grid](https://svgrid.com/docs/help/migrating-from-ag-
 | A generated CRUD app from your database schema | `@svgrid/studio` | Commercial, Suite |
 
 `@svgrid/enterprise` sells in two editions, both covering unlimited production apps.
-**Grid** is the enterprise grid. **Suite** adds the spreadsheet and Studio. Shipping SvGrid to
+**Grid** is the enterprise grid. **Suite** adds the spreadsheet, SvGrid Base and Studio. Shipping SvGrid to
 third parties as a component, an SDK, or an app builder they build with needs an OEM license,
 which is separate from developer seats. See [Pricing](https://svgrid.com/pricing/) and
 Section 4A of the [EULA](docs/legal/EULA.md).

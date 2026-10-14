@@ -45,6 +45,23 @@
   const ICON = {
     selectAll: 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11',
     editFields: 'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z',
+    deleteRows: 'M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6',
+  }
+  // Delete asks first, on the bar itself: "Delete 3 rows?" Delete / Cancel.
+  let confirming = $state(false)
+  let confirmButton = $state<HTMLButtonElement | null>(null)
+  $effect(() => {
+    if (confirming) confirmButton?.focus()
+  })
+  function deleteSelected() {
+    const rows = target.rows
+    const ids = target.ids
+    const drop = new Set(rows)
+    const data = (ctrl.internalData as unknown[]).filter((r) => !drop.has(r))
+    confirming = false
+    clearSelection()
+    ctrl.internalData = data
+    ctrl.props?.onRowsDelete?.({ rows, ids, data })
   }
 
   /** Turn the built-in string keys into real actions. */
@@ -67,6 +84,16 @@
         label: messages.selectionBarEditFields,
         icon: ICON.editFields,
         action: () => (bulkEditOpen = true),
+      }
+    }
+    if (entry === 'deleteRows') {
+      return {
+        key: 'deleteRows',
+        label: messages.selectionBarDelete,
+        icon: ICON.deleteRows,
+        // Rows a server row model never loaded cannot be deleted here.
+        hidden: () => !!ctrl.props?.rowModel,
+        action: () => (confirming = true),
       }
     }
     return null
@@ -107,6 +134,11 @@
    */
   function onKeydown(event: KeyboardEvent) {
     if (event.key === 'Escape') {
+      if (confirming) {
+        confirming = false
+        event.stopPropagation()
+        return
+      }
       if (overflowOpen) {
         overflowOpen = false
         event.stopPropagation()
@@ -154,6 +186,16 @@
     <span class="sv-selbar-count-label">{messages.selectionBarCount}</span>
   </span>
 
+  {#if confirming}
+    <span class="sv-selbar-sep" aria-hidden="true"></span>
+    <span class="sv-selbar-confirm" role="alert">{fill(messages.selectionBarDeleteConfirm, count)}</span>
+    <button type="button" class="sv-selbar-btn is-danger is-solid" bind:this={confirmButton} onclick={deleteSelected}>
+      <span>{messages.selectionBarDelete}</span>
+    </button>
+    <button type="button" class="sv-selbar-btn" onclick={() => (confirming = false)}>
+      <span>{messages.selectionBarCancel}</span>
+    </button>
+  {:else}
   {#if inline.length}
     <span class="sv-selbar-sep" aria-hidden="true"></span>
   {/if}
@@ -221,6 +263,7 @@
         </div>
       {/if}
     </div>
+  {/if}
   {/if}
 
   {#if !hideClear}
@@ -366,6 +409,10 @@
   .sv-selbar-btn.is-danger:hover:not(:disabled) {
     background: color-mix(in srgb, var(--sg-danger, #dc2626) 12%, transparent 88%);
   }
+  /* The confirm is the one red, solid button: the choice that cannot be undone. */
+  .sv-selbar-btn.is-solid { background: var(--sg-danger, #dc2626); color: #fff; }
+  .sv-selbar-btn.is-solid:hover:not(:disabled) { background: color-mix(in srgb, var(--sg-danger, #dc2626) 88%, #000 12%); }
+  .sv-selbar-confirm { flex: none; padding: 0 4px; font-weight: 600; white-space: nowrap; }
   .sv-selbar-more-btn { padding: 5px 7px; flex: none; }
   .sv-selbar-btn > span {
     overflow: hidden;

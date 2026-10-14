@@ -1,0 +1,28 @@
+{
+  "description": "A Svelte 5 data grid as a storefront: the same rows and columns as the table, shown as product cards with a photo, brand, star rating, sale price and a New, Sale or Sold out badge, drawn by a card snippet. One prop, gallery, switches the view; the category filter, search and sort are the grid's, and a click opens the product in a panel with Add to cart.",
+  "keywords": [
+    "svelte gallery view data grid",
+    "svelte product catalog cards",
+    "svelte grid card view",
+    "svelte data grid image cards",
+    "svelte table to gallery switch"
+  ],
+  "faq": [
+    {
+      "question": "Is the gallery a separate component?",
+      "answer": "No. It is the same <SvGrid> with the gallery prop set. The grid keeps its rows, columns, search and sort; the gallery draws the rows it would show as cards. Switch the prop off and the table is back, in the same order."
+    },
+    {
+      "question": "Can I design the product card myself?",
+      "answer": "Yes. gallery.card is a snippet that receives each row, so this demo draws its own card: photo, brand, rating with review count, price with the old price struck through, and a badge. With onCardClick set, the whole card is one button, by click or by Enter."
+    },
+    {
+      "question": "Where does the cover image come from?",
+      "answer": "From the field named in coverField: an image URL, or a list of files whose first image is used. coverFit chooses between cropping to fill (cover) and showing the whole image (contain)."
+    },
+    {
+      "question": "Which parts need @svgrid/enterprise?",
+      "answer": "The gallery renderer: call enableGalleryView() (installEnterprise does it too). The gallery prop and its types are part of the MIT @svgrid/grid package; without the renderer the grid shows a note in place of the cards."
+    }
+  ]
+}

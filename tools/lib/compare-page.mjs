@@ -31,7 +31,7 @@ export const COMPARE_HEADINGS = Object.freeze({
   facts: 'At a glance',
   intro: 'Overview',
   /** @param {string} short */
-  alternative: (short) => `Looking for a ${short} alternative for Svelte?`,
+  alternative: (short) => `Looking for ${/^[aeiou]/i.test(short) ? 'an' : 'a'} ${short} alternative for Svelte?`,
   common: 'What they have in common',
   svgridWins: 'Where SvGrid is stronger',
   /** @param {string} competitor */
@@ -208,6 +208,7 @@ export function compareHeading(key, m) {
 /** The one line under the sources list. Empty when the page was never verified. */
 export function verifiedLine(m) {
   if (!m.verified || m.verified.startsWith('1970')) return ''
+  if (!m.npm) return `Every claim on this page was last checked on ${formatDate(m.verified)}. Feature and pricing statements come from the pages listed below.`
   return `Every claim on this page was last checked on ${formatDate(m.verified)}. Versions, licences and download counts come from the npm registry; feature and pricing statements from the pages listed below.`
 }
 
@@ -432,6 +433,7 @@ export const COMPARE_GROUPS = Object.freeze([
   { id: 'headless', title: 'Headless engines', blurb: 'Bring-your-own-markup libraries with a Svelte adapter. SvGrid has the same kind of core underneath its component.' },
   { id: 'commercial', title: 'Commercial grids from other ecosystems', blurb: 'Vendor grids built for React, Angular, Vue or plain JavaScript and used in Svelte through a wrapper.' },
   { id: 'oss', title: 'Open-source grids from other ecosystems', blurb: 'Free grids built for another framework or for plain JavaScript.' },
+  { id: 'table-database', title: 'Table-database apps', blurb: 'Hosted and self-hosted apps for tables of records with views, forms and automations. SvGrid Base is the same kind of tool as a component: it runs inside your own app, on your database.' },
 ])
 
 /**

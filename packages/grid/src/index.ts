@@ -78,8 +78,9 @@ export { default as SvGrid } from './SvGrid.svelte'
 // Kanban board view. The `board` prop + its config types live in the free grid,
 // but the RENDERER (SvGridBoard) ships in @svgrid/enterprise and registers itself
 // through this seam (see board-view.svelte.ts). Mirrors the scheduler-view seam.
-export type { BoardConfig, BoardLane, BoardCardMoveEvent, BoardCardCommitEvent, BoardLayout, BoardSubtask, BoardComment, BoardMenuContext, BoardLaneMenuContext, BoardDrawerConfig } from './SvGrid.types'
+export type { GalleryConfig, BoardConfig, BoardLane, BoardCardMoveEvent, BoardCardCommitEvent, BoardLayout, BoardSubtask, BoardComment, BoardMenuContext, BoardLaneMenuContext, BoardDrawerConfig } from './SvGrid.types'
 export { registerBoardView, getBoardView, hasBoardView } from './board-view.svelte'
+export { registerGalleryView, getGalleryView, hasGalleryView } from './gallery-view.svelte'
 // Bulk-action bar over the row selection (`selectionBar`), and the right-click
 // menu items - both are prop-shaped config a consumer has to be able to name
 // when they lift the array into its own module.
@@ -89,6 +90,10 @@ export type {
   ContextMenuIcon,
   ContextMenuItem,
   ContextMenuTarget,
+  RowAdderConfig,
+  ColumnAdderConfig,
+  RowColorConfig,
+  RowColorTarget,
 } from './SvGrid.types'
 // Built-in AI helpers (free): natural-language filter, smart-fill, summarize,
 // classify, anomaly detection, chart-this and export planning. They ship no
@@ -140,6 +145,7 @@ export type {
 export { registerGanttView, getGanttView, hasGanttView } from './gantt-view.svelte'
 // Bulk-action bar over the row selection. Prop + types free, renderer Pro.
 export { registerSelectionBarView, getSelectionBarView, hasSelectionBarView } from './selection-bar-view.svelte'
+export { registerGridExtension, getGridExtension, type GridExtension, type GridExtensionMenuItem } from './grid-extension.svelte'
 // Chart view. The `chart` prop + its config live in the free grid AND so does the
 // renderer (SvGridChartView wraps the free SvChart) - so unlike board/scheduler
 // it works out of the box. This seam only lets a host OVERRIDE the built-in view.
@@ -745,7 +751,7 @@ export {
 export { rowResize, type RowResizeOptions } from './row-resize'
 export { columnResize, type ColumnResizeOptions } from './column-resize'
 export { rowDropZone, type RowDragEndEvent, type RowDropZoneOptions } from './row-drag'
-export { resolveColumnTypes, inferCellDataType, type CellDataType } from './column-types'
+export { resolveColumnTypes, inferCellDataType, columnDataType, type CellDataType } from './column-types'
 export {
   computeColumnGroupMeta,
   hiddenLeavesForCollapse,

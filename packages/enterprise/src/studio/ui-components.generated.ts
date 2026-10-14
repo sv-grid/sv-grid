@@ -6615,6 +6615,13 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "group": "common"
       },
       {
+        "key": "gallery",
+        "label": "Gallery",
+        "type": "json",
+        "description": "Gallery mode. When set, the grid renders its rows as cards (a cover image, a title, a few fields) instead of a table. See .",
+        "group": "common"
+      },
+      {
         "key": "scheduler",
         "label": "Scheduler",
         "type": "json",
@@ -6661,6 +6668,55 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Selection Bar",
         "type": "boolean",
         "description": "Floating bar that appears over the grid while rows are selected, showing the count and the actions that apply to the whole selection - the pattern an issue tracker uses for bulk edit. `true` gives the count and a Clear button. An array is the shorthand for `{ actions }`. Pass to also set `position` (`'bottom'` default, or `'top'`), `maxVisible` and `hideClear`. Omitted / `false` is off. Default **off**. This is chrome that floats over your content, not a gesture: it overlaps a row, and what belongs on it is specific to the app. **The prop and its types are free; the bar itself is an Enterprise feature.** Install `@svgrid/enterprise` and call `enableSelectionBar()` (or `installEnterprise`, which does it for you) to render it - without that the grid shows a short upsell note in its place, the same way the scheduler and board views do.",
+        "group": "common"
+      },
+      {
+        "key": "rowAdder",
+        "label": "Row Adder",
+        "type": "boolean",
+        "description": "A \"+ Add row\" line under the last row. Clicking it (or Enter on it) appends a row, scrolls to it and starts editing its first editable cell. `true` uses the defaults; pass for the label and the new row's values. **The prop and its types are free; the row adder is drawn by the Enterprise `@svgrid/enterprise/fields` module** (`enableFields()`). Without it the prop does nothing.",
+        "group": "common"
+      },
+      {
+        "key": "rowColor",
+        "label": "Row Color",
+        "type": "json",
+        "description": "Color rows by a status: by a select field (each row takes its option's `color`) or by rules (first match wins). The color shows on the row header by default (a 3px stripe at the start of the row-number cell); `target` moves it to a stripe in the first cell or a tint across the row. The row header also gets the status as its title, so the color is never the only signal. Computed for rendered rows only. **The prop and its types are free; the colors are drawn by the Enterprise `@svgrid/enterprise/fields` module** (`enableFields()`).",
+        "group": "common"
+      },
+      {
+        "key": "columnAdder",
+        "label": "Column Adder",
+        "type": "boolean",
+        "description": "A \"+\" header cell after the last column that opens the field editor: a name, a field type and that type's properties. Creating adds the column and fires `onColumnAdd`; the grid never stores a schema, the app does. `{ types }` limits the types offered. **Drawn by the Enterprise `@svgrid/enterprise/fields` module.**",
+        "group": "common"
+      },
+      {
+        "key": "fieldMenu",
+        "label": "Field Menu",
+        "type": "boolean",
+        "description": "Field actions in each column's menu: Edit field, Insert left / right, Duplicate, Delete, Hide. Edit can change the type; values are converted where they can be and the editor says how many cells would be cleared. **Drawn by the Enterprise `@svgrid/enterprise/fields` module.**",
+        "group": "common"
+      },
+      {
+        "key": "expandRows",
+        "label": "Expand Rows",
+        "type": "boolean",
+        "description": "The row-number cell becomes the row's handle: on hover it shows a checkbox that selects the row and an expand button that opens the row as a record, every field with its label and its editor. With `showRowNumbers`. **Drawn by the Enterprise `@svgrid/enterprise/fields` module.**",
+        "group": "common"
+      },
+      {
+        "key": "pinSplitter",
+        "label": "Pin Splitter",
+        "type": "boolean",
+        "description": "A divider at the edge of the left-pinned columns: drag it right to pin the columns it passes, left to unpin them. It snaps to column edges and keeps the columns where they are on screen; with the keyboard, focus it and use the arrow keys. Its words come from `localization.text` (`pinSplitterLabel`, `pinSplitterHint`, `pinSplitterNone`, `pinSplitterOne`, `pinSplitterMany`). Loaded only when set.",
+        "group": "common"
+      },
+      {
+        "key": "primaryField",
+        "label": "Primary Field",
+        "type": "string",
+        "description": "The table's primary field (a column id or field): always the first column and pinned, never hidden or deleted, and the name of a record (the expanded record's title, a gallery card's title). **Kept by the Enterprise `@svgrid/enterprise/fields` module.**",
         "group": "common"
       },
       {
@@ -7427,7 +7483,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "rowDragManaged",
         "label": "Row Drag Managed",
         "type": "boolean",
-        "description": "Enables managed row dragging. When `true`, every row becomes a drag source (grab cursor + a grip in the row-number cell) and a drop indicator paints between rows during a drag. On drop the grid mutates its own internal data - reordering within the grid, or moving the row across grids that share the same . Defaults to `false`.",
+        "description": "Enables managed row dragging. When `true`, a row is dragged by its row-number cell (a grip shows while it is hovered), or by any cell when row numbers are off, and a drop indicator paints between rows during a drag. On drop the grid mutates its own internal data - reordering within the grid, or moving the row across grids that share the same . Defaults to `false`.",
         "group": "common"
       },
       {
@@ -7458,6 +7514,42 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Pivot Mode Change",
         "prop": "onPivotModeChange",
         "description": "Fired when the in-grid Pivot toggle flips `pivotMode`."
+      },
+      {
+        "key": "rowAdd",
+        "label": "Row Add",
+        "prop": "onRowAdd",
+        "description": "Fires after the row adder appended a row, with that row. Persist it here."
+      },
+      {
+        "key": "columnAdd",
+        "label": "Column Add",
+        "prop": "onColumnAdd",
+        "description": "A field was added (column adder, Insert, Duplicate). `columns` is the whole column list after the change, as declared (store it as your `columns`); `data` is set when values were written too."
+      },
+      {
+        "key": "columnChange",
+        "label": "Column Change",
+        "prop": "onColumnChange",
+        "description": "A field was edited. `columns` as in `onColumnAdd`; `data` is set when a type change converted its values."
+      },
+      {
+        "key": "columnRemove",
+        "label": "Column Remove",
+        "prop": "onColumnRemove",
+        "description": "A field was deleted from the column menu (its values stay in the rows). `columns` as in `onColumnAdd`."
+      },
+      {
+        "key": "rowsDelete",
+        "label": "Rows Delete",
+        "prop": "onRowsDelete",
+        "description": "Rows were deleted from the selection bar's Delete (`deleteRows`): the rows and their ids, and the data without them, to store."
+      },
+      {
+        "key": "rowColorChange",
+        "label": "Row Color Change",
+        "prop": "onRowColorChange",
+        "description": "The rows were set to be colored by another field, or no longer colored, from a single select's column menu (\"Color rows by this field\" with `fieldMenu`). Store it and pass it back as `rowColor`."
       },
       {
         "key": "expandedChange",

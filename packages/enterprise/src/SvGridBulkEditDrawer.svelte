@@ -48,8 +48,14 @@
   )
 
   /** A column's editor type mapped onto the form's control vocabulary. */
-  function controlFor(editorType: string, hasOptions: boolean): FormFieldType {
-    if (hasOptions) return 'select'
+  function controlFor(c: BulkEditField): FormFieldType {
+    const { editorType } = c
+    if (c.options?.length) return c.multiple ? 'multiselect' : 'select'
+    // Field editors: a number typed as the field writes it ("$1,200", "1:30"),
+    // read by the column's own parser; a rating as stars; long text as lines.
+    if (editorType === 'fieldNumber') return 'text'
+    if (editorType === 'fieldRating') return 'rating'
+    if (editorType === 'fieldLongText') return 'textarea'
     switch (editorType) {
       case 'number': return 'number'
       case 'checkbox': return 'checkbox'
@@ -87,7 +93,8 @@
     columns.map((c) => ({
       name: c.id,
       label: c.label,
-      type: controlFor(c.editorType, !!c.options?.length),
+      type: controlFor(c),
+      ...(c.max ? { max: c.max } : {}),
       // Placeholder only. The same sentence repeated under every differing
       // field was five identical lines of noise - the lead says it once.
       placeholder: mixed.has(c.id) ? messages.bulkEditMixed : undefined,
@@ -104,10 +111,11 @@
     for (const [name, raw] of Object.entries(values)) {
       const column = byId.get(name)
       if (!column) continue
-      const next = coerceBulkValue(column.editorType, raw)
+      const next = column.parse && raw !== '' && raw != null ? column.parse(raw) : coerceBulkValue(column.editorType, raw)
       // Untouched fields are the ones that keep every row's own value. A field
       // that opened "Multiple values" and was left blank is untouched too.
-      if (next === baseline[name]) continue
+      // By content: a multiple select's list is a new array each time.
+      if (next === baseline[name] || JSON.stringify(next) === JSON.stringify(baseline[name])) continue
       if (mixed.has(name) && (raw === '' || raw == null)) continue
       edits[name] = next
     }

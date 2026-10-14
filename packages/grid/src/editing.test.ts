@@ -16,6 +16,7 @@ interface ColSpec {
   editorMultiple?: boolean
   validate?: (p: { value: unknown; row: any }) => string | boolean | null | undefined
   rejectInvalid?: boolean
+  valueParser?: (p: any) => unknown
 }
 
 interface FakeOptions {
@@ -44,6 +45,7 @@ function makeCtx(opts: FakeOptions = {}) {
       editorMultiple: c.editorMultiple,
       validate: c.validate,
       rejectInvalid: c.rejectInvalid,
+      valueParser: c.valueParser,
     },
   }))
 
@@ -266,6 +268,8 @@ describe('startEditingWithChar', () => {
       // The row's data object, kept so the commit still lands if a filter
       // drops the row from the model mid-edit (#49).
       rowRef: ctx.internalData[0],
+      // The editor is told the value is typed text, not the cell's value.
+      typed: true,
     })
     expect(ctx.editorSelectAll).toBe(false)
     expect(ctx.activeCalls).toEqual([[0, 0]])
@@ -461,6 +465,30 @@ describe('saveEditingCell', () => {
     ed.saveEditingCell()
     expect(ctx.history).toHaveLength(0)
     expect(ctx.historyVersion).toBe(0)
+  })
+
+  it('does not report an unchanged value, an equal array included', () => {
+    const onCellValueChange = vi.fn()
+    const { ctx, ed } = editingFor({
+      columns: [
+        { id: 'a', field: 'a', editorType: 'text' },
+        { id: 'b', field: 'b', editorType: 'list', editorMultiple: true },
+      ],
+      data: [{ a: 'same', b: ['x', 'y'] }],
+    })
+    ctx.props.onCellValueChange = onCellValueChange
+    ctx.editingCell = { rowId: '0', columnId: 'a', editorType: 'text', value: 'same' }
+    ed.saveEditingCell()
+    // A fresh array with the same items is no change either.
+    ctx.editingCell = { rowId: '0', columnId: 'b', editorType: 'list', value: ['x', 'y'] }
+    ed.saveEditingCell()
+    expect(onCellValueChange).not.toHaveBeenCalled()
+    expect('0:a' in ctx.editedCellValues).toBe(false)
+    expect(ctx.editingCell).toBeNull()
+    // A real change still reports.
+    ctx.editingCell = { rowId: '0', columnId: 'b', editorType: 'list', value: ['x'] }
+    ed.saveEditingCell()
+    expect(onCellValueChange).toHaveBeenCalledTimes(1)
   })
 
   it('truncates forward (redo) history when editing after an undo', () => {
@@ -1047,6 +1075,29 @@ describe('onCellDoubleClick', () => {
     })
     ed.onCellDoubleClick(0, 0)
     expect(ctx.editingCell.value).toBe('')
+  })
+})
+
+describe('paste reads text through the column valueParser', () => {
+  it('a formatted amount pasted into a number column is parsed by the column, not lost', async () => {
+    // Number("$1,200.50") is NaN; the column that formats amounts can read
+    // them, as it does for an edit commit.
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { readText: vi.fn().mockResolvedValue('$1,200.50') },
+      configurable: true,
+    })
+    const valueParser = vi.fn((p: { rawInput: unknown; newValue: unknown }) =>
+      typeof p.rawInput === 'string' ? Number(p.rawInput.replace(/[$,]/g, '')) : p.newValue,
+    )
+    const { ctx, ed } = editingFor({
+      columns: [{ id: 'amt', field: 'amt', editable: true, editorType: 'number', valueParser }],
+      data: [{ amt: 5 }],
+    })
+    ctx.setActiveCell(0, 0)
+    ctx.selectionRange = { anchor: { rowIndex: 0, colIndex: 0 }, focus: { rowIndex: 0, colIndex: 0 } }
+    await ed.pasteFromClipboard()
+    expect(valueParser).toHaveBeenCalledWith(expect.objectContaining({ rawInput: '$1,200.50', newValue: null, oldValue: 5 }))
+    expect(ctx.internalData[0]).toEqual({ amt: 1200.5 })
   })
 })
 

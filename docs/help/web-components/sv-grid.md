@@ -35,7 +35,7 @@ attribute is the extra convenience, offered only where it can work.
 
 <!-- BEGIN generated reference - packages/grid-wc/scripts/generate-surface.mjs -->
 
-### Attributes (78)
+### Attributes (84)
 
 Primitives, so they work in plain HTML as well as through a property.
 
@@ -44,6 +44,12 @@ Primitives, so they work in plain HTML as well as through a property.
 | `pivot-mode` | `pivotMode` | `boolean` |
 | `context-menu` | `contextMenu` | `boolean \| ReadonlyArray<ContextMenuItem<TData>>` |
 | `selection-bar` | `selectionBar` | `\| boolean \| ReadonlyArray<SelectionBarAction<TData> \| SelectionBarBuiltin> \| SelectionB...` |
+| `row-adder` | `rowAdder` | `boolean \| RowAdderConfig<TData>` |
+| `column-adder` | `columnAdder` | `boolean \| ColumnAdderConfig` |
+| `field-menu` | `fieldMenu` | `boolean` |
+| `expand-rows` | `expandRows` | `boolean` |
+| `pin-splitter` | `pinSplitter` | `boolean` |
+| `primary-field` | `primaryField` | `string` |
 | `sortable` | `sortable` | `boolean` |
 | `filterable` | `filterable` | `boolean` |
 | `editable` | `editable` | `boolean` |
@@ -120,7 +126,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `aligned-grid-group` | `alignedGridGroup` | `string` |
 | `filter-locale` | `filterLocale` | `string \| ReadonlyArray<string>` |
 
-### Properties only (38)
+### Properties only (40)
 
 Arrays, objects and functions. An HTML attribute is a string, so these can
 only be assigned in script: `el.columns = [...]`.
@@ -130,10 +136,12 @@ only be assigned in script: `el.columns = [...]`.
 | `data` | `ReadonlyArray<TData>` |
 | `columns` | `Array<ColumnDef<TFeatures, TData>>` |
 | `board` | `BoardConfig<TFeatures, TData>` |
+| `gallery` | `GalleryConfig<TFeatures, TData>` |
 | `scheduler` | `SchedulerConfig<TFeatures, TData>` |
 | `gantt` | `GanttConfig<TFeatures, TData>` |
 | `chart` | `ChartViewConfig<TFeatures, TData>` |
 | `pivot` | `GridPivotConfig<TData>` |
+| `rowColor` | `RowColorConfig<TData>` |
 | `features` | `TFeatures` |
 | `treeData` | `{ ... }` |
 | `groupBy` | `ReadonlyArray<string>` |
@@ -166,7 +174,7 @@ only be assigned in script: `el.columns = [...]`.
 | `pinnedBottomRows` | `ReadonlyArray<TData>` |
 | `columnOrder` | `ReadonlyArray<string>` |
 
-### Events (26)
+### Events (32)
 
 `detail` is the callback's argument. The one callback that takes two carries
 an object keyed by its parameter names.
@@ -174,6 +182,12 @@ an object keyed by its parameter names.
 | Event | From | `detail` |
 | --- | --- | --- |
 | `pivotmodechange` | `onPivotModeChange` | `on` |
+| `rowadd` | `onRowAdd` | `event` |
+| `columnadd` | `onColumnAdd` | `event` |
+| `columnchange` | `onColumnChange` | `event` |
+| `columnremove` | `onColumnRemove` | `event` |
+| `rowsdelete` | `onRowsDelete` | `event` |
+| `rowcolorchange` | `onRowColorChange` | `config` |
 | `expandedchange` | `onExpandedChange` | `expanded` |
 | `paginationchange` | `onPaginationChange` | `pagination` |
 | `columnresize` | `onColumnResize` | `event` |

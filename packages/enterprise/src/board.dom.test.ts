@@ -88,6 +88,23 @@ describe('SvGridBoard lanes', () => {
     } finally { destroy() }
   })
 
+  it('draws a hideWhenEmpty lane only while a card is in it', () => {
+    const lanes = [
+      { id: '', title: 'Uncategorized', hideWhenEmpty: true },
+      { id: 'todo', title: 'To do' },
+      { id: 'done', title: 'Done' },
+    ]
+    const titles = (t: HTMLElement) => [...t.querySelectorAll('.sv-board-lane-title')].map((n) => n.textContent)
+    const full = mountOn({ data, columns, board: { groupBy: 'status', lanes } })
+    try {
+      expect(titles(full.target)).toEqual(['To do', 'Done'])
+    } finally { full.destroy() }
+    const blank = mountOn({ data: [...data, { id: 4, title: 'Triage', status: '', owner: 'Lee' }], columns, board: { groupBy: 'status', lanes } })
+    try {
+      expect(titles(blank.target)).toEqual(['Uncategorized', 'To do', 'Done'])
+    } finally { blank.destroy() }
+  })
+
   it('flags a lane that exceeds its WIP limit', () => {
     const board = { groupBy: 'status', lanes: [{ id: 'todo', title: 'To do', wipLimit: 1 }] }
     const { target, destroy } = mountOn({ data, columns, board })

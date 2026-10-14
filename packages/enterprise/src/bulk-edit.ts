@@ -17,6 +17,17 @@ export type BulkEditField = {
   editorType: string
   /** Options for list / select style columns, when the column declares them. */
   options?: Array<{ value: unknown; label: string }>
+  /** A field column's type (`@svgrid/enterprise/fields`), for its form control. */
+  fieldType?: string
+  /** The column holds several values (a multiple select, several people). */
+  multiple?: boolean
+  /** A rating's maximum. */
+  max?: number
+  /**
+   * The column's own reading of a typed value (its `valueParser`): "$1,200"
+   * to 1200 for an amount, "42" to 0.42 for a percent of fractions.
+   */
+  parse?: (raw: unknown) => unknown
 }
 
 /**
@@ -46,7 +57,23 @@ export function bulkEditableFields(ctx: any): BulkEditField[] {
             : { value: o, label: String(o) },
         )
       : undefined
-    out.push({ id: column.id, field: String(def.field), label, editorType: String(def.editorType ?? 'text'), options })
+    // A file list or a link to other records is not one value to set on
+    // every row from a form field.
+    if (def.editorType === 'attachment' || def.editorType === 'fieldLink') continue
+    const parser = typeof def.valueParser === 'function' ? def.valueParser : null
+    out.push({
+      id: column.id,
+      field: String(def.field),
+      label,
+      editorType: String(def.editorType ?? 'text'),
+      options,
+      ...(def.fieldType ? { fieldType: String(def.fieldType) } : {}),
+      ...(def.editorMultiple ? { multiple: true } : {}),
+      ...(def.fieldType === 'rating' ? { max: Number(def.fieldProps?.max) || 5 } : {}),
+      ...(parser
+        ? { parse: (raw: unknown) => parser({ newValue: raw, rawInput: typeof raw === 'string' ? raw : undefined, oldValue: undefined }) }
+        : {}),
+    })
   }
   return out
 }

@@ -1,0 +1,23 @@
+{
+  "description": "OKRs built with SvGrid Base for Svelte 5: key results measure progress from start to target with a formula, objectives average them with a rollup. Views by objective, a confidence board, a weekly check-in and a progress chart, with automations for off-track and achieved results.",
+  "keywords": [
+    "svelte okr tracker",
+    "okr template app",
+    "svelte goals tracker",
+    "svelte progress rollup"
+  ],
+  "faq": [
+    {
+      "question": "How is progress worked out?",
+      "answer": "Each key result has a formula, (Current minus Start) divided by (Target minus Start), held between 0 and 100%. Each objective averages its key results with a rollup of that formula."
+    },
+    {
+      "question": "What happens when a target is reached?",
+      "answer": "An automation marks the key result Achieved, stamps the check-in date and shows a notice. One that falls Off track turns red."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

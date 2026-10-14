@@ -3,6 +3,7 @@
 // so it lives outside the controller.
 import type { Column, RowData } from "./index";
 import type { FilterOperator, FilterOption } from "./SvGrid.types";
+import { columnDataType, isDateDataType } from "./column-types";
 import {
   SET_OPERATOR_IDS,
   VALUELESS_OPERATOR_IDS,
@@ -88,13 +89,15 @@ export function operatorOption(value: FilterOperator): FilterOption {
 export function operatorsForColumn<TData extends RowData>(
   column: Column<TData> | undefined,
 ): Array<FilterOption> {
-  const editorType = column?.columnDef.editorType ?? "text";
+  // By the data type, not the editor: a number edited in a text box still
+  // filters with greater than / less than / between.
+  const type = columnDataType(column?.columnDef);
   const ids =
-    editorType === "number"
+    type === "number"
       ? NUMBER_OPERATORS
-      : editorType === "date" || editorType === "datetime"
+      : isDateDataType(type)
         ? DATE_OPERATORS
-        : editorType === "checkbox"
+        : type === "boolean"
           ? CHECKBOX_OPERATORS
           : TEXT_OPERATORS;
   return ids
@@ -114,8 +117,7 @@ export function operatorLabelFor<TData extends RowData>(
   option: FilterOption,
   column: Column<TData> | undefined,
 ): string {
-  const editorType = column?.columnDef.editorType;
-  if (editorType === "date" || editorType === "datetime") {
+  if (isDateDataType(columnDataType(column?.columnDef))) {
     if (option.value === "lessThan") return "Before";
     if (option.value === "greaterThan") return "After";
   }
@@ -150,8 +152,7 @@ export function localizeOperatorLabel<TData extends RowData>(
   column: Column<TData> | undefined,
   messages?: Record<string, string> | null,
 ): string {
-  const editorType = column?.columnDef.editorType;
-  if (editorType === "date" || editorType === "datetime") {
+  if (isDateDataType(columnDataType(column?.columnDef))) {
     if (option.value === "lessThan") return messages?.opBefore || "Before";
     if (option.value === "greaterThan") return messages?.opAfter || "After";
   }

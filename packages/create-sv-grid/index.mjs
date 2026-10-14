@@ -9,7 +9,7 @@
 // Zero runtime dependencies - Node built-ins only. Copies a bundled template,
 // renames `_`-prefixed dotfiles, and rewrites the project name.
 
-import { cp, mkdir, readdir, rename, stat, readFile, writeFile } from 'node:fs/promises'
+import { cp, mkdir, readdir, rename, rm, stat, readFile, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { dirname, join, basename, resolve, isAbsolute } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -26,6 +26,12 @@ const TEMPLATES = {
   sveltekit: {
     label: 'SvelteKit    - server load, URL-driven sort, form-action edits, cookie auth + roles',
     bundled: join(__dirname, 'templates', 'sveltekit'),
+  },
+  base: {
+    label: 'Base         - a table database app on your own data (needs @svgrid/enterprise)',
+    bundled: join(__dirname, 'templates', 'base'),
+    // Asks where the data lives and which sample to start from.
+    base: true,
   },
   'pivot-dashboard': {
     label: 'Pivot dashboard - pivot cube + linked chart + drill-through (needs @svgrid/enterprise)',
@@ -67,7 +73,7 @@ const c = {
 const color = stdout.isTTY ? (k, s) => `${c[k]}${s}${c.reset}` : (_k, s) => s
 
 function parseArgs(argv) {
-  const args = { _: [], template: null, force: false, help: false, theme: null, mode: null }
+  const args = { _: [], template: null, force: false, help: false, theme: null, mode: null, data: null, sample: null }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     if (a === '--help' || a === '-h') args.help = true
@@ -76,6 +82,10 @@ function parseArgs(argv) {
     else if (a.startsWith('--template=')) args.template = a.slice('--template='.length)
     else if (a === '--theme') args.theme = argv[++i]
     else if (a.startsWith('--theme=')) args.theme = a.slice('--theme='.length)
+    else if (a === '--data') args.data = argv[++i]
+    else if (a.startsWith('--data=')) args.data = a.slice('--data='.length)
+    else if (a === '--sample') args.sample = argv[++i]
+    else if (a.startsWith('--sample=')) args.sample = a.slice('--sample='.length)
     else if (a === '--dark') args.mode = 'dark'
     else if (a === '--light') args.mode = 'light'
     else if (!a.startsWith('-')) args._.push(a)
@@ -100,6 +110,9 @@ ${color('bold', 'Options')}
                      Ignored by headless, which ships no stylesheet to theme.
   --dark / --light   Pin the starting mode. Left out, minimal and sveltekit
                      follow the visitor's OS; admin-dashboard starts dark.
+  --data <where>     base only: ${Object.keys(BASE_DATA).join(', ')} (default: browser).
+  --sample <name>    base only: ${Object.keys(BASE_SAMPLES).join(', ')}
+                     (default: project-tracker).
   --force            Scaffold into a non-empty directory.
 
 ${color('bold', 'Examples')}
@@ -107,7 +120,96 @@ ${color('bold', 'Examples')}
   npm  create @svgrid@latest my-app -- --template admin-dashboard
   npm  create @svgrid@latest my-app -- -t admin-dashboard --theme material --light
   pnpm create @svgrid my-app -t minimal
+  npm  create @svgrid@latest my-base -- -t base --data postgres --sample sales-crm
 `)
+}
+
+// ---- The base template: where the data lives, and what it starts with ----------
+
+const BASE_DATA = {
+  browser: 'Postgres in the browser - nothing to set up, try it now',
+  postgres: 'Your Postgres - DATABASE_URL, behind a SvelteKit endpoint',
+  supabase: 'Supabase - your project, live through Realtime',
+}
+// The SvGrid Base templates, exported by tools/base-template-sql.mjs into
+// templates/base/db/templates: tables, records, views and automations.
+const BASE_SAMPLES = {
+  'project-tracker': 'Project tracker - tasks and milestones',
+  'sales-crm': 'Sales CRM - deals, accounts and contacts',
+  'content-calendar': 'Content calendar - posts and campaigns',
+  'product-roadmap': 'Product roadmap - features and feedback',
+  'hiring-tracker': 'Hiring tracker - candidates and roles',
+  inventory: 'Inventory - items and suppliers',
+  'bug-tracker': 'Bug tracker - bugs and releases',
+  'event-planning': 'Event planning - events, attendees, checklist',
+  okrs: 'OKRs - objectives and key results',
+  expenses: 'Expense approvals - expenses and budgets',
+  onboarding: 'Employee onboarding - people, checklist, departments',
+  none: 'My own tables - an empty db/schema.sql to fill in',
+}
+
+async function pickFrom(title, options, flag, ask, interactive, fallback) {
+  const keys = Object.keys(options)
+  if (flag) {
+    if (!keys.includes(flag)) {
+      stdout.write(`${color('red', '✖')} "${flag}" is not one of: ${keys.join(', ')}\n`)
+      process.exit(1)
+    }
+    return flag
+  }
+  if (!interactive) return fallback
+  stdout.write(`\n  ${title}\n`)
+  keys.forEach((k, i) => stdout.write(`    ${color('cyan', String(i + 1))}. ${options[k]}\n`))
+  const pick = await ask(`Pick a number (1-${keys.length}):`, String(keys.indexOf(fallback) + 1))
+  return keys[Number(pick) - 1] ?? (keys.includes(pick) ? pick : fallback)
+}
+
+async function promptBase(args, ask, interactive) {
+  const data = await pickFrom('Where is your data?', BASE_DATA, args.data, ask, interactive, 'browser')
+  const sample = await pickFrom('Start with which template?', BASE_SAMPLES, args.sample, ask, interactive, 'project-tracker')
+  return { data, sample }
+}
+
+const EMPTY_SCHEMA = `-- Your tables. Every table here becomes a tab of the base: columns become
+-- fields, foreign keys become links, a table that only pairs two others
+-- becomes a link to many, and a text column that repeats a few values
+-- becomes a select. Example:
+--
+-- create table items (
+--   id serial primary key,
+--   name text not null,
+--   status text,
+--   due_on date
+-- );
+`
+
+/** Lay the chosen data setup over the template and write db/schema.sql. */
+async function applyBase(destDir, choice) {
+  if (!choice) return
+  const variants = join(destDir, 'variants')
+  const variant = join(variants, choice.data)
+  await cp(variant, destDir, {
+    recursive: true,
+    filter: (src) => !/[\\/](deps\.json|README\.part\.md)$/.test(src),
+  })
+  await renameBack(destDir)
+  // The variant's packages and scripts.
+  const pkgPath = join(destDir, 'package.json')
+  const pkg = JSON.parse(await readFile(pkgPath, 'utf8'))
+  const extra = JSON.parse(await readFile(join(variant, 'deps.json'), 'utf8'))
+  for (const key of ['dependencies', 'devDependencies', 'scripts']) {
+    if (extra[key]) pkg[key] = { ...(pkg[key] ?? {}), ...extra[key] }
+  }
+  await writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
+  // How to reach the data, in the README.
+  const readmePath = join(destDir, 'README.md')
+  const part = await readFile(join(variant, 'README.part.md'), 'utf8').catch(() => '')
+  const readme = await readFile(readmePath, 'utf8').catch(() => null)
+  if (readme != null) await writeFile(readmePath, readme.replace('<!-- svgrid-base-data -->', part.trim()))
+  // The tables it starts with.
+  const schema = choice.sample === 'none' ? EMPTY_SCHEMA : await readFile(join(destDir, 'db', 'templates', `${choice.sample}.sql`), 'utf8')
+  await writeFile(join(destDir, 'db', 'schema.sql'), schema)
+  await rm(variants, { recursive: true, force: true })
 }
 
 const THEME_IDS = [
@@ -486,6 +588,10 @@ async function main() {
     )
   }
   const themeChoice = themed ? await promptTheme(args, ask, interactive) : null
+  if (!TEMPLATES[template].base && (args.data || args.sample)) {
+    stdout.write(`${color('yellow', '!')} --data and --sample are for the base template - ignoring them.\n`)
+  }
+  const baseChoice = TEMPLATES[template].base ? await promptBase(args, ask, interactive) : null
   if (rl) rl.close()
 
   // 4. Scaffold.
@@ -496,6 +602,7 @@ async function main() {
   await applyMode(destDir, themeChoice)
   await applyModeMinimal(destDir, themeChoice)
   await applyModeSvelteKit(destDir, themeChoice)
+  await applyBase(destDir, baseChoice)
   await writeAgentsNotes(destDir, template)
 
   // 5. Next steps.
@@ -510,9 +617,17 @@ async function main() {
     stdout.write(`  ${color('dim', 'theme')} ${themeChoice.name} (${mode})\n`)
   }
   stdout.write(`\n`)
+  if (baseChoice) stdout.write(`  ${color('dim', 'data')} ${BASE_DATA[baseChoice.data].split(' - ')[0]}, ${BASE_SAMPLES[baseChoice.sample].split(' - ')[0]}\n\n`)
   stdout.write(`${color('bold', 'Next steps')}\n`)
   stdout.write(`  cd ${target}\n`)
   stdout.write(`  npm install\n`)
+  if (baseChoice?.data === 'postgres') {
+    stdout.write(`  cp .env.example .env     ${color('dim', '# set DATABASE_URL')}\n`)
+    stdout.write(`  npm run db:setup         ${color('dim', '# creates the tables in db/schema.sql')}\n`)
+  } else if (baseChoice?.data === 'supabase') {
+    stdout.write(`  ${color('dim', '# run db/schema.sql and db/policies.sql in the Supabase SQL editor')}\n`)
+    stdout.write(`  cp .env.example .env     ${color('dim', '# set PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_ANON_KEY')}\n`)
+  }
   stdout.write(`  npm run dev\n\n`)
   stdout.write(`${color('dim', 'Docs:')} https://svgrid.com/docs   ${color('dim', 'Pro:')} https://svgrid.com/pricing\n\n`)
 }

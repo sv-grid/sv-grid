@@ -31,6 +31,8 @@ const CATEGORY_HINTS = {
   Scheduler: ['help/rows/scheduler'],
   Kanban: ['help/rows/kanban'],
   'Pivot Grid': ['help/pivot', 'help/grouping'],
+  'Base': ['help/fields'],
+  'Gallery': ['help/rows/gallery'],
   'Data Export & Import': ['help/export', 'help/import'],
   Spreadsheet: ['help/spreadsheet', 'recipes/'],
   Blocks: ['help/ui-components/', 'help/blocks'],

@@ -1,0 +1,2 @@
+# Your Postgres: Neon, Supabase (the direct connection string), RDS, or local.
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/base

@@ -22,9 +22,17 @@ import {
   isGroupRow,
 } from "./cell-values";
 import { pushHistory, nextGroupId, runHistoryGroup, type HistoryStep } from "./history";
+import { getGridExtension } from "./grid-extension.svelte";
+import { getCellEditor } from "./editor-registry";
 import { hasGridShortcuts, runGridShortcuts } from "./shortcut-registry";
 import { buildCommandContext } from "./command-context";
 
+/** Same value, or the same JSON for an array or object (a multi-select, a file list). */
+function sameValue(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (!a || !b || typeof a !== "object" || typeof b !== "object") return false;
+  try { return JSON.stringify(a) === JSON.stringify(b); } catch { return false; }
+}
 
 export function createEditing<
   TFeatures extends TableFeatures = TableFeatures,
@@ -127,6 +135,10 @@ export function createEditing<
       return false;
     }
     if (editorType === "number" && !/[0-9.+-]/.test(char)) return false;
+    // A registered editor says which keys start it (`typeToEdit`).
+    const registered = getCellEditor(editorType);
+    const accepts = registered?.typeToEdit;
+    if (accepts === false || (typeof accepts === "function" && !accepts(char))) return false;
     ctx.editorSelectAll = false;
     ctx.editingCell = {
       rowId: row.id,
@@ -134,6 +146,7 @@ export function createEditing<
       editorType,
       value: char,
       rowRef: row.original,
+      typed: true,
     };
     ctx.setActiveCell(rowIndex, colIndex);
     selectForEdit(rowIndex, colIndex);
@@ -219,8 +232,9 @@ export function createEditing<
         });
       }
       // A refused edit closes the editor and leaves the row, the overlay,
-      // the history and the consumer untouched.
-      if (editRejected(column, finalValue, rowData)) {
+      // the history and the consumer untouched. So does an unchanged one:
+      // Enter on an open editor is not an edit.
+      if (editRejected(column, finalValue, rowData) || sameValue(oldValue, finalValue)) {
         ctx.editingCell = null;
         return;
       }
@@ -248,6 +262,7 @@ export function createEditing<
     // Notify the consumer AFTER the row has been updated so any callback-
     // driven recompute (cascade totals, server save, undo stack) sees the
     // post-write state. `rowIndex` matches the position in `props.data`.
+    if (rowData && column) getGridExtension()?.cellEdited?.(ctx, { row: rowData, columnId: column.id });
     if (ctx.props.onCellValueChange && rowData && column) {
       const rowIndex = ctx.internalData.indexOf(rowData as TData);
       ctx.props.onCellValueChange({
@@ -335,6 +350,11 @@ export function createEditing<
 
   function commitAndMoveByTab(shiftKey: boolean) {
     commitAndMove(shiftKey ? "tabPrev" : "tabNext");
+  }
+
+  /** Enter in an editor: commit, then a row down (Shift: up). */
+  function commitAndMoveByEnter(shiftKey: boolean) {
+    commitAndMove(shiftKey ? "moveUp" : "moveDown");
   }
 
   /**
@@ -663,9 +683,16 @@ export function createEditing<
         const editorType = (column.columnDef.editorType ??
           "text") as CellEditorType;
         const raw = fillRange ? lines[0]! : sourceCells?.[j] ?? "";
-        const parsedValue = parseEditorValue(editorType, raw, {
+        const coerced = parseEditorValue(editorType, raw, {
           dateOnly: column.columnDef.cellDataType === "dateString",
         });
+        // The column's valueParser reads pasted text as an edit commit does:
+        // "$1,200.00" copied from a currency cell is null to Number() but a
+        // number to the column that formatted it.
+        const parser = (column.columnDef as { valueParser?: (p: unknown) => unknown }).valueParser;
+        const parsedValue = parser
+          ? parser({ newValue: coerced, oldValue: before, rawInput: raw, data: originalRow, columnId: column.id })
+          : coerced;
         // The inbound half of the clipboard pair. A consumer (or a feature
         // pack doing paste-special) gets the raw text AND what the grid would
         // have written, and can return either. `undefined` leaves the cell
@@ -860,6 +887,7 @@ export function createEditing<
     updateEditingCellValue,
     onEditorKeyDown,
     commitAndMoveByTab,
+    commitAndMoveByEnter,
     focusOnMount,
     onCellDoubleClick,
     pasteFromClipboard,

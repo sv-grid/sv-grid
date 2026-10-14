@@ -41,14 +41,10 @@ import { buildPreMeasureItems } from "./virtualization/virtualizer";
 // Not on the public barrel: turns a lazy row list into a plain array before a full pass.
 import { denseRows } from "./core";
 import { isWindowedData } from "./windowed-brand";
+import { applyFieldColumns } from "./grid-extension.svelte";
 import { DEV } from "esm-env";
 import "./sv-grid-scrollbar";
-import {
-    computeColumnStat,
-    formatsNeedingStats,
-    formatNeedsStats,
-    type ColumnStat,
-  } from "./conditional-formatting";
+import type { ColumnStat } from "./conditional-formatting";
 import type {
     Props,
     SelectionRange,
@@ -462,7 +458,8 @@ export function createSvGridController<
    * event - `scrollVersion` fires constantly during a drag.
    */
   let viewportVersion = $state(0);
-  let lastResetSignature = "";
+  // The leaf column keys of the last column set; null before the first render.
+  let lastColumnKeys: Set<string> | null = null;
   let pendingScrollTop = 0;
   let pendingScrollLeft = 0;
   let scrollSyncRaf: number | null = null;
@@ -578,8 +575,14 @@ export function createSvGridController<
         if (!col) continue
         const v = row.getCellValueByColumnId(col.id)
         if (v == null) continue
-        const s = String(v).toLowerCase()
-        if (s.includes(q)) out.push({ rowIndex: r, colIndex: c, columnId: col.id })
+        // What the cell shows counts too: a user's name for its id, "$1,800"
+        // for 1800, a date as the column writes it.
+        const f = col.columnDef.formatter as ((x: { value: unknown; row: unknown; column: unknown }) => unknown) | undefined
+        if (
+          String(v).toLowerCase().includes(q) ||
+          (typeof f === "function" && String(f({ value: v, row, column: col }) ?? "").toLowerCase().includes(q))
+        )
+          out.push({ rowIndex: r, colIndex: c, columnId: col.id })
       }
     }
     return out
@@ -909,8 +912,9 @@ export function createSvGridController<
   // format defaults once, up front, so every downstream reader sees a normal
   // column. Explicit fields on the ColumnDef always win.
   // svelte-ignore state_referenced_locally
+  // Field-type columns are filled in by an opt-in module (grid-extension) first.
   const resolveCols = (cols: Array<ColumnDef<TFeatures, TData>>) =>
-    resolveColumnTypes(cols, props.data?.[0], props.inferColumnTypes === true);
+    resolveColumnTypes(applyFieldColumns(cols), props.data?.[0], props.inferColumnTypes === true);
   // svelte-ignore state_referenced_locally
   let internalColumns = $state.raw<Array<ColumnDef<TFeatures, TData>>>(
     resolveCols(props.columns),
@@ -1569,12 +1573,20 @@ export function createSvGridController<
   const hasConditionalFormats = $derived(
     (props.conditionalFormats?.length ?? 0) > 0,
   );
+  // The formatting engine loads with the first `conditionalFormats`, not with
+  // the grid: until it lands, cells draw unformatted (one frame on a warm cache).
+  let conditionalFormatting = $state.raw<typeof import("./conditional-formatting") | null>(null);
+  $effect(() => {
+    if (hasConditionalFormats && !conditionalFormatting)
+      import("./conditional-formatting").then((m) => (conditionalFormatting = m));
+  });
   // Per-column numeric min/max, needed only by colorScale / dataBar formats.
   // Lazy: this derived never runs unless `conditionalFormats` is set.
   const conditionalColumnStats = $derived.by(function conditionalColumnStats_d() {
     const map = new Map<string, ColumnStat>();
     const formats = props.conditionalFormats;
-    if (!formats?.length || !formatsNeedingStats(formats)) return map;
+    const cf = conditionalFormatting;
+    if (!formats?.length || !cf || !cf.formatsNeedingStats(formats)) return map;
     // Windowed data (a server row model) is mostly rows nobody has loaded;
     // its range is the server's to know. Scanning it would read every row of
     // the source. Give such formats `minValue` / `maxValue` instead.
@@ -1588,13 +1600,13 @@ export function createSvGridController<
     const scanRows = scope === "visible" ? allRows : allRowsBeforePagination;
     for (const column of allColumns) {
       const needs = formats.some(
-        (f) => formatNeedsStats(f) && (!f.columns || f.columns.includes(column.id)),
+        (f) => cf.formatNeedsStats(f) && (!f.columns || f.columns.includes(column.id)),
       );
       if (!needs) continue;
       const def = column.columnDef;
       const fieldFn = def.fieldFn;
       const field = def.field;
-      const stat = computeColumnStat(
+      const stat = cf.computeColumnStat(
         scanAll
           ? (function* () {
               // Raw data objects (unfiltered); field/fieldFn only - no Row wrapper.
@@ -1786,6 +1798,11 @@ export function createSvGridController<
     return rows;
   }
 
+  // The advanced filter's test of one record, as the last pass compiled it. A
+  // collapsed group's records are not in the list; the footer totals read
+  // them through this. Plain, not $state: it changes only inside that pass.
+  let advancedKeep: ((row: any) => boolean) | null = null;
+
   const allRowsBeforePagination = $derived.by(function allRowsBeforePagination_d() {
     // Depend on dataStateVersion (row-model-affecting store changes) NOT
     // gridStateVersion - so moving the active cell / selection does not force
@@ -1800,6 +1817,7 @@ export function createSvGridController<
     // External-filter mode: the consumer fetched / pre-filtered the rows
     // themselves (server-side data sources). Skip every local filter pass
     // so the data isn't double-filtered against the visible page.
+    advancedKeep = null;
     if (externalFilterEnabled) return rawRows;
 
     let rows = rawRows;
@@ -1842,7 +1860,10 @@ export function createSvGridController<
             locale: props.filterLocale ?? props.localization?.locale,
             rows,
           });
-          if (predicate) rows = applyRowPredicate(rows, predicate, isGroupRow);
+          if (predicate) {
+            rows = applyRowPredicate(rows, predicate, isGroupRow);
+            advancedKeep = predicate;
+          }
         } catch {
           // Malformed expression: leave the rows alone.
         }
@@ -3833,15 +3854,28 @@ export function createSvGridController<
     //   - Sort changes preserve length but mean "start from the top",
     //     so callers who want that should drive it explicitly via
     //     api.scrollToTop() (or the equivalent).
-    // The columns ARE a schema change: existing scroll/selection
-    // coordinates are no longer meaningful when the grid's column set
-    // is replaced, so we still reset there.
-    const colCount = props.columns.length;
-    const nextSignature = `cols:${colCount}`;
-    if (nextSignature === lastResetSignature) return;
-    const isFirstRender = lastResetSignature === "";
-    lastResetSignature = nextSignature;
-    if (isFirstRender) return;
+    // A REPLACED column set is a schema change: existing scroll/selection
+    // coordinates are no longer meaningful, so we reset there. Adding,
+    // removing or reordering columns keeps any of them, and keeps the user
+    // where they were: the old `cols:<count>` signature reset on every added
+    // field and threw the view back to the first column.
+    const keys = new Set<string>();
+    const walk = (defs: ReadonlyArray<Record<string, unknown>>) => {
+      for (const d of defs) {
+        if (Array.isArray(d.columns)) walk(d.columns as Record<string, unknown>[]);
+        else {
+          const k = d.id ?? d.field ?? d.accessorKey;
+          if (k != null) keys.add(String(k));
+        }
+      }
+    };
+    walk(props.columns as unknown as Record<string, unknown>[]);
+    const previous = lastColumnKeys;
+    lastColumnKeys = keys;
+    if (!previous) return;
+    let shared = false;
+    for (const k of keys) if (previous.has(k)) { shared = true; break; }
+    if (shared || (keys.size === 0 && previous.size === 0)) return;
 
     selectionRange = { anchor: null, focus: null };
     selectionRanges = [];
@@ -4789,6 +4823,7 @@ export function createSvGridController<
 
   const ctx = {
     get props() { return props; },
+    get advancedKeep() { return advancedKeep; },
     get optionOverrides() { return optionOverrides; },
     set optionOverrides(v) { optionOverrides = v as never; },
     get editingEnabled() { return editingEnabled; },
@@ -4814,8 +4849,6 @@ export function createSvGridController<
     set scrollVersion(v) { scrollVersion = v as never; },
     get viewportVersion() { return viewportVersion; },
     set viewportVersion(v) { viewportVersion = v as never; },
-    get lastResetSignature() { return lastResetSignature; },
-    set lastResetSignature(v) { lastResetSignature = v as never; },
     get pendingScrollTop() { return pendingScrollTop; },
     set pendingScrollTop(v) { pendingScrollTop = v as never; },
     get pendingScrollLeft() { return pendingScrollLeft; },
@@ -5016,6 +5049,7 @@ export function createSvGridController<
     get getColumnBaseValue() { return getColumnBaseValue; },
     get hasConditionalFormats() { return hasConditionalFormats; },
     get conditionalColumnStats() { return conditionalColumnStats; },
+    get conditionalFormatting() { return conditionalFormatting; },
     get cellConditionalFormat() { return cellConditionalFormat; },
     get isGroupRow() { return isGroupRow; },
     get isCellEditable() { return isCellEditable; },
@@ -5467,6 +5501,7 @@ export function createSvGridController<
     get updateEditingCellValue() { return updateEditingCellValue; },
     get onEditorKeyDown() { return onEditorKeyDown; },
     get commitAndMoveByTab() { return commitAndMoveByTab; },
+    get commitAndMoveByEnter() { return commitAndMoveByEnter; },
     get focusOnMount() { return focusOnMount; },
     get onHeaderSortClick() { return onHeaderSortClick; },
     get onGridKeyDown() { return onGridKeyDown; },
@@ -5474,11 +5509,6 @@ export function createSvGridController<
     get goToPage() { return goToPage; },
     get setPageSize() { return setPageSize; },
     get openContextMenu() { return openContextMenu; },
-    get closeContextMenu() { return closeContextMenu; },
-    get contextMenuItems() { return contextMenuItems; },
-    get saveComment() { return saveComment; },
-    get removeComment() { return removeComment; },
-    get closeCommentEditor() { return closeCommentEditor; },
     get updateFilterRow() { return updateFilterRow; },
     get updateFilterOperator() { return updateFilterOperator; },
     get updateFilterMenuValue() { return updateFilterMenuValue; },
@@ -5498,7 +5528,6 @@ export function createSvGridController<
     get autosizeColumn() { return autosizeColumn; },
     get autosizeAllColumns() { return autosizeAllColumns; },
     get resetColumns() { return resetColumns; },
-    get openChooseColumns() { return openChooseColumns; },
     get openColumnMenu() { return openColumnMenu; },
     get openFilterMenu() { return openFilterMenu; },
     get openOperatorMenu() { return openOperatorMenu; },
@@ -5508,10 +5537,6 @@ export function createSvGridController<
     get removeFilterToken() { return removeFilterToken; },
     get toggleFilterToken() { return toggleFilterToken; },
     get setFilterTokens() { return setFilterTokens; },
-    get sortColumnFromMenu() { return sortColumnFromMenu; },
-    get clearColumnSort() { return clearColumnSort; },
-    get groupByColumnFromMenu() { return groupByColumnFromMenu; },
-    get clearGroupingFromMenu() { return clearGroupingFromMenu; },
     get isBucketableColumn() { return isBucketableColumn; },
     get buildBuckets() { return buildBuckets; },
     get isInBucket() { return isInBucket; },
@@ -5521,11 +5546,6 @@ export function createSvGridController<
     get columnMenuVisibleFacets() { return columnMenuVisibleFacets; },
     get columnMenuFacetOptions() { return columnMenuFacetOptions; },
     get columnMenuSelectedFacets() { return columnMenuSelectedFacets; },
-    get isFacetChecked() { return isFacetChecked; },
-    get toggleFacetValue() { return toggleFacetValue; },
-    get setFacetSelection() { return setFacetSelection; },
-    get isAllFacetsChecked() { return isAllFacetsChecked; },
-    get toggleAllFacets() { return toggleAllFacets; },
     get clearColumnFilter() { return clearColumnFilter; },
     get onWindowKeydown() { return onWindowKeydown; },
     get columnDefMatchesId() { return columnDefMatchesId; },
@@ -5541,9 +5561,9 @@ export function createSvGridController<
   // needs). Plain assignment during init - no effect, so SSR gets it too.
   summarize = computeSummaries;
 
-  const { updateFilterRow, updateFilterOperator, updateFilterMenuValue, updateFilterMenuValueTo, addFilterToken, removeFilterToken, toggleFilterToken, toggleCheckboxWithKeyboard, isColumnFiltered, closeMenus, openInSuggest, closeInSuggest, openChooseColumns, openColumnMenu, openFilterMenu, openOperatorMenu, sortColumnFromMenu, clearColumnSort, groupByColumnFromMenu, clearGroupingFromMenu, isFacetChecked, toggleFacetValue, setFacetSelection, setFilterTokens, isAllFacetsChecked, toggleAllFacets, clearColumnFilter, changePage, goToPage, setPageSize, openContextMenu, closeContextMenu, contextMenuItems, saveComment, removeComment, closeCommentEditor } = createMenus<TFeatures, TData>(ctx);
+  const { updateFilterRow, updateFilterOperator, updateFilterMenuValue, updateFilterMenuValueTo, addFilterToken, removeFilterToken, toggleFilterToken, toggleCheckboxWithKeyboard, isColumnFiltered, closeMenus, openInSuggest, closeInSuggest, openColumnMenu, openFilterMenu, openOperatorMenu, setFilterTokens, clearColumnFilter, changePage, goToPage, setPageSize, openContextMenu } = createMenus<TFeatures, TData>(ctx);
   const { cellConditionalFormat, computeRowClass, computeCellClass, computeCellTooltip, computeCellValidity, computeCellNote, getColumnEditorOptions, areEditorOptionsLoading, formatListCellValue, formatCellValue, formatPinnedValue, computePinnedCellClass } = createCellRender<TFeatures, TData>(ctx);
-  const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, commitAndMoveByTab, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste, armPasteFallback } = createEditing<TFeatures, TData>(ctx);
+  const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, commitAndMoveByTab, commitAndMoveByEnter, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste, armPasteFallback } = createEditing<TFeatures, TData>(ctx);
   const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, activeRangeRect, cellSelectionState, getSelectionRects, isInFillPreview, dragPreviewRect, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
   const { cellPinStyle, isColumnPinned, getCurrentColumnOrder, emitColumnOrder, setColumnOrderInternal, applyColumnDrop, onColumnHeaderDragStart, onColumnHeaderDragOver, onColumnHeaderDragLeave, onColumnHeaderDrop, onColumnHeaderDragEnd, pinColumnLeft, pinColumnRight, unpinColumn, toggleColumnVisibleInPanel, moveColumnInPanel, toggleGroupInPanel, getColumnBaseWidth, getColumnWidth, measureText, autosizeColumn, autosizeAllColumns, resetColumns } = createColumns<TFeatures, TData>(ctx);
   const { onRowDragStart, onRowDragOver, onRowDragLeave, onRowDrop, onRowsContainerDragOver, onRowsContainerDrop, onRowDragEnd, onRowPointerDown, destroyRowDrag } = createRowDrag<TFeatures, TData>(ctx);

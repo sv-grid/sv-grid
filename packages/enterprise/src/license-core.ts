@@ -26,14 +26,14 @@ export const VALID_PREFIX = 'SVENTERPRISE-'
 
 /**
  * What an order bought. `grid` is the enterprise grid on its own; `suite` adds
- * the spreadsheet and the Studio. Keys issued before editions existed carry no
+ * the spreadsheet, SvGrid Base (the table database) and the Studio. Keys issued before editions existed carry no
  * edition segment and read as `suite`, so nothing an existing customer already
  * ships changes when this lands.
  */
 export type LicenseEdition = 'grid' | 'suite'
 
-/** The three things an edition can gate. */
-export type LicensedProduct = 'grid' | 'spreadsheet' | 'studio'
+/** The things an edition can gate. */
+export type LicensedProduct = 'grid' | 'spreadsheet' | 'base' | 'studio'
 
 /** Does `edition` cover `product`? Pure, and the only place the answer lives. */
 export function editionCovers(edition: LicenseEdition, product: LicensedProduct): boolean {

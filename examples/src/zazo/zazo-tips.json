@@ -1,0 +1,3162 @@
+{
+ "250-calendar": {
+  "text": "Switch the selection dropdown to range, then click two days to pick a span.",
+  "target": {
+   "sel": "select",
+   "text": "onezeroOrOnemanyrangeweekoneExtended"
+  }
+ },
+ "251-timepicker": {
+  "text": "Click an hour on the dial. With Auto-switch on, it moves straight to minutes.",
+  "target": {
+   "sel": "label",
+   "text": "Auto-switch to minutes"
+  }
+ },
+ "252-datetimepicker": {
+  "text": "Open the picker, choose a day, then use the Time tab to set the clock.",
+  "target": {
+   "sel": "button",
+   "text": "Open picker"
+  }
+ },
+ "283-daterange-input": {
+  "text": "Click the range field and pick a preset like Last 7 days.",
+  "target": {
+   "sel": "input",
+   "text": "Select date range"
+  }
+ },
+ "258-calendar-range": {
+  "text": "Press Last 7 days and the range snaps to the week ending today.",
+  "target": {
+   "sel": "button",
+   "text": "Last 7 days"
+  }
+ },
+ "260-calendar-birthday": {
+  "text": "Pick a birth year, then a day. Future dates stay blocked and the age updates.",
+  "target": {
+   "sel": "button",
+   "text": "2019"
+  }
+ },
+ "259-datetimepicker-forms": {
+  "text": "Open the constrained field: days past the next 90 cannot be picked.",
+  "target": {
+   "sel": "label",
+   "text": "Constrained (today → +90 days)"
+  }
+ },
+ "338-event-calendar": {
+  "text": "Press Next to page ahead a month. The repeating events carry on by themselves.",
+  "target": {
+   "sel": "button",
+   "text": "Next"
+  }
+ },
+ "253-buttons-toggles": {
+  "text": "Hold down Increase and the value keeps climbing until you let go.",
+  "target": {
+   "sel": "button",
+   "text": "Increase"
+  }
+ },
+ "408-segmented": {
+  "text": "Click 7d in the range picker, or use the arrow keys to move along the track.",
+  "target": {
+   "sel": "button",
+   "text": "7d"
+  }
+ },
+ "409-layout-feedback": {
+  "text": "Click Advanced options to show the hidden section, and again to fold it away.",
+  "target": {
+   "sel": "button",
+   "text": "Advanced options"
+  }
+ },
+ "410-typography-display": {
+  "text": "Scroll down to Add to favourites to see the display kit inside a real button.",
+  "target": {
+   "sel": "button",
+   "text": "★Add to favourites"
+  }
+ },
+ "284-button-group": {
+  "text": "Press B and then I. The formatting group lets several stay on at once.",
+  "target": {
+   "sel": "button",
+   "text": "B"
+  }
+ },
+ "305-button": {
+  "text": "Resize the window and watch Continue to checkout keep its full width.",
+  "target": {
+   "sel": "button",
+   "text": "Continue to checkout"
+  }
+ },
+ "306-repeat-button": {
+  "text": "Hold Increase on the quantity. The count speeds up the longer you hold.",
+  "target": {
+   "sel": "button",
+   "text": "Increase"
+  }
+ },
+ "307-toggle-button": {
+  "text": "Press Bold, then press it again. It stays down until you toggle it off.",
+  "target": {
+   "sel": "button",
+   "text": "Bold"
+  }
+ },
+ "308-switch": {
+  "text": "Click a switch to flip its track label between on and off.",
+  "target": {
+   "sel": "button",
+   "text": "ON OFF"
+  }
+ },
+ "309-checkbox": {
+  "text": "Untick Write, and All permissions turns to a dash: partly selected.",
+  "target": {
+   "sel": "label",
+   "text": "All permissions"
+  }
+ },
+ "310-radio-group": {
+  "text": "Click Pro, then use the arrow keys to move through the other plans.",
+  "target": {
+   "sel": "button",
+   "text": "Pro - $29 / mo"
+  }
+ },
+ "311-rating": {
+  "text": "Hover the stars and click the fourth one. The label updates as you go.",
+  "target": {
+   "sel": "button",
+   "text": "4 stars"
+  }
+ },
+ "254-text-inputs": {
+  "text": "Click the colour swatch to open the palette and pick a new shade.",
+  "target": {
+   "sel": "button",
+   "text": "Color #6366f1"
+  }
+ },
+ "290-input-adornments": {
+  "text": "Type in the search box, then press Clear to empty it again.",
+  "target": {
+   "sel": "input",
+   "text": "Search orders"
+  }
+ },
+ "300-number-input": {
+  "text": "Type a large figure into Monthly budget and watch the thousands get grouped.",
+  "target": {
+   "sel": "label",
+   "text": "Monthly budget*"
+  }
+ },
+ "301-password-input": {
+  "text": "Type in New password and the strength meter fills as it gets harder to guess.",
+  "target": {
+   "sel": "label",
+   "text": "New password"
+  }
+ },
+ "302-masked-input": {
+  "text": "Type into Licence plate: letters fill the first two slots, digits go after the dash.",
+  "target": {
+   "sel": "label",
+   "text": "Licence plate (AA-###)"
+  }
+ },
+ "303-phone-input": {
+  "text": "Change the country and the dial code and number mask switch with it.",
+  "target": {
+   "sel": "select",
+   "text": "Country"
+  }
+ },
+ "304-color-input": {
+  "text": "Click a swatch, then type a hex code or pick from the preset palette.",
+  "target": {
+   "sel": "button",
+   "text": "Color #2563eb"
+  }
+ },
+ "287-file-upload": {
+  "text": "Drag files onto Documents, or click it to browse. Files that are too big get rejected.",
+  "target": {
+   "sel": "label",
+   "text": "Documents"
+  }
+ },
+ "255-selection": {
+  "text": "Open the country picker and type a name to search the list with flags.",
+  "target": {
+   "sel": "button",
+   "text": "🇺🇸 United States +1"
+  }
+ },
+ "312-listbox": {
+  "text": "Click several names in Assignees, or type a letter to jump to a match.",
+  "target": {
+   "sel": "label",
+   "text": "Assignees"
+  }
+ },
+ "313-combobox": {
+  "text": "Type in From account to filter the list. Only a listed account can be picked.",
+  "target": {
+   "sel": "label",
+   "text": "From account*"
+  }
+ },
+ "314-dropdownlist": {
+  "text": "Set Status to another value and the issue list below updates.",
+  "target": {
+   "sel": "button",
+   "text": "In progress"
+  }
+ },
+ "315-autocomplete": {
+  "text": "Type a city name. Suggestions appear, but any text you type is accepted.",
+  "target": {
+   "sel": "input",
+   "text": "Search a city..."
+  }
+ },
+ "411-resizable-dropdowns": {
+  "text": "Open the Timezone list and drag the grip at its bottom to resize it.",
+  "target": {
+   "sel": "button",
+   "text": "UTC+00:00 London"
+  }
+ },
+ "316-tags-input": {
+  "text": "Type an email and press Enter to add it as a chip. Backspace removes the last one.",
+  "target": {
+   "sel": "input"
+  }
+ },
+ "317-country-input": {
+  "text": "Open Billing country and type a few letters to find a country.",
+  "target": {
+   "sel": "button",
+   "text": "Select country…"
+  }
+ },
+ "323-list-virtualization": {
+  "text": "Scroll the fifty thousand item list. Only the visible rows exist in the page.",
+  "target": {
+   "sel": "button",
+   "text": "Item 1,235"
+  }
+ },
+ "329-combobox-remote": {
+  "text": "Type in Search repositories and watch it load matches from the server.",
+  "target": {
+   "sel": "input",
+   "text": "Search repositories..."
+  }
+ },
+ "260-headless-editors": {
+  "text": "Pick a framework in either list. One headless core drives both of them.",
+  "target": {
+   "sel": "[role=\"option\"]",
+   "text": "React"
+  }
+ },
+ "261-headless-combobox": {
+  "text": "Type in the custom filter box. Both pickers share one value.",
+  "target": {
+   "sel": "input",
+   "text": "Type to filter…"
+  }
+ },
+ "262-headless-dropdownlist": {
+  "text": "Open the custom Normal menu and pick a priority. The styled list follows.",
+  "target": {
+   "sel": "button",
+   "text": "Normal ▼"
+  }
+ },
+ "263-headless-autocomplete": {
+  "text": "Type a city in either box and pick a suggestion. The other shows the same text.",
+  "target": {
+   "sel": "input",
+   "text": "Type a city…",
+   "nth": 1
+  }
+ },
+ "264-headless-tagsinput": {
+  "text": "Remove the svelte chip in one editor and it vanishes from the other too.",
+  "target": {
+   "sel": "button",
+   "text": "Remove svelte"
+  }
+ },
+ "265-headless-countryinput": {
+  "text": "Open the custom Germany picker and pick a country. The styled one updates too.",
+  "target": {
+   "sel": "button",
+   "text": "🇩🇪 Germany +49 ▼"
+  }
+ },
+ "266-headless-numberinput": {
+  "text": "Step the custom counter up. The styled number input shows the same value.",
+  "target": {
+   "sel": "button",
+   "text": "Increment",
+   "nth": 1
+  }
+ },
+ "267-headless-maskedinput": {
+  "text": "Type a code into the boxed field and watch the badge go from partial to complete.",
+  "target": {
+   "sel": "input",
+   "text": "AA-####-A",
+   "nth": 1
+  }
+ },
+ "268-headless-phoneinput": {
+  "text": "Pick a country in one picker and the other field switches its dial code too.",
+  "target": {
+   "sel": "select",
+   "text": "Country"
+  }
+ },
+ "269-headless-colorinput": {
+  "text": "Pick a swatch in the inline panel and the portalled color input follows.",
+  "target": {
+   "sel": "button",
+   "text": "Color #10b981"
+  }
+ },
+ "270-headless-passwordinput": {
+  "text": "Type a passphrase and watch both strength meters climb together.",
+  "target": {
+   "sel": "input",
+   "text": "Passphrase"
+  }
+ },
+ "271-headless-togglebutton": {
+  "text": "Click the Off pill to turn it on. The Bold button presses down with it.",
+  "target": {
+   "sel": "button",
+   "text": "Off"
+  }
+ },
+ "272-headless-switchbutton": {
+  "text": "Flip Notifications and the custom sliding knob moves to match.",
+  "target": {
+   "sel": "button",
+   "text": "Notifications"
+  }
+ },
+ "273-headless-checkbox": {
+  "text": "Click the Accept terms card and the styled checkbox ticks with it.",
+  "target": {
+   "sel": "button",
+   "text": "Accept terms"
+  }
+ },
+ "274-headless-radiogroup": {
+  "text": "Pick PayPal in the radio group and the custom segmented control follows.",
+  "target": {
+   "sel": "button",
+   "text": "PayPal"
+  }
+ },
+ "275-headless-rating": {
+  "text": "Click the fourth star and the custom segmented meter lights up to match.",
+  "target": {
+   "sel": "button",
+   "text": "4 stars"
+  }
+ },
+ "276-headless-calendar": {
+  "text": "Pick a day in the styled calendar and the compact day grid highlights it too.",
+  "target": {
+   "sel": "button",
+   "text": "Friday, June 5, 2026"
+  }
+ },
+ "277-headless-timepicker": {
+  "text": "Drag the clock hand and watch the digital readout change with it.",
+  "target": {
+   "sel": "input[type=\"range\"], [role=\"slider\"]"
+  }
+ },
+ "278-headless-datetimepicker": {
+  "text": "Type a date and time in the masked field and the styled picker picks it up.",
+  "target": {
+   "sel": "input",
+   "text": "yyyy-MM-dd HH:mm"
+  }
+ },
+ "279-headless-tabs": {
+  "text": "Click Activity in the tabs and the custom segmented control switches too.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Activity"
+  }
+ },
+ "280-headless-tree": {
+  "text": "Expand a folder with the arrow and select a file. Both trees share the selection.",
+  "target": {
+   "sel": "button",
+   "text": "▸"
+  }
+ },
+ "281-headless-slider": {
+  "text": "Drag the slider and the custom bar follows to the same number.",
+  "target": {
+   "sel": "input[type=\"range\"], [role=\"slider\"]"
+  }
+ },
+ "282-headless-gauge": {
+  "text": "Drag the slider to swing the needle on both the styled and the custom gauge.",
+  "target": {
+   "sel": "input[type=\"range\"], [role=\"slider\"]"
+  }
+ },
+ "256-range-feedback": {
+  "text": "Drag both thumbs on Price range to narrow the band from each end.",
+  "target": {
+   "sel": "label",
+   "text": "Price range $200"
+  }
+ },
+ "318-slider": {
+  "text": "Drag the price thumbs and watch the formatted readout update as you go.",
+  "target": {
+   "sel": "input[type=\"range\"], [role=\"slider\"]"
+  }
+ },
+ "319-gauge": {
+  "text": "Look at the coloured bands on each dial. The needle shows where the value sits.",
+  "target": {
+   "sel": "[role=\"meter\"]"
+  }
+ },
+ "330-progress": {
+  "text": "Press Animate and the progress bars and rings move to new values.",
+  "target": {
+   "sel": "button",
+   "text": "Animate"
+  }
+ },
+ "257-tabs-tree-form": {
+  "text": "Open the Tree tab and tick a folder. Its children tick with it.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Tree"
+  }
+ },
+ "320-tabs": {
+  "text": "Click Security, then use the arrow keys to move between the tabs.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Security"
+  }
+ },
+ "321-tree": {
+  "text": "Type in Search files to narrow the tree, then tick a folder to check its files.",
+  "target": {
+   "sel": "input",
+   "text": "Search files..."
+  }
+ },
+ "322-form": {
+  "text": "Press Create account with the fields empty to see each required error.",
+  "target": {
+   "sel": "button",
+   "text": "Create account"
+  }
+ },
+ "324-tree-scale": {
+  "text": "Open Folder 1. The tree holds ten thousand nodes, and only the visible ones are drawn.",
+  "target": {
+   "sel": "[role=\"treeitem\"]",
+   "text": "Folder 1"
+  }
+ },
+ "323-form-dynamic": {
+  "text": "Change Preferred contact and the form swaps which fields it shows.",
+  "target": {
+   "sel": "label",
+   "text": "Preferred contact*"
+  }
+ },
+ "324-form-wizard": {
+  "text": "Press Next with the step empty. It stays put until the fields are valid.",
+  "target": {
+   "sel": "button",
+   "text": "Next"
+  }
+ },
+ "325-form-array": {
+  "text": "Press Add line for another row. Each row validates on its own.",
+  "target": {
+   "sel": "button",
+   "text": "+ Add line"
+  }
+ },
+ "325-tabs-advanced": {
+  "text": "Press left and the tab strip moves to the left side of the panel.",
+  "target": {
+   "sel": "button",
+   "text": "left"
+  }
+ },
+ "326-menu": {
+  "text": "Open File actions and press the right arrow on an item to enter its submenu.",
+  "target": {
+   "sel": "button",
+   "text": "File actions ▾"
+  }
+ },
+ "327-navpane": {
+  "text": "Tick Collapse to rail and the sidebar shrinks to icons only.",
+  "target": {
+   "sel": "label",
+   "text": "Collapse to rail"
+  }
+ },
+ "328-tree-editable": {
+  "text": "Set Sort to A to Z and the sibling nodes reorder by name.",
+  "target": {
+   "sel": "select",
+   "text": "Manual (drag)A -> ZZ -> A"
+  }
+ },
+ "285-accordion": {
+  "text": "Click How does shipping work, then use the arrow keys to move between headers.",
+  "target": {
+   "sel": "button",
+   "text": "How does shipping work?"
+  }
+ },
+ "286-splitter": {
+  "text": "Tick Right-to-left, then drag the divider. The drag direction flips.",
+  "target": {
+   "sel": "label",
+   "text": "Right-to-left"
+  }
+ },
+ "361-dock-layout": {
+  "text": "Drag the README tab onto the edge of another pane to split it there.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "README.md ×"
+  }
+ },
+ "362-dock-manager": {
+  "text": "Press Float Explorer to pop the panel out into its own floating window.",
+  "target": {
+   "sel": "button",
+   "text": "Float Explorer"
+  }
+ },
+ "363-dock-headers": {
+  "text": "Press left and the tabs move to the side of the panel, stacked vertically.",
+  "target": {
+   "sel": "button",
+   "text": "left"
+  }
+ },
+ "364-dock-api": {
+  "text": "Press pop out Editor and watch the call show up in the event log.",
+  "target": {
+   "sel": "button",
+   "text": "pop out Editor"
+  }
+ },
+ "365-dock-dashboard": {
+  "text": "Move a few panes, press Save layout, then Reset and Load to bring it back.",
+  "target": {
+   "sel": "button",
+   "text": "Save layout"
+  }
+ },
+ "366-dock-keepalive": {
+  "text": "Type in Scratch A, open Notes, then come back. With keepAlive on, your text is still there.",
+  "target": {
+   "sel": "textarea",
+   "text": "Uncontrolled text for \"Scratch A\" - not stored in app state."
+  }
+ },
+ "367-dock-popout": {
+  "text": "Press Pop out on Services to open it in its own window. Close that window to dock it back.",
+  "target": {
+   "sel": "button",
+   "text": "Pop out Services"
+  }
+ },
+ "288-overlays": {
+  "text": "Tick Draggable, then press Open modal and move the dialog around. Escape closes it.",
+  "target": {
+   "sel": "button",
+   "text": "Open modal"
+  }
+ },
+ "289-overlays-hovercard-menubar": {
+  "text": "Click File in the menubar, then use the arrow keys to move between menus.",
+  "target": {
+   "sel": "button",
+   "text": "File"
+  }
+ },
+ "331-app-overlays": {
+  "text": "Pick a side, then press Open drawer to slide the panel in from that edge.",
+  "target": {
+   "sel": "button",
+   "text": "Open drawer"
+  }
+ },
+ "332-app-navigation": {
+  "text": "Press Show collapsed crumbs to reveal the hidden middle of the breadcrumb trail.",
+  "target": {
+   "sel": "button",
+   "text": "Show collapsed crumbs"
+  }
+ },
+ "340-command-palette": {
+  "text": "Press Control and K to open the command palette, then type to search the commands.",
+  "target": {
+   "sel": "[role=\"img\"]"
+  }
+ },
+ "342-carousel-tour": {
+  "text": "Press Start tour. Each step spotlights a part of the page, and the arrow keys move on.",
+  "target": {
+   "sel": "button",
+   "text": "Start tour"
+  }
+ },
+ "333-app-feedback": {
+  "text": "Press Show loading and the cards swap their content for shimmering skeletons.",
+  "target": {
+   "sel": "button",
+   "text": "Show loading"
+  }
+ },
+ "339-status-display": {
+  "text": "Press Dismiss to close this alert. The ones below it keep their own actions.",
+  "target": {
+   "sel": "button",
+   "text": "Dismiss"
+  }
+ },
+ "334-input-editors": {
+  "text": "In Estimate, type a time in hours and minutes. It is stored as total minutes.",
+  "target": {
+   "sel": "input",
+   "text": "e.g. 1h 30m"
+  }
+ },
+ "337-account-settings-console": {
+  "text": "Edit a field and press Save changes. A toast tracks the save and offers Undo.",
+  "target": {
+   "sel": "button",
+   "text": "Save changes"
+  }
+ },
+ "343-invoice-builder": {
+  "text": "Delete a line item and confirm, then press Undo on the toast to bring it back.",
+  "target": {
+   "sel": "button",
+   "text": "Delete line"
+  }
+ },
+ "345-ops-dashboard": {
+  "text": "Hover API Gateway for a drill-down preview of that service.",
+  "target": {
+   "sel": "button",
+   "text": "API Gateway"
+  }
+ },
+ "404-form-rich-fields": {
+  "text": "Open the country picker and type to narrow the list. The whole form is one schema.",
+  "target": {
+   "sel": "button",
+   "text": "Select country…"
+  }
+ },
+ "405-form-cascading": {
+  "text": "Pick a country, then a state. Change the country and the state clears itself.",
+  "target": {
+   "sel": "button",
+   "text": "Pick a country"
+  }
+ },
+ "420-block-login": {
+  "text": "Type a password, then press Show password to reveal what you typed.",
+  "target": {
+   "sel": "button",
+   "text": "Show password"
+  }
+ },
+ "421-block-signup": {
+  "text": "Type a password and watch the strength meter rate it as you go.",
+  "target": {
+   "sel": "label",
+   "text": "Password*"
+  }
+ },
+ "422-block-otp": {
+  "text": "Enter six zeros as the code and press Verify to see the error path.",
+  "target": {
+   "sel": "button",
+   "text": "Verify"
+  }
+ },
+ "423-block-dashboard": {
+  "text": "Switch the range to thirty days to see the dashboard for that period.",
+  "target": {
+   "sel": "button",
+   "text": "30d"
+  }
+ },
+ "424-block-app-shell": {
+  "text": "Press Toggle sidebar to collapse the navigation into an icon rail.",
+  "target": {
+   "sel": "button",
+   "text": "Toggle sidebar"
+  }
+ },
+ "425-block-pricing": {
+  "text": "Switch to Annual and every plan price drops by the discount.",
+  "target": {
+   "sel": "button",
+   "text": "Annual -20%"
+  }
+ },
+ "341-rich-text-editor": {
+  "text": "Select a word and press Bold, then try a heading or a bullet list.",
+  "target": {
+   "sel": "button",
+   "text": "Bold"
+  }
+ },
+ "335-tree-select": {
+  "text": "Open the picker, press Right to expand a branch, and Enter to pick a city.",
+  "target": {
+   "sel": "button",
+   "text": "Asia / Japan / Tokyo ▾"
+  }
+ },
+ "336-grid-select": {
+  "text": "Open the Assignee picker. Each option is a table row you can search.",
+  "target": {
+   "sel": "button",
+   "text": "Grace Hopper ▾"
+  }
+ },
+ "334-checkout-form": {
+  "text": "Type a card number starting with 4 and the card brand is detected as you type.",
+  "target": {
+   "sel": "input",
+   "text": "1234 5678 9012 3456"
+  }
+ },
+ "335-booking-form": {
+  "text": "Choose a service, then a date and a time. The summary fills in as you go.",
+  "target": {
+   "sel": "input",
+   "text": "Choose a service…"
+  }
+ },
+ "336-filter-bar": {
+  "text": "Click Furniture and the product list narrows to that category.",
+  "target": {
+   "sel": "button",
+   "text": "Furniture"
+  }
+ },
+ "343-kanban-board": {
+  "text": "Drag a card to another lane. Then press Table: it is the same grid.",
+  "target": {
+   "sel": ".sv-board-card"
+  }
+ },
+ "344-kanban-sprint": {
+  "text": "Drag a card down into another person's band to reassign it.",
+  "target": {
+   "sel": ".sv-board-card"
+  }
+ },
+ "345-kanban-pipeline": {
+  "text": "Drag a deal to the next stage, then reload. The board comes back as you left it.",
+  "target": {
+   "sel": ".sv-board-card"
+  }
+ },
+ "346-kanban-virtualized": {
+  "text": "Drag the slider up to fifty thousand cards, then scroll a lane.",
+  "target": {
+   "sel": "input[type=\"range\"], [role=\"slider\"]"
+  }
+ },
+ "347-kanban-support": {
+  "text": "Drag a ticket into the Urgent band to raise its priority.",
+  "target": {
+   "sel": ".sv-board-card"
+  }
+ },
+ "348-kanban-content": {
+  "text": "Drag a piece across into another channel's band, like Social, to move it there.",
+  "target": {
+   "sel": ".sv-board-card"
+  }
+ },
+ "349-kanban-subtasks": {
+  "text": "Expand the sub-task count on a card to tick items off. The progress bar follows.",
+  "target": {
+   "sel": "button",
+   "text": "▸ 0/2"
+  }
+ },
+ "350-kanban-structure": {
+  "text": "Set Group by to assignee and the cards re-bucket into one lane per person.",
+  "target": {
+   "sel": "select",
+   "text": "statusassigneepriority"
+  }
+ },
+ "351-kanban-power": {
+  "text": "Click the ui tag in the filter bar to show only the cards with that tag.",
+  "target": {
+   "sel": "button",
+   "text": "ui3"
+  }
+ },
+ "352-kanban-epics": {
+  "text": "Open the children count on an epic card to see its stories inline.",
+  "target": {
+   "sel": ".sv-board-card"
+  }
+ },
+ "363-scheduler-intro": {
+  "text": "Switch to Week, then drag an event to another slot to reschedule it.",
+  "target": {
+   "sel": "button",
+   "text": "Week"
+  }
+ },
+ "371-scheduler-timeline": {
+  "text": "Switch to the week timeline to see the whole week at once.",
+  "target": {
+   "sel": "button",
+   "text": "Timeline · Week"
+  }
+ },
+ "372-scheduler-selection": {
+  "text": "Ctrl-click Standup and Review to select both, then drag them together.",
+  "target": {
+   "sel": "button",
+   "text": "9amStandup"
+  }
+ },
+ "381-scheduler-app-calendar": {
+  "text": "Untick Work to hide those events from the calendar.",
+  "target": {
+   "sel": "label",
+   "text": "Work"
+  }
+ },
+ "382-scheduler-app-clinic": {
+  "text": "Drag a patient from the waitlist onto Dr. Jones to book an appointment.",
+  "target": {
+   "sel": "button",
+   "text": "Dr. Jones",
+   "nth": 1
+  }
+ },
+ "383-scheduler-app-dispatch": {
+  "text": "Drag a job from the unassigned queue onto Ava Miller. Overlaps are refused.",
+  "target": {
+   "sel": "button",
+   "text": "Ava Miller",
+   "nth": 1
+  }
+ },
+ "384-scheduler-app-roadmap": {
+  "text": "Switch to the Year timeline to see every initiative across the squads.",
+  "target": {
+   "sel": "button",
+   "text": "Timeline · Year"
+  }
+ },
+ "385-scheduler-app-content": {
+  "text": "Press Board to see the same posts as an approval pipeline.",
+  "target": {
+   "sel": "button",
+   "text": "Board"
+  }
+ },
+ "386-scheduler-rules": {
+  "text": "Drag Consult into the lunch band. That time is hard blocked, so it will not drop.",
+  "target": {
+   "sel": "button",
+   "text": "9amConsult - Rivera"
+  }
+ },
+ "387-scheduler-financial": {
+  "text": "Move a card in the Pipeline tab, and the calendar, grid and chart follow.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Pipeline ×"
+  }
+ },
+ "388-scheduler-hr": {
+  "text": "Change a Stage in the candidates grid. The pipeline and funnel pick it up too.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Stage"
+  }
+ },
+ "389-scheduler-dependencies": {
+  "text": "Drag an Intake booking later. The steps that follow slide forward.",
+  "target": {
+   "sel": "button",
+   "text": "Intake"
+  }
+ },
+ "390-scheduler-capacity": {
+  "text": "Drag a shift onto another person, like Ana Ruiz, to reassign it.",
+  "target": {
+   "sel": "button",
+   "text": "Ana Ruiz"
+  }
+ },
+ "391-scheduler-zoom": {
+  "text": "Press Zoom in for hourly detail. Nights stay folded to a thin gap.",
+  "target": {
+   "sel": "button",
+   "text": "Zoom in"
+  }
+ },
+ "392-scheduler-resource-tree": {
+  "text": "Switch to the Table tab. The provider groups are the same grid rows.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Table"
+  }
+ },
+ "393-scheduler-eligibility": {
+  "text": "Drag Panel upgrade onto Bo. Bo only does plumbing, so the job snaps back.",
+  "target": {
+   "sel": "button",
+   "text": "Bo (Plumbing)"
+  }
+ },
+ "394-scheduler-heatmap": {
+  "text": "Watch the Billing row. Its hours turn red where calls run past its capacity.",
+  "target": {
+   "sel": "button",
+   "text": "Billing (2)"
+  }
+ },
+ "395-scheduler-booking-rules": {
+  "text": "Drag Colour so it touches another appointment. It snaps back and says why.",
+  "target": {
+   "sel": "button",
+   "text": "11:30amColour"
+  }
+ },
+ "396-scheduler-bookable-slots": {
+  "text": "Pick Cleaning and the open hour-long slots light up on each provider.",
+  "target": {
+   "sel": "button",
+   "text": "Cleaning · 60m"
+  }
+ },
+ "397-scheduler-multi-calendar": {
+  "text": "Click Personal in the legend to hide those events from every view.",
+  "target": {
+   "sel": "button",
+   "text": "✓ Personal"
+  }
+ },
+ "398-scheduler-find-a-time": {
+  "text": "Pick sixty minutes to see when everyone is free. Click a suggestion to book it.",
+  "target": {
+   "sel": "button",
+   "text": "60m"
+  }
+ },
+ "399-scheduler-clinic-console": {
+  "text": "Click an open slot in the day schedule to book it.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Day schedule"
+  }
+ },
+ "474-gantt-intro": {
+  "text": "Collapse the Design phase. Its summary bar keeps the whole span.",
+  "target": {
+   "sel": "button",
+   "text": "Collapse Design"
+  }
+ },
+ "475-gantt-editing": {
+  "text": "Press Zoom in, then drag a bar or its edges. The log lists every write.",
+  "target": {
+   "sel": "button",
+   "text": "Zoom in"
+  }
+ },
+ "476-gantt-critical-path": {
+  "text": "Open the Table tab and read the Slack column. The red chain has none.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Table"
+  }
+ },
+ "477-gantt-resources": {
+  "text": "Tick Fold weekends out and the whole quarter fits in the window.",
+  "target": {
+   "sel": "label",
+   "text": "Fold weekends out"
+  }
+ },
+ "478-gantt-four-views": {
+  "text": "Press Kanban. The same rows become cards, and every view writes back to them.",
+  "target": {
+   "sel": "button",
+   "text": "Kanban"
+  }
+ },
+ "479-gantt-roadmap": {
+  "text": "Press At risk to show only the initiatives that are at risk.",
+  "target": {
+   "sel": "button",
+   "text": "At risk"
+  }
+ },
+ "480-gantt-program": {
+  "text": "Press Expand all to open forty sites and six hundred and forty tasks.",
+  "target": {
+   "sel": "button",
+   "text": "Expand all"
+  }
+ },
+ "481-gantt-portfolio-console": {
+  "text": "Read the Drift column: it shows how far each task has moved from its baseline.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Drift"
+  }
+ },
+ "399-alert-rules-engine": {
+  "text": "Open Manage alerts and add a rule on Last. When it matches, the row lights up.",
+  "target": {
+   "sel": "button",
+   "text": "Manage alerts"
+  }
+ },
+ "400-alert-styling-rules": {
+  "text": "Press Simulate load and the CPU and disk cells recolour by rule.",
+  "target": {
+   "sel": "button",
+   "text": "Simulate load"
+  }
+ },
+ "401-alert-aggregate-kpi": {
+  "text": "Press Close deals a few times. An alert fires once revenue clears the target.",
+  "target": {
+   "sel": "button",
+   "text": "Close deals"
+  }
+ },
+ "402-alert-validation-guardrails": {
+  "text": "Type a negative Amount: it is refused. Untick No negative amounts to let it in.",
+  "target": {
+   "sel": "label",
+   "text": "No negative amounts"
+  }
+ },
+ "403-alert-console-navpane": {
+  "text": "Click Critical in the nav pane and the grid shows only the hosts in trouble.",
+  "target": {
+   "sel": "button",
+   "text": "Critical 10"
+  }
+ },
+ "501-mail-app": {
+  "text": "Click Unread to see only the four unread messages.",
+  "target": {
+   "sel": "button",
+   "text": "Unread 4"
+  }
+ },
+ "502-ops-workspace": {
+  "text": "Press Deploy and watch the service degrade until an alert opens an incident.",
+  "target": {
+   "sel": "button",
+   "text": "Deploy"
+  }
+ },
+ "406-chart-context-menu": {
+  "text": "Select a block of cells, right-click, and pick Chart selected range.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "407-grid-chart-view": {
+  "text": "Press Chart, then type in the filter box. The chart redraws from the filtered rows.",
+  "target": {
+   "sel": "button",
+   "text": "Chart"
+  }
+ },
+ "00-trading-desk": {
+  "text": "Click a sector, like Technology, to filter all ten thousand rows.",
+  "target": {
+   "sel": "button",
+   "text": "Technology"
+  }
+ },
+ "01-quick-start": {
+  "text": "Click a column header to sort. Click it again to reverse the order.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Quantity"
+  }
+ },
+ "135-shortcut-config": {
+  "text": "Untick sortable and the column headers stop sorting.",
+  "target": {
+   "sel": "label",
+   "text": "sortable"
+  }
+ },
+ "22-admin-template": {
+  "text": "Open Customers and edit a cell in place.",
+  "target": {
+   "sel": "button",
+   "text": "Customers"
+  }
+ },
+ "06-large-dataset": {
+  "text": "Pick 100k by 100, then scroll. Only the cells you can see exist.",
+  "target": {
+   "sel": "button",
+   "text": "100k"
+  }
+ },
+ "78-million-rows": {
+  "text": "Group by Department, then Country. A million rows regroup in place.",
+  "target": {
+   "sel": "button",
+   "text": "Department → Country"
+  }
+ },
+ "80-cell-types-showcase": {
+  "text": "Double-click a Renewal date to edit it with the date picker.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Renewal"
+  }
+ },
+ "186-headless-table": {
+  "text": "Type in the filter box. The engine filters, and the table is plain HTML.",
+  "target": {
+   "sel": "input",
+   "text": "Filter repositories"
+  }
+ },
+ "187-headless-virtual": {
+  "text": "Scroll this list fast. Fifty thousand rows, and only about twenty exist at once.",
+  "target": {
+   "sel": ".hv-scroll"
+  }
+ },
+ "188-headless-styled": {
+  "text": "Switch the preset to card, then tick Zebra. Same table, a different look.",
+  "target": {
+   "sel": "button",
+   "text": "card"
+  }
+ },
+ "189-headless-shared-state": {
+  "text": "Click a header in either table. The other one re-sorts too, from one shared state.",
+  "target": {
+   "sel": "th",
+   "text": "Deals"
+  }
+ },
+ "190-headless-row-models": {
+  "text": "Set Group by to Lang. Rows fold into groups with a sum on each.",
+  "target": {
+   "sel": "select",
+   "text": "None (flat)Lang"
+  }
+ },
+ "191-headless-server-side": {
+  "text": "Type in the search box. Each change sends one request; watch the counter.",
+  "target": {
+   "sel": "input",
+   "text": "Search name or department…"
+  }
+ },
+ "05-inline-editing": {
+  "text": "Double-click a name to edit it, then press Save changes.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "84-editor-types": {
+  "text": "Double-click a Severity cell to edit it with a range slider.",
+  "target": {
+   "sel": "button",
+   "text": "Severity (slider)"
+  }
+ },
+ "26-list-chips-editors": {
+  "text": "Double-click a Tags cell and type a tag of your own.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Tags"
+  }
+ },
+ "428-async-editor-options": {
+  "text": "Open a City cell twice: the second time is instant. Invalidate cache makes it fetch again.",
+  "target": {
+   "sel": "button",
+   "text": "Invalidate cache"
+  }
+ },
+ "66-custom-cell-editors": {
+  "text": "Click a star in the CSAT column to give that feature a new rating.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "CSAT"
+  }
+ },
+ "68-dependent-dropdowns": {
+  "text": "Change USA to another country. The state and city reset to match it.",
+  "target": {
+   "sel": "button",
+   "text": "USA ▾"
+  }
+ },
+ "24-validation": {
+  "text": "Type an age under 18 in the Age column. The edit is refused.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Age"
+  }
+ },
+ "206-cell-validation": {
+  "text": "Set a salary above two hundred thousand. The cell turns red; hover it for the reason.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Salary (1-200k)"
+  }
+ },
+ "71-submit-validation": {
+  "text": "Press Submit all leads. Every invalid cell lights up and the errors are listed.",
+  "target": {
+   "sel": "button",
+   "text": "Submit all leads"
+  }
+ },
+ "82-conditional-form-schema": {
+  "text": "Switch a row to nonprofit in the Type column. The EIN cell opens and SSN locks.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Type"
+  }
+ },
+ "18-cascade-editing": {
+  "text": "Change a quantity and watch the line total and the summary follow.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Qty"
+  }
+ },
+ "86-undo-redo": {
+  "text": "Edit a few cells, then press Undo, or Control Z, to step back one change at a time.",
+  "target": {
+   "sel": "button",
+   "text": "↶ Undo (empty)"
+  }
+ },
+ "95-fill-handle": {
+  "text": "Press Try this case, then drag the fill handle to see which series the grid picks.",
+  "target": {
+   "sel": "button",
+   "text": "Try this case"
+  }
+ },
+ "429-move-cells": {
+  "text": "Select a block, then drag its border to move it. Hold Control as you drop to copy.",
+  "target": {
+   "sel": "label",
+   "text": "on - border drags the range"
+  }
+ },
+ "103-async-validation": {
+  "text": "Type a barcode with a wrong check digit. The cell flags it after a short pause.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Barcode"
+  }
+ },
+ "175-value-parser": {
+  "text": "Type a price with a dollar sign and commas. The grid stores it as a plain number.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Price → parse \"$1,299.9\""
+  }
+ },
+ "176-programmatic-editing": {
+  "text": "Press Next blank and edit. The grid jumps to the next empty required field.",
+  "target": {
+   "sel": "button",
+   "text": "Next blank & edit 6"
+  }
+ },
+ "177-full-row-editing": {
+  "text": "Double-click a row: every cell in it turns editable. Press Escape to cancel the row.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "02-sort-filter-paginate": {
+  "text": "Type in a filter box under a header, then sort and page through five thousand rows.",
+  "target": {
+   "sel": "input",
+   "text": "Filter…"
+  }
+ },
+ "03-excel-filters": {
+  "text": "Press Engineering only to add a filter chip. Clear the chip to see every row again.",
+  "target": {
+   "sel": "button",
+   "text": "Engineering only"
+  }
+ },
+ "64-filter-between-operator": {
+  "text": "Press the first preset to keep only prices between 100 and 300 dollars.",
+  "target": {
+   "sel": "button",
+   "text": "Price $100 - $300"
+  }
+ },
+ "69-highlighted-search": {
+  "text": "Type a name in the search box. Matching rows stay, with the hit highlighted.",
+  "target": {
+   "sel": "input",
+   "text": "Search people by name, department, or country…"
+  }
+ },
+ "87-find-in-grid": {
+  "text": "Open find, or press Control F in the grid, then type a word to jump between hits.",
+  "target": {
+   "sel": "button",
+   "text": "Or open find programmatically →"
+  }
+ },
+ "110-locale-aware-filter": {
+  "text": "Press munchen. It finds München even though you typed no accent.",
+  "target": {
+   "sel": "button",
+   "text": "\"munchen\""
+  }
+ },
+ "111-set-filter-advanced": {
+  "text": "Press Load values from server to fill a set filter with a list too big to ship.",
+  "target": {
+   "sel": "button",
+   "text": "Load values from server →"
+  }
+ },
+ "178-multi-condition-filter": {
+  "text": "Press the salary band preset. One column now holds two conditions joined by AND.",
+  "target": {
+   "sel": "button",
+   "text": "Salary 80k < x < 150k AND"
+  }
+ },
+ "179-floating-filters": {
+  "text": "Open an operator funnel in the filter row and pick Between. A second To box appears.",
+  "target": {
+   "sel": "button",
+   "text": "Filter condition: Equals"
+  }
+ },
+ "180-row-dragging": {
+  "text": "Drag a task by its grip into the other grid. It leaves this one and lands there.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "184-external-drop-zone": {
+  "text": "Drag a task out onto the Archive or Delete bucket. The row leaves the grid.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "98-advanced-filter-builder": {
+  "text": "Press At-risk EMEA accounts to load three rules at once, then edit any of them.",
+  "target": {
+   "sel": "button",
+   "text": "At-risk EMEA accounts"
+  }
+ },
+ "99-top-n-filter": {
+  "text": "Press 10 for the top ten by revenue, then press Bottom to see the weakest ten.",
+  "target": {
+   "sel": "button",
+   "text": "10"
+  }
+ },
+ "07-grouping-aggregation": {
+  "text": "Press the Department and Country grouping. Each group row sums its salaries.",
+  "target": {
+   "sel": "button",
+   "text": "Department → Country"
+  }
+ },
+ "142-group-aggregators": {
+  "text": "Open a region with its arrow. Its group row shows summed revenue and a median score.",
+  "target": {
+   "sel": "button",
+   "text": "Expand group"
+  }
+ },
+ "89-group-panel": {
+  "text": "Drag the Country header into the group panel to add another grouping level.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Country"
+  }
+ },
+ "427-group-footers": {
+  "text": "Switch to multipleColumns to give each grouped field its own column.",
+  "target": {
+   "sel": "button",
+   "text": "multipleColumns"
+  }
+ },
+ "36-reporting-workspace": {
+  "text": "Click the symbol above a column to switch its aggregate, say from sum to maximum.",
+  "target": {
+   "sel": "button",
+   "text": "Σ"
+  }
+ },
+ "426-tree-data": {
+  "text": "Press Expand all, or open one manager at a time with the arrow.",
+  "target": {
+   "sel": "button",
+   "text": "Expand all"
+  }
+ },
+ "04-selection-copy-paste": {
+  "text": "Drag across cells and press Control C. Paste into a spreadsheet and the rows hold.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "90-selection-api": {
+  "text": "Press Top 5 Metrics. The panel shows the sum, average, min and max of that block.",
+  "target": {
+   "sel": "button",
+   "text": "Top 5 × Metrics"
+  }
+ },
+ "144-status-bar": {
+  "text": "Drag across the quarterly numbers. The bar below shows their count, sum and average.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "118-range-selection": {
+  "text": "Hold Control and drag a second block. Both ranges stay selected and copy together.",
+  "target": {
+   "sel": "button",
+   "text": "Two ranges (Ctrl+drag)"
+  }
+ },
+ "23-bulk-actions": {
+  "text": "Tick a few rows. A bar appears with Mark in stock, Copy and Delete.",
+  "target": {
+   "sel": "button",
+   "text": "Mark in stock"
+  }
+ },
+ "430-selection-bar": {
+  "text": "Select two rows and Merge appears in the floating bar. Press Top to move the bar up.",
+  "target": {
+   "sel": "button",
+   "text": "Top"
+  }
+ },
+ "67-context-menu": {
+  "text": "Right-click a row for copy, duplicate, move up or down, and delete.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "25-column-pinning": {
+  "text": "Open the Company column menu and pin it left. Scroll sideways: it stays put.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Company"
+  }
+ },
+ "54-columns-hierarchy": {
+  "text": "Click a group chevron in the side panel to fold its columns into one summary column.",
+  "target": {
+   "sel": "button",
+   "text": "Collapse group"
+  }
+ },
+ "63-column-layout-api": {
+  "text": "Press Finance to load its widths and pins. Save view stores your own layout.",
+  "target": {
+   "sel": "button",
+   "text": "Finance ×"
+  }
+ },
+ "146-tool-panel": {
+  "text": "Open the Filters tab. Each column gets an operator and a value, synced with its menu.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Filters"
+  }
+ },
+ "109-column-reorder-engine": {
+  "text": "Drag a column header sideways to move the whole column.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Company"
+  }
+ },
+ "172-autosize-columns": {
+  "text": "Press Autosize every column. Each one snaps to its widest visible value.",
+  "target": {
+   "sel": "button",
+   "text": "Autosize every column"
+  }
+ },
+ "182-aligned-grids": {
+  "text": "Resize the Jan column in one grid. The same column in the other grid follows.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Jan"
+  }
+ },
+ "183-collapsible-column-groups": {
+  "text": "Press the caret on Q2. Its three months open beside the total.",
+  "target": {
+   "sel": "button",
+   "text": "Expand Q2"
+  }
+ },
+ "185-column-menu-tabs": {
+  "text": "Turn on columnMenuTabs, then open a column menu. It now has tabs.",
+  "target": {
+   "sel": "label",
+   "text": "columnMenuTabs on"
+  }
+ },
+ "10-custom-cells-and-themes": {
+  "text": "Switch the theme to Dark or High contrast. Avatars and sparklines follow along.",
+  "target": {
+   "sel": "select",
+   "text": "Auto (system)LightDarkHigh contrast"
+  }
+ },
+ "174-zebra-rows": {
+  "text": "Untick zebraRows to drop the stripes. The pinned Total row was never striped.",
+  "target": {
+   "sel": "label",
+   "text": "zebraRows={true}"
+  }
+ },
+ "140-sparkline-cells": {
+  "text": "Look at the Delta column: bars above zero and below zero take different colours.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Delta (bar +/-)"
+  }
+ },
+ "141-conditional-formatting": {
+  "text": "Turn on Alpha heat map. Health score cells shade by value, with no custom cell code.",
+  "target": {
+   "sel": "label",
+   "text": "Alpha heat map on Health score"
+  }
+ },
+ "62-conditional-styling": {
+  "text": "Scan the Priority column for coloured pills. Breached SLA rows carry a side accent.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Priority"
+  }
+ },
+ "85-tooltips-and-notes": {
+  "text": "Select a cell and press Note on selected cell. A corner marker shows it has a note.",
+  "target": {
+   "sel": "button",
+   "text": "+ Note on selected cell"
+  }
+ },
+ "55-state-maintenance": {
+  "text": "Change the sort, then press Undo. The grid steps back through its state history.",
+  "target": {
+   "sel": "button",
+   "text": "↶ Undo"
+  }
+ },
+ "171-persistent-state": {
+  "text": "Sort or resize a column, then reload the tab. The layout comes back as you left it.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Contact"
+  }
+ },
+ "143-named-views": {
+  "text": "Sort or filter, type a name here and press Save current. One click restores it.",
+  "target": {
+   "sel": "input",
+   "text": "View name (e.g. 'Top earners')"
+  }
+ },
+ "94-conditional-formatting": {
+  "text": "Press Plain numbers to see the same data without the rules.",
+  "target": {
+   "sel": "button",
+   "text": "Plain numbers"
+  }
+ },
+ "105-row-reorder": {
+  "text": "Tick several incidents and drag one grip. The whole set moves as a block.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "107-pinned-rows": {
+  "text": "Right-click any row to pin it. The page totals at the bottom follow your filters.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "108-pinned-rows-engine": {
+  "text": "Untick Bottom pinned to drop the page totals row. The top totals stay put.",
+  "target": {
+   "sel": "label",
+   "text": "Bottom pinned (page totals)"
+  }
+ },
+ "28-org-chart-tree": {
+  "text": "Press Expand all to open the whole org chart. Reports counts everyone below.",
+  "target": {
+   "sel": "button",
+   "text": "Expand all"
+  }
+ },
+ "29-wbs-project-tree": {
+  "text": "Edit a subtask completion. Its task and phase recompute their progress above it.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Completion"
+  }
+ },
+ "30-bom-tree": {
+  "text": "Change a part unit cost. Every subtotal above it, up to the grand total, updates.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Unit cost"
+  }
+ },
+ "31-lazy-tree-load": {
+  "text": "Expand a region and a Loading row shows. Collapse and reopen it: no second fetch.",
+  "target": {
+   "sel": "button",
+   "text": "Expand"
+  }
+ },
+ "08-tree-and-master-detail": {
+  "text": "Click an arrow to fold a folder away, and again to open it.",
+  "target": {
+   "sel": "button[aria-expanded]",
+   "text": "Toggle"
+  }
+ },
+ "102-tree-checkbox-cascade": {
+  "text": "Tick a parent and its children follow. Untick one child and the parent goes partial.",
+  "target": {
+   "sel": "[role=\"gridcell\"] input[type=\"checkbox\"]"
+  }
+ },
+ "40-forms-master-detail": {
+  "text": "Pick a row, change the account name in the form, then Save or Discard the edit.",
+  "target": {
+   "sel": "label",
+   "text": "Account name"
+  }
+ },
+ "70-multi-grid-sync": {
+  "text": "Edit a Qty on the left. The right grid updates but keeps its own sort and filter.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Qty"
+  }
+ },
+ "97-side-drawer-edit": {
+  "text": "Click any application row to open the drawer. Press Escape to close it.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "106-detail-rows": {
+  "text": "Open an order to see its line items, shipping, payments and support thread.",
+  "target": {
+   "sel": "button",
+   "text": "Open details"
+  }
+ },
+ "181-master-detail-grid": {
+  "text": "Open an account row. A full nested grid of its calls appears underneath.",
+  "target": {
+   "sel": "button",
+   "text": "Open details"
+  }
+ },
+ "148-server-row-model": {
+  "text": "Switch to Infinite scroll and drag the scrollbar. Blocks of rows load as you go.",
+  "target": {
+   "sel": "button",
+   "text": "Infinite scroll"
+  }
+ },
+ "09-server-side": {
+  "text": "Type a name in Search. The request waits until you stop typing, then hits the server.",
+  "target": {
+   "sel": "input",
+   "text": "name or email"
+  }
+ },
+ "33-server-infinite": {
+  "text": "Press failed to filter on the server. Then scroll: rows load in chunks as you go.",
+  "target": {
+   "sel": "button",
+   "text": "failed"
+  }
+ },
+ "72-graphql-adapter": {
+  "text": "Sort by Price and look at the side panel. It shows the GraphQL query the grid sent.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Price"
+  }
+ },
+ "79-loading-from-rest": {
+  "text": "Press Reload. A loading skeleton shows while the rows come back from the API.",
+  "target": {
+   "sel": "button",
+   "text": "↻ Reload"
+  }
+ },
+ "113-cursor-pagination": {
+  "text": "Press Next a few times. Each page comes from a cursor token, not a row offset.",
+  "target": {
+   "sel": "button",
+   "text": "Next →"
+  }
+ },
+ "114-server-grouping": {
+  "text": "Press Benchmark on this machine to time grouping on the client against the server.",
+  "target": {
+   "sel": "button",
+   "text": "Benchmark on this machine"
+  }
+ },
+ "115-optimistic-updates": {
+  "text": "Edit a price. It saves at once; if the server rejects it, the old value comes back.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Price"
+  }
+ },
+ "116-websocket-live-updates": {
+  "text": "Drag the throughput slider up. Updated cells flash as more changes stream in.",
+  "target": {
+   "sel": "input[type=\"range\"], [role=\"slider\"]"
+  }
+ },
+ "117-bulk-operations": {
+  "text": "Tick some rows, set concurrency to 10 and run. Each row gets its own outcome chip.",
+  "target": {
+   "sel": "select",
+   "text": "1 (serial)4 (default)10 (aggressive)"
+  }
+ },
+ "118-live-dashboard": {
+  "text": "Press Pause stream to freeze the live feed of ten million transactions.",
+  "target": {
+   "sel": "button",
+   "text": "Pause stream"
+  }
+ },
+ "468-server-pivot": {
+  "text": "Change the layout, then press Apply. The million-row pivot comes back in one request.",
+  "target": {
+   "sel": "button",
+   "text": "Apply"
+  }
+ },
+ "496-server-grouping-model": {
+  "text": "Press Load more, then open a group. Its leaves arrive in batches, not all at once.",
+  "target": {
+   "sel": "button",
+   "text": "Load more"
+  }
+ },
+ "469-server-tree-data": {
+  "text": "Open the fixtures folder. Its files come from the server only when you expand it.",
+  "target": {
+   "sel": "button",
+   "text": "fixtures (15)"
+  }
+ },
+ "470-server-transactions": {
+  "text": "Tick Veto adds. New orders are refused and the log marks them cancelled.",
+  "target": {
+   "sel": "label",
+   "text": "Veto adds"
+  }
+ },
+ "471-server-selection": {
+  "text": "Tick the header box, then untick two rows. The panel reads all except those two.",
+  "target": {
+   "sel": "button",
+   "text": "Select all rows"
+  }
+ },
+ "472-server-sql-planner": {
+  "text": "Press MySQL. The panel rewrites the same query in the MySQL dialect.",
+  "target": {
+   "sel": "button",
+   "text": "MySQL"
+  }
+ },
+ "473-server-grouping-rules": {
+  "text": "Press pinned bottom to move the grand total. The log shows what each change costs.",
+  "target": {
+   "sel": "button",
+   "text": "pinned bottom"
+  }
+ },
+ "482-server-crud": {
+  "text": "Turn on Slow server, then edit a cell in optimistic mode. The change shows before the reply.",
+  "target": {
+   "sel": "label",
+   "text": "Slow server (900 ms)"
+  }
+ },
+ "483-server-master-detail": {
+  "text": "Click the chevron on an order to open its detail panel. The line items load from the server.",
+  "target": {
+   "sel": "button",
+   "text": "Open details"
+  }
+ },
+ "500-worker-data-source": {
+  "text": "Sort in the Free grid, then in Enterprise: Web Worker, and compare the two meters.",
+  "target": {
+   "sel": "button",
+   "text": "Enterprise: Web Worker"
+  }
+ },
+ "503-big-data": {
+  "text": "Press 10M for ten million rows, then sort a column. Only the rows on screen get built.",
+  "target": {
+   "sel": "button",
+   "text": "10M"
+  }
+ },
+ "504-project-tracker": {
+  "text": "Open the Status column menu to edit the field and its select pills.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Status"
+  }
+ },
+ "497-live-rest-dummyjson": {
+  "text": "Click the Price header. The public API sorts the rows and sends back a fresh page.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Price"
+  }
+ },
+ "467-server-row-model-1m": {
+  "text": "Press Region, then plus Country, to group a million server rows two levels deep.",
+  "target": {
+   "sel": "button",
+   "text": "+ Country"
+  }
+ },
+ "11-stock-market": {
+  "text": "Press Pause to freeze the ticking prices. The cells stop flashing up and down.",
+  "target": {
+   "sel": "button",
+   "text": "⏸ Pause"
+  }
+ },
+ "14-industrial": {
+  "text": "Press Line to group the sensors by production line.",
+  "target": {
+   "sel": "button",
+   "text": "Line"
+  }
+ },
+ "20-industrial-dashboard": {
+  "text": "Watch the OEE column. Every line refreshes on a two-second tick.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "OEE"
+  }
+ },
+ "495-market-blotter-100k": {
+  "text": "Press fifty thousand a second. A hundred thousand rows stay sorted by change as ticks land.",
+  "target": {
+   "sel": "button",
+   "text": "50k/s"
+  }
+ },
+ "34-realtime-orders": {
+  "text": "Press Simulate disconnect and watch the order stream drop and reconnect.",
+  "target": {
+   "sel": "button",
+   "text": "⚡ Simulate disconnect"
+  }
+ },
+ "149-realtime-collaboration": {
+  "text": "Open this demo in a second tab and edit a cell. The change lands in both tabs.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "145-transaction-api": {
+  "text": "Press Pause, then Step, to apply one batched transaction to the order book at a time.",
+  "target": {
+   "sel": "button",
+   "text": "Step"
+  }
+ },
+ "73-chartjs-sync": {
+  "text": "Filter the Symbol column and the bar chart trims to the rows that are left.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Symbol"
+  }
+ },
+ "353-built-in-charting": {
+  "text": "Change Group by to Region and the chart redraws. Click a bar to filter the grid back.",
+  "target": {
+   "sel": "label",
+   "text": "Group by RepRegionProductQuarterChannel"
+  }
+ },
+ "354-charting-multi-series": {
+  "text": "Tick Stacked to pile the series into one bar. Filter a column and it adds them up again.",
+  "target": {
+   "sel": "label",
+   "text": "Stacked"
+  }
+ },
+ "355-charting-custom-buildspec": {
+  "text": "Tick a few rows in the grid and the sankey redraws for just those flows.",
+  "target": {
+   "sel": "[role=\"img\"]"
+  }
+ },
+ "356-spreadsheet-chart": {
+  "text": "Type a new number into a Units cell and the chart beside it redraws.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Units"
+  }
+ },
+ "358-charting-by-date": {
+  "text": "Press Export chart to save the signups chart as PNG, SVG or CSV.",
+  "target": {
+   "sel": "button",
+   "text": "Export chart"
+  }
+ },
+ "357-ai-chart-this": {
+  "text": "Press Chart with AI and ask for total price by country, stacked by product.",
+  "target": {
+   "sel": "button",
+   "text": "Chart with AI"
+  }
+ },
+ "432-chart-candlestick": {
+  "text": "Press Real time and a gap opens on the axis over every weekend.",
+  "target": {
+   "sel": "button",
+   "text": "Real time"
+  }
+ },
+ "433-chart-boxplot": {
+  "text": "Compare the bars and the boxes: two regions with the same mean look nothing alike.",
+  "target": {
+   "sel": "[role=\"img\"]"
+  }
+ },
+ "434-chart-axes-styling": {
+  "text": "Untick Decimate to draw all fifty thousand readings and see what it costs.",
+  "target": {
+   "sel": "label",
+   "text": "Decimate"
+  }
+ },
+ "435-chart-type-gallery": {
+  "text": "Click any thumbnail card to open that chart full size with its variants.",
+  "target": {
+   "sel": "[role=\"img\"]"
+  }
+ },
+ "436-chart-sync-zoom": {
+  "text": "Press 3M to zoom both charts to three months. The grid shows only those rows.",
+  "target": {
+   "sel": "button",
+   "text": "3M"
+  }
+ },
+ "437-chart-financial-workbench": {
+  "text": "Press RSI to stack an RSI pane under the price on the same x axis.",
+  "target": {
+   "sel": "button",
+   "text": "RSI"
+  }
+ },
+ "438-chart-bar": {
+  "text": "Tick 100 percent and each quarter's bar shows the regions as shares of the whole.",
+  "target": {
+   "sel": "label",
+   "text": "100%"
+  }
+ },
+ "439-chart-line": {
+  "text": "Tick Bridge the outage on Team to draw the line across the two missing months.",
+  "target": {
+   "sel": "label",
+   "text": "Bridge the outage on Team"
+  }
+ },
+ "440-chart-area": {
+  "text": "Toggle Gradient fills and watch each channel's area change its shading.",
+  "target": {
+   "sel": "label",
+   "text": "Gradient fills"
+  }
+ },
+ "441-chart-pie-donut": {
+  "text": "Set Slices to Top 5 plus Other and the small browsers fold into one slice.",
+  "target": {
+   "sel": "select",
+   "text": "Top 5 + OtherTop 8 + OtherAll"
+  }
+ },
+ "442-chart-scatter-bubble": {
+  "text": "Tick Bubble size from units and each point grows with the units it sold.",
+  "target": {
+   "sel": "label",
+   "text": "Bubble size from units"
+  }
+ },
+ "443-chart-combo": {
+  "text": "Switch Cost from Bars to Area. Revenue stays as bars, cost turns into an area.",
+  "target": {
+   "sel": "select",
+   "text": "BarsArea"
+  }
+ },
+ "444-chart-distribution": {
+  "text": "Drag the slider to change the histogram bins. All three services share the same edges.",
+  "target": {
+   "sel": "input[type=\"range\"], [role=\"slider\"]"
+  }
+ },
+ "445-chart-heatmap-calendar": {
+  "text": "Set Colours to Custom stops to repaint the ticket heat map with your own ramp.",
+  "target": {
+   "sel": "select",
+   "text": "SequentialDivergingCustom stops"
+  }
+ },
+ "446-chart-radar-radial": {
+  "text": "Untick Cedar One to take that phone off the radar chart.",
+  "target": {
+   "sel": "label",
+   "text": "Cedar One"
+  }
+ },
+ "447-chart-hierarchy": {
+  "text": "Set Colour by to Sector, then click a sunburst ring to zoom into it.",
+  "target": {
+   "sel": "select",
+   "text": "Day's moveSector"
+  }
+ },
+ "448-chart-flow": {
+  "text": "Hover a ribbon in the sankey for its value, or a node for its total.",
+  "target": {
+   "sel": "[role=\"img\"]"
+  }
+ },
+ "449-chart-waterfall-funnel": {
+  "text": "Change Funnel shape to Pyramid and the sign-up funnel redraws.",
+  "target": {
+   "sel": "select",
+   "text": "TrapezoidPyramidCone"
+  }
+ },
+ "450-chart-gauge-bullet": {
+  "text": "Drag the Uptime slider and the needle sweeps to the new value.",
+  "target": {
+   "sel": "label",
+   "text": "Uptime 99.93%"
+  }
+ },
+ "451-chart-annotations": {
+  "text": "Pick Trend in the toolbar and drag across the chart to draw a trend line.",
+  "target": {
+   "sel": "button",
+   "text": "Trend"
+  }
+ },
+ "147-integrated-charts": {
+  "text": "Switch the chart type to Pie, then filter the grid. The slices re-aggregate live.",
+  "target": {
+   "sel": "select",
+   "text": "BarLineAreaPie"
+  }
+ },
+ "150-scatter-bubble": {
+  "text": "Tick Bubble and each dot grows with the rep's deal count.",
+  "target": {
+   "sel": "label",
+   "text": "Bubble (size = deals)"
+  }
+ },
+ "151-time-series-chart": {
+  "text": "Pick Area stacked from the list. Dates stay spaced by real time, gaps and all.",
+  "target": {
+   "sel": "select",
+   "text": "LineArea (stacked)Bar (stacked)"
+  }
+ },
+ "152-chart-wizard": {
+  "text": "Pick a chart type from the Type tab. Each thumbnail is a live mini chart.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Type"
+  }
+ },
+ "153-chart-zoom-brush": {
+  "text": "Drag a rectangle across the chart to zoom in. Double-click to reset.",
+  "target": {
+   "sel": "[role=\"img\"]"
+  }
+ },
+ "154-chart-heatmap": {
+  "text": "Switch to the Diverging ramp. Cell text flips black or white to stay readable.",
+  "target": {
+   "sel": "select",
+   "text": "Sequential rampDiverging ramp"
+  }
+ },
+ "155-chart-analytics": {
+  "text": "Click any day on the chart and the grid filters to that day's rows.",
+  "target": {
+   "sel": "[role=\"img\"]"
+  }
+ },
+ "156-chart-patterns": {
+  "text": "Tick Pattern fallback and each region gets its own stripes, dots or hatching.",
+  "target": {
+   "sel": "label",
+   "text": "Pattern fallback"
+  }
+ },
+ "157-chart-forecast-band": {
+  "text": "Toggle Smooth curves. The line still passes through every weekly point.",
+  "target": {
+   "sel": "label",
+   "text": "Smooth curves"
+  }
+ },
+ "158-chart-waterfall": {
+  "text": "Follow the bars: each one starts where the last ended. Green adds, red takes away.",
+  "target": {
+   "sel": "[role=\"img\"]"
+  }
+ },
+ "159-chart-streaming": {
+  "text": "Press Start streaming. Old ticks drop off the left as new prices arrive on the right.",
+  "target": {
+   "sel": "button",
+   "text": "▶ Start streaming"
+  }
+ },
+ "160-chart-funnel": {
+  "text": "Each row in Users is one funnel step. Hover a segment for its drop-off.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Users"
+  }
+ },
+ "161-chart-radar": {
+  "text": "Click Aurora X1 in the legend to isolate that product's polygon.",
+  "target": {
+   "sel": "button",
+   "text": "Aurora X1"
+  }
+ },
+ "162-chart-calendar": {
+  "text": "Filter the Type column and the calendar heat map re-aggregates.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Type"
+  }
+ },
+ "163-chart-gauge": {
+  "text": "Click a row in the KPI grid and the gauge dial swings to that metric.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "164-chart-treemap": {
+  "text": "Find the biggest rectangle in the tree map: that region and category earn the most.",
+  "target": {
+   "sel": "[role=\"img\"]"
+  }
+ },
+ "165-chart-sankey": {
+  "text": "Hover a ribbon in the sankey to see how many users flowed from one step to the next.",
+  "target": {
+   "sel": "[role=\"img\"]"
+  }
+ },
+ "27-spreadsheet-ribbon": {
+  "text": "Press Control B on a cell and the Bold button on the Home tab lights up.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Home"
+  }
+ },
+ "83-spreadsheet-formulas": {
+  "text": "Press Insert Function to browse about fifty functions, from VLOOKUP to TEXTJOIN.",
+  "target": {
+   "sel": "button",
+   "text": "Insert Function"
+  }
+ },
+ "169-cell-borders": {
+  "text": "Edit a quarter so it beats its target. Its border turns into a green double line.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "170-cell-merging": {
+  "text": "Change a Qty or Rate on the invoice and the totals recompute.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "173-hyperformula": {
+  "text": "Edit any input cell and every formula that reads it, from SUMIF to PMT, recalculates.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "207-blank-sheet": {
+  "text": "Click a cell, type a few numbers down a column, then press Alt and equals for AutoSum.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "208-freeze-panes": {
+  "text": "Scroll right across the months. The Account and Owner columns stay frozen.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "A"
+  }
+ },
+ "209-data-validation": {
+  "text": "Double-click a Status cell for its dropdown. Fix a red cell and the error clears.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "210-format-cells": {
+  "text": "Select a range and press the currency button. Only the display changes.",
+  "target": {
+   "sel": "button",
+   "text": "$"
+  }
+ },
+ "211-financial-model": {
+  "text": "Change a blue input, like the APR, and all 360 rows recompute.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "212-dashboard-sheet": {
+  "text": "Edit a weekly number and watch the sparkline, the heatmap and the totals update.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "452-excel-shortcuts": {
+  "text": "Click a cell and press Control with an arrow key to jump to the edge of the data.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "453-formula-bar-formats": {
+  "text": "Type an address in the Name Box, like C4, and the selection jumps there.",
+  "target": {
+   "sel": "input",
+   "text": "D1"
+  }
+ },
+ "454-paste-find-structure": {
+  "text": "Press Copy A1 to D4, tick transpose, then paste at the active cell.",
+  "target": {
+   "sel": "button",
+   "text": "Copy A1:D4"
+  }
+ },
+ "455-workbook": {
+  "text": "Change a unit price on the Prices tab, then open Summary to see it carried through.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Prices"
+  }
+ },
+ "456-sales-report-workbook": {
+  "text": "Open the Formulas tab for the whole function library.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Formulas"
+  }
+ },
+ "457-goal-seek": {
+  "text": "Open Data, then Goal Seek, and set the profit to twenty thousand by changing price.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Data"
+  }
+ },
+ "458-data-cleanup": {
+  "text": "On the Data tab, run Text to Columns to split column A at the semicolons.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Data"
+  }
+ },
+ "459-named-ranges-forecast": {
+  "text": "Pick a name in the Name Box to jump to its cell on the Assumptions sheet.",
+  "target": {
+   "sel": "input",
+   "text": "A1"
+  }
+ },
+ "460-review-comments-protection": {
+  "text": "Open Review and press Next to step through the reviewer notes.",
+  "target": {
+   "sel": "button",
+   "text": "Review"
+  }
+ },
+ "461-order-intake-validation": {
+  "text": "Type a Qty over 500. A Stop alert refuses it and offers Retry.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "462-regional-scorecard-cf": {
+  "text": "Edit a month in any region. Its arrow, data bar, fill and rank move with it.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "463-merged-report-headers": {
+  "text": "Click inside Q1. Merge and Center lights up on the Home tab; press it to unmerge.",
+  "target": {
+   "sel": "button",
+   "text": "Home"
+  }
+ },
+ "464-ticket-log-autofilter": {
+  "text": "Type Closed into an open ticket's Status and the row folds out of the filter.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "465-autosave-document": {
+  "text": "Bold a row or type a task, then press Reload the page. Your changes come back.",
+  "target": {
+   "sel": "button",
+   "text": "Reload the page"
+  }
+ },
+ "466-paste-from-excel": {
+  "text": "Press Copy an Excel block, click a cell and paste. Formats and formulas come along.",
+  "target": {
+   "sel": "button",
+   "text": "Copy an Excel block"
+  }
+ },
+ "484-loan-model-files": {
+  "text": "Open the File tab and use Save As to write the whole loan model as an Excel file.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "File"
+  }
+ },
+ "485-sheet-charts-objects": {
+  "text": "Drag the chart by its corner to resize it, or double-click it for the Chart dialog.",
+  "target": {
+   "sel": "[role=\"img\"]"
+  }
+ },
+ "486-sheet-sparklines": {
+  "text": "Open the Insert tab and pick a Line, Column or Win Loss sparkline.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Insert"
+  }
+ },
+ "487-sheet-pivot-range": {
+  "text": "Open the Insert tab and pick PivotTable to pivot a block of cells.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Insert"
+  }
+ },
+ "488-sheet-collaboration": {
+  "text": "Type a number in this sheet. The other one follows, and the log shows the delta.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "489-sheet-hyperlinks": {
+  "text": "Select a cell, open Insert and choose Link, or press Control K.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Insert"
+  }
+ },
+ "490-sheet-let-lambda": {
+  "text": "Open the Formulas tab to look up LET, LAMBDA and helpers like MAP and SCAN.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Formulas"
+  }
+ },
+ "491-sheet-tables": {
+  "text": "Open Insert, then Table Styles, and pick one of eighteen looks for the table.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Insert"
+  }
+ },
+ "492-sheet-iterative": {
+  "text": "Open Formulas, then Calculation Options, and turn on iterative calculation.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Formulas"
+  }
+ },
+ "493-sheet-auditing": {
+  "text": "Open the Formulas tab and run Error Checking to walk every cell with an error.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Formulas"
+  }
+ },
+ "494-sheet-cell-images": {
+  "text": "Sort the list by price from the Data tab. Each picture moves with its row.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Data"
+  }
+ },
+ "498-sheet-bound-tabs": {
+  "text": "Click the Region header to sort Orders. Summary still reads it with plain formulas.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Region"
+  }
+ },
+ "499-sheet-engineering-stats": {
+  "text": "Open the Formulas tab to find ATAN2, BITAND, DSUM and NORM.DIST used here.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Formulas"
+  }
+ },
+ "37-theming-studio": {
+  "text": "Press Dark, then change the density. The CSS snippet updates to match.",
+  "target": {
+   "sel": "button",
+   "text": "☾ Dark"
+  }
+ },
+ "431-custom-icons": {
+  "text": "Press Mixed. Four icons change and the rest keep their built-in glyphs.",
+  "target": {
+   "sel": "button",
+   "text": "Mixed"
+  }
+ },
+ "74-theme-integrations": {
+  "text": "Pick Material UI and the grid restyles. The side panel shows the CSS to paste.",
+  "target": {
+   "sel": "button",
+   "text": "Material UI"
+  }
+ },
+ "17-accessibility": {
+  "text": "Turn on the high-contrast focus outline, then move through cells with the arrows.",
+  "target": {
+   "sel": "label",
+   "text": "High-contrast focus outline"
+  }
+ },
+ "65-keyboard-shortcuts": {
+  "text": "Press Control K for the command palette, or Control slash for the cheat sheet.",
+  "target": {
+   "sel": "button",
+   "text": "⌘ K - Command palette"
+  }
+ },
+ "81-mobile-card-view": {
+  "text": "Press Cards, then tap a card to open its edit panel.",
+  "target": {
+   "sel": "button",
+   "text": "Cards"
+  }
+ },
+ "15-localization": {
+  "text": "Pick EUR in the currency list and every price in the grid reformats.",
+  "target": {
+   "sel": "select",
+   "text": "USDEURGBPJPYCNYAED"
+  }
+ },
+ "38-rtl-i18n": {
+  "text": "Press English to flip the grid back to left to right, with prices in dollars.",
+  "target": {
+   "sel": "button",
+   "text": "🇺🇸 English (US) USD"
+  }
+ },
+ "16-csp-compliant": {
+  "text": "Press Copy to grab the CSP header this grid runs under.",
+  "target": {
+   "sel": "button",
+   "text": "Copy"
+  }
+ },
+ "19-ssr": {
+  "text": "Press Take snapshot to see the grid markup as it renders with no JavaScript.",
+  "target": {
+   "sel": "button",
+   "text": "📸 Take SSR-equivalent snapshot"
+  }
+ },
+ "77-smart-chart": {
+  "text": "Switch the chart to Pie, then filter the grid. The chart re-aggregates.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "◔ Pie"
+  }
+ },
+ "139-migration-from-ag-grid": {
+  "text": "Type in the quick filter. Both grids narrow to the same rows.",
+  "target": {
+   "sel": "input",
+   "text": "Quick filter (both grids)…"
+  }
+ },
+ "12-hr-team": {
+  "text": "Press Team to group the directory by team, or try Location and Status.",
+  "target": {
+   "sel": "button",
+   "text": "Team"
+  }
+ },
+ "13-finances": {
+  "text": "Click the Amount header to sort the ledger by transaction size.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Amount"
+  }
+ },
+ "32-manufacturing-ops": {
+  "text": "Watch the Progress column: the bars advance on a five second tick.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Progress"
+  }
+ },
+ "35-permissions-audit": {
+  "text": "Switch to Viewer and try to edit a cell. A read-only role cannot change it.",
+  "target": {
+   "sel": "button",
+   "text": "RO Viewer (read-only)"
+  }
+ },
+ "39-print-board-export": {
+  "text": "Tick Cover page, then press Print for a boardroom pack with a title page.",
+  "target": {
+   "sel": "label",
+   "text": "Cover page"
+  }
+ },
+ "41-healthcare-emr": {
+  "text": "Switch to Nurse, then Physician, and see which cells each role can edit.",
+  "target": {
+   "sel": "button",
+   "text": "Nurse"
+  }
+ },
+ "42-logistics-fleet": {
+  "text": "Press Pause stream to freeze the board, or Simulate dropout to cut the feed.",
+  "target": {
+   "sel": "button",
+   "text": "⏸ Pause stream"
+  }
+ },
+ "43-compliance-queue": {
+  "text": "Switch to L1 and approve a case to send it up the approval chain.",
+  "target": {
+   "sel": "button",
+   "text": "L1"
+  }
+ },
+ "44-field-service": {
+  "text": "Double-click a Priority cell to change it inline.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Priority"
+  }
+ },
+ "45-gantt-chart": {
+  "text": "Look at the Schedule column: a bar per task, a today line, a glow when overdue.",
+  "target": {
+   "sel": "button",
+   "text": "Schedule"
+  }
+ },
+ "46-scheduler": {
+  "text": "Drag the Annual check to another provider's column to reassign it.",
+  "target": {
+   "sel": "button",
+   "text": "Annual checkA. Reed"
+  }
+ },
+ "47-trash-truck-timeline": {
+  "text": "Press Dispatch depot trucks and watch them roll out along their routes.",
+  "target": {
+   "sel": "button",
+   "text": "Dispatch depot trucks"
+  }
+ },
+ "48-crm-sales-pipeline": {
+  "text": "Press Won to see only closed deals, or All for the whole pipeline.",
+  "target": {
+   "sel": "button",
+   "text": "Won 4"
+  }
+ },
+ "49-admin-dashboard": {
+  "text": "Press Invite user to open the invite dialog and add someone to the list.",
+  "target": {
+   "sel": "button",
+   "text": "+ Invite user"
+  }
+ },
+ "50-seller-panel": {
+  "text": "Open the Inventory tab to see stock bars against the reorder threshold.",
+  "target": {
+   "sel": "button",
+   "text": "Inventory 4"
+  }
+ },
+ "205-project-management": {
+  "text": "Press Collapse on the Timeline group to fold its date columns away.",
+  "target": {
+   "sel": "button",
+   "text": "Collapse Timeline"
+  }
+ },
+ "193-studio-live-sql": {
+  "text": "Press New customer. It runs a real SQL insert on Postgres inside your browser.",
+  "target": {
+   "sel": "button",
+   "text": "New customer"
+  }
+ },
+ "338-pglite-northwind": {
+  "text": "Open the Products tab. Every sort, filter and edit there is real SQL.",
+  "target": {
+   "sel": "button",
+   "text": "Products"
+  }
+ },
+ "194-studio-supabase": {
+  "text": "Press Try the hosted sample to load a live Supabase table into the grid.",
+  "target": {
+   "sel": "button",
+   "text": "Try the hosted sample"
+  }
+ },
+ "195-studio-relations": {
+  "text": "Press New contact and search the Company picker. The grid shows the name.",
+  "target": {
+   "sel": "button",
+   "text": "+ New contact"
+  }
+ },
+ "196-studio-auth": {
+  "text": "Enter any email and password, then press Sign in to reach the grid.",
+  "target": {
+   "sel": "button",
+   "text": "Sign in"
+  }
+ },
+ "197-studio-chart": {
+  "text": "Click a bar in the chart and the grid filters to that tier.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Tier"
+  }
+ },
+ "198-studio-form-fields": {
+  "text": "Press New member and pick a country. The City list changes to match.",
+  "target": {
+   "sel": "button",
+   "text": "+ New member"
+  }
+ },
+ "199-studio-computed-hooks": {
+  "text": "Press New order and type a quantity. The total recomputes as you type.",
+  "target": {
+   "sel": "button",
+   "text": "+ New order"
+  }
+ },
+ "200-studio-dashboard": {
+  "text": "Click true in the chart to drill the grid down to active customers.",
+  "target": {
+   "sel": "button",
+   "text": "true"
+  }
+ },
+ "53-excel-import": {
+  "text": "Paste some CSV here and press Preview to check every row before it lands.",
+  "target": {
+   "sel": "textarea",
+   "text": "Paste CSV / TSV / JSON, then click \"Preview\""
+  }
+ },
+ "88-staged-editing": {
+  "text": "Edit a few cells. The Commit button counts them, then sends the batch at once.",
+  "target": {
+   "sel": "button",
+   "text": "✓ Commit 0 changes"
+  }
+ },
+ "51-ai-assistant": {
+  "text": "Type a question in plain English and press Ask. The mock model filters the grid.",
+  "target": {
+   "sel": "textarea",
+   "text": "e.g. accounts losing momentum in EMEA, by NPS"
+  }
+ },
+ "75-ai-smart-paste": {
+  "text": "Pick the vCard sample, then press Parse with AI to turn it into typed rows.",
+  "target": {
+   "sel": "button",
+   "text": "✨ Parse with AI"
+  }
+ },
+ "92-nl-filter-bar": {
+  "text": "Press top 5 by salary and the grid sorts and trims to five rows.",
+  "target": {
+   "sel": "button",
+   "text": "\"top 5 by salary\""
+  }
+ },
+ "96-high-contrast-theme": {
+  "text": "Press High contrast to switch this grid to the high-contrast skin.",
+  "target": {
+   "sel": "button",
+   "text": "High contrast"
+  }
+ },
+ "100-anomaly-highlights": {
+  "text": "Press Extreme to show only the worst outliers. Hover one to see what tripped.",
+  "target": {
+   "sel": "button",
+   "text": "Extreme"
+  }
+ },
+ "112-barcode-cells": {
+  "text": "Untick Human-readable digits, or click a row for a shelf-label preview.",
+  "target": {
+   "sel": "label",
+   "text": "Human-readable digits"
+  }
+ },
+ "120-test-systems-monitor": {
+  "text": "Press Group by site to fold the fleet into one group per site.",
+  "target": {
+   "sel": "button",
+   "text": "Group by site"
+  }
+ },
+ "167-project-tracker": {
+  "text": "Press Group by phase for per-phase rows with their own aggregate cards.",
+  "target": {
+   "sel": "button",
+   "text": "▤ Group by phase"
+  }
+ },
+ "91-cell-comments": {
+  "text": "Right-click a cell to start a comment thread, then type @ to mention someone.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "360-pivot-mode-grid": {
+  "text": "Turn on Pivot Mode and the flat list becomes a pivot table.",
+  "target": {
+   "sel": "label",
+   "text": "Pivot Mode"
+  }
+ },
+ "52-pivot-table": {
+  "text": "Open Presets to load a ready layout, or drag fields between the four zones.",
+  "target": {
+   "sel": "button",
+   "text": "Presets"
+  }
+ },
+ "60-pivot-expandable": {
+  "text": "Press Expand all to see each sales person under their region.",
+  "target": {
+   "sel": "button",
+   "text": "Expand all"
+  }
+ },
+ "121-pivot-conditional-cells": {
+  "text": "Press Sort row labels. The traffic-light pills and data bars move with their rows.",
+  "target": {
+   "sel": "button",
+   "text": "Sort row labels"
+  }
+ },
+ "122-pivot-drill-through": {
+  "text": "Click any value in the pivot. The right rail lists the source rows behind it.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "123-pivot-totals": {
+  "text": "Untick Row subtotals and the sigma rows vanish. The counts panel updates.",
+  "target": {
+   "sel": "label",
+   "text": "Row subtotals"
+  }
+ },
+ "124-pivot-olap": {
+  "text": "Press EMEA in the slicer rail to narrow the cube to one region.",
+  "target": {
+   "sel": "button",
+   "text": "EMEA"
+  }
+ },
+ "125-pivot-charts": {
+  "text": "Click a region row in the cube. Both charts drill down to its countries.",
+  "target": {
+   "sel": "[role=\"gridcell\"]"
+  }
+ },
+ "166-pivot-analysis-workspace": {
+  "text": "Click the Sum chip to cycle the aggregator, and the pivot recalculates.",
+  "target": {
+   "sel": "button",
+   "text": "Sum · Total spend"
+  }
+ },
+ "168-pivot-designer": {
+  "text": "Search for a field, then drag it into Rows or Columns to re-pivot.",
+  "target": {
+   "sel": "input",
+   "text": "Search fields…"
+  }
+ },
+ "359-pivot-chart": {
+  "text": "Press Chart: the same pivot layout draws as a chart. Table brings it back.",
+  "target": {
+   "sel": "button",
+   "text": "Chart"
+  }
+ },
+ "21-export-and-print": {
+  "text": "Press Export Excel to download the grid as an xlsx file.",
+  "target": {
+   "sel": "button",
+   "text": "Export Excel (xlsx)"
+  }
+ },
+ "56-export-theme-matched": {
+  "text": "Press XLSX: the workbook uses the same colors the grid shows right now.",
+  "target": {
+   "sel": "button",
+   "text": "XLSX"
+  }
+ },
+ "57-export-header-footer-logo": {
+  "text": "Press Download branded XLSX for a file with a logo, title and page numbers.",
+  "target": {
+   "sel": "button",
+   "text": "Download branded XLSX"
+  }
+ },
+ "58-export-with-images": {
+  "text": "Press Export XLSX with images. Each thumbnail lands in Excel as a picture.",
+  "target": {
+   "sel": "button",
+   "text": "⬇ Export XLSX with images"
+  }
+ },
+ "59-export-multi-sheet": {
+  "text": "Filter to EMEA, then press Export. The workbook still holds all five tabs.",
+  "target": {
+   "sel": "button",
+   "text": "⬇ Export 5-sheet XLSX"
+  }
+ },
+ "93-password-protected-export": {
+  "text": "Type a passphrase, export, then decrypt the file below to check the round trip.",
+  "target": {
+   "sel": "input",
+   "text": "Passphrase"
+  }
+ },
+ "101-formulas-in-xlsx": {
+  "text": "Press Export with formulas, open it in Excel, and change a quantity.",
+  "target": {
+   "sel": "button",
+   "text": "ƒx Export with formulas"
+  }
+ },
+ "119-workbook-multi-sheet": {
+  "text": "Press Open to load an xlsx or csv file of your own into the workbook.",
+  "target": {
+   "sel": "label",
+   "text": "Open…"
+  }
+ },
+ "126-export-grouped-grid": {
+  "text": "Group by Region, then press Export to xlsx. The groups come along.",
+  "target": {
+   "sel": "button",
+   "text": "Export to xlsx"
+  }
+ },
+ "127-export-pivot-grid": {
+  "text": "Pick One sheet per region, then export. Each region gets its own tab.",
+  "target": {
+   "sel": "button",
+   "text": "One sheet per region"
+  }
+ },
+ "201-export-formatting-and-xls": {
+  "text": "Tick Raw values and export. Prices and dates leave as plain numbers.",
+  "target": {
+   "sel": "label",
+   "text": "Raw values"
+  }
+ },
+ "202-export-pdf-grouped-and-print": {
+  "text": "Group by Country, then press Export PDF for bold headers and subtotals.",
+  "target": {
+   "sel": "button",
+   "text": "Country"
+  }
+ },
+ "203-ai-export-and-anomalies": {
+  "text": "Type an export request in plain words. The mock model filters, groups and downloads.",
+  "target": {
+   "sel": "input",
+   "text": "e.g. export orders over $300 as a grouped PDF by country"
+  }
+ },
+ "204-import-dialog": {
+  "text": "Press Copy sample CSV, then Import and paste it. Bad cells get flagged.",
+  "target": {
+   "sel": "button",
+   "text": "Import"
+  }
+ },
+ "505-gallery-catalog": {
+  "text": "Pick Lighting to filter the cards, then press Table to see the same rows.",
+  "target": {
+   "sel": "button",
+   "text": "Lighting"
+  }
+ },
+ "506-gallery-team-directory": {
+  "text": "Press Design to show only that team, then search for a person or a city.",
+  "target": {
+   "sel": "button",
+   "text": "Design"
+  }
+ },
+ "507-gallery-listings": {
+  "text": "Press Sold to show only sold listings, or pick a number of bedrooms.",
+  "target": {
+   "sel": "button",
+   "text": "Sold"
+  }
+ },
+ "508-gallery-field-types": {
+  "text": "Press Table: every field on a card turns back into the cell it came from.",
+  "target": {
+   "sel": "button",
+   "text": "Table"
+  }
+ },
+ "509-gallery-at-scale": {
+  "text": "Type in the search box. It narrows all five thousand cards at once.",
+  "target": {
+   "sel": "input",
+   "text": "Search records"
+  }
+ },
+ "510-column-pin-splitter": {
+  "text": "Drag the line after the pinned columns to pin more or fewer. Escape cancels the drag.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Order"
+  }
+ },
+ "511-base-content-calendar": {
+  "text": "Open the Campaigns tab. Each campaign lists the posts linked to it.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Campaigns"
+  }
+ },
+ "512-base-sales-crm": {
+  "text": "Open Accounts. Link a deal to an account and the account lists it too.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Accounts"
+  }
+ },
+ "513-base-product-roadmap": {
+  "text": "Open the Feedback tab to see what customers asked for, linked to features.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Feedback"
+  }
+ },
+ "514-base-hiring-tracker": {
+  "text": "Drag a candidate card to the next stage of the hiring pipeline.",
+  "target": {
+   "sel": ".sv-board-card"
+  }
+ },
+ "515-base-inventory": {
+  "text": "Open Suppliers. Each supplier lists the items it sends you.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Suppliers"
+  }
+ },
+ "516-base-postgres": {
+  "text": "Edit a task. The change runs as a real SQL update on Postgres in the page.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Task"
+  }
+ },
+ "517-base-supabase": {
+  "text": "Change a task in one window and watch it arrive in the other.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Status"
+  }
+ },
+ "518-base-rest-api": {
+  "text": "Open Companies. The API description became tables, selects and links.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Companies"
+  }
+ },
+ "519-base-from-database": {
+  "text": "Pick a sample database, then press Make the app.",
+  "target": {
+   "sel": "button",
+   "text": "Make the app"
+  }
+ },
+ "520-base-bug-tracker": {
+  "text": "Look at Triage: bugs grouped by status and colored by severity.",
+  "target": {
+   "sel": "button",
+   "text": "Colored by Severity"
+  }
+ },
+ "521-base-event-planning": {
+  "text": "Open Attendees. Every event counts who registered and the seats left.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Attendees"
+  }
+ },
+ "522-base-okrs": {
+  "text": "Read the Progress column: a formula from start to target for each key result.",
+  "target": {
+   "sel": "[role=\"columnheader\"]",
+   "text": "Progress"
+  }
+ },
+ "523-base-expenses": {
+  "text": "Open Budgets to see what is left of each one after the approved expenses.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Budgets"
+  }
+ },
+ "524-base-onboarding": {
+  "text": "Drag a new hire through the pipeline, or open their checklist.",
+  "target": {
+   "sel": ".sv-board-card"
+  }
+ }
+}

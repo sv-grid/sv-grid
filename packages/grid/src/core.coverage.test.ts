@@ -216,10 +216,53 @@ describe('isFunction helper', () => {
   })
 })
 
+describe('core - sorting goes by the data type, not the editor', () => {
+  it('a number column edited in a text box sorts as numbers', () => {
+    // Values held as text, as a text editor writes them: "10" sorts after
+    // "9" only when the column says it holds numbers.
+    const sortedIds = (column: Record<string, unknown>) =>
+      createSvGrid({
+        data: [{ id: 1, v: '9' }, { id: 2, v: '10' }, { id: 3, v: '2' }],
+        columns: [column],
+        _features: features,
+        _rowModels: { coreRowModel: createCoreRowModel(), sortedRowModel: createSortedRowModel(sortFns) },
+        state: { sorting: [{ id: 'v', desc: false }] },
+      } as any)
+        .getRowModel()
+        .rows.map((r) => (r.original as { id: number }).id)
+    expect(sortedIds({ field: 'v', cellDataType: 'number', editorType: 'text' })).toEqual([3, 1, 2])
+    // The old way still works: a number editor and no declared type.
+    expect(sortedIds({ field: 'v', editorType: 'number' })).toEqual([3, 1, 2])
+  })
+})
+
 describe('core - column visibility + leaf columns', () => {
   it('getAllColumns returns one entry per column def', () => {
     const grid = makeGrid()
     expect(grid.getAllColumns().length).toBe(columns.length)
+  })
+
+  it('a new columns array reuses the built columns, unless a field\'s fieldProps changed', () => {
+    // The component hands the core its columns through a getter, as here.
+    let current: Array<Record<string, unknown>> = columns.map((c) => ({ ...c }))
+    const grid = createSvGrid({
+      data,
+      get columns() {
+        return current
+      },
+      _features: features,
+      _rowModels: { coreRowModel: createCoreRowModel() },
+    } as any)
+    const first = grid.getAllColumns()
+    // Same shape, recreated inline: the built columns are reused.
+    current = columns.map((c) => ({ ...c }))
+    expect(grid.getAllColumns()).toBe(first)
+    // A field's options changed (an option added from a cell): rebuilt, so
+    // the cell draws the new options.
+    const fieldProps = { options: [{ value: 'New' }] }
+    current = columns.map((c, i) => (i === 0 ? { ...c, fieldProps } : { ...c }))
+    expect(grid.getAllColumns()).not.toBe(first)
+    expect(grid.getAllColumns()[0]!.columnDef.fieldProps).toBe(fieldProps)
   })
 
   it('getVisibleLeafColumns reflects columnVisibility state', () => {

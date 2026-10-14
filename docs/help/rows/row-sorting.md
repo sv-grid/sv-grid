@@ -85,6 +85,21 @@ The grid picks the comparator based on the column's `editorType`:
 If your column has a non-trivial type, set `editorType` even if you do not
 want inline editing - it is what tells sort and filter how to behave.
 
+### Sort by a rank
+
+A status column sorted as text puts "Done" before "To do". `sortValue` gives
+the number to sort a value by instead, and grouped rows follow it too:
+
+```ts
+const STATUS = ['To do', 'In progress', 'Done']
+const columns = [
+  { field: 'status', header: 'Status', sortValue: (v: unknown) => STATUS.indexOf(String(v)) },
+]
+```
+
+Blanks, and anything that is not a number, sort first ascending, as in a
+number column.
+
 ## Programmatic sort
 
 ```ts

@@ -1,0 +1,23 @@
+{
+  "description": "A bug tracker built with SvGrid Base for Svelte 5: Bugs and Releases as linked tables. Triage grouped by status, a Kanban board, a view of what is critical now, bugs by area, and a report form, with automations that flag critical bugs, stamp fix dates and start work from a button.",
+  "keywords": [
+    "svelte bug tracker",
+    "svelte issue tracker component",
+    "svelte kanban bug board",
+    "svelte table database component"
+  ],
+  "faq": [
+    {
+      "question": "What do the automations do?",
+      "answer": "A critical bug that is not fixed turns red and raises a notice; setting Status to Fixed stamps Fixed on with today; a bug sent with the form starts as New; Start in the Fix column moves a bug to In progress. Open 4 automations in the view bar to change them."
+    },
+    {
+      "question": "Can it run on my database?",
+      "answer": "Yes. Give each table a source (baseSource over Postgres, Supabase or your API) and the base loads the records from it and writes every change back; or start from npm create @svgrid@latest -- -t base with your own tables."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

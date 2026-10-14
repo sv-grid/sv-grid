@@ -917,6 +917,7 @@ const windows = commonFree(attendees.map(busyOf), day8, day18, 60)
 | `startField` *(required)* | Field holding each event's start. |
 | `endField` | Field holding the end; else `defaultDurationMin` from the start. |
 | `allDayField` | Boolean field marking an all-day event; enables the drawer's All-day toggle. |
+| `allDay` | Every event is all-day: the start and end fields hold days, and a bare `'2026-10-14'` is that day where the user is (not midnight UTC). For a date field without a time. |
 | `titleField` | Event label. Defaults to the first column's field. |
 | `colorField` / `color` | Per-event accent color (the fill), or one for all. |
 | `secondaryColorField` | A second per-event color, painted as a left-edge strip (encode two dimensions - e.g. fill = person, strip = role). |

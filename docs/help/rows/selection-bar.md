@@ -105,15 +105,17 @@ Strings in the array are built-ins, so the common buttons need no wiring:
 | --- | --- |
 | `'selectAll'` | Selects every row in the view, then disables itself |
 | `'editFields'` | Opens the bulk-edit drawer - see below |
+| `'deleteRows'` | Deletes the selected rows after an inline "Delete N rows?" confirm on the bar, then fires `onRowsDelete` with the rows, their ids and the data left. Not offered over a server row model |
 | `'separator'` | Draws a divider. Not counted against `maxVisible` |
 
 Mix them with your own actions in one array:
 
 ```svelte {runnable}
 <script lang="ts">
-  const bar: Array<SelectionBarAction<Task> | 'selectAll' | 'editFields' | 'separator'> = [
+  const bar: Array<SelectionBarAction<Task> | 'selectAll' | 'editFields' | 'deleteRows' | 'separator'> = [
     'selectAll',
     'editFields',
+    'deleteRows',
     'separator',
     { key: 'watch', label: 'Watch', action: () => {} },
   ]
@@ -143,6 +145,12 @@ The field list is the grid's own editable, field-backed columns. A column with
 `editable: false` is not offered, because writing it in bulk would be a
 footgun, and `editorOptions` carry over - a status column with a fixed set
 becomes a picker in the drawer rather than a free-text box.
+
+Over [field types](../fields.md) the controls follow the field: a select
+or a user field becomes a picker (several values for a multiple select), a
+rating its stars, long text a text area, a date the date picker; a number is
+typed as the field writes it (`$1,200`, `42` for 42%) and read by the
+field's own parser. Attachments, links and computed fields are not offered.
 
 What it does per cell:
 

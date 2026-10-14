@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte 5 data grid as a team directory: each person is a profile card with a round photo, name, role, team, city and a mail link, drawn by a card snippet the app writes. The search box and the team buttons narrow the same rows the table view shows.",
+  "keywords": [
+    "svelte team directory cards",
+    "svelte grid custom card template",
+    "svelte people directory component",
+    "svelte gallery snippet card",
+    "svelte data grid profile cards"
+  ],
+  "faq": [
+    {
+      "question": "Can I draw the cards myself?",
+      "answer": "Yes. gallery.card is a snippet that receives each row; the grid lays the cards out in the wall and you draw what is inside. Without it, a card is a cover, a title and the fields in cardFields."
+    },
+    {
+      "question": "Do filters apply to the cards?",
+      "answer": "Yes. The cards are the grid's filtered and sorted rows. The team buttons in this demo call api.setFilter on the team column, and the search box is the grid's quick filter."
+    },
+    {
+      "question": "How wide are the cards?",
+      "answer": "cardSize sets it: small, medium or large, or a width in pixels (220 here). The wall fits as many columns of cards as the width holds."
+    }
+  ]
+}

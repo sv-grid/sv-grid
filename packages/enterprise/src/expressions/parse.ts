@@ -30,11 +30,13 @@ import type {
   ScalarExpr,
 } from './expression-types.js'
 import {
+  columnLabel,
   columnRefText,
   resolveColumnRef,
   type ExprColumn,
 } from './expression-columns.js'
 import { isBuiltinFunction } from './evaluate.js'
+import { getPredicateKind } from './kinds'
 
 // ---------------------------------------------------------------------------
 // Tokenizer
@@ -490,6 +492,9 @@ export function stringifyPredicate(
       return expr.parts.map((p) => wrapPred(p, columns)).join(' OR ')
     case 'scalarCmp':
       return `${stringifyScalar(expr.left, columns)} ${expr.op} ${stringifyScalar(expr.right, columns)}`
+    // Another module's condition reads as its own words; it is edited there, not as text.
+    case 'ext':
+      return getPredicateKind(expr.type)?.describe?.(expr.payload, (id) => columnLabel(columns, id)) ?? `[${expr.type}]`
     case 'cmp': {
       const col = columnRefText(columns, expr.column)
       if (expr.op === 'isBlank') return `${col} ISBLANK`
@@ -539,6 +544,9 @@ function walkPredicate(expr: PredicateExpr, out: Set<string>): void {
     case 'scalarCmp':
       walkScalar(expr.left, out)
       walkScalar(expr.right, out)
+      return
+    case 'ext':
+      for (const c of getPredicateKind(expr.type)?.columns?.(expr.payload) ?? []) out.add(c)
       return
     case 'const':
       return

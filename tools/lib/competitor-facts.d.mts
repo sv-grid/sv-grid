@@ -39,12 +39,15 @@ export type FactRow = { label: string; svgrid: string; competitor: string; check
 export type Facts = { rows: FactRow[]; footnotes: string[]; verified: string }
 
 export const SVGRID_PRICING: {
+  readonly indie: number
   readonly grid: number
   readonly suite: number
   readonly unit: string
   readonly url: string
   readonly summary: string
+  readonly baseSummary: string
 }
+export function svgridPricingSummary(cmp: { group?: string } | null | undefined): string
 export const SVGRID_SIZE_ENTRY: string
 export function frameworkList(framework: string[]): string
 export function licenseLabel(license: string | null | undefined): string

@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-10-11T21:32:14.483Z",
+  "generatedAt": "2026-10-14T11:23:07.701Z",
   "counts": {
-    "pages": 406,
-    "enterprise": 88,
-    "withDemo": 287
+    "pages": 425,
+    "enterprise": 104,
+    "withDemo": 302
   },
   "pillars": [
     {
@@ -61,6 +61,14 @@
       "blurb": "The grid as an Excel-like spreadsheet.",
       "sections": [
         "help/sheet"
+      ]
+    },
+    {
+      "id": "base",
+      "title": "SvGrid Base",
+      "blurb": "A table database: fields, views, forms and records.",
+      "sections": [
+        "help/base"
       ]
     },
     {
@@ -132,6 +140,8 @@
         "help/llm-grounding.md",
         "help/mcp-server.md",
         "help/migrating-from-ag-grid.md",
+        "help/migrating-from-airtable.md",
+        "help/migrating-from-baserow.md",
         "help/migrating-from-devextreme.md",
         "help/migrating-from-glide.md",
         "help/migrating-from-gridjs.md",
@@ -139,6 +149,7 @@
         "help/migrating-from-jqxgrid.md",
         "help/migrating-from-kendo-grid.md",
         "help/migrating-from-mui-x.md",
+        "help/migrating-from-nocodb.md",
         "help/migrating-from-primevue-datatable.md",
         "help/migrating-from-react-data-grid.md",
         "help/migrating-from-shadcn-data-table.md",
@@ -222,6 +233,7 @@
       "pages": [
         "help/rows/accessing-rows.md",
         "help/rows/full-width-rows.md",
+        "help/rows/gallery.md",
         "help/rows/gantt.md",
         "help/rows/master-detail.md",
         "help/rows/row-data.md",
@@ -412,6 +424,70 @@
             "help/cells/workbooks.md",
             "help/cells/tables.md",
             "help/web-components/sv-sheet.md"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "help/base",
+      "title": "SvGrid Base",
+      "pillar": "base",
+      "pages": [
+        "help/base/quick-start.md",
+        "help/base/start.md",
+        "help/base/templates.md",
+        "help/base/linked-records.md",
+        "help/base/formulas.md",
+        "help/base/views.md",
+        "help/base/forms.md",
+        "help/base/collaboration.md",
+        "help/base/custom-field-type.md",
+        "help/base/automations.md",
+        "help/base/data.md",
+        "help/base/supabase.md",
+        "help/base/postgres.md",
+        "help/base/rest-api.md",
+        "help/fields.md"
+      ],
+      "groups": [
+        {
+          "label": "Start here",
+          "pages": [
+            "help/base/quick-start.md",
+            "help/base/start.md",
+            "help/base/templates.md"
+          ]
+        },
+        {
+          "label": "Build it out",
+          "pages": [
+            "help/base/linked-records.md",
+            "help/base/formulas.md",
+            "help/base/views.md",
+            "help/base/forms.md",
+            "help/base/collaboration.md",
+            "help/base/custom-field-type.md"
+          ]
+        },
+        {
+          "label": "Automate",
+          "pages": [
+            "help/base/automations.md"
+          ]
+        },
+        {
+          "label": "Connect your data",
+          "pages": [
+            "help/base/data.md",
+            "help/base/supabase.md",
+            "help/base/postgres.md",
+            "help/base/rest-api.md"
+          ]
+        },
+        {
+          "label": "Reference",
+          "pages": [
+            "help/fields.md"
           ]
         }
       ]
@@ -728,106 +804,107 @@
       "title": "UI components",
       "pillar": "ui",
       "pages": [
-        "help/ui-components/buttons.md",
+        "help/ui-components/index.md",
         "help/ui-components/cli.md",
-        "help/ui-components/date-time.md",
-        "help/ui-components/feedback.md",
         "help/ui-components/headless-editors.md",
         "help/ui-components/i18n-rtl.md",
-        "help/ui-components/index.md",
-        "help/ui-components/inputs.md",
-        "help/ui-components/layout.md",
-        "help/ui-components/navigation.md",
-        "help/ui-components/overlays.md",
-        "help/ui-components/range.md",
-        "help/ui-components/selection.md",
-        "help/ui-components/sv-accordion.md",
-        "help/ui-components/sv-alert.md",
-        "help/ui-components/sv-auto-complete.md",
-        "help/ui-components/sv-avatar-group.md",
-        "help/ui-components/sv-avatar.md",
-        "help/ui-components/sv-badge.md",
-        "help/ui-components/sv-breadcrumb.md",
-        "help/ui-components/sv-button-group.md",
+        "help/ui-components/buttons.md",
         "help/ui-components/sv-button.md",
-        "help/ui-components/sv-calendar.md",
-        "help/ui-components/sv-card.md",
-        "help/ui-components/sv-carousel.md",
-        "help/ui-components/sv-chart-panes.md",
+        "help/ui-components/sv-button-group.md",
+        "help/ui-components/sv-repeat-button.md",
+        "help/ui-components/sv-toggle-button.md",
+        "help/ui-components/sv-switch-button.md",
         "help/ui-components/sv-check-box.md",
-        "help/ui-components/sv-chip.md",
-        "help/ui-components/sv-circular-progress.md",
-        "help/ui-components/sv-collapsible.md",
+        "help/ui-components/sv-radio-group.md",
+        "help/ui-components/sv-segmented.md",
+        "help/ui-components/sv-rating.md",
+        "help/ui-components/inputs.md",
+        "help/ui-components/sv-text-input.md",
+        "help/ui-components/sv-text-area.md",
+        "help/ui-components/sv-number-input.md",
+        "help/ui-components/sv-password-input.md",
+        "help/ui-components/sv-masked-input.md",
+        "help/ui-components/sv-phone-input.md",
         "help/ui-components/sv-color-input.md",
+        "help/ui-components/sv-otp-input.md",
+        "help/ui-components/sv-duration-input.md",
+        "help/ui-components/sv-tags-input.md",
+        "help/ui-components/selection.md",
+        "help/ui-components/sv-list-box.md",
+        "help/ui-components/sv-drop-down-list.md",
         "help/ui-components/sv-combo-box.md",
-        "help/ui-components/sv-command.md",
-        "help/ui-components/sv-context-menu.md",
+        "help/ui-components/sv-auto-complete.md",
+        "help/ui-components/sv-multi-select.md",
+        "help/ui-components/sv-tree-select.md",
+        "help/ui-components/sv-grid-select.md",
+        "help/ui-components/sv-grid-dropdown.md",
         "help/ui-components/sv-country-input.md",
-        "help/ui-components/sv-date-range-input.md",
+        "help/ui-components/date-time.md",
+        "help/ui-components/sv-calendar.md",
+        "help/ui-components/sv-time-picker.md",
         "help/ui-components/sv-date-time-picker.md",
-        "help/ui-components/sv-display-primitives.md",
-        "help/ui-components/sv-divider.md",
+        "help/ui-components/sv-date-range-input.md",
+        "help/ui-components/range.md",
+        "help/ui-components/sv-slider.md",
+        "help/ui-components/sv-gauge.md",
+        "help/ui-components/sv-progress.md",
+        "help/ui-components/sv-circular-progress.md",
+        "help/ui-components/sv-sparkline.md",
+        "help/ui-components/sv-stat.md",
+        "help/ui-components/overlays.md",
+        "help/ui-components/sv-popover.md",
+        "help/ui-components/sv-hover-card.md",
+        "help/ui-components/sv-tooltip.md",
+        "help/ui-components/sv-popconfirm.md",
+        "help/ui-components/sv-modal.md",
+        "help/ui-components/sv-drawer.md",
+        "help/ui-components/sv-toaster.md",
+        "help/ui-components/sv-context-menu.md",
+        "help/ui-components/sv-menu.md",
+        "help/ui-components/sv-menu-list.md",
+        "help/ui-components/sv-menubar.md",
+        "help/ui-components/layout.md",
+        "help/ui-components/sv-layout-primitives.md",
+        "help/ui-components/sv-tabs.md",
+        "help/ui-components/sv-accordion.md",
+        "help/ui-components/sv-collapsible.md",
+        "help/ui-components/sv-splitter.md",
         "help/ui-components/sv-dock-layout.md",
         "help/ui-components/sv-dock-manager.md",
-        "help/ui-components/sv-drawer.md",
-        "help/ui-components/sv-drop-down-list.md",
-        "help/ui-components/sv-duration-input.md",
-        "help/ui-components/sv-empty-state.md",
+        "help/ui-components/sv-card.md",
+        "help/ui-components/sv-divider.md",
+        "help/ui-components/sv-scroll-area.md",
+        "help/ui-components/sv-grid-chart.md",
+        "help/ui-components/sv-chart-panes.md",
+        "help/ui-components/sv-form.md",
         "help/ui-components/sv-field.md",
         "help/ui-components/sv-file-upload.md",
-        "help/ui-components/sv-form.md",
-        "help/ui-components/sv-gauge.md",
-        "help/ui-components/sv-grid-chart.md",
-        "help/ui-components/sv-grid-dropdown.md",
-        "help/ui-components/sv-grid-select.md",
-        "help/ui-components/sv-hover-card.md",
-        "help/ui-components/sv-layout-primitives.md",
-        "help/ui-components/sv-list-box.md",
-        "help/ui-components/sv-loading-overlay.md",
-        "help/ui-components/sv-masked-input.md",
-        "help/ui-components/sv-menu-list.md",
-        "help/ui-components/sv-menu.md",
-        "help/ui-components/sv-menubar.md",
-        "help/ui-components/sv-modal.md",
-        "help/ui-components/sv-multi-select.md",
-        "help/ui-components/sv-nav-pane.md",
-        "help/ui-components/sv-number-input.md",
-        "help/ui-components/sv-otp-input.md",
-        "help/ui-components/sv-pagination.md",
-        "help/ui-components/sv-password-input.md",
-        "help/ui-components/sv-phone-input.md",
-        "help/ui-components/sv-popconfirm.md",
-        "help/ui-components/sv-popover.md",
-        "help/ui-components/sv-progress.md",
-        "help/ui-components/sv-radio-group.md",
-        "help/ui-components/sv-rating.md",
-        "help/ui-components/sv-repeat-button.md",
-        "help/ui-components/sv-result.md",
-        "help/ui-components/sv-rich-text.md",
-        "help/ui-components/sv-scroll-area.md",
-        "help/ui-components/sv-segmented.md",
+        "help/ui-components/feedback.md",
+        "help/ui-components/sv-badge.md",
         "help/ui-components/sv-skeleton.md",
-        "help/ui-components/sv-slider.md",
-        "help/ui-components/sv-sparkline.md",
         "help/ui-components/sv-spinner.md",
-        "help/ui-components/sv-splitter.md",
-        "help/ui-components/sv-stat.md",
-        "help/ui-components/sv-stepper.md",
-        "help/ui-components/sv-switch-button.md",
-        "help/ui-components/sv-tabs.md",
-        "help/ui-components/sv-tags-input.md",
-        "help/ui-components/sv-text-area.md",
-        "help/ui-components/sv-text-input.md",
-        "help/ui-components/sv-time-picker.md",
+        "help/ui-components/sv-loading-overlay.md",
+        "help/ui-components/sv-alert.md",
+        "help/ui-components/sv-empty-state.md",
+        "help/ui-components/sv-result.md",
+        "help/ui-components/sv-chip.md",
         "help/ui-components/sv-timeline.md",
-        "help/ui-components/sv-toaster.md",
-        "help/ui-components/sv-toggle-button.md",
-        "help/ui-components/sv-tooltip.md",
-        "help/ui-components/sv-tour.md",
-        "help/ui-components/sv-tree-select.md",
+        "help/ui-components/sv-avatar.md",
+        "help/ui-components/sv-avatar-group.md",
+        "help/ui-components/sv-carousel.md",
+        "help/ui-components/sv-typography.md",
+        "help/ui-components/sv-display-primitives.md",
+        "help/ui-components/navigation.md",
+        "help/ui-components/sv-breadcrumb.md",
+        "help/ui-components/sv-pagination.md",
+        "help/ui-components/sv-stepper.md",
+        "help/ui-components/sv-nav-pane.md",
         "help/ui-components/sv-tree.md",
-        "help/ui-components/sv-typography.md"
-      ]
+        "help/ui-components/sv-command.md",
+        "help/ui-components/sv-tour.md",
+        "help/ui-components/sv-rich-text.md"
+      ],
+      "groups": []
     },
     {
       "id": "enterprise",
@@ -942,8 +1019,8 @@
       "section": "enterprise",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 461,
-      "lastUpdated": "2026-10-07",
+      "words": 521,
+      "lastUpdated": "2026-10-14",
       "demoIds": []
     },
     {
@@ -966,8 +1043,8 @@
       "section": "enterprise",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 1514,
-      "lastUpdated": "2026-10-07",
+      "words": 1525,
+      "lastUpdated": "2026-10-13",
       "demoIds": []
     },
     {
@@ -1842,8 +1919,8 @@
       "section": "help/alerts",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 1675,
-      "lastUpdated": "2026-09-22",
+      "words": 1921,
+      "lastUpdated": "2026-10-14",
       "demoIds": [
         "399-alert-rules-engine",
         "400-alert-styling-rules",
@@ -1900,6 +1977,227 @@
       "words": 1320,
       "lastUpdated": "2026-09-21",
       "demoIds": []
+    },
+    {
+      "path": "help/base/automations.md",
+      "url": "/docs/help/base/automations/",
+      "title": "Automations",
+      "summary": "An automation does something on its own when something happens to a record: a task set to Done ticks its Done box, a new request goes to Todo, a blocked task tells its owner, a button starts the work. Each table of a base has its own, under \"Automations\" in the view bar.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "Automate",
+      "words": 2205,
+      "lastUpdated": "2026-10-14",
+      "demoIds": [
+        "504-project-tracker"
+      ]
+    },
+    {
+      "path": "help/base/collaboration.md",
+      "url": "/docs/help/base/collaboration/",
+      "title": "People, comments and files",
+      "summary": "A tracker one person fills in needs a status column and little else. Once a team uses it, people want to see who a task is assigned to, who changed the status and when, a thread of comments on the task, and the mockups attached to it, kept somewhere that survives a reload. This page adds those to the task tracker from Build a project tracker.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "Build it out",
+      "words": 4837,
+      "lastUpdated": "2026-10-14",
+      "demoIds": [
+        "514-base-hiring-tracker"
+      ]
+    },
+    {
+      "path": "help/base/custom-field-type.md",
+      "url": "/docs/help/base/custom-field-type/",
+      "title": "Build your own field type",
+      "summary": "A field type decides what a column holds and how it behaves: what the cell shows, which editor opens, how pasted text is read, what the footer can sum. The built-in types are registered with registerFieldType, the same call you will use, so your type gets the field editor, the views and the expanded record the way they do.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "Build it out",
+      "words": 5454,
+      "lastUpdated": "2026-10-14",
+      "demoIds": []
+    },
+    {
+      "path": "help/base/data.md",
+      "url": "/docs/help/base/data/",
+      "title": "Keep a base in a database",
+      "summary": "A base can keep its records in your database instead of the page. Give a table a source and <SvBase> loads the records from it when it opens, then writes every change back: a cell edit, a pasted range, a new record, a deleted one, a link made from either side. Postgres, MySQL, SQLite, Supabase and any REST API work the same way, because each is reached through the data source contract the grid already uses.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "Connect your data",
+      "words": 1575,
+      "lastUpdated": "2026-10-14",
+      "demoIds": [
+        "516-base-postgres"
+      ]
+    },
+    {
+      "path": "help/base/forms.md",
+      "url": "/docs/help/base/forms/",
+      "title": "Collect records with forms",
+      "summary": "A form view asks for some of a table's fields and adds a record when it is sent. Use it for records other people start: a bug report, an expense, a job application. This page builds a hiring tracker's application flow. Candidates apply through a form, the record lands in the Candidates table, and recruiters move it across a Kanban by stage.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "Build it out",
+      "words": 4205,
+      "lastUpdated": "2026-10-14",
+      "demoIds": [
+        "514-base-hiring-tracker"
+      ]
+    },
+    {
+      "path": "help/base/formulas.md",
+      "url": "/docs/help/base/formulas/",
+      "title": "Computed fields with formulas",
+      "summary": "A formula field works out its value from the other fields of the same record: a stock value from quantity and unit cost, a status from a reorder level, a date 90 days after the last count. Nobody types into it, and views, footers, charts and automations read it like any other field.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "Build it out",
+      "words": 5362,
+      "lastUpdated": "2026-10-14",
+      "demoIds": [
+        "515-base-inventory"
+      ]
+    },
+    {
+      "path": "help/base/linked-records.md",
+      "url": "/docs/help/base/linked-records/",
+      "title": "Link tables: lookups, rollups and counts",
+      "summary": "A base holds several tables, and a link field relates their records: a deal names its account, the account lists its deals. Lookups, rollups and counts then read through the link, so an account can show the value of its pipeline without anyone typing it. This page builds a small sales CRM with Accounts, Contacts and Deals, one step at a time.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "Build it out",
+      "words": 4377,
+      "lastUpdated": "2026-10-14",
+      "demoIds": [
+        "512-base-sales-crm",
+        "522-base-okrs"
+      ]
+    },
+    {
+      "path": "help/base/postgres.md",
+      "url": "/docs/help/base/postgres/",
+      "title": "Build a base on Postgres",
+      "summary": "This tutorial keeps a base in your own Postgres database, behind your own SvelteKit server. The browser never sees a database password: it calls one endpoint per table, and the endpoint runs parameterized SQL. Three tables, Tasks, Projects and Tags, with a foreign key and a junction table between them.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "Connect your data",
+      "words": 1406,
+      "lastUpdated": "2026-10-13",
+      "demoIds": [
+        "516-base-postgres"
+      ]
+    },
+    {
+      "path": "help/base/quick-start.md",
+      "url": "/docs/help/base/quick-start/",
+      "title": "From a database to an app",
+      "summary": "You have a database. One call reads its tables and <SvBase> turns them into an app your team can use: a tab per table, fields typed from the columns, links from the foreign keys, colored selects, a Kanban board and a calendar. Every edit goes back to the database.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "Start here",
+      "words": 1229,
+      "lastUpdated": "2026-10-14",
+      "demoIds": [
+        "519-base-from-database"
+      ],
+      "tutorialIds": [
+        "mk-meet-svgrid-base"
+      ]
+    },
+    {
+      "path": "help/base/rest-api.md",
+      "url": "/docs/help/base/rest-api/",
+      "title": "Build a base on your API",
+      "summary": "When your data sits behind an API you already have, a base can use it as it is: it reads a table with one GET, and writes each change with POST, PATCH or DELETE. This tutorial builds a small CRM, Deals, Companies and Contacts, from the API's own description of its tables.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "Connect your data",
+      "words": 925,
+      "lastUpdated": "2026-10-13",
+      "demoIds": [
+        "518-base-rest-api"
+      ]
+    },
+    {
+      "path": "help/base/start.md",
+      "url": "/docs/help/base/start/",
+      "title": "Build a project tracker",
+      "summary": "SvGrid Base is a table database you put inside your own Svelte app: typed fields, saved views (a grid, a Kanban board, a calendar, a gallery, a form), filters, groups, row colors, linked records, and an expanded record with comments. Your users get a tool they already know how to use; you keep the data, the backend and the rest of the app.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "Start here",
+      "words": 996,
+      "lastUpdated": "2026-10-14",
+      "demoIds": [
+        "504-project-tracker"
+      ]
+    },
+    {
+      "path": "help/base/supabase.md",
+      "url": "/docs/help/base/supabase/",
+      "title": "Build a base on Supabase",
+      "summary": "This tutorial puts a project tracker in a Svelte app with its records in Supabase: two tables, Projects and Tasks, a link between them stored as a foreign key, and edits from other people arriving through Supabase Realtime. It takes about fifteen minutes and a free Supabase project.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "Connect your data",
+      "words": 1310,
+      "lastUpdated": "2026-10-13",
+      "demoIds": [
+        "517-base-supabase"
+      ]
+    },
+    {
+      "path": "help/base/templates.md",
+      "url": "/docs/help/base/templates/",
+      "title": "Ready-to-use bases",
+      "summary": "Each base below is one <SvBase> with sample data: the fields, the saved views and the forms a team would set up on day one. Open the source of any of them, replace the sample rows with your own, and it is your app's tool.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "Start here",
+      "words": 1629,
+      "lastUpdated": "2026-10-14",
+      "demoIds": [
+        "511-base-content-calendar",
+        "512-base-sales-crm",
+        "513-base-product-roadmap",
+        "514-base-hiring-tracker",
+        "515-base-inventory",
+        "520-base-bug-tracker",
+        "521-base-event-planning",
+        "522-base-okrs",
+        "523-base-expenses",
+        "524-base-onboarding"
+      ]
+    },
+    {
+      "path": "help/base/views.md",
+      "url": "/docs/help/base/views/",
+      "title": "Views for every team",
+      "summary": "One table of records, many ways to look at it. Product reads the roadmap grouped by quarter, engineering works off a status board, the leads check a timeline, and anyone in the company files a request through a form. Each of those is a saved view: a name, a type, and the filter, sorts, groups, hidden fields, row height and colors it had when someone last left it.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "Build it out",
+      "words": 4234,
+      "lastUpdated": "2026-10-14",
+      "demoIds": [
+        "513-base-product-roadmap"
+      ]
     },
     {
       "path": "help/benchmarks.md",
@@ -1960,12 +2258,12 @@
       "path": "help/cells/cell-data-types.md",
       "url": "/docs/help/cells/cell-data-types/",
       "title": "Cell data types",
-      "summary": "The editorType field on a column tags the column with a type. This drives three different behaviours:",
+      "summary": "A column has a data type and an editor, set separately. cellDataType says what the values are; editorType says what edits them.",
       "section": "help/cells",
       "pillar": "grid",
       "tier": "community",
-      "words": 1069,
-      "lastUpdated": "2026-09-30",
+      "words": 1089,
+      "lastUpdated": "2026-10-12",
       "demoIds": [
         "01-quick-start"
       ]
@@ -2554,10 +2852,11 @@
       "section": "help/columns",
       "pillar": "grid",
       "tier": "community",
-      "words": 1124,
-      "lastUpdated": "2026-10-07",
+      "words": 1301,
+      "lastUpdated": "2026-10-13",
       "demoIds": [
-        "25-column-pinning"
+        "25-column-pinning",
+        "510-column-pin-splitter"
       ]
     },
     {
@@ -2925,6 +3224,21 @@
       "words": 718,
       "lastUpdated": "2026-09-03",
       "demoIds": []
+    },
+    {
+      "path": "help/fields.md",
+      "url": "/docs/help/fields/",
+      "title": "Field types",
+      "summary": "A column can say what it is - a rating, a URL, a single select with colored options, a list of files - with fieldType, and set that type's properties with fieldProps. The type fills in the editor, the format and the alignment, and draws the cell when the type needs a cell of its own (stars, links, file thumbnails). The same module adds a \"+\" after the last column to create fields, a \"+ Add row\" line under the last row, status colors on the row header, field actions in the column menu, and a view bar with saved grid, Kanban, calendar, gallery and form views.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "Reference",
+      "words": 5169,
+      "lastUpdated": "2026-10-14",
+      "demoIds": [
+        "504-project-tracker"
+      ]
     },
     {
       "path": "help/figma.md",
@@ -3355,6 +3669,30 @@
       ]
     },
     {
+      "path": "help/migrating-from-airtable.md",
+      "url": "/docs/help/migrating-from-airtable/",
+      "title": "Migrating from Airtable",
+      "summary": "Airtable is a cloud service: the base, its views and its records live on Airtable, and the most you can put in your own app is a read-only iframe. SvGrid Base is the same kind of table database shipped as a Svelte 5 component. The records move into your own database, <SvBase> renders the views inside your app, and every edit goes back to your tables.",
+      "section": "help",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 1528,
+      "lastUpdated": "2026-10-14",
+      "demoIds": []
+    },
+    {
+      "path": "help/migrating-from-baserow.md",
+      "url": "/docs/help/migrating-from-baserow/",
+      "title": "Migrating from Baserow",
+      "summary": "Baserow is an app your team signs into; outside it, a view shows up only as a read-only iframe. SvGrid Base is the same kind of table database shipped as a Svelte 5 component. The records go into tables in your own database, <SvBase> renders editable views inside your app, and every change is written back to those tables.",
+      "section": "help",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 1120,
+      "lastUpdated": "2026-10-14",
+      "demoIds": []
+    },
+    {
       "path": "help/migrating-from-devextreme.md",
       "url": "/docs/help/migrating-from-devextreme/",
       "title": "Migrating from DevExtreme DataGrid (DevExpress)",
@@ -3443,6 +3781,18 @@
         "148-server-row-model",
         "467-server-row-model-1m"
       ]
+    },
+    {
+      "path": "help/migrating-from-nocodb.md",
+      "url": "/docs/help/migrating-from-nocodb/",
+      "title": "Migrating from NocoDB",
+      "summary": "NocoDB is an app your team signs into, and outside it a shared view shows up only as an iframe. SvGrid Base is the same kind of table database shipped as a Svelte 5 component: <SvBase> renders the views inside your own app, on your own database, and writes every change back.",
+      "section": "help",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 1063,
+      "lastUpdated": "2026-10-14",
+      "demoIds": []
     },
     {
       "path": "help/migrating-from-primevue-datatable.md",
@@ -3594,8 +3944,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2608,
-      "lastUpdated": "2026-09-20",
+      "words": 2627,
+      "lastUpdated": "2026-10-13",
       "demoIds": []
     },
     {
@@ -3780,6 +4130,24 @@
       ]
     },
     {
+      "path": "help/rows/gallery.md",
+      "url": "/docs/help/rows/gallery/",
+      "title": "Gallery mode",
+      "summary": "Set the gallery prop and the grid renders its rows as **cards** instead of a table: a cover image, a title and a few fields per row, in a wall that fills the width. It is the same <SvGrid>, the same data and columns; the cards are the rows the table would show, so the search box, column filters and the sort carry over, and turning the prop off brings the table back in the same order.",
+      "section": "help/rows",
+      "pillar": "enterprise",
+      "tier": "enterprise",
+      "words": 781,
+      "lastUpdated": "2026-10-14",
+      "demoIds": [
+        "505-gallery-catalog",
+        "508-gallery-field-types",
+        "506-gallery-team-directory",
+        "507-gallery-listings",
+        "509-gallery-at-scale"
+      ]
+    },
+    {
       "path": "help/rows/gantt.md",
       "url": "/docs/help/rows/gantt/",
       "title": "Gantt chart mode",
@@ -3856,12 +4224,12 @@
       "path": "help/rows/row-dragging.md",
       "url": "/docs/help/rows/row-dragging/",
       "title": "Row dragging",
-      "summary": "Managed row dragging lets users **reorder rows** within a grid and **move rows between grids**. Turn on rowDragManaged and every row becomes a drag source (grab cursor + a grip in the row-number cell); a glowing line shows where the row will land, and the grid splices its own data on drop.",
+      "summary": "Managed row dragging lets users **reorder rows** within a grid and **move rows between grids**. Turn on rowDragManaged and every row can be dragged by its row-number cell (a grip shows while the pointer is over it); a glowing line shows where the row will land, and the grid splices its own data on drop.",
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 1203,
-      "lastUpdated": "2026-09-06",
+      "words": 1228,
+      "lastUpdated": "2026-10-13",
       "demoIds": [
         "180-row-dragging",
         "184-external-drop-zone"
@@ -3918,8 +4286,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 1028,
-      "lastUpdated": "2026-09-30",
+      "words": 1102,
+      "lastUpdated": "2026-10-13",
       "demoIds": [
         "02-sort-filter-paginate"
       ]
@@ -3944,8 +4312,8 @@
       "section": "help/scheduler",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 7547,
-      "lastUpdated": "2026-09-21",
+      "words": 7583,
+      "lastUpdated": "2026-10-13",
       "demoIds": [
         "363-scheduler-intro",
         "382-scheduler-app-clinic",
@@ -3972,8 +4340,8 @@
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 1884,
-      "lastUpdated": "2026-10-06",
+      "words": 1989,
+      "lastUpdated": "2026-10-13",
       "demoIds": [
         "430-selection-bar"
       ],
@@ -4851,8 +5219,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 1136,
-      "lastUpdated": "2026-09-12",
+      "words": 1162,
+      "lastUpdated": "2026-10-14",
       "demoIds": [
         "420-block-login",
         "421-block-signup",
@@ -6227,7 +6595,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 791,
-      "lastUpdated": "2026-10-10",
+      "lastUpdated": "2026-10-13",
       "demoIds": [],
       "tutorialIds": [
         "mk-web-component"
@@ -6271,7 +6639,7 @@
       "tier": "community",
       "group": "Start here",
       "words": 788,
-      "lastUpdated": "2026-10-10",
+      "lastUpdated": "2026-10-13",
       "demoIds": []
     },
     {
@@ -6311,13 +6679,13 @@
       "path": "help/web-components/react.md",
       "url": "/docs/help/web-components/react/",
       "title": "SvGrid in React",
-      "summary": "That is the whole integration. The component is generated from <SvGrid>'s own types, so all 116 properties and 27 events are typed props, and it works the same on React 17, 18 and 19.",
+      "summary": "That is the whole integration. The component is generated from <SvGrid>'s own types, so all 124 properties and 33 events are typed props, and it works the same on React 17, 18 and 19.",
       "section": "help/web-components",
       "pillar": "grid",
       "tier": "community",
       "group": "Frameworks",
       "words": 2547,
-      "lastUpdated": "2026-10-10",
+      "lastUpdated": "2026-10-13",
       "demoIds": [
         "10-custom-cells-and-themes"
       ]
@@ -6332,7 +6700,7 @@
       "tier": "community",
       "group": "Start here",
       "words": 631,
-      "lastUpdated": "2026-10-10",
+      "lastUpdated": "2026-10-13",
       "demoIds": [
         "10-custom-cells-and-themes",
         "04-selection-copy-paste"
@@ -6348,7 +6716,7 @@
       "tier": "community",
       "group": "Start here",
       "words": 838,
-      "lastUpdated": "2026-10-08",
+      "lastUpdated": "2026-10-13",
       "demoIds": [
         "435-chart-type-gallery",
         "436-chart-sync-zoom",
@@ -6364,8 +6732,8 @@
       "pillar": "grid",
       "tier": "community",
       "group": "Start here",
-      "words": 1582,
-      "lastUpdated": "2026-10-08",
+      "words": 1681,
+      "lastUpdated": "2026-10-13",
       "demoIds": [
         "07-grouping-aggregation",
         "90-selection-api"
@@ -7036,6 +7404,54 @@
       "tier": "priority"
     },
     {
+      "slug": "compare/airtable",
+      "url": "/compare/airtable/",
+      "title": "SvGrid vs Airtable",
+      "competitor": "Airtable",
+      "seoTitle": "Airtable Alternative for Svelte Apps - SvGrid Base vs Airtable",
+      "summary": "Host an Airtable-style table database inside your own Svelte app: SvGrid Base vs Airtable on embedding, your own database, views, automations and pricing.",
+      "keywords": [
+        "svgrid vs airtable",
+        "airtable alternative",
+        "airtable alternative for svelte",
+        "airtable svelte",
+        "air table",
+        "airtable embed",
+        "self-hosted airtable",
+        "airtable clone",
+        "airtable interface",
+        "svelte data grid comparison",
+        "svelte 5",
+        "sv-grid"
+      ],
+      "verified": "2026-10-14",
+      "published": "2026-10-14",
+      "tier": "priority"
+    },
+    {
+      "slug": "compare/baserow",
+      "url": "/compare/baserow/",
+      "title": "SvGrid vs Baserow",
+      "competitor": "Baserow",
+      "seoTitle": "Baserow Alternative for Svelte Apps - SvGrid Base vs Baserow",
+      "summary": "A table database inside your own Svelte app instead of a read-only Baserow iframe: SvGrid Base vs Baserow on embedding, views, your database and pricing.",
+      "keywords": [
+        "svgrid vs baserow",
+        "baserow alternative",
+        "baserow alternative for svelte",
+        "baserow svelte",
+        "base row",
+        "baserow embed",
+        "open source airtable alternative",
+        "svelte data grid comparison",
+        "svelte 5",
+        "sv-grid"
+      ],
+      "verified": "2026-10-14",
+      "published": "2026-10-14",
+      "tier": "priority"
+    },
+    {
       "slug": "compare/devextreme-datagrid",
       "url": "/compare/devextreme-datagrid/",
       "title": "SvGrid vs DevExtreme DataGrid (DevExpress)",
@@ -7196,6 +7612,30 @@
       ],
       "verified": "2026-09-12",
       "published": "2026-07-16",
+      "tier": "priority"
+    },
+    {
+      "slug": "compare/nocodb",
+      "url": "/compare/nocodb/",
+      "title": "SvGrid vs NocoDB",
+      "competitor": "NocoDB",
+      "seoTitle": "NocoDB Alternative for Svelte Apps - SvGrid Base vs NocoDB",
+      "summary": "A table database inside your own Svelte app instead of a NocoDB iframe: SvGrid Base vs NocoDB on licence, embedding, views, automations and your Postgres.",
+      "keywords": [
+        "svgrid vs nocodb",
+        "nocodb alternative",
+        "nocodb alternative for svelte",
+        "nocodb svelte",
+        "noco db",
+        "nocodb embed",
+        "self-hosted airtable",
+        "open source airtable",
+        "svelte data grid comparison",
+        "svelte 5",
+        "sv-grid"
+      ],
+      "verified": "2026-10-14",
+      "published": "2026-10-14",
       "tier": "priority"
     },
     {

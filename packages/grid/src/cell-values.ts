@@ -10,6 +10,7 @@ import type {
   TableFeatures,
 } from "./index";
 import { formatNumericWithConfig } from "./cell-formatting";
+import { columnDataType, isDateDataType } from "./column-types";
 
 export function getColumnBaseValue<TData extends RowData>(row: Row<TData>, column: Column<TData>) {
   const def = column.columnDef;
@@ -96,23 +97,18 @@ export function formatSummaryNumeric<TData extends RowData>(column: Column<TData
 /**
  * Effective horizontal alignment for a column. Honors the explicit
  * `align` prop on the ColumnDef; otherwise picks a sensible default
- * based on `editorType`:
- *   number / date / datetime → 'right'
- *   checkbox                 → 'center'
- *   everything else          → 'left'
+ * by the column's data type (`cellDataType`, see `columnDataType`), not by
+ * its editor:
+ *   number / date / dateString → 'right'
+ *   boolean                    → 'center'
+ *   everything else            → 'left'
  */
 export function getColumnAlign<TData extends RowData>(column: Column<TData>): "left" | "center" | "right" {
   const explicit = column.columnDef.align;
   if (explicit) return explicit;
-  const editorType = column.columnDef.editorType;
-  if (
-    editorType === "number" ||
-    editorType === "date" ||
-    editorType === "datetime"
-  ) {
-    return "right";
-  }
-  if (editorType === "checkbox") return "center";
+  const type = columnDataType(column.columnDef);
+  if (type === "number" || isDateDataType(type)) return "right";
+  if (type === "boolean") return "center";
   return "left";
 }
 

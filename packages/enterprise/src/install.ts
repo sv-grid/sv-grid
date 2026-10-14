@@ -30,6 +30,7 @@ import {
 } from './pivot'
 import { enableSchedulerView } from './scheduler'
 import { enableBoardView } from './board'
+import { enableGalleryView } from './gallery'
 import { enableGanttView } from './gantt/gantt'
 import { enableSelectionBar } from './selection-bar'
 import { enableAdvancedFilter } from './advanced-filter-enable'
@@ -142,6 +143,8 @@ export function installEnterprise<
   enableSchedulerView()
   // Register the Kanban board view (no-op without the `board` prop).
   enableBoardView()
+  // Register the gallery view (no-op without the `gallery` prop).
+  enableGalleryView()
   // Register the Gantt view (no-op without the `gantt` prop).
   enableGanttView()
   enableSelectionBar()

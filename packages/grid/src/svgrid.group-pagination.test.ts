@@ -10,7 +10,7 @@
  * banners its rows sit under - so a group split across a page boundary is
  * labelled on both pages.
  */
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, unmount } from 'svelte'
 import SvGrid from './SvGrid.svelte'
 import {
@@ -104,6 +104,8 @@ async function grouped(pageSize: number, expand = true, groupFooters = false) {
     g.expandAll()
     await tick()
   }
+  // The pager is its own chunk, loaded once the grid paginates.
+  await vi.waitFor(() => expect(g.target.querySelector('.sv-grid-pagination')).toBeTruthy())
   return g
 }
 

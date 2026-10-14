@@ -40,8 +40,31 @@ export type CellEditorContext<T = unknown> = Required<
   rowId: string
   /** Id of the column being edited. */
   columnId: string
+  /**
+   * The edited column's definition, so an editor can read its own settings
+   * (`fieldProps`, `editorOptions`, ...). Optional: tests and hosts that
+   * build a context by hand may leave it out.
+   */
+  columnDef?: Record<string, unknown>
+  /** The edited row's data. */
+  row?: unknown
+  /**
+   * The edit started from a character typed on the cell: `value` is that
+   * text, not the cell's value (which is in `row`).
+   */
+  typed?: boolean
+  /**
+   * The grid's controller, the same object a grid extension receives; for
+   * editors that change the column itself (a select adding an option).
+   */
+  grid?: unknown
   /** Update the in-progress value WITHOUT ending the edit. */
   onChange: (value: T) => void
+  /**
+   * Commit the way Enter does in the grid's own editors: then move a row
+   * down (`up`: a row up, for Shift+Enter). `onCommit` stays put.
+   */
+  onCommitAndMoveDown?: (value?: T, up?: boolean) => void
 }
 
 /** How a registered component is mounted and wired for a cell edit. */
@@ -55,6 +78,12 @@ export type CellEditorRegistration = {
   props?: (ctx: CellEditorContext) => Record<string, unknown>
   /** Hint that the editor should open its popover immediately on mount. */
   autoOpen?: boolean
+  /**
+   * Whether typing on a selected cell starts this editor with the typed
+   * character (`typed: true` on the context). A function decides per key,
+   * e.g. digits only for a number editor. Default: every printable key.
+   */
+  typeToEdit?: boolean | ((char: string) => boolean)
 }
 
 const registry = new Map<string, CellEditorRegistration>()

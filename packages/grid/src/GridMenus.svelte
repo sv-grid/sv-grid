@@ -24,8 +24,16 @@
   } from "./SvGrid.helpers";
 
   import type { SvGridController } from "./SvGrid.controller.svelte";
+  import { createMenuActions } from "./menu-actions";
+  import { getGridExtension } from "./grid-extension.svelte";
 
   let { ctrl, icon }: { ctrl: SvGridController<TFeatures, TData>; icon: Snippet<[GridIconName]> } = $props();
+
+  // The menus' own actions (menu-actions.ts) load with this component, not
+  // with the grid: it is imported on the first menu open.
+  const {
+    openChooseColumns, sortColumnFromMenu, clearColumnSort, groupByColumnFromMenu, clearGroupingFromMenu, setFacetSelection, isAllFacetsChecked, toggleAllFacets, contextMenuItems, closeContextMenu, saveComment, removeComment, closeCommentEditor,
+  } = createMenuActions<TFeatures, TData>(ctrl);
 
   // View facade: re-bind the controller's reactive members so the markup
   // (moved verbatim from SvGrid.svelte) stays identical.
@@ -127,11 +135,6 @@
   const autosizeColumn = $derived(ctrl.autosizeColumn);
   const autosizeAllColumns = $derived(ctrl.autosizeAllColumns);
   const resetColumns = $derived(ctrl.resetColumns);
-  const openChooseColumns = $derived(ctrl.openChooseColumns);
-  const sortColumnFromMenu = $derived(ctrl.sortColumnFromMenu);
-  const clearColumnSort = $derived(ctrl.clearColumnSort);
-  const groupByColumnFromMenu = $derived(ctrl.groupByColumnFromMenu);
-  const clearGroupingFromMenu = $derived(ctrl.clearGroupingFromMenu);
   const columnMenuFacetValues = $derived(ctrl.columnMenuFacetValues);
   const columnMenuVisibleFacets = $derived(ctrl.columnMenuVisibleFacets);
 
@@ -168,7 +171,7 @@
     const colId = filterMenuFor ?? columnMenuFor;
     if (!colId) return;
     const column = allColumns.find((c) => c.id === colId);
-    if (!usesRichDateFilter(column?.columnDef.editorType)) return;
+    if (!usesRichDateFilter(column?.columnDef)) return;
     if (!MenuDatePicker)
       import("./SvDateTimePicker.svelte").then((m) => (MenuDatePicker = m.default));
     if (!MenuRangePicker)
@@ -237,13 +240,10 @@
   }
   const columnMenuFacetOptions = $derived(ctrl.columnMenuFacetOptions);
   const columnMenuSelectedFacets = $derived(ctrl.columnMenuSelectedFacets);
-  const setFacetSelection = $derived(ctrl.setFacetSelection);
   const setFilterTokens = $derived(ctrl.setFilterTokens);
   const inSuggestOptions = $derived(ctrl.inSuggestOptions);
   const openInSuggest = $derived(ctrl.openInSuggest);
   const closeInSuggest = $derived(ctrl.closeInSuggest);
-  const isAllFacetsChecked = $derived(ctrl.isAllFacetsChecked);
-  const toggleAllFacets = $derived(ctrl.toggleAllFacets);
 
   /**
    * Above this many rows the checklists switch to the windowed listbox. Short
@@ -292,12 +292,7 @@
   const clearColumnFilter = $derived(ctrl.clearColumnFilter);
   const contextMenuFor = $derived(ctrl.contextMenuFor);
   const contextMenuPos = $derived(ctrl.contextMenuPos);
-  const contextMenuItems = $derived(ctrl.contextMenuItems);
-  const closeContextMenu = $derived(ctrl.closeContextMenu);
   const commentEditFor = $derived(ctrl.commentEditFor);
-  const saveComment = $derived(ctrl.saveComment);
-  const removeComment = $derived(ctrl.removeComment);
-  const closeCommentEditor = $derived(ctrl.closeCommentEditor);
 
   function onContextMenuKeydown(event: KeyboardEvent) {
     // Escape closes the context menu, the way every spreadsheet and desktop
@@ -342,7 +337,7 @@
     {@const menuActiveOperator = filterMenuValues[colId]?.operator ?? defaultOperatorFor(menuColumn)}
     {@const menuInputType = getEditorInputType((menuColumn?.columnDef.editorType ?? "text") as CellEditorType)}
     {@const richDate =
-      usesRichDateFilter(menuColumn?.columnDef.editorType) &&
+      usesRichDateFilter(menuColumn?.columnDef) &&
       menuActiveOperator !== "isBlank" &&
       menuActiveOperator !== "isNotBlank" &&
       menuActiveOperator !== "regex" &&
@@ -572,6 +567,8 @@
     {@const menuColumnId = columnMenuFor}
     {@const menuCol = allColumns.find((c) => c.id === menuColumnId)}
     {@const menuCanSort = menuCol?.getCanSort?.() ?? false}
+    {@const menuSortLabels = menuCol ? getGridExtension()?.sortLabels?.(menuCol.columnDef) : null}
+    {@const menuLocked = !!getGridExtension()?.lockColumn?.(ctrl, menuColumnId)}
     {@const menuCanFilter = (menuCol?.columnDef.field != null) && (menuCol?.columnDef.filterable !== false)}
     {@const menuTab = ctrl.columnMenuTab}
     <div
@@ -621,8 +618,8 @@
           role="menuitem"
           onclick={() => sortColumnFromMenu(menuColumnId, false)}
         >
-          <span class="sv-grid-header-icon">{@render icon("sort-asc")}</span> Sort
-          ascending
+          <span class="sv-grid-header-icon">{@render icon("sort-asc")}</span>
+          {menuSortLabels ? `Sort ${menuSortLabels[0]}` : "Sort ascending"}
         </button>
         <button
           type="button"
@@ -630,8 +627,8 @@
           role="menuitem"
           onclick={() => sortColumnFromMenu(menuColumnId, true)}
         >
-          <span class="sv-grid-header-icon">{@render icon("sort-desc")}</span> Sort
-          descending
+          <span class="sv-grid-header-icon">{@render icon("sort-desc")}</span>
+          {menuSortLabels ? `Sort ${menuSortLabels[1]}` : "Sort descending"}
         </button>
         <button
           type="button"
@@ -652,7 +649,7 @@
           type="button"
           class="sv-grid-menu-item"
           role="menuitem"
-          disabled={menuPinSide === "left"}
+          disabled={menuPinSide === "left" || menuLocked}
           onclick={() => pinColumnLeft(menuColumnId)}
         >
           <span class="sv-grid-header-icon"
@@ -663,7 +660,7 @@
           type="button"
           class="sv-grid-menu-item"
           role="menuitem"
-          disabled={menuPinSide === "right"}
+          disabled={menuPinSide === "right" || menuLocked}
           onclick={() => pinColumnRight(menuColumnId)}
         >
           <span class="sv-grid-header-icon"
@@ -674,11 +671,34 @@
           type="button"
           class="sv-grid-menu-item"
           role="menuitem"
-          disabled={!menuPinSide}
+          disabled={!menuPinSide || menuLocked}
           onclick={() => unpinColumn(menuColumnId)}
         >
           <span class="sv-grid-header-icon">{@render icon("unpin")}</span> Unpin column
         </button>
+      {/if}
+      <!-- Items an opt-in module adds (grid-extension columnMenuItems), e.g. the
+           fields module's Edit field / Insert / Duplicate / Delete. -->
+      {#if menuColumnId && getGridExtension()?.columnMenuItems}
+        {@const extItems = getGridExtension()?.columnMenuItems?.(ctrl, menuColumnId) ?? []}
+        <div class="sv-grid-menu-sep"></div>
+        {#each extItems as item (item.key)}
+          {#if item.separatorBefore}<div class="sv-grid-menu-sep"></div>{/if}
+          <button
+            type="button"
+            class="sv-grid-menu-item"
+            role="menuitem"
+            disabled={item.disabled}
+            onclick={() => {
+              closeMenus();
+              item.run();
+            }}
+          >
+            <span class="sv-grid-header-icon">
+              {#if item.icon}<svg class="sv-grid-menu-icon-own" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d={item.icon} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>{/if}
+            </span> {item.label}
+          </button>
+        {/each}
       {/if}
       <div class="sv-grid-menu-sep"></div>
       <!-- `resizable: false` means the width is part of the layout, so the

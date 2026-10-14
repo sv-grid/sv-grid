@@ -161,8 +161,9 @@ describe('icons prop', () => {
     })
     cleanup = destroy
     await tick()
+    // The footer is its own chunk, loaded once the grid paginates.
+    await vi.waitFor(() => expect(target.querySelector('[data-icon="pn"]')).not.toBeNull())
     const hit = target.querySelector('[data-icon="pn"]')
-    expect(hit).not.toBeNull()
     // Still a real pager button, and its label is untouched: icons and
     // localeText are independent axes.
     const btn = hit!.closest('.sv-grid-pagination-btn')

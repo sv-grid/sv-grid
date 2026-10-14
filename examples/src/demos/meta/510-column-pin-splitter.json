@@ -1,0 +1,28 @@
+{
+  "description": "A Svelte 5 data grid where the user pins columns by dragging: a divider at the edge of the pinned columns snaps to column edges as it moves, shows how many columns it will pin, and keeps every column where it is on screen when it changes sides. A 14-column order book starts with the Order column pinned; drag right to pin Customer and Region beside it, left to let them scroll.",
+  "keywords": [
+    "svelte data grid drag to pin columns",
+    "svelte grid freeze columns divider",
+    "svelte table sticky columns resize",
+    "svelte grid pinned columns splitter",
+    "svelte data grid freeze panes"
+  ],
+  "faq": [
+    {
+      "question": "Is the pin splitter part of the free grid?",
+      "answer": "Yes. pinSplitter is a prop of the MIT @svgrid/grid package. The grid loads its code only when the prop is on, so a grid without it does not ship it."
+    },
+    {
+      "question": "Can the user pin every column?",
+      "answer": "No. The divider leaves 120px for the columns that scroll and stops one column short of the last, so there is always something to scroll."
+    },
+    {
+      "question": "Does it work from the keyboard?",
+      "answer": "Yes. The divider is a focusable separator: the arrow keys pin or unpin one column at a time and Home unpins them all. Screen readers hear how many columns are pinned."
+    },
+    {
+      "question": "Can I translate its labels?",
+      "answer": "Yes, through localization.text: pinSplitterLabel, pinSplitterHint, pinSplitterNone, pinSplitterOne and pinSplitterMany ({count} is the number of pinned columns)."
+    }
+  ]
+}

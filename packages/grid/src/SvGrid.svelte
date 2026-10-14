@@ -20,7 +20,6 @@
     RenderSnippetConfig,
     RenderComponentConfig,
   } from "./render-component";
-  import { buildSparkline, toSparklineValues } from "./sparkline";
   import { mergeDrawAt } from "./merges";
   import { localizeOperatorLabel } from "./filter-operators";
   import { GRID_ICON_GLYPHS, type GridIconName } from "./grid-icons";
@@ -48,12 +47,13 @@
   import { createSvGridController } from "./SvGrid.controller.svelte";
   // GridMenus hosts tooltips + all column/filter/context menu overlays - none of
   // which exist until the user hovers or opens a menu, so it too is lazy-loaded.
-  import GridFooter from "./GridFooter.svelte";
   // SvGridChartPanel (charting) and SvGridBoard (Kanban) are heavy, prop-gated
   // views - lazy-loaded below so they stay out of the base <SvGrid> bundle.
   import { getSchedulerView } from "./scheduler-view.svelte";
   import { getSelectionBarView } from "./selection-bar-view.svelte";
+  import { getGridExtension } from "./grid-extension.svelte";
   import { getBoardView } from "./board-view.svelte";
+  import { getGalleryView } from "./gallery-view.svelte";
   import { getGanttView } from "./gantt-view.svelte";
   import { getChartView } from "./chart-view.svelte";
   let props: Props<TFeatures, TData> = $props();
@@ -77,6 +77,7 @@
   // instead of the table (see SvGridBoard). Narrowed derived so the template
   // branch can pass it non-null.
   const boardConfig = $derived(opt.board);
+  const galleryConfig = $derived(opt.gallery);
   // Scheduler / calendar mode: same "view of the grid" seam as the board.
   const schedulerConfig = $derived(opt.scheduler);
   // Gantt mode: a task table beside a time chart. Same seam again; the renderer
@@ -107,6 +108,32 @@
     if (chartViewConfig && !ChartView)
       import("./SvGridChartView.svelte").then((m) => (ChartView = m.default));
   });
+  // The footer draws only a pager or a status bar, so a grid with neither
+  // never loads it.
+  let GridFooter = $state<typeof import("./GridFooter.svelte").default | null>(null);
+  $effect(() => {
+    if ((ctrl.paginationEnabled || ctrl.statusBarEnabled) && !GridFooter)
+      import("./GridFooter.svelte").then((m) => (GridFooter = m.default));
+  });
+  // The pin splitter (`pinSplitter`) loads with the prop, so a grid without it never does.
+  let PinSplitter = $state<typeof import("./PinSplitter.svelte").default | null>(null);
+  $effect(() => {
+    if (opt.pinSplitter && !PinSplitter)
+      import("./PinSplitter.svelte").then((m) => (PinSplitter = m.default));
+  });
+  // An opt-in Enterprise module (e.g. @svgrid/enterprise/fields) can draw field
+  // cells, header / body end components and row marks; null without one.
+  const gridExt = $derived(getGridExtension());
+  const RowHeader = $derived(gridExt?.rowHeader?.(ctrl) ?? null);
+  const SummaryCell = $derived(gridExt?.summaryCell?.(ctrl) ?? null);
+  const GroupRow = $derived(gridExt?.groupRow?.(ctrl) ?? null);
+  const GridOverlay = $derived(gridExt?.overlay?.(ctrl) ?? null);
+  // Sparkline geometry loads with the first column that draws one.
+  let Sparkline = $state.raw<typeof import("./sparkline") | null>(null);
+  $effect(() => {
+    if (!Sparkline && ctrl.allColumns.some((c) => c.columnDef.sparkline))
+      import("./sparkline").then((m) => (Sparkline = m));
+  });
   let MenusOverlay = $state<typeof import("./GridMenus.svelte").default | null>(null);
   // The grid's own date picker, for date FILTER inputs. Lazy for the same
   // reason the cell editor's copy is: most grids never show a filter row, and
@@ -116,7 +143,7 @@
     if (!showFilterRowEffective && !ctrl.filterMenuFor) return;
     if (FilterDatePicker) return;
     const wantsPicker = ctrl.allColumns.some((c: any) =>
-      usesRichDateFilter(c.columnDef?.editorType),
+      usesRichDateFilter(c.columnDef),
     );
     if (wantsPicker)
       import("./SvDateTimePicker.svelte").then((m) => (FilterDatePicker = m.default));
@@ -132,7 +159,7 @@
     if (FilterRangePicker) return;
     const wantsRange = ctrl.allColumns.some(
       (c: any) =>
-        usesRichDateFilter(c.columnDef?.editorType) &&
+        usesRichDateFilter(c.columnDef) &&
         (ctrl.filterMenuValues[c.id]?.operator ??
           ctrl.defaultOperatorFor(c)) === "between",
     );
@@ -208,6 +235,12 @@
   const showTooltipFor = $derived(ctrl.showTooltipFor);
   const hideTooltip = $derived(ctrl.hideTooltip);
   const findHits = $derived(ctrl.findHits);
+  // Every match is marked while find is open, the current one more strongly.
+  const findHitKeys = $derived(new Set(findHits.map((h: { rowIndex: number; columnId: string }) => `${h.rowIndex}:${h.columnId}`)));
+  const findActiveKey = $derived.by(() => {
+    const hit = findHits[ctrl.findHitIndex];
+    return hit ? `${hit.rowIndex}:${hit.columnId}` : "";
+  });
   const headerHeight = $derived(ctrl.headerHeight);
   // Column resizing has always been unconditional; `columnResize={false}` is
   // the opt-out, so the default has to stay on when the prop is absent.
@@ -260,16 +293,26 @@
   const onRowDragEndHandler = $derived(ctrl.onRowDragEnd);
   const onRowPointerDown = $derived(ctrl.onRowPointerDown);
   // Drag attributes spread onto each body <tr>; empty object when disabled so
-  // rows stay non-draggable and no handlers fire.
+  // rows stay non-draggable and no handlers fire. Every row is a drop target.
+  // With row numbers the row header is the handle (rowDragHandle, on that
+  // cell): a press in a data cell selects, edits or scrolls as it does
+  // elsewhere, pinned columns included. Without them the row is the handle.
   function rowDragAttrs(rowIndex: number) {
+    if (!rowDragManagedEffective) return {};
+    const drop = {
+      ondragover: (e: DragEvent) => onRowDragOver(e, rowIndex),
+      ondragleave: () => onRowDragLeave(rowIndex),
+      ondrop: (e: DragEvent) => onRowDrop(e, rowIndex),
+      // Fired on the source and bubbling here, wherever the drag began.
+      ondragend: () => onRowDragEndHandler(),
+    };
+    return showRowNumbersEffective ? drop : { ...drop, ...rowDragHandle(rowIndex) };
+  }
+  function rowDragHandle(rowIndex: number) {
     if (!rowDragManagedEffective) return {};
     return {
       draggable: true,
       ondragstart: (e: DragEvent) => onRowDragStart(e, rowIndex),
-      ondragover: (e: DragEvent) => onRowDragOver(e, rowIndex),
-      ondragleave: () => onRowDragLeave(rowIndex),
-      ondrop: (e: DragEvent) => onRowDrop(e, rowIndex),
-      ondragend: () => onRowDragEndHandler(),
       // Touch fires no HTML5 drag events at all (#66), so it gets its own
       // entry point. It feeds the same drop indicators and commits through the
       // same path, and ignores mouse/pen so the drag events above still own those.
@@ -662,6 +705,8 @@
   function plainCellText(row: Row<TData>, column: Column<TData>, value: unknown): string | null {
     const def = column.columnDef;
     if (def.cell != null || def.sparkline) return null;
+    // A field type with a cell of its own (grid-extension) draws through cellBody.
+    if (def.fieldType && gridExt?.cell && gridExt.hasCell?.(def) !== false) return null;
     const editor = def.editorType;
     if (editor === "checkbox" || editor === "list" || editor === "chips" || typeof value === "boolean") return null;
     if (groupColumnMode && isAutoGroupColumn(column.id)) return null;
@@ -1130,6 +1175,51 @@
       {/if}
     </div>
   </div>
+{:else if galleryConfig}
+  <div
+    class="sv-grid-root sv-grid-gallery-root"
+    class:sv-grid-root-fill={opt.containerHeight === "100%"}
+    style={`height: ${
+      typeof opt.containerHeight === "string"
+        ? opt.containerHeight
+        : `${opt.containerHeight ?? 520}px`
+    }; display: flex; flex-direction: column;`}
+  >
+    {#if galleryConfig.searchable !== false}
+      <label class="sv-grid-board-search">
+        {@render icon("search")}
+        <input
+          type="search"
+          placeholder={galleryConfig.searchPlaceholder ?? "Search records..."}
+          bind:value={ctrl.globalFilter}
+          aria-label="Search records"
+        />
+      </label>
+    {/if}
+    <div style="flex: 1 1 auto; min-height: 0;">
+      {#if getGalleryView()}
+        {@const GalleryView = getGalleryView()}
+        <GalleryView
+          data={boardData}
+          columns={opt.columns}
+          gallery={galleryConfig}
+          getRowId={opt.getRowId}
+        />
+      {:else}
+        <!-- The gallery renderer ships in @svgrid/enterprise. Call
+             `enableGalleryView()` (or `installEnterprise(api)`) to register it. -->
+        <div class="sv-grid-scheduler-upsell" role="note">
+          <strong>Gallery view</strong>
+          <p>
+            The gallery view is an Enterprise feature. Install
+            <code>@svgrid/enterprise</code> and call <code>enableGalleryView()</code>
+            to render it.
+          </p>
+          {@render enterpriseLicenseNote()}
+        </div>
+      {/if}
+    </div>
+  </div>
 {:else if schedulerConfig}
   <div
     class="sv-grid-root sv-grid-scheduler-root"
@@ -1318,7 +1408,9 @@
     <!-- A column's own `cell` renderer wins over every built-in display, the
          checkbox included: a boolean field drawn as a flag button or a status
          pill used to come out as a read-only checkbox, with `cell` never called. -->
-    {#if (column.columnDef.editorType === "checkbox" || typeof cellValue === "boolean") && column.columnDef.cell == null}
+    {#if column.columnDef.fieldType && column.columnDef.cell == null && gridExt?.cell && gridExt.hasCell?.(column.columnDef) !== false}
+      <gridExt.cell {ctrl} {row} {column} value={cellValue} />
+    {:else if (column.columnDef.editorType === "checkbox" || typeof cellValue === "boolean") && column.columnDef.cell == null}
       <div
         class="sv-grid-checkbox sv-grid-checkbox-readonly"
         role="checkbox"
@@ -1355,12 +1447,13 @@
         {formatListCellValue(column, cellValue, row)}
       {/if}
     {:else if column.columnDef.sparkline && column.columnDef.cell == null}
-      {@const geo = buildSparkline(
-        toSparklineValues(cellValue),
+      <!-- Blank, not the raw numbers, for the frame before sparkline.ts lands. -->
+      {@const geo = Sparkline?.buildSparkline(
+        Sparkline.toSparklineValues(cellValue),
         column.columnDef.sparkline,
       )}
-      {#if geo}
-        {@const vals = toSparklineValues(cellValue)}
+      {#if geo && Sparkline}
+        {@const vals = Sparkline.toSparklineValues(cellValue)}
         <svg
           class="sv-grid-sparkline"
           width={geo.width}
@@ -1589,6 +1682,9 @@
           row.toggleExpanded?.();
         }}>{@render icon("chevron-right")}</button
       >
+      {#if GroupRow}
+        <GroupRow {ctrl} {row} column={groupingColumn} value={groupValueRaw} {count} />
+      {:else}
       <span class="sv-grid-group-label">{headerLabel}: {groupValue}</span>
       <span class="sv-grid-group-count"
         >{count} {count === 1 ? messages.rowSuffix : messages.rowsSuffix}</span
@@ -1608,6 +1704,7 @@
           {/if}
         {/if}
       {/each}
+      {/if}
     </div>
   {/snippet}
 
@@ -1781,10 +1878,12 @@
                     {@const stickyTop = stickyTopOfRow(rowIndex)}
                     <tr
                       class={`sv-grid-row ${userRowClass} ${rowDropClass(rowIndex)}`}
+                      style:--sv-row-mark={gridExt?.rowMarkColor?.(ctrl, row.original, rowIndex) ?? undefined}
                       class:sv-grid-row-selected={isRowSelected(row.id, row.original)}
                       class:sv-grid-row-alt={opt.zebraRows &&
                         rowIndex % 2 === 1}
                       class:sv-grid-row-draggable={rowDragManagedEffective}
+                      class:sv-grid-row-drag-by-header={rowDragManagedEffective && showRowNumbersEffective}
                       class:sv-grid-group-footer-row={isGroupFooterRow(row)}
                       class:sv-grid-grand-total-row={isGrandTotalRow(row)}
                       class:sv-grid-row-auto-height={autoRowHeightOn}
@@ -1804,7 +1903,9 @@
                         <td
                           class="sv-grid-cell sv-grid-row-number-cell"
                           style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; inset-inline-start: 0;`}
-                          ><span class="sv-grid-cell-line">{rowIndex + 1}</span></td
+                          title={gridExt?.rowMarkLabel?.(ctrl, row.original, rowIndex) ?? undefined}
+                          {...rowDragHandle(rowIndex)}
+                          >{#if RowHeader}<RowHeader {ctrl} {row} {rowIndex} />{:else}<span class="sv-grid-cell-line">{rowIndex + 1}</span>{/if}</td
                         >
                       {/if}
                       {#if showRowSelectionEffective}
@@ -1880,6 +1981,8 @@
                           class:sv-grid-cell-cf={hasConditionalFormats}
                           class:sv-grid-cell-invalid={c.cellValidity.invalid}
                           class:sv-grid-cell-has-note={c.cellNote != null}
+                          class:sv-grid-cell-find-hit={findHitKeys.size > 0 && findHitKeys.has(`${rowIndex}:${rendered.column.id}`)}
+                          class:sv-grid-cell-find-current={findActiveKey !== "" && findActiveKey === `${rowIndex}:${rendered.column.id}`}
                           aria-invalid={c.cellValidity.invalid ? "true" : undefined}
                           data-svgrid-row={rowIndex}
                           data-svgrid-col={c.colIndex}
@@ -2205,7 +2308,7 @@
   {/snippet}
 
   <div
-    class="sv-grid-root"
+    class={`sv-grid-root ${gridExt?.rootClass?.(ctrl) ?? ""}`}
     class:sv-grid-root-fill={opt.containerHeight === "100%"}
     class:sv-grid-active-seeded={!ctrl.userHasActivatedCell}
     style={chartDockReserveStyle}
@@ -2287,7 +2390,7 @@
       </div>
     {/if}
 
-    {#if hasMeasured && (opt.paginationPosition === "top" || opt.paginationPosition === "both")}
+    {#if GridFooter && hasMeasured && (opt.paginationPosition === "top" || opt.paginationPosition === "both")}
       <GridFooter {ctrl} {icon} showStatus={false} top pager pageSizeOptions={opt.pageSizeOptions} />
     {/if}
 
@@ -2597,12 +2700,19 @@
                               onclick={(event) =>
                                 onHeaderSortClick(event, header.column.id)}
                             >
+                              {#if gridExt?.headerIcon?.(header.column.columnDef)}
+                                <svg class="sv-grid-header-type-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d={gridExt.headerIcon(header.column.columnDef)} fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                              {/if}
                               <span class="sv-grid-header-label">
                                 {typeof header.column.columnDef.header ===
                                 "string"
                                   ? header.column.columnDef.header
                                   : header.id}
                               </span>
+                              {#if gridExt?.headerNote?.(header.column.columnDef)}
+                                {@const note = gridExt.headerNote(header.column.columnDef)}
+                                <span class="sv-grid-header-note" role="img" title={note?.text} aria-label={note?.text}><svg class="sv-grid-header-note-icon" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d={note?.icon} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg></span>
+                              {/if}
                               {#if header.column.getCanSort()}
                                 {#if sortDirection === "asc"}
                                   <span class="sv-grid-header-icon"
@@ -2691,6 +2801,7 @@
                     style={`width: ${columnWindowRightSpacer}px; min-width: ${columnWindowRightSpacer}px; max-width: ${columnWindowRightSpacer}px;`}
                   ></th>
                 {/if}
+                {#if gridExt?.headerEnd}<gridExt.headerEnd {ctrl} />{/if}
               </tr>
               {#if showFilterRowEffective}
                 <tr {...getGridRowA11yProps()}>
@@ -2815,7 +2926,7 @@
                               }}
                             />
                           </div>
-                        {:else if activeOperator !== "isBlank" && activeOperator !== "isNotBlank" && activeOperator !== "regex" && FilterDatePicker && usesRichDateFilter(rendered.column.columnDef.editorType)}
+                        {:else if activeOperator !== "isBlank" && activeOperator !== "isNotBlank" && activeOperator !== "regex" && FilterDatePicker && usesRichDateFilter(rendered.column.columnDef)}
                           <!-- Same picker the cell editor uses, so a date
                                column looks the same wherever you touch it.
                                `regex` keeps the text box - a pattern is not
@@ -3001,6 +3112,7 @@
                 {@render bodyRow(row, rowIndex, rowStyleFor(rowIndex))}
               {/each}
             {/if}
+            {#if gridExt?.bodyEnd}<gridExt.bodyEnd {ctrl} />{/if}
           </tbody>
           {#if opt.pinnedBottomRows && opt.pinnedBottomRows.length > 0}
             <!-- svelte-ignore a11y_no_redundant_roles -->
@@ -3060,7 +3172,7 @@
                       undefined}
                     style={`width: ${rendered.item.size}px; min-width: ${rendered.item.size}px; max-width: ${rendered.item.size}px; ${cellPinStyle(rendered.column.id)}`}
                   >
-                    <span class="sv-grid-cell-text">{summaryByColumn[rendered.column.id] ?? ""}</span>
+                    {#if SummaryCell}<SummaryCell {ctrl} column={rendered.column} text={summaryByColumn[rendered.column.id] ?? ""} />{:else}<span class="sv-grid-cell-text">{summaryByColumn[rendered.column.id] ?? ""}</span>{/if}
                   </th>
                 {/each}
                 {#if showRightSpacer}
@@ -3071,10 +3183,13 @@
                   ></th>
                 {/if}
               </tr>
+              {#if gridExt?.footEnd}<gridExt.footEnd {ctrl} />{/if}
             </tfoot>
           {/if}
         </table>
       </div>
+      {#if GridOverlay}<GridOverlay {ctrl} />{/if}
+      {#if PinSplitter && opt.pinSplitter}<PinSplitter {ctrl} />{/if}
       <!-- 16-px placeholder above the vertical scrollbar that matches the
          header height - fills the gap so the scrollbar starts exactly
          under the header row. Only needed when the vertical scrollbar
@@ -3143,7 +3258,9 @@
       {/if}
     </div>
 
-    <GridFooter {ctrl} {icon} pager={(opt.paginationPosition ?? "bottom") !== "top"} pageSizeOptions={opt.pageSizeOptions} />
+    {#if GridFooter}
+      <GridFooter {ctrl} {icon} pager={(opt.paginationPosition ?? "bottom") !== "top"} pageSizeOptions={opt.pageSizeOptions} />
+    {/if}
 
     {#if ctrl.findOpen}
       <!-- Find-in-grid overlay. Anchored to the TOP of the grid root so

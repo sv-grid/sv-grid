@@ -235,6 +235,41 @@ The bell badge shows the unacknowledged count. Clicking it opens
 severity, with **Acknowledge**, **Clear**, and **Go to row** (wire `onJump` to
 scroll/select the row).
 
+## Conditions from another module
+
+A predicate can hold a condition another module evaluates: an `ext` node,
+`{ kind: 'ext', type, payload }`. SvGrid Base registers one, `baseCondition(filter)`,
+so a rule over a base grid can use the view bar's filter as its condition.
+Register a kind of your own with `registerPredicateKind`:
+
+```ts
+import { registerPredicateKind } from '@svgrid/enterprise'
+
+registerPredicateKind('hasTag', {
+  // The payload as a row test; null for an empty condition (matches every row).
+  compile: (payload, { getValue }) => {
+    const { column, tag } = payload as { column: string; tag: string }
+    return (row) => ((getValue(row, column) as string[]) ?? []).includes(tag)
+  },
+  // How the rule list shows it, with the column's name.
+  describe: (payload, name) => `${name((payload as { column: string }).column)} has ${(payload as { tag: string }).tag}`,
+  // The columns it reads: `{value}` and `{column}` come from the first.
+  columns: (payload) => [(payload as { column: string }).column],
+})
+```
+
+A type no module registered matches nothing. To write such a condition in
+the rule editor, set `setAlertConditionEditor` in a component around
+`<SvGridAlerts>`: its `component` edits the predicate in place of the
+expression editor for the predicates its `accepts` takes.
+
+`<SvGridAlerts token>` resolves message tokens the built-in ones do not
+cover, such as a field named with spaces (`{Due date}`). The overlay's
+`onRulesChange` hands over the list after each edit in the manager.
+
+For a base, its own [Automations](./base/automations.md) do what alerts do
+and can also change records.
+
 ## More examples
 
 ### Styling rules

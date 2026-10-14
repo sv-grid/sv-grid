@@ -51,6 +51,8 @@ const SECTION = {
   Kanban: [/^docs\/help\/rows\//],
   Scheduler: [/^docs\/help\/(rows\/scheduler|scheduling)/],
   'Pivot Grid': [/^docs\/help\/(pivot|grouping)/],
+  'Base': [/^docs\/help\/fields/],
+  'Gallery': [/^docs\/help\/rows\/gallery/],
   'Data Export & Import': [/^docs\/help\/(export|import)/, /^docs\/recipes\//],
   Spreadsheet: [/^docs\/help\/spreadsheet/, /^docs\/recipes\//],
   'Server-Side Data': [/^docs\/help\/(server|headless)\//, /^docs\/help\/server-side-data/],

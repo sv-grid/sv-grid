@@ -1,0 +1,23 @@
+{
+  "description": "Event planning built with SvGrid Base for Svelte 5: Events, Attendees and a Checklist as linked tables. A calendar, a planning board, the guest list, tickets by type and an RSVP form; confirming an event creates its checklist, and a full event is flagged.",
+  "keywords": [
+    "svelte event planning app",
+    "svelte rsvp form",
+    "svelte event calendar component",
+    "svelte attendee list"
+  ],
+  "faq": [
+    {
+      "question": "How does the checklist get made?",
+      "answer": "An automation on Events: when a record starts matching Status is Confirmed, it creates three items in the Checklist table, each linked back to the event, and shows a notice."
+    },
+    {
+      "question": "How are seats counted?",
+      "answer": "Registered is a count of the linked attendees and Seats left is a formula, Capacity minus Registered. Linking a guest from the Attendees table updates both, and the Sold out automation runs when no seats are left."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

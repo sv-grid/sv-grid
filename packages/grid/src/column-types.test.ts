@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { inferCellDataType, resolveColumnTypes } from './column-types'
+import { columnDataType, inferCellDataType, resolveColumnTypes } from './column-types'
 
 describe('inferCellDataType', () => {
   it('classifies primitives', () => {
@@ -60,9 +60,38 @@ describe('resolveColumnTypes', () => {
     expect(on[3].editorType).toBe('checkbox')
   })
 
+  it('infers the data type of a column edited in a text box or a custom editor, and keeps the editor', () => {
+    const cols = [
+      { field: 'age', editorType: 'text' },
+      { field: 'score', editorType: 'stars' },
+      // A built-in number editor already says what the column holds.
+      { field: 'qty', editorType: 'number' },
+    ]
+    const on = resolveColumnTypes(cols, { age: 30, score: 4, qty: '7' }, true)
+    expect(on[0]).toMatchObject({ cellDataType: 'number', editorType: 'text' })
+    expect(on[1]).toMatchObject({ cellDataType: 'number', editorType: 'stars' })
+    expect(on[2].cellDataType).toBeUndefined()
+    expect(columnDataType(on[2])).toBe('number')
+  })
+
   it('recurses into header groups', () => {
     const cols = [{ header: 'Group', columns: [{ field: 'age', cellDataType: 'number' }] }]
     const out = resolveColumnTypes(cols, undefined, false)
     expect(out[0].columns[0].editorType).toBe('number')
+  })
+})
+
+describe('columnDataType', () => {
+  it('the declared type wins over the editor', () => {
+    expect(columnDataType({ cellDataType: 'number', editorType: 'text' })).toBe('number')
+    expect(columnDataType({ cellDataType: 'text', editorType: 'number' })).toBe('text')
+  })
+
+  it('without one, a built-in editor implies it, as before', () => {
+    expect(columnDataType({ editorType: 'number' })).toBe('number')
+    expect(columnDataType({ editorType: 'datetime' })).toBe('date')
+    expect(columnDataType({ editorType: 'checkbox' })).toBe('boolean')
+    expect(columnDataType({ editorType: 'text' })).toBeUndefined()
+    expect(columnDataType({ editorType: 'stars' })).toBeUndefined()
   })
 })

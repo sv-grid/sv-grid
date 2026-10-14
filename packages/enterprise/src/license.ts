@@ -164,6 +164,7 @@ export function nudgeEnterprise(feature?: EnterpriseFeatureLabel): void {
 const PRODUCT_LABEL: Record<LicensedProduct, string> = {
   grid: 'the enterprise grid',
   spreadsheet: 'the spreadsheet',
+  base: 'SvGrid Base',
   studio: 'the Studio',
 }
 

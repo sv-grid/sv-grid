@@ -15,6 +15,12 @@ export type AlertEngineOptions<TData> = {
   /** Resolve a column id to a value (defaults to `row[id]`). */
   getValue?: (row: TData, columnId: string) => unknown
   locale?: string | ReadonlyArray<string>
+  /**
+   * A message token the built-in ones do not cover, as text: SvGrid Base reads
+   * `{Due date}` as the field of that name, formatted as its cell shows it.
+   * Undefined leaves the token as it was.
+   */
+  token?: (row: TData, name: string) => string | undefined
   /** Clock for `firedAt` (injectable for deterministic tests). */
   now?: () => number
 }
@@ -56,16 +62,24 @@ const AGG_ROW_KEY = '*'
 /** Fill message-template tokens from the firing context. */
 export function renderTemplate(
   template: string,
-  ctx: { rule: AlertRule; row?: Record<string, unknown>; columnId?: string; value?: unknown },
+  ctx: {
+    rule: AlertRule
+    row?: Record<string, unknown>
+    columnId?: string
+    value?: unknown
+    token?: (row: Record<string, unknown>, name: string) => string | undefined
+  },
 ): string {
-  const { rule, row, columnId, value } = ctx
-  return template
+  const { rule, row, columnId, value, token } = ctx
+  const out = template
     .replace(/\{rule\}/g, rule.name)
     .replace(/\{severity\}/g, rule.severity)
     .replace(/\{column\}/g, columnId ?? '')
     .replace(/\{value\}/g, value == null ? '' : String(value))
     .replace(/\{row\.([\w$]+)\}/g, (_m, key: string) => fmt(row?.[key]))
     .replace(/\{([\w$]+)\}/g, (m, key: string) => (row && key in row ? fmt(row[key]) : m))
+  // Names with spaces ("{Due date}") only mean something to a resolver.
+  return token && row ? out.replace(/\{([^{}\n]+)\}/g, (m, name: string) => token(row, name.trim()) ?? m) : out
 }
 
 function fmt(v: unknown): string {
@@ -118,6 +132,7 @@ export function createAlertEngine<TData = Record<string, unknown>>(
       row: opts.row as Record<string, unknown> | undefined,
       columnId: opts.columnId,
       value: opts.value,
+      token: options.token as ((row: Record<string, unknown>, name: string) => string | undefined) | undefined,
     })
     return {
       ruleId: rule.id,

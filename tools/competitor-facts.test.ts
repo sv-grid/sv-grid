@@ -34,7 +34,7 @@ const REGISTRY_MAX_AGE_DAYS = 120
 const VERIFIED_MAX_AGE_DAYS = 365
 const ISO = /^\d{4}-\d{2}-\d{2}$/
 const STATUSES = new Set(['yes', 'partial', 'paid', 'no', 'na'])
-const GROUPS = new Set(['svelte-native', 'headless', 'commercial', 'oss'])
+const GROUPS = new Set(['svelte-native', 'headless', 'commercial', 'oss', 'table-database'])
 
 /** Priority pages carry the full required-field set (sources on every paid/no
  *  cell, five FAQ, fourteen rows...); every page, whatever its tier, must be

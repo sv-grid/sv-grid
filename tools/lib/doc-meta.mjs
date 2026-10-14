@@ -72,6 +72,7 @@ export const SECTION_TITLES = {
   'help/state': 'State & views',
   'help/charts': 'Charts',
   'help/sheet': 'Spreadsheet',
+  'help/base': 'SvGrid Base',
   'help/export': 'Import & export',
   'help/pivot': 'Pivot grid',
   'help/kanban': 'Kanban',
@@ -108,6 +109,7 @@ export const SECTION_OVERRIDE = {
   'help/cells/workbooks': 'help/sheet',
   'help/cells/tables': 'help/sheet',
   'help/web-components/sv-sheet': 'help/sheet',
+  'help/fields': 'help/base',
 }
 
 /** Section id for a doc path relative to docs/ (either slash style). */

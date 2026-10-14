@@ -229,7 +229,14 @@ test.describe('server-side row model over one million rows', () => {
     await open(page)
     await page.getByRole('button', { name: 'Paged', exact: true }).click()
     await expect(page.locator('.sv-grid-pagination-range')).toContainText('1 to 4 of 4', { timeout: 30_000 })
-    await expect(groupCells(page)).toHaveCount(4)
+    // The page opens Americas and United States by default, a moment after
+    // the four regions land; wait for that, then close Americas to see the
+    // whole page: the four top-level regions and nothing else.
+    const us = groupCells(page).filter({ hasText: 'United States' }).first()
+    await expect(us).toHaveAttribute('aria-expanded', 'true', { timeout: 30_000 })
+    await groupCells(page).filter({ hasText: 'Americas' }).first().click()
+    await expect(groupCells(page)).toHaveCount(4, { timeout: 30_000 })
+    await expect(groupCells(page).nth(3)).toContainText('LATAM')
   })
 })
 

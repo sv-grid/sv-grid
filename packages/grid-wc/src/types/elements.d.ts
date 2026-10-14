@@ -19,6 +19,8 @@ export interface SvGridElement extends HTMLElement {
   /** property only - an attribute cannot hold this */
   board: unknown
   /** property only - an attribute cannot hold this */
+  gallery: unknown
+  /** property only - an attribute cannot hold this */
   scheduler: unknown
   /** property only - an attribute cannot hold this */
   gantt: unknown
@@ -32,6 +34,20 @@ export interface SvGridElement extends HTMLElement {
   contextMenu: boolean
   /** attribute `selection-bar` */
   selectionBar: boolean
+  /** attribute `row-adder` */
+  rowAdder: boolean
+  /** property only - an attribute cannot hold this */
+  rowColor: unknown
+  /** attribute `column-adder` */
+  columnAdder: boolean
+  /** attribute `field-menu` */
+  fieldMenu: boolean
+  /** attribute `expand-rows` */
+  expandRows: boolean
+  /** attribute `pin-splitter` */
+  pinSplitter: boolean
+  /** attribute `primary-field` */
+  primaryField: string
   /** property only - an attribute cannot hold this */
   features: unknown
   /** attribute `sortable` */
@@ -257,6 +273,12 @@ declare global {
 
   interface HTMLElementEventMap {
     pivotmodechange: CustomEvent<unknown>
+    rowadd: CustomEvent<unknown>
+    columnadd: CustomEvent<unknown>
+    columnchange: CustomEvent<unknown>
+    columnremove: CustomEvent<unknown>
+    rowsdelete: CustomEvent<unknown>
+    rowcolorchange: CustomEvent<unknown>
     expandedchange: CustomEvent<unknown>
     paginationchange: CustomEvent<unknown>
     columnresize: CustomEvent<unknown>

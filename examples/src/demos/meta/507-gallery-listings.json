@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte 5 data grid as real estate listings: each card shows the house photo with its status and a save button, the price, beds, baths and size, the address and the agent, drawn by a card snippet. Status buttons and a bedroom filter set column filters, a sort menu sorts the grid, and the cards follow.",
+  "keywords": [
+    "svelte real estate listings grid",
+    "svelte gallery filter and sort",
+    "svelte property listing cards",
+    "svelte data grid card layout",
+    "svelte grid gallery currency format"
+  ],
+  "faq": [
+    {
+      "question": "Does sorting change the order of the cards?",
+      "answer": "Yes. The gallery draws the grid's rows in the grid's order, so api.setSort, a column filter or the search box all show on the wall at once."
+    },
+    {
+      "question": "What does the card show when nothing matches?",
+      "answer": "The text in emptyText, here No listings match. It defaults to No records."
+    },
+    {
+      "question": "Can a card hold its own buttons?",
+      "answer": "Yes. A card snippet is ordinary markup: the save button on each listing here toggles its own state. Without onCardClick the card itself is not a button, so its controls work on their own."
+    }
+  ]
+}

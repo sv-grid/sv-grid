@@ -57,6 +57,16 @@
       "svelte": "./dist/server/index.js",
       "import": "./dist/server/index.js"
     },
+    "./fields": {
+      "types": "./dist/fields/index.d.ts",
+      "svelte": "./dist/fields/index.js",
+      "import": "./dist/fields/index.js"
+    },
+    "./base": {
+      "types": "./dist/base/index.d.ts",
+      "svelte": "./dist/base/index.js",
+      "import": "./dist/base/index.js"
+    },
     "./worker": {
       "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js"
@@ -130,6 +140,7 @@
     }
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.4",
     "@sveltejs/package": "^2.5.7",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@svgrid/grid": "workspace:^",

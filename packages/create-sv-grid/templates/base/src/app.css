@@ -1,0 +1,15 @@
+/* SvGrid theme. One of the 20 presets @svgrid/grid ships.
+ *
+ * Importing it as a stylesheet means the FIRST paint - and the server-rendered
+ * HTML - is already themed, before any JavaScript runs. The theme picker in the
+ * layout overrides these values at runtime by setting the same --sg-* custom
+ * properties on <html>.
+ *
+ * `npm create @svgrid@latest -- --theme <id>` rewrites the line between the
+ * markers, so pick a starting theme at scaffold time if you prefer. */
+/* svgrid-theme:start */
+@import '@svgrid/grid/themes/ember.css';
+/* svgrid-theme:end */
+
+* { box-sizing: border-box; }
+body { margin: 0; }

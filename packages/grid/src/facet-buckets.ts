@@ -3,6 +3,7 @@
 // row data and an accessor, so this holds no grid state.
 import type { Column, RowData } from "./index";
 import { rawToNumber, formatFacetDate, formatFacetNumber } from "./SvGrid.helpers";
+import { columnDataType, isDateDataType } from "./column-types";
 
 export type FacetBucket = {
   label: string;
@@ -15,9 +16,9 @@ const FACET_BUCKET_THRESHOLD = 30;
 const FACET_BUCKET_COUNT = 10;
 
 export function isBucketableColumn<TData extends RowData>(column: Column<TData>): { isDate: boolean } | null {
-  const editorType = column.columnDef.editorType;
-  if (editorType === "number") return { isDate: false };
-  if (editorType === "date" || editorType === "datetime") return { isDate: true };
+  const type = columnDataType(column.columnDef);
+  if (type === "number") return { isDate: false };
+  if (isDateDataType(type)) return { isDate: true };
   return null;
 }
 

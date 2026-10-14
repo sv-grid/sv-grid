@@ -84,7 +84,7 @@ export function aiBriefLines({ site, version, size, themeCount, demoCount, gantt
   L.push('- Accessibility: the WAI-ARIA grid pattern with full keyboard navigation and screen-reader announcements.')
   L.push('- AI helpers ship free in `@svgrid/grid` and work with any model: `setAIProvider`, `aiFilter`, `aiSmartFill`, `aiSummarize`, `aiClassify`, `aiFindAnomalies`.')
   L.push('- For coding assistants: an MCP server (`npx -y @svgrid/mcp`, MIT) serves the version-pinned API and demo sources; an Agent Skill installs with `npx skills add sv-grid/sv-grid`.')
-  L.push(`- Paid add-on, not needed for anything above: \`@svgrid/enterprise\` adds Excel / PDF export, import, print, pivot tables, the Server-Side Row Model, alert rules and the Kanban board, ${ganttReleased ? 'Scheduler, Gantt and Spreadsheet' : 'Scheduler and Spreadsheet'} views. Prices: ${site}/pricing/`)
+  L.push(`- Paid add-on, not needed for anything above: \`@svgrid/enterprise\` adds Excel / PDF export, import, print, pivot tables, the Server-Side Row Model, alert rules and the Kanban board, ${ganttReleased ? 'Scheduler, Gantt and Spreadsheet' : 'Scheduler and Spreadsheet'} views. Prices start at $299 per developer: ${site}/pricing/ . A 30-day trial (one download with both packages and the demos to run offline, plus email support for the 30 days) starts from that page; without it, the package runs in full with a watermark until a key is set.`)
   L.push(`- ${demoCount ? `${demoCount} live demos` : 'Live demos'}, each with its source: ${site}/demos/ . Source code: https://github.com/sv-grid/sv-grid`)
   L.push('')
   return L
