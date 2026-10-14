@@ -76,6 +76,9 @@ test.describe('scheduler timeline (real browser)', () => {
     await page.waitForTimeout(200)
     const b = bar(page, 'Release 4.2').first()
     await expect(b).toContainText('9am')
+    // The mouse only reaches what is on screen; where the demo header wraps
+    // taller (wider fonts on the Linux runner) this bar starts below the fold.
+    await b.scrollIntoViewIfNeeded()
     const box = (await b.boundingBox())!
     await drag(page, box.x + box.width / 2, box.y + box.height / 2, box.x + box.width / 2 + 140, box.y + box.height / 2)
     // Re-timed: no longer starts at 9am (moved a couple of hours later).
@@ -101,6 +104,7 @@ test.describe('scheduler timeline (real browser)', () => {
     await pickView(page, 'Day')
     await page.waitForTimeout(200)
     const b = bar(page, 'Release 4.2').first()
+    await b.scrollIntoViewIfNeeded()
     const box = (await b.boundingBox())!
     const platform = (await page.locator('.sv-sched-tl-row', { hasText: 'Platform' }).boundingBox())!
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
@@ -123,6 +127,7 @@ test.describe('scheduler timeline (real browser)', () => {
     // "Release 4.2" starts in Mobile.
     await expect(mobileRow.locator('.sv-sched-tl-bar', { hasText: 'Release 4.2' })).toHaveCount(1)
     const b = bar(page, 'Release 4.2').first()
+    await b.scrollIntoViewIfNeeded()
     const box = (await b.boundingBox())!
     const target = (await platformRow.boundingBox())!
     await drag(page, box.x + box.width / 2, box.y + box.height / 2, box.x + box.width / 2, target.y + target.height / 2)

@@ -79,6 +79,18 @@ async function rowCentre(page: Page, label: string) {
   return { x: box.x + box.width / 2, y: box.y + box.height / 2, box }
 }
 
+/**
+ * Centre of that row's row-number cell. The demo shows row numbers, and with
+ * them the row-number cell is the drag handle: a press in a data cell selects
+ * or edits instead (docs/help/rows/row-dragging.md, "The handle").
+ */
+async function handleCentre(page: Page, label: string) {
+  const cell = page.locator('[role="grid"]').first().getByRole('row').filter({ hasText: label }).first().locator('.sv-grid-row-number-cell')
+  const box = await cell.boundingBox()
+  if (!box) throw new Error(`row "${label}" has no row-number cell`)
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2, box }
+}
+
 test.describe('touch row dragging', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(DEMO)
@@ -89,7 +101,7 @@ test.describe('touch row dragging', () => {
 
   test('a swipe past the slop does not pick a row up', async ({ page }) => {
     const before = await backlogOrder(page)
-    const from = await rowCentre(page, 'Design empty states')
+    const from = await handleCentre(page, 'Design empty states')
     const touch = await touchDriver(page)
 
     // Move immediately and well past SCROLL_SLOP_PX, without waiting out the
@@ -103,7 +115,7 @@ test.describe('touch row dragging', () => {
 
   test('a long press then a move reorders on lift', async ({ page }) => {
     const before = await backlogOrder(page)
-    const from = await rowCentre(page, 'Design empty states')
+    const from = await handleCentre(page, 'Design empty states')
     const to = await rowCentre(page, 'CSV export edge cases')
     const touch = await touchDriver(page)
 
@@ -137,7 +149,7 @@ test.describe('touch row dragging', () => {
    */
   test('lifting past the bottom edge commits to the last indicated row', async ({ page }) => {
     const before = await backlogOrder(page)
-    const from = await rowCentre(page, 'Keyboard nav audit')
+    const from = await handleCentre(page, 'Keyboard nav audit')
     const touch = await touchDriver(page)
 
     await touch.start(from.x, from.y)
@@ -155,7 +167,7 @@ test.describe('touch row dragging', () => {
 
   test('an interrupted gesture aborts instead of dropping', async ({ page }) => {
     const before = await backlogOrder(page)
-    const from = await rowCentre(page, 'Keyboard nav audit')
+    const from = await handleCentre(page, 'Keyboard nav audit')
     const touch = await touchDriver(page)
 
     await touch.start(from.x, from.y)
@@ -170,7 +182,7 @@ test.describe('touch row dragging', () => {
 
   test('a second finger mid-drag does not corrupt the drag', async ({ page }) => {
     const before = await backlogOrder(page)
-    const from = await rowCentre(page, 'Design empty states')
+    const from = await handleCentre(page, 'Design empty states')
     const touch = await touchDriver(page)
 
     await touch.start(from.x, from.y)

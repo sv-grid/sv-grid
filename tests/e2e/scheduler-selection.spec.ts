@@ -45,6 +45,9 @@ test.describe('scheduler selection (real browser)', () => {
 
   test('right-clicking an event shows Edit and Delete', async ({ page }) => {
     const ev = events(page).filter({ hasText: 'Standup' }).first()
+    // The mouse only reaches what is on screen; where the demo header wraps
+    // taller (wider fonts on the Linux runner) the event starts below the fold.
+    await ev.scrollIntoViewIfNeeded()
     const box = (await ev.boundingBox())!
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
     await page.mouse.down({ button: 'right' })
@@ -58,6 +61,7 @@ test.describe('scheduler selection (real browser)', () => {
     await expect.poll(() => events(page).count()).toBe(before - 1)
     // Edit on another event opens the drawer.
     const ev2 = events(page).filter({ hasText: 'Review' }).first()
+    await ev2.scrollIntoViewIfNeeded()
     const b2 = (await ev2.boundingBox())!
     await page.mouse.move(b2.x + b2.width / 2, b2.y + b2.height / 2)
     await page.mouse.down({ button: 'right' })

@@ -22,6 +22,12 @@ async function open(page: Page, id: string, height = 1000) {
   await page.locator('.sv-grid-row').first().waitFor()
 }
 
+/** Bring the base's bottom edge (footer, "+ Add row", selection bar) on screen: at
+ *  700px high it can start below the fold where the demo header wraps taller. */
+async function showBottom(page: Page) {
+  await page.locator('.sv-fbase').first().evaluate((el) => el.scrollIntoView({ block: 'end' }))
+}
+
 async function menuOn(page: Page, text: string) {
   await page.getByText(text, { exact: true }).first().click({ button: 'right' })
   await expect(page.locator('.sv-grid-context-menu')).toBeVisible()
@@ -60,6 +66,7 @@ test.describe('SvGrid Base record menu (real browser)', () => {
     await expect(rows.nth(1)).toHaveClass(/sv-field-row-adder/)
     // What is drawn at the adder's left end, over the pinned column, is the adder.
     const button = page.locator('.sv-grid-foot .sv-field-row-adder-button')
+    await showBottom(page)
     const box = (await button.boundingBox())!
     const hit = await page.evaluate(([x, y]) => document.elementFromPoint(x!, y!)?.closest('.sv-field-row-adder') != null, [box.x + 10, box.y + box.height / 2])
     expect(hit).toBe(true)
@@ -73,6 +80,7 @@ test.describe('SvGrid Base record menu (real browser)', () => {
     await expect(page.locator('.sv-grid-root[data-selbar$="bottom"]')).toHaveCount(1)
     // Rows scrolled part way would pass under the footer; the strip below it is the bar's.
     await page.evaluate(() => { document.querySelector('.sv-fbase .sv-grid-container')!.scrollTop = 60 })
+    await showBottom(page)
     const foot = (await page.locator('.sv-fbase .sv-grid-foot').boundingBox())!
     // The strip is painted (a shadow), so hit-testing still finds the rows: read the pixels.
     // Under the Task column a body row would show its name; the strip is one color. Left of
