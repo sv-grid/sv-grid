@@ -103,8 +103,9 @@ curl -H "Authorization: Bearer $ADMIN_TOKEN" https://trial.svgrid.com/founding/t
 ```
 
 Every claim carries its testimonial, and the form's checkbox is the permission
-to publish it with the person's name. Founding customers got their license free: mark that next to every quote
-(the site's testimonial list needs a disclosure line for it).
+to publish it with the person's name. Add a published quote to
+`website/src/lib/testimonials.ts` with `foundingCustomer: true`, which keeps it
+out of the Review markup search engines read.
 
 ## Privacy
 
