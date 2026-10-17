@@ -107,7 +107,8 @@
 >
   <!-- `sv-phone` on the control is the component's public CSS/query hook, the
        same convention SvCountryInput and the rest of the suite follow. -->
-  <input class="sv-phone sv-phone__number" {...ph.inputProps()} />
+  <!-- A visible label names the field; the built-in "Phone number" is only for an unlabelled one. -->
+  <input class="sv-phone sv-phone__number" {...ph.inputProps()} aria-label={label && !ariaLabel ? undefined : (ariaLabel ?? 'Phone number')} />
   {#if name}<input type="hidden" {name} value={ph.value} />{/if}
 </SvField>
 

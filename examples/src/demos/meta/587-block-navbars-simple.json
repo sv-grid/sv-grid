@@ -1,0 +1,24 @@
+{
+  "description": "A simple top navbar for Svelte 5 built from the SvGrid UI kit: brand, four page links with aria-current on the active one, and a Start free trial SvButton, shown over a mock page whose heading follows the current link. Below 768 px the links fold behind a menu button that opens an in-flow panel, closed by Escape or a link click. The createSimpleNavbar() core holds the state for a custom render.",
+  "keywords": [
+    "svelte navbar",
+    "svelte 5 responsive navigation bar",
+    "svelte header with mobile menu",
+    "svelte aria-current nav links",
+    "svelte hamburger menu"
+  ],
+  "faq": [
+    {
+      "question": "How does the active link get marked?",
+      "answer": "createSimpleNavbar() keeps the active path in nav.current, and linkProps(href) returns aria-current=\"page\" for the matching link. In a SvelteKit app set nav.current from page.url.pathname in an $effect so it follows real navigation, and drop the demo's onNavigate that calls preventDefault."
+    },
+    {
+      "question": "How does the phone menu open and close?",
+      "answer": "menuButtonProps() puts aria-expanded and aria-controls on the menu button and toggles nav.menuOpen. The panel is always in the DOM with the hidden attribute while closed. A link click closes it through navigate(), and Escape calls nav.escape(), which closes it and returns true so the render can move focus back to the button."
+    },
+    {
+      "question": "What changes on a phone?",
+      "answer": "Below 768 px the inline links and the CTA are hidden and the menu button appears. The panel opens under the bar and pushes the page down instead of floating over it, with larger tap targets and a full-width Start free trial button."
+    }
+  ]
+}

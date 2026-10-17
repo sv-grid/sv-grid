@@ -157,7 +157,7 @@ The gallery defines these tokens - override at `:root` or on the grid host:
 --sg-row-alt-bg         even-row background
 --sg-row-hover-bg       hover background
 --sg-selection-bg       selected-row background
---sg-focus-ring         focus outline (box-shadow)
+--sg-focus-ring         focus outline color
 --sg-accent             primary accent (sort arrow, etc)
 ```
 

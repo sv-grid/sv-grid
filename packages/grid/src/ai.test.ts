@@ -614,3 +614,32 @@ describe('aiExplainChart', () => {
     expect(handlers.explain).toBeNull()
   })
 })
+
+// ---------------------------------------------------------------------------
+// A plain { getData } row source (AIRowSource)
+// ---------------------------------------------------------------------------
+
+describe('AIRowSource: helpers over rows that are not in a grid', () => {
+  const rows = [
+    { region: 'EMEA', arr: 120000 },
+    { region: 'NA', arr: 90000 },
+  ]
+  const source = { getData: () => rows }
+
+  it('aiSummarize reads a { getData } object without a grid', async () => {
+    setAIProvider(mockAIProvider)
+    const r = await aiSummarize(source, { target: { kind: 'all' } })
+    expect(typeof r.text).toBe('string')
+  })
+
+  it('aiFilter plans against a { getData } object', async () => {
+    setAIProvider(mockAIProvider)
+    const r = await aiFilter(source, 'region EMEA')
+    expect(Array.isArray(r.filters)).toBe(true)
+  })
+
+  it('aiFilter with apply refuses a row source instead of failing on a missing method', async () => {
+    setAIProvider(mockAIProvider)
+    await expect(aiFilter(source, 'region EMEA', { apply: true })).rejects.toThrow(/apply needs the grid api/)
+  })
+})

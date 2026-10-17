@@ -1,0 +1,519 @@
+<!doctype html>
+<!--
+  "Friday, 5:47 PM" - a ~45-second promo, 1080 x 1920 (Shorts / TikTok / Reels).
+
+  Story: Friday evening. The CEO wants an admin panel on the company's
+  Supabase data by Monday 9 AM. The developer sees the weekend go: a list, a
+  form and a record page for every table. Then: one command. SvGrid Studio
+  reads the Supabase tables and writes a SvelteKit 3 app; the monitor shows
+  that app running on the live Supabase data. The clock says 5:52.
+
+  Every animation is a pure function of t (window.__seek), so render.mjs steps
+  it frame by frame. The terminal lines are a real `svgrid-studio init` run
+  (window.__setTerminal) and the payoff is real footage of the app it wrote,
+  with the Supabase requests counted per frame (window.__setPayoff).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=block" />
+<style>
+  :root { --bg: #0b0908; --fg: #fafaf9; --orange: #ff5a1f; --red: #ef4444; --green: #22c55e; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--bg); color: var(--fg); font-family: Inter, system-ui, sans-serif; font-variant-ligatures: none; }
+  .abs { position: absolute; }
+  #frame { position: absolute; inset: 0; overflow: hidden; }
+
+  /* ---------- the office (wide shots) ---------- */
+  #world { position: absolute; inset: 0; transform-origin: 540px 670px; }
+  .wall { position: absolute; inset: -1400px; background: linear-gradient(#2a211c 0, #2a211c 1400px, #191310 2600px, #120d0b); }
+  .window { position: absolute; left: 60px; top: 120px; width: 470px; height: 290px; border-radius: 8px; overflow: hidden; box-shadow: 0 0 0 12px #3a2e27, 0 0 0 16px #241c18; }
+  .sky { position: absolute; inset: 0; background: linear-gradient(#3b1d4a 0%, #a3413a 52%, #f59e4b 82%, #fbbf6a 100%); }
+  .sun { position: absolute; left: 290px; top: 190px; width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(#fde68a, #fb923c 60%, transparent 72%); }
+  .skyline { position: absolute; left: 0; right: 0; bottom: 0; height: 170px; }
+  .mullion { position: absolute; background: #3a2e27; }
+  #clock { position: absolute; left: 800px; top: 150px; width: 200px; height: 200px; border-radius: 50%; background: #f5f0e8; box-shadow: 0 0 0 10px #3f3a36, 0 12px 30px #000a; }
+  #clock .face { position: absolute; inset: 0; }
+  .hand { position: absolute; left: 50%; bottom: 50%; transform-origin: 50% 100%; border-radius: 6px; }
+  #hHour { width: 12px; height: 54px; margin-left: -6px; background: #1c1917; }
+  #hMin { width: 8px; height: 80px; margin-left: -4px; background: #1c1917; }
+  #hSec { width: 3px; height: 86px; margin-left: -1.5px; background: var(--red); }
+  .pin { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px; border-radius: 50%; background: var(--red); }
+  #screen { position: absolute; left: 130px; top: 470px; width: 820px; height: 461px; background: #0c0a09; border-radius: 6px; overflow: hidden; box-shadow: 0 0 0 14px #1c1917, 0 0 0 16px #2b2622, 0 0 120px 30px rgba(255,255,255,.06); }
+  .stand { position: absolute; left: 470px; top: 945px; width: 140px; height: 70px; background: linear-gradient(#292524, #1c1917); clip-path: polygon(35% 0, 65% 0, 100% 100%, 0 100%); }
+  .desk { position: absolute; left: -60px; right: -60px; top: 1010px; height: 380px; background: linear-gradient(#6b4a2f, #4a3220 60%, #3a2718); box-shadow: 0 -6px 0 #7c5737 inset; }
+  .sticky { position: absolute; left: 948px; top: 620px; width: 112px; height: 104px; background: #fde047; color: #1c1917; transform: rotate(7deg); font: 800 22px/1.1 Inter; padding: 14px 10px; box-shadow: 0 8px 16px #0006; text-align: center; }
+  .mug { position: absolute; left: 150px; top: 1040px; width: 90px; height: 100px; background: #e7e5e4; border-radius: 6px 6px 22px 22px; }
+  .mug::after { content: ''; position: absolute; right: -34px; top: 22px; width: 34px; height: 46px; border: 10px solid #e7e5e4; border-left: 0; border-radius: 0 24px 24px 0; }
+  .steam { position: absolute; width: 10px; height: 60px; border-radius: 6px; background: linear-gradient(transparent, rgba(255,255,255,.18)); }
+  #phone { position: absolute; left: 760px; top: 1060px; width: 150px; height: 66px; background: #111; border-radius: 16px; box-shadow: 0 0 0 4px #333, 0 10px 20px #000a; }
+  #phoneGlow { position: absolute; inset: 6px; border-radius: 10px; background: #3b82f6; }
+  #back { position: absolute; left: -60px; top: 1110px; width: 760px; }
+
+  /* ---------- monitor contents ---------- */
+  .layer { position: absolute; inset: 0; }
+  .lock { background: radial-gradient(ellipse at 30% 20%, #3b2a5e, #0c0a09 70%); display: flex; flex-direction: column; justify-content: center; padding: 60px 70px; }
+  .lock b { font: 800 120px Inter; letter-spacing: -.04em; }
+  .lock span { font: 700 34px Inter; color: #d6d3d1; margin-top: 6px; }
+  .lock i { font-style: normal; color: #fde047; }
+  .todo { background: #0c0a09; font: 600 22px/1.5 'JetBrains Mono'; padding: 26px 34px; color: #d6d3d1; white-space: pre; }
+  .todo .file { color: #78716c; font-size: 19px; display: flex; justify-content: space-between; }
+  .todo .count { color: var(--red); font-weight: 700; }
+  .term { background: #0c0a09; font: 600 19px/1.55 'JetBrains Mono'; padding: 24px 30px; color: #d6d3d1; white-space: pre-wrap; word-break: break-all; }
+  .term .p { color: var(--orange); }
+  .term .c { color: #fafaf9; }
+  .term .ok { color: var(--green); }
+  .term .dim { color: #78716c; }
+  .term .caret { display: inline-block; width: 11px; height: 22px; background: #fafaf9; vertical-align: -3px; }
+  #payoff { background: #0c0a09; }
+  #payoff img { width: 100%; height: 100%; object-fit: cover; object-position: left top; display: block; }
+  .badge { position: absolute; right: 14px; bottom: 14px; font: 700 18px 'JetBrains Mono'; color: #fff; background: rgba(12,10,9,.9); border: 2px solid var(--green); border-radius: 10px; padding: 8px 12px; }
+  .badge b { color: var(--green); }
+
+  /* ---------- close-ups ---------- */
+  .shot { position: absolute; inset: 0; overflow: hidden; }
+  .bokeh { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 30%, #3a2a22, #0b0908 70%); }
+  .bokeh i { position: absolute; border-radius: 50%; background: radial-gradient(rgba(255,190,130,.26), transparent 70%); }
+  .bubble { position: absolute; background: #fff; color: #0c0a09; font-weight: 900; border-radius: 30px; padding: 26px 34px; box-shadow: 0 12px 0 #0005; transform-origin: 20% 100%; line-height: 1.05; }
+  .bubble::after { content: ''; position: absolute; bottom: -30px; left: 80px; border: 18px solid transparent; border-top: 30px solid #fff; border-bottom: 0; }
+  #notif { position: absolute; left: 120px; right: 120px; top: 1420px; background: rgba(28,25,23,.96); border: 2px solid #44403c; border-radius: 26px; padding: 22px 26px; display: flex; gap: 20px; align-items: center; box-shadow: 0 20px 50px #000c; }
+  #notif .av { width: 76px; height: 76px; border-radius: 50%; background: linear-gradient(135deg, #f472b6, #fb923c); display: grid; place-items: center; font: 900 34px Inter; color: #fff; flex: none; }
+  #notif b { font: 800 30px Inter; display: block; }
+  #notif span { font: 600 30px Inter; color: #d6d3d1; }
+
+  /* ---------- captions ---------- */
+  .cap { position: absolute; left: 72px; right: 72px; top: 118px; font-weight: 900; font-size: 86px; line-height: 1.0; letter-spacing: -.035em; text-shadow: 0 4px 30px #000; }
+  .cap small { display: block; font-size: 54px; font-weight: 800; color: #e7e5e4; margin-top: 16px; letter-spacing: -.02em; }
+  .cap em { font-style: normal; color: var(--orange); }
+  .cap .r { color: var(--red); }
+  .cap .g { color: var(--green); }
+
+  /* ---------- end card ---------- */
+  #end { background: var(--bg); }
+  #end .card { position: absolute; left: 72px; right: 72px; top: 520px; }
+  #end .logo { display: flex; align-items: center; gap: 26px; font-size: 118px; font-weight: 900; letter-spacing: -.04em; }
+  #end .logo i { font-style: normal; color: var(--orange); }
+  #end h2 { font-size: 88px; line-height: 1.02; font-weight: 900; letter-spacing: -.035em; margin-top: 80px; }
+  #end h2 em { font-style: normal; color: var(--orange); }
+  #end .cmd { display: inline-block; margin-top: 64px; font: 600 40px 'JetBrains Mono'; background: #1c1917; border: 2px solid #292524; border-radius: 18px; padding: 22px 30px; white-space: nowrap; }
+  #end .url { margin-top: 46px; font-size: 54px; font-weight: 800; color: #a8a29e; }
+  #end .note { margin-top: 26px; font-size: 38px; font-weight: 600; color: #a8a29e; }
+  #vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 75% 60% at 50% 48%, transparent 55%, rgba(0,0,0,.55) 100%); }
+  #black { position: absolute; inset: 0; background: #000; pointer-events: none; }
+  #flash { position: absolute; inset: 0; background: #fff; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="frame">
+
+  <!-- The office, over the developer's shoulder -->
+  <div id="world">
+    <div class="wall"></div>
+    <div class="window">
+      <div class="sky"></div><div class="sun" id="sun"></div>
+      <svg class="skyline" viewBox="0 0 470 170" preserveAspectRatio="none" id="skyline"></svg>
+      <div class="mullion" style="left:231px;top:0;width:8px;height:100%"></div>
+      <div class="mullion" style="left:0;top:140px;width:100%;height:8px"></div>
+    </div>
+    <div id="clock"><svg class="face" viewBox="0 0 200 200" id="clockFace"></svg>
+      <div class="hand" id="hHour"></div><div class="hand" id="hMin"></div><div class="hand" id="hSec"></div><div class="pin"></div></div>
+    <div id="screen">
+      <div class="layer lock" id="lLock"><b>5:47</b><span>Friday · <i>weekend in 13 min</i></span></div>
+      <div class="layer todo" id="lTodo"></div>
+      <div class="layer term" id="lTerm"></div>
+      <div class="layer" id="payoff"><img id="payoffImg" alt="" /><div class="badge" id="badge"></div></div>
+    </div>
+    <div class="sticky">WEEK<br>END!</div>
+    <div class="stand"></div>
+    <div class="desk"></div>
+    <div class="mug"></div>
+    <div class="steam" id="steam1" style="left:172px;top:975px"></div>
+    <div class="steam" id="steam2" style="left:204px;top:965px"></div>
+    <div id="phone"><div id="phoneGlow"></div></div>
+    <svg id="back" viewBox="0 0 760 820"></svg>
+  </div>
+
+  <!-- S2 / S8: the CEO in the doorway -->
+  <div class="shot" id="shotCeo">
+    <div class="bokeh" id="bokehCeo"></div>
+    <svg class="abs" id="ceo" style="left:90px;top:520px;width:900px" viewBox="0 0 600 640"></svg>
+    <div class="bubble" id="ceoBubble1" style="left:70px;top:330px;font-size:56px">Admin panel.<br>Our Supabase data.<br>Monday, 9 AM.</div>
+    <div class="bubble" id="ceoBubble2" style="left:120px;top:440px;font-size:70px">It's Friday.<br>Go home.</div>
+  </div>
+
+  <!-- S3 / S5: the developer -->
+  <div class="shot" id="shotDev">
+    <div class="bokeh" id="bokehDev"></div>
+    <svg class="abs" id="dev" style="left:90px;top:470px;width:900px" viewBox="0 0 400 520"></svg>
+    <div id="notif"><div class="av">S</div><div><b>Sam</b><span>still on for tonight?</span></div></div>
+  </div>
+
+  <div id="end" class="shot">
+    <div class="card">
+      <div class="logo" id="logo"></div>
+      <h2>Supabase in.<br><em>SvelteKit 3 out.</em></h2>
+      <div class="cmd">npx @svgrid/studio init --kit 3</div>
+      <div class="url">svgrid.com</div>
+      <div class="note">Studio ships with the SvGrid Enterprise Suite.</div>
+    </div>
+  </div>
+
+  <div id="vignette"></div>
+  <div id="caps"></div>
+  <div id="flash"></div>
+  <div id="black"></div>
+</div>
+
+<script>
+/* =============================================================== timing */
+// render.mjs replaces these with a timeline built from the voice takes
+// (window.__setTimeline); these defaults are the silent cut.
+let T = {
+  s1: [0, 3.6], s2: [3.6, 9.9], s3: [9.9, 16.4], s4: [16.4, 19.5], s5: [19.5, 22.6],
+  s6: [22.6, 26.2], s7: [26.2, 33.4], s8: [33.4, 37.5], s9: [37.5, 44.7],
+  buzz: 13.4, decide: 19.65, homeAt: 34.4, end: 44.7,
+}
+window.__setTimeline = (x) => { T = x; buildCaps() }
+
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x))
+const seg = (t, a, b) => clamp((t - a) / (b - a))
+const lerp = (a, b, k) => a + (b - a) * k
+const easeInOut = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2)
+const easeOut = (k) => 1 - Math.pow(1 - k, 3)
+const inT = (t, [a, b]) => t >= a && t < b
+const $ = (id) => document.getElementById(id)
+const setVis = (el, on) => { el.style.display = on ? '' : 'none' }
+
+/* ============================================================ the cast */
+// The developer (front): curly hair, round glasses, teal hoodie, headset.
+function devSvg() {
+  const skin = '#8d5a3b', skinD = '#74472d', hair = '#1b1210', hood = '#0f766e', hoodD = '#0b5a54'
+  const curls = []
+  for (const [x, y, r] of [[120,150,46],[160,118,50],[210,104,54],[262,116,50],[300,150,46],[316,196,36],[104,196,36],[146,96,34],[236,84,36],[280,100,30]])
+    curls.push(`<circle cx="${x}" cy="${y}" r="${r}" fill="${hair}"/>`)
+  return `
+  <defs>
+    <clipPath id="devEyeL"><ellipse cx="170" cy="230" rx="24" ry="26"/></clipPath>
+    <clipPath id="devEyeR"><ellipse cx="250" cy="230" rx="24" ry="26"/></clipPath>
+  </defs>
+  <path d="M70 520 q10 -150 140 -160 q130 10 140 160 z" fill="${hood}"/>
+  <path d="M200 360 q-60 10 -80 60 M210 360 q60 10 80 60" stroke="${hoodD}" stroke-width="10" fill="none"/>
+  <path d="M180 372 l-6 80 M240 372 l6 80" stroke="#e7e5e4" stroke-width="7" stroke-linecap="round"/>
+  <rect x="178" y="300" width="64" height="70" rx="22" fill="${skinD}"/>
+  <ellipse cx="110" cy="240" rx="20" ry="30" fill="${skin}"/><ellipse cx="310" cy="240" rx="20" ry="30" fill="${skin}"/>
+  <ellipse cx="210" cy="230" rx="100" ry="112" fill="${skin}"/>
+  <path d="M120 270 q90 80 180 0 q-10 60 -90 70 q-80 -10 -90 -70z" fill="${skinD}" opacity=".35"/>
+  ${curls.join('')}
+  <path d="M100 210 q110 -190 220 0" fill="none" stroke="#27272a" stroke-width="12"/>
+  <rect x="86" y="206" width="30" height="58" rx="12" fill="#27272a"/><rect x="304" y="206" width="30" height="58" rx="12" fill="#27272a"/>
+  <path d="M104 262 q8 70 86 58" fill="none" stroke="#27272a" stroke-width="7"/><circle cx="192" cy="320" r="9" fill="#27272a"/>
+  <g id="devEyes">
+    <ellipse cx="170" cy="230" rx="24" ry="26" fill="#fff"/><ellipse cx="250" cy="230" rx="24" ry="26" fill="#fff"/>
+    <g id="devPupils"><circle cx="172" cy="232" r="12" fill="#3b2314"/><circle cx="252" cy="232" r="12" fill="#3b2314"/>
+      <circle cx="176" cy="227" r="4" fill="#fff"/><circle cx="256" cy="227" r="4" fill="#fff"/></g>
+    <g clip-path="url(#devEyeL)"><rect id="devLidL" x="140" y="200" width="60" height="60" fill="${skin}"/></g>
+    <g clip-path="url(#devEyeR)"><rect id="devLidR" x="220" y="200" width="60" height="60" fill="${skin}"/></g>
+  </g>
+  <rect x="136" y="198" width="70" height="64" rx="22" fill="none" stroke="#111" stroke-width="7"/>
+  <rect x="214" y="198" width="70" height="64" rx="22" fill="none" stroke="#111" stroke-width="7"/>
+  <path d="M206 224 h8" stroke="#111" stroke-width="7"/>
+  <path id="devGlint" d="M150 214 l14 -10" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".7"/>
+  <g id="devBrowWorried"><path d="M140 186 L194 172" stroke="${hair}" stroke-width="10" stroke-linecap="round"/><path d="M280 186 L226 172" stroke="${hair}" stroke-width="10" stroke-linecap="round"/></g>
+  <g id="devBrowDet"><path d="M140 172 L196 190" stroke="${hair}" stroke-width="11" stroke-linecap="round"/><path d="M280 172 L224 190" stroke="${hair}" stroke-width="11" stroke-linecap="round"/></g>
+  <path id="devMouthWorried" d="M180 300 q10 -12 20 0 q10 12 20 0 q10 -12 20 0" fill="none" stroke="#3b1408" stroke-width="7" stroke-linecap="round"/>
+  <path id="devMouthDet" d="M184 298 q26 -6 52 0" fill="none" stroke="#3b1408" stroke-width="8" stroke-linecap="round"/>
+  <path id="sweat1" d="M300 150 q16 26 0 38 q-16 -12 0 -38z" fill="#7dd3fc"/>
+  <path id="sweat2" d="M118 170 q14 22 0 33 q-14 -11 0 -33z" fill="#7dd3fc"/>`
+}
+
+// The developer from behind, in the foreground of the office shots.
+function backSvg() {
+  const hair = '#1b1210', hood = '#0f766e', hoodD = '#0b5a54'
+  const curls = []
+  for (const [x, y, r] of [[250,250,70],[320,200,80],[400,190,84],[480,210,76],[530,270,66],[220,320,58],[560,340,56],[300,300,80],[440,280,90],[370,330,80]])
+    curls.push(`<circle cx="${x}" cy="${y}" r="${r}" fill="${hair}"/>`)
+  return `
+  <path d="M20 820 q30 -300 370 -330 q340 30 370 330 z" fill="${hood}"/>
+  <path d="M230 520 q160 60 320 0" stroke="${hoodD}" stroke-width="16" fill="none"/>
+  <rect x="320" y="400" width="140" height="110" rx="40" fill="#74472d"/>
+  ${curls.join('')}
+  <path d="M190 300 q200 -260 400 0" fill="none" stroke="#27272a" stroke-width="18"/>
+  <rect x="168" y="290" width="44" height="86" rx="18" fill="#27272a"/><rect x="568" y="290" width="44" height="86" rx="18" fill="#27272a"/>`
+}
+
+// The CEO: silver bob, navy blazer, pearl earrings.
+function ceoSvg() {
+  const skin = '#f1c6a8', skinD = '#e0a888', hair = '#d6d3d1', hairD = '#a8a29e'
+  return `
+  <defs>
+    <clipPath id="ceoEyeL"><ellipse cx="258" cy="250" rx="22" ry="22"/></clipPath>
+    <clipPath id="ceoEyeR"><ellipse cx="342" cy="250" rx="22" ry="22"/></clipPath>
+  </defs>
+  <path d="M60 640 q20 -190 240 -200 q220 10 240 200 z" fill="#1e293b"/>
+  <path d="M250 450 l50 120 l50 -120 z" fill="#f8fafc"/>
+  <path d="M230 450 l70 150 l-110 -10 z M370 450 l-70 150 l110 -10 z" fill="#0f172a"/>
+  <rect x="264" y="370" width="72" height="80" rx="26" fill="${skinD}"/>
+  <path d="M150 300 q-30 -210 150 -220 q180 10 150 220 q-10 60 -40 80 l0 -150 q-110 -40 -220 0 l0 150 q-30 -20 -40 -80z" fill="${hair}"/>
+  <ellipse cx="300" cy="260" rx="108" ry="124" fill="${skin}"/>
+  <path d="M200 300 q100 90 200 0 q-10 70 -100 80 q-90 -10 -100 -80z" fill="${skinD}" opacity=".35"/>
+  <path d="M192 160 q108 -90 216 0 q-20 -10 -40 30 q-60 -50 -150 -10 q-10 -30 -26 -20z" fill="${hair}"/>
+  <path d="M220 130 q80 -40 160 0" fill="none" stroke="${hairD}" stroke-width="5"/>
+  <circle cx="190" cy="300" r="11" fill="#fafaf9"/><circle cx="410" cy="300" r="11" fill="#fafaf9"/>
+  <g><ellipse cx="258" cy="250" rx="22" ry="22" fill="#fff"/><ellipse cx="342" cy="250" rx="22" ry="22" fill="#fff"/>
+    <g id="ceoPupils"><circle cx="260" cy="252" r="11" fill="#1e3a8a"/><circle cx="344" cy="252" r="11" fill="#1e3a8a"/>
+      <circle cx="263" cy="248" r="4" fill="#fff"/><circle cx="347" cy="248" r="4" fill="#fff"/></g>
+    <g clip-path="url(#ceoEyeL)"><rect id="ceoLidL" x="230" y="220" width="60" height="60" fill="${skin}"/></g>
+    <g clip-path="url(#ceoEyeR)"><rect id="ceoLidR" x="314" y="220" width="60" height="60" fill="${skin}"/></g>
+  </g>
+  <g id="ceoBrowSkeptic"><path d="M226 218 L284 222" stroke="#57534e" stroke-width="9" stroke-linecap="round"/><path d="M318 212 q30 -26 58 -6" fill="none" stroke="#57534e" stroke-width="9" stroke-linecap="round"/></g>
+  <g id="ceoBrowHappy"><path d="M228 206 q28 -22 56 -6" fill="none" stroke="#57534e" stroke-width="9" stroke-linecap="round"/><path d="M316 200 q28 -20 56 6" fill="none" stroke="#57534e" stroke-width="9" stroke-linecap="round"/></g>
+  <path d="M296 260 q-10 40 6 46" fill="none" stroke="${skinD}" stroke-width="6" stroke-linecap="round"/>
+  <path id="ceoMouthFlat" d="M268 330 q32 -8 64 4" fill="none" stroke="#9f1239" stroke-width="9" stroke-linecap="round"/>
+  <ellipse id="ceoMouthO" cx="300" cy="332" rx="16" ry="20" fill="#7f1d1d"/>
+  <g id="ceoMouthSmile"><path d="M262 318 q38 46 76 0 z" fill="#7f1d1d"/><path d="M272 322 q28 12 56 0" fill="#fff"/></g>
+  <g id="ceoArmsCrossed">
+    <path d="M90 560 q120 -40 330 -10 q30 10 20 40 q-200 -20 -330 20 q-30 -20 -20 -50z" fill="#1e293b"/>
+    <path d="M510 560 q-120 -40 -330 -10 q-30 10 -20 40 q200 -20 330 20 q30 -20 20 -50z" fill="#243245"/>
+    <ellipse cx="160" cy="566" rx="30" ry="24" fill="${skin}"/><ellipse cx="440" cy="566" rx="30" ry="24" fill="${skin}"/>
+  </g>`
+}
+
+function skyline() {
+  let s = '', x = 0, i = 0
+  while (x < 470) {
+    const w = 36 + ((i * 29) % 40), h = 60 + ((i * 47) % 100)
+    s += `<rect x="${x}" y="${170 - h}" width="${w}" height="${h}" fill="#1f1530"/>`
+    for (let wy = 170 - h + 10; wy < 160; wy += 16) for (let wx = x + 6; wx < x + w - 8; wx += 12)
+      if (((wx * 7 + wy * 13 + i) % 5) < 2) s += `<rect x="${wx}" y="${wy}" width="5" height="7" fill="#fcd34d" opacity=".8"/>`
+    x += w + 4; i++
+  }
+  return s
+}
+
+function clockFace() {
+  let s = ''
+  for (let i = 0; i < 60; i++) {
+    const a = (i / 60) * Math.PI * 2, big = i % 5 === 0
+    const r1 = big ? 78 : 84, r2 = 90
+    s += `<line x1="${100 + r1 * Math.sin(a)}" y1="${100 - r1 * Math.cos(a)}" x2="${100 + r2 * Math.sin(a)}" y2="${100 - r2 * Math.cos(a)}" stroke="#1c1917" stroke-width="${big ? 5 : 2}"/>`
+  }
+  return s
+}
+
+function logo(size) {
+  const cols = [{ x: 4, w: 6 }, { x: 11, w: 4 }, { x: 16, w: 4 }]
+  let r = ''
+  for (const c of cols) r += `<rect x="${c.x}" y="4" width="${c.w}" height="4" rx="1.2" fill="#fafaf9" opacity="0.9"/>`
+  r += `<path d="M16.9 5.4 L19.1 5.4 L18 6.9 Z" fill="#ff5a1f"/>`
+  for (const y of [9, 13, 17]) cols.forEach((c, i) => (r += `<rect x="${c.x}" y="${y}" width="${c.w}" height="3" rx="0.9" fill="${i === 2 ? '#ff5a1f' : '#fafaf9'}" opacity="${i === 2 ? 1 : 0.32}"/>`))
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}">${r}</svg><span><i>Sv</i>Grid</span>`
+}
+
+$('dev').innerHTML = devSvg()
+$('back').innerHTML = backSvg()
+$('ceo').innerHTML = ceoSvg()
+$('skyline').innerHTML = skyline()
+$('clockFace').innerHTML = clockFace()
+$('logo').innerHTML = logo(126)
+for (const id of ['bokehCeo', 'bokehDev']) {
+  $(id).innerHTML = Array.from({ length: 14 }, (_, i) => {
+    const r = 40 + ((i * 53) % 90)
+    return `<i style="left:${(i * 173) % 1080 - r}px;top:${(i * 311) % 1500 + 200}px;width:${r * 2}px;height:${r * 2}px"></i>`
+  }).join('')
+}
+
+/* ========================================================= captions */
+let CAPS = []
+function buildCaps() {
+  CAPS = [
+    [T.s1[0] + 0.3, T.s1[1], 'Friday, 5:47 PM.<small>Laptop half closed.</small>'],
+    [T.s2[0] + 0.1, T.s2[1], 'The CEO wants<small>a <em>Supabase admin panel.</em> By Monday.</small>'],
+    [T.s3[0] + 0.1, T.s3[1], 'Every table.<small>Every form. <span class="r">The whole weekend.</span></small>'],
+    [T.s4[0] + 0.1, T.s4[1], 'The clock<small>is <span class="r">running.</span></small>'],
+    [T.s5[0] + 0.1, T.s5[1], 'Or...<small><em>one command.</em></small>'],
+    [T.s6[0] + 0.1, T.s6[1], 'SvGrid Studio<small>reads the <em>Supabase</em> tables.</small>'],
+    [T.s7[0] + 0.1, T.s7[1], 'A <em>SvelteKit 3</em> app.<small>On the live Supabase data.</small>'],
+    [T.s8[0] + 0.1, T.s8[1], '<span class="g">5:52 PM.</span><small>Weekend saved.</small>'],
+  ]
+  $('caps').innerHTML = CAPS.map((c, i) => `<div class="cap" id="cap${i}">${c[2]}</div>`).join('')
+}
+buildCaps()
+
+/* ================================================ the to-do list */
+const TODO = ['customers: list page', 'customers: edit form', 'customers: validation', 'customers: record page', 'products: list page', 'products: edit form',
+  'products: validation', 'products: record page', 'orders: list page', 'orders: edit form', 'orders: validation', 'orders: record page',
+  'relations: order -> customer', 'Supabase client + keys', 'SvelteKit routes', 'sorting + paging', 'filters', 'dark mode', 'error states']
+function todoHtml(n) {
+  const shown = TODO.slice(0, n)
+  const tail = shown.slice(-14)
+  return `<div class="file"><span>admin-panel.todo</span><span class="count">0 / ${n} done</span></div>\n` + tail.map((l) => `[ ] ${l}`).join('\n')
+}
+
+/* ============================== terminal (real output, from render.mjs) */
+let TERM = []
+window.__setTerminal = (lines) => { TERM = lines }
+function termHtml(t) {
+  // Each entry: { cmd } typed over its slot, or { text, cls } that appears at its time.
+  const a = T.s6[0] + 0.15, b = T.s6[1] - 0.3
+  let html = '', typing = false
+  TERM.forEach((l, i) => {
+    const at = lerp(a, b, l.at ?? i / Math.max(1, TERM.length))
+    if (t < at) return
+    if (l.cmd) {
+      const k = clamp((t - at) / 0.9)
+      const s = l.cmd.slice(0, Math.ceil(l.cmd.length * k))
+      typing = k < 1
+      html += `<span class="p">$</span> <span class="c">${esc(s)}</span>${typing ? '<span class="caret"></span>' : ''}\n`
+    } else html += `<span class="${l.cls ?? ''}">${esc(l.text)}</span>\n`
+  })
+  return html
+}
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+
+/* ============================================ payoff frames (real) */
+let PAYOFF = { frames: [], requests: [], host: '', fps: 30 }
+window.__setPayoff = (p) => { PAYOFF = p }
+let lastPayoff = -1
+function setPayoffFrame(t) {
+  if (!PAYOFF.frames.length) return
+  const i = clamp(Math.floor((t - T.s7[0]) * PAYOFF.fps), 0, PAYOFF.frames.length - 1)
+  if (i !== lastPayoff) { $('payoffImg').src = PAYOFF.frames[i]; lastPayoff = i }
+  $('badge').innerHTML = `live: <b>${PAYOFF.host}</b> · requests: <b>${PAYOFF.requests[i]}</b>`
+}
+
+/* ============================================================ tick */
+function blink(t, period, offset) {
+  const p = ((t + offset) % period) / period
+  const w = 0.16 / period
+  return p < w ? Math.sin((p / w) * Math.PI) : 0
+}
+
+// 5:47 for most of the story; the minute hand sweeps to 5:52 while the app is built.
+function clockAt(t) {
+  const min = 47 + 5 * easeInOut(seg(t, T.s6[0], T.s8[0] - 0.2))
+  const sec = Math.floor(t + 12) % 60
+  return { hour: 5 + min / 60, min, sec }
+}
+
+function tick(t) {
+  const wide = inT(t, T.s1) || inT(t, T.s4) || inT(t, T.s6) || inT(t, T.s7) || (t >= T.s8[0] && t < T.homeAt - 0.2)
+  setVis($('world'), wide)
+  setVis($('shotCeo'), inT(t, T.s2) || (t >= T.homeAt - 0.2 && t < T.s9[0]))
+  setVis($('shotDev'), inT(t, T.s3) || inT(t, T.s5))
+  setVis($('end'), t >= T.s9[0])
+
+  /* --- camera on the office: [time, scale, panX, panY] --- */
+  // The wall clock (centre 900,250) scaled 1.9x about 540,670, moved to frame centre.
+  const clockFocus = [1.9, -684, 828]
+  const KEYS = [
+    [0, 1.0, 0, 0], [T.s1[1], 1.06, 0, 0],
+    [T.s4[0], 1.12, 0, 60], [T.s4[0] + 0.9, 1.35, 0, 80], [T.s4[1] - 1.0, 1.35, 0, 80], [T.s4[1], ...clockFocus],
+    [T.s6[0], 1.3, 0, 60], [T.s6[1], 1.32, 0, 60],
+    [T.s7[0], 1.32, 0, 60], [T.s7[1] - 0.6, 1.32, 0, 60], [T.s7[1], 1.0, 0, 0],
+    [T.s8[0], 1.0, 0, 0], [T.s8[0] + 0.6, ...clockFocus], [T.s9[0], ...clockFocus],
+  ]
+  let k = 0
+  while (k < KEYS.length - 2 && t >= KEYS[k + 1][0]) k++
+  const [ta, sa, xa, ya] = KEYS[k], [tb, sb, xb, yb] = KEYS[k + 1]
+  const e = easeInOut(seg(t, ta, tb))
+  $('world').style.transform = `translate(${lerp(xa, xb, e).toFixed(1)}px, ${lerp(ya, yb, e).toFixed(1)}px) scale(${lerp(sa, sb, e).toFixed(4)})`
+
+  /* --- the clock --- */
+  const c = clockAt(t)
+  $('hHour').style.transform = `rotate(${(c.hour / 12) * 360}deg)`
+  $('hMin').style.transform = `rotate(${(c.min / 60) * 360}deg)`
+  $('hSec').style.transform = `rotate(${(c.sec / 60) * 360}deg)`
+
+  /* --- the room --- */
+  $('sun').style.transform = `translateY(${(t * 1.4).toFixed(1)}px)`
+  for (const [id, o] of [['steam1', 0], ['steam2', 1.3]]) {
+    const p = ((t + o) % 2.6) / 2.6
+    $(id).style.transform = `translate(${(Math.sin(t * 2 + o) * 6).toFixed(1)}px, ${(-40 * p).toFixed(1)}px)`
+    $(id).style.opacity = (Math.sin(p * Math.PI) * 0.9).toFixed(2)
+  }
+  const buzzing = t >= T.buzz && t < T.buzz + 1.6
+  $('phoneGlow').style.opacity = t >= T.buzz && t < T.s5[1] ? 1 : 0.08
+  $('phone').style.transform = buzzing ? `translateX(${(Math.sin(t * 90) * 4).toFixed(1)}px)` : ''
+  $('back').style.transform = `translateY(${(Math.sin(t * 1.6) * 5).toFixed(1)}px)`
+
+  /* --- the monitor --- */
+  setVis($('lLock'), t < T.s3[0])
+  setVis($('lTodo'), t >= T.s3[0] && t < T.s6[0])
+  setVis($('lTerm'), t >= T.s6[0] && t < T.s7[0])
+  setVis($('payoff'), t >= T.s7[0])
+  if (t >= T.s3[0] && t < T.s6[0]) $('lTodo').innerHTML = todoHtml(Math.max(1, Math.floor(TODO.length * easeOut(seg(t, T.s3[0], T.s4[1] - 0.6)))))
+  if (t >= T.s6[0] && t < T.s7[0]) $('lTerm').innerHTML = termHtml(t)
+  if (t >= T.s7[0]) setPayoffFrame(t)
+
+  /* --- close-up: the developer --- */
+  if (inT(t, T.s3) || inT(t, T.s5)) {
+    const decided = inT(t, T.s5) && t >= T.decide
+    setVis($('devBrowWorried'), !decided); setVis($('devBrowDet'), decided)
+    setVis($('devMouthWorried'), !decided); setVis($('devMouthDet'), decided)
+    const dart = decided ? 0 : Math.sign(Math.sin(t * 8)) * 7
+    $('devPupils').setAttribute('transform', `translate(${dart} ${t >= T.buzz && inT(t, T.s3) ? 10 : 0})`)
+    const b = decided ? 0.25 : blink(t, 1.5, 0)
+    $('devLidL').setAttribute('transform', `translate(0 ${(-60 + 60 * b).toFixed(1)})`)
+    $('devLidR').setAttribute('transform', `translate(0 ${(-60 + 60 * b).toFixed(1)})`)
+    const s1 = ((t - T.s3[0]) * 60) % 140, s2 = ((t - T.s3[0] - 0.3) * 50) % 140
+    $('sweat1').setAttribute('transform', `translate(0 ${s1.toFixed(1)})`)
+    $('sweat2').setAttribute('transform', `translate(0 ${s2.toFixed(1)})`)
+    setVis($('sweat1'), !decided); setVis($('sweat2'), !decided && t > T.buzz)
+    setVis($('devGlint'), decided)
+    const z = inT(t, T.s5)
+      ? (decided ? lerp(1.12, 1.22, easeOut(seg(t, T.decide, T.decide + 0.2))) : 1.12)
+      : lerp(1.0, 1.1, seg(t, T.s3[0], T.s3[1]))
+    $('dev').style.transformOrigin = '450px 380px'
+    $('dev').style.transform = `scale(${z}) translateX(${(decided ? 0 : Math.sin(t * 40) * 2).toFixed(1)}px)`
+    // The text from Sam slides up when the phone buzzes.
+    const n = easeOut(seg(t, T.buzz, T.buzz + 0.35))
+    setVis($('notif'), inT(t, T.s3) && t >= T.buzz)
+    $('notif').style.transform = `translateY(${((1 - n) * 220).toFixed(1)}px)`
+    $('notif').style.opacity = n
+  }
+
+  /* --- close-up: the CEO --- */
+  if ($('shotCeo').style.display !== 'none') {
+    const late = t >= T.s8[0]
+    const surprised = late && t < T.homeAt + 0.9
+    setVis($('ceoBrowSkeptic'), !late); setVis($('ceoBrowHappy'), late)
+    setVis($('ceoMouthFlat'), !late); setVis($('ceoMouthO'), surprised); setVis($('ceoMouthSmile'), late && !surprised)
+    setVis($('ceoArmsCrossed'), true)
+    const b = blink(t, 2.6, 0.3)
+    const narrow = late ? 0 : 14 * seg(t, T.s2[0] + 0.2, T.s2[1] - 0.4)
+    $('ceoLidL').setAttribute('transform', `translate(0 ${(-44 + narrow + 44 * b).toFixed(1)})`)
+    $('ceoLidR').setAttribute('transform', `translate(0 ${(-44 + narrow + 44 * b).toFixed(1)})`)
+    $('ceoPupils').setAttribute('transform', `translate(${late ? 0 : -4} 0)`)
+    const push = late ? lerp(1.0, 1.06, seg(t, T.homeAt, T.s9[0])) : lerp(1.0, 1.12, easeInOut(seg(t, T.s2[0], T.s2[1])))
+    $('ceo').style.transformOrigin = '450px 320px'
+    $('ceo').style.transform = `scale(${push}) translateY(${(Math.sin(t * 1.8) * 3).toFixed(1)}px)`
+    const b1 = easeOut(seg(t, T.s2[0] + 0.3, T.s2[0] + 0.55))
+    setVis($('ceoBubble1'), !late && t >= T.s2[0] + 0.3)
+    $('ceoBubble1').style.transform = `scale(${b1})`
+    const b2 = easeOut(seg(t, T.homeAt + 0.2, T.homeAt + 0.45))
+    setVis($('ceoBubble2'), late && t >= T.homeAt + 0.2)
+    $('ceoBubble2').style.transform = `scale(${b2})`
+  }
+
+  /* --- captions --- */
+  CAPS.forEach(([a, b], i) => {
+    const el = $(`cap${i}`)
+    const on = t >= a && t < b
+    setVis(el, on)
+    if (!on) return
+    const k = easeOut(seg(t, a, a + 0.3))
+    el.style.opacity = k
+    el.style.transform = `translateY(${(1 - k) * 30}px)`
+  })
+
+  /* --- transitions --- */
+  $('flash').style.opacity = t >= T.s6[0] && t < T.s6[0] + 0.22 ? 1 - seg(t, T.s6[0], T.s6[0] + 0.22) : t >= T.s7[0] && t < T.s7[0] + 0.2 ? 0.6 * (1 - seg(t, T.s7[0], T.s7[0] + 0.2)) : 0
+  $('black').style.opacity = t < 0.3 ? 1 - seg(t, 0, 0.3) : t > T.end - 1.1 ? seg(t, T.end - 1.1, T.end - 0.2) : 0
+}
+
+window.__seek = (t) => tick(t)
+window.__seek(0)
+</script>
+</body>
+</html>

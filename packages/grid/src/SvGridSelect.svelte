@@ -133,7 +133,7 @@
   })
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir} loading={loadingProp || loading}>
+<SvField id={uid} {label} {hint} {error} {required} {dir} {block} loading={loadingProp || loading}>
   <div class="sv-gs sv-gs--{size}"
     class:is-block={block} class:is-disabled={disabled}>
     <button
@@ -144,6 +144,7 @@
       {disabled}
       onclick={() => gs.toggle()}
       {...gs.triggerProps()}
+      id={uid}
       {...editorAria({ id: uid, invalid, required, error, hint, ariaLabel })}
     >
       <span class="sv-gs__value" class:is-placeholder={!triggerText}>{triggerText || placeholder}</span>

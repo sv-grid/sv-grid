@@ -1,0 +1,24 @@
+{
+  "description": "An SSO-first Svelte sign-in card from the SvGrid UI kit: stacked outline SvButtons for Google, GitHub and Microsoft, and a Single sign-on (SAML) button that reveals a company-domain SvTextInput. Below an or SvDivider, a passwordless form emails a magic link and switches the card to a Check your inbox state that shows the address, a 30 second resend cooldown and a Use a different email link.",
+  "keywords": [
+    "svelte sso sign in page",
+    "svelte 5 magic link login",
+    "svelte passwordless sign in",
+    "svelte saml single sign-on form",
+    "svelte social login buttons"
+  ],
+  "faq": [
+    {
+      "question": "How do I hook the provider buttons up to OAuth?",
+      "answer": "Each provider button calls the core's withProvider(p), which runs the onProvider option of createProviderSignIn with a provider id of google, github or microsoft. Replace the demo's timer in onProvider with a redirect to your OAuth start route, for example window.location.href = `/auth/${p.id}`, or with your auth library's signIn(p.id) call. The pending state keeps the clicked button in its loading state and disables the others until it settles."
+    },
+    {
+      "question": "How does the SAML option work?",
+      "answer": "Single sign-on (SAML) toggles ssoOpen, which shows a Company domain field and a Continue with SSO button. The core's submitSso lowercases the domain, checks it looks like acme.com and shows an inline error if not, then calls the onSso option. Swap the demo's timer there for a lookup that maps the domain to your identity provider connection and redirects there."
+    },
+    {
+      "question": "How is the resend cooldown handled?",
+      "answer": "When the onSendLink option resolves, the core's sendLink sets sentTo and starts cooldown at 30. An $effect inside createProviderSignIn schedules one setTimeout per second while cooldown is above zero and clears it when the component unmounts. The resend button stays disabled and shows the seconds left until the count reaches zero; Use a different email clears sentTo and the cooldown and brings the form back with the email still filled in."
+    }
+  ]
+}

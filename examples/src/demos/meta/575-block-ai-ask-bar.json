@@ -1,0 +1,24 @@
+{
+  "description": "An Ask about your data bar for Svelte 5 over 30 invoices in an SvGrid. A plain-words question runs aiFilter from @svgrid/grid, which applies column filters and a sort to the grid and shows its reading as badges; a question starting with summarize runs aiSummarize over the rows on screen. SvChip suggested queries, an SvTextInput error for an empty question, an SvAlert with Try again when the call fails, and Clear brings all rows back.",
+  "keywords": [
+    "svelte ai search bar",
+    "svelte 5 natural language filter",
+    "svelte ask your data block",
+    "svelte data grid ai filter",
+    "svelte ai summarize table"
+  ],
+  "faq": [
+    {
+      "question": "How does a question become grid filters?",
+      "answer": "ask() calls aiFilter(api, question, { apply: true }) with the api from the SvGrid onApiReady callback. The helper sends the column schema to the model, drops any clause that names a column the grid does not have, then calls setFilter and setSort on the grid. The block counts getDisplayedRows() to show how many invoices match."
+    },
+    {
+      "question": "What does Clear do?",
+      "answer": "Clear calls clearAllFilters() and clearSort() on the grid api, empties the question and the answer card, and shows a toast. All 30 invoices come back in their original order."
+    },
+    {
+      "question": "How do I connect a real model?",
+      "answer": "Call setAIProvider once at app start, for example in the root +layout.svelte, with a provider that posts to your own +server.ts endpoint. The block checks hasAIProvider() before every call and only lends itself mockAIProvider when nothing is registered, so your provider is used as soon as it is set."
+    }
+  ]
+}

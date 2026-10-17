@@ -49,6 +49,8 @@
     rowHeights?: ReadonlyArray<{ label: string; height: number }>
     /** The Automations button: how many rules, and what its buttons open. */
     automations?: { count: number; onManage: () => void } | null
+    /** Records someone else changed that nobody here opened yet: what to say, and how to mark them all seen. */
+    changed?: { label: string; onSeen: () => void } | null
   }
 
   let {
@@ -58,6 +60,7 @@
     onViewsChange,
     viewTypes,
     automations = null,
+    changed = null,
     rowHeights = [
       { label: 'Short', height: 34 },
       { label: 'Medium', height: 56 },
@@ -509,6 +512,11 @@
     {/if}
 
     <span class="sv-fvb-spacer"></span>
+    {#if changed}
+      <button type="button" class="sv-fvb-btn sv-fvb-changed" title="Mark all as seen" onclick={changed.onSeen}>
+        <span class="sv-fvb-changed-dot" aria-hidden="true"></span><span>{changed.label}</span>
+      </button>
+    {/if}
     {#if automations}
       <button type="button" class="sv-fvb-btn" class:is-set={automations.count > 0} onclick={automations.onManage}>
         {@render glyph(ICON.bolt)}<span>{automations.count ? plural(automations.count, 'automation', 'automations') : 'Automations'}</span>
@@ -554,6 +562,8 @@
 {/if}
 
 <style>
+  .sv-fvb-changed { color: var(--sg-fg, #0f172a); }
+  .sv-fvb-changed-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sg-accent, #2563eb); flex: none; }
   .sv-fvb {
     container-type: inline-size;
     display: flex; align-items: center; gap: 2px; flex-wrap: wrap; min-height: 40px; padding: 4px 6px;

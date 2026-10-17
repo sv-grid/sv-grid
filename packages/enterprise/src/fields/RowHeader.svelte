@@ -3,18 +3,27 @@
    * The row-number cell with `expandRows`: the number, which on hover (or
    * while the row is selected) turns into a checkbox that selects the row,
    * and an expand button that opens the row as a record. A record with
-   * comments shows how many; a click opens it at its discussion.
+   * comments shows how many; a click opens it at its discussion. A record
+   * someone else changed, not opened here since, has a dot in the corner.
    */
   import { openRecord } from './editor-request.svelte'
-  import { commentsOf } from './activity.svelte'
+  import { commentsOf, timeAgo, unseenOf } from './activity.svelte'
+  import { findFieldUser } from './sources.svelte'
 
   let { ctrl, row, rowIndex }: { ctrl: any; row: { id: string; original: unknown }; rowIndex: number } = $props()
 
   const selected = $derived(!!ctrl.isRowSelected?.(row.id, row.original))
   const comments = $derived(commentsOf(ctrl, row.id).length)
+  const unseen = $derived(unseenOf(ctrl, row.id))
+  const unseenText = $derived.by(() => {
+    if (!unseen) return ''
+    const who = unseen.by ? (findFieldUser(unseen.by)?.name ?? 'Someone else') : 'Someone else'
+    return `${who} ${unseen.added ? 'added' : 'changed'} this record ${timeAgo(unseen.at)}`
+  })
 </script>
 
 <span class="sv-frh" class:is-selected={selected} class:has-comments={comments > 0}>
+  {#if unseen}<span class="sv-frh-unseen" role="img" aria-label={unseenText} title={unseenText}></span>{/if}
   <span class="sv-frh-num" aria-hidden="true">{rowIndex + 1}</span>
   <button
     type="button"
@@ -61,7 +70,17 @@
 </span>
 
 <style>
-  .sv-frh { display: flex; align-items: center; gap: 4px; height: 100%; padding: 0 4px 0 8px; box-sizing: border-box; }
+  .sv-frh { position: relative; display: flex; align-items: center; gap: 4px; height: 100%; padding: 0 4px 0 8px; box-sizing: border-box; }
+  .sv-frh-unseen {
+    position: absolute; top: 4px; inset-inline-end: 3px; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--sg-accent, #2563eb); box-shadow: 0 0 0 2px var(--sg-bg, #fff);
+    animation: sv-frh-unseen-in 1.2s ease-out 2;
+  }
+  @keyframes sv-frh-unseen-in {
+    0% { box-shadow: 0 0 0 2px var(--sg-bg, #fff), 0 0 0 2px color-mix(in srgb, var(--sg-accent, #2563eb) 60%, transparent); }
+    100% { box-shadow: 0 0 0 2px var(--sg-bg, #fff), 0 0 0 9px transparent; }
+  }
+  @media (prefers-reduced-motion: reduce) { .sv-frh-unseen { animation: none; } }
   .sv-frh-num { flex: 1; min-width: 0; text-align: center; color: var(--sg-muted, #64748b); font-variant-numeric: tabular-nums; }
   .sv-frh-check {
     display: none; flex: none; align-items: center; justify-content: center; width: 16px; height: 16px; padding: 0;

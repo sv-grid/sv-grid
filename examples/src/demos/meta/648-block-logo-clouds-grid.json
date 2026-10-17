@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte logo cloud built from the SvGrid UI kit: a heading and one line of social proof over a grid of twelve made-up customer wordmarks, each an inline SVG glyph with its own type style. Wordmarks with a case study are links that go from muted to full contrast on hover or keyboard focus, and an SvButton under the grid opens all customer stories.",
+  "keywords": [
+    "svelte logo cloud",
+    "svelte 5 customer logos grid",
+    "svelte trusted by section",
+    "svelte social proof logos",
+    "svelte logo wall block"
+  ],
+  "faq": [
+    {
+      "question": "Which logos are links?",
+      "answer": "Each logo in createLogoCloud({ logos }) has an optional href. Logos with one render as an <a> spread with linkProps(), which sets the href and an aria-label like \"Northwind customer story\"; logos without one render as a plain labelled element that stays muted on hover."
+    },
+    {
+      "question": "Can I route the links myself?",
+      "answer": "Yes. Pass onOpen and linkProps() prevents the default navigation and calls it with the logo, which the demo uses to show a toast. Leave onOpen out and the links navigate to their href like normal anchors."
+    },
+    {
+      "question": "How does the grid wrap on phones?",
+      "answer": "Four columns on desktop, three below 860 px and two below 480 px, where the wordmarks shrink a little. Each cell draws its own right and bottom rule and the frame clips the outer ones, so a list that does not fill the last row still looks clean."
+    }
+  ]
+}

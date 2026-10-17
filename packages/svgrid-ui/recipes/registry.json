@@ -100,7 +100,7 @@
         "field",
         "file-upload",
         "collapsible",
-        "layout",
+        "layout-primitives",
         "typography",
         "display"
       ]
@@ -133,6 +133,259 @@
         "command",
         "tour",
         "rich-text"
+      ]
+    },
+    "blocks/auth": {
+      "title": "Sign-in & registration blocks",
+      "items": [
+        "login",
+        "signup",
+        "otp",
+        "auth-providers",
+        "auth-forgot-password"
+      ]
+    },
+    "blocks/error-pages": {
+      "title": "Error pages blocks",
+      "items": [
+        "error-pages-404-links",
+        "error-pages-500",
+        "error-pages-maintenance",
+        "error-pages-403"
+      ]
+    },
+    "blocks/empty-states": {
+      "title": "Empty states blocks",
+      "items": [
+        "empty-states-simple",
+        "empty-states-drop-zone",
+        "empty-states-no-results",
+        "empty-states-card"
+      ]
+    },
+    "blocks/form-layouts": {
+      "title": "Form layouts blocks",
+      "items": [
+        "form-layouts-stacked",
+        "form-layouts-two-column",
+        "form-layouts-settings",
+        "form-layouts-settings-nav",
+        "form-layouts-danger-zone"
+      ]
+    },
+    "blocks/page-headings": {
+      "title": "Page headings blocks",
+      "items": [
+        "page-headings-breadcrumbs",
+        "page-headings-tabs",
+        "page-headings-meta",
+        "page-headings-stats"
+      ]
+    },
+    "blocks/onboarding": {
+      "title": "Onboarding blocks",
+      "items": [
+        "onboarding-wizard",
+        "onboarding-checklist"
+      ]
+    },
+    "blocks/app-shells": {
+      "title": "App shells & dashboards blocks",
+      "items": [
+        "dashboard",
+        "app-shell"
+      ]
+    },
+    "blocks/kpi-cards": {
+      "title": "KPI cards blocks",
+      "items": [
+        "kpi-cards-icon",
+        "kpi-cards-trend",
+        "kpi-cards-sparkline"
+      ]
+    },
+    "blocks/stats": {
+      "title": "Stats blocks",
+      "items": [
+        "stats-trends",
+        "stats-banded"
+      ]
+    },
+    "blocks/filter-panels": {
+      "title": "Filter panels blocks",
+      "items": [
+        "filter-panels-sidebar",
+        "filter-panels-toolbar",
+        "filter-panels-chips",
+        "filter-panels-collapsible"
+      ]
+    },
+    "blocks/activity-feeds": {
+      "title": "Activity feeds blocks",
+      "items": [
+        "activity-feeds-timeline",
+        "activity-feeds-notifications",
+        "activity-feeds-comments",
+        "activity-feeds-audit-log"
+      ]
+    },
+    "blocks/ai": {
+      "title": "AI assistant blocks",
+      "items": [
+        "ai-prompt-suggestions",
+        "ai-ask-bar",
+        "ai-settings"
+      ]
+    },
+    "blocks/orders": {
+      "title": "Orders blocks",
+      "items": [
+        "orders-history",
+        "orders-tracking"
+      ]
+    },
+    "blocks/banners": {
+      "title": "Banners blocks",
+      "items": [
+        "banners-announcement",
+        "banners-info",
+        "banners-cookie-consent",
+        "banners-billing-warning"
+      ]
+    },
+    "blocks/navbars": {
+      "title": "Navbars blocks",
+      "items": [
+        "navbars-simple",
+        "navbars-search",
+        "navbars-dropdowns"
+      ]
+    },
+    "blocks/footers": {
+      "title": "Footers blocks",
+      "items": [
+        "footers-sitemap",
+        "footers-simple"
+      ]
+    },
+    "blocks/checkout": {
+      "title": "Checkout blocks",
+      "items": [
+        "checkout-split",
+        "checkout-steps",
+        "checkout-payment-methods",
+        "checkout-confirmation"
+      ]
+    },
+    "blocks/shopping-carts": {
+      "title": "Shopping carts blocks",
+      "items": [
+        "shopping-carts-page",
+        "shopping-carts-panel"
+      ]
+    },
+    "blocks/reviews": {
+      "title": "Reviews blocks",
+      "items": [
+        "reviews-summary",
+        "reviews-list",
+        "reviews-write"
+      ]
+    },
+    "blocks/contact": {
+      "title": "Contact blocks",
+      "items": [
+        "contact-centered",
+        "contact-cards",
+        "contact-hours"
+      ]
+    },
+    "blocks/hero": {
+      "title": "Hero blocks",
+      "items": [
+        "hero-centered",
+        "hero-signup"
+      ]
+    },
+    "blocks/features": {
+      "title": "Features blocks",
+      "items": [
+        "features-icons",
+        "features-screenshot"
+      ]
+    },
+    "blocks/cta": {
+      "title": "Call to action blocks",
+      "items": [
+        "cta-centered",
+        "cta-justified"
+      ]
+    },
+    "blocks/pricing": {
+      "title": "Pricing blocks",
+      "items": [
+        "pricing",
+        "pricing-highlighted",
+        "pricing-comparison"
+      ]
+    },
+    "blocks/faq": {
+      "title": "FAQ blocks",
+      "items": [
+        "faq-accordion",
+        "faq-centered"
+      ]
+    },
+    "blocks/bento": {
+      "title": "Bento grids blocks",
+      "items": [
+        "bento-features"
+      ]
+    },
+    "blocks/testimonials": {
+      "title": "Testimonials blocks",
+      "items": [
+        "testimonials-cards",
+        "testimonials-carousel"
+      ]
+    },
+    "blocks/logo-clouds": {
+      "title": "Logo clouds blocks",
+      "items": [
+        "logo-clouds-grid"
+      ]
+    },
+    "blocks/team": {
+      "title": "Team blocks",
+      "items": [
+        "team-grid"
+      ]
+    },
+    "blocks/product-cards": {
+      "title": "Product cards blocks",
+      "items": [
+        "product-cards-grid",
+        "product-cards-horizontal"
+      ]
+    },
+    "blocks/product-lists": {
+      "title": "Product lists blocks",
+      "items": [
+        "product-lists-toolbar",
+        "product-lists-featured"
+      ]
+    },
+    "blocks/product-overview": {
+      "title": "Product overview blocks",
+      "items": [
+        "product-overview-split"
+      ]
+    },
+    "blocks/blog": {
+      "title": "Blog blocks",
+      "items": [
+        "blog-cards",
+        "blog-featured"
       ]
     }
   },
@@ -1261,8 +1514,9 @@
       "group": "layout"
     },
     {
-      "id": "layout",
+      "id": "layout-primitives",
       "title": "Layout primitives",
+      "export": "SvStack",
       "description": "SvStack (column), SvGroup (row), and SvSimpleGrid (responsive grid) - gap-based flex/grid wrappers.",
       "aliases": [
         "svstack",
@@ -1718,6 +1972,1590 @@
         }
       ],
       "group": "navigation"
+    },
+    {
+      "id": "login",
+      "title": "Login",
+      "description": "A two-column authentication page: a branded gradient panel beside a sign-in SvCard with social SvButtons, SvTextInput + SvPasswordInput (reveal), remember-me SvCheckBox, an \"or\" SvDivider and forgot-password link. Drops into any route as-is.",
+      "aliases": [
+        "420-block-login"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "login.svelte",
+          "from": "blocks/auth/login.svelte"
+        }
+      ],
+      "group": "blocks/auth"
+    },
+    {
+      "id": "signup",
+      "title": "Sign-up",
+      "description": "A centered account-creation card: two-up name fields, work email, a password with the live strength meter, a plan SvSegmented switch, terms SvCheckBox and a benefits rail. Submit fires a promise toast. Pure UI-kit.",
+      "aliases": [
+        "421-block-signup"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "signup.svelte",
+          "from": "blocks/auth/signup.svelte"
+        }
+      ],
+      "group": "blocks/auth"
+    },
+    {
+      "id": "otp",
+      "title": "Two-factor / OTP",
+      "description": "The verification step of a sign-in flow: SvOtpInput (6 digits, auto-advance + onComplete), a resend cooldown timer, and the waiting -> verifying -> verified states. Enter 000000 to see the error path.",
+      "aliases": [
+        "422-block-otp"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "otp.svelte",
+          "from": "blocks/auth/otp.svelte"
+        }
+      ],
+      "group": "blocks/auth"
+    },
+    {
+      "id": "auth-providers",
+      "title": "Sign-in with providers",
+      "description": "SSO-first SvCard with Google, GitHub and Microsoft SvButtons, plus a SAML option that reveals a company-domain SvTextInput. Below an SvDivider, a magic-link form switches to a Check your inbox state with a 30 s resend cooldown.",
+      "aliases": [
+        "526-block-auth-providers"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "auth-providers.svelte",
+          "from": "blocks/auth/auth-providers.svelte"
+        }
+      ],
+      "group": "blocks/auth"
+    },
+    {
+      "id": "auth-forgot-password",
+      "title": "Forgot password",
+      "description": "Password recovery in one SvCard. An email SvTextInput with validation and a loading SvButton leads to a check-your-email state that names the address, has a 60 s resend cooldown and a back-to-sign-in link.",
+      "aliases": [
+        "527-block-auth-forgot-password"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "auth-forgot-password.svelte",
+          "from": "blocks/auth/auth-forgot-password.svelte"
+        }
+      ],
+      "group": "blocks/auth"
+    },
+    {
+      "id": "error-pages-404-links",
+      "title": "404 with helpful links",
+      "description": "Site search SvTextInput with a leading icon that filters a list of popular pages as you type (icon, title, description, chevron). An empty search shows a field error; a real query fires a toast.",
+      "aliases": [
+        "530-block-error-pages-404-links"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "error-pages-404-links.svelte",
+          "from": "blocks/error-pages/error-pages-404-links.svelte"
+        }
+      ],
+      "group": "blocks/error-pages"
+    },
+    {
+      "id": "error-pages-500",
+      "title": "500 server error",
+      "description": "Retry SvButton with loading that alternates fail and succeed, each with a toast. Also shows a request id with a Copy button, the failure time and a status link; SvBadge flips to Resolved.",
+      "aliases": [
+        "531-block-error-pages-500"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "error-pages-500.svelte",
+          "from": "blocks/error-pages/error-pages-500.svelte"
+        }
+      ],
+      "group": "blocks/error-pages"
+    },
+    {
+      "id": "error-pages-maintenance",
+      "title": "Maintenance page",
+      "description": "Planned downtime page with a live countdown, an SvProgress bar and step list that advance with the clock, and a notify-me SvTextInput that validates the email before it submits.",
+      "aliases": [
+        "532-block-error-pages-maintenance"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "error-pages-maintenance.svelte",
+          "from": "blocks/error-pages/error-pages-maintenance.svelte"
+        }
+      ],
+      "group": "blocks/error-pages"
+    },
+    {
+      "id": "error-pages-403",
+      "title": "Access denied",
+      "description": "403 page naming the missing permission, with the signed-in account (SvAvatar and email) and Switch account. Request access opens an optional SvTextArea note, sends with loading and a toast, then shows Pending.",
+      "aliases": [
+        "533-block-error-pages-403"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "error-pages-403.svelte",
+          "from": "blocks/error-pages/error-pages-403.svelte"
+        }
+      ],
+      "group": "blocks/error-pages"
+    },
+    {
+      "id": "empty-states-simple",
+      "title": "Empty state",
+      "description": "An empty Dashboards page: SvEmptyState with an icon, title, one sentence and a New dashboard SvButton that opens an inline SvTextInput form. Creating adds the dashboard to the list; deleting the last one brings the empty state back, with Undo in the toast.",
+      "aliases": [
+        "534-block-empty-states-simple"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "empty-states-simple.svelte",
+          "from": "blocks/empty-states/empty-states-simple.svelte"
+        }
+      ],
+      "group": "blocks/empty-states"
+    },
+    {
+      "id": "empty-states-drop-zone",
+      "title": "Upload drop zone",
+      "description": "A Files area that starts as a large dashed SvFileUpload drop zone (PDF, Word, Excel, images, 10 MB each). Added files list with an SvProgress upload bar, size and a Remove button; removing every file returns the empty state.",
+      "aliases": [
+        "536-block-empty-states-drop-zone"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "empty-states-drop-zone.svelte",
+          "from": "blocks/empty-states/empty-states-drop-zone.svelte"
+        }
+      ],
+      "group": "blocks/empty-states"
+    },
+    {
+      "id": "empty-states-no-results",
+      "title": "No search results",
+      "description": "A customer search with an SvTextInput and removable SvChip filters whose starting query matches nothing. SvEmptyState echoes the query and offers Clear filters, Clear search or removing one filter; clearing brings results back.",
+      "aliases": [
+        "537-block-empty-states-no-results"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "empty-states-no-results.svelte",
+          "from": "blocks/empty-states/empty-states-no-results.svelte"
+        }
+      ],
+      "group": "blocks/empty-states"
+    },
+    {
+      "id": "empty-states-card",
+      "title": "Empty widget card",
+      "description": "A dashboard row of three SvCard widgets: Revenue with SvStat and SvSparkline, Signups showing a compact SvEmptyState, and Support tickets asking to connect a source. Connect help desk fills that card with data. Stacks on phones.",
+      "aliases": [
+        "538-block-empty-states-card"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "empty-states-card.svelte",
+          "from": "blocks/empty-states/empty-states-card.svelte"
+        }
+      ],
+      "group": "blocks/empty-states"
+    },
+    {
+      "id": "form-layouts-stacked",
+      "title": "Stacked form",
+      "description": "A New project form in one column: SvTextInput, SvTextArea with a counter, SvDropDownList owner, SvRadioGroup visibility and an SvDateTimePicker due date. Create shows errors under each field, then a toast, and adds the project to a list.",
+      "aliases": [
+        "540-block-form-layouts-stacked"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "form-layouts-stacked.svelte",
+          "from": "blocks/form-layouts/form-layouts-stacked.svelte"
+        }
+      ],
+      "group": "blocks/form-layouts"
+    },
+    {
+      "id": "form-layouts-two-column",
+      "title": "Two-column form",
+      "description": "Account settings in Profile, Address and Notifications sections: title and explanation on the left, the form on the right, built from SvTextInput, SvTextArea, SvDropDownList, SvCheckBox and SvRadioGroup. Each section saves on its own and stacks on phones.",
+      "aliases": [
+        "541-block-form-layouts-two-column"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "form-layouts-two-column.svelte",
+          "from": "blocks/form-layouts/form-layouts-two-column.svelte"
+        }
+      ],
+      "group": "blocks/form-layouts"
+    },
+    {
+      "id": "form-layouts-settings",
+      "title": "Notification settings",
+      "description": "Events by Email, Push and SMS with an SvSwitchButton per cell and an SvSegmented digest frequency. A sticky save bar counts unsaved changes; Save stores them and Discard restores the saved state.",
+      "aliases": [
+        "542-block-form-layouts-settings"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "form-layouts-settings.svelte",
+          "from": "blocks/form-layouts/form-layouts-settings.svelte"
+        }
+      ],
+      "group": "blocks/form-layouts"
+    },
+    {
+      "id": "form-layouts-settings-nav",
+      "title": "Settings with side nav",
+      "description": "Workspace settings with a General, Security, Billing and Team menu that swaps the form on the right, built from SvTextInput, SvDropDownList, SvSwitchButton and SvSegmented. Team invites members into the list. On phones the menu becomes an SvDropDownList.",
+      "aliases": [
+        "543-block-form-layouts-settings-nav"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "form-layouts-settings-nav.svelte",
+          "from": "blocks/form-layouts/form-layouts-settings-nav.svelte"
+        }
+      ],
+      "group": "blocks/form-layouts"
+    },
+    {
+      "id": "form-layouts-danger-zone",
+      "title": "Danger zone",
+      "description": "Destructive project actions in a --sg-danger bordered panel: transfer ownership with an SvDropDownList and SvCheckBox acknowledgement, archive through SvPopconfirm, and delete through an SvModal that enables Delete only once the project name is typed exactly.",
+      "aliases": [
+        "544-block-form-layouts-danger-zone"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "form-layouts-danger-zone.svelte",
+          "from": "blocks/form-layouts/form-layouts-danger-zone.svelte"
+        }
+      ],
+      "group": "blocks/form-layouts"
+    },
+    {
+      "id": "page-headings-breadcrumbs",
+      "title": "Page heading with breadcrumbs",
+      "description": "Release page heading with an SvBreadcrumb trail above the title, a status SvBadge, and Edit notes / Publish release SvButtons. On phones the trail becomes one Back link.",
+      "aliases": [
+        "546-block-page-headings-breadcrumbs"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "page-headings-breadcrumbs.svelte",
+          "from": "blocks/page-headings/page-headings-breadcrumbs.svelte"
+        }
+      ],
+      "group": "blocks/page-headings"
+    },
+    {
+      "id": "page-headings-tabs",
+      "title": "Page heading with tabs",
+      "description": "Project heading with Invite and Run sync SvButtons over an SvTabs strip (Overview, Activity, Settings) with live counts. Run sync logs an entry and jumps to Activity.",
+      "aliases": [
+        "547-block-page-headings-tabs"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "page-headings-tabs.svelte",
+          "from": "blocks/page-headings/page-headings-tabs.svelte"
+        }
+      ],
+      "group": "blocks/page-headings"
+    },
+    {
+      "id": "page-headings-meta",
+      "title": "Page heading with meta",
+      "description": "Job posting heading with a status SvBadge, icon meta items (location, salary, closing date, manager) and a Status SvMenu. Picking Open, Paused or Closed updates the badge.",
+      "aliases": [
+        "548-block-page-headings-meta"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "page-headings-meta.svelte",
+          "from": "blocks/page-headings/page-headings-meta.svelte"
+        }
+      ],
+      "group": "blocks/page-headings"
+    },
+    {
+      "id": "page-headings-stats",
+      "title": "Page heading with stats",
+      "description": "Revenue heading with an SvSegmented 7d/30d/90d switch and four SvStat values with deltas. Changing the range swaps every number; refund rate uses invert.",
+      "aliases": [
+        "549-block-page-headings-stats"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "page-headings-stats.svelte",
+          "from": "blocks/page-headings/page-headings-stats.svelte"
+        }
+      ],
+      "group": "blocks/page-headings"
+    },
+    {
+      "id": "onboarding-wizard",
+      "title": "Setup wizard",
+      "description": "A four-step workspace setup with SvStepper: name and a live URL slug, teammate emails in SvTagsInput, plan radio cards, then a review. Next checks each step, and Create workspace runs a toast.promise.",
+      "aliases": [
+        "551-block-onboarding-wizard"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "onboarding-wizard.svelte",
+          "from": "blocks/onboarding/onboarding-wizard.svelte"
+        }
+      ],
+      "group": "blocks/onboarding"
+    },
+    {
+      "id": "onboarding-checklist",
+      "title": "Progress checklist",
+      "description": "A getting-started card with an SvProgress bar and an x of y done count. Each task is an SvCollapsible with a button that completes it; done tasks are struck through, and at 5 of 5 the card turns into a dismissable all-done state.",
+      "aliases": [
+        "552-block-onboarding-checklist"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "onboarding-checklist.svelte",
+          "from": "blocks/onboarding/onboarding-checklist.svelte"
+        }
+      ],
+      "group": "blocks/onboarding"
+    },
+    {
+      "id": "dashboard",
+      "title": "Analytics dashboard",
+      "description": "A full overview page: a range SvSegmented + actions header, a KPI grid (SvStat + SvSparkline), a revenue bar panel, a recent-activity SvTimeline and a top-products list with SvProgress bars. No grid dependency.",
+      "aliases": [
+        "423-block-dashboard"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "dashboard.svelte",
+          "from": "blocks/app-shells/dashboard.svelte"
+        }
+      ],
+      "group": "blocks/app-shells"
+    },
+    {
+      "id": "app-shell",
+      "title": "App shell",
+      "description": "A complete application layout: a SvNavPane sidebar with sections + badges, a top bar with SvBreadcrumb, search and an account SvMenu, and a routed content area. Nav swaps the page; the toggle collapses the rail to an icon rail.",
+      "aliases": [
+        "424-block-app-shell"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "app-shell.svelte",
+          "from": "blocks/app-shells/app-shell.svelte"
+        }
+      ],
+      "group": "blocks/app-shells"
+    },
+    {
+      "id": "kpi-cards-icon",
+      "title": "KPI cards with icons",
+      "description": "Metric tiles with a tinted inline-SVG icon, today's value and the 7-day average. Clicking a card selects it (aria-pressed) and the SvCard panel below shows that metric's last 7 days as one bar and value per day.",
+      "aliases": [
+        "556-block-kpi-cards-icon"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "kpi-cards-icon.svelte",
+          "from": "blocks/kpi-cards/kpi-cards-icon.svelte"
+        }
+      ],
+      "group": "blocks/kpi-cards"
+    },
+    {
+      "id": "kpi-cards-trend",
+      "title": "KPI cards with trend",
+      "description": "Four SvStat cards with the change vs the previous period, an up/down arrow colored by whether the move is good, and the previous value. Churn and time to convert use invert. An SvSegmented 7d/30d/90d switch changes every number.",
+      "aliases": [
+        "557-block-kpi-cards-trend"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "kpi-cards-trend.svelte",
+          "from": "blocks/kpi-cards/kpi-cards-trend.svelte"
+        }
+      ],
+      "group": "blocks/kpi-cards"
+    },
+    {
+      "id": "kpi-cards-sparkline",
+      "title": "KPI cards with sparklines",
+      "description": "Live API metrics in SvCard tiles, each with value, 30-second average and peak, and a full-width SvSparkline area chart. The Live SvSwitchButton appends a point every second; turning it off stops the interval.",
+      "aliases": [
+        "559-block-kpi-cards-sparkline"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "kpi-cards-sparkline.svelte",
+          "from": "blocks/kpi-cards/kpi-cards-sparkline.svelte"
+        }
+      ],
+      "group": "blocks/kpi-cards"
+    },
+    {
+      "id": "stats-trends",
+      "title": "Stats with trends",
+      "description": "Weekly report figures, each with an icon, last week's value and a trend chip; metrics where lower is better flip the chip color. Export CSV downloads the raw numbers and confirms with a toast.",
+      "aliases": [
+        "564-block-stats-trends"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "stats-trends.svelte",
+          "from": "blocks/stats/stats-trends.svelte"
+        }
+      ],
+      "group": "blocks/stats"
+    },
+    {
+      "id": "stats-banded",
+      "title": "Banded stats",
+      "description": "Status board on a tinted band: a health SvBadge and a bordered grid of six cells with value, label, status dot and change since an hour ago. An SvSwitchButton turns on live polling.",
+      "aliases": [
+        "565-block-stats-banded"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "stats-banded.svelte",
+          "from": "blocks/stats/stats-banded.svelte"
+        }
+      ],
+      "group": "blocks/stats"
+    },
+    {
+      "id": "filter-panels-sidebar",
+      "title": "Sidebar filters",
+      "description": "Product list with a filter sidebar: SvCheckBox category and brand groups with live counts, a range SvSlider for price, an SvRadioGroup minimum rating and Reset. On phones the filters open in an SvDrawer from a Filters button showing the active count.",
+      "aliases": [
+        "566-block-filter-panels-sidebar"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "filter-panels-sidebar.svelte",
+          "from": "blocks/filter-panels/filter-panels-sidebar.svelte"
+        }
+      ],
+      "group": "blocks/filter-panels"
+    },
+    {
+      "id": "filter-panels-toolbar",
+      "title": "Filter toolbar",
+      "description": "One-row toolbar over a report list: SvTextInput search, SvDropDownList filters for type, team and status, an SvDropDownList sort and an SvSegmented list/grid switch. The list re-sorts and refilters live; the row wraps on phones.",
+      "aliases": [
+        "567-block-filter-panels-toolbar"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "filter-panels-toolbar.svelte",
+          "from": "blocks/filter-panels/filter-panels-toolbar.svelte"
+        }
+      ],
+      "group": "blocks/filter-panels"
+    },
+    {
+      "id": "filter-panels-chips",
+      "title": "Applied filter chips",
+      "description": "An Add filter SvMenu with field submenus adds removable SvChip filters like Status: Open. A result count, Clear all and a read-only query-string field with Copy link update with the ticket list.",
+      "aliases": [
+        "568-block-filter-panels-chips"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "filter-panels-chips.svelte",
+          "from": "blocks/filter-panels/filter-panels-chips.svelte"
+        }
+      ],
+      "group": "blocks/filter-panels"
+    },
+    {
+      "id": "filter-panels-collapsible",
+      "title": "Collapsible filters",
+      "description": "SvAccordion filter sections (Status checkboxes, Assignee dropdown, an SvDateRangeInput due date, an SvMultiSelect for tags), each header with an SvBadge count, and an SvGrid of tasks beside them that refilters on every change.",
+      "aliases": [
+        "569-block-filter-panels-collapsible"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "filter-panels-collapsible.svelte",
+          "from": "blocks/filter-panels/filter-panels-collapsible.svelte"
+        }
+      ],
+      "group": "blocks/filter-panels"
+    },
+    {
+      "id": "activity-feeds-timeline",
+      "title": "Activity timeline",
+      "description": "Project activity grouped by day into SvTimeline lists, with a marker color and glyph per event type (commit, comment, deploy, status change), actor, detail and relative time. Load more appends older events with a loading state.",
+      "aliases": [
+        "570-block-activity-feeds-timeline"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "activity-feeds-timeline.svelte",
+          "from": "blocks/activity-feeds/activity-feeds-timeline.svelte"
+        }
+      ],
+      "group": "blocks/activity-feeds"
+    },
+    {
+      "id": "activity-feeds-notifications",
+      "title": "Notification list",
+      "description": "A bell SvButton with an unread count opens the list in an SvPopover (inline below 560 px): All / Unread SvSegmented, click to mark read, Mark all as read, archive with an Undo toast, and an SvEmptyState when nothing is left.",
+      "aliases": [
+        "571-block-activity-feeds-notifications"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "activity-feeds-notifications.svelte",
+          "from": "blocks/activity-feeds/activity-feeds-notifications.svelte"
+        }
+      ],
+      "group": "blocks/activity-feeds"
+    },
+    {
+      "id": "activity-feeds-comments",
+      "title": "Comment feed",
+      "description": "A discussion thread with SvAvatar, name, relative time and body, Like and Reply, and one level of nested replies. Reply opens an inline SvTextArea; the bottom composer validates, shows a loading Post button and appends the comment.",
+      "aliases": [
+        "572-block-activity-feeds-comments"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "activity-feeds-comments.svelte",
+          "from": "blocks/activity-feeds/activity-feeds-comments.svelte"
+        }
+      ],
+      "group": "blocks/activity-feeds"
+    },
+    {
+      "id": "activity-feeds-audit-log",
+      "title": "Audit log",
+      "description": "A compact audit log grouped by day with time, SvAvatar actor, SvBadge action, target and IP. Two SvDropDownList filters narrow it by actor and action, and updated rows expand into a before/after diff of each field.",
+      "aliases": [
+        "573-block-activity-feeds-audit-log"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "activity-feeds-audit-log.svelte",
+          "from": "blocks/activity-feeds/activity-feeds-audit-log.svelte"
+        }
+      ],
+      "group": "blocks/activity-feeds"
+    },
+    {
+      "id": "ai-prompt-suggestions",
+      "title": "Prompt suggestions",
+      "description": "An empty assistant chat with four starter prompt cards over a sales pipeline. A card fills the SvTextInput and sends it to aiFilter, aiSummarize or aiFindAnomalies; the reply appears word by word and a Stop SvButton cancels it.",
+      "aliases": [
+        "574-block-ai-prompt-suggestions"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "ai-prompt-suggestions.svelte",
+          "from": "blocks/ai/ai-prompt-suggestions.svelte"
+        }
+      ],
+      "group": "blocks/ai"
+    },
+    {
+      "id": "ai-ask-bar",
+      "title": "Ask bar",
+      "description": "An Ask about your data bar over 30 invoices in an SvGrid. aiFilter turns a question into grid filters and a sort; summarize questions run aiSummarize over the rows on screen. SvChip suggestions, an SvAlert error state and Clear.",
+      "aliases": [
+        "575-block-ai-ask-bar"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "ai-ask-bar.svelte",
+          "from": "blocks/ai/ai-ask-bar.svelte"
+        }
+      ],
+      "group": "blocks/ai"
+    },
+    {
+      "id": "ai-settings",
+      "title": "AI settings",
+      "description": "Assistant settings with a model SvDropDownList, temperature SvSlider, max length SvNumberInput, a system prompt SvTextArea with counter and SvSwitchButton tools. A preview card shows the request payload live; Save and Reset confirm with a toast.",
+      "aliases": [
+        "576-block-ai-settings"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "ai-settings.svelte",
+          "from": "blocks/ai/ai-settings.svelte"
+        }
+      ],
+      "group": "blocks/ai"
+    },
+    {
+      "id": "orders-history",
+      "title": "Order history",
+      "description": "Past orders in SvGrid with sortable columns, a right-aligned currency total and an SvBadge status cell. An SvSegmented filters by status, and View or a row click opens the order in an SvDrawer with its lines, totals and address.",
+      "aliases": [
+        "579-block-orders-history"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "orders-history.svelte",
+          "from": "blocks/orders/orders-history.svelte"
+        }
+      ],
+      "group": "blocks/orders"
+    },
+    {
+      "id": "orders-tracking",
+      "title": "Order tracking",
+      "description": "A shipment page: an SvBadge header, a five-stage delivery stepper with timestamps (across on desktop, down on phones), carrier scan events newest first, and an SvCard with the tracking number and a copy button. Refresh pulls the next scan.",
+      "aliases": [
+        "580-block-orders-tracking"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "orders-tracking.svelte",
+          "from": "blocks/orders/orders-tracking.svelte"
+        }
+      ],
+      "group": "blocks/orders"
+    },
+    {
+      "id": "banners-announcement",
+      "title": "Announcement bar",
+      "description": "Slim bar above a mock app header with an SvBadge, one line of news, a changelog link and dismiss. Dismissing fires an SvToaster toast with Undo, and an SvButton brings the bar back.",
+      "aliases": [
+        "581-block-banners-announcement"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "banners-announcement.svelte",
+          "from": "blocks/banners/banners-announcement.svelte"
+        }
+      ],
+      "group": "blocks/banners"
+    },
+    {
+      "id": "banners-info",
+      "title": "Inline info banners",
+      "description": "SvAlert in danger, warning, success and info tones inside a settings page, all dismissable. Retry now and Rotate key show a loading state and then clear their banner; Show hidden banners restores them.",
+      "aliases": [
+        "583-block-banners-info"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "banners-info.svelte",
+          "from": "blocks/banners/banners-info.svelte"
+        }
+      ],
+      "group": "blocks/banners"
+    },
+    {
+      "id": "banners-cookie-consent",
+      "title": "Cookie consent",
+      "description": "Consent bar with Accept all, Reject non-essential and Customize. Customize opens an SvModal with an SvSwitchButton per category (Necessary locked on). The saved choice becomes a one-line summary with Change settings.",
+      "aliases": [
+        "585-block-banners-cookie-consent"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "banners-cookie-consent.svelte",
+          "from": "blocks/banners/banners-cookie-consent.svelte"
+        }
+      ],
+      "group": "blocks/banners"
+    },
+    {
+      "id": "banners-billing-warning",
+      "title": "Billing warning banner",
+      "description": "Failed-payment banner with an SvBadge counting days left. Update payment method opens an SvModal card form: SvTextInput plus SvMaskedInput for card number (Luhn check), expiry and CVC. Saving resolves the banner to success.",
+      "aliases": [
+        "586-block-banners-billing-warning"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "banners-billing-warning.svelte",
+          "from": "blocks/banners/banners-billing-warning.svelte"
+        }
+      ],
+      "group": "blocks/banners"
+    },
+    {
+      "id": "navbars-simple",
+      "title": "Simple navbar",
+      "description": "Brand, four links with aria-current and a Start free trial SvButton over a mock page whose heading follows the current link. Below 768 px a menu button opens an in-flow panel that Escape or a link click closes.",
+      "aliases": [
+        "587-block-navbars-simple"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "navbars-simple.svelte",
+          "from": "blocks/navbars/navbars-simple.svelte"
+        }
+      ],
+      "group": "blocks/navbars"
+    },
+    {
+      "id": "navbars-search",
+      "title": "Navbar with search",
+      "description": "Storefront header with an SvTextInput search that toasts the query, an account SvMenu and a cart button with an SvBadge count that Add to cart raises. On phones the search moves under the bar.",
+      "aliases": [
+        "588-block-navbars-search"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "navbars-search.svelte",
+          "from": "blocks/navbars/navbars-search.svelte"
+        }
+      ],
+      "group": "blocks/navbars"
+    },
+    {
+      "id": "navbars-dropdowns",
+      "title": "Navbar with dropdown menus",
+      "description": "Products opens a two-column mega menu of icon, title and description links; Resources opens an SvMenu. Enter, Space or ArrowDown opens, arrow keys move between links, and Escape closes and returns focus.",
+      "aliases": [
+        "591-block-navbars-dropdowns"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "navbars-dropdowns.svelte",
+          "from": "blocks/navbars/navbars-dropdowns.svelte"
+        }
+      ],
+      "group": "blocks/navbars"
+    },
+    {
+      "id": "footers-sitemap",
+      "title": "Sitemap footer",
+      "description": "Brand and a one-line summary beside four link columns built from one data array, with an SvBadge on a new link and a Back to top SvButton. The columns go 4, 2, then 1 as the screen narrows.",
+      "aliases": [
+        "593-block-footers-sitemap"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "footers-sitemap.svelte",
+          "from": "blocks/footers/footers-sitemap.svelte"
+        }
+      ],
+      "group": "blocks/footers"
+    },
+    {
+      "id": "footers-simple",
+      "title": "Simple footer",
+      "description": "One row with the copyright on the left and Privacy, Terms and Status on the right, with an Operational SvBadge on Status. The row stacks on phones.",
+      "aliases": [
+        "595-block-footers-simple"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "footers-simple.svelte",
+          "from": "blocks/footers/footers-simple.svelte"
+        }
+      ],
+      "group": "blocks/footers"
+    },
+    {
+      "id": "checkout-split",
+      "title": "Split checkout",
+      "description": "One-page checkout with SvTextInput, SvCountryInput, a delivery SvRadioGroup and SvMaskedInput card fields beside a sticky order summary. Pay checks every field (Luhn check, expiry not in the past), then shows SvButton loading and a toast.",
+      "aliases": [
+        "599-block-checkout-split"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "checkout-split.svelte",
+          "from": "blocks/checkout/checkout-split.svelte"
+        }
+      ],
+      "group": "blocks/checkout"
+    },
+    {
+      "id": "checkout-steps",
+      "title": "Stepped checkout",
+      "description": "An SvStepper with Shipping, Payment and Review: SvPhoneInput, SvCountryInput, SvRadioGroup and SvMaskedInput validated per step. Review has Edit links that jump back and return to Review; Place order shows a loading state.",
+      "aliases": [
+        "600-block-checkout-steps"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "checkout-steps.svelte",
+          "from": "blocks/checkout/checkout-steps.svelte"
+        }
+      ],
+      "group": "blocks/checkout"
+    },
+    {
+      "id": "checkout-payment-methods",
+      "title": "Payment methods",
+      "description": "Radio cards for Card, Wallet pay, Bank transfer and Invoice with arrow-key navigation; the chosen method's form appears below (SvMaskedInput card, SvPhoneInput, IBAN with a mod-97 check, or VAT number plus SvCountryInput). Continue validates only that method.",
+      "aliases": [
+        "601-block-checkout-payment-methods"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "checkout-payment-methods.svelte",
+          "from": "blocks/checkout/checkout-payment-methods.svelte"
+        }
+      ],
+      "group": "blocks/checkout"
+    },
+    {
+      "id": "checkout-confirmation",
+      "title": "Order confirmation",
+      "description": "Thank-you page with an inline-SVG check mark, a copyable order number, a delivery window counted in business days, next steps, the paid summary with an SvBadge status, and Track order / Continue shopping SvButtons.",
+      "aliases": [
+        "602-block-checkout-confirmation"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "checkout-confirmation.svelte",
+          "from": "blocks/checkout/checkout-confirmation.svelte"
+        }
+      ],
+      "group": "blocks/checkout"
+    },
+    {
+      "id": "shopping-carts-page",
+      "title": "Cart page",
+      "description": "Cart page with SvNumberInput quantities, Remove with an Undo toast and Save for later moving items to a saved list. The summary column has subtotal, estimated shipping, an SvTextInput promo code (WELCOME15 takes 15% off) and Checkout.",
+      "aliases": [
+        "603-block-shopping-carts-page"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "shopping-carts-page.svelte",
+          "from": "blocks/shopping-carts/shopping-carts-page.svelte"
+        }
+      ],
+      "group": "blocks/shopping-carts"
+    },
+    {
+      "id": "shopping-carts-panel",
+      "title": "Cart slide-over",
+      "description": "Product grid whose Add to cart SvButtons open an SvDrawer cart with SvNumberInput quantities, Remove, subtotal, Checkout and Continue shopping; the header Cart button shows the item count.",
+      "aliases": [
+        "604-block-shopping-carts-panel"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "shopping-carts-panel.svelte",
+          "from": "blocks/shopping-carts/shopping-carts-panel.svelte"
+        }
+      ],
+      "group": "blocks/shopping-carts"
+    },
+    {
+      "id": "reviews-summary",
+      "title": "Rating summary",
+      "description": "The average rating with a read-only half-star SvRating, the review count, 5-to-1 star bars and an SvProgress for would recommend. Click a star row to filter the recent reviews to that rating; Clear filter resets it.",
+      "aliases": [
+        "607-block-reviews-summary"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "reviews-summary.svelte",
+          "from": "blocks/reviews/reviews-summary.svelte"
+        }
+      ],
+      "group": "blocks/reviews"
+    },
+    {
+      "id": "reviews-list",
+      "title": "Review list",
+      "description": "Reviews with SvAvatar, a Verified purchase SvBadge, a read-only SvRating, date, title and a body that clamps to three lines with Read more. Mark a review Helpful once, sort with an SvDropDownList and load the next page.",
+      "aliases": [
+        "608-block-reviews-list"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "reviews-list.svelte",
+          "from": "blocks/reviews/reviews-list.svelte"
+        }
+      ],
+      "group": "blocks/reviews"
+    },
+    {
+      "id": "reviews-write",
+      "title": "Write a review",
+      "description": "A required SvRating, a title, a body with a 30-character minimum and counter, up to three photos in SvFileUpload and a yes/no SvSegmented. Submit validates, shows a loading state, then a thank-you view with the posted review.",
+      "aliases": [
+        "609-block-reviews-write"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "reviews-write.svelte",
+          "from": "blocks/reviews/reviews-write.svelte"
+        }
+      ],
+      "group": "blocks/reviews"
+    },
+    {
+      "id": "contact-centered",
+      "title": "Centered contact form",
+      "description": "A heading over a contact form with SvTextInput name and email, an SvDropDownList topic, an SvTextArea with a counter and a required SvCheckBox. Send validates, shows the loading state, then a sent confirmation.",
+      "aliases": [
+        "610-block-contact-centered"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "contact-centered.svelte",
+          "from": "blocks/contact/contact-centered.svelte"
+        }
+      ],
+      "group": "blocks/contact"
+    },
+    {
+      "id": "contact-cards",
+      "title": "Contact cards",
+      "description": "Sales, Support, Press and Partnerships cards with an icon, an email link and an SvButton. Book a demo opens an SvModal form that validates and marks the Sales card with an SvBadge.",
+      "aliases": [
+        "612-block-contact-cards"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "contact-cards.svelte",
+          "from": "blocks/contact/contact-cards.svelte"
+        }
+      ],
+      "group": "blocks/contact"
+    },
+    {
+      "id": "contact-hours",
+      "title": "Contact with support hours",
+      "description": "A support ticket form with an SvSegmented priority beside a weekly hours table, an Open now / Opens at badge from the viewer's clock, and response times per channel that change with the priority.",
+      "aliases": [
+        "614-block-contact-hours"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "contact-hours.svelte",
+          "from": "blocks/contact/contact-hours.svelte"
+        }
+      ],
+      "group": "blocks/contact"
+    },
+    {
+      "id": "hero-centered",
+      "title": "Centered hero",
+      "description": "Headline, subline, a primary and an outline SvButton and a note, centered over an admin-app product shot drawn in CSS that fades into the page. Copy and CTAs come from the core's options.",
+      "aliases": [
+        "616-block-hero-centered"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "hero-centered.svelte",
+          "from": "blocks/hero/hero-centered.svelte"
+        }
+      ],
+      "group": "blocks/hero"
+    },
+    {
+      "id": "hero-signup",
+      "title": "Hero with email sign-up",
+      "description": "Hero whose main CTA is an inline SvTextInput work email plus a Start free trial SvButton. It validates the address, shows loading, puts a server refusal under the field and switches to a check-your-inbox state.",
+      "aliases": [
+        "620-block-hero-signup"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "hero-signup.svelte",
+          "from": "blocks/hero/hero-signup.svelte"
+        }
+      ],
+      "group": "blocks/hero"
+    },
+    {
+      "id": "features-icons",
+      "title": "Features with icons",
+      "description": "A heading, a one-line intro and six features, each an inline-SVG icon with a title and two lines of text, three across, then two, then one. An SvBadge tags the newest feature and the SvButton trial CTA shows its loading state.",
+      "aliases": [
+        "622-block-features-icons"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "features-icons.svelte",
+          "from": "blocks/features/features-icons.svelte"
+        }
+      ],
+      "group": "blocks/features"
+    },
+    {
+      "id": "features-screenshot",
+      "title": "Features with screenshot",
+      "description": "A feature list that works as a tablist (arrow keys, Home, End) beside an inline-SVG product screenshot that redraws for the selected feature: dashboard, SQL editor, alert chart or share dialog.",
+      "aliases": [
+        "624-block-features-screenshot"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "features-screenshot.svelte",
+          "from": "blocks/features/features-screenshot.svelte"
+        }
+      ],
+      "group": "blocks/features"
+    },
+    {
+      "id": "cta-centered",
+      "title": "Centered call to action",
+      "description": "A heading, one line and two SvButtons centered on an accent band. Start free trial shows its loading state, confirms in an SvToaster toast and leaves a status line; Talk to sales goes through the same tracked action.",
+      "aliases": [
+        "628-block-cta-centered"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "cta-centered.svelte",
+          "from": "blocks/cta/cta-centered.svelte"
+        }
+      ],
+      "group": "blocks/cta"
+    },
+    {
+      "id": "cta-justified",
+      "title": "Justified call to action",
+      "description": "A heading and one line on the left, Book a demo and Get started SvButtons on the right of one bordered row. Get started shows loading, confirms in a toast and replaces the buttons with a confirmation. Stacks on phones.",
+      "aliases": [
+        "630-block-cta-justified"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "cta-justified.svelte",
+          "from": "blocks/cta/cta-justified.svelte"
+        }
+      ],
+      "group": "blocks/cta"
+    },
+    {
+      "id": "pricing",
+      "title": "Pricing",
+      "description": "A three-tier plan grid with a monthly/annual SvSegmented toggle (annual applies the discount live), a highlighted \"most popular\" card, per-plan feature SvLists with check marks, and a CTA SvButton on each.",
+      "aliases": [
+        "425-block-pricing"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "pricing.svelte",
+          "from": "blocks/pricing/pricing.svelte"
+        }
+      ],
+      "group": "blocks/pricing"
+    },
+    {
+      "id": "pricing-highlighted",
+      "title": "Pricing with highlighted plan",
+      "description": "Four per-seat plans in SvCards with the recommended one outlined and badged. A Seats SvNumberInput reprices every card live, with volume discounts at 25 and 100 seats, monthly totals, and seat caps that switch a plan off.",
+      "aliases": [
+        "634-block-pricing-highlighted"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "pricing-highlighted.svelte",
+          "from": "blocks/pricing/pricing-highlighted.svelte"
+        }
+      ],
+      "group": "blocks/pricing"
+    },
+    {
+      "id": "pricing-comparison",
+      "title": "Pricing comparison table",
+      "description": "A feature-by-plan table with grouped sections, check marks and limits, and a sticky header row holding each plan's price and SvButton. On phones an SvSegmented picks which plan column is shown.",
+      "aliases": [
+        "635-block-pricing-comparison"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "pricing-comparison.svelte",
+          "from": "blocks/pricing/pricing-comparison.svelte"
+        }
+      ],
+      "group": "blocks/pricing"
+    },
+    {
+      "id": "faq-accordion",
+      "title": "FAQ accordion",
+      "description": "A heading and a search SvTextInput beside an accordion of questions. Typing filters the list live, highlights each hit with SvMark and opens matching answers; with no matches it offers Clear search and Contact support.",
+      "aliases": [
+        "640-block-faq-accordion"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "faq-accordion.svelte",
+          "from": "blocks/faq/faq-accordion.svelte"
+        }
+      ],
+      "group": "blocks/faq"
+    },
+    {
+      "id": "faq-centered",
+      "title": "Centered FAQ accordion",
+      "description": "A centered heading over an SvSegmented Billing / Account / Data switch that swaps the questions in an SvAccordion. Expand all and Collapse all SvButtons open or close every answer in the topic.",
+      "aliases": [
+        "641-block-faq-centered"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "faq-centered.svelte",
+          "from": "blocks/faq/faq-centered.svelte"
+        }
+      ],
+      "group": "blocks/faq"
+    },
+    {
+      "id": "bento-features",
+      "title": "Feature bento",
+      "description": "A feature section as a bento grid: one large tile with a mini results table and four smaller SVG tiles, each with a Read the guide link. Tile spans come from the data; an SvBadge marks the new feature and an SvButton starts the trial.",
+      "aliases": [
+        "642-block-bento-features"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "bento-features.svelte",
+          "from": "blocks/bento/bento-features.svelte"
+        }
+      ],
+      "group": "blocks/bento"
+    },
+    {
+      "id": "testimonials-cards",
+      "title": "Testimonial cards",
+      "description": "Six customer quote cards in a masonry-style column layout, each with a company wordmark, optional SvRating, the quote and an SvAvatar with name and role. Long quotes open with Read more, and the header shows the average rating.",
+      "aliases": [
+        "646-block-testimonials-cards"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "testimonials-cards.svelte",
+          "from": "blocks/testimonials/testimonials-cards.svelte"
+        }
+      ],
+      "group": "blocks/testimonials"
+    },
+    {
+      "id": "testimonials-carousel",
+      "title": "Testimonial carousel",
+      "description": "One large customer quote at a time in an SvCarousel with arrows, dots, swipe and autoplay that pauses on hover or focus and stays off under reduced motion. A row of company wordmarks jumps to that company's quote.",
+      "aliases": [
+        "647-block-testimonials-carousel"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "testimonials-carousel.svelte",
+          "from": "blocks/testimonials/testimonials-carousel.svelte"
+        }
+      ],
+      "group": "blocks/testimonials"
+    },
+    {
+      "id": "logo-clouds-grid",
+      "title": "Logo cloud",
+      "description": "A heading and a social proof line over twelve made-up customer wordmarks in a ruled grid. Linked logos go from muted to full contrast on hover or focus, and an SvButton opens all customer stories.",
+      "aliases": [
+        "648-block-logo-clouds-grid"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "logo-clouds-grid.svelte",
+          "from": "blocks/logo-clouds/logo-clouds-grid.svelte"
+        }
+      ],
+      "group": "blocks/logo-clouds"
+    },
+    {
+      "id": "team-grid",
+      "title": "Team grid",
+      "description": "Team member cards with SvAvatar, name, role, bio and labelled email and profile links. An SvSegmented filter narrows the grid by department, and the We're hiring card lists that department's open roles.",
+      "aliases": [
+        "649-block-team-grid"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "team-grid.svelte",
+          "from": "blocks/team/team-grid.svelte"
+        }
+      ],
+      "group": "blocks/team"
+    },
+    {
+      "id": "product-cards-grid",
+      "title": "Product card",
+      "description": "Four product cards with color swatches that recolor the art, a read-only SvRating with review count, sale prices with an SvBadge, a wishlist heart (aria-pressed) and Add to cart with loading and a toast. 4, 2 or 1 columns.",
+      "aliases": [
+        "650-block-product-cards-grid"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "product-cards-grid.svelte",
+          "from": "blocks/product-cards/product-cards-grid.svelte"
+        }
+      ],
+      "group": "blocks/product-cards"
+    },
+    {
+      "id": "product-cards-horizontal",
+      "title": "Horizontal product card",
+      "description": "List-view product cards with drawn art, a description and stock status, an SvNumberInput quantity capped at the units left and Add to cart with loading and a toast. Out of stock disables both. Stacks on phones.",
+      "aliases": [
+        "651-block-product-cards-horizontal"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "product-cards-horizontal.svelte",
+          "from": "blocks/product-cards/product-cards-horizontal.svelte"
+        }
+      ],
+      "group": "blocks/product-cards"
+    },
+    {
+      "id": "product-lists-toolbar",
+      "title": "Product list with toolbar",
+      "description": "Twelve store products under a toolbar with the result count, an SvDropDownList sort and an SvSegmented grid/list switch. Load more shows the next eight, and Add to cart fires a toast.",
+      "aliases": [
+        "652-block-product-lists-toolbar"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "product-lists-toolbar.svelte",
+          "from": "blocks/product-lists/product-lists-toolbar.svelte"
+        }
+      ],
+      "group": "blocks/product-lists"
+    },
+    {
+      "id": "product-lists-featured",
+      "title": "Featured product list",
+      "description": "A large featured product tile with an SvBadge, price, a short pitch and a Shop now SvButton beside a 2x2 grid of smaller products, each with an Add button that loads and a save toggle.",
+      "aliases": [
+        "653-block-product-lists-featured"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "product-lists-featured.svelte",
+          "from": "blocks/product-lists/product-lists-featured.svelte"
+        }
+      ],
+      "group": "blocks/product-lists"
+    },
+    {
+      "id": "product-overview-split",
+      "title": "Product overview",
+      "description": "Product page with a keyboard-selectable thumbnail gallery, SvRating, color swatches, an SvSegmented size picker that disables sold-out sizes, quantity, Add to cart that asks for a size first, and an SvAccordion with Details, Shipping and Returns.",
+      "aliases": [
+        "654-block-product-overview-split"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "product-overview-split.svelte",
+          "from": "blocks/product-overview/product-overview-split.svelte"
+        }
+      ],
+      "group": "blocks/product-overview"
+    },
+    {
+      "id": "blog-cards",
+      "title": "Blog post cards",
+      "description": "A blog index grid of six post cards with SVG cover art, a category SvBadge, a 3-line excerpt, an SvAvatar byline, date and reading time. Category chips filter the grid; an empty category shows an SvEmptyState with Show all posts.",
+      "aliases": [
+        "655-block-blog-cards"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "blog-cards.svelte",
+          "from": "blocks/blog/blog-cards.svelte"
+        }
+      ],
+      "group": "blocks/blog"
+    },
+    {
+      "id": "blog-featured",
+      "title": "Featured article",
+      "description": "A lead article with a large SVG cover, a category SvBadge, the excerpt and an SvAvatar byline with date and reading time, beside the four most recent posts and a View all posts link. Stacks on phones.",
+      "aliases": [
+        "656-block-blog-featured"
+      ],
+      "deps": [
+        "@svgrid/grid"
+      ],
+      "files": [
+        {
+          "write": "blog-featured.svelte",
+          "from": "blocks/blog/blog-featured.svelte"
+        }
+      ],
+      "group": "blocks/blog"
     }
   ]
 }

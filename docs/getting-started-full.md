@@ -339,7 +339,7 @@ directly on `<SvGrid>`.
   --sg-row-hover-bg: #eef2ff;
   --sg-selection-bg: #dbeafe;
   --sg-border: #e5e7eb;
-  --sg-focus-ring: 0 0 0 2px #2563eb;
+  --sg-focus-ring: #2563eb;
   --sg-font: 'Inter', system-ui, sans-serif;
 }
 

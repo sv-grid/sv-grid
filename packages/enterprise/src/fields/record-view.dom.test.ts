@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest'
 import { flushSync, mount, unmount } from 'svelte'
 import { SvGrid } from '@svgrid/grid'
-import { enableFields, SvBase, setRecordComments, openRecord, closeRecord, type BaseAutomation, type BaseTable } from './index'
+import { enableFields, SvBase, setRecordComments, openRecord, closeRecord, setCurrentUser, setFieldUsers, type BaseAutomation, type BaseTable } from './index'
 import { getRecordRequest } from './editor-request.svelte'
 import { changesOf } from './activity.svelte'
 import { gridOf, writeCell } from './grid-access'
@@ -352,5 +352,55 @@ describe('SvBase: comments and activity by table', () => {
     expect(await ids({ data })).toEqual(['a', 'b'])
     expect(await ids({ data: [{ name: 'No id' }] })).toEqual(['0'])
     expect(await ids({ data, getRowId: (r: { name: string }) => `k-${r.name}` })).toEqual(['k-One', 'k-Two'])
+  })
+})
+
+describe('editing in the record view', () => {
+  // The select's options and the long text panel are drawn at the end of the
+  // page, outside the record's dialog. A pointerdown there used to read as a
+  // click outside the dialog: the record closed and the value was lost.
+  it('picks a select option and types in a long text without closing the record, and shows who changed it', async () => {
+    setFieldUsers([{ id: 'me', name: 'Mia Stone' }, { id: 'old', name: 'Old Hand' }])
+    setCurrentUser({ id: 'me', name: 'Mia Stone' })
+    const g = mountGrid({
+      expandRows: true,
+      data: [{ id: 1, name: 'Alpha', status: 'Todo', notes: 'First', by: 'old' }],
+      columns: [
+        { field: 'name', header: 'Name', fieldType: 'text' },
+        { field: 'status', header: 'Status', fieldType: 'singleSelect', fieldProps: { options: [{ value: 'Todo', color: '#64748b' }, { value: 'Done', color: '#16a34a' }] } },
+        { field: 'notes', header: 'Notes', fieldType: 'longText' },
+        { field: 'by', header: 'Changed by', fieldType: 'lastModifiedBy' },
+      ],
+    })
+    try {
+      await until(() => !!g.target.querySelector('.sv-frh'), 'the row header')
+      g.target.querySelector<HTMLButtonElement>('tbody .sv-frh-expand')!.click()
+      await until(() => !!document.querySelector('.sv-frv-fields'), 'the record view')
+      const box = (label: string) =>
+        [...document.querySelectorAll<HTMLElement>('.sv-frv-field')].find((f) => f.querySelector('.sv-frv-label span')?.textContent?.trim() === label)!.querySelector<HTMLElement>('.sv-frv-box')!
+
+      box('Status').click()
+      await until(() => document.querySelectorAll('[role="option"]').length > 0, 'the options')
+      const done = [...document.querySelectorAll<HTMLElement>('[role="option"]')].find((o) => o.textContent?.trim() === 'Done')!
+      done.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+      done.click()
+      await settle()
+      expect(document.querySelector('.sv-frv-fields')).not.toBeNull()
+      expect(g.changes.at(-1)).toMatchObject({ newValue: 'Done' })
+      // The stamp shows in the open record at once.
+      const byField = [...document.querySelectorAll<HTMLElement>('.sv-frv-field')].find((f) => f.querySelector('.sv-frv-label span')?.textContent?.trim() === 'Changed by')!
+      await until(() => !!byField.textContent?.includes('Mia Stone'), 'the new last modified by')
+
+
+      box('Notes').click()
+      await until(() => !!document.querySelector('textarea'), 'the long text panel')
+      document.querySelector('textarea')!.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+      await settle()
+      expect(document.querySelector('.sv-frv-fields')).not.toBeNull()
+    } finally {
+      closeRecord()
+      setCurrentUser(null)
+      g.destroy()
+    }
   })
 })

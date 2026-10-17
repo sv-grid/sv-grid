@@ -1,0 +1,24 @@
+{
+  "description": "A notification settings page for Svelte 5 built from the SvGrid UI kit: a table of event types by channel with an SvSwitchButton in every cell, and an SvSegmented control for the email digest frequency. A sticky save bar with an SvBadge change count appears only when the choices differ from the saved ones; Save stores them and Discard restores the saved state.",
+  "keywords": [
+    "svelte notification settings page",
+    "svelte 5 settings toggles table",
+    "svelte unsaved changes save bar",
+    "svelte switch matrix email push sms",
+    "svelte notification preferences form"
+  ],
+  "faq": [
+    {
+      "question": "How does the save bar know something changed?",
+      "answer": "The block keeps two copies: saved and prefs. Switches and the digest control edit prefs, and a $derived count compares every cell and the digest against saved. The bar renders only while that count is above zero, so flipping a switch back hides it again."
+    },
+    {
+      "question": "What do Save and Discard do?",
+      "answer": "Save runs toast.promise around a timer and, on success, copies prefs into saved with $state.snapshot, which hides the bar. Discard copies saved back into prefs. Replace the timer with a PUT of prefs to your API to persist it."
+    },
+    {
+      "question": "Does the table fit on a phone?",
+      "answer": "Yes. The channel columns shrink to 48 px with tighter padding below 560 px, the event names wrap, and the save bar wraps its buttons onto a second line when they no longer fit beside the change count."
+    }
+  ]
+}

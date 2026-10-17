@@ -4,7 +4,7 @@
  * read.
  *
  * Column types become field types, helped by the column's name (`email`,
- * `phone`, `price`, `notes`, `rating`); an enum, or a text column that keeps
+ * `phone`, `price`, `notes`, `rating`, `updated_by`); an enum, or a text column that keeps
  * repeating a handful of values, becomes a single select with colored
  * options; a foreign key becomes a link to the table it names, with a field
  * in that table that links back; a table that only pairs two others
@@ -49,6 +49,9 @@ const linkName = (column: string) => column.replace(/_?id$/i, '') || column
 
 const MONEY = /(^|_)(price|amount|cost|budget|revenue|salary|total|fee|value|spend|mrr|arr)($|_)/i
 const LONG = /(^|_)(notes?|description|body|comment|comments|summary|details|bio|content|message)($|_)/i
+// Who changed or added a row, as the app (or an agent) writes it: a user id the base names from its people list.
+const MODIFIED_BY = /^(updated|modified|last_modified|edited)_?by$/i
+const CREATED_BY = /^created_?by$/i
 
 function fieldOf(f: EntityField): Def {
   const header = f.label ?? title(f.field)
@@ -74,6 +77,8 @@ function fieldOf(f: EntityField): Def {
       if (f.format === 'email') return { ...base, fieldType: 'email' }
       if (f.format === 'url') return { ...base, fieldType: 'url' }
       if (editor === 'phone') return { ...base, fieldType: 'phone' }
+      if (MODIFIED_BY.test(f.field)) return { ...base, fieldType: 'lastModifiedBy' }
+      if (CREATED_BY.test(f.field)) return { ...base, fieldType: 'createdBy' }
       if (LONG.test(f.field)) return { ...base, fieldType: 'longText' }
       return { ...base, fieldType: 'text' }
   }

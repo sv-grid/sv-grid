@@ -93,6 +93,7 @@ export {
   type BaseSource,
   type BaseSourceOptions,
   type BaseSyncStatus,
+  type BaseRemoteChange,
   type ForeignKeyLink,
   type JunctionLink,
 } from './base-sync'
@@ -229,14 +230,20 @@ function groupByField(ctrl: any, columnId: string): void {
 function stampModified(ctrl: any, row: Record<string, unknown> | null, columnId: string): void {
   if (!row) return
   const author = getCurrentUser()?.id
+  // Into the edit overlay too, as an edit goes: what reads through it (an
+  // open record) shows the stamp at once, not after the grid draws again.
+  const rowId = ctrl.buildApi?.().getRowId?.(row)
+  const overlay = (id: string, value: unknown) => {
+    if (rowId != null && ctrl.editedCellValues) ctrl.editedCellValues = { ...ctrl.editedCellValues, [`${rowId}:${id}`]: value }
+  }
   for (const c of (ctrl?.internalColumns ?? []) as Array<Record<string, any>>) {
     if (c.fieldType !== 'lastModifiedTime' && c.fieldType !== 'lastModifiedBy') continue
     const id = String(c.id ?? c.field)
     if (id === columnId || !c.field) continue
     const p = fieldPropsOf(originalColumn(c)) as { watch?: string; watchFields?: string[] }
     if (p.watch === 'specific' && !(p.watchFields ?? []).includes(columnId)) continue
-    if (c.fieldType === 'lastModifiedTime') row[c.field] = new Date().toISOString()
-    else if (author !== undefined) row[c.field] = author
+    if (c.fieldType === 'lastModifiedTime') overlay(id, (row[c.field] = new Date().toISOString()))
+    else if (author !== undefined) overlay(id, (row[c.field] = author))
   }
 }
 

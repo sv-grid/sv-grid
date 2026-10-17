@@ -1,0 +1,24 @@
+{
+  "description": "An onboarding checklist card for Svelte 5 built from the SvGrid UI kit. SvProgress shows how many tasks are done, each task is an SvCollapsible with a description and an SvButton that completes it, and done tasks are struck through with a check. When every task is done the card switches to an all-done state you can dismiss.",
+  "keywords": [
+    "svelte onboarding checklist",
+    "svelte 5 getting started card",
+    "svelte progress checklist block",
+    "svelte collapsible task list",
+    "svelte setup progress bar"
+  ],
+  "faq": [
+    {
+      "question": "How does completing a task work?",
+      "answer": "The action button calls the core's complete(id). It sets working so the button shows its loading state, awaits the onComplete option (a 700 ms timer and a success toast in the demo), then marks the task done and opens the next unfinished one. The progress bar and the x of y count are derived from the same task list."
+    },
+    {
+      "question": "How do I save progress for the user?",
+      "answer": "Pass the saved ids as the done option of createChecklist, and post the task id to your server inside onComplete. If onComplete throws, the task stays open and its button can be pressed again. The docs page shows the load function and the API route for this."
+    },
+    {
+      "question": "What happens when the user dismisses it?",
+      "answer": "The close button and the all-done Dismiss button set dismissed = true, which replaces the card with a one-line Show it again link. Persist that flag if the checklist should stay hidden after a reload."
+    }
+  ]
+}

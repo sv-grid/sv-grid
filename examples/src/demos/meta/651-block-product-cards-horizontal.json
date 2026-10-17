@@ -1,0 +1,24 @@
+{
+  "description": "Svelte list-view product cards built from the SvGrid UI kit. Each row has drawn product art on the left, then the name, variant, a one-line description and a stock status (In stock, Only 3 left, Out of stock), and on the right the price, an SvNumberInput quantity and an SvButton Add to cart with a loading state and a toast. Out of stock disables the quantity and the button, and the quantity is capped at the units not already in the cart. The rows stack on phones. Stock, quantities and the add flow live in the headless createProductList() core.",
+  "keywords": [
+    "svelte product list view",
+    "svelte 5 horizontal product card",
+    "svelte stock status low stock",
+    "svelte add to cart with quantity",
+    "svelte headless product list component"
+  ],
+  "faq": [
+    {
+      "question": "How is the stock status decided?",
+      "answer": "statusOf(product) returns out when stock is 0, low when stock is at or below the lowStock option (5 by default) and in otherwise. The block shows Out of stock, Only n left or In stock. Out of stock disables the quantity and shows a disabled Sold out button."
+    },
+    {
+      "question": "Why does the quantity stop below 10?",
+      "answer": "The core tracks how many units of each product went into the cart. The quantity is capped at the smaller of maxQty (10 by default) and the stock left after those units, and once nothing is left the button reads All in your cart and is disabled. A typed value above the cap is clamped when SvNumberInput commits it on Enter or blur."
+    },
+    {
+      "question": "How does the row change on a phone?",
+      "answer": "Below 640 px the art shrinks to 72 px and the price, quantity and Add to cart button move from the right column to a full-width row under the description, so a row fits 375 px without scrolling sideways."
+    }
+  ]
+}

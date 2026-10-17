@@ -78,6 +78,8 @@ export function createPhoneInput(config: PhoneInputConfig) {
       lastVal = v
       const match = matchCountry(v)
       if (match) { iso = match.code; national = v.slice(match.dial.length) }
+      // Clearing from outside (a form reset sets value to '') empties the field.
+      else if (!v) national = ''
     }
   })
 

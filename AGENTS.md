@@ -28,7 +28,8 @@ in order of preference:
 - **Svelte 5 only.** Runes (`$state`, `$derived`, `$effect`) and snippets.
   Never `export let`, never Svelte 4 stores.
 - **It is a library, not a copy-in CLI.** You `import` from `@svgrid/grid`.
-  There is no "add component" step.
+  There is no "add component" step for components. Page blocks (login,
+  app shell, pricing, ...) are the one copy-in layer: `npx @svgrid/ui add`.
 - **AI helpers are free and live in `@svgrid/grid`**, not in
   `@svgrid/enterprise`: `setAIProvider`, `aiFilter`, `aiSmartFill`,
   `aiSummarize`, `aiClassify`, `aiFindAnomalies`, `mockAIProvider`.
@@ -53,7 +54,7 @@ packages/grid-wc/         @svgrid/grid-wc       - <sv-grid> web component
 packages/svgrid-ui/       @svgrid/ui            - UI component CLI
 packages/create-sv-grid/  @svgrid/create        - grid scaffolder
 packages/create-studio/   @svgrid/create-studio - Studio app scaffolder
-examples/                                       - 400+ live demos
+examples/                                       - 500+ live demos
 website/                                        - svgrid.com source (PRIVATE submodule)
 docs/                                           - markdown docs
 ```
@@ -134,7 +135,10 @@ feature needing an Enterprise key are separate facts; do not collapse them.
 `@svgrid/enterprise` sells in two editions. Grid covers the enterprise grid;
 Suite adds the spreadsheet (`src/sheet`, `<SvSheet>`, `<sv-sheet>`) and the
 Studio. Gate a new Suite-only surface with `nudgeEnterpriseFor(product,
-feature)`, never with a hard block: an out-of-edition key watermarks and
-nudges, and the feature still runs.
+feature)`, never with a hard block: without a valid key it watermarks and
+nudges, and the feature still runs. Since 2026-10-07 every customer gets the
+same key and it reads as Suite (`packages/enterprise/src/license-core.ts`), so
+the edition is a license term the key does not enforce. Do not write that a
+Grid key watermarks a Suite feature; no key can be a Grid key.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contributor guide.

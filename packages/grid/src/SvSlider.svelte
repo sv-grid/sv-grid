@@ -108,7 +108,7 @@
   const fmt = (v: number) => (formatValue ? formatValue(v) : String(v))
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir}>
+<SvField id={uid} {label} {hint} {error} {required} {dir} {block}>
 <div
   class="sv-slider sv-slider--{orientation} sv-slider--{size}" class:is-block={block}
   class:is-disabled={disabled}

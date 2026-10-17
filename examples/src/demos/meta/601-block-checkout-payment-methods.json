@@ -1,0 +1,24 @@
+{
+  "description": "A payment method picker in Svelte 5: four radio cards for Card, Wallet pay, Bank transfer and Invoice, with arrow-key navigation from the kit's createRadioGroup. The form for the chosen method appears below: SvMaskedInput card fields with an SvCheckBox, an SvPhoneInput for wallet approval, an IBAN SvTextInput with a mod-97 check, or company name, VAT number and SvCountryInput for invoices on business accounts. Continue validates only the chosen method and shows the SvButton loading state.",
+  "keywords": [
+    "svelte payment method selector",
+    "svelte 5 radio cards",
+    "svelte invoice vat number form",
+    "svelte iban validation",
+    "svelte checkout payment options"
+  ],
+  "faq": [
+    {
+      "question": "Which fields are validated when I press Continue?",
+      "answer": "Only the chosen method's. validatePayment(method, values) checks card number, expiry and CVC for Card, a valid phone for Wallet pay, the account holder and IBAN check digits for Bank transfer, and company name, VAT number format, invoice email and country for Invoice. Switching method clears the errors."
+    },
+    {
+      "question": "How are the radio cards made accessible?",
+      "answer": "The cards are buttons with role radio inside a radiogroup, wired by the kit's createRadioGroup through groupProps() and optionProps(). Arrow keys move and select, only the selected card is in the tab order, and aria-checked drives the selected style."
+    },
+    {
+      "question": "How do I save the method to my backend?",
+      "answer": "Pass onSave to createPaymentMethods(). It receives the method id, all values and a one-line label such as Card ending 4242; resolve it and the block shows the saved label, throw it and the form stays as it was."
+    }
+  ]
+}

@@ -17,11 +17,16 @@
    *
    * A table with a `source` (`baseSource`) loads its records from a database
    * or an API and writes each change back (`base-sync.ts`); the end of the
-   * tab bar says when it is loading, saving, or a save failed.
+   * tab bar says when it is loading, saving, or a save failed. A change made
+   * in the database by someone else (another user, a script, an AI agent)
+   * shows up in the page: its cells are tinted and its row marked until the
+   * record is opened, and the record's activity says who changed what, from
+   * the row's "last modified by" field. `onRemoteChange` hears of each one.
    */
   import { onMount, untrack } from 'svelte'
   import { toast } from '@svgrid/grid'
-  import { createBaseSync, type BaseSyncStatus } from './base-sync'
+  import { createBaseSync, type BaseRemoteChange, type BaseSyncStatus } from './base-sync'
+  import { noteRemoteChange } from './activity.svelte'
   import BaseTableView from './BaseTableView.svelte'
   import BaseTabs from './BaseTabs.svelte'
   import { registerLinkedTable, unregisterLinkedTable } from './sources.svelte'
@@ -66,6 +71,7 @@
     onApiReady,
     serverRuns,
     automations = true,
+    onRemoteChange,
     ...grid
   }: {
     /** Several tables, shown as tabs. Without it, `data` and `columns` are the one table. */
@@ -86,6 +92,8 @@
     serverRuns?: () => Promise<ReadonlyArray<AutomationRun>>
     /** The view bar's Automations; false hides it (automations already set still run). */
     automations?: boolean
+    /** Changes made in the database by someone else, once they are in the page (tables with a `source` that has `realtime`). */
+    onRemoteChange?: (changes: BaseRemoteChange[]) => void
     [prop: string]: any
   } = $props()
 
@@ -179,7 +187,39 @@
       syncState = s
     },
     onError: (e) => toast.error(`Could not ${e.action === 'load' ? 'load' : 'save'} ${e.table}: ${e.message}`),
+    onRemoteChange: (list) => {
+      for (const c of list) noteRemote(c)
+      onRemoteChange?.(list)
+    },
   })
+
+  // Fields the database or the page stamps: a change to one says nothing new.
+  const STAMPS = new Set(['createdTime', 'createdBy', 'lastModifiedTime', 'lastModifiedBy', 'autoNumber'])
+
+  /** Who made a change elsewhere: the record's "last modified by" (or, when added, "created by"). */
+  function authorOf(t: BaseTable, record: Row, added: boolean): string | undefined {
+    const order = added ? ['createdBy', 'lastModifiedBy'] : ['lastModifiedBy']
+    for (const type of order) {
+      const d = t.columns.find((x) => x.fieldType === type && x.field != null)
+      const v = d ? record[String(d.field)] : undefined
+      if (v != null && v !== '') return String(v)
+    }
+    return undefined
+  }
+
+  /** A change made elsewhere goes into the record's activity, and marks it unseen. */
+  function noteRemote(c: BaseRemoteChange) {
+    const t = tableOf(c.table)
+    if (!t || c.type === 'delete') return
+    const scope = { base: baseScope, tableId: t.id }
+    const by = authorOf(t, c.record, c.type === 'insert')
+    if (c.type === 'insert') return noteRemoteChange(scope, c.id, { by, added: true })
+    const fields = (c.fields ?? []).flatMap((f) => {
+      const d = t.columns.find((x) => x.field != null && String(x.field) === f.field)
+      return d && !STAMPS.has(d.fieldType) ? [{ columnId: colId(d), from: f.from, to: f.to }] : []
+    })
+    noteRemoteChange(scope, c.id, { by, fields })
+  }
   onMount(() => {
     void sync.load()
     return () => {

@@ -35,9 +35,9 @@ One click:
 [Add to Cursor](https://cursor.com/en/install-mcp?name=svgrid&config=eyJ1cmwiOiJodHRwczovL21jcC5zdmdyaWQuY29tL21jcCJ9)
 · [Add to VS Code](https://insiders.vscode.dev/redirect/mcp/install?name=svgrid&config=%7B%22name%22%3A%22svgrid%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.svgrid.com%2Fmcp%22%7D)
 
-It carries six tools - `search`, `fetch`, `list_examples`,
-`get_example_source`, `get_api_reference` and `check_svgrid_code` - and
-needs no Node, no config file, and no key.
+It carries seven tools - `search`, `fetch`, `list_examples`,
+`get_example_source`, `get_api_reference`, `check_svgrid_code` and
+`svgrid_preview` - and needs no Node, no config file, and no key.
 
 **Local (`npx @svgrid/mcp`).** Everything the hosted server has, plus
 the Studio tools, the docs and demos as MCP resources, ready-made
@@ -217,14 +217,14 @@ exactly, which is what a connector needs to index it.
 
 ## Tools exposed
 
-Four, by default. `tools/list` is sent on **every** request, so the tool
+Five, by default. `tools/list` is sent on **every** request, so the tool
 surface is pure overhead on every turn - and this server used to spend
 ~4,710 tokens of it on 36 tools, 79% of them Studio tools that most
 sessions never call once.
 
 | Tool | What it does |
 | ---- | ------------ |
-| `svgrid_search` | Search the docs, the 375 demos and the API surface **in one call**. No arguments returns an index. |
+| `svgrid_search` | Search the docs, every demo and the API surface **in one call**. No arguments returns an index. |
 | `svgrid_get` | Read one thing in full: a doc slug, a demo id, or `api`. |
 | `svgrid_check_code` | Verify code against the real exported surface before the user sees it. |
 | `svgrid_preview` | Render a **live, interactive grid** in the conversation from columns + rows. |
@@ -317,7 +317,7 @@ never cries wolf - and rewriting raises the stakes from wasting a turn to
 corrupting working code. Only exact renames are applied (a known rename, or a
 close-enough spelling), only on word boundaries, and only on the line the
 diagnostic reported. Advice that is ambiguous - "this has no equivalent, remove
-it" - stays advice. A test asserts that running auto-fix across all 367 demos
+it" - stays advice. A test asserts that running auto-fix across every demo
 in this repository changes nothing at all.
 
 ### It knows which version you have
@@ -336,9 +336,9 @@ backend cannot do this - it has no idea what is in your `node_modules`.
 ### Nothing leaves your machine
 
 This server makes **no network calls**. Not for docs, not for the API surface,
-not for verification - the whole corpus (375 demos, 408 doc pages, the full
-exported API) ships inside the package, which is why it is 8 MB rather than
-90 KB. There is no API key, no licence check on the wire, and no telemetry.
+not for verification - the whole corpus (every demo, every doc page, the full
+exported API) ships inside the package, which is why it is megabytes rather
+than kilobytes. There is no API key, no licence check on the wire, and no telemetry.
 
 It works on a plane, behind a corporate proxy, and inside an air-gapped
 network. `tools/mcp-offline.test.ts` enforces it: the server is driven through
@@ -464,11 +464,29 @@ the key in your MCP client's server config:
 }
 ```
 
+## Enterprise features and the trial
+
+Most of SvGrid is the MIT `@svgrid/grid` package. Export to Excel and PDF,
+pivot tables, the Kanban board, the scheduler, the spreadsheet and the
+server-side row model are in `@svgrid/enterprise`, which is commercial.
+
+The server tells your assistant which is which. In `svgrid_search` results a
+paid doc or demo carries `"enterprise": true`, and when a question is about a
+paid feature the answer says so once, with the trial link.
+`svgrid_get` puts the same line at the top of a paid doc or demo, and
+`svgrid_check_code` adds it when the fix is to install the package. Nothing
+is sent anywhere to do this; it is part of the answer text.
+
+`@svgrid/enterprise` runs without a license key and shows a watermark until
+one is set, so you can try a feature before deciding. The
+[30-day trial](https://svgrid.com/pricing/?trial=mcp-docs) adds a download of
+every demo and 30 days of email support.
+
 ## Verifying it works
 
 Ask your model: *"What MCP tools do you have from svgrid?"* The local
-server answers with 36, including `check_svgrid_code` and the `studio_*`
-set; the hosted server answers with 6.
+server lists five, including `svgrid_check_code` (four Studio tools more when
+enabled); the hosted server lists seven.
 
 Then give it something to catch:
 
@@ -504,9 +522,13 @@ The two ways of running it differ here, so pick deliberately.
 - Your client sends tool arguments to a Cloudflare Worker we operate.
   Anything you pass to a tool leaves your machine, and for
   `check_svgrid_code` that means **the source you ask it to check**.
-- Each call is logged: tool name, duration, whether it succeeded, and the
-  query or id it was given. For `check_svgrid_code` only the **byte
-  length** of the submitted source is recorded, never the source itself.
+- Each call is recorded: tool name, duration, whether it succeeded, the
+  query or id it was given, how many pages matched, and whether the answer
+  mentioned the Enterprise trial. For `check_svgrid_code` only the **byte
+  length** of the submitted source and the names of the rules that fired
+  are recorded, never the source itself. The records stay in Cloudflare
+  (Workers logs, and an Analytics Engine dataset kept three months) and are
+  read in aggregate to see what people ask for.
 - No account, no key, no cookies. Requests are not tied to a user.
 - If your code cannot leave the building, use the local server. That is
   what it is for.

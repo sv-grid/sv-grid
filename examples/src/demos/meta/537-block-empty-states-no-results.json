@@ -1,0 +1,24 @@
+{
+  "description": "A no-results state for a Svelte 5 customer directory: an SvTextInput search and removable SvChip filters above a results list. The starting query and filters match nothing, so SvEmptyState echoes the query, says how many filters are active and offers Clear filters, Clear search and per-filter links. Clearing filters brings matching customers back, and typing a matching query shows results.",
+  "keywords": [
+    "svelte no search results",
+    "svelte 5 empty search state",
+    "svelte filter chips",
+    "svelte clear filters",
+    "svelte search results list"
+  ],
+  "faq": [
+    {
+      "question": "How are results filtered?",
+      "answer": "A $derived inside createCustomerSearch keeps the customers whose name contains the trimmed query and that match every active filter, so editing the search or removing a chip updates the list on the next render."
+    },
+    {
+      "question": "How do I run the search on the server?",
+      "answer": "Put the query and filters in the URL and read them in a SvelteKit load function, then pass the rows to createCustomerSearch as customers. The template stays the same because it only checks whether the core's results array is empty."
+    },
+    {
+      "question": "What do the suggested fixes do?",
+      "answer": "Clear filters empties the filter list and Clear search empties the query. With two or more filters, each one is also listed as a link that removes only that filter."
+    }
+  ]
+}

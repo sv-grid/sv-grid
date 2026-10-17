@@ -6464,6 +6464,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "block",
         "label": "Block",
         "type": "boolean",
+        "default": false,
         "description": "Fill the container instead of the control's own default width. A default width is right for a control sitting on its own; in a form grid a row of inputs each stopping at a different width reads as broken.",
         "group": "appearance"
       },

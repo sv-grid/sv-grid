@@ -1,0 +1,24 @@
+{
+  "description": "An announcement bar for Svelte 5 built from the SvGrid UI kit: a slim inverted bar above the app header with an SvBadge, one line of news, a changelog link and a dismiss button. Dismissing hides the bar and shows an SvToaster toast with Undo, and a Show announcement again SvButton in the page brings it back.",
+  "keywords": [
+    "svelte announcement bar",
+    "svelte 5 dismissible top banner",
+    "svelte site-wide notice bar",
+    "svelte changelog banner",
+    "svelte header announcement"
+  ],
+  "faq": [
+    {
+      "question": "How do I keep the bar hidden after a user dismisses it?",
+      "answer": "createAnnouncement() keeps visibility in bar.open. Create it with open: false so the bar starts hidden, read a key such as banner:exports-weekend:v1 from localStorage in onMount and call bar.show() when it is not set, and write the key in the onDismiss callback. Put a version in the key so the next announcement shows again."
+    },
+    {
+      "question": "Why is the bar drawn with the foreground color?",
+      "answer": "The bar uses --sg-fg as its background and --sg-bg as its text, so it reads as a system message in light and dark themes without borrowing the accent color, which stays reserved for primary actions."
+    },
+    {
+      "question": "What changes on a phone?",
+      "answer": "Below 640 px the New badge and the mock nav links are hidden, the message aligns left and wraps onto two lines, and the dismiss button stays top right."
+    }
+  ]
+}

@@ -1,10 +1,10 @@
 /**
  * Which version of SvGrid the person asking actually has installed.
  *
- * This is the thing a proxy-shaped MCP server cannot do. Telerik and Syncfusion
- * answer every question from a backend that serves one global "latest" - their
- * server has no idea what is in your `node_modules`, so a model can be told
- * about an API you do not have, confidently and with a citation.
+ * This is the thing a proxy-shaped MCP server cannot do. A server that answers
+ * every question from a backend serving one global "latest" has no idea what
+ * is in your `node_modules`, so a model can be told about an API you do not
+ * have, confidently and with a citation.
  *
  * We ship the corpus, so we can do better: read the consumer's installed grid
  * and say plainly when it disagrees with what this corpus describes. A warning

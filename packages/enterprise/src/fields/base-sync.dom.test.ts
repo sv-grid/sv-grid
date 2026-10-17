@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { ServerDataSource } from '@svgrid/grid'
-import { baseSource, createBaseSync, type BaseSyncStatus } from './base-sync'
+import { baseSource, createBaseSync, type BaseRemoteChange, type BaseSyncStatus } from './base-sync'
 import { syncInverse, type BaseTable } from './base-tables'
 
 type Row = Record<string, unknown>
@@ -69,11 +69,13 @@ function setup(opts: { serial?: boolean; fail?: (op: string, arg: unknown) => bo
   ]
   const statuses: BaseSyncStatus[] = []
   const errors: string[] = []
+  const remote: BaseRemoteChange[] = []
   const sync = createBaseSync({
     getTables: () => tables,
     apply: (next) => (tables = next),
     onStatus: (s) => statuses.push(s),
     onError: (e) => errors.push(`${e.action} ${e.table}: ${e.message}`),
+    onRemoteChange: (list) => remote.push(...list),
   })
   const edit = (change: (t: BaseTable[]) => BaseTable[]) => {
     tables = change(tables)
@@ -81,7 +83,7 @@ function setup(opts: { serial?: boolean; fail?: (op: string, arg: unknown) => bo
     return sync.settled()
   }
   const table = (id: string) => tables.find((t) => t.id === id)!
-  return { tasks, projects, sync, edit, table, get tables() { return tables }, statuses, errors }
+  return { tasks, projects, sync, edit, table, get tables() { return tables }, statuses, errors, remote }
 }
 
 const setRow = (t: BaseTable[], table: string, id: string, patch: Row) =>
@@ -176,9 +178,68 @@ describe('a base on a database', () => {
     // Nothing is written back.
     expect(b.tasks.log).toEqual([])
   })
+
+  it('says what changed elsewhere: each moved field from what to what, records added and removed', async () => {
+    const b = setup()
+    let ping: () => void = () => {}
+    b.table('tasks').source!.subscribe = (on) => {
+      ping = on
+      return () => {}
+    }
+    await b.sync.load()
+    b.tasks.store.set('t1', { ...b.tasks.store.get('t1')!, status: 'Done' })
+    b.tasks.store.set('t9', { id: 't9', name: 'Remote', status: 'Todo', project_id: null })
+    b.tasks.store.delete('t2')
+    ping()
+    await new Promise((r) => setTimeout(r, 200))
+    const byType = Object.fromEntries(b.remote.map((c) => [c.type, c]))
+    expect(byType.update).toMatchObject({ table: 'tasks', id: 't1', fields: [{ field: 'status', from: 'Todo', to: 'Done' }] })
+    expect(byType.update!.record.status).toBe('Done')
+    expect(byType.insert).toMatchObject({ table: 'tasks', id: 't9', record: { name: 'Remote' } })
+    expect(byType.delete).toMatchObject({ table: 'tasks', id: 't2', record: { name: 'Site' } })
+    expect(b.remote).toHaveLength(3)
+  })
+
+  it('does not report the writes of the page itself as changes made elsewhere', async () => {
+    const b = setup()
+    let ping: () => void = () => {}
+    b.table('tasks').source!.subscribe = (on) => {
+      ping = on
+      return () => {}
+    }
+    await b.sync.load()
+    await b.edit((t) => setRow(t, 'tasks', 't1', { status: 'Done' }))
+    // The database tells every listener of the write, this page included.
+    ping()
+    await new Promise((r) => setTimeout(r, 200))
+    expect(b.tasks.log).toEqual(['update t1 {"status":"Done"}'])
+    expect(b.remote).toEqual([])
+  })
 })
 
 describe('base tables from a database description', () => {
+  it('names who changed or added a row from updated_by and created_by columns', async () => {
+    const { baseFieldsFromSchema } = await import('./base-schema')
+    const { columns } = baseFieldsFromSchema({
+      name: 'tickets',
+      fields: [
+        { field: 'id', type: 'text', primaryKey: true },
+        { field: 'subject', type: 'text' },
+        { field: 'created_by', type: 'text' },
+        { field: 'updated_by', type: 'text' },
+        { field: 'modified_by', type: 'text' },
+        { field: 'bypass', type: 'text' },
+      ],
+    })
+    expect(columns.map((x) => [x.field, x.fieldType])).toEqual([
+      ['subject', 'text'],
+      ['created_by', 'createdBy'],
+      ['updated_by', 'lastModifiedBy'],
+      ['modified_by', 'lastModifiedBy'],
+      ['bypass', 'text'],
+    ])
+  })
+
   it('makes fields by column type, a link for a foreign key, and the field that links back', async () => {
     const { baseTablesFromSchemas } = await import('./base-schema')
     const deals = fakeTable([{ id: 'd1', title: 'Renewal', stage: 'Won', amount: 10, company_id: 'c1', region_id: 'r9' }])

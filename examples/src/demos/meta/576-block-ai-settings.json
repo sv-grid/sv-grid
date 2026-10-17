@@ -1,0 +1,24 @@
+{
+  "description": "An assistant settings page for Svelte 5 built from the SvGrid UI kit. Pick the model in an SvDropDownList, set temperature with an SvSlider, cap the reply length with an SvNumberInput, edit the system prompt in an SvTextArea with a character counter, and switch tools on or off with SvSwitchButton. A preview card shows the request payload the settings produce as you change them; Save and Reset to defaults confirm with a toast.",
+  "keywords": [
+    "svelte ai settings page",
+    "svelte 5 assistant settings form",
+    "svelte model picker temperature slider",
+    "svelte system prompt editor",
+    "svelte llm request payload preview"
+  ],
+  "faq": [
+    {
+      "question": "How does validation work?",
+      "answer": "Two derived values hold the errors: the max reply length must be between 64 and 4,000 tokens and the system prompt cannot be empty. They feed the error props of SvNumberInput and SvTextArea, and Save shows an error toast instead of saving while either is set."
+    },
+    {
+      "question": "How do I save the settings to my backend?",
+      "answer": "Pass onSave to createAISettings. The block's onSave runs toast.promise around a timer; replace the timer with a fetch to your API that stores the settings object. When it resolves the core copies the edited settings into saved, and the Unsaved changes badge and the Save button compare the two."
+    },
+    {
+      "question": "Where do these settings go at request time?",
+      "answer": "The preview card is built from the same state as the form. Your AI provider would read the stored settings and post them with the prompt to your own endpoint, which adds the API key on the server and calls the model."
+    }
+  ]
+}

@@ -21,6 +21,13 @@ PUBLIC_URL = "https://mcp.svgrid.com"
 [observability]
 enabled = true
 
+# One data point per tool call, kept three months and queried with SQL by
+# tools/mcp-report.mjs. The dataset is created on the first write. What goes
+# in it is listed above `record` in src/index.ts and on the privacy page.
+[[analytics_engine_datasets]]
+binding = "MCP_EVENTS"
+dataset = "svgrid_mcp"
+
 # svgrid.com is on Cloudflare, so this hostname is provisioned by the deploy
 # itself. `custom_domain` (rather than a pattern + zone_name route) is what
 # makes wrangler create the DNS record and the certificate - the pattern form

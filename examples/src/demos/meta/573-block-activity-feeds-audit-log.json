@@ -1,0 +1,24 @@
+{
+  "description": "A compact audit log for Svelte 5 built from the SvGrid UI kit. Events are grouped by day with time, SvAvatar actor, an SvBadge action, target and source IP. Two SvDropDownList filters narrow the log by actor and by action, Clear filters resets them, and rows that changed settings expand into a before and after diff of each field.",
+  "keywords": [
+    "svelte audit log page",
+    "svelte 5 activity log table",
+    "svelte security log",
+    "svelte before after diff",
+    "svelte log filter dropdown"
+  ],
+  "faq": [
+    {
+      "question": "How do the filters work?",
+      "answer": "actor and action are $state strings that start at all. filtered is $derived from both, and days groups the filtered rows by calendar day. Clear filters sets both back to all, and an empty result shows a Clear filters button in place of the list."
+    },
+    {
+      "question": "How does the before and after diff work?",
+      "answer": "An entry with a changes array gets an expand button with aria-expanded. Opening it renders a table of field, before and after, with the old value in a del tinted from --sg-danger and the new one in an ins tinted from --sg-success."
+    },
+    {
+      "question": "How does the layout change on a phone?",
+      "answer": "Below 720 px each row becomes a small grid: time, actor and action badge on the first line, the target on the second and the IP on the third, with the expand button on the right. The filters sit side by side and the diff table gets tighter padding."
+    }
+  ]
+}

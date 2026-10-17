@@ -163,6 +163,7 @@ const tables = await baseFromDatabase({ execute: async (sql, params) => (await d
 | A table that only pairs two others (`task_tags`) | A link to many records, stored in that table |
 | A key the database makes (`serial`, a default `uuid`) | New records get theirs from the database |
 | A column named `name` or `title` | The primary field, first and pinned |
+| A text column named `created_by`, `updated_by` or `modified_by` | Created by / Last modified by: the user id is shown as the person, and a change made elsewhere is credited to them |
 
 Each table also gets views: a grid colored by its first select, a Kanban
 board by that select, and a calendar by its first date.

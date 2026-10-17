@@ -1,0 +1,24 @@
+{
+  "description": "A record page heading in Svelte 5, shown on a job posting: an h1 with a status SvBadge, a wrapping row of meta items with inline SVG icons for location, salary, closing date and hiring manager, and Edit, Status and View applicants actions. The Status SvMenu moves the posting between Open, Paused and Closed, the badge color follows, and closing the posting disables the primary SvButton.",
+  "keywords": [
+    "svelte record page header",
+    "svelte 5 page heading with meta",
+    "svelte job posting header",
+    "svelte status badge dropdown",
+    "svelte detail header with icons"
+  ],
+  "faq": [
+    {
+      "question": "How does the status menu update the badge?",
+      "answer": "The SvMenu items are derived from the status state. Each item's onSelect calls setStatus, which assigns the new value; the SvBadge variant comes from a tone map, so Open is green, Paused amber and Closed neutral."
+    },
+    {
+      "question": "How do I add or change meta items?",
+      "answer": "The meta row renders a small array of { icon, text } objects, where icon is an SVG path string drawn in a 24 by 24 viewBox. Add an entry and it wraps onto the next line when the row runs out of space."
+    },
+    {
+      "question": "What changes on a phone?",
+      "answer": "Below 640 px the meta items stack in a column, and the primary View applicants button moves above Edit and Status at full width."
+    }
+  ]
+}

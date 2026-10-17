@@ -1,0 +1,24 @@
+{
+  "description": "A 500 server error page block for Svelte 5: a Retry SvButton that shows loading and reports the result in a toast, a request id with a copy SvButton for support tickets, the time of the failure and a status-page link. On success the SvBadge flips to Resolved and the card turns green; the demo alternates fail and succeed so both paths show.",
+  "keywords": [
+    "svelte 500 error page",
+    "svelte 5 server error page template",
+    "sveltekit error page retry button",
+    "svelte copy request id to clipboard",
+    "svelte internal server error block"
+  ],
+  "faq": [
+    {
+      "question": "How do I make Retry do real work?",
+      "answer": "Pass a retry prop that returns a promise, for example one that re-requests the page, throws if it still fails, then calls invalidateAll from $app/navigation. If it resolves the block shows the recovered state and a success toast; if it rejects it shows an error toast. Without the prop a simulated retry fails first and succeeds next."
+    },
+    {
+      "question": "Where does the request id come from?",
+      "answer": "It is the requestId prop, which reaches createServerError through a getter. In SvelteKit return an id from handleError in hooks.server.ts and pass page.error.errorId to the block; an empty string hides the row. The core's copyId() writes it with navigator.clipboard and reports the result to onCopy, which toasts it, or a warning if the browser blocks it."
+    },
+    {
+      "question": "How does the layout change on a phone?",
+      "answer": "Below 560 px the icon moves above the text, the card padding shrinks and the request id and time stack in one column."
+    }
+  ]
+}

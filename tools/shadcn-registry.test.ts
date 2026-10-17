@@ -24,11 +24,20 @@ const ROOT = process.cwd()
 const R_DIR = join(ROOT, 'website', 'public', 'r')
 const RECIPES = join(ROOT, 'packages', 'svgrid-ui', 'recipes')
 
-// Item name -> the recipe whose bytes it must carry. Mirrors ITEMS in
-// tools/build-shadcn-registry.mjs; a new entry there needs one here.
-const EXPECTED = [{ name: 'data-table', recipe: 'data/data-table.svelte' }]
-
 const readJson = async (p: string) => JSON.parse(await readFile(p, 'utf8'))
+
+type RecipeItem = { id: string; group?: string; files: { from: string }[] }
+const registry: { items: RecipeItem[] } = await readJson(join(RECIPES, 'registry.json'))
+
+// Item name -> the recipe whose bytes it must carry. data-table mirrors ITEMS
+// in tools/build-shadcn-registry.mjs; every page block in the recipe registry
+// is published as well.
+const EXPECTED = [
+  { name: 'data-table', recipe: 'data/data-table.svelte' },
+  ...registry.items
+    .filter((it) => String(it.group ?? '').startsWith('blocks/'))
+    .map((it) => ({ name: it.id, recipe: it.files[0]!.from })),
+]
 
 describe('shadcn-svelte registry', () => {
   it('lists every published item in the index', async () => {

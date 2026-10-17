@@ -89,7 +89,7 @@
   --sg-row-hover-bg:  #ffe600;       /* yellow hover band - unique tone */
   --sg-selection-bg:  #c20000;       /* red selection - unique tone */
   --sg-accent:        #c20000;
-  --sg-focus-ring:    0 0 0 3px #c20000;
+  --sg-focus-ring:    #c20000;
 }
 [data-theme='dark'] .high-contrast {
   --sg-bg:            #000000;
@@ -102,7 +102,7 @@
   --sg-row-hover-bg:  #1f3b8a;
   --sg-selection-bg:  #ffff00;
   --sg-accent:        #ffff00;
-  --sg-focus-ring:    0 0 0 3px #ffff00;
+  --sg-focus-ring:    #ffff00;
 }`}</code></pre>
   </details>
 </section>
@@ -137,7 +137,7 @@
     --sg-row-hover-bg:  #ffe600;
     --sg-selection-bg:  #c20000;
     --sg-accent:        #c20000;
-    --sg-focus-ring:    0 0 0 3px #c20000;
+    --sg-focus-ring:    #c20000;
   }
   :global(html[data-theme='dark']) .hc-host-contrast {
     --sg-bg:            #000000;
@@ -150,7 +150,7 @@
     --sg-row-hover-bg:  #1f3b8a;
     --sg-selection-bg:  #ffff00;
     --sg-accent:        #ffff00;
-    --sg-focus-ring:    0 0 0 3px #ffff00;
+    --sg-focus-ring:    #ffff00;
   }
   /* Bump the cell-border weight in contrast mode so the grid lines are
      not invisible at the higher contrast palette. */

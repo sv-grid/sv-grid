@@ -1,5 +1,6 @@
 import type { Component } from 'svelte'
 import { pendingDemoIds } from '../../../tools/lib/releases.mjs'
+import blockGroups from './block-groups.json'
 import Calendar250 from '../demos/250-calendar.svelte'
 import TimePicker251 from '../demos/251-timepicker.svelte'
 import DateTimePicker252 from '../demos/252-datetimepicker.svelte'
@@ -15,6 +16,88 @@ import BlockOtp422 from '../demos/422-block-otp.svelte'
 import BlockDashboard423 from '../demos/423-block-dashboard.svelte'
 import BlockAppShell424 from '../demos/424-block-app-shell.svelte'
 import BlockPricing425 from '../demos/425-block-pricing.svelte'
+import BlockAuthProviders526 from '../demos/526-block-auth-providers.svelte'
+import BlockAuthForgotPassword527 from '../demos/527-block-auth-forgot-password.svelte'
+import BlockErrorPages404Links530 from '../demos/530-block-error-pages-404-links.svelte'
+import BlockErrorPages500531 from '../demos/531-block-error-pages-500.svelte'
+import BlockErrorPagesMaintenance532 from '../demos/532-block-error-pages-maintenance.svelte'
+import BlockErrorPages403533 from '../demos/533-block-error-pages-403.svelte'
+import BlockEmptyStatesSimple534 from '../demos/534-block-empty-states-simple.svelte'
+import BlockEmptyStatesDropZone536 from '../demos/536-block-empty-states-drop-zone.svelte'
+import BlockEmptyStatesNoResults537 from '../demos/537-block-empty-states-no-results.svelte'
+import BlockEmptyStatesCard538 from '../demos/538-block-empty-states-card.svelte'
+import BlockFormLayoutsStacked540 from '../demos/540-block-form-layouts-stacked.svelte'
+import BlockFormLayoutsTwoColumn541 from '../demos/541-block-form-layouts-two-column.svelte'
+import BlockFormLayoutsSettings542 from '../demos/542-block-form-layouts-settings.svelte'
+import BlockFormLayoutsSettingsNav543 from '../demos/543-block-form-layouts-settings-nav.svelte'
+import BlockFormLayoutsDangerZone544 from '../demos/544-block-form-layouts-danger-zone.svelte'
+import BlockPageHeadingsBreadcrumbs546 from '../demos/546-block-page-headings-breadcrumbs.svelte'
+import BlockPageHeadingsTabs547 from '../demos/547-block-page-headings-tabs.svelte'
+import BlockPageHeadingsMeta548 from '../demos/548-block-page-headings-meta.svelte'
+import BlockPageHeadingsStats549 from '../demos/549-block-page-headings-stats.svelte'
+import BlockOnboardingWizard551 from '../demos/551-block-onboarding-wizard.svelte'
+import BlockOnboardingChecklist552 from '../demos/552-block-onboarding-checklist.svelte'
+import BlockKpiCardsIcon556 from '../demos/556-block-kpi-cards-icon.svelte'
+import BlockKpiCardsTrend557 from '../demos/557-block-kpi-cards-trend.svelte'
+import BlockKpiCardsSparkline559 from '../demos/559-block-kpi-cards-sparkline.svelte'
+import BlockStatsTrends564 from '../demos/564-block-stats-trends.svelte'
+import BlockStatsBanded565 from '../demos/565-block-stats-banded.svelte'
+import BlockFilterPanelsSidebar566 from '../demos/566-block-filter-panels-sidebar.svelte'
+import BlockFilterPanelsToolbar567 from '../demos/567-block-filter-panels-toolbar.svelte'
+import BlockFilterPanelsChips568 from '../demos/568-block-filter-panels-chips.svelte'
+import BlockFilterPanelsCollapsible569 from '../demos/569-block-filter-panels-collapsible.svelte'
+import BlockActivityFeedsTimeline570 from '../demos/570-block-activity-feeds-timeline.svelte'
+import BlockActivityFeedsNotifications571 from '../demos/571-block-activity-feeds-notifications.svelte'
+import BlockActivityFeedsComments572 from '../demos/572-block-activity-feeds-comments.svelte'
+import BlockActivityFeedsAuditLog573 from '../demos/573-block-activity-feeds-audit-log.svelte'
+import BlockAiPromptSuggestions574 from '../demos/574-block-ai-prompt-suggestions.svelte'
+import BlockAiAskBar575 from '../demos/575-block-ai-ask-bar.svelte'
+import BlockAiSettings576 from '../demos/576-block-ai-settings.svelte'
+import BlockOrdersHistory579 from '../demos/579-block-orders-history.svelte'
+import BlockOrdersTracking580 from '../demos/580-block-orders-tracking.svelte'
+import BlockBannersAnnouncement581 from '../demos/581-block-banners-announcement.svelte'
+import BlockBannersInfo583 from '../demos/583-block-banners-info.svelte'
+import BlockBannersCookieConsent585 from '../demos/585-block-banners-cookie-consent.svelte'
+import BlockBannersBillingWarning586 from '../demos/586-block-banners-billing-warning.svelte'
+import BlockNavbarsSimple587 from '../demos/587-block-navbars-simple.svelte'
+import BlockNavbarsSearch588 from '../demos/588-block-navbars-search.svelte'
+import BlockNavbarsDropdowns591 from '../demos/591-block-navbars-dropdowns.svelte'
+import BlockFootersSitemap593 from '../demos/593-block-footers-sitemap.svelte'
+import BlockFootersSimple595 from '../demos/595-block-footers-simple.svelte'
+import BlockCheckoutSplit599 from '../demos/599-block-checkout-split.svelte'
+import BlockCheckoutSteps600 from '../demos/600-block-checkout-steps.svelte'
+import BlockCheckoutPaymentMethods601 from '../demos/601-block-checkout-payment-methods.svelte'
+import BlockCheckoutConfirmation602 from '../demos/602-block-checkout-confirmation.svelte'
+import BlockShoppingCartsPage603 from '../demos/603-block-shopping-carts-page.svelte'
+import BlockShoppingCartsPanel604 from '../demos/604-block-shopping-carts-panel.svelte'
+import BlockReviewsSummary607 from '../demos/607-block-reviews-summary.svelte'
+import BlockReviewsList608 from '../demos/608-block-reviews-list.svelte'
+import BlockReviewsWrite609 from '../demos/609-block-reviews-write.svelte'
+import BlockContactCentered610 from '../demos/610-block-contact-centered.svelte'
+import BlockContactCards612 from '../demos/612-block-contact-cards.svelte'
+import BlockContactHours614 from '../demos/614-block-contact-hours.svelte'
+import BlockHeroCentered616 from '../demos/616-block-hero-centered.svelte'
+import BlockHeroSignup620 from '../demos/620-block-hero-signup.svelte'
+import BlockFeaturesIcons622 from '../demos/622-block-features-icons.svelte'
+import BlockFeaturesScreenshot624 from '../demos/624-block-features-screenshot.svelte'
+import BlockCtaCentered628 from '../demos/628-block-cta-centered.svelte'
+import BlockCtaJustified630 from '../demos/630-block-cta-justified.svelte'
+import BlockPricingHighlighted634 from '../demos/634-block-pricing-highlighted.svelte'
+import BlockPricingComparison635 from '../demos/635-block-pricing-comparison.svelte'
+import BlockFaqAccordion640 from '../demos/640-block-faq-accordion.svelte'
+import BlockFaqCentered641 from '../demos/641-block-faq-centered.svelte'
+import BlockBentoFeatures642 from '../demos/642-block-bento-features.svelte'
+import BlockTestimonialsCards646 from '../demos/646-block-testimonials-cards.svelte'
+import BlockTestimonialsCarousel647 from '../demos/647-block-testimonials-carousel.svelte'
+import BlockLogoCloudsGrid648 from '../demos/648-block-logo-clouds-grid.svelte'
+import BlockTeamGrid649 from '../demos/649-block-team-grid.svelte'
+import BlockProductCardsGrid650 from '../demos/650-block-product-cards-grid.svelte'
+import BlockProductCardsHorizontal651 from '../demos/651-block-product-cards-horizontal.svelte'
+import BlockProductListsToolbar652 from '../demos/652-block-product-lists-toolbar.svelte'
+import BlockProductListsFeatured653 from '../demos/653-block-product-lists-featured.svelte'
+import BlockProductOverviewSplit654 from '../demos/654-block-product-overview-split.svelte'
+import BlockBlogCards655 from '../demos/655-block-blog-cards.svelte'
+import BlockBlogFeatured656 from '../demos/656-block-blog-featured.svelte'
 import ButtonGroup284 from '../demos/284-button-group.svelte'
 import ButtonDemo305 from '../demos/305-button.svelte'
 import RepeatButton306 from '../demos/306-repeat-button.svelte'
@@ -413,6 +496,7 @@ import BaseEventPlanning521     from '../demos/521-base-event-planning.svelte'
 import BaseOkrs522              from '../demos/522-base-okrs.svelte'
 import BaseExpenses523          from '../demos/523-base-expenses.svelte'
 import BaseOnboarding524        from '../demos/524-base-onboarding.svelte'
+import BaseAiTriage700          from '../demos/700-base-ai-triage.svelte'
 import BaseHiring514            from '../demos/514-base-hiring-tracker.svelte'
 import BaseRoadmap513           from '../demos/513-base-product-roadmap.svelte'
 import BaseCrm512               from '../demos/512-base-sales-crm.svelte'
@@ -640,6 +724,8 @@ export type Demo = {
    *  small dot badge in the sidebar so users can scan the Pro features
    *  at a glance. */
   pro?: boolean
+  /** Sub-group inside a category, a BLOCK_GROUPS id (Blocks only today). */
+  group?: string
   component: Component<any>
   source: string
 }
@@ -650,9 +736,28 @@ function demo(
   blurb: string,
   category: DemoCategory,
   component: Component<any>,
-  opts?: { pro?: boolean },
+  opts?: { pro?: boolean; group?: string },
 ): Demo {
-  return { id, title, blurb, category, component, pro: opts?.pro, source: sourceFor(id) }
+  return { id, title, blurb, category, component, pro: opts?.pro, group: opts?.group, source: sourceFor(id) }
+}
+
+/** Sub-groups of the Blocks category, in sidebar order. Mirrors BLOCK_GROUPS in
+ *  website/src/lib/demos.ts; both read examples/src/shared/block-groups.json. */
+export type BlockGroup = { id: string; label: string; icon: string }
+export const BLOCK_GROUPS: BlockGroup[] = blockGroups
+const blockGroupById = new Map(BLOCK_GROUPS.map((g) => [g.id, g]))
+
+/** A category's demos split by sub-group, in BLOCK_GROUPS order. Demos
+ *  without a group come first under `group: null`. */
+export function subGroupsOf(list: Demo[]): { group: BlockGroup | null; demos: Demo[] }[] {
+  const out: { group: BlockGroup | null; demos: Demo[] }[] = []
+  const loose = list.filter((d) => !d.group || !blockGroupById.has(d.group))
+  if (loose.length) out.push({ group: null, demos: loose })
+  for (const g of BLOCK_GROUPS) {
+    const ds = list.filter((d) => d.group === g.id)
+    if (ds.length) out.push({ group: g, demos: ds })
+  }
+  return out
 }
 
 const baseDemos: Demo[] = [
@@ -760,12 +865,94 @@ const baseDemos: Demo[] = [
   demo('405-form-cascading',        'Form: cascading fields', 'SvForm dependent selects - a child list derives from the parent value via a function `options`, and `dependsOn` clears the child when the parent changes so a stale selection never lingers. Country -> State -> City.', 'Layout', FormCascading405),
 
   // ===== Blocks - copy-paste, full-page UI sections built from the kit (shadcn "blocks"-style).
-  demo('420-block-login',           'Login block',            'A two-column authentication page: a branded gradient panel beside a sign-in SvCard with social SvButtons, SvTextInput + SvPasswordInput (reveal), remember-me SvCheckBox, an "or" SvDivider and forgot-password link. Drops into any route as-is.', 'Blocks', BlockLogin420),
-  demo('421-block-signup',          'Sign-up block',          'A centered account-creation card: two-up name fields, work email, a password with the live strength meter, a plan SvSegmented switch, terms SvCheckBox and a benefits rail. Submit fires a promise toast. Pure UI-kit.', 'Blocks', BlockSignup421),
-  demo('422-block-otp',             'Two-factor / OTP block', 'The verification step of a sign-in flow: SvOtpInput (6 digits, auto-advance + onComplete), a resend cooldown timer, and the waiting -> verifying -> verified states. Enter 000000 to see the error path.', 'Blocks', BlockOtp422),
-  demo('423-block-dashboard',       'Analytics dashboard block', 'A full overview page: a range SvSegmented + actions header, a KPI grid (SvStat + SvSparkline), a revenue bar panel, a recent-activity SvTimeline and a top-products list with SvProgress bars. No grid dependency.', 'Blocks', BlockDashboard423),
-  demo('424-block-app-shell',       'App shell block',        'A complete application layout: a SvNavPane sidebar with sections + badges, a top bar with SvBreadcrumb, search and an account SvMenu, and a routed content area. Nav swaps the page; the toggle collapses the rail to an icon rail.', 'Blocks', BlockAppShell424),
-  demo('425-block-pricing',         'Pricing block',          'A three-tier plan grid with a monthly/annual SvSegmented toggle (annual applies the discount live), a highlighted "most popular" card, per-plan feature SvLists with check marks, and a CTA SvButton on each.', 'Blocks', BlockPricing425),
+  demo('420-block-login',           'Login block',            'A two-column authentication page: a branded gradient panel beside a sign-in SvCard with social SvButtons, SvTextInput + SvPasswordInput (reveal), remember-me SvCheckBox, an "or" SvDivider and forgot-password link. Drops into any route as-is.', 'Blocks', BlockLogin420, { group: 'auth' }),
+  demo('421-block-signup',          'Sign-up block',          'A centered account-creation card: two-up name fields, work email, a password with the live strength meter, a plan SvSegmented switch, terms SvCheckBox and a benefits rail. Submit fires a promise toast. Pure UI-kit.', 'Blocks', BlockSignup421, { group: 'auth' }),
+  demo('422-block-otp',             'Two-factor / OTP block', 'The verification step of a sign-in flow: SvOtpInput (6 digits, auto-advance + onComplete), a resend cooldown timer, and the waiting -> verifying -> verified states. Enter 000000 to see the error path.', 'Blocks', BlockOtp422, { group: 'auth' }),
+  demo('423-block-dashboard',       'Analytics dashboard block', 'A full overview page: a range SvSegmented + actions header, a KPI grid (SvStat + SvSparkline), a revenue bar panel, a recent-activity SvTimeline and a top-products list with SvProgress bars. No grid dependency.', 'Blocks', BlockDashboard423, { group: 'app-shells' }),
+  demo('424-block-app-shell',       'App shell block',        'A complete application layout: a SvNavPane sidebar with sections + badges, a top bar with SvBreadcrumb, search and an account SvMenu, and a routed content area. Nav swaps the page; the toggle collapses the rail to an icon rail.', 'Blocks', BlockAppShell424, { group: 'app-shells' }),
+  demo('425-block-pricing',         'Pricing block',          'A three-tier plan grid with a monthly/annual SvSegmented toggle (annual applies the discount live), a highlighted "most popular" card, per-plan feature SvLists with check marks, and a CTA SvButton on each.', 'Blocks', BlockPricing425, { group: 'pricing' }),
+  demo('526-block-auth-providers', 'Sign-in with providers block', 'SSO-first SvCard with Google, GitHub and Microsoft SvButtons, plus a SAML option that reveals a company-domain SvTextInput. Below an SvDivider, a magic-link form switches to a Check your inbox state with a 30 s resend cooldown.', 'Blocks', BlockAuthProviders526, { group: 'auth' }),
+  demo('527-block-auth-forgot-password', 'Forgot password block', 'Password recovery in one SvCard. An email SvTextInput with validation and a loading SvButton leads to a check-your-email state that names the address, has a 60 s resend cooldown and a back-to-sign-in link.', 'Blocks', BlockAuthForgotPassword527, { group: 'auth' }),
+  demo('530-block-error-pages-404-links', '404 with helpful links block', 'Site search SvTextInput with a leading icon that filters a list of popular pages as you type (icon, title, description, chevron). An empty search shows a field error; a real query fires a toast.', 'Blocks', BlockErrorPages404Links530, { group: 'error-pages' }),
+  demo('531-block-error-pages-500', '500 server error block', 'Retry SvButton with loading that alternates fail and succeed, each with a toast. Also shows a request id with a Copy button, the failure time and a status link; SvBadge flips to Resolved.', 'Blocks', BlockErrorPages500531, { group: 'error-pages' }),
+  demo('532-block-error-pages-maintenance', 'Maintenance page block', 'Planned downtime page with a live countdown, an SvProgress bar and step list that advance with the clock, and a notify-me SvTextInput that validates the email before it submits.', 'Blocks', BlockErrorPagesMaintenance532, { group: 'error-pages' }),
+  demo('533-block-error-pages-403', 'Access denied block', '403 page naming the missing permission, with the signed-in account (SvAvatar and email) and Switch account. Request access opens an optional SvTextArea note, sends with loading and a toast, then shows Pending.', 'Blocks', BlockErrorPages403533, { group: 'error-pages' }),
+  demo('534-block-empty-states-simple', 'Empty state block', 'An empty Dashboards page: SvEmptyState with an icon, title, one sentence and a New dashboard SvButton that opens an inline SvTextInput form. Creating adds the dashboard to the list; deleting the last one brings the empty state back, with Undo in the toast.', 'Blocks', BlockEmptyStatesSimple534, { group: 'empty-states' }),
+  demo('536-block-empty-states-drop-zone', 'Upload drop zone block', 'A Files area that starts as a large dashed SvFileUpload drop zone (PDF, Word, Excel, images, 10 MB each). Added files list with an SvProgress upload bar, size and a Remove button; removing every file returns the empty state.', 'Blocks', BlockEmptyStatesDropZone536, { group: 'empty-states' }),
+  demo('537-block-empty-states-no-results', 'No search results block', 'A customer search with an SvTextInput and removable SvChip filters whose starting query matches nothing. SvEmptyState echoes the query and offers Clear filters, Clear search or removing one filter; clearing brings results back.', 'Blocks', BlockEmptyStatesNoResults537, { group: 'empty-states' }),
+  demo('538-block-empty-states-card', 'Empty widget card block', 'A dashboard row of three SvCard widgets: Revenue with SvStat and SvSparkline, Signups showing a compact SvEmptyState, and Support tickets asking to connect a source. Connect help desk fills that card with data. Stacks on phones.', 'Blocks', BlockEmptyStatesCard538, { group: 'empty-states' }),
+  demo('540-block-form-layouts-stacked', 'Stacked form block', 'A New project form in one column: SvTextInput, SvTextArea with a counter, SvDropDownList owner, SvRadioGroup visibility and an SvDateTimePicker due date. Create shows errors under each field, then a toast, and adds the project to a list.', 'Blocks', BlockFormLayoutsStacked540, { group: 'form-layouts' }),
+  demo('541-block-form-layouts-two-column', 'Two-column form block', 'Account settings in Profile, Address and Notifications sections: title and explanation on the left, the form on the right, built from SvTextInput, SvTextArea, SvDropDownList, SvCheckBox and SvRadioGroup. Each section saves on its own and stacks on phones.', 'Blocks', BlockFormLayoutsTwoColumn541, { group: 'form-layouts' }),
+  demo('542-block-form-layouts-settings', 'Notification settings block', 'Events by Email, Push and SMS with an SvSwitchButton per cell and an SvSegmented digest frequency. A sticky save bar counts unsaved changes; Save stores them and Discard restores the saved state.', 'Blocks', BlockFormLayoutsSettings542, { group: 'form-layouts' }),
+  demo('543-block-form-layouts-settings-nav', 'Settings with side nav block', 'Workspace settings with a General, Security, Billing and Team menu that swaps the form on the right, built from SvTextInput, SvDropDownList, SvSwitchButton and SvSegmented. Team invites members into the list. On phones the menu becomes an SvDropDownList.', 'Blocks', BlockFormLayoutsSettingsNav543, { group: 'form-layouts' }),
+  demo('544-block-form-layouts-danger-zone', 'Danger zone block', 'Destructive project actions in a --sg-danger bordered panel: transfer ownership with an SvDropDownList and SvCheckBox acknowledgement, archive through SvPopconfirm, and delete through an SvModal that enables Delete only once the project name is typed exactly.', 'Blocks', BlockFormLayoutsDangerZone544, { group: 'form-layouts' }),
+  demo('546-block-page-headings-breadcrumbs', 'Page heading with breadcrumbs block', 'Release page heading with an SvBreadcrumb trail above the title, a status SvBadge, and Edit notes / Publish release SvButtons. On phones the trail becomes one Back link.', 'Blocks', BlockPageHeadingsBreadcrumbs546, { group: 'page-headings' }),
+  demo('547-block-page-headings-tabs', 'Page heading with tabs block', 'Project heading with Invite and Run sync SvButtons over an SvTabs strip (Overview, Activity, Settings) with live counts. Run sync logs an entry and jumps to Activity.', 'Blocks', BlockPageHeadingsTabs547, { group: 'page-headings' }),
+  demo('548-block-page-headings-meta', 'Page heading with meta block', 'Job posting heading with a status SvBadge, icon meta items (location, salary, closing date, manager) and a Status SvMenu. Picking Open, Paused or Closed updates the badge.', 'Blocks', BlockPageHeadingsMeta548, { group: 'page-headings' }),
+  demo('549-block-page-headings-stats', 'Page heading with stats block', 'Revenue heading with an SvSegmented 7d/30d/90d switch and four SvStat values with deltas. Changing the range swaps every number; refund rate uses invert.', 'Blocks', BlockPageHeadingsStats549, { group: 'page-headings' }),
+  demo('551-block-onboarding-wizard', 'Setup wizard block', 'A four-step workspace setup with SvStepper: name and a live URL slug, teammate emails in SvTagsInput, plan radio cards, then a review. Next checks each step, and Create workspace runs a toast.promise.', 'Blocks', BlockOnboardingWizard551, { group: 'onboarding' }),
+  demo('552-block-onboarding-checklist', 'Progress checklist block', 'A getting-started card with an SvProgress bar and an x of y done count. Each task is an SvCollapsible with a button that completes it; done tasks are struck through, and at 5 of 5 the card turns into a dismissable all-done state.', 'Blocks', BlockOnboardingChecklist552, { group: 'onboarding' }),
+  demo('556-block-kpi-cards-icon', 'KPI cards with icons block', 'Metric tiles with a tinted inline-SVG icon, today\'s value and the 7-day average. Clicking a card selects it (aria-pressed) and the SvCard panel below shows that metric\'s last 7 days as one bar and value per day.', 'Blocks', BlockKpiCardsIcon556, { group: 'kpi-cards' }),
+  demo('557-block-kpi-cards-trend', 'KPI cards with trend block', 'Four SvStat cards with the change vs the previous period, an up/down arrow colored by whether the move is good, and the previous value. Churn and time to convert use invert. An SvSegmented 7d/30d/90d switch changes every number.', 'Blocks', BlockKpiCardsTrend557, { group: 'kpi-cards' }),
+  demo('559-block-kpi-cards-sparkline', 'KPI cards with sparklines block', 'Live API metrics in SvCard tiles, each with value, 30-second average and peak, and a full-width SvSparkline area chart. The Live SvSwitchButton appends a point every second; turning it off stops the interval.', 'Blocks', BlockKpiCardsSparkline559, { group: 'kpi-cards' }),
+  demo('564-block-stats-trends', 'Stats with trends block', 'Weekly report figures, each with an icon, last week\'s value and a trend chip; metrics where lower is better flip the chip color. Export CSV downloads the raw numbers and confirms with a toast.', 'Blocks', BlockStatsTrends564, { group: 'stats' }),
+  demo('565-block-stats-banded', 'Banded stats block', 'Status board on a tinted band: a health SvBadge and a bordered grid of six cells with value, label, status dot and change since an hour ago. An SvSwitchButton turns on live polling.', 'Blocks', BlockStatsBanded565, { group: 'stats' }),
+  demo('566-block-filter-panels-sidebar', 'Sidebar filters block', 'Product list with a filter sidebar: SvCheckBox category and brand groups with live counts, a range SvSlider for price, an SvRadioGroup minimum rating and Reset. On phones the filters open in an SvDrawer from a Filters button showing the active count.', 'Blocks', BlockFilterPanelsSidebar566, { group: 'filter-panels' }),
+  demo('567-block-filter-panels-toolbar', 'Filter toolbar block', 'One-row toolbar over a report list: SvTextInput search, SvDropDownList filters for type, team and status, an SvDropDownList sort and an SvSegmented list/grid switch. The list re-sorts and refilters live; the row wraps on phones.', 'Blocks', BlockFilterPanelsToolbar567, { group: 'filter-panels' }),
+  demo('568-block-filter-panels-chips', 'Applied filter chips block', 'An Add filter SvMenu with field submenus adds removable SvChip filters like Status: Open. A result count, Clear all and a read-only query-string field with Copy link update with the ticket list.', 'Blocks', BlockFilterPanelsChips568, { group: 'filter-panels' }),
+  demo('569-block-filter-panels-collapsible', 'Collapsible filters block', 'SvAccordion filter sections (Status checkboxes, Assignee dropdown, an SvDateRangeInput due date, an SvMultiSelect for tags), each header with an SvBadge count, and an SvGrid of tasks beside them that refilters on every change.', 'Blocks', BlockFilterPanelsCollapsible569, { group: 'filter-panels' }),
+  demo('570-block-activity-feeds-timeline', 'Activity timeline block', 'Project activity grouped by day into SvTimeline lists, with a marker color and glyph per event type (commit, comment, deploy, status change), actor, detail and relative time. Load more appends older events with a loading state.', 'Blocks', BlockActivityFeedsTimeline570, { group: 'activity-feeds' }),
+  demo('571-block-activity-feeds-notifications', 'Notification list block', 'A bell SvButton with an unread count opens the list in an SvPopover (inline below 560 px): All / Unread SvSegmented, click to mark read, Mark all as read, archive with an Undo toast, and an SvEmptyState when nothing is left.', 'Blocks', BlockActivityFeedsNotifications571, { group: 'activity-feeds' }),
+  demo('572-block-activity-feeds-comments', 'Comment feed block', 'A discussion thread with SvAvatar, name, relative time and body, Like and Reply, and one level of nested replies. Reply opens an inline SvTextArea; the bottom composer validates, shows a loading Post button and appends the comment.', 'Blocks', BlockActivityFeedsComments572, { group: 'activity-feeds' }),
+  demo('573-block-activity-feeds-audit-log', 'Audit log block', 'A compact audit log grouped by day with time, SvAvatar actor, SvBadge action, target and IP. Two SvDropDownList filters narrow it by actor and action, and updated rows expand into a before/after diff of each field.', 'Blocks', BlockActivityFeedsAuditLog573, { group: 'activity-feeds' }),
+  demo('574-block-ai-prompt-suggestions', 'Prompt suggestions block', 'An empty assistant chat with four starter prompt cards over a sales pipeline. A card fills the SvTextInput and sends it to aiFilter, aiSummarize or aiFindAnomalies; the reply appears word by word and a Stop SvButton cancels it.', 'Blocks', BlockAiPromptSuggestions574, { group: 'ai' }),
+  demo('575-block-ai-ask-bar', 'Ask bar block', 'An Ask about your data bar over 30 invoices in an SvGrid. aiFilter turns a question into grid filters and a sort; summarize questions run aiSummarize over the rows on screen. SvChip suggestions, an SvAlert error state and Clear.', 'Blocks', BlockAiAskBar575, { group: 'ai' }),
+  demo('576-block-ai-settings', 'AI settings block', 'Assistant settings with a model SvDropDownList, temperature SvSlider, max length SvNumberInput, a system prompt SvTextArea with counter and SvSwitchButton tools. A preview card shows the request payload live; Save and Reset confirm with a toast.', 'Blocks', BlockAiSettings576, { group: 'ai' }),
+  demo('579-block-orders-history', 'Order history block', 'Past orders in SvGrid with sortable columns, a right-aligned currency total and an SvBadge status cell. An SvSegmented filters by status, and View or a row click opens the order in an SvDrawer with its lines, totals and address.', 'Blocks', BlockOrdersHistory579, { group: 'orders' }),
+  demo('580-block-orders-tracking', 'Order tracking block', 'A shipment page: an SvBadge header, a five-stage delivery stepper with timestamps (across on desktop, down on phones), carrier scan events newest first, and an SvCard with the tracking number and a copy button. Refresh pulls the next scan.', 'Blocks', BlockOrdersTracking580, { group: 'orders' }),
+  demo('581-block-banners-announcement', 'Announcement bar block', 'Slim bar above a mock app header with an SvBadge, one line of news, a changelog link and dismiss. Dismissing fires an SvToaster toast with Undo, and an SvButton brings the bar back.', 'Blocks', BlockBannersAnnouncement581, { group: 'banners' }),
+  demo('583-block-banners-info', 'Inline info banners block', 'SvAlert in danger, warning, success and info tones inside a settings page, all dismissable. Retry now and Rotate key show a loading state and then clear their banner; Show hidden banners restores them.', 'Blocks', BlockBannersInfo583, { group: 'banners' }),
+  demo('585-block-banners-cookie-consent', 'Cookie consent block', 'Consent bar with Accept all, Reject non-essential and Customize. Customize opens an SvModal with an SvSwitchButton per category (Necessary locked on). The saved choice becomes a one-line summary with Change settings.', 'Blocks', BlockBannersCookieConsent585, { group: 'banners' }),
+  demo('586-block-banners-billing-warning', 'Billing warning banner block', 'Failed-payment banner with an SvBadge counting days left. Update payment method opens an SvModal card form: SvTextInput plus SvMaskedInput for card number (Luhn check), expiry and CVC. Saving resolves the banner to success.', 'Blocks', BlockBannersBillingWarning586, { group: 'banners' }),
+  demo('587-block-navbars-simple', 'Simple navbar block', 'Brand, four links with aria-current and a Start free trial SvButton over a mock page whose heading follows the current link. Below 768 px a menu button opens an in-flow panel that Escape or a link click closes.', 'Blocks', BlockNavbarsSimple587, { group: 'navbars' }),
+  demo('588-block-navbars-search', 'Navbar with search block', 'Storefront header with an SvTextInput search that toasts the query, an account SvMenu and a cart button with an SvBadge count that Add to cart raises. On phones the search moves under the bar.', 'Blocks', BlockNavbarsSearch588, { group: 'navbars' }),
+  demo('591-block-navbars-dropdowns', 'Navbar with dropdown menus block', 'Products opens a two-column mega menu of icon, title and description links; Resources opens an SvMenu. Enter, Space or ArrowDown opens, arrow keys move between links, and Escape closes and returns focus.', 'Blocks', BlockNavbarsDropdowns591, { group: 'navbars' }),
+  demo('593-block-footers-sitemap', 'Sitemap footer block', 'Brand and a one-line summary beside four link columns built from one data array, with an SvBadge on a new link and a Back to top SvButton. The columns go 4, 2, then 1 as the screen narrows.', 'Blocks', BlockFootersSitemap593, { group: 'footers' }),
+  demo('595-block-footers-simple', 'Simple footer block', 'One row with the copyright on the left and Privacy, Terms and Status on the right, with an Operational SvBadge on Status. The row stacks on phones.', 'Blocks', BlockFootersSimple595, { group: 'footers' }),
+  demo('599-block-checkout-split', 'Split checkout block', 'One-page checkout with SvTextInput, SvCountryInput, a delivery SvRadioGroup and SvMaskedInput card fields beside a sticky order summary. Pay checks every field (Luhn check, expiry not in the past), then shows SvButton loading and a toast.', 'Blocks', BlockCheckoutSplit599, { group: 'checkout' }),
+  demo('600-block-checkout-steps', 'Stepped checkout block', 'An SvStepper with Shipping, Payment and Review: SvPhoneInput, SvCountryInput, SvRadioGroup and SvMaskedInput validated per step. Review has Edit links that jump back and return to Review; Place order shows a loading state.', 'Blocks', BlockCheckoutSteps600, { group: 'checkout' }),
+  demo('601-block-checkout-payment-methods', 'Payment methods block', 'Radio cards for Card, Wallet pay, Bank transfer and Invoice with arrow-key navigation; the chosen method\'s form appears below (SvMaskedInput card, SvPhoneInput, IBAN with a mod-97 check, or VAT number plus SvCountryInput). Continue validates only that method.', 'Blocks', BlockCheckoutPaymentMethods601, { group: 'checkout' }),
+  demo('602-block-checkout-confirmation', 'Order confirmation block', 'Thank-you page with an inline-SVG check mark, a copyable order number, a delivery window counted in business days, next steps, the paid summary with an SvBadge status, and Track order / Continue shopping SvButtons.', 'Blocks', BlockCheckoutConfirmation602, { group: 'checkout' }),
+  demo('603-block-shopping-carts-page', 'Cart page block', 'Cart page with SvNumberInput quantities, Remove with an Undo toast and Save for later moving items to a saved list. The summary column has subtotal, estimated shipping, an SvTextInput promo code (WELCOME15 takes 15% off) and Checkout.', 'Blocks', BlockShoppingCartsPage603, { group: 'shopping-carts' }),
+  demo('604-block-shopping-carts-panel', 'Cart slide-over block', 'Product grid whose Add to cart SvButtons open an SvDrawer cart with SvNumberInput quantities, Remove, subtotal, Checkout and Continue shopping; the header Cart button shows the item count.', 'Blocks', BlockShoppingCartsPanel604, { group: 'shopping-carts' }),
+  demo('607-block-reviews-summary', 'Rating summary block', 'The average rating with a read-only half-star SvRating, the review count, 5-to-1 star bars and an SvProgress for would recommend. Click a star row to filter the recent reviews to that rating; Clear filter resets it.', 'Blocks', BlockReviewsSummary607, { group: 'reviews' }),
+  demo('608-block-reviews-list', 'Review list block', 'Reviews with SvAvatar, a Verified purchase SvBadge, a read-only SvRating, date, title and a body that clamps to three lines with Read more. Mark a review Helpful once, sort with an SvDropDownList and load the next page.', 'Blocks', BlockReviewsList608, { group: 'reviews' }),
+  demo('609-block-reviews-write', 'Write a review block', 'A required SvRating, a title, a body with a 30-character minimum and counter, up to three photos in SvFileUpload and a yes/no SvSegmented. Submit validates, shows a loading state, then a thank-you view with the posted review.', 'Blocks', BlockReviewsWrite609, { group: 'reviews' }),
+  demo('610-block-contact-centered', 'Centered contact form block', 'A heading over a contact form with SvTextInput name and email, an SvDropDownList topic, an SvTextArea with a counter and a required SvCheckBox. Send validates, shows the loading state, then a sent confirmation.', 'Blocks', BlockContactCentered610, { group: 'contact' }),
+  demo('612-block-contact-cards', 'Contact cards block', 'Sales, Support, Press and Partnerships cards with an icon, an email link and an SvButton. Book a demo opens an SvModal form that validates and marks the Sales card with an SvBadge.', 'Blocks', BlockContactCards612, { group: 'contact' }),
+  demo('614-block-contact-hours', 'Contact with support hours block', 'A support ticket form with an SvSegmented priority beside a weekly hours table, an Open now / Opens at badge from the viewer\'s clock, and response times per channel that change with the priority.', 'Blocks', BlockContactHours614, { group: 'contact' }),
+  demo('616-block-hero-centered', 'Centered hero block', 'Headline, subline, a primary and an outline SvButton and a note, centered over an admin-app product shot drawn in CSS that fades into the page. Copy and CTAs come from the core\'s options.', 'Blocks', BlockHeroCentered616, { group: 'hero' }),
+  demo('620-block-hero-signup', 'Hero with email sign-up block', 'Hero whose main CTA is an inline SvTextInput work email plus a Start free trial SvButton. It validates the address, shows loading, puts a server refusal under the field and switches to a check-your-inbox state.', 'Blocks', BlockHeroSignup620, { group: 'hero' }),
+  demo('622-block-features-icons', 'Features with icons block', 'A heading, a one-line intro and six features, each an inline-SVG icon with a title and two lines of text, three across, then two, then one. An SvBadge tags the newest feature and the SvButton trial CTA shows its loading state.', 'Blocks', BlockFeaturesIcons622, { group: 'features' }),
+  demo('624-block-features-screenshot', 'Features with screenshot block', 'A feature list that works as a tablist (arrow keys, Home, End) beside an inline-SVG product screenshot that redraws for the selected feature: dashboard, SQL editor, alert chart or share dialog.', 'Blocks', BlockFeaturesScreenshot624, { group: 'features' }),
+  demo('628-block-cta-centered', 'Centered call to action block', 'A heading, one line and two SvButtons centered on an accent band. Start free trial shows its loading state, confirms in an SvToaster toast and leaves a status line; Talk to sales goes through the same tracked action.', 'Blocks', BlockCtaCentered628, { group: 'cta' }),
+  demo('630-block-cta-justified', 'Justified call to action block', 'A heading and one line on the left, Book a demo and Get started SvButtons on the right of one bordered row. Get started shows loading, confirms in a toast and replaces the buttons with a confirmation. Stacks on phones.', 'Blocks', BlockCtaJustified630, { group: 'cta' }),
+  demo('634-block-pricing-highlighted', 'Pricing with highlighted plan block', 'Four per-seat plans in SvCards with the recommended one outlined and badged. A Seats SvNumberInput reprices every card live, with volume discounts at 25 and 100 seats, monthly totals, and seat caps that switch a plan off.', 'Blocks', BlockPricingHighlighted634, { group: 'pricing' }),
+  demo('635-block-pricing-comparison', 'Pricing comparison table block', 'A feature-by-plan table with grouped sections, check marks and limits, and a sticky header row holding each plan\'s price and SvButton. On phones an SvSegmented picks which plan column is shown.', 'Blocks', BlockPricingComparison635, { group: 'pricing' }),
+  demo('640-block-faq-accordion', 'FAQ accordion block', 'A heading and a search SvTextInput beside an accordion of questions. Typing filters the list live, highlights each hit with SvMark and opens matching answers; with no matches it offers Clear search and Contact support.', 'Blocks', BlockFaqAccordion640, { group: 'faq' }),
+  demo('641-block-faq-centered', 'Centered FAQ accordion block', 'A centered heading over an SvSegmented Billing / Account / Data switch that swaps the questions in an SvAccordion. Expand all and Collapse all SvButtons open or close every answer in the topic.', 'Blocks', BlockFaqCentered641, { group: 'faq' }),
+  demo('642-block-bento-features', 'Feature bento block', 'A feature section as a bento grid: one large tile with a mini results table and four smaller SVG tiles, each with a Read the guide link. Tile spans come from the data; an SvBadge marks the new feature and an SvButton starts the trial.', 'Blocks', BlockBentoFeatures642, { group: 'bento' }),
+  demo('646-block-testimonials-cards', 'Testimonial cards block', 'Six customer quote cards in a masonry-style column layout, each with a company wordmark, optional SvRating, the quote and an SvAvatar with name and role. Long quotes open with Read more, and the header shows the average rating.', 'Blocks', BlockTestimonialsCards646, { group: 'testimonials' }),
+  demo('647-block-testimonials-carousel', 'Testimonial carousel block', 'One large customer quote at a time in an SvCarousel with arrows, dots, swipe and autoplay that pauses on hover or focus and stays off under reduced motion. A row of company wordmarks jumps to that company\'s quote.', 'Blocks', BlockTestimonialsCarousel647, { group: 'testimonials' }),
+  demo('648-block-logo-clouds-grid', 'Logo cloud block', 'A heading and a social proof line over twelve made-up customer wordmarks in a ruled grid. Linked logos go from muted to full contrast on hover or focus, and an SvButton opens all customer stories.', 'Blocks', BlockLogoCloudsGrid648, { group: 'logo-clouds' }),
+  demo('649-block-team-grid', 'Team grid block', 'Team member cards with SvAvatar, name, role, bio and labelled email and profile links. An SvSegmented filter narrows the grid by department, and the We\'re hiring card lists that department\'s open roles.', 'Blocks', BlockTeamGrid649, { group: 'team' }),
+  demo('650-block-product-cards-grid', 'Product card block', 'Four product cards with color swatches that recolor the art, a read-only SvRating with review count, sale prices with an SvBadge, a wishlist heart (aria-pressed) and Add to cart with loading and a toast. 4, 2 or 1 columns.', 'Blocks', BlockProductCardsGrid650, { group: 'product-cards' }),
+  demo('651-block-product-cards-horizontal', 'Horizontal product card block', 'List-view product cards with drawn art, a description and stock status, an SvNumberInput quantity capped at the units left and Add to cart with loading and a toast. Out of stock disables both. Stacks on phones.', 'Blocks', BlockProductCardsHorizontal651, { group: 'product-cards' }),
+  demo('652-block-product-lists-toolbar', 'Product list with toolbar block', 'Twelve store products under a toolbar with the result count, an SvDropDownList sort and an SvSegmented grid/list switch. Load more shows the next eight, and Add to cart fires a toast.', 'Blocks', BlockProductListsToolbar652, { group: 'product-lists' }),
+  demo('653-block-product-lists-featured', 'Featured product list block', 'A large featured product tile with an SvBadge, price, a short pitch and a Shop now SvButton beside a 2x2 grid of smaller products, each with an Add button that loads and a save toggle.', 'Blocks', BlockProductListsFeatured653, { group: 'product-lists' }),
+  demo('654-block-product-overview-split', 'Product overview block', 'Product page with a keyboard-selectable thumbnail gallery, SvRating, color swatches, an SvSegmented size picker that disables sold-out sizes, quantity, Add to cart that asks for a size first, and an SvAccordion with Details, Shipping and Returns.', 'Blocks', BlockProductOverviewSplit654, { group: 'product-overview' }),
+  demo('655-block-blog-cards', 'Blog post cards block', 'A blog index grid of six post cards with SVG cover art, a category SvBadge, a 3-line excerpt, an SvAvatar byline, date and reading time. Category chips filter the grid; an empty category shows an SvEmptyState with Show all posts.', 'Blocks', BlockBlogCards655, { group: 'blog' }),
+  demo('656-block-blog-featured', 'Featured article block', 'A lead article with a large SVG cover, a category SvBadge, the excerpt and an SvAvatar byline with date and reading time, beside the four most recent posts and a View all posts link. Stacks on phones.', 'Blocks', BlockBlogFeatured656, { group: 'blog' }),
   demo('341-rich-text-editor',      'Rich text editor (WYSIWYG)', 'SvRichText: a lightweight WYSIWYG over a contentEditable region - bold/italic/underline/strike, headings, lists, quote, code block, alignment, links, undo/redo - emitting HTML via bind:value, with a configurable toolbar. Parity: Smart editor.', 'Inputs', RichTextEditor341),
   demo('335-tree-select',           'Tree select', 'SvTreeSelect: a single-select dropdown showing a collapsible tree in its portalled panel (the tree-select / cascader pattern). Arrow keys navigate, Right/Left expand/collapse, Enter selects; optional full-path label in the trigger.', 'Selection', TreeSelect335),
   demo('336-grid-select',           'Grid select (multi-column)', 'SvGridSelect: a "grid in a dropdown" single-select - the panel shows options as a compact multi-column table with a header row and search, so you pick by more than a label. Built on its own panel (no embedded SvGrid); standalone or as a cell editor.', 'Selection', GridSelect336),
@@ -977,6 +1164,7 @@ const baseDemos: Demo[] = [
   demo('522-base-okrs', 'OKRs', 'Objectives and key results, ready to use: key results measure progress from start to target with a formula, and each objective averages them with a rollup. Views by objective, a confidence board, a weekly check-in and progress by objective, with automations for off-track and achieved results.', 'Base', BaseOkrs522, { pro: true }),
   demo('523-base-expenses', 'Expense approvals', 'Expense approvals, ready to use: Expenses and Budgets as linked tables, with receipts, approval statuses and what is left of each budget. Views for this month, an approvals board, spend by category, receipts and a submit form, with automations that route big expenses for approval and an Approve button.', 'Base', BaseExpenses523, { pro: true }),
   demo('524-base-onboarding', 'Employee onboarding', 'Employee onboarding, ready to use: People, their Checklist and Departments as linked tables. Views for the hiring pipeline, a photo directory, start dates on a calendar and a new hire form, with an automation that creates the checklist for IT, HR and the manager of each new hire.', 'Base', BaseOnboarding524, { pro: true }),
+  demo('700-base-ai-triage', 'An AI agent and your team, one table', 'An AI agent and your team in one table: a support inbox on Postgres in the page. Run the triage agent and it writes each ticket\'s category, priority and a draft reply to the database with SQL; the base shows what it changed, tinted until someone opens the record, and the record\'s activity says Triage agent changed Priority from what to what. Review the agent\'s work in the Needs review view, set its one wrong call right, and Approve.', 'Base', BaseAiTriage700, { pro: true }),
   demo('505-gallery-catalog', 'Product catalog (gallery)', 'One <SvGrid> as a storefront: the `gallery` prop shows the rows as product cards drawn by a card snippet (photo, brand, rating, sale price, a badge), and Table shows the same rows. The category filter, search and sort are the grid, so both views agree; a click opens the product in a panel with Add to cart.', 'Gallery', GalleryCatalog505, { pro: true }),
   demo('506-gallery-team-directory', 'Team directory (custom cards)', 'A gallery whose cards you draw yourself: `gallery.card` is a snippet that gets each row, so a person shows as a profile card with photo, role, team and a mail link. The search box and the Team filter buttons narrow the same rows the Table view shows.', 'Gallery', GalleryTeam506, { pro: true }),
   demo('507-gallery-listings', 'Real estate listings', 'Listings drawn by a card snippet: the photo with its status and a save button, the price, beds, baths and size, the address and the agent. The cards are the grid filtered and sorted rows: status buttons and a beds filter set column filters, the sort menu calls api.setSort, the search box is the quick filter.', 'Gallery', GalleryListings507, { pro: true }),

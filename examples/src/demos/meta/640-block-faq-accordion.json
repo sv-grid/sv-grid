@@ -1,0 +1,24 @@
+{
+  "description": "An FAQ section for Svelte 5 built from the SvGrid UI kit: a heading and a search SvTextInput on the left, an accordion of questions on the right. Typing filters the questions live, highlights every hit in the question and the answer with SvMark and opens the answers that contain a hit. When nothing matches, a no-matches state offers Clear search and Contact support SvButtons. The questions, search and open state live in an exported createFaqAccordion() core.",
+  "keywords": [
+    "svelte faq page",
+    "svelte 5 faq accordion",
+    "svelte searchable faq",
+    "svelte faq search highlight",
+    "sveltekit faq json-ld"
+  ],
+  "faq": [
+    {
+      "question": "How does the search decide what matches?",
+      "answer": "createFaqAccordion() splits the query on spaces and keeps a question only when every word appears somewhere in its question or answer, ignoring case. parts(text) splits a string into plain and hit runs with the same words, and the block wraps each hit in SvMark. Up to three results whose answer holds a hit are opened so the highlight is in view; clearing the search closes them."
+    },
+    {
+      "question": "How do I use my own questions?",
+      "answer": "Pass items to createFaqAccordion() as an array of { id, question, answer }, for example from a SvelteKit load function. The sample set is only the default. initialOpen sets which ids are open on load, and onContact receives the trimmed search text when a reader presses Contact support from the no-matches state."
+    },
+    {
+      "question": "What changes on a phone?",
+      "answer": "Below 760 px the two columns stack: heading, line and search box on top, the question list under them, with 16 px side padding. Long questions wrap inside their button and the chevron keeps its place at the right edge."
+    }
+  ]
+}

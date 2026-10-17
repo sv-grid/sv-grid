@@ -27,7 +27,7 @@ from `@svgrid/grid/core`. MIT licensed, TypeScript-first, and it server-renders 
 
 </p>
 
-**Quick links:** [Website](https://svgrid.com) · [Docs](https://svgrid.com/docs/) · [400+ Demos](https://svgrid.com/demos/) · [Pricing](https://svgrid.com/pricing/) · [Roadmap](https://svgrid.com/roadmap/) · [Blog](https://svgrid.com/blog/) · [Releases](https://github.com/sv-grid/sv-grid/releases) · [npm](https://www.npmjs.com/package/@svgrid/grid)
+**Quick links:** [Website](https://svgrid.com) · [Docs](https://svgrid.com/docs/) · [500+ Demos](https://svgrid.com/demos/) · [Pricing](https://svgrid.com/pricing/) · [Roadmap](https://svgrid.com/roadmap/) · [Blog](https://svgrid.com/blog/) · [Releases](https://github.com/sv-grid/sv-grid/releases) · [npm](https://www.npmjs.com/package/@svgrid/grid)
 
 If you build on Svelte 5, [star the repo](https://github.com/sv-grid/sv-grid) so it is there when you
 need a grid. Stars are also how other Svelte developers find it.
@@ -115,7 +115,7 @@ Vite + Svelte 5 project. Nothing to install.
 | [<img src="https://svgrid.com/thumbs/343-kanban-board.webp" width="260" alt="Kanban board demo" />](https://svgrid.com/demos/343-kanban-board/) | [<img src="https://svgrid.com/thumbs/363-scheduler-intro.webp" width="260" alt="Scheduler demo" />](https://svgrid.com/demos/363-scheduler-intro/) | [<img src="https://svgrid.com/thumbs/80-cell-types-showcase.webp" width="260" alt="Cell types showcase demo" />](https://svgrid.com/demos/80-cell-types-showcase/) |
 | **[Kanban board](https://svgrid.com/demos/343-kanban-board/)**<br>the same grid, board mode | **[Scheduler](https://svgrid.com/demos/363-scheduler-intro/)**<br>calendar views off the same data | **[Cell types](https://svgrid.com/demos/80-cell-types-showcase/)**<br>every editor in one grid |
 
-All [400+ demos](https://svgrid.com/demos/) are browsable by category.
+All [500+ demos](https://svgrid.com/demos/) are browsable by category.
 
 ## What ships free
 
@@ -155,7 +155,7 @@ The MIT package has no license key, no watermark, and no row-count cap.
 | **License** | MIT, free for commercial use |
 | **Bundle (gzip)** | ~2.7 KB headless core, ~98 KB full `<SvGrid>` + ~10 KB CSS; charts, date pickers, menus and export load as separate chunks on first use |
 | **SSR** | Header plus a viewport window of rows in the server HTML; checked in CI by `pnpm ssr:check` |
-| **Demos** | [400+ demos](https://svgrid.com/demos/), each with a StackBlitz button |
+| **Demos** | [500+ demos](https://svgrid.com/demos/), each with a StackBlitz button |
 | **AI grounding** | [MCP server](https://www.npmjs.com/package/@svgrid/mcp), [llms.txt](https://svgrid.com/llms.txt), [Agent Skill](https://svgrid.com/docs/help/skill/) |
 
 Numbers are measured, not typed: `pnpm size` and `pnpm demos:count` re-derive them.

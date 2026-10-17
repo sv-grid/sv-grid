@@ -1,0 +1,24 @@
+{
+  "description": "A Files area for Svelte 5 that starts as a large dashed SvFileUpload drop zone: drag files in or browse, with accepted types and a 10 MB per-file cap. Added files move into a list with a type tile, name, SvProgress upload bar, size, an Uploaded SvBadge and a Remove button, while the zone shrinks to an add-more strip. Removing every file returns the empty state.",
+  "keywords": [
+    "svelte file upload drop zone",
+    "svelte 5 drag and drop upload",
+    "svelte empty files state",
+    "svelte upload progress list",
+    "svelte file list with remove"
+  ],
+  "faq": [
+    {
+      "question": "How are file types and sizes enforced?",
+      "answer": "SvFileUpload gets accept and maxSize props and checks each dropped or picked file. Rejected files go to onReject, which the block turns into an error toast naming the file and the reason."
+    },
+    {
+      "question": "How do I upload to my storage instead of the simulated progress?",
+      "answer": "Pass an upload option to createUploadList: a function that sends one file with fetch or XMLHttpRequest and calls the progress callback from the upload events. The list and SvProgress bar already read that progress, and a rejected upload drops the file from the list."
+    },
+    {
+      "question": "Why does the block keep its own file list?",
+      "answer": "SvFileUpload is bound to the core's pending array, and its onChange hands the files to the core's add(), which moves them into items and empties pending. The component never draws its own list, so the block can show progress, status and its own Remove buttons."
+    }
+  ]
+}

@@ -1,0 +1,318 @@
+<!doctype html>
+<!--
+  "An AI agent and your team, one table" - a landscape presentation, 1920 x 1080.
+
+  Zazo presents on the left, his mouth driven by the loudness of his voice
+  (window.__setMouth). The screen on the right shows slides and real footage
+  (record.mjs): a support inbox in SvGrid Base on a real Supabase project,
+  Claude Code triaging it through the Supabase MCP server (sped up, with its
+  real output replayed in the terminal panel at the times it arrived), then a
+  person reviewing the agent's work.
+
+  Every animation is a pure function of t (window.__seek).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=block" />
+<style>
+  :root { --bg: #0b0908; --fg: #fafaf9; --muted: #a8a29e; --orange: #ff5a1f; --green: #22c55e; --teal: #2dd4bf; --line: #292524; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); color: var(--fg); font-family: Inter, system-ui, sans-serif; }
+  #frame { position: absolute; inset: 0; overflow: hidden; }
+  .stage { position: absolute; inset: 0; background: radial-gradient(ellipse 70% 80% at 30% 40%, #1d2224 0%, #0f1214 55%, #0b0908 100%); }
+  .floor { position: absolute; left: 0; right: 0; bottom: 0; height: 220px; background: linear-gradient(#0b0908 0%, #15110f 100%); border-top: 1px solid #1f1a17; }
+  .spot { position: absolute; left: -120px; top: 120px; width: 900px; height: 1100px; background: radial-gradient(ellipse at 50% 40%, rgba(45,212,191,.08), transparent 60%); }
+
+  #screen { position: absolute; left: 650px; top: 96px; width: 1220px; height: 686px; border-radius: 22px; overflow: hidden; background: #0c0a09; box-shadow: 0 0 0 2px #2b2622, 0 30px 80px -20px rgba(0,0,0,.8), 0 0 120px 10px rgba(255,90,31,.06); }
+  #slides { position: absolute; inset: 0; }
+  .slide { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 70px 90px; }
+  .slide h1 { font-size: 92px; line-height: 1; font-weight: 900; letter-spacing: -.04em; }
+  .slide h2 { font-size: 58px; line-height: 1.08; font-weight: 900; letter-spacing: -.03em; }
+  .slide h2 em, .slide h1 em { font-style: normal; color: var(--orange); }
+  .slide p { font-size: 34px; line-height: 1.35; color: #d6d3d1; margin-top: 26px; font-weight: 600; }
+  .slide .k { color: var(--muted); font-size: 26px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 22px; }
+  .brand { display: flex; align-items: center; gap: 22px; font-size: 96px; font-weight: 900; letter-spacing: -.04em; }
+  .brand i { font-style: normal; color: var(--orange); }
+  .brand small { font-size: 96px; color: #e7e5e4; font-weight: 800; }
+  .code { white-space: pre-wrap; font: 600 30px/1.5 'JetBrains Mono'; background: #171311; border: 1px solid var(--line); border-radius: 14px; padding: 22px 28px; margin-top: 30px; color: #e7e5e4; }
+  .rows { margin-top: 34px; display: grid; gap: 14px; }
+  .r { display: grid; grid-template-columns: 300px 1fr 1fr; gap: 14px; align-items: center; font-size: 26px; font-weight: 700; }
+  .r span { background: #171311; border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; }
+  .r .q { color: #fca5a5; border-color: #7f1d1d; }
+  #clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: left top; display: block; }
+
+  /* The agent's terminal, over the empty space under the ten tickets. */
+  #term { position: absolute; left: 22px; right: 22px; bottom: 18px; height: 168px; background: rgba(9,9,11,.96); border: 1px solid #3f3f46; border-radius: 14px; box-shadow: 0 18px 50px rgba(0,0,0,.65); overflow: hidden; display: flex; flex-direction: column; }
+  #term .hd { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1px solid #27272a; font: 700 15px 'JetBrains Mono'; color: #a1a1aa; }
+  #term .hd i { width: 10px; height: 10px; border-radius: 50%; background: #3f3f46; display: inline-block; }
+  #term .hd b { color: #e4e4e7; }
+  #term .hd .mcp { margin-left: auto; color: #3ecf8e; }
+  #term .body { flex: 1; padding: 8px 16px; font: 600 15px/1.5 'JetBrains Mono'; color: #d4d4d8; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
+  #term .ln { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #term .p { color: #fafafa; white-space: normal; }
+  #term .p::before { content: '> '; color: var(--orange); }
+  #term .say::before { content: '● '; color: #e4e4e7; }
+  #term .sql { color: #93c5fd; }
+  #term .sql::before { content: '  execute_sql  '; color: #3ecf8e; }
+  #term .ok { color: #71717a; }
+  #term .caret { display: inline-block; width: 9px; height: 17px; background: var(--orange); vertical-align: -3px; margin-left: 2px; }
+  .tag { position: absolute; right: 18px; top: 16px; font: 700 18px 'JetBrains Mono'; color: #fff; background: rgba(12,10,9,.92); border: 2px solid var(--green); border-radius: 10px; padding: 7px 12px; }
+  #speed { position: absolute; left: 520px; top: 8px; font: 800 20px 'JetBrains Mono'; color: #0c0a09; background: var(--teal); border-radius: 10px; padding: 6px 12px; }
+
+  #lower { position: absolute; left: 720px; top: 820px; width: 1150px; }
+  #lower .big { font-size: 54px; font-weight: 900; letter-spacing: -.03em; line-height: 1.05; }
+  #lower .big em { font-style: normal; color: var(--orange); }
+  #lower .small { font-size: 30px; font-weight: 700; color: var(--muted); margin-top: 12px; }
+
+  #zazo { position: absolute; left: 20px; top: 250px; width: 640px; overflow: visible; }
+  .name { position: absolute; left: 70px; top: 960px; font-size: 30px; font-weight: 800; background: #171311; border: 1px solid var(--line); border-radius: 12px; padding: 10px 18px; }
+  .name i { font-style: normal; color: var(--orange); }
+  #black { position: absolute; inset: 0; background: #000; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="frame">
+  <div class="stage"></div>
+  <div class="spot"></div>
+  <div class="floor"></div>
+
+  <div id="screen">
+    <img id="clip" alt="" />
+    <div id="slides"></div>
+    <div id="term"><div class="hd"><i></i><i></i><i></i><b>claude</b> -p &nbsp;·&nbsp; Claude Code, headless<span class="mcp">supabase MCP · execute_sql</span></div><div class="body" id="termBody"></div></div>
+    <div id="speed"></div>
+    <div class="tag" id="tag"></div>
+  </div>
+  <div id="lower"><div class="big" id="lowerBig"></div><div class="small" id="lowerSmall"></div></div>
+
+  <svg id="zazo" viewBox="0 0 400 520"></svg>
+  <div class="name"><i>Zazo</i> · SvGrid</div>
+  <div id="black"></div>
+</div>
+
+<script>
+let SEG = {}
+let END = 100
+let MOUTH = []
+let AGENT = null   // { frames: [{ t, src }], events: [{ t, kind, text }], start, speed, prompt }
+let REVIEW = []
+const FPS = 30
+window.__setTimeline = (seg, end) => { SEG = seg; END = end }
+window.__setMouth = (m) => { MOUTH = m }
+window.__setFootage = (agent, review) => { AGENT = agent; REVIEW = review }
+
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x))
+const seg = (t, a, b) => clamp((t - a) / (b - a))
+const easeOut = (k) => 1 - Math.pow(1 - k, 3)
+const easeInOut = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2)
+const $ = (id) => document.getElementById(id)
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+const now = (t) => Object.keys(SEG).find((k) => t >= SEG[k][0] && t < SEG[k][1]) ?? (t < (SEG.hello?.[0] ?? 0.6) ? 'hello' : 'close')
+
+/* ======================================================== the SvGrid mark */
+function logoParts(fg = '#fafaf9') {
+  const cols = [{ x: 4, w: 6 }, { x: 11, w: 4 }, { x: 16, w: 4 }]
+  let r = ''
+  for (const c of cols) r += `<rect x="${c.x}" y="4" width="${c.w}" height="4" rx="1.2" fill="${fg}" opacity="0.92"/>`
+  r += `<path d="M16.9 5.4 L19.1 5.4 L18 6.9 Z" fill="#ff5a1f"/>`
+  for (const y of [9, 13, 17]) cols.forEach((c, i) => (r += `<rect x="${c.x}" y="${y}" width="${c.w}" height="3" rx="0.9" fill="${i === 2 ? '#ff5a1f' : '#71717a'}"/>`))
+  return r
+}
+const logo = (size) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}">${logoParts()}</svg>`
+
+/* ============================================================ Zazo */
+function zazoSvg() {
+  const skin = '#8d5a3b', skinD = '#74472d', hair = '#1b1210', shirt = '#18181b'
+  const curls = []
+  for (const [x, y, r] of [[120,150,46],[160,118,50],[210,104,54],[262,116,50],[300,150,46],[316,196,36],[104,196,36],[146,96,34],[236,84,36],[280,100,30]])
+    curls.push(`<circle cx="${x}" cy="${y}" r="${r}" fill="${hair}"/>`)
+  return `
+  <defs>
+    <clipPath id="eyeL"><ellipse cx="170" cy="230" rx="24" ry="26"/></clipPath>
+    <clipPath id="eyeR"><ellipse cx="250" cy="230" rx="24" ry="26"/></clipPath>
+  </defs>
+  <g id="armL"><path d="M96 410 q-40 60 -26 150" stroke="${shirt}" stroke-width="44" stroke-linecap="round" fill="none"/></g>
+  <g id="body">
+    <path d="M70 540 q10 -170 140 -180 q130 10 140 180 z" fill="${shirt}" stroke="#3f3f46" stroke-width="3"/>
+    <path d="M176 362 q34 24 68 0" fill="none" stroke="#52525b" stroke-width="7" stroke-linecap="round"/>
+    <g transform="translate(176 398) scale(2.85)">${logoParts()}</g>
+  </g>
+  <g id="armR">
+    <path id="armRline" d="M324 410 q40 60 26 150" stroke="#3f3f46" stroke-width="50" stroke-linecap="round" fill="none"/>
+    <path id="armRpath" d="M324 410 q40 60 26 150" stroke="${shirt}" stroke-width="44" stroke-linecap="round" fill="none"/>
+    <g id="handR"><circle cx="0" cy="0" r="24" fill="${skin}"/><path id="finger" d="M14 -10 L44 -26" stroke="${skin}" stroke-width="13" stroke-linecap="round"/></g>
+  </g>
+  <g id="head">
+    <rect x="178" y="300" width="64" height="70" rx="22" fill="${skinD}"/>
+    <ellipse cx="110" cy="240" rx="20" ry="30" fill="${skin}"/><ellipse cx="310" cy="240" rx="20" ry="30" fill="${skin}"/>
+    <ellipse cx="210" cy="230" rx="100" ry="112" fill="${skin}"/>
+    <path d="M120 270 q90 80 180 0 q-10 60 -90 70 q-80 -10 -90 -70z" fill="${skinD}" opacity=".35"/>
+    ${curls.join('')}
+    <path d="M100 210 q110 -190 220 0" fill="none" stroke="#27272a" stroke-width="12"/>
+    <rect x="86" y="206" width="30" height="58" rx="12" fill="#27272a"/><rect x="304" y="206" width="30" height="58" rx="12" fill="#27272a"/>
+    <path d="M104 262 q8 70 86 58" fill="none" stroke="#27272a" stroke-width="7"/><circle cx="192" cy="320" r="9" fill="#27272a"/>
+    <ellipse cx="170" cy="230" rx="24" ry="26" fill="#fff"/><ellipse cx="250" cy="230" rx="24" ry="26" fill="#fff"/>
+    <g id="pupils"><circle cx="172" cy="232" r="12" fill="#3b2314"/><circle cx="252" cy="232" r="12" fill="#3b2314"/>
+      <circle cx="176" cy="227" r="4" fill="#fff"/><circle cx="256" cy="227" r="4" fill="#fff"/></g>
+    <g clip-path="url(#eyeL)"><rect id="lidL" x="140" y="200" width="60" height="60" fill="${skin}"/></g>
+    <g clip-path="url(#eyeR)"><rect id="lidR" x="220" y="200" width="60" height="60" fill="${skin}"/></g>
+    <rect x="136" y="198" width="70" height="64" rx="22" fill="none" stroke="#111" stroke-width="7"/>
+    <rect x="214" y="198" width="70" height="64" rx="22" fill="none" stroke="#111" stroke-width="7"/>
+    <path d="M206 224 h8" stroke="#111" stroke-width="7"/>
+    <g id="brows">
+      <path d="M144 180 q24 -18 50 -6" fill="none" stroke="${hair}" stroke-width="10" stroke-linecap="round"/>
+      <path d="M226 174 q26 -12 50 6" fill="none" stroke="${hair}" stroke-width="10" stroke-linecap="round"/>
+    </g>
+    <ellipse cx="146" cy="282" rx="16" ry="9" fill="#c2410c" opacity=".28"/><ellipse cx="274" cy="282" rx="16" ry="9" fill="#c2410c" opacity=".28"/>
+    <g id="smile"><path d="M178 292 q32 34 64 0 z" fill="#3b1408"/><path d="M186 294 q24 9 48 0" fill="#fff"/></g>
+    <g id="talk"><ellipse cx="210" cy="300" rx="24" ry="18" fill="#3b1408"/><ellipse cx="210" cy="310" rx="13" ry="7" fill="#e11d48" opacity=".7"/><path d="M192 288 q18 -5 36 0" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/></g>
+  </g>`
+}
+$('zazo').innerHTML = zazoSvg()
+
+/* ========================================================== the screen */
+const SLIDES = {
+  hello: () => `<div class="slide"><div class="k">Zazo presents</div><div class="brand">${logo(110)}<span><i>Sv</i>Grid</span><small>Base</small></div><p>An AI agent and your team, one table.</p></div>`,
+  hook: () => `<div class="slide"><h2>AI agents now work<br>in <em>your team's data.</em></h2><div class="rows">${[['Update records', 'status, owner, dates'], ['Fill in fields', 'categories, priorities, tags'], ['Draft replies', 'for a person to send']].map(([a, b]) => `<div class="r"><span>${a}</span><span style="grid-column:span 2;color:var(--muted)">${b}</span></div>`).join('')}</div></div>`,
+  problem: () => `<div class="slide"><h2>Rows just change.</h2><div class="rows"><div class="r"><span class="q">What did it touch?</span><span class="q">What was there before?</span><span class="q">Who checks it?</span></div></div><p>An agent edits faster than anyone can watch.</p></div>`,
+  close: () => `<div class="slide"><div class="brand" style="font-size:84px">${logo(96)}<span><i>Sv</i>Grid</span><small style="font-size:84px">Base</small></div><h2 style="margin-top:30px">The agent does the first pass.<br><em>People make the call.</em></h2><div class="code" style="font-size:28px">npm i @svgrid/enterprise</div><p style="font-size:28px">Part of SvGrid Suite. Free to try, with a small watermark until you add a key.<br>svgrid.com/docs/help/base/data</p></div>`,
+}
+const LOWER = {
+  setup: ['A support inbox, <em>on Supabase.</em>', 'Ten new tickets. Claude Code, with the Supabase MCP server.'],
+  agent: ['Every change, <em>with a name on it.</em>', 'The agent writes to the database; the base shows what moved'],
+  review: ['What changed, <em>and from what.</em>', 'Each record keeps the agent\'s changes in its activity'],
+  correct: ['Disagree? <em>Change it.</em>', 'Your edit goes to the same table, under your name'],
+  approve: ['Review, then <em>approve.</em>', 'A Needs review view and an Approve button'],
+}
+const TAGS = { setup: 'a real Supabase project', agent: 'real Claude Code run, real Realtime', review: 'the same page, after the run', correct: 'written to Supabase as Ana', approve: 'written to Supabase' }
+
+let lastSlide = '', lastSrc = '', lastTerm = ''
+function show(src) {
+  const img = $('clip')
+  if (src !== lastSrc) { img.src = src; lastSrc = src }
+  img.style.display = ''
+  if (lastSlide) { $('slides').innerHTML = ''; lastSlide = '' }
+}
+/** The agent's time (seconds since Claude started) at video time t. */
+function agentTime(t) {
+  if (!AGENT) return 0
+  if (now(t) === 'setup') return AGENT.start
+  return AGENT.start + Math.max(0, t - SEG.agent[0]) * AGENT.speed
+}
+function agentFrame(real) {
+  const f = AGENT.frames
+  let lo = 0, hi = f.length - 1
+  while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (f[mid].t <= real) lo = mid; else hi = mid - 1 }
+  return f[lo].src
+}
+/** Claude's SQL on one line: the statement, its values, no padding. */
+const oneLine = (sql) => sql.replace(/\s+/g, ' ').trim()
+
+function terminal(t, id) {
+  let html = ''
+  if (id === 'setup') {
+    const k = seg(t, SEG.setup[0] + 2.5, SEG.setup[1] - 1.2)
+    const typed = AGENT.prompt.slice(0, Math.round(AGENT.prompt.length * k))
+    html = `<div class="ln p">${esc(typed)}<span class="caret"></span></div>`
+  } else {
+    const real = agentTime(t)
+    const lines = [`<div class="ln p">${esc(AGENT.prompt.slice(0, 92))}...</div>`]
+    for (const e of AGENT.events) {
+      if (e.t > real) break
+      if (e.kind === 'say') lines.push(`<div class="ln say">${esc(e.text.split('\n')[0])}</div>`)
+      else if (e.kind === 'sql') lines.push(`<div class="ln sql">${esc(oneLine(e.text))}</div>`)
+    }
+    html = lines.slice(-5).join('')
+  }
+  if (html !== lastTerm) { $('termBody').innerHTML = html; lastTerm = html }
+}
+
+function screen(t) {
+  const id = now(t)
+  const footage = AGENT && (id === 'setup' || id === 'agent')
+  const reviewing = REVIEW.length && (id === 'review' || id === 'correct' || id === 'approve')
+  if (footage) show(agentFrame(agentTime(t)))
+  else if (reviewing) show(REVIEW[clamp(Math.floor((t - SEG.review[0]) * FPS), 0, REVIEW.length - 1)])
+  else {
+    $('clip').style.display = 'none'
+    const html = SLIDES[id] ? SLIDES[id]() : ''
+    if (html !== lastSlide) { $('slides').innerHTML = html; lastSlide = html }
+  }
+  $('slides').style.opacity = easeOut(seg(t, SEG[id]?.[0] ?? 0, (SEG[id]?.[0] ?? 0) + 0.4))
+  $('slides').style.transform = `translateY(${(1 - easeOut(seg(t, SEG[id]?.[0] ?? 0, (SEG[id]?.[0] ?? 0) + 0.5))) * 20}px)`
+
+  $('term').style.display = footage ? '' : 'none'
+  if (footage) {
+    terminal(t, id)
+    const k = easeOut(seg(t, SEG.setup[0] + 1.6, SEG.setup[0] + 2.3))
+    $('term').style.transform = `translateY(${(1 - k) * 220}px)`
+  }
+  const sped = id === 'agent' && AGENT
+  $('speed').style.display = sped ? '' : 'none'
+  if (sped) $('speed').textContent = `sped up ${AGENT.speed.toFixed(AGENT.speed < 10 ? 1 : 0).replace(/\.0$/, '')}x`
+  const tag = (footage || reviewing) && TAGS[id]
+  $('tag').style.display = tag ? '' : 'none'
+  if (tag) $('tag').textContent = TAGS[id]
+
+  const l = LOWER[id]
+  $('lower').style.display = l ? '' : 'none'
+  if (l) {
+    $('lowerBig').innerHTML = l[0]
+    $('lowerSmall').textContent = l[1]
+    const k = easeOut(seg(t, SEG[id][0] + 0.2, SEG[id][0] + 0.6))
+    $('lower').style.opacity = k
+    $('lower').style.transform = `translateY(${(1 - k) * 16}px)`
+  }
+}
+
+/* ============================================================ tick */
+function blink(t, period, offset) {
+  const p = ((t + offset) % period) / period
+  const w = 0.16 / period
+  return p < w ? Math.sin((p / w) * Math.PI) : 0
+}
+const POINT = new Set(['setup', 'agent', 'review', 'correct', 'approve'])
+
+function tick(t) {
+  screen(t)
+  const id = now(t)
+  const f = Math.floor(t * FPS)
+  const open = MOUTH[f] ?? 0
+  const talking = open > 0.04
+  $('smile').style.opacity = talking ? 0 : 1
+  $('talk').style.opacity = talking ? 1 : 0
+  $('talk').setAttribute('transform', `translate(210 300) scale(${(0.9 + 0.15 * Math.sin(t * 9)).toFixed(3)} ${(0.15 + open * 1.1).toFixed(3)}) translate(-210 -300)`)
+  $('brows').setAttribute('transform', `translate(0 ${(-open * 5).toFixed(2)})`)
+  const b = blink(t, 3.6, 0.4)
+  $('lidL').setAttribute('transform', `translate(0 ${(-60 + 60 * b).toFixed(1)})`)
+  $('lidR').setAttribute('transform', `translate(0 ${(-60 + 60 * b).toFixed(1)})`)
+  const look = POINT.has(id) ? 1 : 0
+  $('pupils').setAttribute('transform', `translate(${(look * 9).toFixed(1)} ${(-look * 2).toFixed(1)})`)
+  $('head').setAttribute('transform', `rotate(${(Math.sin(t * 1.3) * 2 + open * 2 * Math.sin(t * 5)).toFixed(2)} 210 330)`)
+  // He points while the screen shows footage; between footage segments the arm stays up.
+  const was = (k) => POINT.has(k)
+  const prevId = Object.keys(SEG)[Object.keys(SEG).indexOf(id) - 1]
+  const pointK = easeInOut(clamp(POINT.has(id) ? (was(prevId) ? 1 : seg(t, SEG[id][0], SEG[id][0] + 0.5)) : 1 - seg(t, SEG[id]?.[0] ?? 0, (SEG[id]?.[0] ?? 0) + 0.5)))
+  // Aimed at the grid, clear of the terminal along the bottom of the screen.
+  const restHand = [350, 560], pointHand = [362, 205]
+  const gesture = talking && !POINT.has(id) ? Math.sin(t * 3.2) * 18 : 0
+  const hx = restHand[0] + (pointHand[0] - restHand[0]) * pointK
+  const hy = restHand[1] + (pointHand[1] - restHand[1]) * pointK - gesture
+  const armD = `M324 410 Q${(330 + 70 * pointK).toFixed(1)} ${(470 - 120 * pointK).toFixed(1)} ${hx.toFixed(1)} ${hy.toFixed(1)}`
+  $('armRpath').setAttribute('d', armD)
+  $('armRline').setAttribute('d', armD)
+  $('handR').setAttribute('transform', `translate(${hx.toFixed(1)} ${hy.toFixed(1)})`)
+  $('finger').style.opacity = pointK
+  const wave = (id === 'hello' || id === 'close') && t < (SEG[id]?.[0] ?? 0) + 2 ? Math.sin(t * 14) * 10 : 0
+  $('armL').setAttribute('transform', `rotate(${(wave).toFixed(1)} 96 410)`)
+  $('zazo').style.transform = `translateY(${(Math.sin(t * 1.1) * 4).toFixed(1)}px)`
+  $('black').style.opacity = t < 0.4 ? 1 - seg(t, 0, 0.4) : t > END - 1.2 ? seg(t, END - 1.2, END - 0.2) : 0
+}
+
+window.__seek = (t) => tick(t)
+window.__seek(0)
+</script>
+</body>
+</html>

@@ -102,6 +102,41 @@ describe('the data type and the editor are separate', () => {
 })
 
 describe('registry wiring in SvGrid', () => {
+  it('a registered editor that commits ends the edit without an error', async () => {
+    // The commit path end to end. The browser crash this guards against
+    // (2026-10-17, svgrid.com hero grid) came from an editor reading a prop
+    // after the edit ended - an input firing onChange on the blur its commit
+    // causes - which re-ran the props spread against the cleared editingCell.
+    // jsdom fires no such blur, so the fix (SvGridCellEditor keeps the mounted
+    // registration) was verified in the browser; this keeps the path green.
+    let seen: { onCommit?: (v?: unknown) => void; onCommitAndMoveDown?: (v?: unknown) => void } = {}
+    registerCellEditor('stars', {
+      component: SvRating,
+      props: (ctx) => {
+        seen = ctx as never
+        return { value: ctx.value }
+      },
+    })
+    const errors: unknown[] = []
+    const onError = (e: ErrorEvent) => errors.push(e.error ?? e.message)
+    window.addEventListener('error', onError)
+    const { api, target, destroy } = await mountGrid()
+    try {
+      api.startEditing(0, 'score')
+      await vi.waitFor(() => expect(target.querySelector('.sv-rating')).not.toBeNull())
+      // Enter in an editor: commit and move down, then the focus leaving the
+      // unmounting editor commits again.
+      seen.onCommitAndMoveDown?.(4)
+      seen.onCommit?.(4)
+      await vi.waitFor(() => expect(target.querySelector('.sv-rating')).toBeNull())
+      expect(rows[0]!.score).toBe(4)
+      expect(errors).toEqual([])
+    } finally {
+      window.removeEventListener('error', onError)
+      destroy()
+    }
+  })
+
   it('mounts a registered component when a custom-editorType cell edits', async () => {
     registerCellEditor('stars', {
       component: SvRating,

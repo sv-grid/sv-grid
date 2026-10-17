@@ -22,6 +22,7 @@
  * clone without `pnpm install`.
  */
 import { readdir, readFile, writeFile, stat, mkdir } from 'node:fs/promises'
+import { readFileSync } from 'node:fs'
 import { join, relative, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { isHiddenDoc, isLlmOnlyDoc, parseDocFrontmatter, sectionOf } from './lib/doc-meta.mjs'
@@ -73,6 +74,7 @@ const SECTION_TITLES = {
   'help/scheduler':    'Scheduler',
   'help/alerts':       'Alerts & scheduling',
   'help/ui-components':'UI components',
+  'help/ui-blocks':    'UI blocks',
   'help/web-components':'Web components',
   'recipes':           'Recipes / cookbook',
   'reference':         'API reference',
@@ -123,6 +125,7 @@ const SECTION_PILLAR = {
   'reference':         'grid',
   'enterprise/studio': 'studio',
   'help/ui-components':'ui',
+  'help/ui-blocks':    'ui',
   'help/web-components':'grid',
   'enterprise':        'enterprise',
   'compliance':        'enterprise',
@@ -167,6 +170,11 @@ const pillarOf = (slug, section) => PAGE_PILLAR[slug] ?? SECTION_PILLAR[section]
 
 // Curated sidebar order within a pillar (index = position; unknown → end).
 // Replaces the old alphabetical sort that buried Getting started behind Brand.
+// Block group ids, in sidebar order: one docs page each under help/ui-blocks/.
+const BLOCK_GROUP_IDS = JSON.parse(
+  readFileSync(join(ROOT, 'examples', 'src', 'shared', 'block-groups.json'), 'utf8'),
+).map((g) => g.id)
+
 const SECTION_ORDER = [
   '', 'getting-started', 'help',
   'help/cells', 'help/columns', 'help/rows',
@@ -179,6 +187,7 @@ const SECTION_ORDER = [
   'help/web-components', 'recipes', 'reference',
   'enterprise/studio',
   'help/ui-components',
+  'help/ui-blocks',
   'enterprise', 'compliance', 'legal', 'brand',
 ]
 
@@ -225,6 +234,7 @@ const PAGE_GROUPS = {
     { label: 'Build it out', pages: ['linked-records', 'formulas', 'views', 'forms', 'collaboration', 'custom-field-type'] },
     { label: 'Automate', pages: ['automations'] },
     { label: 'Connect your data', pages: ['data', 'supabase', 'postgres', 'rest-api'] },
+    { label: 'AI agents', pages: ['ai-agents', 'review-queue'] },
     { label: 'Reference', pages: ['help/fields.md'] },
   ],
   'help/kanban': [{ label: '', pages: ['sprint-board', 'help/rows/kanban-board.md'] }],
@@ -256,6 +266,9 @@ const PAGE_GROUPS = {
     'feedback', 'sv-badge', 'sv-skeleton', 'sv-spinner', 'sv-loading-overlay', 'sv-alert', 'sv-empty-state', 'sv-result', 'sv-chip', 'sv-timeline', 'sv-avatar', 'sv-avatar-group', 'sv-carousel', 'sv-typography', 'sv-display-primitives',
     'navigation', 'sv-breadcrumb', 'sv-pagination', 'sv-stepper', 'sv-nav-pane', 'sv-tree', 'sv-command', 'sv-tour', 'sv-rich-text',
   ] }],
+  // The blocks overview, then one page per block group in the gallery's
+  // order (examples/src/shared/block-groups.json).
+  'help/ui-blocks': [{ label: '', pages: ['index', ...BLOCK_GROUP_IDS] }],
   // Reading order, not alphabetical: the attribute-vs-property rule in
   // `quick-start` is the thing every reader needs before anything else, and
   // `limitations` reads as a conclusion rather than an opening.

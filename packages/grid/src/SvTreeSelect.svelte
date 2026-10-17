@@ -129,7 +129,7 @@
   })
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir} {loading}>
+<SvField id={uid} {label} {hint} {error} {required} {dir} {block} {loading}>
   <div class="sv-ts sv-ts--{size}"
     class:is-block={block} class:is-disabled={disabled}>
     <button
@@ -140,6 +140,7 @@
       {disabled}
       onclick={() => ts.toggle()}
       {...ts.triggerProps('tree')}
+      id={uid}
       {...editorAria({ id: uid, invalid, required, error, hint, ariaLabel })}
     >
       <span class="sv-ts__value" class:is-placeholder={!triggerText}>{triggerText || placeholder}</span>

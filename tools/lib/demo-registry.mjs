@@ -63,9 +63,11 @@ export async function parseDemoRegistry(root) {
     const chunk = src.slice(marks[i].at, i + 1 < marks.length ? marks[i + 1].at : marks[i].at + 1000)
     const st = chunk.match(/seoTitle:\s*'((?:\\.|[^'\\])*)'/)
     const sd = chunk.match(/seoDescription:\s*'((?:\\.|[^'\\])*)'/)
+    const gr = chunk.match(/group:\s*'([^']+)'/)
     out.push({
       id: marks[i].id, title: marks[i].title, blurb: marks[i].blurb, category: marks[i].category,
       pro: /pro:\s*true/.test(chunk),
+      group: gr ? gr[1] : undefined,
       seoTitle: st ? unesc(st[1]) : undefined,
       seoDescription: sd ? unesc(sd[1]) : undefined,
     })

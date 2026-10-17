@@ -1731,52 +1731,380 @@
     "text": "Drag a new hire through the pipeline, or open their checklist.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "tip-526-block-auth-providers": {
+    "text": "Click Single sign-on (SAML) to open the company domain field.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-527-block-auth-forgot-password": {
+    "text": "Enter any email and press Send reset link to see the confirmation and resend timer.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "tip-53-excel-import": {
     "text": "Paste some CSV here and press Preview to check every row before it lands.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-530-block-error-pages-404-links": {
+    "text": "Type \"rep\" in the search field to filter the popular pages.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-531-block-error-pages-500": {
+    "text": "Press Retry twice: the first try fails, the second brings the page back.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-532-block-error-pages-maintenance": {
+    "text": "Type an email without an @ and press Notify me to see the field error.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-533-block-error-pages-403": {
+    "text": "Press Request access, add a note and send it to see the pending state.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-534-block-empty-states-simple": {
+    "text": "Press New dashboard, name it and create it to see the list replace the empty state.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-536-block-empty-states-drop-zone": {
+    "text": "Drop a PDF or image onto the dashed zone, or click browse, to see it upload.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-537-block-empty-states-no-results": {
+    "text": "Press Clear filters to bring the two Acme customers back.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-538-block-empty-states-card": {
+    "text": "Press Connect help desk to watch the empty card fill with ticket data.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "tip-54-columns-hierarchy": {
     "text": "Click a group chevron in the side panel to fold its columns into one summary column.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "tip-540-block-form-layouts-stacked": {
+    "text": "Press Create project with the form empty to see each field's error, then fill it in.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-541-block-form-layouts-two-column": {
+    "text": "Break the email in Profile and press Save profile: only that section is checked.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-542-block-form-layouts-settings": {
+    "text": "Flip any switch to bring up the save bar, then try Discard.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-543-block-form-layouts-settings-nav": {
+    "text": "Open Team and invite someone by email to add them to the member list.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-544-block-form-layouts-danger-zone": {
+    "text": "Open Delete project and type atlas-web exactly to enable the Delete button.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-546-block-page-headings-breadcrumbs": {
+    "text": "Click Publish release and watch the badge switch to Live.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-547-block-page-headings-tabs": {
+    "text": "Run a sync and the Activity tab count goes up.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-548-block-page-headings-meta": {
+    "text": "Open Status and pause the posting to see the badge change.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-549-block-page-headings-stats": {
+    "text": "Switch the range to 90d and watch the stats change.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "tip-55-state-maintenance": {
     "text": "Change the sort, then press Undo. The grid steps back through its state history.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-551-block-onboarding-wizard": {
+    "text": "Clear the name and press Next to see the step-one checks, or type Acme to hit a taken URL.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-552-block-onboarding-checklist": {
+    "text": "Press Open a template to complete a task and watch the progress bar move.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-556-block-kpi-cards-icon": {
+    "text": "Click Support tickets to see its last seven days in the panel below.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-557-block-kpi-cards-trend": {
+    "text": "Switch to 7d and watch churn rate drop and turn green.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-559-block-kpi-cards-sparkline": {
+    "text": "Turn Live off and the numbers and charts stop updating.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "tip-56-export-theme-matched": {
     "text": "Press XLSX: the workbook uses the same colors the grid shows right now.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "tip-564-block-stats-trends": {
+    "text": "Click Export CSV to download this week's numbers as a CSV file.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-565-block-stats-banded": {
+    "text": "Turn on Live updates to watch the board poll every 3 seconds.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-566-block-filter-panels-sidebar": {
+    "text": "Tick Ridgeback under Brand and watch the list and the other counts update.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-567-block-filter-panels-toolbar": {
+    "text": "Switch the view to Grid, then pick Finance under Team.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-568-block-filter-panels-chips": {
+    "text": "Open Add filter, pick Priority then Urgent, and watch the query string change.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-569-block-filter-panels-collapsible": {
+    "text": "Open Assignee, choose Maya Chen, and watch the grid drop to her tasks.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "tip-57-export-header-footer-logo": {
     "text": "Press Download branded XLSX for a file with a logo, title and page numbers.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-570-block-activity-feeds-timeline": {
+    "text": "Press Load more to pull in older events and see them land under their own day.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-571-block-activity-feeds-notifications": {
+    "text": "Switch the panel to Unread, then archive one and press Undo in the toast.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-572-block-activity-feeds-comments": {
+    "text": "Press Reply under a comment to open a composer right below it, then post with Ctrl+Enter.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-573-block-activity-feeds-audit-log": {
+    "text": "Open the Workspace row to see the before and after of each setting.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-574-block-ai-prompt-suggestions": {
+    "text": "Click a starter card to send it, then press Stop while the reply is still appearing.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-575-block-ai-ask-bar": {
+    "text": "Click a suggested question and watch the grid filter itself, then press Clear.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-576-block-ai-settings": {
+    "text": "Turn on Create support tickets and watch the request payload update.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-579-block-orders-history": {
+    "text": "Pick Open to see only orders still on their way, then press View on one.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "tip-58-export-with-images": {
     "text": "Press Export XLSX with images. Each thumbnail lands in Excel as a picture.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "tip-580-block-orders-tracking": {
+    "text": "Press Refresh to pull the next carrier scan and watch the parcel reach Delivered.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-581-block-banners-announcement": {
+    "text": "Dismiss the bar, then press Undo in the toast to bring it back.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-583-block-banners-info": {
+    "text": "Press Rotate key to see the warning resolve after a short loading state.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-585-block-banners-cookie-consent": {
+    "text": "Open Customize, switch on Analytics and save to see the summary line.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-586-block-banners-billing-warning": {
+    "text": "Update the payment method with 4242 4242 4242 4242 to clear the warning.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-587-block-navbars-simple": {
+    "text": "Click Pricing to move the current-page marker and the page heading.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-588-block-navbars-search": {
+    "text": "Type a product name and press Enter to run the search.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "tip-59-export-multi-sheet": {
     "text": "Filter to EMEA, then press Export. The workbook still holds all five tabs.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-591-block-navbars-dropdowns": {
+    "text": "Open Products and use the arrow keys to move through the mega menu.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-593-block-footers-sitemap": {
+    "text": "Press Back to top to scroll the page back to its start.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-595-block-footers-simple": {
+    "text": "Narrow the window to see the links move above the copyright.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-599-block-checkout-split": {
+    "text": "Press Pay with the card fields empty to see every field validate, then try 4242 4242 4242 4242.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "tip-60-pivot-expandable": {
     "text": "Press Expand all to see each sales person under their region.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "tip-600-block-checkout-steps": {
+    "text": "Press Continue to payment with the form empty to see this step's validation.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-601-block-checkout-payment-methods": {
+    "text": "Pick Invoice and press Continue to see the VAT number check.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-602-block-checkout-confirmation": {
+    "text": "Copy the order number to the clipboard.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-603-block-shopping-carts-page": {
+    "text": "Type WELCOME15 in the promo code and press Apply to see the discount line.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-604-block-shopping-carts-panel": {
+    "text": "Press Add to cart on the kettle and watch the drawer open with the count updated.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-607-block-reviews-summary": {
+    "text": "Click the 2-star row to filter the recent reviews to that rating.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-608-block-reviews-list": {
+    "text": "Mark a review as helpful; each review takes one vote.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-609-block-reviews-write": {
+    "text": "Press Submit review with the form empty to see the field errors.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-610-block-contact-centered": {
+    "text": "Press Send message with the form empty to see every field error at once.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-612-block-contact-cards": {
+    "text": "Click Book a demo to request a call from the modal form.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-614-block-contact-hours": {
+    "text": "Pick Urgent and watch the promised response times change.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-616-block-hero-centered": {
+    "text": "Press Start free: the demo handles the click in a toast instead of navigating; leave out onCta and it is a plain link.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "tip-62-conditional-styling": {
     "text": "Scan the Priority column for coloured pills. Breached SLA rows carry a side accent.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-620-block-hero-signup": {
+    "text": "Enter taken@ledgerline.app and press Start free trial to see a refusal from the server under the field.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-622-block-features-icons": {
+    "text": "Press Start a 14-day trial to see the button's loading state and the toast.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-624-block-features-screenshot": {
+    "text": "Click Alerts, or press the arrow keys in the list, to switch the screenshot.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-628-block-cta-centered": {
+    "text": "Press Start free trial to see the loading state and the status line it leaves behind.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "tip-63-column-layout-api": {
     "text": "Press Finance to load its widths and pins. Save view stores your own layout.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "tip-630-block-cta-justified": {
+    "text": "Click Get started: the buttons turn into a confirmation once the request resolves.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-634-block-pricing-highlighted": {
+    "text": "Raise Seats to 120 and watch the per-seat prices drop and Starter switch off.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-635-block-pricing-comparison": {
+    "text": "Press Start trial on Growth to see the button's loading state.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "tip-64-filter-between-operator": {
     "text": "Press the first preset to keep only prices between 100 and 300 dollars.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "tip-640-block-faq-accordion": {
+    "text": "Type export or SSO in the search box to filter the questions and highlight every match.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-641-block-faq-centered": {
+    "text": "Switch to Data, then press Expand all to open every answer in that topic.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-642-block-bento-features": {
+    "text": "Press Read the guide on any tile; the core reports which feature you opened.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-646-block-testimonials-cards": {
+    "text": "Open a long quote with Read more to see the full text.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-647-block-testimonials-carousel": {
+    "text": "Click a company name under the carousel to jump to its quote.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-648-block-logo-clouds-grid": {
+    "text": "Hover or tab to a logo to see which customers have a story to read.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-649-block-team-grid": {
+    "text": "Pick Customer to filter the team and see that department's open roles.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "tip-65-keyboard-shortcuts": {
     "text": "Press Control K for the command palette, or Control slash for the cheat sheet.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-650-block-product-cards-grid": {
+    "text": "Tap the heart on the Arc table lamp to save it to your wishlist.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-651-block-product-cards-horizontal": {
+    "text": "Add the Gooseneck kettle until all 3 units are in your cart and its button locks.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-652-block-product-lists-toolbar": {
+    "text": "Switch to List to see each product with its description, then sort by price.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-653-block-product-lists-featured": {
+    "text": "Press Add on the Glass carafe to see the button load while the cart updates.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-654-block-product-overview-split": {
+    "text": "Press Add to cart before picking a size to see the size check, then pick one and try again.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-655-block-blog-cards": {
+    "text": "Pick the Customers chip to see the empty state, then bring every post back.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-656-block-blog-featured": {
+    "text": "Click a recent post title to open it; in your app the link goes to /blog/<slug>.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "tip-66-custom-cell-editors": {
@@ -1797,6 +2125,10 @@
   },
   "tip-70-multi-grid-sync": {
     "text": "Edit a Qty on the left. The right grid updates but keeps its own sort and filter.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "tip-700-base-ai-triage": {
+    "text": "Run the triage agent, then open a tinted ticket to see what it changed.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "tip-71-submit-validation": {
@@ -1963,6 +2295,10 @@
     "text": "Staffing board, assignments and utilization.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-12a30nu": {
+    "text": "Contact with support hours block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-12j7fju": {
     "text": "Support triage board.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
@@ -1977,6 +2313,10 @@
   },
   "title-130bxxy": {
     "text": "Multi-series and stacked.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-1324dpw": {
+    "text": "Navbar with search block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-132a00o": {
@@ -2013,6 +2353,10 @@
   },
   "title-148rpz8": {
     "text": "Budget report: merged headers.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-14rvjj9": {
+    "text": "Features with icons block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-14sdxk5": {
@@ -2055,6 +2399,10 @@
     "text": "Shortcut config.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-16ghbnv": {
+    "text": "Centered call to action block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-16h5edw": {
     "text": "100 thousand rows × 100 columns.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
@@ -2093,6 +2441,10 @@
   },
   "title-17wxks9": {
     "text": "Financial model (amortization).",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-184safg": {
+    "text": "Testimonial cards block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-186ldui": {
@@ -2155,6 +2507,10 @@
     "text": "Mail client.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-19sjzi7": {
+    "text": "Simple footer block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-19yj6l": {
     "text": "Docking: pop out to a window.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
@@ -2183,12 +2539,20 @@
     "text": "Async editor options.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-1asu0rz": {
+    "text": "Sign-in with providers block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-1b0nnx1": {
     "text": "List and chips editors.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-1babd25": {
     "text": "Country input.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-1bmisxt": {
+    "text": "Danger zone block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-1bnh2u4": {
@@ -2227,6 +2591,10 @@
     "text": "Spreadsheet shell (SvSheet).",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-1ck0ssa": {
+    "text": "500 server error block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-1clwok3": {
     "text": "Radio group.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
@@ -2241,6 +2609,10 @@
   },
   "title-1d0z9yr": {
     "text": "Board power tools (filters, multi-select, menus).",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-1d3ulxm": {
+    "text": "An AI agent and your team, one table.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-1d3wm32": {
@@ -2263,8 +2635,8 @@
     "text": "Integrated charts (no dependencies).",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
-  "title-1dt1dy0": {
-    "text": "Project tracker (field types).",
+  "title-1dy10z4": {
+    "text": "Payment methods block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-1e27puk": {
@@ -2277,6 +2649,10 @@
   },
   "title-1edl10u": {
     "text": "Data cleanup: Text to Columns, Remove Duplicates.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-1edujgm": {
+    "text": "Pricing with highlighted plan block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-1ef80yb": {
@@ -2299,8 +2675,20 @@
     "text": "Optimistic updates and rollback.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-1f2xxvv": {
+    "text": "Prompt suggestions block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-1fj8uwv": {
+    "text": "Access denied block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-1fmg23k": {
     "text": "Two-factor / OTP block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-1frixlx": {
+    "text": "Collapsible filters block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-1ft9q6a": {
@@ -2375,6 +2763,10 @@
     "text": "Feedback and display: badge, avatar, skeleton, card.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-1h6zjdd": {
+    "text": "KPI cards with icons block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-1hd3vwr": {
     "text": "Gauge dial (KPI dashboard).",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
@@ -2415,8 +2807,16 @@
     "text": "Field array form.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-1iwq22r": {
+    "text": "Blog post cards block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-1ixjwr9": {
     "text": "Drop-down list.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-1iyb7y5": {
+    "text": "Page heading with tabs block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-1j0lt2g": {
@@ -2443,12 +2843,28 @@
     "text": "Portfolio office, project console.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-1jtp3n3": {
+    "text": "Audit log block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-1k2aw86": {
     "text": "Axes, titles and styling.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-1k4j4nt": {
     "text": "Charts and pictures on the sheet.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-1k7p8xd": {
+    "text": "Order confirmation block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-1ki659v": {
+    "text": "Notification list block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-1kirvbg": {
+    "text": "Page heading with stats block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-1kndyqj": {
@@ -2465,6 +2881,10 @@
   },
   "title-1l2nsf": {
     "text": "Waterfall, funnel and pareto.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-1l49xq6": {
+    "text": "Centered contact form block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-1lb07d9": {
@@ -2503,8 +2923,20 @@
     "text": "Selection controls.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-1mdype0": {
+    "text": "Review list block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-1mgy6i1": {
+    "text": "Banded stats block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-1mixnkk": {
     "text": "Tree editing (drag / rename / sort).",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-1mqic5t": {
+    "text": "Team grid block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-1mriwl1": {
@@ -2515,12 +2947,20 @@
     "text": "Segmented control.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-1n0psk3": {
+    "text": "Progress checklist block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-1n6s6h6": {
     "text": "Phone input, headless.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-1n8db4r": {
     "text": "Export grouped grid to Excel.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-1naekse": {
+    "text": "Feature bento block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-1nfysw": {
@@ -2547,8 +2987,20 @@
     "text": "Custom cells and themes.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-1o21u9w": {
+    "text": "Product overview block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-1o8oyjz": {
     "text": "Grouping and aggregation.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-1o95k8f": {
+    "text": "KPI cards with sparklines block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-1odvfc1": {
+    "text": "Horizontal product card block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-1oga84t": {
@@ -2623,8 +3075,16 @@
     "text": "Chart a spreadsheet.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-1s1v1dm": {
+    "text": "Featured article block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-1s7sizk": {
     "text": "Staged / batch editing.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-1s8x68e": {
+    "text": "Upload drop zone block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-1skw28z": {
@@ -2663,6 +3123,10 @@
     "text": "Spreadsheet and Ribbon bar.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-1tju405": {
+    "text": "Rating summary block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-1tpkh2q": {
     "text": "Column reorder.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
@@ -2679,6 +3143,10 @@
     "text": "Project tracker.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-1uafnk8": {
+    "text": "Centered hero block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-1ufkj3p": {
     "text": "SvGrid Studio, rich fields.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
@@ -2693,6 +3161,10 @@
   },
   "title-1uu91uw": {
     "text": "Epics -> stories (hierarchical cards).",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-1v5wubw": {
+    "text": "Empty state block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-1v6ocsk": {
@@ -2723,6 +3195,10 @@
     "text": "Password input.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-1w00rxb": {
+    "text": "Product card block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-1w04y8e": {
     "text": "List box.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
@@ -2743,6 +3219,10 @@
     "text": "KPI and aggregate alerts.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-1wl54rt": {
+    "text": "Two-column form block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-1wr6e2k": {
     "text": "Conditional formatting.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
@@ -2753,6 +3233,10 @@
   },
   "title-1wukw2h": {
     "text": "Excel-style fill handle.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-1wynfp4": {
+    "text": "Maintenance page block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-1x2kqu6": {
@@ -2767,6 +3251,10 @@
     "text": "Project plan.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-1xdxpa4": {
+    "text": "Centered FAQ accordion block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-1xfps0": {
     "text": "Buttons and toggles.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
@@ -2779,6 +3267,10 @@
     "text": "Login block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-1xnkh42": {
+    "text": "FAQ accordion block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-1xqtbx6": {
     "text": "Gauge.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
@@ -2789,6 +3281,10 @@
   },
   "title-1xtpgq9": {
     "text": "Command palette (⌘K) and sparklines, avatars, scroll.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-1xuyxrp": {
+    "text": "Stepped checkout block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-1xztmxz": {
@@ -2831,6 +3327,10 @@
     "text": "Date-time picker.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-2ms6mc": {
+    "text": "Forgot password block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-2uczpr": {
     "text": "Project tracker (PM workspace).",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
@@ -2859,12 +3359,24 @@
     "text": "Localization.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-46f7qh": {
+    "text": "Stacked form block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-48mhkn": {
+    "text": "Page heading with breadcrumbs block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-4chlti": {
     "text": "Clinic operations console.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-4digfp": {
     "text": "Layout and feedback primitives.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-4emjjr": {
+    "text": "Testimonial carousel block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-4f9x2l": {
@@ -2923,6 +3435,10 @@
     "text": "Mobile / responsive cards.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-5sff9n": {
+    "text": "Pricing comparison table block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-5t7jhf": {
     "text": "Inventory.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
@@ -2971,12 +3487,20 @@
     "text": "Pivot, Totals and Subtotals.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-7fq5ir": {
+    "text": "Cart page block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-7qexi": {
     "text": "Product roadmap.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-7uw9vy": {
     "text": "Carousel and guided tour.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-7y1099": {
+    "text": "Stats with trends block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-89a2my": {
@@ -2997,6 +3521,10 @@
   },
   "title-8ydpk6": {
     "text": "Hiring tracker.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-8zeouu": {
+    "text": "Page heading with meta block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-9gj50b": {
@@ -3055,6 +3583,10 @@
     "text": "Pivot, Conditional cells.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-asuhga": {
+    "text": "KPI cards with trend block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-azples": {
     "text": "Critical path and baselines.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
@@ -3111,6 +3643,10 @@
     "text": "Tabbed column menu.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-c5ri3z": {
+    "text": "404 with helpful links block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-c6lsgv": {
     "text": "Docking: keep-alive tabs.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
@@ -3141,6 +3677,10 @@
   },
   "title-cppif9": {
     "text": "Cell types showcase.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-cprph0": {
+    "text": "Justified call to action block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-csctu9": {
@@ -3197,6 +3737,10 @@
   },
   "title-e1nic5": {
     "text": "Export, Theme-matched.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-e3uy9n": {
+    "text": "Settings with side nav block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-ecfsnm": {
@@ -3267,6 +3811,10 @@
     "text": "Streaming chart (rolling window).",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-got73r": {
+    "text": "Navbar with dropdown menus block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-guuj14": {
     "text": "Side-drawer edit form.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
@@ -3303,12 +3851,24 @@
     "text": "Evaluate Formula and Error Checking.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-hv6g7u": {
+    "text": "Cookie consent block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-hvayp2": {
     "text": "Reporting workspace.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-hxz1zo": {
+    "text": "Inline info banners block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-hyjxvl": {
     "text": "Sparkline cells.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-i2lqgs": {
+    "text": "Order history block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-i34vo5": {
@@ -3355,6 +3915,10 @@
     "text": "Server-side pivot.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-j1tfml": {
+    "text": "No search results block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-j6l7t7": {
     "text": "Spreadsheet and formulas.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
@@ -3365,6 +3929,10 @@
   },
   "title-jmv5di": {
     "text": "Workbook, multi-sheet and formulas.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-jp4xa4": {
+    "text": "Ask bar block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-jr6so8": {
@@ -3451,8 +4019,16 @@
     "text": "Forms-in-grid (master detail).",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-mj1q3t": {
+    "text": "Order tracking block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-mlsnin": {
     "text": "Waterfall (signed P and L).",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-mpst87": {
+    "text": "Hero with email sign-up block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-msx641": {
@@ -3477,6 +4053,14 @@
   },
   "title-n88hjd": {
     "text": "Conditional styling.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-naqmhx": {
+    "text": "Filter toolbar block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-nd4kki": {
+    "text": "Setup wizard block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-nf2ts4": {
@@ -3513,6 +4097,10 @@
   },
   "title-o6fcn3": {
     "text": "Tree and master detail.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-odass7": {
+    "text": "Comment feed block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-odriog": {
@@ -3559,8 +4147,16 @@
     "text": "External drop zones (row drag).",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-pk5gwo": {
+    "text": "Sitemap footer block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-pkws3y": {
     "text": "Combo box.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-pm5kgg": {
+    "text": "Applied filter chips block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-pqq3ll": {
@@ -3595,6 +4191,10 @@
     "text": "Password input, headless.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-qoz1kk": {
+    "text": "Announcement bar block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-qxbmcb": {
     "text": "Chart a selection (context menu).",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
@@ -3611,12 +4211,28 @@
     "text": "Bulk server operations.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-rrhtxn": {
+    "text": "Billing warning banner block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-rx9tuc": {
+    "text": "Product list with toolbar block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-s3qrrh": {
     "text": "Free busy, find a time.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-s50fok": {
+    "text": "Activity timeline block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-s8e276": {
     "text": "Formulas preserved in xlsx.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-s8vsk5": {
+    "text": "Contact cards block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-shcthj": {
@@ -3643,6 +4259,10 @@
     "text": "Annotations, reference marks and notes.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-tgnjug": {
+    "text": "Logo cloud block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-tkg91y": {
     "text": "Headless -> your own table.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
@@ -3651,12 +4271,24 @@
     "text": "Time picker.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-tow1a0": {
+    "text": "Cart slide-over block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-tqpesl": {
+    "text": "Empty widget card block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-tt149m": {
     "text": "What-if analysis: Goal Seek.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-tys7it": {
     "text": "Iterative calculation.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-u6x3dp": {
+    "text": "AI settings block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-ubji5l": {
@@ -3711,16 +4343,32 @@
     "text": "WebSocket live updates.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-vjium6": {
+    "text": "Write a review block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-w5n5xb": {
     "text": "Charting by date (time axis).",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-w75j7m": {
+    "text": "Split checkout block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-w8rjpl": {
     "text": "Industrial, IoT sensors.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
+  "title-w96cyd": {
+    "text": "Featured product list block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
   "title-wfoid3": {
     "text": "Custom icon set.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-wnq67j": {
+    "text": "Features with screenshot block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-wqv2pi": {
@@ -3737,6 +4385,10 @@
   },
   "title-xb894h": {
     "text": "Lazy tree (load on expand).",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-xeipkk": {
+    "text": "Notification settings block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-xi9id8": {
@@ -3769,6 +4421,14 @@
   },
   "title-xxxvmp": {
     "text": "Group panel (drag and drop).",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-xyji94": {
+    "text": "Simple navbar block.",
+    "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
+  },
+  "title-y18tl5": {
+    "text": "Sidebar filters block.",
     "sound": "TX3LPaxmHKxFdv7VOQHJ|eleven_v3|mp3_44100_64|{\"stability\":0.3,\"similarity_boost\":0.8,\"style\":0.6,\"use_speaker_boost\":true}"
   },
   "title-yivwu2": {

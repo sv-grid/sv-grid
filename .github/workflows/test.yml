@@ -146,7 +146,7 @@ jobs:
         # testing nothing, which is worse than not running it at all.
         run: |
           node tools/build-doc-snippets.mjs
-          pnpm vitest run tools/demo-doc-coverage.test.ts tools/docs-links.test.ts tools/reference-coverage.test.ts tools/reference-defaults.test.ts tools/llm-only-docs.test.ts tools/shadcn-registry.test.ts
+          pnpm vitest run tools/demo-doc-coverage.test.ts tools/docs-links.test.ts tools/reference-coverage.test.ts tools/reference-defaults.test.ts tools/llm-only-docs.test.ts tools/shadcn-registry.test.ts tools/ui-blocks.test.ts
 
       - name: Demo warehouse answers like the reference backend
         # examples/src/shared/server-warehouse.ts is the columnar million-row

@@ -16,7 +16,7 @@ Related: [SvCard](sv-card.md) · [SvSplitter](sv-splitter.md) · [SvDockLayout](
 
 Add them with the CLI:
 
-<div data-docs-add="add layout"></div>
+<div data-docs-add="add layout-primitives"></div>
 
 Or install the package and import them directly. They ship free in
 `@svgrid/grid` (dependency-free):

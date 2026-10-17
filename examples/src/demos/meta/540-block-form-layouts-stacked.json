@@ -1,0 +1,24 @@
+{
+  "description": "A single-column New project form for Svelte 5 built from the SvGrid UI kit: SvTextInput for the name, SvTextArea with a character counter for the description, SvDropDownList for the owner, SvRadioGroup for visibility and SvDateTimePicker in calendar-only mode for the due date. Create validates every field and shows the message under it; a valid submit puts the SvButton into its loading state, shows a toast, adds the project to a list below and resets the form.",
+  "keywords": [
+    "svelte form page",
+    "svelte 5 new project form",
+    "svelte form validation block",
+    "svelte single column form layout",
+    "svelte textarea character counter"
+  ],
+  "faq": [
+    {
+      "question": "How does the validation work?",
+      "answer": "The form has novalidate, so submit always runs validate(). It checks that the name has at least 3 characters and is not already taken, that an owner is picked, and that a due date is set and is not in the past. Each failure goes into an errors object that feeds the field's error and invalid props; changing a field clears its own message."
+    },
+    {
+      "question": "How do I send the project to my API?",
+      "answer": "Replace the timer inside submit with your request, for example fetch('/api/projects', { method: 'POST', body: JSON.stringify(project) }), and keep toast.promise around it. Every input also has a name prop, which renders a hidden input with its value, so a SvelteKit form action can read the same fields from request.formData()."
+    },
+    {
+      "question": "What changes on a phone?",
+      "answer": "The form is one column at every width, capped at 540 px. Below 560 px the page and form padding shrink and the Cancel and Create buttons split the footer row evenly so both stay easy to tap."
+    }
+  ]
+}

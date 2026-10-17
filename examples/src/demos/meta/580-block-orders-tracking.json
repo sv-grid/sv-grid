@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte shipment tracking page built from the SvGrid UI kit: an order header with an SvBadge status, a five-stage delivery stepper (order placed, packed, shipped, out for delivery, delivered) with a timestamp under each stage, the carrier's scan events newest first, and an SvCard with the carrier and tracking number plus a copy SvButton. Refresh fetches the next scan, which marks the parcel delivered and adds the event to the list.",
+  "keywords": [
+    "svelte order tracking page",
+    "svelte 5 delivery status stepper",
+    "svelte shipment timeline",
+    "svelte tracking number copy button",
+    "svelte package tracking ui"
+  ],
+  "faq": [
+    {
+      "question": "Where does the stepper get its state?",
+      "answer": "createOrderTracking() keeps one timestamp per stage in track.reached, or null for a stage not reached yet. The first null is the current stage, so it gets the ringed marker, earlier ones get a check and their time, and the latest reached stage carries aria-current=\"step\". Pass your carrier's timestamps as the reached option, and resolve { scan, stage } from the fetchUpdate option to add a scan and mark a stage."
+    },
+    {
+      "question": "How does the copy button work?",
+      "answer": "track.copyTracking() writes the number without spaces through the copy option, which defaults to navigator.clipboard, then calls onCopied, which shows a success toast. If the browser refuses clipboard access, for example on a page that is not served over HTTPS, it calls onCopyFailed and the block shows an error toast asking the user to copy the number by hand."
+    },
+    {
+      "question": "How does the layout change on a phone?",
+      "answer": "Below 760 px the stepper turns vertical: the stages stack with the connector drawn down the left edge instead of across. The carrier and address cards move under the activity list, and each event puts its time above the title instead of in a 130 px column beside it."
+    }
+  ]
+}

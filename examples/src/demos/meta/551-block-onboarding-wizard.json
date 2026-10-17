@@ -1,0 +1,24 @@
+{
+  "description": "A four-step workspace setup wizard for Svelte 5 built from the SvGrid UI kit. SvStepper shows the steps, SvTextInput takes the workspace name and a URL slug that follows the name until you edit it, SvTagsInput collects teammate emails, and plan cards run on the createRadioGroup core. Next validates each step before advancing and Create workspace runs a toast.promise.",
+  "keywords": [
+    "svelte onboarding wizard",
+    "svelte 5 multi-step form",
+    "svelte setup wizard block",
+    "svelte stepper form validation",
+    "svelte invite teammates email tags"
+  ],
+  "faq": [
+    {
+      "question": "How does per-step validation work?",
+      "answer": "An errors object is derived from the current values and stepValid maps it to each step. Next marks the step as tried, which turns on the error and invalid props of its fields, and only advances when that step is valid. Back and clicks on completed SvStepper steps move freely."
+    },
+    {
+      "question": "How is the URL slug derived from the name?",
+      "answer": "slug is a  of slugify(name) until the user types in the URL field; from then on slugOverride holds their value. Slugs shorter than 3 characters or in the TAKEN list fail validation."
+    },
+    {
+      "question": "How do I create the workspace on my server?",
+      "answer": "Pass an onCreate option to createWorkspaceWizard. It receives { name, slug, invites, plan }; return your fetch or form action promise from it, wrapped in toast.promise if you want the loading toast. The core sets created when the promise resolves and stays on Review if it rejects."
+    }
+  ]
+}

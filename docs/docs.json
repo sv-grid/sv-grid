@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-10-14T20:30:51.068Z",
+  "generatedAt": "2026-10-17T15:54:14.336Z",
   "counts": {
-    "pages": 425,
-    "enterprise": 104,
-    "withDemo": 302
+    "pages": 461,
+    "enterprise": 106,
+    "withDemo": 337
   },
   "pillars": [
     {
@@ -35,7 +35,8 @@
       "title": "SvGrid UI",
       "blurb": "The Svelte component suite.",
       "sections": [
-        "help/ui-components"
+        "help/ui-components",
+        "help/ui-blocks"
       ]
     },
     {
@@ -447,6 +448,8 @@
         "help/base/supabase.md",
         "help/base/postgres.md",
         "help/base/rest-api.md",
+        "help/base/ai-agents.md",
+        "help/base/review-queue.md",
         "help/fields.md"
       ],
       "groups": [
@@ -482,6 +485,13 @@
             "help/base/supabase.md",
             "help/base/postgres.md",
             "help/base/rest-api.md"
+          ]
+        },
+        {
+          "label": "AI agents",
+          "pages": [
+            "help/base/ai-agents.md",
+            "help/base/review-queue.md"
           ]
         },
         {
@@ -907,6 +917,48 @@
       "groups": []
     },
     {
+      "id": "help/ui-blocks",
+      "title": "UI blocks",
+      "pillar": "ui",
+      "pages": [
+        "help/ui-blocks/index.md",
+        "help/ui-blocks/auth.md",
+        "help/ui-blocks/error-pages.md",
+        "help/ui-blocks/empty-states.md",
+        "help/ui-blocks/form-layouts.md",
+        "help/ui-blocks/page-headings.md",
+        "help/ui-blocks/onboarding.md",
+        "help/ui-blocks/app-shells.md",
+        "help/ui-blocks/kpi-cards.md",
+        "help/ui-blocks/stats.md",
+        "help/ui-blocks/filter-panels.md",
+        "help/ui-blocks/activity-feeds.md",
+        "help/ui-blocks/ai.md",
+        "help/ui-blocks/orders.md",
+        "help/ui-blocks/banners.md",
+        "help/ui-blocks/navbars.md",
+        "help/ui-blocks/footers.md",
+        "help/ui-blocks/checkout.md",
+        "help/ui-blocks/shopping-carts.md",
+        "help/ui-blocks/reviews.md",
+        "help/ui-blocks/contact.md",
+        "help/ui-blocks/hero.md",
+        "help/ui-blocks/features.md",
+        "help/ui-blocks/cta.md",
+        "help/ui-blocks/pricing.md",
+        "help/ui-blocks/faq.md",
+        "help/ui-blocks/bento.md",
+        "help/ui-blocks/testimonials.md",
+        "help/ui-blocks/logo-clouds.md",
+        "help/ui-blocks/team.md",
+        "help/ui-blocks/product-cards.md",
+        "help/ui-blocks/product-lists.md",
+        "help/ui-blocks/product-overview.md",
+        "help/ui-blocks/blog.md"
+      ],
+      "groups": []
+    },
+    {
       "id": "enterprise",
       "title": "Enterprise tier",
       "pillar": "enterprise",
@@ -995,8 +1047,8 @@
       "section": "compliance",
       "pillar": "enterprise",
       "tier": "community",
-      "words": 687,
-      "lastUpdated": "2026-08-23",
+      "words": 700,
+      "lastUpdated": "2026-10-17",
       "demoIds": []
     },
     {
@@ -1043,8 +1095,8 @@
       "section": "enterprise",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 1525,
-      "lastUpdated": "2026-10-13",
+      "words": 1530,
+      "lastUpdated": "2026-10-17",
       "demoIds": []
     },
     {
@@ -1680,8 +1732,8 @@
       "section": "",
       "pillar": "grid",
       "tier": "community",
-      "words": 3607,
-      "lastUpdated": "2026-10-10",
+      "words": 3603,
+      "lastUpdated": "2026-10-16",
       "demoIds": []
     },
     {
@@ -1902,8 +1954,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2143,
-      "lastUpdated": "2026-10-07",
+      "words": 2247,
+      "lastUpdated": "2026-10-15",
       "demoIds": [
         "51-ai-assistant",
         "92-nl-filter-bar",
@@ -1979,6 +2031,24 @@
       "demoIds": []
     },
     {
+      "path": "help/base/ai-agents.md",
+      "url": "/docs/help/base/ai-agents/",
+      "title": "Let an AI agent work in your base",
+      "summary": "An agent can do the first pass on a table your team works in: categorize the new records, set a priority, draft a reply. The hard part is not the edit. It is what comes after: seeing what the agent touched, what each field held before, and having a person make the final call.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "AI agents",
+      "words": 1482,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "700-base-ai-triage"
+      ],
+      "tutorialIds": [
+        "mk-ai-agent-base"
+      ]
+    },
+    {
       "path": "help/base/automations.md",
       "url": "/docs/help/base/automations/",
       "title": "Automations",
@@ -2002,8 +2072,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Build it out",
-      "words": 4837,
-      "lastUpdated": "2026-10-14",
+      "words": 4896,
+      "lastUpdated": "2026-10-16",
       "demoIds": [
         "514-base-hiring-tracker"
       ]
@@ -2030,10 +2100,11 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Connect your data",
-      "words": 1575,
-      "lastUpdated": "2026-10-14",
+      "words": 1998,
+      "lastUpdated": "2026-10-16",
       "demoIds": [
-        "516-base-postgres"
+        "516-base-postgres",
+        "700-base-ai-triage"
       ]
     },
     {
@@ -2106,8 +2177,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Start here",
-      "words": 1229,
-      "lastUpdated": "2026-10-14",
+      "words": 1263,
+      "lastUpdated": "2026-10-16",
       "demoIds": [
         "519-base-from-database"
       ],
@@ -2129,6 +2200,19 @@
       "demoIds": [
         "518-base-rest-api"
       ]
+    },
+    {
+      "path": "help/base/review-queue.md",
+      "url": "/docs/help/base/review-queue/",
+      "title": "Review what an agent changed",
+      "summary": "An agent can be Claude Code with an MCP server, a worker that calls a model, or a script on a schedule. Whatever it is, and whatever database it writes to, the review side in SvGrid Base is the same: the agent marks what it wrote, the base hears of it, people see it and decide. This page sets that up piece by piece. Let an AI agent work in your base does it end to end on Supabase with Claude Code.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "AI agents",
+      "words": 1108,
+      "lastUpdated": "2026-10-16",
+      "demoIds": []
     },
     {
       "path": "help/base/start.md",
@@ -3650,8 +3734,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 3210,
-      "lastUpdated": "2026-10-07",
+      "words": 3405,
+      "lastUpdated": "2026-10-17",
       "demoIds": []
     },
     {
@@ -3944,8 +4028,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2627,
-      "lastUpdated": "2026-10-13",
+      "words": 2703,
+      "lastUpdated": "2026-10-16",
       "demoIds": []
     },
     {
@@ -4358,7 +4442,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 904,
-      "lastUpdated": "2026-10-09",
+      "lastUpdated": "2026-10-16",
       "demoIds": [
         "62-conditional-styling",
         "174-zebra-rows"
@@ -4477,8 +4561,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1315,
-      "lastUpdated": "2026-09-03",
+      "words": 1335,
+      "lastUpdated": "2026-10-17",
       "demoIds": [
         "16-csp-compliant"
       ]
@@ -4743,8 +4827,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1513,
-      "lastUpdated": "2026-09-03",
+      "words": 1509,
+      "lastUpdated": "2026-10-16",
       "demoIds": []
     },
     {
@@ -5106,8 +5190,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1528,
-      "lastUpdated": "2026-10-07",
+      "words": 1529,
+      "lastUpdated": "2026-10-16",
       "demoIds": [
         "74-theme-integrations",
         "435-chart-type-gallery"
@@ -5125,6 +5209,539 @@
       "lastUpdated": "2026-09-21",
       "demoIds": [
         "79-loading-from-rest"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/activity-feeds.md",
+      "url": "/docs/help/ui-blocks/activity-feeds/",
+      "title": "Activity feed blocks",
+      "summary": "Screens that show what happened and who did it: a project timeline, a notification panel, a comment thread and an audit log. Each block is one .svelte file built from SvTimeline, SvPopover, SvSegmented, SvAvatar, SvTextArea and SvDropDownList, themed from the --sg-* tokens. Relative times come from Intl.RelativeTimeFormat, measured from one now read when the block mounts.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 880,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "570-block-activity-feeds-timeline",
+        "571-block-activity-feeds-notifications",
+        "572-block-activity-feeds-comments",
+        "573-block-activity-feeds-audit-log"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/ai.md",
+      "url": "/docs/help/ui-blocks/ai/",
+      "title": "AI assistant blocks",
+      "summary": "Screens for putting a language model in front of your users: a chat with starter prompts, an ask bar over a table, and the assistant's settings page. The blocks call the free AI helpers in @svgrid/grid (aiFilter, aiSummarize, aiFindAnomalies) and are built from SvTextInput, SvButton, SvChip, SvGrid and the form controls, themed from the --sg-* tokens. They run offline with mockAIProvider until you register your own model.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 1017,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "574-block-ai-prompt-suggestions",
+        "575-block-ai-ask-bar",
+        "576-block-ai-settings"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/app-shells.md",
+      "url": "/docs/help/ui-blocks/app-shells/",
+      "title": "App shell & dashboard blocks",
+      "summary": "Full-screen layouts for the inside of an app: the frame around every page, and the overview page users land on. Neither one needs the data grid; they are built from SvNavPane, SvBreadcrumb, SvMenu, SvStat, SvSparkline and SvTimeline. When a page inside the shell needs a table, drop an SvGrid into its content area.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 374,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "423-block-dashboard",
+        "424-block-app-shell"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/auth.md",
+      "url": "/docs/help/ui-blocks/auth/",
+      "title": "Sign-in & registration blocks",
+      "summary": "Screens for getting a user into your app: sign in with a password, a provider or a magic link, create an account, prove it is them with a one-time code, and reset a forgotten password. Each block is one .svelte file built from SvTextInput, SvPasswordInput, SvOtpInput, SvButton and SvCard, themed from the --sg-* tokens.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 854,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "420-block-login",
+        "421-block-signup",
+        "422-block-otp",
+        "526-block-auth-providers",
+        "527-block-auth-forgot-password"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/banners.md",
+      "url": "/docs/help/ui-blocks/banners/",
+      "title": "Banner blocks",
+      "summary": "Messages that sit on top of or inside a page: an announcement bar, inline status banners, cookie consent and a failed-payment warning. Each block is one .svelte file built from SvAlert, SvButton, SvBadge, SvModal, SvSwitchButton and SvMaskedInput, themed from the --sg-* tokens. Every block draws a mock page around its banner and has a control to show the banner again after you dismiss it.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 1035,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "581-block-banners-announcement",
+        "583-block-banners-info",
+        "585-block-banners-cookie-consent",
+        "586-block-banners-billing-warning"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/bento.md",
+      "url": "/docs/help/ui-blocks/bento/",
+      "title": "Bento grid blocks",
+      "summary": "Feature sections laid out as a bento grid: a CSS grid where some tiles span two columns or two rows. The tile art is inline SVG or CSS drawn from the --sg-* tokens, so it follows the theme. Each block is one .svelte file built from SvButton, SvBadge and SvToaster.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 601,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "642-block-bento-features"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/blog.md",
+      "url": "/docs/help/ui-blocks/blog/",
+      "title": "Blog blocks",
+      "summary": "The index pages of a blog: a filterable grid of post cards, and a lead article next to the latest posts. Each block is one .svelte file built from SvBadge, SvAvatar, SvEmptyState and SvButton, with cover art drawn as inline SVG from the --sg-* tokens, so it follows the theme in light and dark.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 1167,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "655-block-blog-cards",
+        "656-block-blog-featured"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/checkout.md",
+      "url": "/docs/help/ui-blocks/checkout/",
+      "title": "Checkout blocks",
+      "summary": "The pages between the cart and the receipt: a one-page checkout, a stepped checkout, a payment method picker and the order confirmation. Each block is one .svelte file built from SvTextInput, SvCountryInput, SvPhoneInput, SvMaskedInput, SvRadioGroup, SvStepper, SvCheckBox and SvButton, with money kept in integer cents and formatted with Intl.NumberFormat.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 889,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "599-block-checkout-split",
+        "600-block-checkout-steps",
+        "601-block-checkout-payment-methods",
+        "602-block-checkout-confirmation"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/contact.md",
+      "url": "/docs/help/ui-blocks/contact/",
+      "title": "Contact blocks",
+      "summary": "Contact sections for a marketing site or an app's help page: a plain contact form, cards per team, and a support form with opening hours. Each block is one .svelte file built from SvTextInput, SvTextArea, SvDropDownList, SvSegmented, SvModal and SvButton, themed from the --sg-* tokens.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 893,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "610-block-contact-centered",
+        "612-block-contact-cards",
+        "614-block-contact-hours"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/cta.md",
+      "url": "/docs/help/ui-blocks/cta/",
+      "title": "Call to action blocks",
+      "summary": "Closing sections that ask the reader to sign up, start a trial or talk to sales. Each block is one .svelte file built from SvButton and SvToaster, themed from the --sg-* tokens. Each core owns its copy and actions and reports every press through a callback.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 613,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "628-block-cta-centered",
+        "630-block-cta-justified"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/empty-states.md",
+      "url": "/docs/help/ui-blocks/empty-states/",
+      "title": "Empty state blocks",
+      "summary": "What a screen shows before it has data: an empty list, an empty files area, a search that matched nothing, a dashboard card with no source. Each block is one .svelte file built on SvEmptyState (the drop zone uses SvFileUpload instead), with SvChip, SvCard, SvStat and SvProgress where the screen needs them, and every one switches to real content when you act on it.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 759,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "534-block-empty-states-simple",
+        "536-block-empty-states-drop-zone",
+        "537-block-empty-states-no-results",
+        "538-block-empty-states-card"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/error-pages.md",
+      "url": "/docs/help/ui-blocks/error-pages/",
+      "title": "Error page blocks",
+      "summary": "Screens for when a request does not end on the page the user wanted: not found, server error, planned maintenance and access denied. Each block is one .svelte file built from SvButton, SvBadge, SvTextInput, SvProgress, SvAvatar and SvTextArea, themed from the --sg-* tokens.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 772,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "530-block-error-pages-404-links",
+        "531-block-error-pages-500",
+        "532-block-error-pages-maintenance",
+        "533-block-error-pages-403"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/faq.md",
+      "url": "/docs/help/ui-blocks/faq/",
+      "title": "FAQ blocks",
+      "summary": "Question-and-answer sections for a pricing, help or product page. Each block is one .svelte file built from SvAccordion, SvTextInput, SvMark, SvSegmented and SvButton, themed from the --sg-* tokens.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 630,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "640-block-faq-accordion",
+        "641-block-faq-centered"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/features.md",
+      "url": "/docs/help/ui-blocks/features/",
+      "title": "Feature section blocks",
+      "summary": "The part of a landing page that lists what the product does, under the hero. There are two blocks: a grid of features with icons, and a feature list that switches a product screenshot. Each is one .svelte file built from SvButton, SvBadge and SvToaster, with the icons and screenshots drawn in inline SVG and themed from the --sg-* tokens.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 781,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "622-block-features-icons",
+        "624-block-features-screenshot"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/filter-panels.md",
+      "url": "/docs/help/ui-blocks/filter-panels/",
+      "title": "Filter panel blocks",
+      "summary": "Filters with the results they filter: a sidebar of facets beside a product list, a toolbar over a report list, removable chips over a support queue, and collapsible sections beside an SvGrid. Each block is one .svelte file built from SvCheckBox, SvSlider, SvDropDownList, SvChip, SvMenu and SvAccordion, themed from the --sg-* tokens.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 740,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "566-block-filter-panels-sidebar",
+        "567-block-filter-panels-toolbar",
+        "568-block-filter-panels-chips",
+        "569-block-filter-panels-collapsible"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/footers.md",
+      "url": "/docs/help/ui-blocks/footers/",
+      "title": "Footer blocks",
+      "summary": "Site footers for the bottom of every page: a sitemap with four link columns for a marketing site, and a one-row footer for an app. Each block is one .svelte file built from SvBadge (plus an SvButton for Back to top in the sitemap), themed from the --sg-* tokens. Each demo draws the end of a page above the footer so you see it in context.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 734,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "593-block-footers-sitemap",
+        "595-block-footers-simple"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/form-layouts.md",
+      "url": "/docs/help/ui-blocks/form-layouts/",
+      "title": "Form layouts",
+      "summary": "Forms and settings pages: a stacked create form, settings split into sections, a notification matrix, a settings page with a side menu, and a danger zone. Each block is one .svelte file built from SvTextInput, SvTextArea, SvDropDownList, SvRadioGroup, SvSwitchButton, SvSegmented and SvButton, themed from the --sg-* tokens.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 1008,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "540-block-form-layouts-stacked",
+        "541-block-form-layouts-two-column",
+        "542-block-form-layouts-settings",
+        "543-block-form-layouts-settings-nav",
+        "544-block-form-layouts-danger-zone"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/hero.md",
+      "url": "/docs/help/ui-blocks/hero/",
+      "title": "Hero blocks",
+      "summary": "The first screen of a landing page: a specific headline, one line of explanation and the action you want the visitor to take. Each block is one .svelte file built from SvButton, SvTextInput and SvToaster, with the product art drawn in CSS and themed from the --sg-* tokens.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 690,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "616-block-hero-centered",
+        "620-block-hero-signup"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/index.md",
+      "url": "/docs/help/ui-blocks/index/",
+      "title": "UI blocks",
+      "summary": "A block is a whole page section built from the SvGrid UI components: a sign-in screen, a 404 page, a pricing table, an empty state. Each one is a single .svelte file that imports from @svgrid/grid and nothing else. You copy it into your app and change it like any other file you own.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 1066,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "530-block-error-pages-404-links",
+        "575-block-ai-ask-bar",
+        "599-block-checkout-split"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/kpi-cards.md",
+      "url": "/docs/help/ui-blocks/kpi-cards/",
+      "title": "KPI card blocks",
+      "summary": "The metric tiles at the top of an app dashboard: a few numbers someone checks every morning, with enough context to tell whether they moved. Each block is one .svelte file built from SvCard, SvStat, SvSparkline, SvBadge, SvSegmented and SvSwitchButton, themed from the --sg-* tokens.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 872,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "556-block-kpi-cards-icon",
+        "557-block-kpi-cards-trend",
+        "559-block-kpi-cards-sparkline"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/logo-clouds.md",
+      "url": "/docs/help/ui-blocks/logo-clouds/",
+      "title": "Logo cloud blocks",
+      "summary": "A row of customer logos with one line of social proof, for a landing or pricing page. The block is one .svelte file built from SvButton, themed from the --sg-* tokens. The sample wordmarks are made-up companies: an inline SVG glyph next to the name in its own type style, so nothing loads from another server.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 561,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "648-block-logo-clouds-grid"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/navbars.md",
+      "url": "/docs/help/ui-blocks/navbars/",
+      "title": "Navbar blocks",
+      "summary": "Top bars for a site or an app: plain links with a call to action, a storefront bar with search and a cart, and a bar with dropdown and mega menus. Each block is one .svelte file built from SvButton, SvMenu, SvBadge and SvTextInput, themed from the --sg-* tokens, and drawn over a short mock page so you can see it in place.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 711,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "587-block-navbars-simple",
+        "588-block-navbars-search",
+        "591-block-navbars-dropdowns"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/onboarding.md",
+      "url": "/docs/help/ui-blocks/onboarding/",
+      "title": "Onboarding blocks",
+      "summary": "Screens for a user's first minutes in your app: a setup wizard, a getting-started checklist. Each block is one .svelte file, the wizard built from SvStepper, SvTextInput and SvTagsInput, the checklist from SvCollapsible and SvProgress, both themed from the --sg-* tokens.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 745,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "551-block-onboarding-wizard",
+        "552-block-onboarding-checklist"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/orders.md",
+      "url": "/docs/help/ui-blocks/orders/",
+      "title": "Order blocks",
+      "summary": "The screens around a customer's past orders: the list of them, and where a parcel is right now. Each block is one .svelte file. The history is an SvGrid with an SvDrawer for details; tracking uses SvBadge, SvCard and SvButton. Money is kept in integer cents and formatted with Intl.NumberFormat only when it is shown. For the cart before checkout, see the shopping cart blocks.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 910,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "579-block-orders-history",
+        "580-block-orders-tracking"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/page-headings.md",
+      "url": "/docs/help/ui-blocks/page-headings/",
+      "title": "Page heading blocks",
+      "summary": "The strip at the top of an app page: the title, where you are, and what you can do here. Each block is one .svelte file built from SvButton, SvMenu, SvBreadcrumb, SvTabs, SvBadge, SvSegmented and SvStat, with a little placeholder content underneath so it reads as the top of a page.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 910,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "546-block-page-headings-breadcrumbs",
+        "547-block-page-headings-tabs",
+        "548-block-page-headings-meta",
+        "549-block-page-headings-stats"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/pricing.md",
+      "url": "/docs/help/ui-blocks/pricing/",
+      "title": "Pricing blocks",
+      "summary": "Plan tables for a pricing page or an upgrade screen, built from SvCard, SvButton, SvBadge, SvSegmented and SvNumberInput. Prices are plain data: the PLANS array at the top of each file is the default for the core's plans option, so changing a plan is an edit to one array, or pass your own. The newer blocks keep money in integer cents and format it with Intl.NumberFormat (currency and locale options, US dollars and en-US by default).",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 680,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "425-block-pricing",
+        "634-block-pricing-highlighted",
+        "635-block-pricing-comparison"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/product-cards.md",
+      "url": "/docs/help/ui-blocks/product-cards/",
+      "title": "Product card blocks",
+      "summary": "Two ways to show products in a store: cards in a grid, and wide cards in a list. Each block is one .svelte file built from SvRating, SvBadge, SvNumberInput and SvButton, with a toast from SvToaster when something goes in the cart. Prices are integer cents formatted with Intl.NumberFormat, and the product pictures are inline SVG tinted from the --sg-* tokens.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 862,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "650-block-product-cards-grid",
+        "651-block-product-cards-horizontal"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/product-lists.md",
+      "url": "/docs/help/ui-blocks/product-lists/",
+      "title": "Product list blocks",
+      "summary": "Two ways to lay out products in a store: a full category page with a sort and view toolbar, and a featured product beside a small grid. Each block is one .svelte file built from SvButton, with SvDropDownList and SvSegmented in the toolbar and SvBadge on the featured tile. Prices are integer cents formatted with Intl.NumberFormat, and the product pictures are inline SVG tinted from the --sg-* tokens.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 956,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "652-block-product-lists-toolbar",
+        "653-block-product-lists-featured"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/product-overview.md",
+      "url": "/docs/help/ui-blocks/product-overview/",
+      "title": "Product overview block",
+      "summary": "The top of a product page: the gallery on one side and everything needed to buy on the other. The block is one .svelte file built from SvRating, SvSegmented, SvNumberInput, SvButton and SvAccordion, with a toast from SvToaster when the item goes in the cart. The price is integer cents formatted with Intl.NumberFormat, and the product images are inline SVG tinted from the --sg-* tokens.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 837,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "654-block-product-overview-split"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/reviews.md",
+      "url": "/docs/help/ui-blocks/reviews/",
+      "title": "Review blocks",
+      "summary": "The review section of a product page: a rating summary with a star distribution, the review feed, and the form to write one. Each block is one .svelte file built from SvRating, SvAvatar, SvBadge, SvDropDownList, SvFileUpload and SvSegmented, themed from the --sg-* tokens.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 799,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "607-block-reviews-summary",
+        "608-block-reviews-list",
+        "609-block-reviews-write"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/shopping-carts.md",
+      "url": "/docs/help/ui-blocks/shopping-carts/",
+      "title": "Shopping cart blocks",
+      "summary": "Two places a cart shows up in a store: the cart page, and a drawer that opens when you add something. Each block is one .svelte file built from SvNumberInput and SvButton, with SvTextInput for the promo code on the page and SvDrawer for the slide-over. Money is kept in integer cents and formatted with Intl.NumberFormat only when it is shown, and the product pictures are inline SVG tinted from the --sg-* tokens.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 1026,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "603-block-shopping-carts-page",
+        "604-block-shopping-carts-panel"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/stats.md",
+      "url": "/docs/help/ui-blocks/stats/",
+      "title": "Stats blocks",
+      "summary": "Number sections for reports and status boards: large figures with labels, framed as a page section rather than a dashboard tile. There are two blocks, a weekly report and a status board. The report is built from SvButton and SvToaster, the board from SvSwitchButton and SvBadge, and every value is a raw number formatted with Intl.NumberFormat, so it reads in the visitor's locale.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 742,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "564-block-stats-trends",
+        "565-block-stats-banded"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/team.md",
+      "url": "/docs/help/ui-blocks/team/",
+      "title": "Team blocks",
+      "summary": "The people section of an about or careers page. The block is one .svelte file built from SvAvatar, SvSegmented, SvBadge and SvButton, themed from the --sg-* tokens. Avatars are initials on a color picked from the name, so there are no photos to host until you add them.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 631,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "649-block-team-grid"
+      ]
+    },
+    {
+      "path": "help/ui-blocks/testimonials.md",
+      "url": "/docs/help/ui-blocks/testimonials/",
+      "title": "Testimonial blocks",
+      "summary": "Customer quotes for a landing, pricing or product page: a wall of quote cards and a one-at-a-time carousel. Each block is one .svelte file built from SvAvatar, SvRating, SvCarousel and SvButton, themed from the --sg-* tokens. Company marks are made-up glyphs drawn as inline SVG, so nothing loads from another server.",
+      "section": "help/ui-blocks",
+      "pillar": "ui",
+      "tier": "community",
+      "words": 663,
+      "lastUpdated": "2026-10-16",
+      "demoIds": [
+        "646-block-testimonials-cards",
+        "647-block-testimonials-carousel"
       ]
     },
     {
@@ -5149,8 +5766,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 820,
-      "lastUpdated": "2026-08-19",
+      "words": 947,
+      "lastUpdated": "2026-10-16",
       "demoIds": []
     },
     {
@@ -5219,15 +5836,12 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 1162,
-      "lastUpdated": "2026-10-14",
+      "words": 1043,
+      "lastUpdated": "2026-10-16",
       "demoIds": [
         "420-block-login",
-        "421-block-signup",
-        "422-block-otp",
         "423-block-dashboard",
-        "424-block-app-shell",
-        "425-block-pricing"
+        "566-block-filter-panels-sidebar"
       ]
     },
     {
@@ -5659,8 +6273,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 1141,
-      "lastUpdated": "2026-09-03",
+      "words": 1172,
+      "lastUpdated": "2026-10-15",
       "demoIds": [
         "252-datetimepicker",
         "259-datetimepicker-forms",
@@ -5807,8 +6421,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 785,
-      "lastUpdated": "2026-09-03",
+      "words": 834,
+      "lastUpdated": "2026-10-16",
       "demoIds": [
         "287-file-upload"
       ]
@@ -5918,7 +6532,7 @@
       "pillar": "ui",
       "tier": "community",
       "words": 533,
-      "lastUpdated": "2026-09-03",
+      "lastUpdated": "2026-10-15",
       "demoIds": [
         "409-layout-feedback"
       ]
@@ -6799,8 +7413,8 @@
       "section": "legal",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 2806,
-      "lastUpdated": "2026-10-07",
+      "words": 2856,
+      "lastUpdated": "2026-10-17",
       "demoIds": []
     },
     {

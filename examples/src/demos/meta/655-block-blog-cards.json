@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte blog index built from the SvGrid UI kit: six post cards, each with inline SVG cover art drawn from the theme tokens, a category SvBadge, the title, an excerpt clamped to three lines, the author's SvAvatar, the date and a reading time computed from the word count. Category chips (All, Engineering, Product, Customers) filter the grid and show a count per category. A category with no posts shows an SvEmptyState with an SvButton back to all posts.",
+  "keywords": [
+    "svelte blog cards",
+    "svelte 5 blog index page",
+    "svelte category filter chips",
+    "svelte reading time",
+    "svelte post card grid"
+  ],
+  "faq": [
+    {
+      "question": "How is the reading time calculated?",
+      "answer": "readingMinutes() counts the words in the post's body when you pass one, otherwise it uses a precomputed words field, and falls back to the excerpt. It divides by wordsPerMinute (225 by default), rounds up and never returns less than 1, so a 2,140-word post shows 10 min read."
+    },
+    {
+      "question": "How do the category chips filter the cards?",
+      "answer": "createBlogCards() holds the selected category in $state and derives the visible posts from it, newest first. Each chip is a button spread with chipProps(name), which sets aria-pressed and calls setCategory(). The count next to each chip comes from count(name), the line under the chips is aria-live, and onFilter tells your app about the change (for example to sync a ?category= query string)."
+    },
+    {
+      "question": "How do I feed it real posts and links?",
+      "answer": "Pass posts (slug, title, excerpt, category, author, ISO date, and body or words) and, if your categories differ, categories with a badge tone each. Each card's title is a link to /blog/<slug>, or to whatever your href option returns, stretched over the whole card. The demo passes onOpen to show a toast; drop it and the links navigate. Ctrl or Cmd-click always opens a new tab."
+    }
+  ]
+}

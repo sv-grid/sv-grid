@@ -154,7 +154,7 @@ point of assignment:
   --sg-row-hover-bg:          hsl(var(--accent));
   --sg-selection-bg:          hsl(var(--primary) / 0.15);
   --sg-accent:                hsl(var(--primary));
-  --sg-focus-ring:            0 0 0 2px hsl(var(--ring));
+  --sg-focus-ring:            hsl(var(--ring));
   --sg-scrollbar-bg:          hsl(var(--background));
   --sg-scrollbar-thumb:       hsl(var(--muted-foreground) / 0.4);
   --sg-scrollbar-thumb-hover: hsl(var(--muted-foreground) / 0.6);

@@ -57,3 +57,19 @@ describe('SvFileUpload', () => {
     } finally { destroy() }
   })
 })
+
+describe('SvFileUpload name', () => {
+  it('renders a named hidden file input so a plain form post carries the files', () => {
+    const { target, destroy } = mountFu({ name: 'photos' })
+    try {
+      const field = target.querySelector<HTMLInputElement>('input[type="file"][name="photos"]')
+      expect(field).not.toBeNull()
+      expect(field!.hidden).toBe(true)
+    } finally { destroy() }
+  })
+
+  it('renders no named input without a name', () => {
+    const { target, destroy } = mountFu({})
+    try { expect(target.querySelector('input[name]')).toBeNull() } finally { destroy() }
+  })
+})

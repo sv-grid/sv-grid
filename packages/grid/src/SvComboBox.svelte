@@ -182,7 +182,7 @@
   function focusOpen(node: HTMLInputElement) { if (autoOpen) { node.focus() } }
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir} loading={loadingProp || loading}>
+<SvField id={uid} {label} {hint} {error} {required} {dir} {block} loading={loadingProp || loading}>
   <div bind:this={fieldEl} class="sv-combo sv-combo--{size}"
     class:is-block={block} class:is-open={combo.open} class:is-disabled={disabled} class:is-invalid={invalid}>
     <input

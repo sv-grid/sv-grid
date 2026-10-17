@@ -1,0 +1,24 @@
+{
+  "description": "A support contact page for Svelte 5: a ticket form (SvTextInput, SvTextArea, a priority SvSegmented and an SvButton) beside a support-hours panel with the weekly hours table, an SvBadge that reads Open now or Opens at 9:00 from the viewer's clock, and the expected response time per channel. Switching the priority changes the promised times in the panel and in the confirmation toast. The hours, status and form come from an exported createSupportRequest() core.",
+  "keywords": [
+    "svelte support contact page",
+    "svelte 5 support hours",
+    "svelte open now status",
+    "svelte ticket form priority",
+    "svelte response time block"
+  ],
+  "faq": [
+    {
+      "question": "How is the Open now status worked out?",
+      "answer": "The core keeps the hours as one [open, close] pair per weekday in minutes after midnight, Sunday first, with null for closed days. It compares them with the viewer's local time: inside today's window it says Open now, until the closing time; before it, Opens at the opening time; otherwise it finds the next open day. start() re-reads the clock every minute."
+    },
+    {
+      "question": "How does the priority change the response times?",
+      "answer": "Each channel in the response option has a time per priority (low, normal, urgent). The promised list is derived from the current priority, so the panel updates as soon as the SvSegmented changes, and the toast after a submit quotes the email time for that priority."
+    },
+    {
+      "question": "How do I connect it to my helpdesk?",
+      "answer": "Pass onSubmit to createSupportRequest(). It receives name, email, subject, message and priority after validation; create the ticket there and throw on failure to keep the subject and message for a retry. On success the core clears those two fields and keeps the name and email."
+    }
+  ]
+}

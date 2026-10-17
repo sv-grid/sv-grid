@@ -1,0 +1,24 @@
+{
+  "description": "A danger zone panel for Svelte 5 built from the SvGrid UI kit: destructive project actions kept apart behind a --sg-danger border. Transfer ownership needs a new owner from an SvDropDownList plus an SvCheckBox acknowledgement, Archive asks once through SvPopconfirm, and Delete opens an SvModal whose Delete SvButton stays disabled until the project name is typed exactly into an SvTextInput. A deleted project can be restored from the toast's Undo button.",
+  "keywords": [
+    "svelte danger zone settings",
+    "svelte 5 delete confirmation modal",
+    "svelte type to confirm delete",
+    "svelte transfer ownership form",
+    "svelte archive popconfirm"
+  ],
+  "faq": [
+    {
+      "question": "How does the type-to-confirm delete work?",
+      "answer": "The modal's SvTextInput is bound to typed, and the Delete button has disabled={typed !== PROJECT}. The comparison is exact and case-sensitive, so the button only enables when the full project name is typed. Opening the modal clears the field."
+    },
+    {
+      "question": "Why three different confirmation styles?",
+      "answer": "The cost of a mistake differs. Archive is reversible, so a one-click SvPopconfirm is enough. Transfer removes your admin rights, so it needs an owner choice and a checkbox. Delete loses data, so it needs a modal and the typed name."
+    },
+    {
+      "question": "Where do I call my API?",
+      "answer": "transfer(), toggleArchive() and confirmDelete() each hold one timer or state flip. Replace them with your requests, for example a DELETE to /api/projects/atlas-web inside confirmDelete, and keep the loading flags and toasts for feedback."
+    }
+  ]
+}

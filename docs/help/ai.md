@@ -186,6 +186,22 @@ under a sensible token budget. The response shape:
 The optional `question` parameter biases the summary toward the columns
 that answer the question.
 
+The read-only helpers (`aiSummarize`, `aiClassify`, `aiSmartFill`,
+`aiFindAnomalies`, and `aiFilter` without `apply`) only read rows, so they
+also take an `AIRowSource`: any object with `getData()`. Use it to summarize
+data that is not on screen in a grid, such as a chat answering questions
+about an account list:
+
+```ts
+import { aiSummarize, type AIRowSource, type TableFeatures } from '@svgrid/grid'
+
+type Account = { name: string; region: string; arr: number }
+declare const accounts: Account[]
+
+const source: AIRowSource<TableFeatures, Account> = { getData: () => accounts }
+const { text } = await aiSummarize(source, { target: { kind: 'all' }, question: 'How is EMEA doing?' })
+```
+
 ## 4. Classify
 
 Bucket free-text cells into one of a known set of labels:

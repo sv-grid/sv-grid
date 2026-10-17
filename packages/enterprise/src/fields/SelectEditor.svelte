@@ -15,7 +15,7 @@
    * outside keep what is chosen. Escape on a single select leaves the cell as
    * it was.
    */
-  import { portalToBody } from '@svgrid/grid'
+  import { createDismissableLayer, portalToBody } from '@svgrid/grid'
   import { onMount } from 'svelte'
   import { fieldPropsOf } from './registry.svelte'
   import { addSelectOptions } from './field-ops'
@@ -133,7 +133,14 @@
     window.addEventListener('resize', place)
     window.addEventListener('scroll', onScroll, true)
     document.addEventListener('pointerdown', onDown, true)
+    // The panel is drawn at the end of the page, outside any dialog the editor
+    // sits in (the record view). As the top layer it keeps that dialog from
+    // reading a click on an option as a click outside and closing: the editor
+    // handles outside clicks and Escape itself.
+    const layer = createDismissableLayer({ element: () => [panel ?? null, anchor ?? null], onDismiss: () => {}, closeOnEscape: false, closeOnOutside: false })
+    layer.activate()
     return () => {
+      layer.release()
       cancelAnimationFrame(frame)
       window.removeEventListener('resize', place)
       window.removeEventListener('scroll', onScroll, true)

@@ -339,6 +339,49 @@ describe.skipIf(!hasDist)('check_svgrid_code catches what a model gets wrong', (
   }, 30_000)
 })
 
+describe.skipIf(!hasDist)('answers say when a feature is in the paid package', () => {
+  const TRIAL = 'https://svgrid.com/pricing/?trial=mcp'
+
+  it('marks paid hits and adds the trial link to a question about a paid feature', async () => {
+    for (const query of ['pivot table', 'kanban board', 'export to excel']) {
+      const body = await callJson('svgrid_search', { query })
+      expect(body.enterprise, query).toContain(TRIAL)
+      expect(body.examples.hits.some((h: { enterprise?: boolean }) => h.enterprise), query).toBe(true)
+    }
+  })
+
+  it('stays quiet on questions about free features', async () => {
+    for (const query of ['pin a column', 'sort', 'filter', 'theme dark', 'edit cells']) {
+      const body = await callJson('svgrid_search', { query })
+      expect(body.enterprise, `${query} got the trial note`).toBeUndefined()
+    }
+  })
+
+  it('puts the line at the top of a paid demo, and not on a free one', async () => {
+    const paid = await callTool('svgrid_get', { ref: '343-kanban-board' })
+    expect(paid.split('\n').slice(0, 4).join('\n')).toContain(TRIAL)
+    const free = await callTool('svgrid_get', { ref: '25-column-pinning' })
+    expect(free).not.toContain(TRIAL)
+  })
+
+  it('adds it to a check only when the fix is to install the paid package', async () => {
+    const paid = [
+      '<script lang="ts">',
+      "  import { SvGrid, type SvGridApi } from '@svgrid/grid'",
+      '  function go(api: SvGridApi) { api.exportData() }',
+      '</script>',
+      '',
+      '<SvGrid data={[]} columns={[]} onApiReady={go} />',
+    ].join('\n')
+    const body = await callJson('check_svgrid_code', { source: paid, filename: 'Paid.svelte' })
+    expect(body.diagnostics.map((d: { rule: string }) => d.rule)).toContain('svgrid/enterprise-not-installed')
+    expect(body.enterprise).toContain(TRIAL)
+
+    const clean = "<script lang=\"ts\">\n  import { SvGrid } from '@svgrid/grid'\n</script>\n\n<SvGrid data={[]} columns={[]} />"
+    expect((await callJson('check_svgrid_code', { source: clean, filename: 'Free.svelte' })).enterprise).toBeUndefined()
+  }, 30_000)
+})
+
 describe.skipIf(!hasDist)('check_svgrid_code stays quiet on code that is already right', () => {
   // The whole tool is worthless the moment it cries wolf: a model that gets a
   // false finding "fixes" working code. Every demo in the repo is known-good,

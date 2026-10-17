@@ -12,7 +12,7 @@ Software. By downloading, installing, or using the Software you agree to be boun
 by the terms and conditions of this EULA. If you do not agree, you are not
 permitted to use the Software or any portion of it.
 
-Version 1.2. A PDF copy: [SvGrid-EULA.pdf](/legal/SvGrid-EULA.pdf).
+Version 1.3. A PDF copy: [SvGrid-EULA.pdf](/legal/SvGrid-EULA.pdf).
 
 SvGrid is distributed in two editions under two different sets of terms:
 
@@ -39,13 +39,18 @@ SvGrid is distributed in two editions under two different sets of terms:
   file-format features of the Enterprise Package, including `<SvSheet>`, the
   `<sv-sheet>` custom element, the formula evaluator, and the readers and
   writers for the `.xlsx`, `.xls`, `.ods` and `.csv` formats.
+- **"SvGrid Base"** means the table-database and field-type features of the
+  Enterprise Package: everything exported from its `@svgrid/enterprise/base`
+  and `@svgrid/enterprise/fields` entry points, including `<SvBase>`,
+  `SvBaseViewBar`, `SvBaseForm`, the field types, saved views, forms and
+  records.
 - **"Studio"** means the `@svgrid/studio` package together with the Studio
   designer, code generator, and SQL data sources shipped in the Enterprise
   Package.
 - **"Grid Edition"** means an Enterprise license whose scope excludes the
-  Spreadsheet Module and Studio.
+  Spreadsheet Module, SvGrid Base and Studio.
 - **"Suite Edition"** means an Enterprise license whose scope includes the
-  Enterprise Package in full, the Spreadsheet Module, and Studio.
+  Enterprise Package in full, the Spreadsheet Module, SvGrid Base and Studio.
 - **"Author"** means jQWidgets Ltd.
 - **"Subscriber"** means the individual or organization that has obtained a valid
   Enterprise license.
@@ -96,12 +101,13 @@ non-sublicensable license to:
 The scope of the license is determined by the Subscriber's order:
 
 - A **Grid Developer License** covers the Enterprise Package excluding the
-  Spreadsheet Module and Studio, on an unlimited number of deployed production
+  Spreadsheet Module, SvGrid Base and Studio, on an unlimited number of deployed production
   applications within the Subscriber's organization, including subsidiaries and
   sister products, plus any number of internal development and staging
   environments.
 - A **Suite Developer License** covers the Enterprise Package in full, including
-  the Spreadsheet Module and Studio, on the same unlimited application scope.
+  the Spreadsheet Module, SvGrid Base and Studio, on the same unlimited
+  application scope.
 - An **Indie Developer License** covers the same scope as a Grid Developer
   License. It is available only to a Subscriber that is an individual working on
   their own account, or an organization whose total revenue, together with its
@@ -114,8 +120,8 @@ The scope of the license is determined by the Subscriber's order:
   defined in the separately negotiated order or master agreement.
 - An **OEM License** covers the redistribution cases in Section 4A.
 
-Use of the Spreadsheet Module or Studio under a Grid Developer License or an
-Indie Developer License is outside the licensed scope. The License Key does not
+Use of the Spreadsheet Module, SvGrid Base or Studio under a Grid Developer
+License or an Indie Developer License is outside the licensed scope. The License Key does not
 distinguish editions (Section 9), so the Software neither blocks nor flags such
 use; it remains outside the license, and bringing it into scope requires a
 Suite Developer License.
@@ -137,8 +143,8 @@ following applies:
   (c) the Subscriber sublicenses, resells, or white-labels the Enterprise
       Package under another name;
   (d) the Subscriber deploys the Enterprise Package in a multi-tenant hosted
-      product in which the Spreadsheet Module or Studio is a material part of
-      what the Subscriber's customers are paying for.
+      product in which the Spreadsheet Module, SvGrid Base or Studio is a
+      material part of what the Subscriber's customers are paying for.
 
 An OEM License is priced separately from Developer seats, is granted for a
 defined term and a defined product, and may carry a redistribution volume or
@@ -200,8 +206,8 @@ Subscriber.
 ## 7. ENTERPRISE LICENSE - EVALUATION
 
 The Author grants a 30-day evaluation period for the Enterprise Package. During
-the evaluation, the Enterprise Package in full, including the Spreadsheet Module
-and Studio, may be installed and used without a License Key for the sole purpose
+the evaluation, the Enterprise Package in full, including the Spreadsheet
+Module, SvGrid Base and Studio, may be installed and used without a License Key for the sole purpose
 of deciding whether to obtain an Enterprise license, on developer workstations
 and in internal development, staging and demonstration environments. Production
 use requires a License Key.
@@ -266,8 +272,8 @@ The Subscriber may NOT:
       third parties;
   (e) share License Keys outside of the Developer seats covered by the
       Subscriber's order;
-  (f) ship to production a use of the Spreadsheet Module or Studio that the
-      Subscriber's edition does not cover, or a redistribution described in
+  (f) ship to production a use of the Spreadsheet Module, SvGrid Base or Studio
+      that the Subscriber's edition does not cover, or a redistribution described in
       Section 4A without an OEM License.
 
 ## 11. INTELLECTUAL PROPERTY

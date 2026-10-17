@@ -1,0 +1,24 @@
+{
+  "description": "A notification centre for Svelte 5 built from the SvGrid UI kit: a bell SvButton with an unread count opens the list in an SvPopover, and on phones the same panel renders inline. An All / Unread SvSegmented filters it, clicking an item marks it read, Mark all as read clears the dots, each item can be archived with an Undo toast, and SvEmptyState covers an empty list.",
+  "keywords": [
+    "svelte notifications page",
+    "svelte 5 notification center",
+    "svelte notification bell popover",
+    "svelte unread badge",
+    "svelte mark all as read"
+  ],
+  "faq": [
+    {
+      "question": "How does mark as read work?",
+      "answer": "Each notification has a read flag in the notes $state array. Clicking the item sets it to true, Mark all as read sets it on every item, and the unread count, the bell badge and the Unread tab are $derived from the array, so they update together."
+    },
+    {
+      "question": "Why does the panel show inline on phones?",
+      "answer": "A matchMedia query for max-width 560px sets compact. When it matches, the bell toggles an inline panel under the greeting instead of opening the 360 px SvPopover, which would crowd a 375 px screen. Both views render the same panel snippet and share state."
+    },
+    {
+      "question": "How do I connect it to a real notifications API?",
+      "answer": "Load notes from your API on page load, and call your endpoint from markRead, markAll and archive before or after updating the local array. The Undo action in the archive toast puts the item back at its old index, so call your unarchive endpoint there too."
+    }
+  ]
+}

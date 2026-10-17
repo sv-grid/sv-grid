@@ -65,4 +65,23 @@ describe('SvCarousel', () => {
       expect(activeDot(target)).toBe(1)
     } finally { destroy() }
   })
+
+  it('does not autoplay when the user prefers reduced motion', () => {
+    const original = globalThis.matchMedia
+    globalThis.matchMedia = ((q: string) => ({
+      matches: q.includes('prefers-reduced-motion'), media: q,
+      addEventListener() {}, removeEventListener() {},
+    })) as unknown as typeof matchMedia
+    const { target, destroy } = mountCarousel({ count: 3, autoplay: 1000 })
+    try {
+      flushSync()
+      vi.advanceTimersByTime(5000)
+      flushSync()
+      expect(activeDot(target)).toBe(0)
+      expect(target.querySelector('.sv-carousel__playpause')).toBeNull()
+    } finally {
+      destroy()
+      globalThis.matchMedia = original
+    }
+  })
 })

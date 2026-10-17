@@ -1,0 +1,24 @@
+{
+  "description": "Inline info banners for Svelte 5 built from the SvGrid UI kit: SvAlert in danger, warning, success and info tones inside a workspace settings page. Each is dismissable, and the actions are SvButtons that do work: Retry now and Rotate key show a loading state and resolve their banner, Download fires a toast. A Show hidden banners button restores everything dismissed or resolved.",
+  "keywords": [
+    "svelte inline alert banner",
+    "svelte 5 alert component",
+    "svelte warning banner with actions",
+    "svelte dismissible alert",
+    "svelte success error info banner"
+  ],
+  "faq": [
+    {
+      "question": "How does dismissing work with SvAlert?",
+      "answer": "SvAlert hides itself when its x is pressed and calls onDismiss. The block also wraps each alert in an {#if} on banners.shown and calls banners.dismiss(id) from onDismiss, so the core knows which banners are gone and banners.restore() can render them again."
+    },
+    {
+      "question": "Which tone should I use for what?",
+      "answer": "Danger for something already broken that needs action (failed webhooks), warning for something that will break (an expiring key), success for a finished background job, and info for context that needs no action. Danger and warning render with role alert, the others with role status."
+    },
+    {
+      "question": "How do I hook the actions to my API?",
+      "answer": "createInfoBanners() takes rotateKey and retryHooks options. banners.rotateKey() and banners.retryHooks() set a loading flag, await your function, then hide their banner and call onRotated or onRetried, which show the success toast. The block passes timers; replace them with your requests. If your function throws, the banner stays up, so catch the error there and show toast.error."
+    }
+  ]
+}

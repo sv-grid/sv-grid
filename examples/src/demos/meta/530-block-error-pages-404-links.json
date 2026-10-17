@@ -1,0 +1,24 @@
+{
+  "description": "A 404 page block for Svelte 5 that helps the visitor recover: a site search SvTextInput with a leading search icon and a list of popular destinations, each with an icon tile, title, one-line description and chevron. Typing filters the list as you go, submitting an empty search shows a field error, and a real query fires a toast.",
+  "keywords": [
+    "svelte 404 page with search",
+    "svelte 5 not found page helpful links",
+    "svelte error page popular pages list",
+    "sveltekit 404 search block",
+    "svelte search input with icon"
+  ],
+  "faq": [
+    {
+      "question": "How does the search field validate?",
+      "answer": "On submit an empty query sets an error string in createRecoverySearch, which the SvTextInput shows through its error and invalid props. Typing clears it, because the core's query setter resets the error."
+    },
+    {
+      "question": "How do I send the search to my search page?",
+      "answer": "Pass an onSearch option to createRecoverySearch that calls goto from $app/navigation, for example goto('/search?q=' + encodeURIComponent(query)). The core calls it with the trimmed query."
+    },
+    {
+      "question": "Why do the destination links show a toast instead of navigating?",
+      "answer": "The demo's onOpen option calls preventDefault on the click so the gallery stays put. Drop onOpen and each row follows its href like a normal link."
+    }
+  ]
+}

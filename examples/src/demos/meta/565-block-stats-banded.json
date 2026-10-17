@@ -1,0 +1,24 @@
+{
+  "description": "A status board section in Svelte 5: a full-width tinted band with a heading, an SvBadge for overall health and a bordered, table-like grid of six cells. Each cell has a value, a label, a status dot and the change since an hour ago, colored by whether lower or higher is better. An SvSwitchButton turns on live updates that poll every 3 seconds, and the three columns become one on phones.",
+  "keywords": [
+    "svelte status board",
+    "svelte 5 banded stats section",
+    "svelte system status metrics",
+    "svelte live updating stats",
+    "svelte stats table grid"
+  ],
+  "faq": [
+    {
+      "question": "How are the cell borders drawn?",
+      "answer": "The board is a CSS grid with a 1px gap on a background in the border color, and each cell has the page background. The gaps show through as the inner rules, and one outer border with a rounded corner frames the grid."
+    },
+    {
+      "question": "How do live updates work, and how do I point them at real data?",
+      "answer": "The switch sets the core's live flag. An $effect inside the core starts a 3 second setInterval while live is true and clears it when it turns off or the block unmounts. Pass a poll option that fetches your metrics endpoint and returns the new cells; the default nudges the sample values."
+    },
+    {
+      "question": "How does the health badge decide what to show?",
+      "answer": "Cells can set warnAbove. Any cell whose value is over its threshold gets an amber dot and a hidden '(above threshold)' note, and the badge counts those cells; with none it reads All metrics normal."
+    }
+  ]
+}

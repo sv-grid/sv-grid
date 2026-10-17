@@ -1,0 +1,24 @@
+{
+  "description": "A project activity feed for Svelte 5 built from the SvGrid UI kit. Events are grouped by day into SvTimeline lists whose marker colour and glyph name the event type (commit, comment, deploy, status change), with the actor, what changed and a relative time. Load more appends older events with a loading state on the SvButton.",
+  "keywords": [
+    "svelte activity feed page",
+    "svelte 5 activity timeline",
+    "svelte project activity log",
+    "svelte timeline grouped by day",
+    "svelte load more button"
+  ],
+  "faq": [
+    {
+      "question": "How are the relative times computed?",
+      "answer": "The block reads Date.now() once at mount into now, and relative() formats the difference with Intl.RelativeTimeFormat, picking seconds, minutes, hours or days by size. Every label is measured from that one clock, so the feed does not shift while you read it."
+    },
+    {
+      "question": "How do I load older events from my API?",
+      "answer": "Pass loadOlder to createActivityTimeline. It receives the oldest at you already hold as a cursor and returns { events, done }; the block's own loadOlder is a setTimeout stand-in. loadMore() appends the result to events, and the days derived value re-sorts and re-groups everything, so older events land under their own day heading."
+    },
+    {
+      "question": "How do I add a new event type?",
+      "answer": "Add a key to the ActivityKind type and an entry to ACTIVITY_KINDS with a label, a one-character glyph and a colour token. The marker, the legend and the grouping all read from ACTIVITY_KINDS."
+    }
+  ]
+}

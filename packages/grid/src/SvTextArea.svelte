@@ -73,7 +73,7 @@
   }
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir}>
+<SvField id={uid} {label} {hint} {error} {required} {dir} {block}>
   <div class="sv-ta sv-ta--{size}"
     class:is-block={block} class:is-disabled={disabled}>
     <textarea
@@ -89,6 +89,7 @@
       {maxlength}
       oninput={onInput}
       onkeydown={onKeydown}
+      id={uid}
       {...editorAria({ id: uid, invalid, required, error, hint, ariaLabel })}
     ></textarea>
     {#if showCount && maxlength}

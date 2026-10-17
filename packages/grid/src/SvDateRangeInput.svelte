@@ -158,7 +158,7 @@
   }
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir}>
+<SvField id={uid} {label} {hint} {error} {required} {dir} {block}>
 <div class="sv-dri" class:is-block={block} class:sv-dri--disabled={disabled}>
   <!-- The whole field is the trigger, not just the <input>. The input is
        readonly and carries the dialog semantics, but it is the flex child that

@@ -265,12 +265,30 @@ export type BaseSyncStatus =
   | { state: 'error'; message: string; table: string }
   | { state: 'limited'; table: string; limit: number }
 
+/**
+ * A change made in the database by someone else (another user, another tab,
+ * a script, an AI agent), as the base found it when it read the table again.
+ */
+export type BaseRemoteChange = {
+  /** The base table's id. */
+  table: string
+  type: 'insert' | 'update' | 'delete'
+  /** The record's page id. */
+  id: string
+  /** The record as it is now; for a delete, as it was. */
+  record: Row
+  /** For an update: each stored field that moved, from what to what. */
+  fields?: Array<{ field: string; from: unknown; to: unknown }>
+}
+
 export type BaseSyncOptions = {
   getTables: () => BaseTable[] | undefined
   /** Put tables in the page without writing them (loaded, undone, changed elsewhere). */
   apply: (tables: BaseTable[]) => void
   onStatus?: (status: BaseSyncStatus) => void
   onError?: (error: { table: string; action: 'insert' | 'update' | 'delete' | 'load'; message: string }) => void
+  /** Changes made elsewhere, after they are in the page. Never called for the page's own writes. */
+  onRemoteChange?: (changes: BaseRemoteChange[]) => void
 }
 
 const clone = (r: Row): Row => {
@@ -510,7 +528,7 @@ export function createBaseSync(options: BaseSyncOptions) {
     if (!list || !t || !before || disposed) return
     const fields = storedFields(list, t)
     const fresh = new Map(rows.map((r) => [String(r.id), r]))
-    let changed = false
+    const changes: BaseRemoteChange[] = []
     const data: Row[] = []
     for (const r of t.data) {
       if (!r) continue
@@ -520,29 +538,31 @@ export function createBaseSync(options: BaseSyncOptions) {
         if (pendingInsert.has(key(tableId, id))) data.push(r)
         else {
           before.delete(id)
-          changed = true
+          changes.push({ table: tableId, type: 'delete', id, record: r })
         }
         continue
       }
       fresh.delete(id)
-      const moved = fields.filter((f) => f in server && !same(server[f], before.get(id)?.[f]))
+      const was = before.get(id)
+      const moved = fields.filter((f) => f in server && !same(server[f], was?.[f]))
       if (moved.length) {
-        changed = true
         const next = { ...r }
         for (const f of moved) next[f] = server[f]
-        before.set(id, { ...before.get(id), ...pick(server, moved) })
+        changes.push({ table: tableId, type: 'update', id, record: next, fields: moved.map((f) => ({ field: f, from: was?.[f], to: server[f] })) })
+        before.set(id, { ...was, ...pick(server, moved) })
         data.push(next)
       } else data.push(r)
     }
     for (const [id, r] of fresh) {
-      changed = true
       before.set(id, pick(r, fields))
+      changes.push({ table: tableId, type: 'insert', id, record: r })
       data.push(r)
     }
-    if (!changed) return
+    if (!changes.length) return
     let next = list.map((x) => (x.id === tableId ? { ...x, data } : x))
     next = linkBack(next, tableId)
     options.apply(next)
+    options.onRemoteChange?.(changes)
   }
 
   return {

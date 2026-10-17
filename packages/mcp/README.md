@@ -22,19 +22,20 @@
 
 Point any MCP-capable client - Claude Desktop, Claude Code, Cursor, Zed - at this server and the model answers with **accurate, version-pinned** facts about SvGrid: real prop, method, and event names, plus every demo's source as grounding. No hallucinated APIs, no stale blog posts.
 
-**Why this beats pasting docs into the chat.** A model working from memory invents plausible SvGrid APIs, because it learned from a mix of other grids and older versions. Pasting docs helps for one question and then falls out of the context window. This server puts the current API surface and 370+ working demo sources one tool call away, for every question, pinned to the version you installed.
+**Why this beats pasting docs into the chat.** A model working from memory invents plausible SvGrid APIs, because it learned from a mix of other grids and older versions. Pasting docs helps for one question and then falls out of the context window. This server puts the current API surface and every working demo source one tool call away, for every question, pinned to the version you installed.
 
 ## Tools exposed
 
-Four. `tools/list` is sent on **every** request, so the tool surface is pure
+Five. `tools/list` is sent on **every** request, so the tool surface is pure
 overhead on every turn - this server used to spend ~4,710 tokens of it on 36
 tools, 79% of them Studio tools most sessions never call once.
 
 | Tool | Purpose |
 | --- | --- |
-| `svgrid_search` | Search the docs, all 400+ demos and the API surface **in one call**. No arguments returns an index. |
+| `svgrid_search` | Search the docs, every demo and the API surface **in one call**. No arguments returns an index. |
 | `svgrid_get` | Read one thing in full: a doc slug, a demo id, or `api`. |
 | `svgrid_check_code` | **Verify** a file against the real API surface + the Svelte compiler. |
+| `svgrid_preview` | Render a live, interactive grid in the conversation from columns + rows (MCP Apps). |
 | `svgrid_scaffold` | Studio: turn a Drizzle schema, sample rows or an `EntitySchema` into runnable SvelteKit files. |
 
 The docs and demos are also served as **MCP resources**
@@ -89,8 +90,8 @@ What it checks:
   too. The result says which of the two ran in its `compiler` field, so
   "no errors" is never mistaken for "this compiles".
 
-It is tuned to shut up when the code is right: it reports **nothing** across all
-400+ demos in this repo, which is what a CI test asserts. A verifier that cries
+It is tuned to shut up when the code is right: it reports **nothing** across
+every demo in this repo, which is what a CI test asserts. A verifier that cries
 wolf is worse than none, because a model will happily "fix" working code.
 
 ### Studio: drive the app model (agent co-designer)
@@ -122,8 +123,8 @@ failure reports which op failed and what already applied.
 | --- | --- | --- |
 | Install | `npx @svgrid/mcp` | `https://mcp.svgrid.com/mcp` |
 | Needs Node | yes | no |
-| `check_svgrid_code` compiles | yes | static checks only |
-| Studio `studio_*` tools | yes (27) | no |
+| `svgrid_check_code` compiles | yes | static checks only |
+| Studio `studio_*` tools | yes (opt-in) | no |
 | Works offline | yes | no |
 
 ```bash
@@ -136,8 +137,8 @@ claude mcp add --transport http svgrid https://mcp.svgrid.com/mcp
   <a href="https://insiders.vscode.dev/redirect/mcp/install?name=svgrid&config=%7B%22name%22%3A%22svgrid%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.svgrid.com%2Fmcp%22%7D"><img src="https://img.shields.io/badge/Add%20to-VS%20Code-0098FF?logo=visualstudiocode&logoColor=white" alt="Add to VS Code" /></a>
 </p>
 
-The remote server is live at **https://mcp.svgrid.com/mcp** and carries the six
-docs + verification tools ([source](../../workers/svgrid-mcp)). Use stdio when
+The remote server is live at **https://mcp.svgrid.com/mcp** and carries the docs,
+verification and preview tools ([source](../../workers/svgrid-mcp)). Use stdio when
 you want the compiler pass, the Studio tools, or no third-party endpoint in the
 loop.
 
@@ -205,6 +206,17 @@ node dist/index.js
 `pnpm build` first runs `scripts/build-manifests.mjs`, which reads
 `examples/src/demos/*.svelte` and `docs/**/*.md` from the workspace and inlines
 them into `src/data.ts`, so the published package is fully self-contained.
+
+## Enterprise features
+
+Export to Excel and PDF, pivot tables, the Kanban board, the scheduler, the
+spreadsheet and the server-side row model live in `@svgrid/enterprise`, which
+is commercial. Answers say so: a paid doc or demo in `svgrid_search` results
+carries `"enterprise": true`, a question about a paid feature gets one line
+with the trial link, and `svgrid_check_code` adds it when the fix is to install
+the package. The package runs without a license key and shows a watermark
+until one is set. The [30-day trial](https://svgrid.com/pricing/?trial=mcp-docs)
+adds a download of every demo and 30 days of email support.
 
 ## Licensing
 

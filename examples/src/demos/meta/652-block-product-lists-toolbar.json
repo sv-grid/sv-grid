@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte store category page built from the SvGrid UI kit: twelve products with drawn art, rating, review count and price under a toolbar with the result count, an SvDropDownList sort (featured, price low to high, price high to low, top rated, newest) and an SvSegmented grid/list switch. Load more is an SvButton with a loading state that shows the next eight products, and Add to cart fires a toast. Sort, view and page live in the headless createProductListToolbar() core.",
+  "keywords": [
+    "svelte product list page",
+    "svelte 5 product grid with sort",
+    "svelte grid list view toggle",
+    "svelte load more pagination",
+    "svelte headless product listing"
+  ],
+  "faq": [
+    {
+      "question": "How do sort and Load more work together?",
+      "answer": "createProductListToolbar sorts a copy of the products option (price by integer cents, top rated by rating then review count, newest by the added date, featured keeps the order you passed) and shows the first page times pageSize rows, 8 by default. Load more awaits your onLoadMore(page, sort) and then adds a page. Changing the sort goes back to page 1."
+    },
+    {
+      "question": "Can the server do the sorting and paging?",
+      "answer": "Yes. Pass products and total as getters, for example products: () => data.items and total: () => data.total. With total set the core neither sorts nor slices; it shows the rows as given and offers Load more while fewer than total are shown. Navigate in onSortChange and onLoadMore (for example goto with ?sort= and ?page=) and the load function returns the new rows."
+    },
+    {
+      "question": "What changes on a phone?",
+      "answer": "Below 640 px the grid view has two columns with a full-width Add to cart button under each price, and the sort dropdown takes its own row under the count and the view switch. The list view puts a smaller picture on the left and moves the price and Add to cart under the description."
+    }
+  ]
+}

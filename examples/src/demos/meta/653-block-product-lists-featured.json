@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte featured products section built from the SvGrid UI kit: one large tile for the featured product with drawn art, an SvBadge, name, price, a short pitch and a Shop now SvButton, beside a 2x2 grid of smaller products. Each small tile has an Add SvButton that shows its loading state, and every tile has a save toggle. Below 900 px the featured tile moves above the grid. State lives in the headless createFeaturedProducts() core.",
+  "keywords": [
+    "svelte featured product section",
+    "svelte 5 product grid with hero tile",
+    "svelte store homepage block",
+    "svelte add to cart button loading",
+    "svelte headless product list"
+  ],
+  "faq": [
+    {
+      "question": "How do I show my own products?",
+      "answer": "Pass featured (one product, with an optional pitch) and products (the styled block shows four) to createFeaturedProducts. Prices are integer cents, formatted with Intl.NumberFormat for the currency and locale options, USD and en-US by default."
+    },
+    {
+      "question": "How do Shop now and Add connect to my app?",
+      "answer": "Shop now awaits onShop(product) and Add awaits onAdd(product); each button shows its loading state until the promise settles, and the other Add buttons are disabled meanwhile. A throw goes to onError(error, product). The demo waits a moment and fires a toast; put a goto to the product page and a POST to your cart there."
+    },
+    {
+      "question": "What changes on smaller screens?",
+      "answer": "Below 900 px the layout is one column: the featured tile on top with a wide picture and the 2x2 grid under it. Below 480 px the price moves under the product name and Shop now spans the full width of the tile."
+    }
+  ]
+}

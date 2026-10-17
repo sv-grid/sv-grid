@@ -1,0 +1,24 @@
+{
+  "description": "A justified call-to-action row for Svelte 5 built from the SvGrid UI kit: a heading and one line of copy on the left, Book a demo and Get started SvButtons on the right, inside a bordered neutral panel. Get started shows its loading state, reports through an SvToaster toast and swaps the buttons for a confirmation message.",
+  "keywords": [
+    "svelte call to action row",
+    "svelte 5 cta block justified",
+    "svelte cta copy left buttons right",
+    "svelte signup call to action",
+    "svelte responsive cta section"
+  ],
+  "faq": [
+    {
+      "question": "How do I wire Get started to a real signup?",
+      "answer": "Either drop onAction from createCtaJustified() so the button follows its href (/signup by default), or pass onAction and call your API in it. When the primary action resolves the core sets finished to true and the render shows doneText in place of the buttons; a thrown error keeps the buttons and goes to onError."
+    },
+    {
+      "question": "How do I record which button was pressed?",
+      "answer": "Pass onTrack. It is called with the action ({ id, label, href }) on every press, before onAction runs or the link navigates, so the event is sent even when the browser leaves the page."
+    },
+    {
+      "question": "How does the layout change on a phone?",
+      "answer": "Below 760 px the row becomes a column: the copy sits on top and the two buttons stack at full width with Get started first. Above that, the actions keep their width and the copy takes the remaining space."
+    }
+  ]
+}

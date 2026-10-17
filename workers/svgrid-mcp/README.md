@@ -116,7 +116,28 @@ worse than no entry.
 ## Logs
 
 Every tool call logs one JSON line: tool name, duration, whether it succeeded,
-and the query or id it was given. `check_svgrid_code` logs the **size** of the
-submitted source and nothing else - the source itself is never logged. Read
-them with `npx wrangler tail`, or in the dashboard (observability is on in
-`wrangler.toml`).
+the query or id it was given, how many results matched the whole query, and
+whether the answer carried the Enterprise trial note. `check_svgrid_code` logs
+the **size** of the submitted source and the rule ids that fired - the source
+itself is never logged. Read them with `npx wrangler tail`, or in the dashboard
+(observability is on in `wrangler.toml`).
+
+The same record goes to the `svgrid_mcp` Workers Analytics Engine dataset
+(binding `MCP_EVENTS`), which keeps three months and answers SQL. The column
+layout is documented above `record` in `src/index.ts`. A weekly report:
+
+```bash
+CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... node tools/mcp-report.mjs --days 7
+```
+
+The token needs "Account Analytics: Read". `--sql` prints the queries. The
+privacy page (`website/src/routes/Privacy.svelte`) lists what is recorded;
+change both together.
+
+## Enterprise features
+
+Search results, fetched docs and demos, and check results that involve
+`@svgrid/enterprise` carry `enterprise: true` or a one-line note with the trial
+link `https://svgrid.com/pricing/?trial=mcp`, the same as the npm server. The
+rules live in `packages/mcp/src/enterprise.ts`, copied here by
+`scripts/build-data.mjs`.

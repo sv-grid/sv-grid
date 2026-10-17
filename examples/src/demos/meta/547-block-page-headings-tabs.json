@@ -1,0 +1,24 @@
+{
+  "description": "A project page heading in Svelte 5 with an h1, owner line, Invite and Run sync SvButtons, and an SvTabs strip underneath (Overview, Activity, Settings) whose labels carry live counts. The tab panel switches between an overview summary, an activity list and a settings form with SvTextInput and SvSwitchButton. Run sync appends an activity entry, bumps the count and jumps to the Activity tab.",
+  "keywords": [
+    "svelte page heading with tabs",
+    "svelte 5 tabs header",
+    "svelte project page header",
+    "svelte tabs with counts",
+    "svelte page header tab navigation"
+  ],
+  "faq": [
+    {
+      "question": "How are the tab counts kept in sync?",
+      "answer": "The tabs array is a $derived over the activity state, so the Activity label is rebuilt with the new length whenever an entry is added. SvTabs labels are plain strings, so the count is part of the label text."
+    },
+    {
+      "question": "How does Run sync switch tabs?",
+      "answer": "SvTabs is bound to a tab state with bind:value. runSync adds the entry and sets tab to activity, which moves the selection and re-renders the panel snippet."
+    },
+    {
+      "question": "Can each tab be its own route instead?",
+      "answer": "Yes. Drop the panel snippet, render the content from your router, set the value from the current URL, and call goto in onChange to navigate when a tab is picked."
+    }
+  ]
+}

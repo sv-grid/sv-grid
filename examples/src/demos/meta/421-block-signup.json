@@ -10,7 +10,7 @@
   "faq": [
     {
       "question": "How is the submit button gated?",
-      "answer": "canSubmit is a $derived requiring a name, an email, a password of at least eight characters and the terms box; the button reads it as disabled and shows loading while the promise runs."
+      "answer": "canSubmit is a $derived in the createSignup core that needs a work email, a password of at least eight characters and the terms box ticked; the name fields are optional. The button is disabled until it is true and shows its loading state while onSubmit runs. Pressing Enter in an incomplete form calls onIncomplete, which the demo shows as a warning toast."
     },
     {
       "question": "How is the plan chosen?",

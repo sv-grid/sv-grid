@@ -9,6 +9,10 @@
    * With a `runner`, the view bar has the table's Automations; an
    * automation's "Color the record" action paints the grid while a record
    * matches its condition.
+   *
+   * A record someone else changed (read from the database, `base-sync.ts`)
+   * has the cells that moved tinted, and a record added elsewhere the whole
+   * row, until the record is opened.
    */
   import { SvGrid, hasGanttView } from '@svgrid/grid'
   import SvBaseViewBar from './SvBaseViewBar.svelte'
@@ -16,6 +20,8 @@
   import BaseChartView from './BaseChartView.svelte'
   import BaseAutomations from './BaseAutomations.svelte'
   import { gridOf } from './grid-access'
+  import { markAllSeen, unseenIn } from './activity.svelte'
+  import { findFieldUser } from './sources.svelte'
   import { fieldCopyText } from './copy-text'
   import { recordMenu } from './record-menu'
   import { matches, type AutomationRun, type AutomationRunner, type BaseAutomation } from './automations.svelte'
@@ -106,7 +112,42 @@
     }
     return out
   })
-  const conditionalFormats = $derived(highlightFormats.length ? [...((grid.conditionalFormats as any[]) ?? []), ...highlightFormats] : grid.conditionalFormats)
+  // ---- Changes made elsewhere ------------------------------------------------
+  const UNSEEN = 'color-mix(in srgb, var(--sg-accent, #2563eb) 20%, transparent)'
+  // A format per changed column, drawn on the records that changed it and are not seen yet.
+  const unseenFormats = $derived.by(() => {
+    const tableId = grid.baseTableId
+    const getRowId = grid.getRowId
+    if (typeof tableId !== 'string' || !tableId || typeof getRowId !== 'function') return []
+    const marks = unseenIn({ base: grid.baseScope, tableId })
+    if (!marks.size) return []
+    const idOf = (row: Record<string, unknown>) => String(getRowId(row, 0))
+    const columns = new Set<string>()
+    let added = false
+    for (const m of marks.values()) {
+      if (m.added) added = true
+      for (const c of m.columns) columns.add(c)
+    }
+    const out: any[] = []
+    if (added) out.push({ type: 'rule', when: ({ row }: { row: Record<string, unknown> }) => !!marks.get(idOf(row))?.added, background: UNSEEN })
+    for (const c of columns) out.push({ type: 'rule', columns: [c], when: ({ row }: { row: Record<string, unknown> }) => !!marks.get(idOf(row))?.columns.has(c), background: UNSEEN })
+    return out
+  })
+  // The view bar's "3 changed by Ana" chip: one name when one person made them all.
+  const changed = $derived.by(() => {
+    const tableId = grid.baseTableId
+    if (typeof tableId !== 'string' || !tableId) return null
+    const scope = { base: grid.baseScope, tableId }
+    const marks = unseenIn(scope)
+    if (!marks.size) return null
+    const authors = new Set([...marks.values()].map((m) => m.by ?? ''))
+    const only = authors.size === 1 ? [...authors][0] : ''
+    const who = only ? (findFieldUser(only)?.name ?? 'someone else') : authors.size === 1 ? 'someone else' : 'others'
+    return { label: `${marks.size} changed by ${who}`, onSeen: () => markAllSeen(scope) }
+  })
+  const conditionalFormats = $derived(
+    highlightFormats.length || unseenFormats.length ? [...((grid.conditionalFormats as any[]) ?? []), ...highlightFormats, ...unseenFormats] : grid.conditionalFormats,
+  )
 </script>
 
 <div class="sv-fbase" class:is-bare={bare} style:height>
@@ -119,6 +160,7 @@
       viewTypes={types}
       {rowHeights}
       automations={runner && table ? { count: automationList.length, onManage: () => (automationsOpen = true) } : null}
+      {changed}
     />
   {/if}
   <div class="sv-fbase-body">

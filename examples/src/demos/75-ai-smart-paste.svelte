@@ -1100,7 +1100,7 @@ Wirth, Niklaus; niklaus.wirth@inf.ethz.ch; ETH Zurich; Professor Emeritus; +41 4
   }
   .ai-textarea:focus {
     border-color: var(--sg-accent, #6366f1);
-    box-shadow: var(--sg-focus-ring, 0 0 0 3px color-mix(in srgb, var(--sg-accent, #6366f1) 18%, transparent));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--sg-focus-ring, var(--sg-accent, #6366f1)) 18%, transparent);
   }
 
   /* ---- Action bar ---- */

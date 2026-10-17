@@ -10,7 +10,7 @@
   "faq": [
     {
       "question": "How does the range control affect the tiles?",
-      "answer": "range is bound to the SvSegmented; the KPI values and sparkline series are derived from it, so 7d, 30d and 90d swap the numbers without re-mounting the tiles."
+      "answer": "The SvSegmented is bound to range in the createDashboard core, and the core picks the KPI tiles for that range from kpis, one list per range value (7d, 30d, QTD, YTD in the sample). Switching it swaps the values, deltas and sparkline series in place and calls onRangeChange, where a real app would load that period. Pass a single list instead and the tiles stay the same for every range."
     },
     {
       "question": "What draws the revenue panel?",

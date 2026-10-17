@@ -15,13 +15,14 @@
  */
 import { apiReference, apiSurface, docs, examples, schemas } from './data.js'
 import { meaningfulTerms, rankDocs } from './search.js'
+import { ENTERPRISE_LINE, ENTERPRISE_NOTE, importsEnterprise, isEnterpriseDoc, isPaidQuestion } from './enterprise.js'
 
 export type ToolResult = {
   isError?: boolean
   content: { type: 'text'; text: string }[]
 }
 
-const DOCS_FOOTER = '\n\nSvGrid reference: full docs & 375 live demos at https://svgrid.com/docs'
+const DOCS_FOOTER = `\n\nSvGrid reference: full docs & ${examples.length} live demos at https://svgrid.com/docs`
 
 const text = (body: string): ToolResult => ({ content: [{ type: 'text', text: body }] })
 const withDocs = (body: string): ToolResult => text(body + DOCS_FOOTER)
@@ -65,8 +66,20 @@ const apiNames: { name: string; group: string }[] = (() => {
   for (const p of apiSurface.props) add(p.name, 'SvGrid prop')
   for (const c of apiSurface.columnDef) add(c.name, 'column option')
   for (const m of apiSurface.apiMethods) add(m, 'grid api method')
-  return [...merged].map(([name, groups]) => ({ name, group: [...groups].join(', ') }))
+  // The methods installEnterprise(api) adds are searchable too, so "export"
+  // finds exportData and says where it comes from. Not every enterprise
+  // export: over a thousand names drowned the free API on ordinary queries
+  // (tools/mcp-tools.test.ts, "filler words"); the docs and demos cover them.
+  for (const m of apiSurface.enterpriseApiMethods) add(m, 'enterprise api method (installEnterprise)')
+  return [...merged].map(([name, groups]) => {
+    const group = [...groups].join(', ')
+    return { name, group, ...(group.includes('enterprise') ? { enterprise: true as const } : {}) }
+  })
 })()
+
+/** Docs and demos that use the paid package, found once from their source. */
+const enterpriseDocs = new Set(docs.filter((d) => isEnterpriseDoc(d.slug, d.markdown)).map((d) => d.slug))
+const enterpriseExamples = new Set(examples.filter((e) => importsEnterprise(e.source)).map((e) => e.id))
 
 export const CORE_TOOLS = [
   {
@@ -262,9 +275,10 @@ function search(args: Record<string, unknown>): ToolResult {
     body.docs = {
       total: ranked.total,
       partial: partial || undefined,
-      hits: shown.map((h: Record<string, unknown>) =>
-        detail === 'full' ? h : { ...h, excerpt: trimBlurb(String(h.excerpt ?? ''), 200) },
-      ),
+      hits: shown.map((h: Record<string, unknown>) => {
+        const hit = detail === 'full' ? h : { ...h, excerpt: trimBlurb(String(h.excerpt ?? ''), 200) }
+        return enterpriseDocs.has(String(h.slug)) ? { ...hit, enterprise: true } : hit
+      }),
     }
     if (partial) {
       body.hint = `No page matched all of "${query}". These matched some of it - treat them as leads, not answers.`
@@ -283,6 +297,7 @@ function search(args: Record<string, unknown>): ToolResult {
         title: e.title,
         category: e.category,
         blurb: detail === 'full' ? e.blurb : trimBlurb(e.blurb),
+        ...(enterpriseExamples.has(e.id) ? { enterprise: true } : {}),
       })),
     }
   }
@@ -296,6 +311,12 @@ function search(args: Record<string, unknown>): ToolResult {
     !(body.docs as { total?: number })?.total &&
     !(body.examples as { total?: number })?.total &&
     !(body.api as { total?: number })?.total
+
+  // Once per answer, and only when the question is about a paid feature.
+  const lists = [body.docs, body.examples, body.api].map(
+    (c) => (c as { hits?: { enterprise?: boolean }[] } | undefined)?.hits ?? [],
+  )
+  if (isPaidQuestion(lists)) body.enterprise = ENTERPRISE_NOTE
 
   if (!empty) {
     // A partial-match warning outranks the generic next-step hint: it is the
@@ -387,7 +408,11 @@ function get(args: Record<string, unknown>): ToolResult {
 
   if (kind === 'doc' || kind === 'auto') {
     const doc = docs.find((d) => d.slug === ref)
-    if (doc) return withDocs(clip(doc.markdown))
+    if (doc) {
+      // On top, where truncation cannot cut it off.
+      const paid = enterpriseDocs.has(doc.slug) ? `> ${ENTERPRISE_LINE}\n\n` : ''
+      return withDocs(clip(paid + doc.markdown))
+    }
     if (kind === 'doc') {
       return fail(`No doc with slug "${ref}". Use svgrid_search to find one.`)
     }
@@ -395,7 +420,8 @@ function get(args: Record<string, unknown>): ToolResult {
 
   const example = examples.find((e) => e.id === ref)
   if (example) {
-    return text(clip(`// ${example.path}\n// ${example.title} - ${example.blurb}\n\n${example.source}`))
+    const paid = enterpriseExamples.has(example.id) ? `// ${ENTERPRISE_LINE}\n` : ''
+    return text(clip(`// ${example.path}\n// ${example.title} - ${example.blurb}\n${paid}\n${example.source}`))
   }
 
   // A miss is a chance to point somewhere useful rather than just say no.

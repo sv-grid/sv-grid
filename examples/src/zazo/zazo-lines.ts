@@ -30,8 +30,7 @@ export const LINES = {
   docsToo: "There's a docs page on it too.",
   foundDocs: "Here's what I found in the docs.",
   // A question answered from the open demo's FAQ (examples/src/demos/meta/<id>.json).
-  faq: "Good question. Here's what I know about this one.",
-} as const
+  faq: "Good question. Here's what I know about this one.",} as const
 
 export type LineKey = keyof typeof LINES
 

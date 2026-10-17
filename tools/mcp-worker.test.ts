@@ -315,3 +315,54 @@ describe.skipIf(!ready)('the hosted server has resources, prompts and the previe
     expect(body.result?._meta?.['ui/resourceUri']).toBe('ui://svgrid/preview.html')
   })
 })
+
+describe.skipIf(!ready)('remote MCP worker: paid features and usage records', () => {
+  const TRIAL = 'https://svgrid.com/pricing/?trial=mcp'
+
+  it('adds the trial note to a question about a paid feature, not a free one', async () => {
+    const paid = JSON.parse(await callTool('search', { query: 'pivot table' }))
+    expect(paid.enterprise).toContain(TRIAL)
+    expect(paid.results.some((r: { enterprise?: boolean }) => r.enterprise)).toBe(true)
+
+    const free = JSON.parse(await callTool('search', { query: 'pin a column' }))
+    expect(free.enterprise).toBeUndefined()
+  })
+
+  it('puts the line on a paid demo and leaves a free one alone', async () => {
+    expect(await callTool('fetch', { id: 'demo:343-kanban-board' })).toContain(TRIAL)
+    expect(await callTool('fetch', { id: 'demo:11-stock-market' })).not.toContain(TRIAL)
+  })
+
+  it('writes one data point per call, never the checked source', async () => {
+    const points: { indexes?: string[]; blobs?: string[]; doubles?: number[] }[] = []
+    const withEvents = { ...env, MCP_EVENTS: { writeDataPoint: (p: (typeof points)[number]) => points.push(p) } }
+    const worker = await loadWorker()
+    const call = (name: string, args: Record<string, unknown>) =>
+      worker.fetch(
+        new Request('https://mcp.svgrid.com/mcp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: ++nextId, method: 'tools/call', params: { name, arguments: args } }),
+        }),
+        withEvents,
+      )
+
+    await call('search', { query: 'kanban board' })
+    await call('search', { query: 'zzqx nonexistent widget' })
+    const secret = 'const SECRET_TOKEN_123 = 1'
+    await call('check_svgrid_code', {
+      source: `<script lang="ts">\n  import { SvGrid } from '@svgrid/grid'\n  ${secret}\n</script>\n\n<SvGrid rowData={[]} columns={[]} />`,
+      filename: 'X.svelte',
+    })
+
+    expect(points).toHaveLength(3)
+    const [hit, miss, check] = points
+    expect(hit!.blobs!.slice(0, 2)).toEqual(['search', 'kanban board'])
+    expect(hit!.blobs![4]).toBe('1')
+    expect(hit!.doubles![2]).toBeGreaterThan(0)
+    expect(miss!.doubles![2], 'an empty search must be countable').toBe(0)
+    expect(check!.blobs![3]).toContain('svgrid/renamed-prop')
+    expect(check!.doubles![3]).toBeGreaterThan(0)
+    expect(JSON.stringify(points)).not.toContain('SECRET_TOKEN_123')
+  })
+})

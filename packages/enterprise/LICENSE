@@ -1,5 +1,5 @@
 SVGRID ENTERPRISE COMMERCIAL LICENSE
-Version 1.1
+Version 1.2
 
 Copyright (c) 2011-2026 jQWidgets Ltd.
 Author contact: Boyko Markov <boikom@jqwidgets.com>
@@ -36,11 +36,12 @@ non-exclusive, non-transferable, non-sublicensable license to:
 License scope is set by the Subscriber's order:
 
   - Grid Developer License: the Software excluding the Spreadsheet
-    Module and the Studio, on unlimited deployed production
+    Module, SvGrid Base and the Studio, on unlimited deployed production
     applications within the Subscriber's organization, plus unlimited
     internal dev / staging environments.
   - Suite Developer License: the Software in full, including the
-    Spreadsheet Module and the Studio, on the same unlimited scope.
+    Spreadsheet Module, SvGrid Base and the Studio, on the same
+    unlimited scope.
   - Indie Developer License: the same scope as a Grid Developer
     License, for a Subscriber that is an individual working on their
     own account or an organization whose revenue, with its affiliates,
@@ -55,11 +56,14 @@ License scope is set by the Subscriber's order:
 The "Spreadsheet Module" is the workbook, formula engine and
 spreadsheet file-format features: <SvSheet>, the <sv-sheet> element,
 the formula evaluator, and the .xlsx / .xls / .ods / .csv readers and
-writers. The "Studio" is the designer, the code generator and the SQL
-data sources.
+writers. "SvGrid Base" is the table-database and field-type features:
+everything exported from @svgrid/enterprise/base and
+@svgrid/enterprise/fields, including <SvBase>, SvBaseViewBar and
+SvBaseForm. The "Studio" is the designer, the code generator and the
+SQL data sources.
 
-Using the Spreadsheet Module or the Studio under a Grid or Indie
-Developer License is outside the licensed scope. The license key does
+Using the Spreadsheet Module, SvGrid Base or the Studio under a Grid or
+Indie Developer License is outside the licensed scope. The license key does
 not distinguish editions, so the Software neither blocks nor flags it;
 it stays outside the license until the license is upgraded to Suite.
 
@@ -81,8 +85,8 @@ License, negotiated separately with the Author, is required where:
   (c) the Subscriber sublicenses, resells, or white-labels the Software
       under another name;
   (d) the Subscriber deploys the Software in a multi-tenant hosted
-      product in which the Spreadsheet Module or the Studio is a
-      material part of what the Subscriber's customers pay for.
+      product in which the Spreadsheet Module, SvGrid Base or the
+      Studio is a material part of what the Subscriber's customers pay for.
 
 An OEM License is priced separately from developer seats, is granted
 for a defined term and a defined product, and may carry a
@@ -141,7 +145,7 @@ paying Subscriber.
 ------------------------------------------------------------------------
 
 The Author grants a 30-day evaluation period. During it every feature,
-the Spreadsheet Module and the Studio included, may be used without a
+the Spreadsheet Module, SvGrid Base and the Studio included, may be used without a
 license key to decide whether to buy, on workstations and in internal
 development, staging and demonstration environments; production use
 needs a license key. Without a key the grid and the spreadsheet show a
@@ -178,8 +182,8 @@ The Subscriber may NOT:
       distribution to third parties;
   (e) share license keys outside of the developer seats covered by the
       Subscriber's order;
-  (f) ship to production a use of the Spreadsheet Module or the Studio
-      that the Subscriber's edition does not cover, or a
+  (f) ship to production a use of the Spreadsheet Module, SvGrid Base
+      or the Studio that the Subscriber's edition does not cover, or a
       redistribution described in Section 1A without an OEM License.
 
 ------------------------------------------------------------------------

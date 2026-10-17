@@ -100,6 +100,7 @@ npx @svgrid/ui list
 | `--dir <path>`   | Where to write files. Default: `src/lib/components/ui`, or the `componentsDir` in a project `svgrid.json`. |
 | `--force`        | Overwrite files that already exist (otherwise existing files are left untouched).                    |
 | `--no-install`   | Skip installing the dependency; just print the install command.                                      |
+| `--headless`     | (blocks) Write only the block's headless core as `<block>.svelte.ts`: its state, validation and actions, for your own markup. |
 
 ## Available components
 
@@ -107,21 +108,37 @@ The whole [catalogue](./index.md#the-catalogue) is available - every component i
 maps to its tutorial page. Add them individually (`add calendar`), several at once
 (`add calendar time-picker`), or a full family with its group id:
 
-| Group        | Adds                                                              |
-| ------------ | ---------------------------------------------------------------- |
-| `date-time`  | calendar, time-picker, date-time-picker, date-range-input        |
-| `buttons`    | button, button-group, repeat-button, toggle-button, switch-button, check-box, radio-group, rating |
-| `inputs`     | text-input, text-area, number-input, password-input, masked-input, phone-input, color-input, otp-input, duration-input, tags-input |
-| `selection`  | list-box, drop-down-list, combo-box, auto-complete, multi-select, tree-select, grid-select, country-input |
-| `range`      | slider, gauge, progress, circular-progress, sparkline, stat      |
-| `overlays`   | popover, tooltip, modal, drawer, toaster, context-menu, menu |
-| `layout`     | tabs, accordion, splitter, dock-layout, dock-manager, card, divider, scroll-area, grid-chart, form, field, file-upload |
-| `feedback`   | badge, skeleton, alert, empty-state, chip, timeline, avatar, avatar-group, carousel |
+| Group | Adds |
+| --- | --- |
+| `data` | data-table |
+| `date-time` | calendar, time-picker, date-time-picker, date-range-input |
+| `buttons` | button, button-group, repeat-button, toggle-button, switch-button, check-box, radio-group, rating, segmented |
+| `inputs` | text-input, text-area, number-input, password-input, masked-input, phone-input, color-input, otp-input, duration-input, tags-input |
+| `selection` | list-box, drop-down-list, combo-box, auto-complete, multi-select, tree-select, grid-select, country-input |
+| `range` | slider, gauge, progress, circular-progress, sparkline, stat |
+| `overlays` | popover, tooltip, modal, drawer, toaster, context-menu, menu, hover-card, popconfirm, menubar |
+| `layout` | tabs, accordion, splitter, dock-layout, dock-manager, card, divider, scroll-area, grid-chart, form, field, file-upload, collapsible, layout-primitives, typography, display |
+| `feedback` | badge, skeleton, alert, empty-state, chip, timeline, avatar, avatar-group, carousel, spinner, loading-overlay, result |
 | `navigation` | breadcrumb, pagination, stepper, nav-pane, tree, command, tour, rich-text |
 
 Run `npx @svgrid/ui list` for the full set with descriptions. Every component is
 also a plain import from `@svgrid/grid` - the CLI is a convenience, never the only
 way in.
+
+## Page blocks
+
+Blocks are whole page sections (sign-in screens, dashboards, pricing tables) built
+from the components. Their groups start with `blocks/`:
+
+```sh
+npx @svgrid/ui try blocks/auth      # see the group in a sandbox
+npx @svgrid/ui add blocks/auth      # every sign-in & registration block
+npx @svgrid/ui add login           # one block
+npx @svgrid/ui add login --headless   # its headless core only: login.svelte.ts
+```
+
+A block file is yours to edit; the `Sv*` components inside it still update with
+`@svgrid/grid`. The list of groups is on the [UI blocks](../ui-blocks/index.md) page.
 
 ## See also
 

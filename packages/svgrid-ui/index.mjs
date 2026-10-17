@@ -22,6 +22,7 @@ import { fileURLToPath } from 'node:url'
 import { tmpdir } from 'node:os'
 import { stdout } from 'node:process'
 import { spawnSync } from 'node:child_process'
+import { headlessCore } from './headless.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const RECIPES_DIR = join(__dirname, 'recipes')
@@ -48,7 +49,7 @@ const PMS = [
 function parseArgs(argv) {
   // install defaults ON: an added component imports @svgrid/grid, so it should
   // work right away. `--no-install` opts out (just prints the command).
-  const args = { _: [], dir: null, force: false, install: true, preview: false, help: false, js: false }
+  const args = { _: [], dir: null, force: false, install: true, preview: false, help: false, js: false, headless: false }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     if (a === '--help' || a === '-h') args.help = true
@@ -56,6 +57,7 @@ function parseArgs(argv) {
     else if (a === '--install') args.install = true
     else if (a === '--no-install') args.install = false
     else if (a === '--preview' || a === '-p') args.preview = true
+    else if (a === '--headless') args.headless = true
     else if (a === '--js') args.js = true
     else if (a === '--ts') args.js = false
     else if (a === '--dir' || a === '-d') args.dir = argv[++i]
@@ -282,25 +284,40 @@ ${color('bold', 'Options')}
                  "componentsDir" in a project svgrid.json).
   --force        Overwrite files that already exist.
   --no-install   Do not run the package manager; just print the install command.
+  --headless     (blocks) Write only the block's headless core, <block>.svelte.ts:
+                 its state, validation and actions, for your own markup.
 
 ${color('bold', 'Examples')}
   npx @svgrid/ui try button
   npx @svgrid/ui add button --preview
   npx @svgrid/ui add calendar time-picker --dir src/lib/ui
   npx @svgrid/ui add date-time
+  npx @svgrid/ui try blocks/auth     ${color('dim', '# page blocks: sign-in, 404, pricing, ...')}
 `)
 }
 
+/** Page blocks (sign-in screens, error pages, pricing, ...) are whole
+ *  sections, not components: they live under the `blocks/<group>` groups. */
+const isBlock = (it) => String(it.group ?? '').startsWith('blocks/')
+
 async function cmdList(registry) {
   stdout.write(`\n${color('bold', 'Available components')}\n`)
-  for (const it of registry.items) {
+  for (const it of registry.items.filter((i) => !isBlock(i))) {
     stdout.write(`  ${color('cyan', it.id.padEnd(18))} ${color('dim', it.description)}\n`)
   }
   const groups = Object.entries(registry.groups ?? {})
-  if (groups.length) {
+  const componentGroups = groups.filter(([id]) => !id.startsWith('blocks/'))
+  const blockGroups = groups.filter(([id]) => id.startsWith('blocks/'))
+  if (componentGroups.length) {
     stdout.write(`\n${color('bold', 'Groups')}\n`)
-    for (const [id, g] of groups) {
+    for (const [id, g] of componentGroups) {
       stdout.write(`  ${color('cyan', id.padEnd(18))} ${color('dim', g.items.join(', '))}\n`)
+    }
+  }
+  if (blockGroups.length) {
+    stdout.write(`\n${color('bold', 'Page blocks')} ${color('dim', '(add one, or a whole group)')}\n`)
+    for (const [id, g] of blockGroups) {
+      stdout.write(`  ${color('cyan', id.padEnd(24))} ${color('dim', g.items.join(', '))}\n`)
     }
   }
   stdout.write(`\n${color('dim', 'Add one with:')} npx @svgrid/ui add ${registry.items[0]?.id ?? 'calendar'}\n`)
@@ -325,6 +342,16 @@ async function cmdAdd(registry, tokens, args) {
   for (const it of items) {
     for (const d of it.deps ?? []) deps.add(d)
     for (const file of it.files ?? []) {
+      if (args.headless && isBlock(it)) {
+        // The block's headless core only: its <script module>, as .svelte.ts.
+        const core = headlessCore(await readFile(join(RECIPES_DIR, file.from), 'utf8'), file.write)
+        const name = file.write.replace(/\.svelte$/, '.svelte.ts')
+        if (core == null) { skipped.push(`${file.write} (no headless core)`); continue }
+        if (existsSync(join(dest, name)) && !args.force) { skipped.push(name); continue }
+        await writeFile(join(dest, name), core)
+        written.push(name)
+        continue
+      }
       const outPath = join(dest, file.write)
       if (existsSync(outPath) && !args.force) {
         skipped.push(file.write)
@@ -395,7 +422,14 @@ async function cmdAdd(registry, tokens, args) {
         `  ${color('dim', 'Start an app:')} ${color('cyan', 'npm create @svgrid@latest')} ${color('dim', '(then run add inside it)')}\n`,
     )
   } else {
-    stdout.write(`  ${color('dim', 'Use it:')}  import { ${exportName(first)} } from '@svgrid/grid'\n`)
+    if (isBlock(first)) {
+      const file = first.files?.[0]?.write ?? `${first.id}.svelte`
+      const name = first.id.split('-').map((s) => s[0].toUpperCase() + s.slice(1)).join('')
+      const from = relFromCwd(projectRoot, join(dest, file)).split('\\').join('/').replace(/^src\/lib\//, '$lib/')
+      stdout.write(`  ${color('dim', 'Use it:')}  import ${name} from '${from}'  ${color('dim', `then <${name} /> in a route`)}\n`)
+    } else {
+      stdout.write(`  ${color('dim', 'Use it:')}  import { ${exportName(first)} } from '@svgrid/grid'\n`)
+    }
     // "See it" - skip when we already wrote preview routes just above.
     if (!(args.preview && isSvelteKit(projectRoot))) {
       stdout.write(`  ${color('dim', 'See it:')}  ${color('cyan', `npx @svgrid/ui try ${ids}`)} ${color('dim', '(opens in your browser)')}\n`)
@@ -466,7 +500,8 @@ async function cmdTry(registry, tokens) {
     if (!primary) continue
     const ident = toIdent(it.id)
     imports.push(`  import ${ident} from './${primary}'`)
-    sections.push(`    <section class="svui-try__item">\n      <h2>${esc(it.title ?? it.id)}</h2>\n      <${ident} />\n    </section>`)
+    const cls = isBlock(it) ? 'svui-try__item svui-try__item--block' : 'svui-try__item'
+    sections.push(`    <section class="${cls}">\n      <h2>${esc(it.title ?? it.id)}</h2>\n      <${ident} />\n    </section>`)
   }
   await writeFile(
     join(src, 'App.svelte'),
@@ -505,7 +540,7 @@ ${imports.join('\n')}
   </div>
 </header>
 
-<main class="svui-try">
+<main class="svui-try${items.some(isBlock) ? ' svui-try--wide' : ''}">
   <p class="svui-try__sub">${esc(items.map((i) => i.id).join(', '))}</p>
 ${sections.join('\n')}
 </main>
@@ -523,6 +558,10 @@ ${sections.join('\n')}
   .svui-try__sub { margin: 0 0 20px; font-size: 12px; color: var(--sg-muted, #64748b); }
   .svui-try__item { padding: 28px; border: 1px solid var(--sg-border, #e2e8f0); border-radius: 12px; background: var(--sg-bg, #fff); margin-bottom: 16px; }
   .svui-try__item h2 { margin: 0 0 16px; font-size: 15px; color: var(--sg-muted, #334155); }
+  /* Page blocks are full sections: wider page, no inner padding around them. */
+  .svui-try--wide { max-width: 1280px; }
+  .svui-try__item--block { padding: 0; overflow: hidden; }
+  .svui-try__item--block > h2 { margin: 0; padding: 12px 16px; border-bottom: 1px solid var(--sg-border, #e2e8f0); font-size: 13px; }
 </style>
 `,
   )

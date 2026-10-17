@@ -140,6 +140,30 @@ Every gallery demo must also be registered in `website/src/lib/demos.ts` with a
 matching id, or `pnpm demos:count` will fail. The website reuses the same
 `.svelte` files but keeps its own curated list.
 
+### Adding a page block
+
+Blocks (SvGrid UI > Blocks in the gallery, `npx @svgrid/ui add blocks/<group>`)
+are demos with extra rules, because the same file is copied into users' apps.
+
+1. Write `examples/src/demos/<n>-block-<group>-<slug>.svelte`, where `<group>` is
+   an id from `examples/src/shared/block-groups.json`. One file, imports from
+   `@svgrid/grid` only, colors from `--sg-*` tokens, no remote images or fonts,
+   no em-dash, clean at 375 px. It is headless: `<script lang="ts" module>`
+   opens with a `/** <Name> block - ... */` comment (MCP and the docs read it)
+   and exports a `create<Name>()` core with the state and logic and no markup;
+   the styled render below calls it. Every class it defines is `sv-<stem>-*`
+   and never a kit class. `examples/src/demos/527-block-auth-forgot-password.svelte`
+   is the reference.
+2. Register it in `website/src/lib/demos.ts` and `examples/src/shared/registry.ts`
+   with category `'Blocks'` and `{ group: '<group>', added: 'YYYY-MM-DD' }`.
+3. Add `examples/src/demos/meta/<id>.json` with at least one FAQ, and a Zazo
+   tip in `examples/src/zazo/zazo-tips.json` (then `node --env-file=.env tools/zazo-voice.mjs`).
+4. Embed it on `docs/help/ui-blocks/<group>.md` and list it in
+   `tools/demo-doc-placements.json`.
+5. Run `node tools/sync-block-recipes.mjs`. It copies the file into
+   `packages/svgrid-ui/recipes/blocks/` and updates the recipe registry;
+   `tools/ui-blocks.test.ts` fails until you do.
+
 ## Conventions
 
 - **Svelte 5 runes only.** No Svelte 4 stores in new code.

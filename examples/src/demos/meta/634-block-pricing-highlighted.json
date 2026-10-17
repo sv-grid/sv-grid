@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte per-seat pricing section built from the SvGrid UI kit: four plans in SvCards with the recommended one raised and marked with an SvBadge, and a Seats SvNumberInput above them. Changing the seat count reprices every card: volume discounts of 10% from 25 seats and 20% from 100 seats show the old price struck through, each card shows its monthly total, and a plan whose seat cap is exceeded switches its SvButton off.",
+  "keywords": [
+    "svelte pricing page per seat",
+    "svelte 5 pricing cards with seat selector",
+    "svelte recommended plan highlight",
+    "svelte volume discount pricing",
+    "svelte saas pricing block"
+  ],
+  "faq": [
+    {
+      "question": "How are the per-seat prices calculated?",
+      "answer": "Each plan stores seatCents, the price of one seat per month in integer cents. createSeatPricing() finds the highest volume band whose from value the seat count has reached, takes that fraction off and rounds to whole cents; the monthly total is that price times the seat count. Intl.NumberFormat formats the result, dropping the decimals when the amount is whole. Pass your own bands with the volume option, or an empty array for no discount."
+    },
+    {
+      "question": "When does the price update while typing a seat count?",
+      "answer": "The spin buttons and the arrow keys update the cards at once. A typed number is committed when you press Enter or leave the field, which is how SvNumberInput works; the core then rounds it and clamps it between 1 and maxSeats (1,000 by default). If you render a plain input with seatsProps() instead, it updates on every keystroke."
+    },
+    {
+      "question": "How do I send the chosen plan to checkout?",
+      "answer": "Replace the toast in the onChoose option. It receives the plan, the seat count and the monthly total in cents, or null for a plan with seatCents: null such as Enterprise, so you can redirect to a checkout URL with the plan id and quantity, or open a sales form. choose() does nothing for a plan whose maxSeats is below the current count."
+    }
+  ]
+}

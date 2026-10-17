@@ -64,6 +64,7 @@
     --_border: var(--sg-border, #cbd5e1);
     --_radius: var(--sg-radius, 8px);
     display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    box-sizing: border-box; /* an href renders <a>, which is content-box by default */
     font: inherit; font-weight: 600; line-height: 1; white-space: nowrap;
     border: 1px solid transparent; border-radius: var(--_radius); cursor: pointer;
     text-decoration: none; user-select: none; transition: background 0.12s, border-color 0.12s, opacity 0.12s;

@@ -30,6 +30,7 @@
   "bin": "index.mjs",
   "files": [
     "index.mjs",
+    "headless.mjs",
     "recipes"
   ],
   "engines": {

@@ -1,0 +1,267 @@
+<!doctype html>
+<!--
+  Shorts engine: renders one short (1080 x 1920) from a script of beats.
+
+  render.mjs hands in, before the first seek:
+    window.__setShort({ beats, T, clips, mouth })
+      beats  the script's beats, each with `start`/`end` from the voice timeline
+      clips  recorded browser footage: { [id]: { frames: [dataURL], urls: [string], fps } }
+      mouth  per-beat lip-sync envelope, one 0..1 value per video frame
+  then calls window.__seek(t) once per frame. Every pixel is a pure function of
+  t, so a render is deterministic.
+
+  Beat kinds: title | code | terminal | browser | end. See scripts/*.mjs.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=block" />
+<style>
+  :root { --bg: #0c0a09; --panel: #161311; --line: #292524; --fg: #fafaf9; --muted: #a8a29e; --orange: #ff5a1f; --red: #ef4444; --green: #22c55e; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--bg); color: var(--fg); font-family: Inter, system-ui, sans-serif; font-variant-ligatures: none; }
+  #bg { position: absolute; inset: 0; background:
+      radial-gradient(ellipse 70% 40% at 50% 52%, rgba(255,90,31,.13), transparent 70%),
+      linear-gradient(transparent 0 0); }
+  #gridlines { position: absolute; inset: -200px; background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px); background-size: 60px 60px; }
+  #progress { position: absolute; left: 0; top: 0; height: 10px; background: var(--orange); }
+  #series { position: absolute; left: 72px; top: 56px; display: flex; align-items: center; gap: 14px; font-weight: 800; font-size: 30px; color: var(--muted); letter-spacing: .02em; }
+  #series b { color: var(--fg); }
+  #series i { font-style: normal; color: var(--orange); }
+
+  .cap { position: absolute; left: 72px; right: 72px; top: 150px; font-weight: 900; font-size: 74px; line-height: 1.02; letter-spacing: -.035em; }
+  .cap em { font-style: normal; color: var(--orange); }
+  .cap .r { color: var(--red); }
+  .cap .g { color: var(--green); }
+  .cap code { font-family: 'JetBrains Mono'; font-size: .78em; letter-spacing: 0; background: #1c1917; border: 2px solid var(--line); border-radius: 12px; padding: 0 .2em; }
+
+  #stage { position: absolute; left: 60px; top: 470px; width: 960px; height: 1000px; }
+  .win { position: absolute; left: 0; right: 0; top: 0; bottom: 0; border-radius: 22px; overflow: hidden; background: var(--panel); border: 2px solid var(--line); box-shadow: 0 40px 90px rgba(0,0,0,.6); display: flex; flex-direction: column; }
+  .bar { height: 64px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 22px; background: #1c1917; border-bottom: 2px solid var(--line); }
+  .dots { display: flex; gap: 9px; }
+  .dots i { width: 15px; height: 15px; border-radius: 50%; background: #44403c; display: block; }
+  .dots i:nth-child(1) { background: #ef4444; } .dots i:nth-child(2) { background: #eab308; } .dots i:nth-child(3) { background: #22c55e; }
+  .title { font: 600 24px 'JetBrains Mono'; color: var(--muted); margin-left: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .url { flex: 1; margin-left: 10px; font: 500 23px 'JetBrains Mono'; color: #e7e5e4; background: #0c0a09; border: 2px solid var(--line); border-radius: 999px; padding: 8px 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .url b { color: var(--orange); font-weight: 600; }
+  .body { position: relative; flex: 1; overflow: hidden; }
+  pre.code { position: relative; padding: 30px 34px 40px; font: 500 30px/1.55 'JetBrains Mono'; font-variant-ligatures: none; font-feature-settings: 'calt' 0, 'liga' 0; white-space: pre; color: #e7e5e4; }
+  .ln { display: block; position: relative; }
+  .ln.add { background: rgba(34,197,94,.14); color: #bbf7d0; }
+  .ln.del { background: rgba(239,68,68,.13); color: #fecaca; text-decoration: line-through; text-decoration-color: rgba(239,68,68,.7); }
+  .ln.focus::before { content: ''; position: absolute; left: -34px; top: 0; bottom: 0; width: 8px; background: var(--orange); border-radius: 0 4px 4px 0; }
+  .squig { position: absolute; height: 10px; background: repeating-linear-gradient(135deg, var(--red) 0 4px, transparent 4px 8px); }
+  .tip { position: absolute; left: 34px; right: 34px; background: #2a0d0d; border: 2px solid var(--red); border-radius: 14px; padding: 18px 22px; font: 600 25px/1.4 'JetBrains Mono'; color: #fecaca; box-shadow: 0 18px 40px rgba(0,0,0,.6); }
+  .tip b { color: #fff; display: block; font-family: Inter; font-weight: 800; font-size: 24px; margin-bottom: 6px; }
+  .tk-kw { color: #ff8a5c; } .tk-string { color: #a3e635; } .tk-comment { color: #78716c; } .tk-tag { color: #7dd3fc; } .tk-attr { color: #fcd34d; } .tk-type { color: #c4b5fd; } .tk-number { color: #fdba74; }
+  .ln.del .tk-kw, .ln.del .tk-string, .ln.del .tk-tag, .ln.del .tk-attr, .ln.del .tk-type { color: inherit; }
+  pre.term { position: relative; padding: 30px 34px 40px; font: 500 27px/1.5 'JetBrains Mono'; font-variant-ligatures: none; font-feature-settings: 'calt' 0, 'liga' 0; white-space: pre-wrap; color: #d6d3d1; }
+  .term .p { color: var(--orange); } .term .ok { color: var(--green); } .term .err { color: #fca5a5; } .term .dim { color: #78716c; } .term .hl { color: #fafaf9; font-weight: 700; }
+  .shot img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; object-position: left top; }
+  .badge { position: absolute; right: 22px; top: 22px; background: var(--orange); color: #0c0a09; font: 800 28px 'JetBrains Mono'; padding: 10px 18px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+  .bigtitle { position: absolute; left: 72px; right: 72px; top: 560px; font-weight: 900; font-size: 128px; line-height: .96; letter-spacing: -.045em; }
+  .bigtitle em { font-style: normal; color: var(--orange); }
+  .bigtitle small { display: block; font-size: 52px; letter-spacing: -.02em; color: #d6d3d1; margin-top: 34px; font-weight: 800; }
+  .endcard { position: absolute; left: 72px; right: 72px; top: 520px; }
+  .endcard .logo { display: flex; align-items: center; gap: 24px; font-size: 112px; font-weight: 900; letter-spacing: -.04em; }
+  .endcard .logo i { font-style: normal; color: var(--orange); }
+  .endcard h2 { margin-top: 70px; font-size: 76px; line-height: 1.04; font-weight: 900; letter-spacing: -.035em; }
+  .endcard h2 em { font-style: normal; color: var(--orange); }
+  .endcard .cmd { display: inline-block; margin-top: 56px; font: 600 44px 'JetBrains Mono'; background: #1c1917; border: 2px solid var(--line); border-radius: 18px; padding: 20px 30px; }
+  .endcard .url2 { margin-top: 40px; font-size: 52px; font-weight: 800; color: var(--muted); }
+  .endcard .note { margin-top: 28px; font-size: 38px; font-weight: 600; color: var(--muted); line-height: 1.25; }
+
+  #host { position: absolute; left: 34px; top: 1268px; width: 300px; height: 300px; border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 50% 40%, #2a221d, #120f0d); border: 5px solid var(--orange); box-shadow: 0 20px 50px rgba(0,0,0,.6); }
+  #host svg { position: absolute; left: -60px; top: -78px; width: 420px; }
+  #flash { position: absolute; inset: 0; background: #fff; pointer-events: none; opacity: 0; }
+  #black { position: absolute; inset: 0; background: #000; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="bg"></div><div id="gridlines"></div>
+<div id="series"></div>
+<div id="cap" class="cap"></div>
+<div id="stage"></div>
+<div id="host"><svg viewBox="0 0 400 520" id="hostSvg"></svg></div>
+<div id="progress"></div>
+<div id="flash"></div>
+<div id="black"></div>
+<script>
+const $ = (id) => document.getElementById(id)
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x))
+const seg = (t, a, b) => clamp((t - a) / (b - a))
+const lerp = (a, b, k) => a + (b - a) * k
+const easeOut = (k) => 1 - Math.pow(1 - k, 3)
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+const rich = (s) => esc(s).replace(/==(.+?)==/g, '<em>$1</em>').replace(/!!(.+?)!!/g, '<span class="r">$1</span>').replace(/\+\+(.+?)\+\+/g, '<span class="g">$1</span>').replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\n/g, '<br>')
+
+/* ------------------------------------------------- syntax highlighting */
+const KEYWORDS = new Set(['import', 'from', 'export', 'const', 'let', 'var', 'type', 'function', 'return', 'async', 'await', 'new', 'if', 'else', 'for', 'of', 'in', 'true', 'false', 'null', 'default'])
+const RULES = [[/^\/\/[^\n]*/, 'comment'], [/^(['"`])(?:\\.|(?!\1)[^\\\n])*\1/, 'string'], [/^<\/?[A-Za-z][\w:.-]*/, 'tag'], [/^\/?>/, 'tag'], [/^[A-Za-z_$][\w$-]*(?==)/, 'attr'], [/^\b\d+(?:\.\d+)?\b/, 'number'], [/^[A-Za-z_$#][\w$]*/, 'ident'], [/^\s+/, 'ws'], [/^[\s\S]/, 'punct']]
+function hl(code) {
+  let out = '', rest = code
+  while (rest.length) {
+    for (const [re, cls] of RULES) {
+      const m = rest.match(re)
+      if (!m) continue
+      const tx = m[0]
+      if (cls === 'ws' || cls === 'punct') out += esc(tx)
+      else if (cls === 'ident') out += KEYWORDS.has(tx) ? `<span class="tk-kw">${esc(tx)}</span>` : /^[A-Z]/.test(tx) ? `<span class="tk-type">${esc(tx)}</span>` : esc(tx)
+      else out += `<span class="tk-${cls}">${esc(tx)}</span>`
+      rest = rest.slice(tx.length)
+      break
+    }
+  }
+  return out
+}
+
+/* --------------------------------------------------------- the host */
+// The developer from "The Live Demo": curly hair, round glasses, headset.
+function hostSvg() {
+  const skin = '#8d5a3b', skinD = '#74472d', hair = '#1b1210', hood = '#0f766e', hoodD = '#0b5a54'
+  const curls = [[120,150,46],[160,118,50],[210,104,54],[262,116,50],[300,150,46],[316,196,36],[104,196,36],[146,96,34],[236,84,36],[280,100,30]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${hair}"/>`).join('')
+  return `
+  <defs><clipPath id="eL"><ellipse cx="170" cy="230" rx="24" ry="26"/></clipPath><clipPath id="eR"><ellipse cx="250" cy="230" rx="24" ry="26"/></clipPath></defs>
+  <path d="M70 520 q10 -150 140 -160 q130 10 140 160 z" fill="${hood}"/>
+  <path d="M200 360 q-60 10 -80 60 M210 360 q60 10 80 60" stroke="${hoodD}" stroke-width="10" fill="none"/>
+  <rect x="178" y="300" width="64" height="70" rx="22" fill="${skinD}"/>
+  <ellipse cx="110" cy="240" rx="20" ry="30" fill="${skin}"/><ellipse cx="310" cy="240" rx="20" ry="30" fill="${skin}"/>
+  <ellipse cx="210" cy="230" rx="100" ry="112" fill="${skin}"/>
+  ${curls}
+  <path d="M100 210 q110 -190 220 0" fill="none" stroke="#27272a" stroke-width="12"/>
+  <rect x="86" y="206" width="30" height="58" rx="12" fill="#27272a"/><rect x="304" y="206" width="30" height="58" rx="12" fill="#27272a"/>
+  <path d="M104 262 q8 70 86 58" fill="none" stroke="#27272a" stroke-width="7"/><circle cx="192" cy="320" r="9" fill="#27272a"/>
+  <ellipse cx="170" cy="230" rx="24" ry="26" fill="#fff"/><ellipse cx="250" cy="230" rx="24" ry="26" fill="#fff"/>
+  <g id="pupils"><circle cx="172" cy="232" r="12" fill="#3b2314"/><circle cx="252" cy="232" r="12" fill="#3b2314"/><circle cx="176" cy="227" r="4" fill="#fff"/><circle cx="256" cy="227" r="4" fill="#fff"/></g>
+  <g clip-path="url(#eL)"><rect id="lidL" x="140" y="200" width="60" height="60" fill="${skin}"/></g>
+  <g clip-path="url(#eR)"><rect id="lidR" x="220" y="200" width="60" height="60" fill="${skin}"/></g>
+  <rect x="136" y="198" width="70" height="64" rx="22" fill="none" stroke="#111" stroke-width="7"/><rect x="214" y="198" width="70" height="64" rx="22" fill="none" stroke="#111" stroke-width="7"/><path d="M206 224 h8" stroke="#111" stroke-width="7"/>
+  <g id="browWorried"><path d="M140 186 L194 172" stroke="${hair}" stroke-width="10" stroke-linecap="round"/><path d="M280 186 L226 172" stroke="${hair}" stroke-width="10" stroke-linecap="round"/></g>
+  <g id="browUp"><path d="M140 176 q27 -16 54 -4" fill="none" stroke="${hair}" stroke-width="10" stroke-linecap="round"/><path d="M280 176 q-27 -16 -54 -4" fill="none" stroke="${hair}" stroke-width="10" stroke-linecap="round"/></g>
+  <g id="browDet"><path d="M140 172 L196 190" stroke="${hair}" stroke-width="11" stroke-linecap="round"/><path d="M280 172 L224 190" stroke="${hair}" stroke-width="11" stroke-linecap="round"/></g>
+  <ellipse id="mouth" cx="210" cy="300" rx="26" ry="4" fill="#3b1408"/>
+  <path id="smile" d="M180 292 q30 26 60 0" fill="none" stroke="#3b1408" stroke-width="7" stroke-linecap="round"/>
+  <path id="sweat" d="M300 150 q16 26 0 38 q-16 -12 0 -38z" fill="#7dd3fc"/>`
+}
+function logo(size) {
+  const cols = [{ x: 4, w: 6 }, { x: 11, w: 4 }, { x: 16, w: 4 }]
+  let r = ''
+  for (const c of cols) r += `<rect x="${c.x}" y="4" width="${c.w}" height="4" rx="1.2" fill="#fafaf9" opacity="0.9"/>`
+  r += `<path d="M16.9 5.4 L19.1 5.4 L18 6.9 Z" fill="#ff5a1f"/>`
+  for (const y of [9, 13, 17]) cols.forEach((c, i) => (r += `<rect x="${c.x}" y="${y}" width="${c.w}" height="3" rx="0.9" fill="${i === 2 ? '#ff5a1f' : '#fafaf9'}" opacity="${i === 2 ? 1 : 0.32}"/>`))
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}">${r}</svg><span><i>Sv</i>Grid</span>`
+}
+$('hostSvg').innerHTML = hostSvg()
+
+/* ------------------------------------------------------------ state */
+let S = { beats: [], T: { end: 1 }, clips: {}, mouth: [], series: '' }
+window.__setShort = (s) => {
+  S = s
+  $('series').innerHTML = `${logo(40)}<b>${esc(s.series || '')}</b>`
+}
+
+/* ------------------------------------------------------- beat views */
+function codeView(b, k) {
+  // Lines reveal across the first 55% of the beat; an error tip pops at `errorAt`.
+  const lines = b.code.split('\n')
+  const total = lines.reduce((n, l) => n + l.length + 1, 0)
+  let budget = Math.floor(total * clamp(k / (b.typeUntil ?? 0.55)))
+  let html = ''
+  lines.forEach((l, i) => {
+    if (budget <= 0 && i > 0) return // not typed yet
+    const kind = b.diff ? (l.startsWith('+') ? 'add' : l.startsWith('-') ? 'del' : '') : ''
+    const focus = (b.focus ?? []).includes(i + 1) && k > (b.focusAt ?? 0.6) ? ' focus' : ''
+    const shown = l.slice(0, Math.max(0, budget))
+    budget -= l.length + 1
+    html += `<span class="ln ${kind}${focus}">${hl(shown) || ' '}</span>`
+  })
+  let extra = ''
+  if (b.error && k >= (b.errorAt ?? 0.6)) {
+    const pop = easeOut(seg(k, b.errorAt ?? 0.6, (b.errorAt ?? 0.6) + 0.08))
+    extra = `<div class="tip" style="top:${b.error.tipTop ?? 520}px;transform:scale(${lerp(0.9, 1, pop)});opacity:${pop}"><b>${esc(b.error.title ?? 'Type error')}</b>${esc(b.error.text)}</div>`
+  }
+  // A beat may shrink the font so a long real line fits unwrapped; the squiggle
+  // follows the same metrics (JetBrains Mono: 0.6em advance, 1.55 line height).
+  const fs = b.size ?? 30, cw = fs * 0.6, lh = fs * 1.55
+  return `<div class="win" style="bottom:auto"><div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="title">${esc(b.file ?? '')}</div></div>
+    <div class="body" style="min-height:${b.error ? (b.error.tipTop ?? 520) + 300 : 0}px"><pre class="code" style="font-size:${fs}px">${html}</pre>${b.error && k >= (b.errorAt ?? 0.6) ? `<div class="squig" style="left:${34 + b.error.col * cw}px;top:${30 + b.error.line * lh - 4}px;width:${b.error.len * cw}px"></div>` : ''}${extra}</div></div>`
+}
+function termView(b, k) {
+  // Each line appears at its own fraction of the beat.
+  const n = b.lines.length
+  const shown = b.lines.filter((l, i) => k >= (l.at ?? (i / n) * 0.8)).map((l) => {
+    const cls = l.cls ?? ''
+    const text = l.cmd ? `<span class="p">$</span> <span class="hl">${esc(l.cmd)}</span>` : esc(l.text ?? '')
+    return `<span class="${cls}">${text}</span>`
+  })
+  return `<div class="win" style="bottom:auto"><div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="title">${esc(b.file ?? 'Terminal')}</div></div>
+    <div class="body" style="min-height:${b.minHeight ?? 0}px"><pre class="term">${shown.join('\n')}</pre></div></div>`
+}
+function browserView(b, k, t) {
+  const clip = S.clips[b.clip]
+  if (!clip) return ''
+  const i = clamp(Math.floor((t - b.start) * clip.fps), 0, clip.frames.length - 1)
+  const u = clip.urls[i] ?? ''
+  const m = u.match(/^(https?:\/\/[^/]+)(\/[^?]*)(\?.*)?$/)
+  const url = m ? `${esc(m[1].replace(/^https?:\/\//, ''))}${esc(m[2])}${m[3] ? `<b>${esc(m[3])}</b>` : ''}` : esc(u)
+  return `<div class="win"><div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="url">${url}</div></div>
+    <div class="body shot"><img src="${clip.frames[i]}" alt="" />${b.badge ? `<div class="badge">${esc(b.badge)}</div>` : ''}</div></div>`
+}
+
+/* ------------------------------------------------------------ tick */
+let lastKey = ''
+function tick(t) {
+  const beats = S.beats
+  const bi = Math.max(0, beats.findIndex((b) => t >= b.start && t < b.end))
+  const b = beats[bi] ?? beats[beats.length - 1]
+  const k = seg(t, b.start, b.end)
+  $('progress').style.width = `${(100 * clamp(t / S.T.end)).toFixed(2)}%`
+  $('gridlines').style.transform = `translate(${(t * 6) % 60}px, ${(t * 10) % 60}px)`
+
+  // Caption: slides in at each beat.
+  const ck = easeOut(seg(t, b.start, b.start + 0.3))
+  $('cap').innerHTML = b.kind === 'title' || b.kind === 'end' ? '' : rich(b.cap ?? '')
+  $('cap').style.opacity = ck
+  $('cap').style.transform = `translateY(${(1 - ck) * 26}px)`
+
+  // Stage: rebuilt each frame (cheap), with a pop-in at the beat start.
+  let html = ''
+  if (b.kind === 'code') html = codeView(b, k)
+  else if (b.kind === 'terminal') html = termView(b, k)
+  else if (b.kind === 'browser') html = browserView(b, k, t)
+  else if (b.kind === 'title') html = `<div class="bigtitle" style="top:90px">${rich(b.title)}${b.sub ? `<small>${rich(b.sub)}</small>` : ''}</div>`
+  else if (b.kind === 'end') html = `<div class="endcard" style="top:20px"><div class="logo">${logo(118)}</div><h2>${rich(b.title)}</h2><div class="cmd" style="white-space:nowrap;font-size:${Math.min(44, Math.floor(1300 / (b.cmd ?? 'npm install @svgrid/grid').length))}px">${esc(b.cmd ?? 'npm install @svgrid/grid')}</div><div class="url2">svgrid.com</div>${b.note ? `<div class="note">${rich(b.note)}</div>` : ''}</div>`
+  if (html !== lastKey) { $('stage').innerHTML = html; lastKey = html }
+  const pop = easeOut(seg(t, b.start, b.start + 0.28))
+  $('stage').style.transform = `translateY(${(1 - pop) * 60}px) scale(${lerp(0.96, 1, pop)})`
+  $('stage').style.opacity = pop
+
+  // The host: mouth from the voice envelope, blinks, mood per beat.
+  const env = S.mouth[Math.floor(t * 30)] ?? 0
+  $('mouth').setAttribute('ry', (4 + 22 * env).toFixed(1))
+  $('mouth').setAttribute('rx', (24 + 6 * env).toFixed(1))
+  const mood = b.mood ?? 'neutral'
+  $('browWorried').style.display = mood === 'worried' ? '' : 'none'
+  $('browDet').style.display = mood === 'determined' ? '' : 'none'
+  $('browUp').style.display = mood === 'happy' || mood === 'neutral' ? '' : 'none'
+  $('smile').style.display = mood === 'happy' && env < 0.15 ? '' : 'none'
+  $('mouth').style.display = mood === 'happy' && env < 0.15 ? 'none' : ''
+  $('sweat').style.display = mood === 'worried' ? '' : 'none'
+  const p = ((t + 0.4) % 3.3) / 3.3, w = 0.16 / 3.3
+  const blink = p < w ? Math.sin((p / w) * Math.PI) : 0
+  $('lidL').setAttribute('transform', `translate(0 ${(-60 + 60 * blink).toFixed(1)})`)
+  $('lidR').setAttribute('transform', `translate(0 ${(-60 + 60 * blink).toFixed(1)})`)
+  $('pupils').setAttribute('transform', `translate(${(Math.sin(t * 0.9) * 3).toFixed(1)} 0)`)
+  $('hostSvg').style.transform = `translateY(${(Math.sin(t * 2.4) * 3 - env * 4).toFixed(1)}px) rotate(${(Math.sin(t * 1.3) * 1.5).toFixed(2)}deg)`
+  $('host').style.display = b.kind === 'end' ? 'none' : ''
+
+  // Cut flash between beats; fade from and to black for the loop.
+  const since = t - b.start
+  $('flash').style.opacity = bi > 0 && since < 0.12 ? (0.18 * (1 - since / 0.12)).toFixed(3) : 0
+  $('black').style.opacity = t < 0.2 ? 1 - t / 0.2 : t > S.T.end - 0.6 ? seg(t, S.T.end - 0.6, S.T.end - 0.05) : 0
+}
+window.__seek = (t) => tick(t)
+</script>
+</body>
+</html>

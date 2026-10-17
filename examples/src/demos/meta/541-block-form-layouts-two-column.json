@@ -1,0 +1,24 @@
+{
+  "description": "A two-column account settings page for Svelte 5 built from the SvGrid UI kit. Profile, Address and Notifications each put a title and a short explanation on the left and their own form on the right, using SvTextInput, SvTextArea, SvDropDownList, SvCheckBox and SvRadioGroup. Every section has its own Save SvButton with a loading state, field errors and a toast, and the columns stack on phones.",
+  "keywords": [
+    "svelte settings page",
+    "svelte 5 two column form",
+    "svelte account settings form",
+    "svelte profile and address form",
+    "svelte settings sections layout"
+  ],
+  "faq": [
+    {
+      "question": "Why does each section have its own Save button?",
+      "answer": "Each section is a separate form element with its own onsubmit, so saving the address never sends the profile and an error in one section does not block another. save(section) validates only that section's fields and sets busy to that section, so only its button shows the spinner."
+    },
+    {
+      "question": "How do I load and save real values?",
+      "answer": "The profile, address and notify objects are plain $state. Fill them from your load function or an API call, and replace the timer in save() with a request per section, for example a PATCH to /api/account/address. The inputs carry name props, so each form also posts as ordinary form data."
+    },
+    {
+      "question": "How does the layout change on a phone?",
+      "answer": "Each section is a CSS grid with a 1:2 split. Below 760 px it becomes a single column, so the explanation sits above its form, and the two-up rows (name and email, city and postal code) stack too."
+    }
+  ]
+}

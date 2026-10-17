@@ -1,0 +1,24 @@
+{
+  "description": "A features section for a Svelte 5 landing page: a heading, a one-line intro and six features, each with a small inline SVG icon, a title and two lines of text. Built with SvButton, SvBadge and SvToaster; an SvBadge tags the newest feature and the trial SvButton shows its loading state while the request runs. The grid is three across on desktop, two on tablets and one on phones, and the list comes from an exported createFeatureGrid() core.",
+  "keywords": [
+    "svelte features section",
+    "svelte 5 landing page features",
+    "svelte feature grid with icons",
+    "svelte saas features block",
+    "svelte product features list"
+  ],
+  "faq": [
+    {
+      "question": "How do I change the features?",
+      "answer": "Pass features to createFeatureGrid(). Each feature has an id, a title, a text, an icon (SVG path data for a 24 by 24 stroke icon) and an optional tag that renders as an SvBadge next to the title. Without features the core uses the six sample items, so a translated list or one loaded from a CMS drops in the same way."
+    },
+    {
+      "question": "How do I wire the trial button to my sign-up?",
+      "answer": "Replace the onStart option. start() sets busy, which puts the SvButton into its loading state, then awaits onStart. Navigate to your sign-up route or post to your API there; if onStart throws, busy resets and the button can be pressed again."
+    },
+    {
+      "question": "How does the layout change on smaller screens?",
+      "answer": "The list is a CSS grid with three columns. Below 900 px it switches to two columns, and below 560 px to one column with smaller padding and a smaller heading. Each item keeps its icon on the left of the title and text at every width."
+    }
+  ]
+}

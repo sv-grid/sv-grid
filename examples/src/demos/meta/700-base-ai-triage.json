@@ -1,0 +1,27 @@
+{
+  "description": "An AI agent and a support team working in one SvGrid Base table, in Svelte 5. The agent triages tickets by writing SQL to Postgres; the base shows each change it made, tinted until a person opens the record, with who changed what from what in the record's activity. People review in a Needs review view, correct the agent's mistake and approve.",
+  "keywords": [
+    "svelte ai agent table",
+    "human in the loop ai review grid",
+    "svelte support ticket triage",
+    "ai agent database changes ui"
+  ],
+  "faq": [
+    {
+      "question": "Does the agent write to the page?",
+      "answer": "No. It runs SQL against the database (Postgres in the page here). The base hears of the write through its source's realtime hook, reads the table again and shows what moved, the same way it shows another user's change."
+    },
+    {
+      "question": "How does the base know the agent made the change?",
+      "answer": "The agent writes its own user id to modified_by, the column behind the table's Last changed by field. The base looks that id up in the people list and names it in the record's activity and the view bar."
+    },
+    {
+      "question": "Is a real model involved?",
+      "answer": "Not in this demo: the agent is a set of keyword rules, so it runs without a model or a key. A real agent, such as Claude Code with your database's MCP server, writes the same UPDATE and the base shows it the same way."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

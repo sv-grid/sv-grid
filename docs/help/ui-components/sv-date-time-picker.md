@@ -70,6 +70,9 @@ SvGrid mounts for a `datetime` cell.
 
 `SvDateTimePicker` extends `SvEditorProps` (`disabled`, `readonly`, `required`,
 `invalid`, `error`, `label`, `hint`, `dir`, `name`, `id`, `ariaLabel`).
+With a `name`, a form posts the local day (`2026-10-16`) when
+`dropDownDisplayMode` is `'calendar'`, the local time (`14:30`) when it is
+`'time'`, and the ISO instant (`toISOString()`) when it picks both.
 Its own props:
 
 | Prop                  | Type                                     | Default              | Description                                                        |

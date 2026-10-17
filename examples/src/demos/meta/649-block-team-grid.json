@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte team section built from the SvGrid UI kit: a card per person with an SvAvatar, name, role, a short bio and email and profile links labelled with the person's name. An SvSegmented control filters the grid to Engineering, Product or Customer, and the We're hiring card at the end lists that department's open roles with an SvButton to the careers page.",
+  "keywords": [
+    "svelte team page",
+    "svelte 5 team members grid",
+    "svelte about us team section",
+    "svelte department filter",
+    "svelte we are hiring card"
+  ],
+  "faq": [
+    {
+      "question": "How does the department filter work?",
+      "answer": "SvSegmented is bound to the core's dept, with All plus every department from the departments option. The shown members and the open roles are both derived from it, so picking Customer shows the three customer people and the hiring card switches to the one open Customer role. A visually hidden live region announces how many people are shown."
+    },
+    {
+      "question": "How are the contact links made accessible?",
+      "answer": "Each icon link is spread with contactProps(member, kind), which sets a mailto: or profile href and an aria-label such as \"Email Grace Liu\" or \"Grace Liu's profile\". The icons themselves are aria-hidden. Pass onContact to open your own contact modal instead of following the link."
+    },
+    {
+      "question": "What does the hiring card say when a department has no openings?",
+      "answer": "hiringText reads \"No open roles in Product right now. Open applications are read every week.\" and the button becomes Send an application. onCareers receives the selected department either way, so you can link to a filtered careers page."
+    }
+  ]
+}

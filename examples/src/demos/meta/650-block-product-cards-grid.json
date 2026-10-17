@@ -1,0 +1,24 @@
+{
+  "description": "A row of four Svelte product cards built from the SvGrid UI kit. Each card has drawn product art that takes the color of the chosen swatch, a read-only SvRating with the review count, the price with an optional sale price and an SvBadge showing the percent off, a wishlist heart with aria-pressed, and an SvButton Add to cart with a loading state and a toast. The products, the chosen color per card and the wishlist live in the headless createProductCards() core.",
+  "keywords": [
+    "svelte product card",
+    "svelte 5 product grid with add to cart",
+    "svelte wishlist button aria-pressed",
+    "svelte color swatch picker",
+    "svelte headless product card component"
+  ],
+  "faq": [
+    {
+      "question": "How do I show my own products?",
+      "answer": "Pass them to createProductCards({ products }). Each product has an id, name, art key, priceCents, an optional saleCents, rating, reviews and a list of variants with id, name and tint. The block falls back to its four sample products only when you pass none. Prices are integer cents and are formatted with Intl.NumberFormat when shown."
+    },
+    {
+      "question": "How does Add to cart reach my server?",
+      "answer": "The core calls your onAdd({ product, variant }) option and keeps that card's button in its loading state until the returned promise settles. If it throws, the core calls onError(error, product) instead. The demo returns toast.promise around a short delay; replace that with a fetch to your cart endpoint."
+    },
+    {
+      "question": "How does the layout change on smaller screens?",
+      "answer": "The cards sit in a four-column grid. Below 900 px it becomes two columns, and below 520 px one column with a wider 3:2 image and tighter page padding, so nothing overflows at 375 px."
+    }
+  ]
+}

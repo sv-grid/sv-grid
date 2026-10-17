@@ -1,0 +1,24 @@
+{
+  "description": "A navbar with dropdowns for Svelte 5 built from the SvGrid UI kit: Products opens a two-column mega menu of icon, title and description links, Resources opens an SvMenu, and Pricing is a plain link. Enter, Space or ArrowDown opens the mega menu, arrow keys move between its links, and Escape closes it and returns focus to Products. Below 768 px a menu button opens every link in grouped sections.",
+  "keywords": [
+    "svelte mega menu",
+    "svelte 5 navbar dropdown",
+    "svelte accessible dropdown navigation",
+    "svelte keyboard navigation menu",
+    "svelte header with submenus"
+  ],
+  "faq": [
+    {
+      "question": "How does the keyboard model work?",
+      "answer": "triggerProps() handles the Products button: a keyboard click (Enter or Space, which reports event.detail 0) or ArrowDown opens the panel and asks for focus on the first link through onFocusItem. megaProps() moves focus with ArrowUp and ArrowDown and wraps at the ends. Escape goes through nav.escape(), which closes the panel and tells the render to focus Products again."
+    },
+    {
+      "question": "Why is the mega menu not an SvPopover?",
+      "answer": "SvPopover caps its panel at 360 px wide, which is too narrow for two columns of links with descriptions. The mega menu is an absolutely positioned panel under the header with its own outside-click and focus-out handling, while Resources uses SvMenu, which brings its own keyboard support."
+    },
+    {
+      "question": "How do I feed my own product links?",
+      "answer": "Pass columns to createDropdownNavbar(): an array of { heading, items } where each item has title, desc, href and an icon given as an SVG path string. The same data renders the desktop mega menu and the grouped phone menu."
+    }
+  ]
+}

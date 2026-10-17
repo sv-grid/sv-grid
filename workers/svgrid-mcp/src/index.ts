@@ -23,11 +23,22 @@ import { rankDocs, type RankableDoc } from './generated/search.js'
 import { apiReference, apiSurface, docs, examples } from './generated/index.js'
 import { PROMPTS, getPrompt } from './generated/prompts.js'
 import { PREVIEW_TOOL, handlePreview, previewResource, readPreviewResource } from './generated/preview.js'
+import { ENTERPRISE_LINE, ENTERPRISE_NOTE, checkNeedsEnterprise, isPaidQuestion } from './generated/enterprise.js'
 
 export type Env = {
   ASSETS: { fetch: (req: Request | string) => Promise<Response> }
   PUBLIC_URL?: string
+  /** One data point per tool call (see `record`). Unbound, nothing is kept. */
+  MCP_EVENTS?: AnalyticsEngineDataset
 }
+
+/** Paid docs and demos, marked by scripts/build-data.mjs. */
+const paidDocs = new Set(docs.filter((d) => d.enterprise).map((d) => d.slug))
+const paidDemos = new Set(examples.filter((e) => e.enterprise).map((e) => e.id))
+const paidLine = (isPaid: boolean, prefix: string) => (isPaid ? `${prefix}${ENTERPRISE_LINE}\n` : '')
+
+/** What a call produced, for the usage record. Filled in by `callTool`. */
+type CallMeta = { results?: number; paid?: boolean; rules?: string[] }
 
 const SERVER_NAME = 'svgrid'
 const SERVER_VERSION = apiSurface.gridVersion
@@ -194,7 +205,12 @@ export function resolveToolName(name: string): string {
   return ALIASES[name] ?? name
 }
 
-async function callTool(name: string, args: Record<string, unknown>, env: Env): Promise<ToolResult> {
+async function callTool(
+  name: string,
+  args: Record<string, unknown>,
+  env: Env,
+  meta: CallMeta = {},
+): Promise<ToolResult> {
   switch (name) {
     case 'search': {
       const query = String(args.query ?? '').trim()
@@ -209,27 +225,36 @@ async function callTool(name: string, args: Record<string, unknown>, env: Env): 
         .filter((e) => `${e.id} ${e.title} ${e.blurb} ${e.category}`.toLowerCase().includes(q))
         .slice(0, 5)
 
+      const docResults = hits.map((h) => ({
+        id: h.slug,
+        title: h.title,
+        section: h.section,
+        url: `https://svgrid.com/docs/${h.slug}`,
+        excerpt: h.excerpt,
+        ...(paidDocs.has(h.slug) ? { enterprise: true } : {}),
+      }))
+      const demoResults = demoHits.map((e) => ({
+        id: `demo:${e.id}`,
+        title: `${e.title} (demo)`,
+        section: e.category,
+        url: `https://svgrid.com/examples/${e.id}`,
+        excerpt: e.blurb,
+        ...(e.enterprise ? { enterprise: true } : {}),
+      }))
+      // Same rule as the npm server: the note goes on top only when the
+      // question is about a paid feature; each result carries its own mark.
+      // Partial matches are leads, not answers: for the usage report a query
+      // that matched no page in full is a query we could not answer.
+      meta.results = (partial ? 0 : total) + demoHits.length
+      meta.paid = isPaidQuestion([docResults, demoResults])
+
       return withDocs(
         json({
           query,
           total,
           partial: partial || undefined,
-          results: [
-            ...hits.map((h) => ({
-              id: h.slug,
-              title: h.title,
-              section: h.section,
-              url: `https://svgrid.com/docs/${h.slug}`,
-              excerpt: h.excerpt,
-            })),
-            ...demoHits.map((e) => ({
-              id: `demo:${e.id}`,
-              title: `${e.title} (demo)`,
-              section: e.category,
-              url: `https://svgrid.com/examples/${e.id}`,
-              excerpt: e.blurb,
-            })),
-          ],
+          ...(meta.paid ? { enterprise: ENTERPRISE_NOTE } : {}),
+          results: [...docResults, ...demoResults],
         }),
       )
     }
@@ -241,13 +266,15 @@ async function callTool(name: string, args: Record<string, unknown>, env: Env): 
       if (id.startsWith('demo:')) {
         const demo = await loadExample(env, id.slice(5))
         if (!demo) return fail(`No demo with id "${id.slice(5)}". Call list_examples for the ids.`)
-        return text(`// ${demo.path}\n// ${demo.title} - ${demo.blurb}\n\n${demo.source}`)
+        meta.paid = paidDemos.has(demo.id)
+        return text(`// ${demo.path}\n// ${demo.title} - ${demo.blurb}\n${paidLine(meta.paid, '// ')}\n${demo.source}`)
       }
 
       const all = await loadDocs(env)
       const doc = all.find((d) => d.slug === id)
       if (!doc) return fail(`No doc with slug "${id}". Call search to find one.`)
-      return withDocs(doc.markdown)
+      meta.paid = paidDocs.has(doc.slug)
+      return withDocs(`${paidLine(meta.paid, '> ')}${meta.paid ? '\n' : ''}${doc.markdown}`)
     }
 
     case 'list_examples': {
@@ -261,6 +288,7 @@ async function callTool(name: string, args: Record<string, unknown>, env: Env): 
         return true
       })
       const shown = pool.slice(0, limit)
+      meta.results = pool.length
       const body: Record<string, unknown> = {
         total: pool.length,
         shown: shown.length,
@@ -278,7 +306,8 @@ async function callTool(name: string, args: Record<string, unknown>, env: Env): 
       const id = String(args.id ?? '')
       const demo = await loadExample(env, id)
       if (!demo) return fail(`No example with id "${id}". Call list_examples for available ids.`)
-      return text(`// ${demo.path}\n// ${demo.title} - ${demo.blurb}\n\n${demo.source}`)
+      meta.paid = paidDemos.has(demo.id)
+      return text(`// ${demo.path}\n// ${demo.title} - ${demo.blurb}\n${paidLine(meta.paid, '// ')}\n${demo.source}`)
     }
 
     case 'get_api_reference':
@@ -295,11 +324,68 @@ async function callTool(name: string, args: Record<string, unknown>, env: Env): 
       const result = await checkSvGridCode(source, apiSurface as ApiSurface, {
         filename: typeof args.filename === 'string' ? args.filename : undefined,
       })
-      return text(json(result))
+      meta.rules = [...new Set(result.diagnostics.map((d) => d.rule))]
+      meta.paid = checkNeedsEnterprise(result.diagnostics)
+      return text(json(meta.paid ? { ...result, enterprise: ENTERPRISE_LINE } : result))
     }
 
     default:
       return fail(`Unknown tool: ${name}`)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Usage records
+// ---------------------------------------------------------------------------
+
+/**
+ * One line per tool call, to the Workers log and to Analytics Engine.
+ *
+ * Usage is the point of running this remotely: which tools get called, which
+ * queries come back empty (a feature we lack or name differently), which paid
+ * features people ask about, and which check rules fire. Never the source under
+ * check - only its size and the rule ids. No IP, no user agent, no session.
+ *
+ * The log lasts days; the Analytics Engine dataset keeps three months and
+ * answers SQL, which is what `tools/mcp-report.mjs` reads. Column order is the
+ * contract with that script:
+ *
+ *   index1   tool
+ *   blob1    tool          blob2  query        blob3  id
+ *   blob4    rules fired, comma-separated      blob5  "1" when the answer
+ *                                                     carried the trial note
+ *   double1  ms            double2  ok (1/0)   double3  results that matched
+ *                                                       the whole query (-1 = n/a)
+ *   double4  bytes of checked source
+ */
+function record(env: Env, tool: string, args: Record<string, unknown>, meta: CallMeta, ms: number, ok: boolean) {
+  const query = tool === 'search' || tool === 'list_examples' ? String(args.query ?? '').slice(0, 200) : ''
+  const id = tool === 'fetch' || tool === 'get_example_source' ? String(args.id ?? '').slice(0, 200) : ''
+  const sourceBytes = tool === 'check_svgrid_code' ? String(args.source ?? '').length : 0
+  const rules = (meta.rules ?? []).join(',').slice(0, 1000)
+
+  console.log(
+    JSON.stringify({
+      tool,
+      ms,
+      ok,
+      query: query || undefined,
+      id: id || undefined,
+      results: meta.results,
+      paid: meta.paid || undefined,
+      rules: rules || undefined,
+      sourceBytes: sourceBytes || undefined,
+    }),
+  )
+
+  try {
+    env.MCP_EVENTS?.writeDataPoint({
+      indexes: [tool],
+      blobs: [tool, query, id, rules, meta.paid ? '1' : ''],
+      doubles: [ms, ok ? 1 : 0, meta.results ?? -1, sourceBytes],
+    })
+  } catch {
+    // A usage record must never fail the call it describes.
   }
 }
 
@@ -453,24 +539,14 @@ async function handleRpc(msg: RpcRequest, env: Env): Promise<object | null> {
         return rpcError(msg.id, -32602, `Unknown tool: ${requested}`)
       }
       const started = Date.now()
+      const meta: CallMeta = {}
       try {
-        const result = await callTool(name, args, env)
-        // Telemetry is the point of running this remotely: which tools get
-        // called, and which queries come back empty. Never the source under
-        // check - only its size and the rule ids that fired.
-        console.log(
-          JSON.stringify({
-            tool: name,
-            ms: Date.now() - started,
-            ok: !result.isError,
-            query: name === 'search' ? String(args.query ?? '') : undefined,
-            id: name === 'fetch' || name === 'get_example_source' ? String(args.id ?? '') : undefined,
-            sourceBytes: name === 'check_svgrid_code' ? String(args.source ?? '').length : undefined,
-          }),
-        )
+        const result = await callTool(name, args, env, meta)
+        record(env, name, args, meta, Date.now() - started, !result.isError)
         return rpcResult(msg.id, result)
       } catch (err) {
         console.log(JSON.stringify({ tool: name, ms: Date.now() - started, ok: false, error: String(err) }))
+        record(env, name, args, meta, Date.now() - started, false)
         return rpcResult(msg.id, fail(`${name} failed: ${err instanceof Error ? err.message : String(err)}`))
       }
     }

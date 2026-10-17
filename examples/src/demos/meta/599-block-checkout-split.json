@@ -1,0 +1,24 @@
+{
+  "description": "A one-page checkout in Svelte 5: contact email, shipping address with SvTextInput and SvCountryInput, a delivery SvRadioGroup and SvMaskedInput card fields on the left, with a sticky order summary of items, subtotal, shipping, tax and total on the right. Pay validates every field, including a Luhn check on the card number and an expiry that is not in the past, then shows the SvButton loading state and a toast. The headless createSplitCheckout() core holds the values, totals and pay flow.",
+  "keywords": [
+    "svelte checkout page",
+    "svelte 5 checkout form template",
+    "svelte order summary sidebar",
+    "svelte card payment form validation",
+    "svelte shipping address form"
+  ],
+  "faq": [
+    {
+      "question": "How does the validation work?",
+      "answer": "Nothing is flagged until the first Pay. After that, createSplitCheckout() derives the errors from the current values, so each message clears as soon as the field is fixed."
+    },
+    {
+      "question": "Where do I connect my payment provider?",
+      "answer": "Pass onPay to createSplitCheckout(). It is called with the values and the totals in integer cents once every field passes, and the button shows its loading state until the promise settles. In production, replace the three card inputs with your provider's hosted fields so raw card numbers never reach your server."
+    },
+    {
+      "question": "What changes on a phone?",
+      "answer": "Below 820 px the two columns stack and the order summary moves above the form, collapsed to one row showing the total. The Show order summary button expands it in place and sets aria-expanded."
+    }
+  ]
+}

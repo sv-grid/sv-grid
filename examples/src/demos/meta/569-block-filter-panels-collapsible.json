@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte task tracker with collapsible filters, built from the SvGrid UI kit. SvAccordion sections hold a Status SvCheckBox list, an Assignee SvDropDownList, a due-date SvDateRangeInput and an SvMultiSelect of tags, and each section header carries an SvBadge with its active count. The SvGrid on the right refilters on every change, with sortable columns, a row count and Clear all.",
+  "keywords": [
+    "svelte collapsible filter panel",
+    "svelte 5 accordion filters",
+    "svelte data grid with filters",
+    "svelte date range filter",
+    "svelte multi select tag filter"
+  ],
+  "faq": [
+    {
+      "question": "How does the SvGrid update when a filter changes?",
+      "answer": "The grid's data prop is a $derived that filters the tasks by the selected statuses, the assignee, the due-date range and the tags (a task matches if it has any picked tag). Changing any control re-runs the $derived and the grid renders the new rows; when nothing matches it shows its emptyMessage."
+    },
+    {
+      "question": "How is the count badge on each section worked out?",
+      "answer": "A counts $derived holds one number per section: how many statuses and tags are picked, and 1 for the assignee or the date range when set. Each section is its own one-item SvAccordion with the SvBadge positioned over the right edge of its header, and the badge ignores pointer events so a click still toggles the section."
+    },
+    {
+      "question": "What changes on a phone?",
+      "answer": "Below 760 px the filter column stacks above the grid at full width. The grid has responsive={{ breakpoint: 420 }} and the Assignee, Due and Tags columns carry hideBelow: 420, so on a 375 px screen the grid shows only Task and Status. Above 420 px fitColumns spreads all five columns across the grid's width."
+    }
+  ]
+}

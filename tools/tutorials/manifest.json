@@ -4101,6 +4101,87 @@
       ],
       "youtubeId": "rB-K65XMm7M",
       "publishedAt": "2026-10-14"
+    },
+    {
+      "id": "mk-ai-agent-base",
+      "kind": "marketing",
+      "player": true,
+      "title": "An AI agent and your team, one table: Claude Code, Supabase and SvGrid Base",
+      "description": "Claude Code triages a Supabase support inbox; SvGrid Base shows each change with the agent name on it, and a person reviews and approves.",
+      "demo": null,
+      "docsPage": "docs/help/base/ai-agents.md",
+      "anchor": "> SvGrid Base is part of the",
+      "tags": [
+        "svgrid base",
+        "ai agent",
+        "claude code",
+        "supabase mcp",
+        "human in the loop",
+        "svelte"
+      ],
+      "duration": 77.8,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-10-16",
+      "files": {
+        "mp4": "/tutorials/mk-ai-agent-base.mp4",
+        "poster": "/tutorials/mk-ai-agent-base.poster.webp",
+        "vtt": "/tutorials/mk-ai-agent-base.vtt"
+      },
+      "bytes": {
+        "mp4": 1980198,
+        "poster": 50100,
+        "master": 12729366
+      },
+      "transcript": [
+        {
+          "start": 0.85,
+          "end": 4.21,
+          "text": "Zazo: Hi, I'm Zazo. Let me show you something new in SvGrid Base."
+        },
+        {
+          "start": 5.06,
+          "end": 12.66,
+          "text": "Zazo: AI agents now work in the same data as your team. They update records, fill in fields, and draft replies."
+        },
+        {
+          "start": 13.51,
+          "end": 19.51,
+          "text": "Zazo: But when an agent edits a table, rows just change. What did it touch? And who checks it?"
+        },
+        {
+          "start": 20.36,
+          "end": 31.96,
+          "text": "Zazo: Here is a support inbox in SvGrid Base, on a real Supabase project. Ten new tickets. And Claude Code, connected to the same database through the Supabase MCP server."
+        },
+        {
+          "start": 32.81,
+          "end": 42.41,
+          "text": "Zazo: One instruction: triage the inbox. Claude writes straight to the database, and the base shows every change as it lands, with the agent's name on it."
+        },
+        {
+          "start": 47.81,
+          "end": 52.37,
+          "text": "Zazo: Open a record, and you see exactly what the agent changed, and what each field held before."
+        },
+        {
+          "start": 54.02,
+          "end": 59.3,
+          "text": "Zazo: Where you disagree, change it. Your edit goes to the same table, under your name."
+        },
+        {
+          "start": 60.95,
+          "end": 65.11,
+          "text": "Zazo: Then work through the Needs review view, and approve the rest with one click."
+        },
+        {
+          "start": 65.96,
+          "end": 74.6,
+          "text": "Zazo: The agent does the first pass. People make the call. Same table, your database. That is SvGrid Base, part of SvGrid Suite."
+        }
+      ],
+      "youtubeId": "HNMV1rTaDzE",
+      "publishedAt": "2026-10-16"
     }
   ]
 }

@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte review feed built from the SvGrid UI kit. Each review shows an SvAvatar, the reviewer's name, a Verified purchase SvBadge, a read-only SvRating, the date, a title and a body that clamps to three lines with a Read more toggle. Readers can mark a review Helpful once, sort the list with an SvDropDownList (most helpful, newest, highest, lowest) and load the next page with an SvButton.",
+  "keywords": [
+    "svelte review list",
+    "svelte 5 product reviews",
+    "svelte helpful votes",
+    "svelte sort reviews dropdown",
+    "svelte read more text clamp"
+  ],
+  "faq": [
+    {
+      "question": "How is a helpful vote limited to one per review?",
+      "answer": "createReviewList() keeps a voted map keyed by review id. vote() returns early if the id is already in it, otherwise it marks it, adds one to the count and calls onVote. The button is spread with helpfulProps(), which sets aria-pressed and disables it once voted. If onVote throws, the vote and the count roll back. On a real site also enforce one vote per user on the server."
+    },
+    {
+      "question": "How do Read more and Load more work?",
+      "answer": "A body longer than clampAt characters (220 by default) gets a CSS line clamp of three lines and a Read more button that toggles it; the button carries aria-expanded and aria-controls. The list shows pageSize reviews (4) at a time. loadMore() awaits onLoadMore, appends any reviews it returns, and shows the next page while the SvButton shows its loading state."
+    },
+    {
+      "question": "What changes on a phone?",
+      "answer": "Below 600 px the Sort by dropdown moves under the heading at full width, the review date drops onto its own line under the name, and the side padding shrinks to 16 px. The rating and title wrap onto two lines when they do not fit."
+    }
+  ]
+}

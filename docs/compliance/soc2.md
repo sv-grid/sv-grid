@@ -22,7 +22,7 @@ responsibility ends and yours begins.
 | **CC6.6 Encryption in transit** | n/a - no transit                                       |
 | **CC7.1 System operations** | Bundle is deterministic; SHA-256 published per release      |
 | **CC8.1 Change management** | Every change ships as a PR with reviews; release notes per version |
-| **CC9.2 Vendor management** | 0 runtime deps in `@svgrid/grid`; lazy peer deps in `@svgrid/enterprise` documented in [security](../help/security.md) |
+| **CC9.2 Vendor management** | One runtime dep in `@svgrid/grid` (`esm-env`, MIT, dependency-free); lazy peer deps in `@svgrid/enterprise` documented in [security](../help/security.md) |
 
 ## What you cover (in your own SOC 2)
 
@@ -39,7 +39,7 @@ responsibility ends and yours begins.
 
 1. **MIT licence** - vetted by your legal team once, valid forever
 2. **Public source code** - no obfuscation; your auditor can read every line
-3. **Zero runtime dependencies** - `@svgrid/grid`, `@svgrid/enterprise`, `@svgrid/grid-wc` and `@svgrid/ui` each declare no runtime dependencies, so there is no transitive tree to review. Verify with `npm view @svgrid/grid dependencies`. The two optional peers for Enterprise export (`jszip`, `pdfmake`, both MIT) are listed in [security](../help/security.md)
+3. **A shallow dependency tree** - `@svgrid/enterprise`, `@svgrid/grid-wc` and `@svgrid/ui` declare no runtime dependencies; `@svgrid/grid` declares one, `esm-env` (MIT), which has none of its own, so the transitive tree is one package deep. Verify with `npm view @svgrid/grid dependencies`. The two optional peers for Enterprise export (`jszip`, `pdfmake`, both MIT) are listed in [security](../help/security.md)
 4. **Published SBOM** - a CycloneDX 1.6 document per package under [`sbom/`](https://github.com/sv-grid/sv-grid/tree/main/sbom), covering runtime and peer dependencies to full declared depth. Regenerate with `pnpm sbom`; `pnpm sbom:check` fails if it has drifted from the manifests. Satisfies the EU Cyber Resilience Act's machine-readable SBOM expectation
 5. **Security disclosure policy** - email `support@jqwidgets.com`, GPG fingerprint published, response SLA documented in [security](../help/security.md)
 6. **Vulnerability history** - every CVE attributed to sv-grid published in the [changelog](../changelog.md) with disclosure date, fix version, mitigation

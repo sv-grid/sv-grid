@@ -1,0 +1,24 @@
+{
+  "description": "A dashboard page heading in Svelte 5: an h1 with a scope line, an SvSegmented range switch for 7d, 30d and 90d, and a Download report SvButton, above a row of four SvStat values with deltas and a light bar strip. Switching the range swaps every value, delta and bar. Refund rate uses the SvStat invert prop, so a drop reads as good.",
+  "keywords": [
+    "svelte dashboard page header",
+    "svelte 5 kpi header with date range",
+    "svelte segmented range switch",
+    "svelte stat row block",
+    "svelte page heading with stats"
+  ],
+  "faq": [
+    {
+      "question": "How does the range switch change the numbers?",
+      "answer": "SvSegmented is bound to a range state, and the view is a $derived lookup into a DATA record keyed by range. Each SvStat reads its label, value and delta from that view, so one assignment updates the whole row."
+    },
+    {
+      "question": "Why does the refund rate show pp?",
+      "answer": "Refund rate is itself a percentage, so its change is in percentage points. The block passes it as a preformatted delta string with an explicit trend, and sets invert so a falling rate is shown green."
+    },
+    {
+      "question": "How do I load real numbers?",
+      "answer": "Replace the DATA record with a fetch keyed by range, for example in a SvelteKit load that reads the range from the URL, and keep the same { kpis, bars } shape."
+    }
+  ]
+}

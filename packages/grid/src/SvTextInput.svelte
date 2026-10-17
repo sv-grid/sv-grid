@@ -141,6 +141,7 @@
     oninput={onInput}
     onkeydown={onKeydown}
     onfocus={onFocus}
+    id={uid}
     {...editorAria({ id: uid, invalid, required, error, hint, ariaLabel })}
   />
   {#if name}<input type="hidden" {name} value={value} />{/if}

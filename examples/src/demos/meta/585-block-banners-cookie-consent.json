@@ -1,0 +1,24 @@
+{
+  "description": "A cookie consent banner for Svelte 5 built from the SvGrid UI kit: Accept all, Reject non-essential and Customize SvButtons at the bottom of a site. Customize opens an SvModal with an SvSwitchButton per category, with Necessary on and disabled. Saving replaces the banner with a one-line summary of the allowed categories and a Change settings link.",
+  "keywords": [
+    "svelte cookie consent banner",
+    "svelte 5 cookie preferences modal",
+    "svelte gdpr cookie banner",
+    "svelte cookie settings switches",
+    "svelte consent management"
+  ],
+  "faq": [
+    {
+      "question": "How is the choice stored?",
+      "answer": "createCookieConsent() keeps the saved choice in consent.saved, a record of four booleans, or null before the user decides. In a real app write it to a consent cookie from the onDecide callback or a SvelteKit form action, so the server knows the choice before rendering and can skip analytics scripts, and pass it back as the saved option; the docs page shows the action."
+    },
+    {
+      "question": "Why can the Necessary switch not be turned off?",
+      "answer": "It is rendered with disabled, consent.setDraft() ignores it, and the core sets necessary to true in every choice it saves. Necessary cookies do not need consent, and showing the switch locked tells the user they exist."
+    },
+    {
+      "question": "Does Customize start from the current choice?",
+      "answer": "Yes. consent.customize() copies consent.saved into consent.draft, which the switches edit, or starts from necessary only on a first visit. Cancel calls consent.cancel(), which closes the modal without touching the saved choice."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "Selectable KPI cards for a Svelte 5 dashboard, each with a tinted inline-SVG icon, today's value and the 7-day average. The cards are toggle buttons with aria-pressed; clicking one highlights it and the SvCard panel below shows that metric's last seven days as one labelled bar per day.",
+  "keywords": [
+    "svelte kpi cards with icons",
+    "svelte 5 selectable metric cards",
+    "svelte dashboard card aria-pressed",
+    "svelte 7 day bar chart css",
+    "svelte metric drilldown panel"
+  ],
+  "faq": [
+    {
+      "question": "How does selecting a card work?",
+      "answer": "Each card is a native button with aria-pressed bound to whether its key equals the selected state. Clicking sets selected, and the panel reads the current metric through a $derived lookup, so the title, bars and values all switch together."
+    },
+    {
+      "question": "How are the bars drawn?",
+      "answer": "With plain spans in a seven-column CSS grid. Each bar's height is its value as a percentage of the week's peak, and today's bar is drawn darker. The values under the bars are real text, so screen readers get the numbers."
+    },
+    {
+      "question": "What changes on a phone?",
+      "answer": "The four cards become a two-by-two grid below 900 px. Below 560 px the bars get shorter, the gaps tighter, and revenue values use a short form such as $11.8k so seven columns fit in 375 px."
+    }
+  ]
+}

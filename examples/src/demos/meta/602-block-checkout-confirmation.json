@@ -1,0 +1,24 @@
+{
+  "description": "An order confirmation page in Svelte 5: an inline-SVG check mark, the order number with a copy button, a delivery window counted in business days from today, the shipping address, a what-happens-next list and the order summary with totals kept in integer cents. SvButton actions for Track order and Continue shopping, an SvBadge for the order state and toasts for copy and receipt resend. The headless createOrderConfirmation() core holds the order data and actions.",
+  "keywords": [
+    "svelte order confirmation page",
+    "svelte 5 thank you page",
+    "svelte order success template",
+    "svelte copy order number",
+    "svelte delivery estimate business days"
+  ],
+  "faq": [
+    {
+      "question": "How is the delivery estimate calculated?",
+      "answer": "The order carries deliveryDays, a pair of business-day counts. addBusinessDays() steps forward from today and skips Saturdays and Sundays, and the window is formatted with Intl.DateTimeFormat, in the form Wed, Oct 21 - Fri, Oct 23. Public holidays are not skipped."
+    },
+    {
+      "question": "How do I show my own order?",
+      "answer": "Pass order to createOrderConfirmation() with the number, the customer's first name and email, the shipping line, the card's last four digits, the items in cents, shipping, tax rate and delivery days. In SvelteKit, load it in the confirmation route's load function and pass it in."
+    },
+    {
+      "question": "What does the copy button do if the clipboard is blocked?",
+      "answer": "copy() resolves false when writeText throws, and the block shows an error toast asking the user to copy the number by hand. On success the button reads Copied for two seconds."
+    }
+  ]
+}

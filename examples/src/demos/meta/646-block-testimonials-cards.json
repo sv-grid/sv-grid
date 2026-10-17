@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte testimonials section built from the SvGrid UI kit: six customer quote cards in a masonry-style column layout, each with an inline-SVG company wordmark, an optional read-only SvRating, the quote and an SvAvatar with the person's name and role. Quotes longer than 170 characters open with Read more, and the header shows the average rating with an SvButton to the customer stories.",
+  "keywords": [
+    "svelte testimonials section",
+    "svelte 5 testimonial cards",
+    "svelte masonry quote cards",
+    "svelte customer quotes block",
+    "svelte social proof reviews"
+  ],
+  "faq": [
+    {
+      "question": "How do I show my own quotes?",
+      "answer": "Pass items to createTestimonialCards() as an array of { id, quote, name, role, company, mark, rating? }. mark picks one of six made-up glyphs for the wordmark (ring, peak, hex, bars, leaf, wave), and rating is optional: quotes without it show no stars and are left out of the average in the header."
+    },
+    {
+      "question": "How does Read more work?",
+      "answer": "A quote longer than excerptLength (170 characters by default) is cut at the last whole word with an ellipsis. Its Read more button is spread with toggleProps(), which sets aria-expanded and aria-controls pointing at the quote, and toggles that card between the excerpt and the full text."
+    },
+    {
+      "question": "What changes on smaller screens?",
+      "answer": "The cards sit in CSS columns: three on desktop, two below 1024 px and one below 640 px, where the side padding drops to 16 px. Cards never split across columns, so taller quotes simply make their column longer."
+    }
+  ]
+}

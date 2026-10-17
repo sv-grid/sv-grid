@@ -49,8 +49,12 @@
   type Answer = { you: string; text: string; demos: ZazoDemo[]; docs: ZazoLink[]; links: ZazoLink[] }
 
   type Props = {
-    /** The demo on screen. */
-    demo: ZazoDemo
+    /**
+     * The demo on screen. Without one (the website's home page) he still finds
+     * demos, shows how to install, says what is free, and answers questions;
+     * the demo-only parts (about, tip, FAQ, source) stay out of his menu.
+     */
+    demo?: ZazoDemo | null
     /** Where he sits. */
     perch: ZazoPerch
     /** True when the demo imports @svgrid/enterprise. */
@@ -78,10 +82,10 @@
     /** Hide while something else owns the screen (full screen, a modal). */
     hidden?: boolean
   }
-  let { demo, perch, enterprise = false, loadDocs, searchDocs, startHref, pricingHref, search, onOpenDemo, onShowSource, onFind, loadMeta, stage = '.demo-stage', onEvent, hidden = false }: Props = $props()
+  let { demo = null, perch, enterprise = false, loadDocs, searchDocs, startHref, pricingHref, search, onOpenDemo, onShowSource, onFind, loadMeta, stage = '.demo-stage', onEvent, hidden = false }: Props = $props()
 
   const emit = (action: string, data: Record<string, string | number | boolean> = {}) => {
-    try { onEvent?.({ action, demo: demo.id, ...data }) } catch { /* analytics never breaks him */ }
+    try { onEvent?.({ action, demo: demo?.id ?? '', ...data }) } catch { /* analytics never breaks him */ }
   }
 
   const KEY = 'svgrid-zazo'
@@ -120,6 +124,10 @@
       if (!b.width || b.bottom < 0 || b.top > vh) { pos = null; return }
       const seatY = (perch.seat === 'top' ? b.top : b.bottom) - SEAT
       const after = perch.after ? document.querySelector(perch.after)?.getBoundingClientRect() : null
+      // The element he sits after is on the page but hidden (a phone layout
+      // drops it): he sits out rather than fall back to the bar's edge, where
+      // he would cover the icons.
+      if (after && !after.width) { pos = null; return }
       if (after && after.width) {
         const x = after.right + 10
         // Off the window's edge on a narrow screen: then he sits out.
@@ -353,7 +361,7 @@
     if (read(KEY) === 'off') return
     off = false
     // The tips (one per demo) are a chunk of their own; fetch it now he is here.
-    loadTips().then((t) => (tips = t)).catch(() => {})
+    if (demo) loadTips().then((t) => (tips = t)).catch(() => {})
     canListen = 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window
     // His voice is on unless muted. Browsers only let a page play sound once
     // the visitor has clicked or typed on it, so until then he talks in text.
@@ -383,7 +391,7 @@
 
   // The bar can move when the page lays out again (a route change, a font load).
   $effect(() => {
-    demo.id
+    void demo?.id
     hidden
     place()
   })
@@ -405,7 +413,6 @@
   const markGreeted = () => {
     try { sessionStorage.setItem(GREETED_KEY, 'yes') } catch { /* private mode */ }
   }
-
   // Sitting down after he walks in, he says who he is in a bubble beside him.
   const HELLO = "Hi, I'm Zazo and I can help you."
   let hello = $state(false)
@@ -416,15 +423,55 @@
     helloTimer = window.setTimeout(() => (hello = false), 5000)
   }
 
+  // ---- left alone: back to work ---------------------------------------------------
+  // Thirty seconds with nobody at him (popup shut; not talking, listening,
+  // pointing or walking) and he opens a laptop on his lap and types: he is
+  // working on SvGrid. A hover or a click puts the laptop away, and the half
+  // minute starts again once he is left alone.
+  const IDLE_MS = 30_000
+  // Shown in a bubble, not spoken: like the hello, it should not talk over the page.
+  const WORKING_NOTE = "OK, if you need me, I'm here. While I'm idle, I'll continue improving SvGrid."
+  let working = $state(false)
+  let workNote = $state(false)
+  let workNoteTimer = 0
+  let idleRestart = $state(0)
+  function startWorking() {
+    working = true
+    hello = false
+    workNote = true
+    clearTimeout(workNoteTimer)
+    workNoteTimer = window.setTimeout(() => (workNote = false), 7000)
+  }
+  function stopWorking() {
+    if (!working) return
+    working = false
+    workNote = false
+    idleRestart++
+  }
+  $effect(() => {
+    void idleRestart
+    const calm = shown_ && !open && !hidden && !leaving && !arriving && !listening && !ring && !speaking
+    if (!calm) {
+      untrack(() => { working = false; workNote = false })
+      return
+    }
+    if (working) return
+    const t = setTimeout(startWorking, IDLE_MS)
+    return () => clearTimeout(t)
+  })
+
   // The mouse over him raises his hand (CSS); a click opens the popup. Only a
   // click: browsers let a page play sound once it has been clicked, so his
   // first words follow one.
   function onHover() {
+    stopWorking()
     if (leaving) return
     // A heavy demo can hold up his entrance; the mouse reaching him brings him in now.
     shown_ = true
   }
   function onFigureClick() {
+    // A touch screen has no hover: the click is what wakes him.
+    stopWorking()
     if (!open) {
       emit('open', { via: 'click' })
       // Opened from a click or the keyboard: the focus goes into the popup.
@@ -465,11 +512,12 @@
     if (hadFocus) figure?.focus()
   }
   /** A menu choice, counted. */
-  function menu(item: 'about' | 'find' | 'start' | 'code' | 'tip') {
+  function menu(item: 'about' | 'find' | 'start' | 'code' | 'tip' | 'license') {
     emit('menu', { item })
     if (item === 'find') void find()
     else if (item === 'code') onShowSource?.()
     else if (item === 'tip') showTip()
+    else if (item === 'license') lineReply("What's free and what's paid?", 'license', { links: [{ label: 'Pricing', href: pricingHref }] })
     else show(item)
   }
 
@@ -516,13 +564,15 @@
   // ---- what this demo shows -----------------------------------------------
   /** The first two sentences: the blurb's lead, without the full spec. */
   const lead = $derived.by(() => {
-    const parts = demo.blurb.match(/[^.!?]+[.!?]+(\s|$)/g)
-    return parts && parts.length > 2 ? parts.slice(0, 2).join('').trim() : demo.blurb
+    const blurb = demo?.blurb ?? ''
+    const parts = blurb.match(/[^.!?]+[.!?]+(\s|$)/g)
+    return parts && parts.length > 2 ? parts.slice(0, 2).join('').trim() : blurb
   })
   let docs = $state<ZazoLink[]>([])
   $effect(() => {
-    const id = demo.id
+    const id = demo?.id
     docs = []
+    if (!id) return
     let live = true
     loadDocs?.(id).then((d) => { if (live) docs = d.slice(0, 3) }).catch(() => {})
     return () => { live = false }
@@ -531,8 +581,9 @@
   // ---- questions people ask about this demo ------------------------------------
   let faq = $state<Faq[]>([])
   $effect(() => {
-    const id = demo.id
+    const id = demo?.id
     faq = []
+    if (!id) return
     let live = true
     loadMeta?.(id).then((m) => { if (live) faq = m?.faq ?? [] }).catch(() => {})
     return () => { live = false }
@@ -546,7 +597,7 @@
 
   // ---- a tip: one thing to try, and where it is ---------------------------------
   let tips = $state<Record<string, Tip> | null>(null)
-  const tip = $derived(tips?.[demo.id] ?? null)
+  const tip = $derived(demo ? tips?.[demo.id] ?? null : null)
   let ring = $state<{ x: number; y: number; w: number; h: number } | null>(null)
   let look = $state<{ x: number; y: number } | null>(null)
   let pointing = 0
@@ -557,7 +608,7 @@
   }
   // A new demo: stop ringing the old one's target, and leave its tip.
   $effect(() => {
-    demo.id
+    void demo?.id
     untrack(() => {
       stopPointing()
       if (view === 'tip') view = 'hi'
@@ -595,9 +646,9 @@
 
   /** What he says for the popup on screen. `again` repeats the greeting even if he has said it this visit. */
   function speakView(again = false) {
-    if (view === 'tip') say(`tip-${demo.id}`)
+    if (view === 'tip') { if (demo) say(`tip-${demo.id}`) }
     else if (view === 'hi') { if (again || !greeted()) say(line('hi')) }
-    else if (view === 'about') say(line('thisOne'), titleClip(demo.title), line('shortVersion'))
+    else if (view === 'about') { if (demo) say(line('thisOne'), titleClip(demo.title), line('shortVersion')) }
     else if (view === 'find') say(line('find'))
     else if (view === 'start') say(line('start'))
     else if (answer) say(...answer.clips)
@@ -667,7 +718,8 @@
     }
     if (intent.kind !== 'search' && intent.kind !== 'open') asked('line')
     switch (intent.kind) {
-      case 'greet': return lineReply(you, 'greet')
+      // The greet line mentions "this demo"; with none on screen, the plain hello.
+      case 'greet': return lineReply(you, demo ? 'greet' : 'hi')
       case 'thanks': return lineReply(you, 'thanks')
       case 'who': return lineReply(you, 'who')
       case 'bye':
@@ -675,7 +727,7 @@
         open = false
         write(KEY, 'min')
         return
-      case 'about': return show('about')
+      case 'about': return demo ? show('about') : show('hi')
       case 'start': return show('start')
       case 'code':
         if (onShowSource) { say(line('code')); onShowSource() }
@@ -757,6 +809,7 @@
       class:is-waving={waving}
       class:is-speaking={speaking}
       class:is-listening={listening}
+      class:is-working={working}
       class:no-analyser={speaking && !liveMouth}
       class:is-standing={leaving !== '' || arriving !== ''}
       class:is-walking={leaving === 'walk' || arriving === 'start' || arriving === 'walk'}
@@ -770,7 +823,7 @@
       style:top="{pos.y}px"
       style:width="{W}px"
       style:height="{H}px"
-      aria-label={open ? 'Close Zazo' : 'Ask Zazo for help'}
+      aria-label={open ? 'Close Zazo' : working ? 'Zazo is working on SvGrid. Ask Zazo for help' : 'Ask Zazo for help'}
       aria-expanded={open}
       aria-haspopup="dialog"
       aria-controls="zazo-panel"
@@ -796,7 +849,7 @@
         </g>
         <rect class="zazo-seat" x="27" y="88" width="46" height="10" rx="4.5" fill="#3f4d63" />
         <!-- body: a black SvGrid T-shirt -->
-        <path d="M29 67 Q50 60 71 67 L74 93 Q50 97 26 93 Z" fill="#18181b" stroke="#3f3f46" stroke-width="0.8" />
+        <path class="zazo-shirt" d="M29 67 Q50 60 71 67 L74 93 Q50 97 26 93 Z" fill="#18181b" stroke="#3f3f46" stroke-width="0.8" />
         <rect x="45" y="58" width="10" height="10" rx="3" fill="#74472d" />
         <path d="M43.5 64.5 q6.5 5.5 13 0" fill="none" stroke="#52525b" stroke-width="1.8" stroke-linecap="round" />
         <!-- The SvGrid mark (the site header's logo): a header row with a sort
@@ -814,19 +867,19 @@
         </g>
         <g class="zazo-arm-l">
           <path d="M31 70 Q21 80 24 92" stroke="#8d5a3b" stroke-width="7" stroke-linecap="round" fill="none" />
-          <path d="M31 70 Q26 74.5 25.3 79" stroke="#18181b" stroke-width="9.5" stroke-linecap="round" fill="none" />
+          <path class="zazo-sleeve" d="M31 70 Q26 74.5 25.3 79" stroke="#18181b" stroke-width="9.5" stroke-linecap="round" fill="none" />
           <circle cx="24" cy="94" r="4.3" fill="#8d5a3b" />
         </g>
         <g class="zazo-arm">
           <path d="M69 70 Q80 63 82 50" stroke="#8d5a3b" stroke-width="7" stroke-linecap="round" fill="none" />
-          <path d="M69 70 Q74 67 76.5 63.5" stroke="#18181b" stroke-width="9.5" stroke-linecap="round" fill="none" />
+          <path class="zazo-sleeve" d="M69 70 Q74 67 76.5 63.5" stroke="#18181b" stroke-width="9.5" stroke-linecap="round" fill="none" />
           <circle cx="82.5" cy="45" r="5" fill="#8d5a3b" />
           <path d="M79 41 v-4.5 M82.5 40 v-5.5 M86 41 v-4.5 M87.5 46 l3 -2.5" stroke="#8d5a3b" stroke-width="2.4" stroke-linecap="round" />
         </g>
         <!-- at rest: the right hand down on the bar, like the left -->
         <g class="zazo-arm-down">
           <path d="M69 70 Q79 80 76 92" stroke="#8d5a3b" stroke-width="7" stroke-linecap="round" fill="none" />
-          <path d="M69 70 Q74 74.5 74.7 79" stroke="#18181b" stroke-width="9.5" stroke-linecap="round" fill="none" />
+          <path class="zazo-sleeve" d="M69 70 Q74 74.5 74.7 79" stroke="#18181b" stroke-width="9.5" stroke-linecap="round" fill="none" />
           <circle cx="76" cy="94" r="4.3" fill="#8d5a3b" />
         </g>
         <!-- head -->
@@ -882,6 +935,53 @@
             <path d="M46 54.2 q4 -1.2 8 0" stroke="#fff" stroke-width="1.3" fill="none" stroke-linecap="round" />
           </g>
         </g>
+        <!-- Left alone: an orange laptop (Svelte's orange) on his lap, drawn the
+             way everyone draws a laptop - screen up, keyboard in front - so it
+             reads at 52px. It lands shut; the lid folds back on its hinge and
+             the screen comes up with SvGrid on it: a grid and a line of code
+             with a blinking cursor. His hands come round to the keys. -->
+        <g class="zazo-laptop">
+          <!-- keyboard deck: a trapezoid seen from above, keys in rows -->
+          <path d="M31 86 H69 L78 95 H22 Z" fill="#ff3e00" />
+          <path d="M22 95 H78 V97.5 Q78 98.5 77 98.5 H23 Q22 98.5 22 97.5 Z" fill="#b32d00" />
+          <path d="M32.5 88 H67.5" stroke="#7a1f00" stroke-width="1.5" stroke-dasharray="2.4 0.9" />
+          <path d="M30.5 90.3 H69.5" stroke="#7a1f00" stroke-width="1.5" stroke-dasharray="2.4 0.9" />
+          <path d="M28.5 92.6 H38 M62 92.6 H71.5" stroke="#7a1f00" stroke-width="1.5" stroke-dasharray="2.4 0.9" />
+          <path d="M40 92.6 H60" stroke="#7a1f00" stroke-width="1.5" stroke-linecap="round" />
+          <!-- the screen, rising on the hinge at the deck's back edge -->
+          <g class="zazo-screen">
+            <rect x="29" y="60" width="42" height="26.5" rx="3" fill="#ff3e00" stroke="#c43000" stroke-width="0.8" />
+            <rect x="31.5" y="62.5" width="37" height="21" rx="1.2" fill="#111827" />
+            <!-- SvGrid on screen: an orange header row over grey rows -->
+            <rect x="33.5" y="64.5" width="33" height="3" rx="0.6" fill="#ff3e00" />
+            <g fill="#4b5563">
+              <rect x="33.5" y="68.6" width="12" height="2.2" rx="0.5" /><rect x="46.5" y="68.6" width="9" height="2.2" rx="0.5" /><rect x="56.5" y="68.6" width="10" height="2.2" rx="0.5" />
+              <rect x="33.5" y="71.8" width="12" height="2.2" rx="0.5" /><rect x="46.5" y="71.8" width="9" height="2.2" rx="0.5" /><rect x="56.5" y="71.8" width="10" height="2.2" rx="0.5" />
+            </g>
+            <rect class="zazo-new-row" x="33.5" y="75" width="33" height="2.2" rx="0.5" fill="#fb923c" />
+            <!-- the line he is typing, and its cursor -->
+            <rect class="zazo-typed" x="33.5" y="79.2" width="20" height="1.8" rx="0.5" fill="#a3e635" />
+            <rect class="zazo-cursor" x="55" y="78.6" width="1.4" height="3" fill="#f9fafb" />
+          </g>
+          <!-- shut: the lid lies on the keys, folding back as the screen comes up -->
+          <path class="zazo-lid-shut" d="M31 86 H69 L78 95 H22 Z" fill="#ff5a26" stroke="#c43000" stroke-width="0.8" />
+          <!-- hands on the keys -->
+          <g class="zazo-type-l">
+            <path d="M31 70 Q19 82 33 91" stroke="#8d5a3b" stroke-width="6.5" stroke-linecap="round" fill="none" />
+            <path class="zazo-sleeve" d="M31 70 Q26 74.5 25.2 79" stroke="#18181b" stroke-width="9.5" stroke-linecap="round" fill="none" />
+            <ellipse cx="34.5" cy="91.2" rx="4.2" ry="3" fill="#8d5a3b" />
+          </g>
+          <g class="zazo-type-r">
+            <path d="M69 70 Q81 82 67 91" stroke="#8d5a3b" stroke-width="6.5" stroke-linecap="round" fill="none" />
+            <path class="zazo-sleeve" d="M69 70 Q74 74.5 74.8 79" stroke="#18181b" stroke-width="9.5" stroke-linecap="round" fill="none" />
+            <ellipse cx="65.5" cy="91.2" rx="4.2" ry="3" fill="#8d5a3b" />
+          </g>
+        </g>
+        <!-- what he is writing, drifting up from the screen -->
+        <g class="zazo-glyphs" aria-hidden="true">
+          <text class="zazo-glyph-1" x="72" y="62">&lt;/&gt;</text>
+          <text class="zazo-glyph-2" x="76" y="64">{'{ }'}</text>
+        </g>
       </svg>
     </button>
 
@@ -898,8 +998,21 @@
         onclick={() => { emit('open', { via: 'hello' }); show('hi', true) }}
       >{HELLO}</button>
     {/if}
+    {#if workNote && working && !open}
+      <!-- What he says as he opens the laptop, in the same place as his hello. -->
+      {@const onLeft = pos.x + W / 2 > vw / 2}
+      <button
+        type="button"
+        class="zazo-hello zazo-work-note"
+        class:on-left={onLeft}
+        style:top="{Math.round(pos.y + H * 0.22)}px"
+        style:left={onLeft ? undefined : `${pos.x + W + 10}px`}
+        style:right={onLeft ? `${vw - pos.x + 10}px` : undefined}
+        onclick={() => { emit('open', { via: 'working' }); show('hi', true) }}
+      >{WORKING_NOTE}</button>
+    {/if}
     {#if open}
-      <div bind:this={panel} id="zazo-panel" class="zazo-panel" role="dialog" aria-label="Zazo, the demo helper" style:left="{panelLeft}px" style:top="{panelTop}px" style:max-height="{vh - panelTop - 16}px" style:--tail="{tailX}px">
+      <div bind:this={panel} id="zazo-panel" class="zazo-panel" role="dialog" aria-label="Zazo, the SvGrid helper" style:left="{panelLeft}px" style:top="{panelTop}px" style:max-height="{vh - panelTop - 16}px" style:--tail="{tailX}px">
         <div class="zazo-tools">
           <button type="button" class="zazo-icon" aria-pressed={sound} title={sound ? "Mute Zazo's voice" : "Turn on Zazo's voice"} aria-label={sound ? "Mute Zazo's voice" : "Turn on Zazo's voice"} onclick={toggleSound}>
             <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -925,10 +1038,11 @@
           {:else if view === 'hi'}
             <p class="zazo-hi">{shown('hi')}</p>
             <div class="zazo-menu">
-              <button type="button" onclick={() => menu('about')}>What does this demo show?</button>
+              {#if demo}<button type="button" onclick={() => menu('about')}>What does this demo show?</button>{/if}
               {#if tip}<button type="button" onclick={() => menu('tip')}>What should I try here?</button>{/if}
               <button type="button" onclick={() => menu('find')}>Find me a demo</button>
               <button type="button" onclick={() => menu('start')}>How do I add it to my app?</button>
+              {#if !demo}<button type="button" onclick={() => menu('license')}>What's free and what's paid?</button>{/if}
               {#if onShowSource}<button type="button" onclick={() => menu('code')}>Show me the code</button>{/if}
             </div>
           {:else if view === 'tip' && tip}
@@ -938,7 +1052,7 @@
               <button type="button" onclick={pointAt}>Show me where</button>
               <button type="button" class="is-quiet" onclick={() => show('hi')}>Back</button>
             </div>
-          {:else if view === 'about'}
+          {:else if view === 'about' && demo}
             <p class="zazo-title">{demo.title}</p>
             <p class="zazo-blurb">{lead}</p>
             {#if faq.length}
@@ -1149,6 +1263,60 @@
     50% { transform: rotate(18deg); }
   }
 
+  /* Left alone: the laptop lands on his lap shut, the lid folds back on its
+     hinge (the deck's back edge, y 86) and the screen comes up from it; his
+     resting arms go to the keys. Putting it away runs the other way, quicker. */
+  .zazo-laptop, .zazo-glyphs text { opacity: 0; }
+  .zazo-laptop { transform: translateY(10px); transition: opacity 0.25s 0.2s, transform 0.3s ease-in 0.2s; }
+  .zazo-figure.is-working .zazo-laptop { opacity: 1; transform: none; transition: opacity 0.25s, transform 0.35s cubic-bezier(0.3, 1.4, 0.6, 1); }
+  .zazo-lid-shut { transform-origin: 50px 86px; transition: transform 0.15s ease-out 0.05s; }
+  .zazo-figure.is-working .zazo-lid-shut { transform: scaleY(0); transition: transform 0.25s ease-in 0.45s; }
+  .zazo-screen { transform-origin: 50px 86.5px; transform: scaleY(0); transition: transform 0.15s ease-in; }
+  .zazo-figure.is-working .zazo-screen { transform: none; transition: transform 0.5s cubic-bezier(0.3, 1.35, 0.55, 1) 0.65s; }
+  .zazo-figure.is-working .zazo-arm-l,
+  .zazo-figure.is-working .zazo-arm-down { opacity: 0; }
+  .zazo-figure.is-working:not(.is-speaking) .zazo-pupils { transform: translate(0, 2px); }
+  .zazo-figure.is-working .zazo-brows { transform: translateY(1px); }
+  /* On the screen: the line he types grows, the cursor blinks, and the grid's
+     newest row lights up as he saves. */
+  .zazo-typed { transform-origin: 33.5px 80px; }
+  .zazo-figure.is-working .zazo-typed { animation: zazo-typing 2.6s steps(9, end) 1.2s infinite; }
+  .zazo-figure.is-working .zazo-cursor { animation: zazo-blink-cursor 0.9s steps(1, end) infinite; }
+  .zazo-figure.is-working .zazo-new-row { animation: zazo-new-row 2.6s ease-out 1.2s infinite; }
+  @keyframes zazo-typing {
+    0% { transform: scaleX(0); }
+    80%, 100% { transform: scaleX(1); }
+  }
+  @keyframes zazo-blink-cursor {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+  @keyframes zazo-new-row {
+    0%, 75% { opacity: 0.25; }
+    85% { opacity: 1; }
+    100% { opacity: 0.55; }
+  }
+  .zazo-type-l { transform-origin: 31px 70px; }
+  .zazo-type-r { transform-origin: 69px 70px; }
+  /* Typing starts once the screen is up. */
+  .zazo-figure.is-working .zazo-type-l { animation: zazo-type 0.34s ease-in-out 1.2s infinite; }
+  .zazo-figure.is-working .zazo-type-r { animation: zazo-type 0.34s ease-in-out 1.37s infinite; }
+  @keyframes zazo-type {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-1.6px); }
+  }
+  .zazo-glyphs text { font: 700 12px ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--z-accent); }
+  .zazo-figure.is-working .zazo-glyph-1 { animation: zazo-float 2.8s ease-out 1.4s infinite; }
+  .zazo-figure.is-working .zazo-glyph-2 { animation: zazo-float 2.8s ease-out 2.8s infinite; }
+  @keyframes zazo-float {
+    0% { opacity: 0; transform: translate(0, 0); }
+    15% { opacity: 1; }
+    100% { opacity: 0; transform: translate(10px, -36px); }
+  }
+  /* His line is longer than the hello: let it wrap. Two classes, so it beats
+     the hello's nowrap, which comes later in this sheet. */
+  .zazo-hello.zazo-work-note { white-space: normal; width: max-content; max-width: 250px; text-align: left; }
+
   /* Mouths: the smile by default, the live mouth while the audio plays. */
   .zazo-flat, .zazo-oh, .zazo-talk { opacity: 0; }
   .zazo-talk {
@@ -1173,6 +1341,10 @@
   .mood-thinking .zazo-brows { transform: translateY(-2px); }
 
   /* Listening: brows up, a pulse around his head. */
+  /* His shirt is black, which on a white page made him a dark blob beside the
+     header buttons. In light mode it is denim; the dark theme keeps black. */
+  :global(html:not([data-theme='dark'])) .zazo-shirt { fill: #3b5b8c; stroke: #2c4670; }
+  :global(html:not([data-theme='dark'])) .zazo-sleeve { stroke: #3b5b8c; }
   .zazo-ring { stroke: var(--z-accent); opacity: 0; transform-origin: 50px 40px; }
   .zazo-figure.is-listening .zazo-brows { transform: translateY(-3px); }
   .zazo-figure.is-listening .zazo-ring { animation: zazo-pulse 1.2s ease-out infinite; }
@@ -1319,7 +1491,7 @@
     border: 1px solid var(--sg-input-border, var(--z-border));
     border-radius: 12px;
   }
-  .zazo-ask:focus-within { box-shadow: var(--sg-focus-ring, 0 0 0 2px #ff5a1f); }
+  .zazo-ask:focus-within { box-shadow: 0 0 0 2px var(--sg-focus-ring, #ff5a1f); }
   .zazo-ask input { flex: 1; min-width: 0; padding: 5px 0; font: inherit; color: var(--z-fg); background: none; border: 0; outline: none; }
 
   .zazo-off {
@@ -1402,6 +1574,11 @@
     .zazo-figure.is-listening .zazo-ring,
     .zazo-figure.no-analyser .zazo-talk,
     .zazo-target { animation: none !important; }
+    /* At the laptop, still: open at once, no typing, no drifting code, a
+       finished line on a steady screen. */
+    .zazo-type-l, .zazo-type-r, .zazo-typed, .zazo-cursor, .zazo-new-row { animation: none !important; }
+    .zazo-laptop, .zazo-lid-shut, .zazo-screen { transition: none !important; }
+    .zazo-glyphs { display: none; }
   }
   /* Phones: the top bar has no room beside the search, and the screen is the demo's. */
   @media (max-width: 767px) {

@@ -142,6 +142,23 @@ type ColumnSchemaEntry = {
 }
 
 /**
+ * What the read-only helpers need from a grid: its rows. A full `SvGridApi`
+ * satisfies it, and so does `{ getData: () => rows }`, which lets a chat or a
+ * report summarize data that is not on screen in a grid. `aiFilter` with
+ * `apply: true` and `aiExport` still need the grid itself.
+ */
+export type AIRowSource<
+  TFeatures extends TableFeatures = TableFeatures,
+  TData extends RowData = RowData,
+> = Pick<SvGridApi<TFeatures, TData>, 'getData'>
+
+function isGridApi<TFeatures extends TableFeatures, TData extends RowData>(
+  api: AIRowSource<TFeatures, TData>,
+): api is SvGridApi<TFeatures, TData> {
+  return typeof (api as Partial<SvGridApi<TFeatures, TData>>).setFilter === 'function'
+}
+
+/**
  * Inspect the first N rows the grid is holding to infer a typed schema +
  * a handful of sample values per column. This is the context every AI
  * task needs and the most expensive thing to build, so the helpers cache
@@ -151,7 +168,7 @@ type ColumnSchemaEntry = {
 function buildColumnSchema<
   TFeatures extends TableFeatures,
   TData extends RowData,
->(api: SvGridApi<TFeatures, TData>, sampleSize = 50): ColumnSchemaEntry[] {
+>(api: AIRowSource<TFeatures, TData>, sampleSize = 50): ColumnSchemaEntry[] {
   const data = api.getData()
   if (data.length === 0) return []
   const slice = data.slice(0, Math.min(data.length, sampleSize))
@@ -244,7 +261,7 @@ export async function aiFilter<
   TFeatures extends TableFeatures,
   TData extends RowData,
 >(
-  api: SvGridApi<TFeatures, TData>,
+  api: AIRowSource<TFeatures, TData>,
   query: string,
   opts: AIFilterOptions = {},
 ): Promise<AIFilterResult> {
@@ -277,6 +294,7 @@ export async function aiFilter<
   result.sort = (result.sort ?? []).filter((s) => valid.has(s.field))
 
   if (opts.apply) {
+    if (!isGridApi(api)) throw new Error('aiFilter: apply needs the grid api, not a { getData } row source')
     api.clearAllFilters()
     api.clearSort()
     for (const f of result.filters) {
@@ -334,7 +352,7 @@ export async function aiSmartFill<
   TData extends RowData,
   TValue = unknown,
 >(
-  api: SvGridApi<TFeatures, TData>,
+  api: AIRowSource<TFeatures, TData>,
   opts: AISmartFillOptions,
 ): Promise<AISmartFillResult<TValue>> {
   if (opts.examples.length === 0) {
@@ -427,7 +445,7 @@ export async function aiSummarize<
   TFeatures extends TableFeatures,
   TData extends RowData,
 >(
-  api: SvGridApi<TFeatures, TData>,
+  api: AIRowSource<TFeatures, TData>,
   opts: AISummarizeOptions,
 ): Promise<AISummary> {
   const all = api.getData()
@@ -517,7 +535,7 @@ export async function aiClassify<
   TFeatures extends TableFeatures,
   TData extends RowData,
 >(
-  api: SvGridApi<TFeatures, TData>,
+  api: AIRowSource<TFeatures, TData>,
   opts: AIClassifyOptions,
 ): Promise<AIClassifyResult> {
   const data = api.getData()
@@ -766,7 +784,7 @@ export type AIAnomalyOptions = {
 }
 
 function sliceForTarget<TFeatures extends TableFeatures, TData extends RowData>(
-  api: SvGridApi<TFeatures, TData>,
+  api: AIRowSource<TFeatures, TData>,
   target: AISummarizeTarget,
 ): TData[] {
   const all = api.getData()
@@ -793,7 +811,7 @@ export async function aiFindAnomalies<
   TFeatures extends TableFeatures,
   TData extends RowData,
 >(
-  api: SvGridApi<TFeatures, TData>,
+  api: AIRowSource<TFeatures, TData>,
   opts: AIAnomalyOptions = {},
 ): Promise<AIAnomalyResult> {
   const rows = sliceForTarget(api, opts.target ?? { kind: 'all' })

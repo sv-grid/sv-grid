@@ -1,0 +1,24 @@
+{
+  "description": "A landing-page hero for Svelte 5 whose main call to action is an inline email form, built from the SvGrid UI kit: an SvTextInput work email next to a Start free trial SvButton, with fine print under it and a small ledger card below. An empty or malformed address shows an error under the field, a valid one puts the button into its loading state, a refusal from the server shows its message under the field, and success replaces the form with a check-your-inbox message.",
+  "keywords": [
+    "svelte hero email signup",
+    "svelte 5 start free trial form",
+    "svelte landing page email capture",
+    "svelte inline email input with button",
+    "svelte saas hero with signup form"
+  ],
+  "faq": [
+    {
+      "question": "How is the email validated?",
+      "answer": "submit() trims the address and checks that it is not empty and matches a name@domain.tld pattern. The message shows under the SvTextInput and clears as soon as the user types. The form uses novalidate so the browser does not show its own bubble."
+    },
+    {
+      "question": "How do I connect the form to my sign-up API?",
+      "answer": "Pass onStart to createSignupHero(). It gets the trimmed address while the button shows its loading state. Resolve to switch to the check-your-inbox state; throw an Error and its message appears under the field with the address still filled in. In the demo, taken@ledgerline.app shows that refusal."
+    },
+    {
+      "question": "How does the layout change on a phone?",
+      "answer": "Below 600 px the headline drops to 32 px and the Start free trial button moves under the email field at full width. The ledger card keeps its three columns and shortens long labels with an ellipsis."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte rating summary for a product page built from the SvGrid UI kit: the average as a number next to a read-only SvRating with half stars, the review count, a 5-to-1 star distribution with bars and counts, and an SvProgress for the share who would recommend. Clicking a star row filters the recent reviews beside it to that rating, marks the row with aria-pressed and shows an SvBadge chip with a Clear filter SvButton.",
+  "keywords": [
+    "svelte product reviews summary",
+    "svelte 5 star rating distribution",
+    "svelte rating bars filter",
+    "svelte average rating stars",
+    "svelte customer reviews section"
+  ],
+  "faq": [
+    {
+      "question": "Where do the average and the bars come from?",
+      "answer": "createReviewSummary() takes counts, a map from star to number of reviews. It sums them for the total, weights them for the average, and works out each row's percentage of the total for the bar width. The SvRating gets the average rounded to the nearest half star with allowHalf and readonly, so 4.5 paints four and a half stars."
+    },
+    {
+      "question": "How does the star filter work?",
+      "answer": "Each distribution row is a button spread with rowProps(star), which sets aria-pressed and an aria-label with the count and percentage. Clicking a row sets the filter to that star, clicking it again or pressing Clear filter sets it back to null, and the shown list is derived from the recent reviews with that rating. An onFilter callback lets you fetch that rating's reviews from your API instead."
+    },
+    {
+      "question": "What changes on a phone?",
+      "answer": "Below 760 px the two columns stack: the average, distribution, recommend bar and Write a review button come first, the recent reviews follow underneath, and the side padding drops to 16 px."
+    }
+  ]
+}

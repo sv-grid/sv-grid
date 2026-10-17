@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte order history page that lists a customer's past orders in SvGrid: order number, date, item count, a right-aligned currency total and an SvBadge status cell. Click a header to sort, filter by status with an SvSegmented control, and press View or click any row to open the order in an SvDrawer with its lines, totals, shipping address and Invoice and Buy again actions.",
+  "keywords": [
+    "svelte order history page",
+    "svelte 5 orders table",
+    "svelte data grid status badge",
+    "svelte account orders list",
+    "svelte drawer order details"
+  ],
+  "faq": [
+    {
+      "question": "How does the status filter work with sorting?",
+      "answer": "The SvSegmented binds to history.filter, and createOrderHistory() derives history.rows from it: all orders, only processing and shipped ones for Open, or one status. SvGrid gets that filtered array as data and keeps its own sort state, so a sort you picked stays applied when you switch filters. The Status column sorts by a rank from the exported ORDER_STATUS map through sortValue, not alphabetically."
+    },
+    {
+      "question": "How is the total column formatted?",
+      "answer": "Orders carry totalCents as an integer. The column sets align: 'right' and a formatter that divides by 100 and runs the value through Intl.NumberFormat with currency USD, so sorting still compares the raw cents while the cell shows $156.96."
+    },
+    {
+      "question": "How does it fit on a phone?",
+      "answer": "The grid has responsive on, so when it is narrower than 640 px fitColumns is suspended and the columns keep their widths and pan sideways inside the grid while the page stays put. The Items column sets hideBelow: 520 and drops out at phone width. Clicking any row opens the same drawer as View, so a tap works without scrolling to the action column."
+    }
+  ]
+}

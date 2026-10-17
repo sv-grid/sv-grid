@@ -40,8 +40,29 @@ export type RecordChange = {
   by?: string
   /** The automation that made it, by name. */
   automation?: string
+  /** Made elsewhere (another user, a script, an agent) and read from the database. */
+  remote?: boolean
+  /** The record was added elsewhere: one entry, with no field. */
+  added?: boolean
   columnId: string
   value: unknown
+  /** What the field held before, when known (a change made elsewhere). */
+  from?: unknown
+}
+
+/**
+ * A record someone else changed that nobody here has looked at yet: the
+ * cells that moved are tinted and the row header shows a dot until the record
+ * is opened, or `markAllSeen` runs.
+ */
+export type UnseenChange = {
+  at: number
+  /** Who changed it, when the record says (its "last modified by" field). */
+  by?: string
+  /** The column ids that changed. */
+  columns: ReadonlySet<string>
+  /** Added elsewhere: the whole record is new. */
+  added?: boolean
 }
 
 // Bumped on every change so the panel redraws.
@@ -51,6 +72,8 @@ let version = $state(0)
 type Kept<T> = { bases: WeakMap<object, Map<string, Map<string, T[]>>>; grids: WeakMap<object, Map<string, T[]>> }
 const changes: Kept<RecordChange> = { bases: new WeakMap(), grids: new WeakMap() }
 const memory: Kept<RecordComment> = { bases: new WeakMap(), grids: new WeakMap() }
+// One entry per record at most: its unseen change, merged as more arrive.
+const unseen: Kept<UnseenChange> = { bases: new WeakMap(), grids: new WeakMap() }
 // The base of a table named by id alone.
 const ANY_BASE = {}
 let store: RecordCommentStore | null = null
@@ -105,6 +128,64 @@ export function noteChange(scope: ActivityScope, rowId: string, columnId: string
 export function changesOf(scope: ActivityScope, rowId: string): ReadonlyArray<RecordChange> {
   void version
   return rowsOf(changes, scope, false)?.get(rowId) ?? []
+}
+
+/**
+ * Note a change made elsewhere and read from the database: an activity entry
+ * per field (with what it held before), credited to `by`, and the record
+ * marked unseen. `added` notes a record added elsewhere.
+ */
+export function noteRemoteChange(
+  scope: ActivityScope,
+  rowId: string,
+  change: { by?: string; added?: boolean; fields?: ReadonlyArray<{ columnId: string; from: unknown; to: unknown }> },
+): void {
+  const at = Date.now()
+  const fields = change.fields ?? []
+  if (!change.added && !fields.length) return
+  const byRow = rowsOf(changes, scope, true)!
+  const list = byRow.get(rowId) ?? []
+  const by = change.by ? { by: change.by } : {}
+  if (change.added) list.push({ at, ...by, remote: true, added: true, columnId: '', value: undefined })
+  for (const f of fields) list.push({ at, ...by, remote: true, columnId: f.columnId, value: copy(f.to), from: copy(f.from) })
+  if (list.length > 50) list.splice(0, list.length - 50)
+  byRow.set(rowId, list)
+
+  const marks = rowsOf(unseen, scope, true)!
+  const was = marks.get(rowId)?.[0]
+  const columns = new Set([...(was?.columns ?? []), ...fields.map((f) => f.columnId)])
+  marks.set(rowId, [{ at, ...by, columns, ...(change.added || was?.added ? { added: true } : {}) }])
+  version += 1
+}
+const copy = (v: unknown) => (Array.isArray(v) ? [...v] : v)
+
+/** The record's change made elsewhere that nobody here has seen, if any. */
+export function unseenOf(scope: ActivityScope, rowId: string): UnseenChange | undefined {
+  void version
+  return rowsOf(unseen, scope, false)?.get(rowId)?.[0]
+}
+
+/** Every unseen record of a grid or table, by row id. */
+export function unseenIn(scope: ActivityScope): ReadonlyMap<string, UnseenChange> {
+  void version
+  const out = new Map<string, UnseenChange>()
+  for (const [id, list] of rowsOf(unseen, scope, false) ?? []) if (list[0]) out.set(id, list[0])
+  return out
+}
+
+/** The record was looked at: its cells and row header go back to normal. */
+export function markSeen(scope: ActivityScope, rowId: string): void {
+  const marks = rowsOf(unseen, scope, false)
+  if (marks?.delete(rowId)) version += 1
+}
+
+/** Every record of a grid or table was looked at. */
+export function markAllSeen(scope: ActivityScope): void {
+  const marks = rowsOf(unseen, scope, false)
+  if (marks?.size) {
+    marks.clear()
+    version += 1
+  }
 }
 
 const contextOf = (ctrl: any): RecordCommentContext => ({ tableId: tableIdOf(ctrl), api: ctrl?.buildApi?.() })

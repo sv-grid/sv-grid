@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte product list with a filter sidebar built from the SvGrid UI kit. SvCheckBox groups for category and brand show how many products each option leaves, a range SvSlider sets the price band and an SvRadioGroup sets the minimum rating. The product cards beside it filter live with a count, Reset brings every product back, and on phones the sidebar moves into an SvDrawer opened by a Filters button that shows the active count.",
+  "keywords": [
+    "svelte product filter sidebar",
+    "svelte 5 faceted search filters",
+    "svelte price range slider filter",
+    "svelte filter drawer mobile",
+    "svelte checkbox filter with counts"
+  ],
+  "faq": [
+    {
+      "question": "How are the counts next to each checkbox worked out?",
+      "answer": "countFor(group, value) runs the same matches() test the list uses but skips the option's own group, then counts the products with that category or brand. So the number beside a brand is how many products you would see from that brand given the other filters, and it updates as you move the price range or rating."
+    },
+    {
+      "question": "What changes on a phone?",
+      "answer": "Below 720 px the sidebar is hidden and a Filters button appears in the list header, with a pill showing the number of active filters. It opens an SvDrawer from the left that renders the same filters snippet, with Reset and a Show N results button in its footer. The product cards drop to two columns."
+    },
+    {
+      "question": "How do I filter on the server instead of in the browser?",
+      "answer": "The filter state is four $state values: categories, brands, price and minRating. Replace the results $derived with a request that sends them as query parameters, for example in a SvelteKit load function that reads url.searchParams, and keep the checkboxes, slider and radio group as they are. Facet counts then come from your API's aggregation instead of countFor."
+    }
+  ]
+}

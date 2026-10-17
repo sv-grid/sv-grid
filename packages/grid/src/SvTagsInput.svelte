@@ -69,7 +69,7 @@
   })
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir}>
+<SvField id={uid} {label} {hint} {error} {required} {dir} {block}>
   <div class="sv-tags sv-tags--{size}" class:is-block={block} class:is-disabled={disabled} class:is-invalid={invalid} {...ti.rootProps()}>
     {#each value as tag, i (tag + i)}
       <span class="sv-tags__chip" {...ti.tagProps(i)}>
@@ -83,6 +83,8 @@
       class="sv-tags__input"
       placeholder={value.length ? '' : placeholder}
       {...ti.inputProps()}
+      id={uid}
+      aria-label={label ? undefined : M.add}
     />
     {#if name}<input type="hidden" {name} value={value.join(',')} />{/if}
   </div>

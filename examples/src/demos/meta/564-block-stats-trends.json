@@ -1,0 +1,24 @@
+{
+  "description": "A weekly report stats section in Svelte 5: four figures, each with an inline SVG icon, the previous week's value and a trend chip with the percentage change. Metrics where lower is better, such as churn and load time, flip the chip color. The Export CSV SvButton downloads the raw numbers as a CSV file and confirms with an SvToaster message.",
+  "keywords": [
+    "svelte stats with trends",
+    "svelte 5 weekly report",
+    "svelte export csv download",
+    "svelte trend indicator",
+    "svelte metrics with previous value"
+  ],
+  "faq": [
+    {
+      "question": "How does the CSV export work?",
+      "answer": "exportCsv() asks the core for the CSV text: rows of metric, this_week, previous_week and change_pct from the raw numbers, with any cell holding a comma or quote quoted. It hands the text and file name to onExport, where the demo wraps it in a Blob, clicks a temporary link to an object URL, revokes the URL on the next tick and reports the file name with toast.success."
+    },
+    {
+      "question": "How is the trend color decided?",
+      "answer": "Each metric's change is (value - previous) / previous. A rise is good unless the metric sets lowerIsBetter, so fewer churned accounts shows green and a slower load time shows red. The arrow direction always follows the sign, and a hidden '(better)' or '(worse)' is read to screen readers."
+    },
+    {
+      "question": "How does it fit on a phone?",
+      "answer": "The four figures sit in one row on desktop, two columns below 900 px, and below 520 px the padding and figure size shrink. The Export CSV button wraps under the heading when there is no room beside it."
+    }
+  ]
+}

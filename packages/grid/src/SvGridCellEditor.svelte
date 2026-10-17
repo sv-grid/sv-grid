@@ -36,6 +36,7 @@
     hasCellEditor,
     resolveEditorProps,
     type CellEditorContext,
+    type CellEditorRegistration,
   } from "./editor-registry";
   import type { SvGridController } from "./SvGrid.controller.svelte";
 
@@ -122,6 +123,18 @@
   // Build the interaction context handed to a CUSTOM cell editor registered via
   // `registerCellEditor`. Maps the grid's editing lifecycle onto the uniform
   // change / commit / cancel contract every registered editor speaks.
+  // The registration of the custom editor that is mounted, kept for its whole
+  // life. When the edit ends, editingCell clears before the editor unmounts,
+  // and a prop the editor reads in that window (an input's onChange firing on
+  // the blur the commit causes) re-runs the props spread: looked up again from
+  // the cleared cell, the registration came back undefined and threw.
+  let mountedRegistration: CellEditorRegistration | undefined;
+  function registrationFor(type: string): CellEditorRegistration | undefined {
+    const found = getCellEditor(type);
+    if (found) mountedRegistration = found;
+    return found ?? mountedRegistration;
+  }
+
   function buildRegisteredEditorContext(): CellEditorContext {
     const cell = ctrl.editingCell;
     return {
@@ -721,9 +734,11 @@
     {:else if hasCellEditor(String(ctrl.editingCell?.editorType ?? ""))}
       <!-- Custom editor registered via `registerCellEditor(type, Component)`:
            mount it and hand it the uniform change / commit / cancel context. -->
-      {@const _reg = getCellEditor(String(ctrl.editingCell?.editorType))!}
-      {@const CustomCellEditor = _reg.component}
-      <CustomCellEditor {...resolveEditorProps(_reg, buildRegisteredEditorContext())} />
+      {@const _reg = registrationFor(String(ctrl.editingCell?.editorType))}
+      {#if _reg}
+        {@const CustomCellEditor = _reg.component}
+        <CustomCellEditor {...resolveEditorProps(_reg, buildRegisteredEditorContext())} />
+      {/if}
     {:else if (ctrl.editingCell?.editorType ?? "text") === "text" && column?.columnDef.editorMultiline}
       <!-- The text editor with room for line breaks: Alt+Enter inserts one
            (handled in onEditorKeyDown), Enter commits like the input's, and

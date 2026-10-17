@@ -1,0 +1,24 @@
+{
+  "description": "A discussion thread for Svelte 5 built from the SvGrid UI kit. Each comment shows an SvAvatar, name, relative time and body with Like and Reply actions, and replies nest one level deep. Reply opens an inline SvTextArea composer under that comment, and the composer at the bottom validates the text, shows a loading SvButton and appends the new comment.",
+  "keywords": [
+    "svelte comments page",
+    "svelte 5 comment thread",
+    "svelte nested replies",
+    "svelte comment composer",
+    "svelte discussion feed"
+  ],
+  "faq": [
+    {
+      "question": "How does the composer validate?",
+      "answer": "check() returns an error message when the text is empty or shorter than 3 characters. The message goes to the SvTextArea error prop with invalid set, and typing clears it. Post and Ctrl+Enter both run the same post() function."
+    },
+    {
+      "question": "Why do replies only nest one level?",
+      "answer": "Reply on a nested comment opens the composer under its top-level parent and prefills an @mention of the person you are answering. New replies are pushed onto the parent's replies array, so the thread never goes deeper than one level."
+    },
+    {
+      "question": "How do I save comments to my backend?",
+      "answer": "Pass onPost to createComments: it gets the text and the parent (null for a top-level comment), and a thrown error keeps the draft. The block's onPost is a setTimeout stand-in, so replace it with a POST to your comments endpoint. toggleLike() flips the local count, so send the like or unlike from there."
+    }
+  ]
+}

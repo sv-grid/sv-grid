@@ -46,7 +46,7 @@ bar, and the Kanban, scheduler and Gantt renderers.
 less than $1M in yearly revenue, self-declared at purchase. It comes without
 support (no email, no Slack; public GitHub issues only, as with the Community
 tier), and its yearly renewal pays for updates only. Indie orders are
-fulfilled with a standard Grid key. Grow past the threshold and you move the
+fulfilled with the same license key every customer receives. Grow past the threshold and you move the
 seats to Grid at your next renewal.
 
 **Suite ($999)** adds the two things that are their own products:
@@ -128,23 +128,23 @@ setLicenseKey(KEY)
 That is the evaluation: every feature, with the watermark and the
 console message until a key is set. Once you're sold, drop in a key.
 
-## A Grid key on a Suite feature
+## Editions are a license term, not a key check
 
-The same rule, for the same reason. A Grid Developer License that opens
-`<SvSheet>` or `<SvBase>`, calls the formula engine, or reaches a Studio data source gets the
-watermark and a one-time console notice naming the feature. Nothing stops
-working and nothing is hidden, so a Grid-tier team can try the spreadsheet in
-their own app before deciding to upgrade, exactly as an unlicensed team can.
+Every customer receives the same license key, whichever edition they bought,
+and the package reads every valid key as covering the whole Suite. The edition
+is set by the license (the EULA), not enforced by the key: a Grid team that
+opens `<SvSheet>` or `<SvBase>` sees no watermark, and using a Suite product in
+production still needs a Suite license.
 
 ```ts
 import { licenseCovers } from '@svgrid/enterprise'
 
-licenseCovers('spreadsheet') // false on a GRID key, true on SUITE
+licenseCovers('spreadsheet') // true with any valid key, false with no key
 licenseCovers('base')        // SvGrid Base: the same
 ```
 
-Use `licenseCovers` if you want to hide a Suite-only entry point in your own UI
-rather than let it nudge.
+Use `licenseCovers` if you want to hide an Enterprise entry point in your own UI
+until a key is set, rather than let it nudge.
 
 ## Studio (data-app generator)
 

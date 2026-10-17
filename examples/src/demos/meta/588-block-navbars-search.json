@@ -1,0 +1,24 @@
+{
+  "description": "A storefront navbar for Svelte 5 built from the SvGrid UI kit: brand, an SvTextInput search form, an account SvMenu (Orders, Wishlist, Addresses, Sign out) and a cart button with an SvBadge count, over a row of category links. Submitting the search toasts the query, and Add to cart on the mock product tiles raises the badge. On phones the search drops under the bar and the categories move behind a menu button.",
+  "keywords": [
+    "svelte navbar with search",
+    "svelte 5 ecommerce header",
+    "svelte storefront navigation",
+    "svelte cart badge count",
+    "svelte account dropdown menu"
+  ],
+  "faq": [
+    {
+      "question": "How do I send the search to a real results page?",
+      "answer": "The search form spreads searchProps(), which prevents the default submit and calls onSearch with the trimmed query; an empty query goes to onEmptySearch instead. In SvelteKit pass onSearch: (q) => goto(`/search?q=${encodeURIComponent(q)}`) to createSearchNavbar()."
+    },
+    {
+      "question": "How does the cart count stay in sync?",
+      "answer": "The core keeps the count in nav.cartCount, seeded from the cartCount option. addToCart(product) raises it and calls onAddToCart with the product and the new count, and cartProps() gives the cart button an aria-label that reads the count, since the SvBadge itself is aria-hidden."
+    },
+    {
+      "question": "What changes on a phone?",
+      "answer": "Below 768 px the top row wraps: a menu button appears before the brand, the search form takes a full row under it, and the category links move into a vertical panel that the menu button opens. Escape or a category click closes it, and the product grid drops to two columns."
+    }
+  ]
+}

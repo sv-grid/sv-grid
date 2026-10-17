@@ -1,0 +1,24 @@
+{
+  "description": "A scheduled maintenance page block for Svelte 5: what is changing, a live countdown to the expected finish time, an SvProgress bar and a step list that advance with the clock, a notify-me SvTextInput that checks the email format before the SvButton submits, and a status link. The interval is cleared in the $effect teardown.",
+  "keywords": [
+    "svelte maintenance page",
+    "svelte 5 downtime page countdown",
+    "svelte coming back soon page",
+    "sveltekit maintenance mode block",
+    "svelte countdown timer progress bar"
+  ],
+  "faq": [
+    {
+      "question": "How does the countdown stay live without leaking timers?",
+      "answer": "An $effect inside createMaintenance starts a one-second setInterval that updates now and returns a function that clears it, so the interval stops when the block unmounts. The countdown, progress and current step are all $derived from now."
+    },
+    {
+      "question": "How do I set the real maintenance window?",
+      "answer": "Pass startsAt and endsAt as millisecond timestamps. By default the window started 26 minutes ago and ends in 19. When the end passes the clock reads Any minute now."
+    },
+    {
+      "question": "How does the notify-me field validate?",
+      "answer": "On submit the email is checked against a simple pattern; a bad value sets the SvTextInput error. A valid one shows loading on the button, then a success toast and a confirmation line in place of the form."
+    }
+  ]
+}

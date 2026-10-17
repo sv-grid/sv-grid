@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte product page built from the SvGrid UI kit, with a gallery on the left and the details on the right. The gallery has previous and next buttons and a thumbnail strip of native radios, so the arrow keys pick an image. The details show a read-only SvRating, the price, color swatches, an SvSegmented size picker that disables sizes sold out in the chosen color, an SvNumberInput quantity, an SvButton Add to cart that asks for a size first, and an SvAccordion with Details, Shipping and Returns. All state lives in the headless createProductOverview() core.",
+  "keywords": [
+    "svelte product page",
+    "svelte 5 product detail with gallery",
+    "svelte size picker sold out sizes",
+    "svelte image gallery thumbnails keyboard",
+    "svelte headless product overview component"
+  ],
+  "faq": [
+    {
+      "question": "How does the size validation work?",
+      "answer": "add() checks that a size is chosen before it calls your onAdd option. Without one it sets sizeError to Choose a size., which the block passes to SvSegmented as error and invalid, and the cart request is not sent. Picking a size clears the error."
+    },
+    {
+      "question": "How are sold-out sizes handled?",
+      "answer": "Each color lists its soldOut sizes. sizeOptions marks those options disabled for the current color, a hint under the picker names them, and switching to a color where the chosen size is sold out clears the size so the shopper picks again."
+    },
+    {
+      "question": "What changes on a phone?",
+      "answer": "Below 760 px the two columns become one: the gallery with its thumbnails comes first and the details follow under it, with tighter padding and a smaller heading, so the page fits 375 px."
+    }
+  ]
+}

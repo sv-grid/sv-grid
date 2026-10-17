@@ -1,0 +1,24 @@
+{
+  "description": "Four SvStat cards that compare each metric with the previous period in a Svelte 5 dashboard: a signed change with an up or down arrow, green when the move is good and red when it is bad, plus the previous value. Churn rate and time to convert use invert, so a drop reads green. An SvSegmented switch for 7d, 30d and 90d changes every number.",
+  "keywords": [
+    "svelte kpi cards with trend",
+    "svelte 5 period over period delta",
+    "svelte stat card up down arrow",
+    "svelte segmented date range",
+    "svelte dashboard churn rate card"
+  ],
+  "faq": [
+    {
+      "question": "How is the delta worked out?",
+      "answer": "Each metric stores its current and previous value per period. The delta function returns the percent change with one decimal, or the difference in percentage points for churn rate, which is already a percentage, and an explicit up, down or flat trend."
+    },
+    {
+      "question": "How do I mark a metric where lower is better?",
+      "answer": "Set invert: true on it. The block passes that to SvStat, which colors a downward trend green and an upward one red. The arrow still points the way the number moved."
+    },
+    {
+      "question": "How does the period switch update the cards?",
+      "answer": "SvSegmented is bound to a period state and a $derived narrows it to '7d', '30d' or '90d'. Every value, delta, previous-value hint and the subtitle read from that one key."
+    }
+  ]
+}

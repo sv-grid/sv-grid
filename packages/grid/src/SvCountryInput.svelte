@@ -93,7 +93,7 @@
   })
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir}>
+<SvField id={uid} {label} {hint} {error} {required} {dir} {block}>
   <button bind:this={triggerEl} class="sv-country sv-country--{size}" class:is-block={block} class:is-open={ci.open} class:is-disabled={disabled} class:is-invalid={invalid} {...ci.triggerProps()}>
     {#if selected}
       <span class="sv-country__flag" aria-hidden="true">{flagEmoji(selected.code)}</span>

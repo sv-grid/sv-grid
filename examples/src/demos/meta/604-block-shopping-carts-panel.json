@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte cart slide-over built from the SvGrid UI kit: a product grid where each card's Add to cart SvButton adds the item and opens an SvDrawer cart. The drawer lists the lines with SvNumberInput quantities and Remove links, the subtotal, a Checkout button with a loading state and Continue shopping, and the cart button in the header shows the item count. The headless createCartPanel() core owns the lines, the open state and the totals.",
+  "keywords": [
+    "svelte cart drawer",
+    "svelte 5 slide over cart",
+    "svelte add to cart button",
+    "svelte product grid with cart",
+    "svelte headless shopping cart"
+  ],
+  "faq": [
+    {
+      "question": "What happens when I press Add to cart?",
+      "answer": "add(id) looks the product up in the catalog, adds one to its line (or creates a line with quantity 1, capped at maxQty) and sets open to true, so the SvDrawer slides in. The header count is derived from the lines, so it changes at the same moment. onAdd is called with the line if you want to sync it to a server."
+    },
+    {
+      "question": "How do I connect Checkout to my backend?",
+      "answer": "Pass onCheckout to createCartPanel. It receives a plain copy of the lines and the subtotal in cents; return the promise from your fetch. While it runs the core sets busy, which drives the button's loading state, and when it resolves the drawer closes. If it throws, the drawer stays open with the cart unchanged."
+    },
+    {
+      "question": "How does it look on a phone?",
+      "answer": "Below 640 px the product grid drops from three columns to two and the page padding shrinks to 16 px. The SvDrawer is at most 92% of the viewport wide, so the cart lines, subtotal and buttons stay readable at 375 px."
+    }
+  ]
+}

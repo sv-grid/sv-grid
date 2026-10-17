@@ -143,7 +143,7 @@
   })
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir} loading={loadingProp || loading}>
+<SvField id={uid} {label} {hint} {error} {required} {dir} {block} loading={loadingProp || loading}>
   <div class="sv-ms sv-ms--{size}"
     class:is-block={block} class:is-disabled={disabled}>
     <button
@@ -154,6 +154,7 @@
       {disabled}
       onclick={() => ms.toggle()}
       {...ms.triggerProps()}
+      id={uid}
       {...editorAria({ id: uid, invalid, required, error, hint, ariaLabel })}
     >
       {#if selectedOptions.length === 0}

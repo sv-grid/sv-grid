@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte 5 page heading for a detail page: an SvBreadcrumb trail (Projects, Fieldline Mobile, Releases, v2.4.0) above the h1, an SvBadge status next to the title, and Edit notes plus Publish release SvButtons on the right. On phones the trail is swapped for a single Back to Releases link. Publishing shows the button's loading state, flips the badge to Live and confirms with SvToaster.",
+  "keywords": [
+    "svelte breadcrumb page header",
+    "svelte 5 page heading with breadcrumbs",
+    "svelte back link mobile breadcrumb",
+    "svelte detail page header",
+    "svelte release page header block"
+  ],
+  "faq": [
+    {
+      "question": "What replaces the breadcrumb on a phone?",
+      "answer": "Below 640 px the SvBreadcrumb is hidden and a Back to Releases button is shown instead. It points at the second-to-last crumb, so it always goes one level up whatever the trail holds."
+    },
+    {
+      "question": "Can the crumbs be real links?",
+      "answer": "Yes. Each BreadcrumbItem takes either href or onClick. The demo uses onClick with a toast so the gallery does not navigate away; in an app give each crumb an href. The last item always renders as the current page."
+    },
+    {
+      "question": "How does the publish state work?",
+      "answer": "Publish release sets publishing, which drives the SvButton loading prop, and runs a toast.promise. On success published becomes true, the SvBadge switches from In review to Live and the button disables itself."
+    }
+  ]
+}

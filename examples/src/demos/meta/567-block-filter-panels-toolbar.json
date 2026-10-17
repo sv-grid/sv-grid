@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte filter toolbar over a report library, built from the SvGrid UI kit. One row holds an SvTextInput search, SvDropDownList filters for type, team and status, an SvDropDownList sort and an SvSegmented list or grid view switch. The list below reacts to every change, shows a Clear filters link when anything is filtered, and the toolbar wraps onto several rows on phones.",
+  "keywords": [
+    "svelte filter toolbar",
+    "svelte 5 search and filter bar",
+    "svelte list grid view toggle",
+    "svelte sort dropdown",
+    "svelte dropdown filters over a list"
+  ],
+  "faq": [
+    {
+      "question": "How does the list react to the toolbar?",
+      "answer": "Each control writes to its own $state value (query, type, team, status, sort, view). A single $derived.by filters the reports by name or owner, by the three dropdowns, then sorts by the chosen key, so every change re-runs it. The view value only switches a class on the list between rows and cards."
+    },
+    {
+      "question": "What happens on a phone?",
+      "answer": "Below 720 px the toolbar wraps: the search takes the full width, the four dropdowns sit two per row and the view switch gets its own row. List rows wrap so the views and date line moves under the title instead of pushing the row wider than the screen."
+    },
+    {
+      "question": "How do I keep the filters in the URL?",
+      "answer": "Build a URLSearchParams from the non-default values and call goto('?' + params, { keepFocus: true, noScroll: true, replaceState: true }) from $app/navigation whenever they change. On load, read page.url.searchParams from $app/state to set the initial values, so a filtered view can be shared and survives a reload."
+    }
+  ]
+}

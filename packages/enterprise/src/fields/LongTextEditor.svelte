@@ -6,7 +6,7 @@
    * outside saves, and Escape leaves the cell as it was. With rich text on,
    * the footer names the markup the cell draws.
    */
-  import { portalToBody } from '@svgrid/grid'
+  import { createDismissableLayer, portalToBody } from '@svgrid/grid'
   import { onMount } from 'svelte'
   import { fieldPropsOf } from './registry.svelte'
 
@@ -74,7 +74,12 @@
     window.addEventListener('resize', place)
     window.addEventListener('scroll', onScroll, true)
     document.addEventListener('pointerdown', onDown, true)
+    // Drawn at the end of the page, outside the record view's dialog: as the
+    // top layer it keeps a click in the panel from closing that dialog.
+    const layer = createDismissableLayer({ element: () => [panel ?? null, anchor ?? null], onDismiss: () => {}, closeOnEscape: false, closeOnOutside: false })
+    layer.activate()
     return () => {
+      layer.release()
       cancelAnimationFrame(frame)
       window.removeEventListener('resize', place)
       window.removeEventListener('scroll', onScroll, true)

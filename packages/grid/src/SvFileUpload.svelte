@@ -44,6 +44,7 @@
     maxFiles,
     disabled = false,
     readonly = false,
+    block = false,
     ariaLabel,
     invalid = false,
     required = false,
@@ -53,11 +54,23 @@
     dir,
     id,
     messages,
+    name,
   }: Props = $props()
 
   const autoId = nextEditorId('sv-file')
   const uid = $derived(id ?? autoId)
   const M = $derived(resolveMessages(DEFAULT_MESSAGES, messages))
+
+  // With a `name`, a hidden file input carries the selection so a plain form
+  // post (or new FormData(form)) includes the files, like a native field. The
+  // visible picker is cleared after every pick, so it cannot do that itself.
+  let formInput = $state<HTMLInputElement | null>(null)
+  $effect(() => {
+    if (!formInput || typeof DataTransfer === 'undefined') return
+    const dt = new DataTransfer()
+    for (const f of files) dt.items.add(f)
+    formInput.files = dt.files
+  })
 
   const fu = createFileUpload({
     files: () => files,
@@ -97,8 +110,8 @@
   const fmtSize = (n: number) => (n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(0)} KB` : `${(n / 1048576).toFixed(1)} MB`)
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir}>
-  <div class="sv-file" class:is-disabled={disabled}>
+<SvField id={uid} {label} {hint} {error} {required} {dir} {block}>
+  <div class="sv-file" class:is-block={block} class:is-disabled={disabled}>
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
       class="sv-file__zone"
@@ -117,6 +130,7 @@
       {#if accept}<p class="sv-file__types">{M.hintTypes} {accept}</p>{/if}
       <input bind:this={inputEl} class="sv-file__input" {...fu.inputProps()} onchange={onInputChange} />
     </div>
+    {#if name}<input bind:this={formInput} type="file" {name} multiple hidden tabindex="-1" aria-hidden="true" />{/if}
 
     {#if files.length}
       <ul class="sv-file__list">
@@ -141,6 +155,7 @@
     --_radius: var(--sg-radius, 8px);
     display: flex; flex-direction: column; gap: 8px; width: 320px; color: var(--sg-fg, #0f172a);
   }
+  .sv-file.is-block { width: 100%; }
   .sv-file.is-disabled { opacity: 0.6; }
   .sv-file__zone {
     display: flex; flex-direction: column; align-items: center; gap: 4px;

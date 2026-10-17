@@ -16,7 +16,7 @@
  * Run it from anywhere: `node tools/build-shadcn-registry.mjs`.
  * Dependency-free so it runs on a fresh clone without `pnpm install`.
  */
-import { readFile, writeFile, mkdir } from 'node:fs/promises'
+import { readFile, writeFile, mkdir, readdir, rm } from 'node:fs/promises'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -51,6 +51,27 @@ const ITEMS = [
   },
 ]
 
+/**
+ * Page blocks (sign-in, error pages, pricing, ...) are published too: a block
+ * is exactly what a shadcn registry item of type registry:block is. They come
+ * from the generated blocks/<group> entries in recipes/registry.json (see
+ * tools/sync-block-recipes.mjs), so a new block needs no edit here.
+ */
+async function blockItems() {
+  const registry = JSON.parse(await readFile(join(RECIPES, 'registry.json'), 'utf8'))
+  return registry.items
+    .filter((it) => String(it.group ?? '').startsWith('blocks/'))
+    .map((it) => ({
+      name: it.id,
+      title: `${it.title} block`,
+      description: it.description,
+      recipe: it.files[0].from,
+      target: `blocks/${it.files[0].write}`,
+      dependencies: it.deps,
+      categories: ['blocks', it.group.slice('blocks/'.length)],
+    }))
+}
+
 async function buildItem(item) {
   const content = await readFile(join(RECIPES, item.recipe), 'utf8')
   return {
@@ -62,7 +83,9 @@ async function buildItem(item) {
     author: 'jQWidgets Ltd <https://svgrid.com>',
     dependencies: item.dependencies,
     categories: item.categories,
-    docs: `Docs: ${SITE}/docs/getting-started/ - migrating from the shadcn-svelte data table: ${SITE}/docs/help/migrating-from-shadcn-data-table/`,
+    docs: item.categories.includes('blocks')
+      ? `Docs: ${SITE}/docs/help/ui-blocks/${item.categories[1]}/`
+      : `Docs: ${SITE}/docs/getting-started/ - migrating from the shadcn-svelte data table: ${SITE}/docs/help/migrating-from-shadcn-data-table/`,
     files: [
       {
         // `content` (not `path`) is what a SERVED item carries - the CLI fetches
@@ -79,7 +102,7 @@ async function main() {
   await mkdir(OUT_DIR, { recursive: true })
 
   const built = []
-  for (const item of ITEMS) {
+  for (const item of [...ITEMS, ...(await blockItems())]) {
     const json = await buildItem(item)
     await writeFile(join(OUT_DIR, `${item.name}.json`), JSON.stringify(json, null, 2) + '\n')
     built.push({ name: item.name, type: json.type, title: item.title, description: item.description })
@@ -93,6 +116,13 @@ async function main() {
     items: built,
   }
   await writeFile(join(OUT_DIR, 'registry.json'), JSON.stringify(index, null, 2) + '\n')
+
+  // A block removed from the registry must stop being served: drop item files
+  // this run did not write. The folder holds only this generator's output.
+  const keep = new Set([...built.map((b) => `${b.name}.json`), 'registry.json'])
+  for (const f of await readdir(OUT_DIR)) {
+    if (f.endsWith('.json') && !keep.has(f)) await rm(join(OUT_DIR, f))
+  }
 
   console.log(
     `build-shadcn-registry: ${built.length} item(s) -> website/public/r/ ` +

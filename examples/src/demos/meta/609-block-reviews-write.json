@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte write-a-review form built from the SvGrid UI kit: a required SvRating star input, an SvTextInput title, an SvTextArea body with a 30-character minimum and a live counter, an SvFileUpload for up to three images and an SvSegmented yes/no recommend control. Submitting validates every field, shows the SvButton loading state, then swaps the form for a thank-you view that previews the posted review with its photos.",
+  "keywords": [
+    "svelte write a review form",
+    "svelte 5 star rating input",
+    "svelte review form validation",
+    "svelte image upload form",
+    "svelte product review submit"
+  ],
+  "faq": [
+    {
+      "question": "How does validation work?",
+      "answer": "createReviewForm() derives an error for each required field: no stars chosen, an empty title, or a body under 30 characters after trimming. Errors stay hidden until the first submit; after that each field shows its message through the error and invalid props and clears as soon as it is fixed. A failed submit calls onInvalid with the first bad field, which the block uses to focus it."
+    },
+    {
+      "question": "How are photos limited?",
+      "answer": "SvFileUpload gets accept=\"image/*\", multiple, maxFiles={3} and maxSize of 5 MB. Files that are not images, are too big or go past three are rejected by the component and reported through onReject, which the block turns into a warning toast. The kept files are bound to the core and previewed with object URLs that are revoked when the selection changes."
+    },
+    {
+      "question": "How do I post the review to my backend?",
+      "answer": "Pass onSubmit to createReviewForm. It receives rating, title, body, photos and recommend; build a FormData with the photos appended and POST it. While the promise is pending the submit button shows its loading state; if it throws, the form stays open with the values intact, and if it resolves the thank-you view appears."
+    }
+  ]
+}

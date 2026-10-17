@@ -150,7 +150,7 @@
   .search-input input:focus {
     outline: none;
     border-color: var(--sg-accent, #6366f1);
-    box-shadow: var(--sg-focus-ring, 0 0 0 3px rgba(99,102,241,0.18));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--sg-focus-ring, #6366f1) 18%, transparent);
   }
   .search-clear {
     position: absolute; right: 8px; top: 50%; transform: translateY(-50%);

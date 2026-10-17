@@ -135,6 +135,9 @@ sparklines, collaboration). The genuine remaining gaps:
 | ~~**Chart depth program** (axis model, 13 more series types, interaction, financial toolkit, builder)~~ | **shipped** 12 Sep 2026, all free in `@svgrid/grid` - per-axis config with a numeric x axis and reference bands; histogram, range, lollipop, dumbbell, pareto, stream, sunburst, radial, nightingale, chord and bullet; wheel / pinch / pan zoom, range presets, `syncGroup`, a context menu, animation, drilldown, point selection, LTTB decimation; eight indicators with `SvChartPanes`, `rowsToOhlcSpec` + resampling, a last-price line, flags, drawing tools; PDF and print; the in-panel builder with a type gallery, Format tab and link / unlink; `<sv-chart>` with React / Vue / Angular wrappers. Demos 434 to 437 | ✓ |
 | ~~**Server-side pivot**~~ | **shipped** (Enterprise) - `createServerRowModel` sends `pivotBy` + `pivotMode`, builds the columns from `pivotResultFields`, and `SvPivotDesigner` drives it in server mode; see [Server pivot](./server/server-pivot.md) | ✓ |
 | **Viewport row model** (the server pushes the visible window over a socket) | not built; [real-time](./real-time.md) merges deltas into loaded rows instead, and a socket can push a whole level through `applyRowData` | M |
+| **3D charts** | not built; the 29 chart types are all 2D | L |
+| **More render modes, starting with Canvas** | not built; the grid renders to the DOM, with row and column virtualization | L |
+| **Spreadsheet gaps** (track changes, page layout, chart formatting, pivot field list and slicers, Data > Subtotal, server-backed collaboration) | listed with what ships today under [What it does not do](./cells/spreadsheet-shell.md#what-it-does-not-do) | M to L |
 
 ## What's already there
 

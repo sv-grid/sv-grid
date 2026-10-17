@@ -1,0 +1,24 @@
+{
+  "description": "A three-step checkout in Svelte 5 behind an SvStepper: Shipping (SvTextInput, SvPhoneInput, SvCountryInput and a delivery SvRadioGroup), Payment (SvMaskedInput card fields and a billing SvCheckBox) and Review. Each step validates before Continue moves on, Review lists everything entered with Edit links that jump back and return straight to Review, and Place order shows the SvButton loading state. The headless createSteppedCheckout() core holds the step, values and order flow.",
+  "keywords": [
+    "svelte multi step checkout",
+    "svelte 5 checkout wizard",
+    "svelte stepper form validation",
+    "svelte checkout review step",
+    "svelte place order page"
+  ],
+  "faq": [
+    {
+      "question": "How does per-step validation work?",
+      "answer": "Continue runs validateStep() for the current step only. If anything fails, the step's fields show their errors and stay put; once the step passes, the core moves to the next one. Errors follow the values after the first attempt, so fixing a field clears its message."
+    },
+    {
+      "question": "What do the Edit links on Review do?",
+      "answer": "Edit calls edit(step), which jumps back to Shipping or Payment and remembers you came from Review. The primary button then reads Save and review, and after the step validates it returns straight to Review instead of walking through the steps again."
+    },
+    {
+      "question": "How do I create the real order?",
+      "answer": "Pass onPlace to createSteppedCheckout(). It receives every value and the total in integer cents and should resolve with the order number; the block then shows the placed state. If it throws, the shopper stays on Review with their data intact."
+    }
+  ]
+}

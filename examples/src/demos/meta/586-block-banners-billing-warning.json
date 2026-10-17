@@ -1,0 +1,24 @@
+{
+  "description": "A failed-payment banner for Svelte 5 built from the SvGrid UI kit: the declined invoice, an SvBadge with days left before suspension and an Update payment method SvButton. It opens an SvModal with a card form of SvTextInput and three SvMaskedInputs (card number with a checksum test, expiry, CVC) validated on save. Saving shows a loading state and turns the banner into a payment received state.",
+  "keywords": [
+    "svelte payment failed banner",
+    "svelte 5 billing warning",
+    "svelte credit card form masked input",
+    "svelte dunning banner",
+    "svelte update payment method modal"
+  ],
+  "faq": [
+    {
+      "question": "How is the card form validated?",
+      "answer": "createBillingWarning() derives an errors object from the four fields: a name must be present, the card number needs 16 digits and must pass the Luhn checksum, the expiry must be a real month that has not passed, and the CVC needs 3 digits. billing.errors stays empty until the first save attempt, so messages show only after it."
+    },
+    {
+      "question": "Should I send card numbers to my own server?",
+      "answer": "Usually not. Most teams use their payment provider's hosted fields or checkout so raw card data never reaches their servers. Keep this form for the layout and validation feedback, or point the onSave option of createBillingWarning() at a provider SDK that tokenizes the card."
+    },
+    {
+      "question": "What changes on a phone?",
+      "answer": "Below 720 px the banner wraps so the two buttons sit on a row under the message, and the placeholder grid drops from three columns to two. The modal keeps expiry and CVC side by side."
+    }
+  ]
+}

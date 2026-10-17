@@ -14,8 +14,9 @@ server-side data, and full keyboard + screen-reader support. Two packages:
 `@svgrid/grid` (MIT) and `@svgrid/enterprise` (commercial add-on).
 
 > **This is a library, not a source-copy CLI.** You `import` from
-> `@svgrid/grid`; there is no "add component" step. Write correct code
-> against the API below and ground uncertain details in the live docs
+> `@svgrid/grid`; there is no "add component" step. (Page blocks such as a
+> login screen are the one copy-in layer, see [blocks.md](./rules/blocks.md).)
+> Write correct code against the API below and ground uncertain details in the live docs
 > (see [Grounding](#grounding-look-it-up-dont-guess)).
 
 ## Current project context
@@ -127,6 +128,14 @@ code pairs.
 - **Qualify addresses in `formats`** to reach another sheet
   (`'Orders!F2'`); `onAction` returning `true` takes an action over.
 
+### Page blocks → [blocks.md](./rules/blocks.md)
+
+- **Blocks are the one copy-in layer.** For a login page, 2FA screen, app
+  shell, dashboard or pricing section, `npx @svgrid/ui add <block>` copies a
+  single `.svelte` file (imports `@svgrid/grid` only) into the project; then
+  edit it. Components stay imports. Read block names from
+  `npx @svgrid/ui list`, never guess them.
+
 ## Grounding: look it up, don't guess
 
 SvGrid ships machine-readable grounding so you never invent an API. When a
@@ -202,3 +211,4 @@ Tailwind). Use the project's package runner (`npm create` / `pnpm create` /
 - [rules/columns.md](./rules/columns.md) - ColumnDef, custom cells, widths, types, formatting, editors
 - [rules/data-and-features.md](./rules/data-and-features.md) - feature toggles, the SvGridApi, selection, server-side data
 - [rules/theming.md](./rules/theming.md) - `--sg-*` tokens, dark mode, design-system presets, the shadcn bridge
+- [rules/blocks.md](./rules/blocks.md) - page blocks (sign-in, app shell, pricing, ...) copied in with `npx @svgrid/ui add`

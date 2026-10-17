@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte featured article section built from the SvGrid UI kit. The lead post has large inline SVG cover art, a category SvBadge, the title, the full excerpt and an SvAvatar byline with the date and reading time. Beside it a list shows the four most recent other posts with their date and reading time, followed by a View all posts link. Below 760 px the two columns stack.",
+  "keywords": [
+    "svelte featured article",
+    "svelte 5 blog homepage section",
+    "svelte recent posts list",
+    "svelte blog layout",
+    "svelte latest posts block"
+  ],
+  "faq": [
+    {
+      "question": "Which post becomes the lead article?",
+      "answer": "createFeaturedPosts() sorts the posts by date, newest first. The lead is the post whose slug matches the featured option, or the newest post when you do not pass one. The recent list holds the next recentCount posts (4 by default) and never repeats the lead."
+    },
+    {
+      "question": "How are dates and reading times formatted?",
+      "answer": "Dates go through one Intl.DateTimeFormat built from the locale option (en-US by default) with the UTC time zone, so an ISO date like 2026-10-08 renders as Oct 8, 2026 on the server and in every browser. Reading time is the word count of the body (or the words field) divided by wordsPerMinute, 225 by default, rounded up."
+    },
+    {
+      "question": "What changes on a phone?",
+      "answer": "Below 760 px the grid drops to one column, so the recent posts list moves under the lead article, the side padding shrinks to 16 px and the lead title goes from 23 px to 20 px. The cover keeps its 16:9 ratio at any width."
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # SvGrid - Examples Gallery
 
-400+ runnable demos covering the full SvGrid feature surface. The first ten
+500+ runnable demos covering the full SvGrid feature surface. The first ten
 below are the guided tour; the rest are grouped by feature in the running app
 and on [svgrid.com/demos](https://svgrid.com/demos/).
 

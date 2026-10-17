@@ -1,0 +1,24 @@
+{
+  "description": "A sitemap footer for Svelte 5 built from the SvGrid UI kit: brand and a one-line summary beside four link columns (Product, Company, Resources, Legal), with an SvBadge on a new link and a bottom bar holding the copyright and a Back to top SvButton. The columns come from one data array passed to the createSitemapFooter() core, and the layout goes from four columns to two to one as the screen narrows.",
+  "keywords": [
+    "svelte footer with link columns",
+    "svelte 5 sitemap footer",
+    "svelte site footer component",
+    "svelte responsive footer",
+    "svelte footer navigation"
+  ],
+  "faq": [
+    {
+      "question": "Where do the link columns come from?",
+      "answer": "From the columns option of createSitemapFooter(), an array of { title, links } objects with SITEMAP_COLUMNS as the default. Pass your own array and the footer renders it; the same array can feed your navbar and sitemap.xml."
+    },
+    {
+      "question": "How is each column announced to screen readers?",
+      "answer": "The columns sit in a nav labelled Footer. Each column heading gets an id from headingProps(i) and its list gets aria-labelledby from listProps(i), so the list is named by its heading. Set idPrefix when two footers share a page."
+    },
+    {
+      "question": "How does the layout change on a phone?",
+      "answer": "Below 860 px the brand moves above the links and the four columns become two; below 340 px they become one. The bottom bar wraps, so the copyright and Back to top stack when there is no room for both."
+    }
+  ]
+}

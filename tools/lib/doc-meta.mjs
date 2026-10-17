@@ -79,6 +79,7 @@ export const SECTION_TITLES = {
   'help/scheduler': 'Scheduler',
   'help/alerts': 'Alerts & scheduling',
   'help/ui-components': 'UI components',
+  'help/ui-blocks': 'UI blocks',
   recipes: 'Recipes',
   reference: 'API reference',
   'enterprise/studio': 'Studio',
@@ -225,6 +226,9 @@ export function docSeoTitle({ slug, section, title }) {
       ])
     }
     return pick([`${h1} - Svelte UI Components | SvGrid UI`, `${h1} - Svelte UI Components`, `${h1} - Svelte UI`])
+  }
+  if (section === 'help/ui-blocks') {
+    return pick([`${h1} - Svelte UI Blocks | SvGrid UI`, `${h1} - Svelte UI Blocks`, `${h1} - Svelte`])
   }
   if (section === 'enterprise/studio') {
     return pick([`${h1} - SvGrid Studio for SvelteKit`, `${h1} - Studio for SvelteKit`, `${h1} - SvelteKit`])

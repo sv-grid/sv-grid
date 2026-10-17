@@ -1,0 +1,24 @@
+{
+  "description": "A features section for a Svelte 5 landing page with a selectable feature list on one side and a product screenshot on the other. The list is an accessible tablist driven by the mouse or the arrow keys, Home and End, and the inline SVG screenshot redraws for the selected feature: a dashboard, a SQL editor, an alert chart or a share dialog. Built with SvBadge, SvButton and SvToaster on an exported createFeatureShowcase() core.",
+  "keywords": [
+    "svelte features with screenshot",
+    "svelte 5 product tour section",
+    "svelte feature tabs with image",
+    "svelte accessible tablist landing page",
+    "svelte saas feature showcase"
+  ],
+  "faq": [
+    {
+      "question": "How does the keyboard navigation work?",
+      "answer": "Only the selected feature is in the tab order. ArrowDown or ArrowRight selects the next feature, ArrowUp or ArrowLeft the previous one, wrapping at the ends, and Home and End jump to the first and last. The core bumps focusTick on each key, and an $effect in the component moves focus to the button at focusIndex, so focus never jumps on page load."
+    },
+    {
+      "question": "How do I use my own screenshots?",
+      "answer": "Each feature has a shot key. The component draws an inline SVG for the four sample keys; replace those branches with an img or your own SVG per key, or pass features with new keys to createFeatureShowcase() and render them. The panel keeps role tabpanel and aria-labelledby from panelProps()."
+    },
+    {
+      "question": "What happens on a phone?",
+      "answer": "Below 820 px the two columns become one. The screenshot moves up under the heading, above the feature list, so tapping a feature shows the change on screen. The DOM order stays list first, so screen readers and the Tab key still meet the list before the panel."
+    }
+  ]
+}

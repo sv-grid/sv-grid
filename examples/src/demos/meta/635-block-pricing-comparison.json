@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte plan comparison table built from the SvGrid UI kit: features grouped into Inventory, Integrations and Admin sections, check marks for included features, limits as text, and a sticky header row with each plan's name, price and an SvButton. The most chosen plan carries an SvBadge and a tinted column. On a phone the table shows one plan column and an SvSegmented above it switches between plans.",
+  "keywords": [
+    "svelte pricing comparison table",
+    "svelte 5 feature comparison table",
+    "svelte sticky table header pricing",
+    "svelte compare plans page",
+    "svelte responsive pricing table mobile"
+  ],
+  "faq": [
+    {
+      "question": "How do I change the features and limits?",
+      "answer": "Pass sections to createPlanComparison(). Each section has a title and features, and each feature has a name and a values object keyed by plan id: true renders a check mark, false a dash, and a string such as '25,000' or 'Read only' is shown as text. The check and the dash carry visually hidden 'Included' and 'Not included' text for screen readers."
+    },
+    {
+      "question": "How does the phone layout work?",
+      "answer": "Below 640 px the SvSegmented appears above the table, bound to the core's focus value. Every plan cell carries a data-plan attribute, and the phone rules hide the cells of all plans except the one in focus, so the table becomes two columns: feature and the selected plan. The section rows span all columns, so they keep their full width."
+    },
+    {
+      "question": "Why does the header row stay visible while scrolling?",
+      "answer": "The header cells use position: sticky with top: 0, so they pin to the top of the nearest scrolling container. If your page has a fixed navbar, raise top to its height. Keep the table out of any wrapper with overflow set, or the header sticks to that wrapper instead of the page."
+    }
+  ]
+}

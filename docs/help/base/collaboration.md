@@ -582,6 +582,13 @@ shows it, or "(cleared)". A field an automation's `updateRecord` sets is
 noted under the automation's name: "Automation: Done ticks the box changed
 Done".
 
+A change someone else made in the database, read in through a table's
+`realtime` source, is noted too, under the name in the record's
+`lastModifiedBy` field, with the value before it: "Triage agent changed
+Priority", Low → Urgent. Until the record is opened, its changed cells are
+tinted and its row number has a dot. See [Changes made
+elsewhere](./data.md#changes-made-elsewhere).
+
 The log lives in memory and keeps the latest 50 changes of each record. In
 `<SvBase tables>` it is kept by base, table and record id, so it survives
 switching tabs; with one table it is kept per grid. It is not exported, and

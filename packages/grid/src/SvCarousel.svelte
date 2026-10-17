@@ -45,12 +45,25 @@
   // Navigation, autoplay (pause on hover/focus + WCAG 2.2.2 stop toggle) and the
   // rtl-aware arrow wiring live in the shared headless core; this component keeps
   // only the visual track + swipe. See createCarousel.svelte.ts.
+  // prefers-reduced-motion turns autoplay off (WCAG 2.2.2 / 2.3.3): slides
+  // only move when the user moves them. Read live so an OS change applies.
+  let reducedMotion = $state(false)
+  $effect(() => {
+    if (typeof matchMedia === 'undefined') return
+    const mq = matchMedia('(prefers-reduced-motion: reduce)')
+    reducedMotion = mq.matches
+    const on = () => (reducedMotion = mq.matches)
+    mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
+  })
+  const effectiveAutoplay = $derived(reducedMotion ? 0 : autoplay)
+
   const car = createCarousel({
     count: () => count,
     current: () => current,
     onChange: (i) => (current = i),
     loop: () => loop,
-    autoplay: () => autoplay,
+    autoplay: () => effectiveAutoplay,
     dir: () => (dir === 'ltr' || dir === 'rtl' ? dir : undefined),
   })
   const rtl = $derived(car.rtl())
@@ -98,7 +111,7 @@
     </div>
   {/if}
 
-  {#if autoplay > 0}
+  {#if effectiveAutoplay > 0}
     <button type="button" class="sv-carousel__playpause" {...car.playPauseProps()}>{car.userPaused ? '▶' : '⏸'}</button>
   {/if}
 </div>
@@ -108,6 +121,7 @@
   .sv-carousel__viewport { overflow: hidden; touch-action: pan-y; }
   .sv-carousel__track { display: flex; transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1); }
   .sv-carousel__track.is-dragging { transition: none; }
+  @media (prefers-reduced-motion: reduce) { .sv-carousel__track { transition: none; } }
   .sv-carousel__slide { flex: 0 0 100%; min-width: 0; }
   .sv-carousel__slide :global(img) { display: block; width: 100%; height: 100%; object-fit: cover; }
 

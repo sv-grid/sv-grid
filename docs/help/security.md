@@ -18,7 +18,7 @@ our InfoSec team?".
 | Telemetry                         | **Zero.** No `fetch`, no `navigator.sendBeacon`, no console identifiers. |
 | `eval` / `new Function` / dynamic code | **None in `@svgrid/grid`.** See [CSP-compliant grid](https://svgrid.com/demos/16-csp-compliant/) demo + runtime self-check. |
 | Cookies / localStorage            | None set by the library itself. (Your app's saved-views helpers may opt in.) |
-| Outbound dependencies             | **Community:** zero runtime deps. **Enterprise:** two optional peer deps (`jszip`, `pdfmake`), see below. |
+| Outbound dependencies             | **Community:** one runtime dep, `esm-env` (MIT, no dependencies of its own). **Enterprise:** two optional peer deps (`jszip`, `pdfmake`), see below. |
 | AI calls                          | The user's own `AIProvider` adapter calls whichever endpoint *they* configured. The package never embeds a model client. |
 | License                           | Community: MIT. Enterprise: commercial (see [LICENSE](../../packages/enterprise/LICENSE)). |
 | npm provenance + signing          | Published with `npm publish --provenance` from GitHub Actions; integrity hashes in the npm registry. |
@@ -26,9 +26,10 @@ our InfoSec team?".
 
 ## Runtime dependencies
 
-`@svgrid/grid` has **zero runtime dependencies**. It is a single
-package with no transitive supply chain - the only thing the user's
-build pulls in is `svelte` itself (peer).
+`@svgrid/grid` has **one runtime dependency**, [`esm-env`](https://www.npmjs.com/package/esm-env)
+(MIT), which has no dependencies of its own and only reports the build's
+browser / dev / SSR conditions. Beyond that the user's build pulls in
+`svelte` itself (peer). Verify with `npm view @svgrid/grid dependencies`.
 
 `@svgrid/enterprise` adds two **optional** peer dependencies, both lazy-loaded
 on first use:

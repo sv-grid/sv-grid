@@ -1,0 +1,24 @@
+{
+  "description": "An access denied (403) page block for Svelte 5: it names the report and the missing permission, shows the signed-in account with SvAvatar and email beside a Switch account SvButton, and lets the user request access. Request access opens an optional SvTextArea note with a character count, sending shows loading and a toast, and a pending SvBadge replaces the form.",
+  "keywords": [
+    "svelte 403 page",
+    "svelte 5 access denied page",
+    "svelte request access form",
+    "sveltekit forbidden error page block",
+    "svelte permission denied template"
+  ],
+  "faq": [
+    {
+      "question": "How does the request flow work?",
+      "answer": "A stage state moves from idle to writing when you press Request access, which shows the SvTextArea and Send request. Sending shows loading, fires a success toast and moves to sent, where a pending badge explains who has to approve."
+    },
+    {
+      "question": "How do I send the request to my backend?",
+      "answer": "Pass an onRequest option to createAccessRequest that POSTs the resource, permission and note to your access-request endpoint. The core moves the stage to sent when it resolves and stays on the note form if it rejects."
+    },
+    {
+      "question": "How does it fit on a phone?",
+      "answer": "Below 480 px the card padding shrinks and the account row wraps so Switch account sits under the email instead of squeezing it."
+    }
+  ]
+}

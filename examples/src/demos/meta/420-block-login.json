@@ -14,7 +14,7 @@
     },
     {
       "question": "How does the layout behave on a phone?",
-      "answer": "The two columns stack, the brand panel becomes a short header and the card takes the full width, using the kit's block inputs and no custom media queries in the form itself."
+      "answer": "Below 720 px the grid drops to one column and the brand panel is hidden, so the sign-in card fills the screen on its own. The inputs and buttons use the kit's block width, so the form needs no other phone rules."
     },
     {
       "question": "Is anything here from the grid?",

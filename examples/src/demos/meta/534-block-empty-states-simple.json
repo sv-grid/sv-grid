@@ -1,0 +1,24 @@
+{
+  "description": "An empty Dashboards page built from the SvGrid UI kit in Svelte 5. SvEmptyState shows an icon, a one-line title, one sentence and a New dashboard SvButton; the button opens an inline SvTextInput form that validates the name and creates the first dashboard, and the list then shows it. Deleting the last dashboard brings the empty state back, with an Undo action in the toast.",
+  "keywords": [
+    "svelte empty state page",
+    "svelte 5 empty state component",
+    "svelte create first item",
+    "svelte empty list placeholder",
+    "svelte no data yet block"
+  ],
+  "faq": [
+    {
+      "question": "How does the block decide between the empty state and the list?",
+      "answer": "It renders SvEmptyState when the dashboards array is empty and the create form is closed, and the list otherwise. Load the array from your API or a SvelteKit load function and the same if-branch picks the right view."
+    },
+    {
+      "question": "How is the name validated?",
+      "answer": "The core's create() trims the value and sets an error when it is blank or matches an existing dashboard name; the SvTextInput shows it through its error prop and invalid turns the field red. The required prop also marks the field for screen readers."
+    },
+    {
+      "question": "How do I save the new dashboard to a server?",
+      "answer": "Pass an onCreate option to createDashboardList that POSTs the name. The core adds the dashboard when it resolves, keeps the form open when it rejects, and holds the saving flag around it so the Create button shows its loading spinner."
+    }
+  ]
+}

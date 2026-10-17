@@ -67,7 +67,7 @@
   })
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir}>
+<SvField id={uid} {label} {hint} {error} {required} {dir} {block}>
   <div class="sv-seg sv-seg--{size}" class:is-block={block} class:is-disabled={disabled} class:is-invalid={invalid} {...rg.groupProps()}>
     {#each options as opt (opt.value)}
       <button
@@ -104,7 +104,9 @@
   .sv-seg__opt:hover:not(.is-selected):not([disabled]) { color: var(--sg-fg, #0f172a); }
   .sv-seg__opt.is-selected {
     background: var(--sg-input-bg, #fff); color: var(--sg-fg, #0f172a);
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+    /* The ring keeps the pill visible in dark themes, where --sg-input-bg and
+       the track's --sg-row-hover-bg are almost the same color. */
+    box-shadow: 0 0 0 1px var(--sg-border, #e2e8f0), 0 1px 2px rgba(15, 23, 42, 0.12);
   }
   .sv-seg__opt[disabled] { opacity: 0.5; cursor: default; }
   .sv-seg__opt:focus-visible { outline: 2px solid var(--sg-focus-ring, var(--_accent)); outline-offset: -2px; }

@@ -1,0 +1,24 @@
+{
+  "description": "A centered FAQ section for Svelte 5 built from the SvGrid UI kit: a heading, an SvSegmented switch between Billing, Account and Data, and an SvAccordion with the questions of the chosen topic. Expand all and Collapse all SvButtons open or close every answer in the topic, and a Contact support link sits under the list. The categories, questions and open state live in an exported createFaqCentered() core.",
+  "keywords": [
+    "svelte faq section",
+    "svelte 5 accordion faq",
+    "svelte faq categories",
+    "svelte expand all accordion",
+    "sveltekit faq page"
+  ],
+  "faq": [
+    {
+      "question": "How do the category switch and the accordion share state?",
+      "answer": "createFaqCentered() holds the active category and the list of open question ids. SvSegmented writes the category through the core's setter, which also closes every answer, and SvAccordion binds its expanded list to core.open with expandMode multiple, so clicks on headers and the Expand all and Collapse all buttons edit the same array."
+    },
+    {
+      "question": "How do I add a category or load questions from a CMS?",
+      "answer": "Pass categories as [{ id, label }] and items as [{ id, category, question, answer }] to createFaqCentered(). Each item's category must match a category id. The switch, the question count and the accordion all read from the core, so no markup changes; initialCategory picks the topic shown first."
+    },
+    {
+      "question": "What changes on a phone?",
+      "answer": "Below 560 px the side padding drops to 16 px and the heading shrinks. The segmented switch already fills its 360 px track, so on a phone it spans the width, and answers lose the left indent that lines them up under the question text."
+    }
+  ]
+}

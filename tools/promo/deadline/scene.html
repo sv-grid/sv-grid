@@ -1,0 +1,583 @@
+<!doctype html>
+<!--
+  "Deadline" - a 26-second cartoon promo, 1080 x 1920 (TikTok / Shorts / Reels).
+  Rendered frame by frame by render.mjs: window.__seek(t) puts every CSS
+  animation and every scripted element at time t, so the video is
+  deterministic and never depends on how fast the machine renders.
+
+  Story: 4:52 PM, the grid is due at 5. The manager chases the developer. The
+  developer asks an AI chat to write a grid and spirals into errors at 4:57.
+  Then installs SvGrid instead, and at 4:58 it ships. The grid on the laptop
+  in the last scene is a real screenshot (render.mjs passes it in).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800;900&family=JetBrains+Mono:wght@400;600&display=block" />
+<style>
+  :root {
+    --bg: #0c0a09; --panel: #1c1917; --line: #292524; --fg: #fafaf9; --muted: #a8a29e;
+    --orange: #ff5a1f; --red: #ef4444; --green: #22c55e;
+    --skin: #f4c7a1; --skin-red: #f08a7a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--bg); color: var(--fg); font-variant-ligatures: none; font-family: Inter, system-ui, sans-serif; }
+  #root { position: absolute; inset: 0; }
+  /* Visible only while its own animation runs: no fill, so before its start
+     and after its end the base opacity 0 applies. */
+  .scene { position: absolute; inset: 0; opacity: 0; animation-name: show; animation-fill-mode: none; animation-timing-function: linear; }
+  @keyframes show { from { opacity: 1 } to { opacity: 1 } }
+
+  /* Captions: the story has to work muted, so every beat is in words too. */
+  .cap { position: absolute; left: 72px; right: 72px; top: 130px; font-weight: 900; font-size: 84px; line-height: 1.02; letter-spacing: -0.03em; opacity: 0; animation: cap 0.35s ease-out both; }
+  .cap small { display: block; font-size: 52px; font-weight: 800; color: #d6d3d1; margin-top: 18px; letter-spacing: -0.02em; }
+  .cap em { font-style: normal; color: var(--orange); }
+  .cap .r { color: var(--red); }
+  .cap .g { color: var(--green); }
+  @keyframes cap { from { opacity: 0; transform: translateY(24px) } to { opacity: 1; transform: none } }
+  .capout { animation: cap 0.35s ease-out both, capout 0.2s ease-in both; }
+  @keyframes capout { to { opacity: 0 } }
+  @keyframes gone { to { opacity: 0 } }
+
+  /* Red heartbeat vignette */
+  .vignette { position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 260px 40px rgba(239, 68, 68, 0.55); animation: beat 0.62s ease-out infinite; }
+  @keyframes beat { 0% { opacity: 0.25 } 18% { opacity: 1 } 40% { opacity: 0.45 } 55% { opacity: 0.85 } 100% { opacity: 0.25 } }
+
+  /* ---------------- Scene A: the clock ---------------- */
+  #A { animation-duration: 3.2s; animation-delay: 0s; }
+  #A .wall { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, #1c1917 0 120px, #1a1715 120px 240px); }
+  #A .clock { position: absolute; left: 190px; top: 560px; width: 700px; height: 700px; }
+  #A .stamp { position: absolute; left: 110px; top: 1250px; width: 860px; text-align: center; font-weight: 900; font-size: 92px; letter-spacing: 0.02em; color: var(--red); border: 12px solid var(--red); border-radius: 22px; padding: 14px 0 20px; transform: rotate(-7deg); background: rgba(12,10,9,0.75);
+    animation: stamp 0.28s cubic-bezier(.2,1.6,.4,1) 0.45s both; }
+  @keyframes stamp { from { transform: rotate(-7deg) scale(3); opacity: 0 } to { transform: rotate(-7deg) scale(1); opacity: 1 } }
+  #A .stamp span { display: block; font-size: 50px; letter-spacing: 0.06em; margin-top: 4px; }
+
+  /* ---------------- Scene B: the chase ---------------- */
+  #B { animation-duration: 5s; animation-delay: 3.2s; }
+  #B .sky { position: absolute; inset: 0; background: #292524; }
+  #B .strip { position: absolute; left: 0; top: 820px; width: 4320px; height: 640px; display: flex; animation: scroll 1.1s linear infinite; }
+  @keyframes scroll { from { transform: translateX(0) } to { transform: translateX(-1080px) } }
+  #B .floor { position: absolute; left: 0; right: 0; top: 1440px; height: 480px; background: #171412; border-top: 6px solid #3f3a36; }
+  #B .floorlines { position: absolute; left: 0; top: 1446px; width: 4320px; height: 120px; background: repeating-linear-gradient(90deg, transparent 0 150px, #26221f 150px 156px); animation: scroll 0.55s linear infinite; }
+  #B .speed { position: absolute; height: 6px; border-radius: 3px; background: rgba(250,250,249,0.35); animation: speed 0.45s linear infinite; }
+  @keyframes speed { from { transform: translateX(300px); opacity: 0 } 20% { opacity: 1 } to { transform: translateX(-900px); opacity: 0 } }
+  #B .emp { position: absolute; left: 560px; top: 900px; width: 380px; animation: bob 0.275s ease-in-out infinite alternate; }
+  #B .mgr { position: absolute; left: 70px; top: 820px; width: 430px; animation: bob 0.3s ease-in-out infinite alternate; }
+  @keyframes bob { from { transform: translateY(0) } to { transform: translateY(-22px) } }
+  .bubble { position: absolute; background: #fff; color: #0c0a09; font-weight: 900; border-radius: 28px; padding: 22px 30px; box-shadow: 0 10px 0 rgba(0,0,0,0.35); }
+  .bubble::after { content: ''; position: absolute; bottom: -28px; left: 70px; border: 16px solid transparent; border-top: 28px solid #fff; border-bottom: 0; }
+  #B .bubble { left: 60px; top: 600px; font-size: 64px; transform-origin: 80px 140px; animation: yell 0.3s ease-out 3.6s both, shout 0.18s ease-in-out 3.9s infinite alternate; }
+  @keyframes yell { from { transform: scale(0) } to { transform: scale(1) } }
+  @keyframes shout { from { transform: scale(1) rotate(-1deg) } to { transform: scale(1.05) rotate(1.5deg) } }
+
+  /* Running limbs */
+  .legL, .armL { transform-box: fill-box; transform-origin: 50% 0%; animation: swingA 0.275s ease-in-out infinite alternate; }
+  .legR, .armR { transform-box: fill-box; transform-origin: 50% 0%; animation: swingB 0.275s ease-in-out infinite alternate; }
+  @keyframes swingA { from { transform: rotate(32deg) } to { transform: rotate(-32deg) } }
+  @keyframes swingB { from { transform: rotate(-32deg) } to { transform: rotate(32deg) } }
+  .drop { transform-box: fill-box; animation: drop 0.6s ease-out infinite; }
+  @keyframes drop { from { transform: translate(0,0) scale(1); opacity: 1 } to { transform: translate(-70px,-60px) scale(0.6); opacity: 0 } }
+  .steam { transform-box: fill-box; transform-origin: center; animation: steam 0.7s ease-out infinite; }
+  @keyframes steam { from { transform: translateY(0) scale(0.6); opacity: 0.9 } to { transform: translateY(-80px) scale(1.5); opacity: 0 } }
+
+  /* ---------------- Laptop (scenes C, D, E) ---------------- */
+  .desk { position: absolute; left: 0; right: 0; top: 1330px; height: 600px; background: linear-gradient(#3b2f27, #2a211b); border-top: 8px solid #57463a; }
+  .laptop { position: absolute; left: 60px; top: 560px; width: 960px; }
+  .lid { position: relative; width: 960px; height: 640px; background: #3f3f46; border-radius: 26px 26px 10px 10px; padding: 26px; box-shadow: 0 30px 80px rgba(0,0,0,0.6); }
+  .screen { position: relative; width: 100%; height: 100%; background: #0f0f10; border-radius: 10px; overflow: hidden; }
+  .base { width: 1040px; margin-left: -40px; height: 46px; background: linear-gradient(#a1a1aa, #71717a); border-radius: 0 0 40px 40px; }
+  .peek { position: absolute; left: 330px; top: 330px; width: 420px; }
+
+  /* Scene C: the AI chat */
+  #C { animation-duration: 6.4s; animation-delay: 8.2s; }
+  #C .bg { position: absolute; inset: 0; background: #1c1917; }
+  #C .cam { position: absolute; inset: 0; transform-origin: 540px 900px; animation: push 6.4s ease-in 8.2s both; }
+  @keyframes push { from { transform: scale(1) } to { transform: scale(1.07) } }
+  .chat { position: absolute; inset: 0; display: flex; flex-direction: column; font-size: 23px; }
+  .chat .bar { height: 54px; display: flex; align-items: center; gap: 12px; padding: 0 20px; background: #18181b; border-bottom: 1px solid #27272a; color: #e4e4e7; font-weight: 700; }
+  .chat .bar i { font-style: normal; color: #a78bfa; font-size: 26px; }
+  .chat .log { position: relative; flex: 1; overflow: hidden; padding: 16px 20px; }
+  .chat .feed { position: absolute; left: 20px; right: 20px; bottom: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .msg-u { align-self: flex-end; max-width: 78%; background: #3f3f46; border-radius: 18px 18px 4px 18px; padding: 12px 18px; color: #fafafa; font-weight: 500; }
+  .msg-a { align-self: stretch; font-family: 'JetBrains Mono', monospace; font-size: 17px; line-height: 1.45; color: #d4d4d8; white-space: pre; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 12px 16px; overflow: hidden; }
+  .toast { position: absolute; left: 30px; right: 30px; padding: 18px 22px; border-radius: 14px; background: #450a0a; border: 2px solid var(--red); color: #fecaca; font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 600; box-shadow: 0 16px 40px rgba(0,0,0,0.6); opacity: 0; animation: toast 0.25s cubic-bezier(.2,1.5,.4,1) both; }
+  @keyframes toast { from { opacity: 0; transform: translateY(-40px) scale(0.9) } to { opacity: 1; transform: none } }
+  .clockbadge { position: absolute; right: 60px; top: 470px; font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 46px; padding: 10px 22px; border-radius: 14px; }
+  #C .clockbadge { color: #fff; background: var(--red); animation: blink 0.5s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0.35 } }
+  #C .looming { position: absolute; right: -60px; top: 760px; width: 380px; animation: loom 0.5s ease-out 10.6s both; }
+  @keyframes loom { from { transform: translateX(380px) } to { transform: translateX(0) } }
+
+  /* Scene D: the switch */
+  #D { animation-duration: 3.6s; animation-delay: 14.6s; }
+  #D .bg { position: absolute; inset: 0; background: #1c1917; }
+  #D .flash { position: absolute; inset: 0; background: #fff; animation: flash 0.35s ease-out 14.6s both; }
+  @keyframes flash { from { opacity: 0.9 } to { opacity: 0 } }
+  .term { position: absolute; inset: 0; padding: 26px 30px; font-family: 'JetBrains Mono', monospace; font-size: 30px; line-height: 1.55; white-space: pre; color: #e7e5e4; }
+  .term .p { color: var(--orange); }
+  .term .ok { color: var(--green); }
+  .term .tag { color: #7dd3fc; }
+  .term .at { color: #fcd34d; }
+  .term .file { color: #78716c; font-size: 22px; }
+  .bulb { position: absolute; left: 470px; top: 220px; width: 140px; animation: bulb 0.4s cubic-bezier(.2,1.7,.4,1) 14.7s both; }
+  @keyframes bulb { from { transform: scale(0) translateY(60px); opacity: 0 } to { transform: none; opacity: 1 } }
+
+  /* Scene E: shipped */
+  #E { animation-duration: 4.6s; animation-delay: 18.2s; }
+  #E .bg { position: absolute; inset: 0; background: radial-gradient(circle at 50% 45%, #14532d 0%, #1c1917 55%); animation: calm 1s ease-out 18.2s both; }
+  @keyframes calm { from { opacity: 0 } to { opacity: 1 } }
+  #E .gridshot { width: 100%; height: 100%; object-fit: cover; object-position: left top; animation: pop 0.45s cubic-bezier(.2,1.4,.4,1) 18.3s both; }
+  @keyframes pop { from { transform: scale(0.85); opacity: 0 } to { transform: none; opacity: 1 } }
+  #E .clockbadge { color: #052e16; background: var(--green); }
+  #E .mgr { position: absolute; left: -20px; top: 1080px; width: 380px; animation: slidein 0.5s ease-out 19.6s both; }
+  @keyframes slidein { from { transform: translateX(-420px) } to { transform: none } }
+  #E .bubble { left: 40px; top: 900px; font-size: 52px; animation: yell 0.3s ease-out 20.1s both; }
+  #E .check { position: absolute; right: 90px; top: 800px; width: 200px; animation: bulb 0.45s cubic-bezier(.2,1.7,.4,1) 18.9s both; }
+  .confetti { position: absolute; top: -40px; width: 22px; height: 34px; border-radius: 4px; animation: fall 2.4s linear infinite; }
+  @keyframes fall { from { transform: translateY(0) rotate(0) } to { transform: translateY(2000px) rotate(720deg) } }
+
+  /* Scene F: end card */
+  #F { animation-duration: 4.2s; animation-delay: 22.8s; }
+  #F .bg { position: absolute; inset: 0; background: var(--bg); }
+  #F .card { position: absolute; left: 72px; right: 72px; top: 520px; animation: cap 0.5s ease-out 22.9s both; }
+  #F .logo { display: flex; align-items: center; gap: 26px; font-size: 120px; font-weight: 900; letter-spacing: -0.04em; }
+  #F .logo i { font-style: normal; color: var(--orange); }
+  #F h2 { font-size: 92px; line-height: 1.02; font-weight: 900; letter-spacing: -0.035em; margin-top: 90px; }
+  #F h2 em { font-style: normal; color: var(--orange); }
+  #F .cmd { display: inline-block; margin-top: 70px; font-family: 'JetBrains Mono', monospace; font-size: 48px; background: var(--panel); border: 2px solid var(--line); border-radius: 18px; padding: 22px 32px; }
+  #F .url { margin-top: 50px; font-size: 56px; font-weight: 800; color: var(--muted); }
+</style>
+</head>
+<body>
+<div id="root">
+
+  <!-- A: 0.0 - 3.2  the clock -->
+  <section class="scene" id="A">
+    <div class="wall"></div>
+    <div class="cap" style="animation-delay:0.05s">4:52 PM.<small>The data grid is due at <em>5:00</em>.</small></div>
+    <svg class="clock" viewBox="0 0 700 700" id="clockA"></svg>
+    <div class="stamp">DEADLINE<span>TODAY · 5:00 PM</span></div>
+    <div class="vignette" style="animation-duration:0.9s"></div>
+  </section>
+
+  <!-- B: 3.2 - 8.2  the chase -->
+  <section class="scene" id="B">
+    <div class="sky"></div>
+    <div class="strip" id="strip"></div>
+    <div class="floor"></div>
+    <div class="floorlines"></div>
+    <div id="speedlines"></div>
+    <div class="cap" style="animation-delay:3.25s">Your manager<small>wants it. <span class="r">Now.</span></small></div>
+    <div class="mgr" id="mgrRun"></div>
+    <div class="emp" id="empRun"></div>
+    <div class="bubble">WHERE IS<br>MY GRID?!</div>
+  </section>
+
+  <!-- C: 8.2 - 14.6  the AI spiral -->
+  <section class="scene" id="C">
+    <div class="bg"></div>
+    <div class="cam">
+      <div class="desk"></div>
+      <div class="peek" id="empWorried"></div>
+      <div class="laptop">
+        <div class="lid"><div class="screen">
+          <div class="chat">
+            <div class="bar"><i>✦</i>AI chat</div>
+            <div class="log"><div class="feed" id="feed"></div></div>
+          </div>
+          <div class="toast" style="top:90px;animation-delay:12.55s">TypeError: Cannot read properties of undefined (reading 'sort')</div>
+          <div class="toast" style="top:200px;animation-delay:13.75s">RangeError: Maximum call stack size exceeded</div>
+        </div></div>
+        <div class="base"></div>
+      </div>
+      <div class="looming" id="mgrLoom"></div>
+    </div>
+    <div class="clockbadge">4:57 PM</div>
+    <div class="cap" style="animation: cap 0.35s ease-out 8.25s both, gone 0.01s linear 12.5s forwards" id="capC1">So you ask an AI<small>to write you a grid…</small></div>
+    <div class="cap" style="animation-delay:12.55s" id="capC2"><span class="r">…and debug it.</span><small>At 4:57.</small></div>
+    <div class="vignette"></div>
+  </section>
+
+  <!-- D: 14.6 - 18.2  the switch -->
+  <section class="scene" id="D">
+    <div class="bg"></div>
+    <div class="desk"></div>
+    <div class="peek" id="empDetermined"></div>
+    <svg class="bulb" viewBox="0 0 140 180" id="bulb"></svg>
+    <div class="laptop">
+      <div class="lid"><div class="screen"><div class="term" id="term"></div></div></div>
+      <div class="base"></div>
+    </div>
+    <div class="cap" style="animation-delay:14.7s">Or you <em>install</em> one.</div>
+    <div class="flash"></div>
+  </section>
+
+  <!-- E: 18.2 - 22.8  shipped -->
+  <section class="scene" id="E">
+    <div class="bg"></div>
+    <div id="confetti"></div>
+    <div class="desk"></div>
+    <div class="peek" id="empHappy"></div>
+    <div class="laptop">
+      <div class="lid"><div class="screen"><img class="gridshot" id="gridshot" alt="" /></div></div>
+      <div class="base"></div>
+    </div>
+    <svg class="check" viewBox="0 0 220 220"><circle cx="110" cy="110" r="104" fill="#22c55e"/><path d="M60 114 L96 150 L164 78" fill="none" stroke="#052e16" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="mgr" id="mgrHappy"></div>
+    <div class="bubble">…that's<br>exactly it.</div>
+    <div class="clockbadge">4:58 PM</div>
+    <div class="cap" style="animation-delay:18.3s"><span class="g">Shipped.</span><small>Two minutes early.</small></div>
+  </section>
+
+  <!-- F: 22.8 - 27.0  end card -->
+  <section class="scene" id="F">
+    <div class="bg"></div>
+    <div class="card">
+      <div class="logo" id="logo"></div>
+      <h2>Don't generate a grid.<br><em>Install one.</em></h2>
+      <div class="cmd">npm install @svgrid/grid</div>
+      <div class="url">svgrid.com</div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ------------------------------------------------------------------ art */
+const SKIN = '#f4c7a1', HAIR = '#2b1d14', HOODIE = '#ff5a1f', JEANS = '#1e3a5f'
+
+/** The developer. mood: worried | determined | happy. pose: run | desk */
+function employee(mood, pose) {
+  const face = {
+    worried: `
+      <path d="M112 116 L140 104" stroke="${HAIR}" stroke-width="7" stroke-linecap="round"/>
+      <path d="M188 116 L160 104" stroke="${HAIR}" stroke-width="7" stroke-linecap="round"/>
+      <circle cx="128" cy="138" r="14" fill="#fff"/><circle cx="172" cy="138" r="14" fill="#fff"/>
+      <circle cx="131" cy="141" r="7" fill="#111"/><circle cx="175" cy="141" r="7" fill="#111"/>
+      <path d="M132 186 q9 -10 18 0 q9 10 18 0" fill="none" stroke="#7a2e1d" stroke-width="6" stroke-linecap="round"/>
+      <path d="M210 108 q14 22 0 32 q-14 -10 0 -32z" fill="#7dd3fc"/>`,
+    determined: `
+      <path d="M110 108 L142 118" stroke="${HAIR}" stroke-width="8" stroke-linecap="round"/>
+      <path d="M190 108 L158 118" stroke="${HAIR}" stroke-width="8" stroke-linecap="round"/>
+      <circle cx="128" cy="140" r="12" fill="#fff"/><circle cx="172" cy="140" r="12" fill="#fff"/>
+      <circle cx="128" cy="142" r="7" fill="#111"/><circle cx="172" cy="142" r="7" fill="#111"/>
+      <path d="M134 186 L166 184" stroke="#7a2e1d" stroke-width="7" stroke-linecap="round"/>`,
+    happy: `
+      <path d="M112 104 q16 -12 30 -2" fill="none" stroke="${HAIR}" stroke-width="7" stroke-linecap="round"/>
+      <path d="M188 104 q-16 -12 -30 -2" fill="none" stroke="${HAIR}" stroke-width="7" stroke-linecap="round"/>
+      <path d="M116 142 q12 -16 24 0" fill="none" stroke="#111" stroke-width="7" stroke-linecap="round"/>
+      <path d="M160 142 q12 -16 24 0" fill="none" stroke="#111" stroke-width="7" stroke-linecap="round"/>
+      <circle cx="112" cy="168" r="11" fill="#f9a8a8" opacity="0.7"/><circle cx="188" cy="168" r="11" fill="#f9a8a8" opacity="0.7"/>
+      <path d="M124 174 q26 34 52 0 z" fill="#7a2e1d"/><path d="M132 178 q18 10 36 0" fill="#fff"/>`,
+  }[mood]
+  const head = `
+    <ellipse cx="88" cy="146" rx="12" ry="18" fill="${SKIN}"/><ellipse cx="212" cy="146" rx="12" ry="18" fill="${SKIN}"/>
+    <circle cx="150" cy="140" r="66" fill="${SKIN}"/>
+    <path d="M84 132 q-4 -76 68 -78 q70 0 66 74 q-18 -34 -54 -36 q-10 18 -40 16 q-28 0 -40 24z" fill="${HAIR}"/>
+    ${face}`
+  if (pose === 'run') {
+    return `<svg viewBox="0 0 300 560" xmlns="http://www.w3.org/2000/svg">
+      <g class="legL"><rect x="114" y="330" width="34" height="150" rx="16" fill="${JEANS}"/><ellipse cx="128" cy="486" rx="30" ry="15" fill="#111"/></g>
+      <g class="legR"><rect x="152" y="330" width="34" height="150" rx="16" fill="${JEANS}"/><ellipse cx="172" cy="486" rx="30" ry="15" fill="#111"/></g>
+      <g class="armL"><rect x="70" y="214" width="30" height="120" rx="15" fill="${HOODIE}"/><circle cx="85" cy="336" r="15" fill="${SKIN}"/></g>
+      <rect x="92" y="200" width="116" height="150" rx="30" fill="${HOODIE}"/>
+      <path d="M128 202 q22 24 44 0" fill="none" stroke="#c2410c" stroke-width="6"/>
+      <g transform="rotate(-8 230 280)"><rect x="186" y="236" width="110" height="74" rx="8" fill="#a1a1aa"/><rect x="194" y="244" width="94" height="58" rx="4" fill="#27272a"/></g>
+      <g class="armR"><rect x="200" y="214" width="30" height="110" rx="15" fill="${HOODIE}"/><circle cx="215" cy="326" r="15" fill="${SKIN}"/></g>
+      ${head}
+      <path class="drop" style="animation-delay:-0.1s" d="M222 92 q12 18 0 27 q-12 -9 0 -27z" fill="#7dd3fc"/>
+      <path class="drop" style="animation-delay:-0.4s" d="M84 100 q12 18 0 27 q-12 -9 0 -27z" fill="#7dd3fc"/>
+    </svg>`
+  }
+  // desk: head and shoulders behind the laptop lid
+  return `<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+    <rect x="62" y="210" width="176" height="120" rx="44" fill="${HOODIE}"/>
+    <path d="M122 212 q28 26 56 0" fill="none" stroke="#c2410c" stroke-width="6"/>
+    ${head}
+  </svg>`
+}
+
+/** The manager. mood: angry | happy. pose: run | loom | stand */
+function manager(mood, pose) {
+  const skin = mood === 'angry' ? '#f08a7a' : SKIN
+  const face = mood === 'angry' ? `
+      <path d="M108 112 L146 128" stroke="#3f3f46" stroke-width="10" stroke-linecap="round"/>
+      <path d="M212 112 L174 128" stroke="#3f3f46" stroke-width="10" stroke-linecap="round"/>
+      <circle cx="136" cy="146" r="13" fill="#fff"/><circle cx="184" cy="146" r="13" fill="#fff"/>
+      <circle cx="138" cy="148" r="7" fill="#111"/><circle cx="182" cy="148" r="7" fill="#111"/>
+      <ellipse cx="160" cy="200" rx="34" ry="26" fill="#450a0a"/><rect x="134" y="180" width="52" height="10" rx="4" fill="#fff"/>` : `
+      <path d="M112 116 q18 -10 32 0" fill="none" stroke="#3f3f46" stroke-width="8" stroke-linecap="round"/>
+      <path d="M208 116 q-18 -10 -32 0" fill="none" stroke="#3f3f46" stroke-width="8" stroke-linecap="round"/>
+      <circle cx="136" cy="146" r="12" fill="#fff"/><circle cx="184" cy="146" r="12" fill="#fff"/>
+      <circle cx="136" cy="148" r="7" fill="#111"/><circle cx="184" cy="148" r="7" fill="#111"/>
+      <path d="M134 190 q26 24 52 0" fill="none" stroke="#7a2e1d" stroke-width="7" stroke-linecap="round"/>`
+  // Steam only on the run: on the looming close-up a puff reads as a stray dot.
+  const steam = mood === 'angry' && pose === 'run' ? `
+      <circle class="steam" cx="74" cy="78" r="18" fill="#e7e5e4"/>
+      <circle class="steam" style="animation-delay:-0.35s" cx="246" cy="78" r="18" fill="#e7e5e4"/>
+      <circle class="steam" style="animation-delay:-0.2s" cx="60" cy="96" r="12" fill="#e7e5e4"/>
+      <circle class="steam" style="animation-delay:-0.5s" cx="262" cy="96" r="12" fill="#e7e5e4"/>` : ''
+  const head = `
+    <ellipse cx="92" cy="152" rx="13" ry="20" fill="${skin}"/><ellipse cx="228" cy="152" rx="13" ry="20" fill="${skin}"/>
+    <ellipse cx="160" cy="146" rx="70" ry="78" fill="${skin}"/>
+    <path d="M90 140 q0 -30 14 -46 q-2 30 8 40z M230 140 q0 -30 -14 -46 q2 30 -8 40z" fill="#9ca3af"/>
+    ${face}${steam}`
+  const suit = `
+    <path d="M70 250 q90 -30 180 0 l14 150 h-208z" fill="#27272a"/>
+    <path d="M132 236 l28 60 l28 -60z" fill="#fafafa"/>
+    <path d="M152 250 h16 l8 90 l-16 22 l-16 -22z" fill="#dc2626"/>`
+  if (pose === 'run') {
+    return `<svg viewBox="0 0 320 600" xmlns="http://www.w3.org/2000/svg">
+      <g class="legL"><rect x="116" y="390" width="38" height="160" rx="16" fill="#1f1f23"/><ellipse cx="132" cy="556" rx="34" ry="16" fill="#111"/></g>
+      <g class="legR"><rect x="166" y="390" width="38" height="160" rx="16" fill="#1f1f23"/><ellipse cx="186" cy="556" rx="34" ry="16" fill="#111"/></g>
+      <g class="armL"><rect x="56" y="262" width="34" height="130" rx="16" fill="#27272a"/><circle cx="73" cy="394" r="17" fill="${skin}"/></g>
+      ${suit}
+      <g class="armR"><rect x="232" y="262" width="34" height="130" rx="16" fill="#27272a"/><circle cx="249" cy="394" r="17" fill="${skin}"/></g>
+      ${head}
+    </svg>`
+  }
+  if (pose === 'stand') {
+    // thumbs up
+    return `<svg viewBox="0 0 320 520" xmlns="http://www.w3.org/2000/svg">
+      ${suit}
+      <rect x="232" y="200" width="34" height="110" rx="16" fill="#27272a" transform="rotate(-150 249 262)"/>
+      <!-- Thumbs-up: thumb on the fist's edge, knuckle lines across the
+           front, so it cannot read as any other single raised finger. -->
+      <g transform="translate(262 150)">
+        <rect x="-20" y="-6" width="50" height="44" rx="13" fill="${skin}"/>
+        <rect x="-20" y="-44" width="18" height="46" rx="9" fill="${skin}"/>
+        <path d="M2 6 h26 M2 18 h26 M2 30 h24" stroke="#c98a63" stroke-width="3" stroke-linecap="round"/>
+        <rect x="-22" y="36" width="54" height="12" rx="4" fill="#fafafa"/>
+      </g>
+      ${head}
+    </svg>`
+  }
+  // loom: just the face, glaring in from the edge
+  return `<svg viewBox="40 40 260 230" xmlns="http://www.w3.org/2000/svg">${head}</svg>`
+}
+
+function clockFace() {
+  let s = `<circle cx="350" cy="350" r="330" fill="#fafaf9" stroke="#57534e" stroke-width="22"/>`
+  for (let i = 0; i < 60; i++) {
+    const a = (i * 6 * Math.PI) / 180
+    const big = i % 5 === 0
+    const r1 = big ? 268 : 290, r2 = 312
+    s += `<line x1="${350 + r1 * Math.sin(a)}" y1="${350 - r1 * Math.cos(a)}" x2="${350 + r2 * Math.sin(a)}" y2="${350 - r2 * Math.cos(a)}" stroke="#292524" stroke-width="${big ? 12 : 4}" stroke-linecap="round"/>`
+  }
+  // The last eight minutes before five, shaded red.
+  const arc = (from, to, r) => {
+    const p = (m) => [350 + r * Math.sin((m * 6 * Math.PI) / 180), 350 - r * Math.cos((m * 6 * Math.PI) / 180)]
+    const [x1, y1] = p(from), [x2, y2] = p(to)
+    return `M350 350 L${x1} ${y1} A${r} ${r} 0 0 1 ${x2} ${y2} Z`
+  }
+  s += `<path d="${arc(52, 60, 250)}" fill="#ef4444" opacity="0.25"/>`
+  s += `<g id="hourHand"><rect x="338" y="170" width="24" height="200" rx="12" fill="#1c1917"/></g>`
+  s += `<g id="minHand"><rect x="343" y="78" width="14" height="292" rx="7" fill="#1c1917"/></g>`
+  s += `<g id="secHand"><rect x="346" y="60" width="8" height="330" rx="4" fill="#ef4444"/></g>`
+  s += `<circle cx="350" cy="350" r="22" fill="#ef4444"/>`
+  return s
+}
+
+function bulbSvg() {
+  return `<circle cx="70" cy="70" r="56" fill="#fde047"/>
+    <rect x="46" y="118" width="48" height="34" rx="6" fill="#a8a29e"/>
+    <path d="M70 0 v-0" />
+    ${[0, 45, 90, 135, 180].map((d) => `<line x1="70" y1="70" x2="${70 + 76 * Math.cos(((d + 180) * Math.PI) / 180)}" y2="${70 + 76 * Math.sin(((d + 180) * Math.PI) / 180)}" stroke="#fde047" stroke-width="6" stroke-linecap="round" stroke-dasharray="0 62 14"/>`).join('')}`
+}
+
+function logo(size) {
+  const cols = [{ x: 4, w: 6 }, { x: 11, w: 4 }, { x: 16, w: 4 }]
+  let r = ''
+  for (const c of cols) r += `<rect x="${c.x}" y="4" width="${c.w}" height="4" rx="1.2" fill="#fafaf9" opacity="0.9"/>`
+  r += `<path d="M16.9 5.4 L19.1 5.4 L18 6.9 Z" fill="#ff5a1f"/>`
+  for (const y of [9, 13, 17]) cols.forEach((c, i) => (r += `<rect x="${c.x}" y="${y}" width="${c.w}" height="3" rx="0.9" fill="${i === 2 ? '#ff5a1f' : '#fafaf9'}" opacity="${i === 2 ? 1 : 0.32}"/>`))
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}">${r}</svg><span><i>Sv</i>Grid</span>`
+}
+
+/** One office "tile", 1080 wide, repeated in the scrolling strip. */
+function officeTile(seed) {
+  const win = (x) => `<rect x="${x}" y="20" width="200" height="240" rx="10" fill="#44403c"/><rect x="${x + 12}" y="32" width="176" height="216" rx="6" fill="#57534e"/>
+    <path d="M${x + 12} 248 v-60 h30 v-40 h26 v70 h22 v-90 h28 v60 h24 v-30 h30 v90z" fill="#3f3a36"/>`
+  const desk = (x) => `<rect x="${x}" y="420" width="260" height="22" rx="6" fill="#78716c"/><rect x="${x + 20}" y="442" width="16" height="150" fill="#57534e"/><rect x="${x + 224}" y="442" width="16" height="150" fill="#57534e"/>
+    <rect x="${x + 70}" y="320" width="130" height="90" rx="8" fill="#1c1917" stroke="#a8a29e" stroke-width="6"/><rect x="${x + 126}" y="410" width="18" height="12" fill="#a8a29e"/>`
+  const plant = (x) => `<rect x="${x}" y="500" width="80" height="90" rx="10" fill="#c2410c"/><circle cx="${x + 40}" cy="470" r="46" fill="#15803d"/><circle cx="${x + 12}" cy="440" r="30" fill="#16a34a"/><circle cx="${x + 70}" cy="436" r="32" fill="#16a34a"/>`
+  return `<svg width="1080" height="640" viewBox="0 0 1080 640">
+    ${win(80)}${win(560)}${desk(seed ? 300 : 40)}${plant(seed ? 900 : 760)}
+    <rect x="${seed ? 120 : 470}" y="330" width="70" height="260" rx="14" fill="#e7e5e4"/><rect x="${seed ? 128 : 478}" y="300" width="54" height="50" rx="10" fill="#93c5fd"/>
+  </svg>`
+}
+
+/* ------------------------------------------------------------ assembly */
+const $ = (id) => document.getElementById(id)
+$('clockA').innerHTML = clockFace()
+$('empRun').innerHTML = employee('worried', 'run')
+$('mgrRun').innerHTML = manager('angry', 'run')
+$('empWorried').innerHTML = employee('worried', 'desk')
+$('mgrLoom').innerHTML = manager('angry', 'loom')
+$('empDetermined').innerHTML = employee('determined', 'desk')
+$('empHappy').innerHTML = employee('happy', 'desk')
+$('mgrHappy').innerHTML = manager('happy', 'stand')
+$('bulb').innerHTML = bulbSvg()
+$('logo').innerHTML = logo(130)
+$('strip').innerHTML = [0, 1, 0, 1].map(officeTile).join('')
+$('speedlines').innerHTML = [520, 700, 1180, 1300, 1380, 960].map((y, i) =>
+  `<div class="speed" style="top:${y}px;left:${300 + (i * 137) % 600}px;width:${180 + (i * 53) % 160}px;animation-delay:-${(i * 0.13).toFixed(2)}s"></div>`).join('')
+$('confetti').innerHTML = Array.from({ length: 26 }, (_, i) =>
+  `<div class="confetti" style="left:${(i * 83) % 1060}px;background:${['#ff5a1f', '#22c55e', '#fde047', '#7dd3fc', '#f472b6'][i % 5]};animation-delay:-${((i * 0.37) % 2.4).toFixed(2)}s"></div>`).join('')
+
+/* -------------------------------------------------------- scripted bits */
+// What the AI chat streams: generic hand-rolled table code, fast enough that
+// nobody reads it - the point is the volume, then the errors.
+const GENERATED = `function sortRows(rows, key, dir) {
+  return [...rows].sort((a, b) => {
+    const x = a[key], y = b[key]
+    if (x == null) return 1
+    if (y == null) return -1
+    if (x instanceof Date) return dir * (x - y)
+    return dir * String(x).localeCompare(String(y))
+  })
+}
+function filterRows(rows, filters) {
+  return rows.filter((r) =>
+    Object.entries(filters).every(([k, v]) =>
+      String(r[k] ?? '').toLowerCase()
+        .includes(String(v).toLowerCase())))
+}
+function paginate(rows, page, size) {
+  const start = page * size
+  return rows.slice(start, start + size)
+}
+let sortKey = null, sortDir = 1, page = 0
+function onHeaderClick(col) {
+  if (sortKey === col.key) sortDir = -sortDir
+  else { sortKey = col.key; sortDir = 1 }
+  render()
+}
+function render() {
+  const visible = paginate(
+    sortRows(filterRows(data, filters), sortKey, sortDir),
+    page, pageSize)
+  tbody.innerHTML = visible.map(rowHtml).join('')
+  updatePager()
+  updateAriaSort()
+}
+function startEdit(td, row, key) {
+  const input = document.createElement('input')
+  input.value = row[key]
+  input.onkeydown = (e) => {
+    if (e.key === 'Enter') commit(row, key, input.value)
+    if (e.key === 'Escape') cancel()
+  }
+  td.replaceChildren(input)
+  input.focus()
+}
+function virtualize(container, rowHeight) {
+  const first = Math.floor(container.scrollTop / rowHeight)
+  const count = Math.ceil(container.clientHeight / rowHeight)
+  return { first, count, offset: first * rowHeight }
+}`.split('\n')
+const FIX = `// Fixed: dates now compare by time
+function compareDates(a, b) {
+  return new Date(a).getTime() - new Date(b).getTime()
+}
+function sortRows(rows, key, dir) {
+  return sortRows(rows, key, dir).sort(compareDates)
+}`.split('\n')
+
+function streamed(lines, t0, perSec, t) {
+  if (t < t0) return null
+  return lines.slice(0, Math.min(lines.length, Math.floor((t - t0) * perSec))).join('\n')
+}
+
+function renderChat(t) {
+  const items = []
+  if (t >= 8.6) items.push(`<div class="msg-u">Build me a data grid: sorting, filtering, paging, inline editing. Fast.</div>`)
+  const a1 = streamed(GENERATED, 9.1, 26, t)
+  if (a1 !== null) items.push(`<div class="msg-a">${esc(a1)}</div>`)
+  if (t >= 11.3) items.push(`<div class="msg-u">sorting breaks on dates. fix it</div>`)
+  const a2 = streamed(FIX, 11.7, 9, t)
+  if (a2 !== null) items.push(`<div class="msg-a">${esc(a2)}</div>`)
+  if (t >= 13.2) items.push(`<div class="msg-u">please. it's due in 3 minutes</div>`)
+  $('feed').innerHTML = items.join('')
+}
+
+function renderTerm(t) {
+  let out = ''
+  const typed = (s, t0, cps) => s.slice(0, Math.max(0, Math.min(s.length, Math.floor((t - t0) * cps))))
+  const cmd = 'npm install @svgrid/grid'
+  if (t >= 14.8) out += `<span class="p">$</span> ${esc(typed(cmd, 14.8, 30))}${t < 15.75 && Math.floor(t * 4) % 2 ? '▌' : ''}\n`
+  if (t >= 15.8) out += `<span class="ok">✓</span> @svgrid/grid installed\n\n`
+  if (t >= 16.0) {
+    // The <SvGrid> call from the docs snippet whose output is the next scene.
+    const code = [
+      ['<span class="tag">&lt;SvGrid</span>', '<SvGrid'],
+      ['  <span class="at">data</span>={rows}', '  data={rows}'],
+      ['  <span class="at">columns</span>={columns}', '  columns={columns}'],
+      ['  <span class="at">sortable</span>', '  sortable'],
+      ['  <span class="at">filterable</span>', '  filterable'],
+      ['  <span class="at">editable</span>', '  editable'],
+      ['  <span class="at">groupable</span>', '  groupable'],
+      ['  <span class="at">pageable</span>', '  pageable'],
+      ['<span class="tag">/&gt;</span>', '/>'],
+    ]
+    out += `<span class="file">App.svelte</span>\n`
+    let budget = Math.floor((t - 16.0) * 70)
+    for (const [html, plain] of code) {
+      if (budget <= 0) break
+      if (budget >= plain.length) { out += html + '\n'; budget -= plain.length }
+      else { out += esc(plain.slice(0, budget)); budget = 0 }
+    }
+  }
+  $('term').innerHTML = out
+}
+
+function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }
+
+function setClock(t) {
+  // 4:50:00 at t=0, racing to 4:52:30 by the end of the scene.
+  const secs = 50 * 60 + Math.min(t, 3.2) * (150 / 3.2)
+  const m = secs / 60, s = secs % 60
+  $('minHand').setAttribute('transform', `rotate(${m * 6} 350 350)`)
+  $('hourHand').setAttribute('transform', `rotate(${(4 + m / 60) * 30} 350 350)`)
+  $('secHand').setAttribute('transform', `rotate(${s * 6} 350 350)`)
+}
+
+// Screen shake: a decaying wobble after each hit.
+const HITS = [0.73, 12.55, 13.75, 14.6]
+function shake(t) {
+  let dx = 0, dy = 0
+  for (const h of HITS) {
+    const k = t - h
+    if (k < 0 || k > 0.45) continue
+    const a = 26 * Math.exp(-k * 9)
+    dx += a * Math.sin(k * 90)
+    dy += a * Math.cos(k * 77)
+  }
+  $('root').style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`
+}
+
+function tick(t) {
+  setClock(t)
+  renderChat(t)
+  renderTerm(t)
+  shake(t)
+}
+
+window.__DURATION = 27
+window.__seek = (t) => {
+  for (const a of document.getAnimations()) {
+    a.pause()
+    a.currentTime = t * 1000
+  }
+  tick(t)
+}
+window.__setGrid = (src) => new Promise((resolve) => {
+  const img = $('gridshot')
+  img.onload = resolve
+  img.src = src
+})
+window.__seek(0)
+</script>
+</body>
+</html>

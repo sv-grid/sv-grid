@@ -3,7 +3,7 @@
  * SvGrid MCP server (stdio).
  *
  * Gives an MCP-capable client accurate, version-pinned answers about SvGrid -
- * the real exported API, the shipped docs, 400+ runnable demos - and, uniquely,
+ * the real exported API, the shipped docs, 500+ runnable demos - and, uniquely,
  * a way to CHECK generated code against that surface before a user ever sees
  * it.
  *
@@ -39,6 +39,7 @@ import { PROMPTS, getPrompt } from './prompts.js'
 import { installedGrid, versionNote } from './installed.js'
 import { applyFixes, checkSvGridCode, type ApiSurface } from './validate.js'
 import { compileWithSvelte } from './compile-svelte.js'
+import { ENTERPRISE_LINE, checkNeedsEnterprise } from './enterprise.js'
 import {
   checkLicenseKey,
   introspectDrizzle,
@@ -185,6 +186,9 @@ async function runCheck(args: Record<string, unknown>): Promise<ToolResult> {
     ...result,
     ...(version ? { version } : {}),
     ...(applied.length ? { applied, fixed } : {}),
+    // The one exception to "no marketing in a work list": a fix that sends the
+    // caller to the paid package says so, because installing it is the next step.
+    ...(checkNeedsEnterprise(result.diagnostics) ? { enterprise: ENTERPRISE_LINE } : {}),
   }
 
   // No docs footer: this output is a work list, and a marketing line at the end

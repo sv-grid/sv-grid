@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte testimonial carousel built from the SvGrid UI kit: one large customer quote at a time in an SvCarousel with previous and next arrows, dots, swipe and autoplay that pauses on hover or focus. Each slide has a read-only SvRating, an SvAvatar, the name and role and a Read the story SvButton, and a row of company wordmarks under it jumps straight to that company's quote.",
+  "keywords": [
+    "svelte testimonial carousel",
+    "svelte 5 quote slider",
+    "svelte autoplay carousel reduced motion",
+    "svelte customer quotes slider",
+    "svelte testimonials slideshow"
+  ],
+  "faq": [
+    {
+      "question": "How does autoplay respect reduced motion?",
+      "answer": "createTestimonialCarousel() exposes autoplay, which is the interval (7000 ms by default) or 0 while reducedMotion is true. The component reads the prefers-reduced-motion media query in an $effect, keeps the core in sync when it changes, and passes autoplay to SvCarousel, so the slides never move on their own for those readers. The slide transition is also turned off under that media query."
+    },
+    {
+      "question": "When does autoplay pause?",
+      "answer": "SvCarousel pauses while the pointer is over it or focus is inside it, and shows a pause button in the corner that stops autoplay until it is pressed again. Under reduced motion there is no autoplay and no pause button."
+    },
+    {
+      "question": "How do the wordmark buttons stay in step with the slides?",
+      "answer": "The carousel binds current to the core's index, and each wordmark button is spread with jumpProps(i), which calls go(i) and sets aria-current on the active one. Arrows, dots, swipe, autoplay and the wordmarks all change the same index, and onChange reports every change."
+    }
+  ]
+}

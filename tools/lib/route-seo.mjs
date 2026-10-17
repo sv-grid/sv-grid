@@ -141,7 +141,6 @@ export const ROUTE_SEO = {
     description:
       `SvGrid Community is free under the MIT License for commercial use. The Enterprise pack (@svgrid/enterprise) is paid, per developer, unlimited apps: Enterprise ($599) is the enterprise grid - the Kanban board and ${GANTT ? 'Scheduler and Gantt' : 'Scheduler'} views, the Server-Side Row Model, Excel, PDF, CSV, TSV, HTML export and Print, pivot tables, plus direct support; Enterprise Suite ($999) adds the Excel-style Spreadsheet, SvGrid Base and SvGrid Studio. Indie ($299) is the Enterprise feature set for freelancers and companies under $1M revenue, without support. Buy once, keep forever, with an optional yearly renewal for new updates and support (cancel anytime). Enterprise - Custom is a tailored contract for 50+ seats, MSA / NDA, source escrow, named support, on-prem docs, and multi-year terms. AI helpers are built into the free @svgrid/grid.`,
     keywords: ['svelte grid pricing', 'sv-grid license', '@svgrid/enterprise license', 'grid developer license', 'suite developer license', 'indie developer license', 'svgrid enterprise suite', 'enterprise custom svelte grid', 'svelte table commercial license'],
-    video: 'mk-what-the-licence-buys',
     path: '/pricing',
   },
   blog: {
@@ -171,6 +170,13 @@ export const ROUTE_SEO = {
       'SvGrid is built by jQWidgets, the team behind jqwidgets.com and htmlelements.com - UI components shipped since 2011 to 5,000+ companies including Samsung, Boeing, NVIDIA, Microsoft, Nokia, and Intel. SvGrid is the team’s new Svelte 5 product.',
     keywords: ['jqwidgets', 'htmlelements', 'about sv-grid', 'svelte grid company'],
     path: '/about',
+  },
+  trust: {
+    title: 'Trust & Licensing - SvGrid Enterprise License, Support, Security',
+    description:
+      'What a procurement or architecture review needs on SvGrid: the MIT grid and the perpetual per-developer Enterprise license, what the yearly renewal buys, support channels, release process, CSP, dependencies, accessibility, and how to buy with a PO.',
+    keywords: ['svgrid license', 'svgrid enterprise license terms', 'svgrid security', 'svgrid procurement', 'svelte data grid commercial license'],
+    path: '/trust',
   },
   contact: {
     title: 'Contact - SvGrid Sales, Support, and Bug Reports',

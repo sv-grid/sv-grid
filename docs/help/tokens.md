@@ -31,7 +31,7 @@ ship in a corporate design system.
 | `--sg-row-hover-bg`    | `rgba(148,163,184,.10)`| `rgba(148,163,184,.14)`| Hover row background                                                 |
 | `--sg-selection-bg`    | `rgba(99,102,241,.10)` | `rgba(99,102,241,.18)` | Selected row / selected cell-range fill                              |
 | `--sg-accent`          | `#6366f1`              | `#818cf8`              | Active-cell ring, primary buttons, sort indicator                    |
-| `--sg-focus-ring`      | `0 0 0 2px rgba(99,102,241,.40)` | same | Box-shadow used for the focus outline                                |
+| `--sg-focus-ring`      | `--sg-accent`          | `--sg-accent`          | Color of the keyboard focus outline (a color, not a box-shadow)      |
 
 ## Chart series tokens
 

@@ -1,0 +1,24 @@
+{
+  "description": "A centered contact page for Svelte 5 built from the SvGrid UI kit: a heading and one line over a form with name and email (SvTextInput), a topic SvDropDownList, a message SvTextArea with a character counter and a required privacy SvCheckBox. Send validates every field, shows the SvButton loading state and a toast, then replaces the form with a sent confirmation that names the reply address. The state and validation live in an exported createContactForm() core.",
+  "keywords": [
+    "svelte contact page",
+    "svelte 5 contact form",
+    "svelte contact form validation",
+    "svelte contact us block",
+    "sveltekit contact form honeypot"
+  ],
+  "faq": [
+    {
+      "question": "How does the validation work?",
+      "answer": "The form has novalidate, so every submit runs validate() in createContactForm(). It needs a name, an email that matches name@domain.tld, a topic, a message of at least 20 characters (minMessage option) and the privacy box ticked. Each failure lands in the errors object, which feeds the field's error and invalid props; typing in a field clears its own message."
+    },
+    {
+      "question": "How do I send the message to my server?",
+      "answer": "Pass onSubmit to createContactForm(). It gets the trimmed values; throw or reject and the form stays filled, resolve and the block shows the sent state. Every field has a name, so new FormData(form) carries name, email, topic, message, privacy and the hidden website honeypot to a SvelteKit form action, and setErrors() shows field errors the server returns."
+    },
+    {
+      "question": "What changes on a phone?",
+      "answer": "The form is capped at 560 px wide at every size. Below 560 px the name and email fields stack into one column, the heading shrinks and the page and panel padding drop to 16 px so nothing overflows at 375 px."
+    }
+  ]
+}

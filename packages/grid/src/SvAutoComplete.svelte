@@ -108,7 +108,7 @@
   })
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir} {loading}>
+<SvField id={uid} {label} {hint} {error} {required} {dir} {block} {loading}>
   <input
     bind:this={fieldEl}
     class="sv-ac sv-ac--{size}"

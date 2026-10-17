@@ -1,6 +1,7 @@
 ﻿<script lang="ts">
-  import { demos, demoGroups, findDemo, landingDemo, isEnterpriseCategory, isEditorCategory, categoryIcon } from './shared/registry'
+  import { demos, demoGroups, findDemo, landingDemo, isEnterpriseCategory, isEditorCategory, categoryIcon, subGroupsOf, type Demo } from './shared/registry'
   import SourceModal from './shared/SourceModal.svelte'
+  import { handleNavKeydown, navItems } from './shared/nav-keys'
   import Zazo, { type ZazoMeta } from './zazo/Zazo.svelte'
   import './index.css'
 
@@ -127,6 +128,11 @@
 
   const current = $derived(findDemo(route))
   const Current = $derived(current.component)
+
+  // Blocks: one gallery page per category; the switcher moves between its blocks.
+  const blockSiblings = $derived(
+    current.category === 'Blocks' && current.group ? demos.filter((d) => d.group === current.group) : [],
+  )
 
   function go(id: string) {
     window.location.hash = `/${id}`
@@ -320,8 +326,13 @@
     } else if (e.key === 'Enter' && searchResults && searchResults.length > 0) {
       e.preventDefault()
       go(searchResults[0]!.id)
+    } else if (e.key === 'ArrowDown' && navEl) {
+      // Step from the search box into the list (examples/src/shared/nav-keys.ts).
+      const first = navItems(navEl)[0]
+      if (first) { e.preventDefault(); first.focus() }
     }
   }
+  let navEl = $state<HTMLElement | null>(null)
 
   // Global `/` shortcut to focus the search.
   $effect(() => {
@@ -516,7 +527,8 @@
       {/if}
     </div>
 
-    <nav aria-label="Examples">
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <nav aria-label="Examples" bind:this={navEl} onkeydown={(e) => navEl && handleNavKeydown(e, navEl)}>
       {#if searchResults !== null}
         {@const toks = tokens(query)}
         <div class="mb-2 px-2 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -571,25 +583,52 @@
               <span class="demo-group-count">{group.demos.length}</span>
             </button>
             {#if isOpen}
-              <ul class="space-y-0.5 pb-2">
-                {#each group.demos as demo (demo.id)}
-                  {@const active = demo.id === current.id}
-                  <li>
-                    <button
-                      type="button"
-                      onclick={() => go(demo.id)}
-                      class="demo-leaf w-full text-left rounded pl-6 pr-3 py-1.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 {active ? 'bg-slate-100 dark:bg-slate-800 font-semibold' : ''}"
-                    >
-                      <span class="demo-leaf-title">{demo.title}</span>
-                    </button>
-                  </li>
-                {/each}
-              </ul>
+              {@const subs = subGroupsOf(group.demos)}
+              {#if subs.some((s) => s.group)}
+                <!-- Blocks: one page per block category; the page's switcher
+                     moves between the category's blocks. -->
+                <ul class="space-y-0.5 pb-2">
+                  {#each subs as sub (sub.group?.id ?? '')}
+                    {#if sub.group}
+                      {@const here = current.group === sub.group.id}
+                      <li>
+                        <button
+                          type="button"
+                          onclick={() => { if (!here && sub.demos[0]) go(sub.demos[0].id) }}
+                          aria-current={here ? 'page' : undefined}
+                          class="demo-leaf w-full text-left rounded pl-6 pr-3 py-1.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 {here ? 'bg-slate-100 dark:bg-slate-800 font-semibold' : ''}"
+                        >
+                          <span class="demo-leaf-title">{sub.group.label}</span>
+                          <span class="demo-group-count">{sub.demos.length}</span>
+                        </button>
+                      </li>
+                    {:else}
+                      {#each sub.demos as demo (demo.id)}{@render demoLeaf(demo, 'pl-6')}{/each}
+                    {/if}
+                  {/each}
+                </ul>
+              {:else}
+                <ul class="space-y-0.5 pb-2">
+                  {#each group.demos as demo (demo.id)}{@render demoLeaf(demo, 'pl-6')}{/each}
+                </ul>
+              {/if}
             {/if}
           </div>
         {/each}
       {/if}
     </nav>
+    {#snippet demoLeaf(demo: Demo, pad: string)}
+      {@const active = demo.id === current.id}
+      <li>
+        <button
+          type="button"
+          onclick={() => go(demo.id)}
+          class="demo-leaf w-full text-left rounded {pad} pr-3 py-1.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 {active ? 'bg-slate-100 dark:bg-slate-800 font-semibold' : ''}"
+        >
+          <span class="demo-leaf-title">{demo.title}</span>
+        </button>
+      </li>
+    {/snippet}
     <p class="mt-8 text-xs text-slate-500 dark:text-slate-400">
       Each demo is a single .svelte file under <code>src/demos/</code>. Read the source
       alongside the running app - it is what you would copy into your own project.
@@ -669,6 +708,18 @@
         </button>
       </div>
     </header>
+    {/if}
+    {#if blockSiblings.length > 1}
+      <nav class="block-switch" aria-label="Blocks in this category">
+        {#each blockSiblings as b (b.id)}
+          <button
+            type="button"
+            class="block-switch-btn"
+            aria-current={b.id === current.id ? 'page' : undefined}
+            onclick={() => go(b.id)}
+          >{b.title.replace(/ block$/, '')}</button>
+        {/each}
+      </nav>
     {/if}
     <div
       bind:this={stageEl}
@@ -1047,4 +1098,11 @@
     color: #f59e0b;
     background: color-mix(in oklab, #f59e0b 14%, transparent);
   }
+  .block-switch { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+  .block-switch-btn {
+    font: inherit; font-size: 13px; padding: 5px 12px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--sg-border, #e2e8f0); background: transparent; color: var(--sg-muted, #64748b);
+  }
+  .block-switch-btn:hover { color: var(--sg-fg, #0f172a); }
+  .block-switch-btn[aria-current='page'] { color: var(--sg-fg, #0f172a); background: var(--sg-row-hover-bg, #f1f5f9); font-weight: 600; }
 </style>

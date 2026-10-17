@@ -1,0 +1,24 @@
+{
+  "description": "A centered landing-page hero for Svelte 5 built from the SvGrid UI kit: a headline, one subline, a primary and an outline SvButton and a short note, over a product shot of an admin app drawn in CSS whose lower half fades into the page. The copy and both CTAs come from createCenteredHero() options, so a page can feed them from its CMS. Below 640 px the buttons stack full width and the product shot drops its sidebar and ID column.",
+  "keywords": [
+    "svelte hero section",
+    "svelte 5 landing page hero",
+    "svelte centered hero with product screenshot",
+    "svelte hero call to action buttons",
+    "svelte saas landing page header"
+  ],
+  "faq": [
+    {
+      "question": "How do I set the headline and buttons from my own content?",
+      "answer": "Pass headline, subline, note, primary and secondary ({ label, href }) to createCenteredHero(). Anything you leave out falls back to the sample copy, so you can override one field at a time, for example from data returned by a SvelteKit +page.ts load."
+    },
+    {
+      "question": "Why do the buttons show a toast instead of navigating?",
+      "answer": "The demo passes onCta, and ctaProps() calls preventDefault and hands the CTA to onCta when it is set. Leave onCta out and the buttons are plain links to their href. Keep it when you want to track the click or open a modal instead."
+    },
+    {
+      "question": "How is the product shot made and how does it fade out?",
+      "answer": "The shot is plain markup and CSS (a window bar, a sidebar and a five-row table with status pills), marked aria-hidden. A ::after layer over its lower 65% runs a gradient from transparent to --sg-bg, so the fade matches the page in light and dark themes. Swap the markup for your own screenshot if you have one."
+    }
+  ]
+}

@@ -228,7 +228,7 @@
   function focusOpen(node: HTMLButtonElement) { if (autoOpen) { node.focus(); ddl.openPanel() } }
 </script>
 
-<SvField id={uid} {label} {hint} {error} {required} {dir}>
+<SvField id={uid} {label} {hint} {error} {required} {dir} {block}>
   <button
     bind:this={triggerEl}
     class="sv-ddl sv-ddl--{size}"

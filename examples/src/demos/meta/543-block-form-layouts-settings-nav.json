@@ -1,0 +1,24 @@
+{
+  "description": "A workspace settings page for Svelte 5 built from the SvGrid UI kit: a section menu on the left (General, Security, Billing, Team) swaps the form on the right. Each panel is a short form with SvTextInput, SvDropDownList, SvSwitchButton or SvSegmented fields and a Save SvButton, and the Team panel invites members into a list. On phones the menu turns into an SvDropDownList above the panel.",
+  "keywords": [
+    "svelte settings page with sidebar",
+    "svelte 5 settings side nav",
+    "svelte workspace settings form",
+    "svelte team invite form",
+    "svelte responsive settings menu"
+  ],
+  "faq": [
+    {
+      "question": "How does the menu switch panels?",
+      "answer": "One active $state holds the current section. The nav buttons and the phone dropdown both call go(id), which sets it and clears errors, and the panel renders the matching form in an if block. The active button gets aria-current=\"page\"."
+    },
+    {
+      "question": "How would I give each section its own URL?",
+      "answer": "Make each section a SvelteKit route, such as /settings/general, and turn the nav buttons into links. Derive active from the page URL instead of $state, and point the phone dropdown's onChange at goto()."
+    },
+    {
+      "question": "What happens on a phone?",
+      "answer": "Below 720 px the left menu is hidden and an SvDropDownList labelled Section appears above the panel. The layout becomes one column and the Team invite row stacks the email, role and Invite button."
+    }
+  ]
+}

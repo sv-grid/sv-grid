@@ -1,0 +1,24 @@
+{
+  "description": "Live service KPI cards in Svelte 5: each SvCard shows the current value, the average and peak over the last 30 seconds, and a full-width SvSparkline area chart. An SvSwitchButton turns Live on and off; while on, a new point is appended every second and the oldest dropped, and an SvBadge shows Streaming or Paused.",
+  "keywords": [
+    "svelte live kpi cards",
+    "svelte 5 realtime sparkline",
+    "svelte setinterval effect cleanup",
+    "svelte dashboard live metrics",
+    "svelte sparkline full width"
+  ],
+  "faq": [
+    {
+      "question": "How is the interval cleaned up?",
+      "answer": "An $effect reads the live state. When it is on, the effect starts setInterval and returns a function that clears it. Svelte runs that function when live turns off and when the block unmounts, so there is never a stray timer."
+    },
+    {
+      "question": "How does the sparkline fill the card width?",
+      "answer": "Each chart's wrapper binds its clientWidth into a widths array, and that number is passed as the SvSparkline width. The chart is redrawn at the real size instead of being stretched, so the end dot stays round."
+    },
+    {
+      "question": "How do I connect it to real metrics?",
+      "answer": "Create the core with live: false and call its tick(values) from your feed, for example an EventSource or websocket message handler, with one number per metric in card order. tick appends the point and drops the oldest, so the window stays at 30 points."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "description": "A contact cards section for Svelte 5 with one card per team: Sales, Support, Press and Partnerships. Each card has an inline SVG icon, one line, an email link and an SvButton. Book a demo opens an SvModal with a short form (SvTextInput, SvDropDownList) that validates, shows the loading state and adds an SvBadge to the Sales card; the other buttons confirm through a toast. Channels and the booking flow come from an exported createContactChannels() core.",
+  "keywords": [
+    "svelte contact cards",
+    "svelte 5 contact options page",
+    "svelte book a demo modal",
+    "svelte sales support press contact",
+    "svelte modal form block"
+  ],
+  "faq": [
+    {
+      "question": "How do I change the cards?",
+      "answer": "Pass channels to createContactChannels(). Each channel has id, title, line, email, action (the button text), icon (SVG path data for a 24 by 24 stroke icon) and an optional books flag. The channel with books set opens the booking dialog; every other action calls your onAction callback."
+    },
+    {
+      "question": "How does the Book a demo dialog work?",
+      "answer": "act() opens the SvModal, which is bound to the core's open state. Request demo runs book(): it checks the name, a work email and the team size, then awaits onBook. If onBook resolves, the dialog closes, the form clears and the Sales card shows a Demo requested badge; if it throws, the dialog stays open with the values."
+    },
+    {
+      "question": "What happens on smaller screens?",
+      "answer": "The cards sit four across on desktop, two across below 980 px and in one column below 560 px. Each card stretches its button to the card width and pins it to the bottom so the buttons line up in a row."
+    }
+  ]
+}

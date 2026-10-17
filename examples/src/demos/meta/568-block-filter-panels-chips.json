@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte applied-filters bar over a support queue, built from the SvGrid UI kit. An Add filter SvMenu lists fields with their values as submenus, and picking one adds a removable SvChip such as Status: Open. The ticket list, a result count and Clear all update with every chip, and a read-only SvTextInput shows the URL query string the filters would produce, with a Copy link action.",
+  "keywords": [
+    "svelte filter chips",
+    "svelte 5 applied filters bar",
+    "svelte add filter menu",
+    "svelte removable chip filter",
+    "svelte filters to url query string"
+  ],
+  "faq": [
+    {
+      "question": "How are several filters combined?",
+      "answer": "Chips of the same field are OR-ed and different fields are AND-ed. With Status: Open and Status: Pending you see tickets in either status; adding Priority: Urgent keeps only urgent ones among them. A value that is already applied is disabled in the menu so it cannot be added twice."
+    },
+    {
+      "question": "Where does the query string come from?",
+      "answer": "A $derived builds a URLSearchParams and appends one field=value pair per chip, lowercased, so two status chips give ?status=open&status=pending. In a SvelteKit page you pass the same params to goto, and on load read them back with page.url.searchParams.getAll('status')."
+    },
+    {
+      "question": "How do I add another field to the menu?",
+      "answer": "Pass your own list as createFilterChips({ fields }) (the sample list is the default), each entry with a key that exists on the row type, a label and its values. The menu items, the chip label and the filtering all read from that list, so nothing else needs to change."
+    }
+  ]
+}

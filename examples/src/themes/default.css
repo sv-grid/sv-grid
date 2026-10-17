@@ -22,7 +22,7 @@ html[data-preset='default'] .page-warm {
   --sg-row-hover-bg: #eef2ff;
   --sg-selection-bg: #dbeafe;
   --sg-accent: #2563eb;
-  --sg-focus-ring: 0 0 0 2px #2563eb;
+  --sg-focus-ring: #2563eb;
   --sg-input-bg: #ffffff;
   --sg-input-border: #cbd5e1;
   --sg-pill-active: #dcfce7;
@@ -53,7 +53,7 @@ html[data-preset='default'][data-theme='dark'] .page-warm {
   --sg-row-hover-bg: #232b3c;
   --sg-selection-bg: #1d3a73;
   --sg-accent: #3b82f6;
-  --sg-focus-ring: 0 0 0 2px #3b82f6;
+  --sg-focus-ring: #3b82f6;
   --sg-input-bg: #1a2130;
   --sg-input-border: #2c3548;
   --sg-pill-active: #064e3b;

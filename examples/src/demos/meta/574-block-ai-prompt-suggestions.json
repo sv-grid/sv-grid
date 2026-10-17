@@ -1,0 +1,24 @@
+{
+  "description": "An empty assistant chat for Svelte 5 with four starter prompt cards over a sales pipeline. A card fills the SvTextInput and sends; the question runs through the free AI helpers in @svgrid/grid (aiFilter, aiSummarize, aiFindAnomalies) and the reply appears word by word. A Stop SvButton cancels the call and keeps the part already shown, and an SvBadge says whether a real model or the offline mockAIProvider answered.",
+  "keywords": [
+    "svelte ai chat page",
+    "svelte 5 prompt suggestions",
+    "svelte chat starter prompts block",
+    "svelte streaming reply stop button",
+    "svelte ai assistant empty state"
+  ],
+  "faq": [
+    {
+      "question": "Which AI call answers each question?",
+      "answer": "answer() routes on the text. Questions with unusual, outlier or anomaly go to aiFindAnomalies. Summary questions go to aiSummarize. Everything else goes to aiFilter, and when aiFilter returns no filter or sort the question falls through to aiSummarize with the question attached."
+    },
+    {
+      "question": "Does it replace the AI provider my app already set?",
+      "answer": "No. withProvider() calls straight through when hasAIProvider() is true. Only when no provider is registered does it set mockAIProvider for the length of one call, then clears it again if it is still the mock. Register your own with setAIProvider once at app start and the block uses it."
+    },
+    {
+      "question": "Is the reply really streamed?",
+      "answer": "An AIProvider returns the whole answer as one string, so the block reveals it word by word on a 40 ms interval after the call resolves. Stop aborts the AbortSignal passed to the helper (your provider receives it), stops the reveal and keeps the words already on screen."
+    }
+  ]
+}

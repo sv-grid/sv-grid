@@ -53,8 +53,12 @@ import { SvFileUpload } from '@svgrid/grid'
 ## Props
 
 `SvFileUpload` extends the shared `SvEditorProps` (`disabled`, `readonly`,
-`required`, `invalid`, `error`, `label`, `hint`, `dir`, `id`, `ariaLabel`) and
-adds:
+`required`, `invalid`, `error`, `label`, `hint`, `dir`, `id`, `ariaLabel`,
+`name`) and adds the props below. With a `name`, the selected files go out in a
+plain form post or `new FormData(form)` under that name, like a native
+`<input type="file" multiple>`.
+
+Its own props:
 
 | Prop        | Type                                    | Default | Description                                                       |
 | ----------- | --------------------------------------- | ------- | ---------------------------------------------------------------- |
@@ -65,6 +69,7 @@ adds:
 | `multiple`  | `boolean`                               | `false` | Allow selecting more than one file.                              |
 | `maxSize`   | `number`                                | -       | Max size per file, in bytes.                                     |
 | `maxFiles`  | `number`                                | -       | Maximum number of files.                                         |
+| `block`     | `boolean`                               | `false` | Fill the container width instead of the default 320px.           |
 | `messages`  | `Partial<FileMessages>`                 | -       | Override the prompt / browse / remove / accepted-types strings.  |
 
 ### FileRejection

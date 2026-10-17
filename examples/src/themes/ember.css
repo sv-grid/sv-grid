@@ -29,7 +29,7 @@ html[data-preset='ember'] .page-warm {
   --sg-row-hover-bg: #f5f5f4;
   --sg-selection-bg: #ffece3;        /* accent surface - orange at a low tint */
   --sg-accent: #ff3e00;              /* primary (Svelte orange) */
-  --sg-focus-ring: 0 0 0 2px #ff3e00;
+  --sg-focus-ring: #ff3e00;
   --sg-input-bg: #ffffff;
   --sg-input-border: #e7e5e4;
   --sg-pill-active: #ecfdf5;
@@ -74,7 +74,7 @@ html[data-preset='ember'][data-theme='dark'] .page-warm {
   --sg-selection-bg: #3a2318;        /* warm ember glow under the selection */
   --sg-accent: #ff5a1f;              /* brighter Svelte orange on dark */
   --sg-on-accent: #ffffff;
-  --sg-focus-ring: 0 0 0 2px #ff7a45;
+  --sg-focus-ring: #ff7a45;
   --sg-input-bg: #1c1917;
   --sg-input-border: #292524;
   --sg-pill-active: #064e3b;

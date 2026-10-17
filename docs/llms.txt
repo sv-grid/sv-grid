@@ -51,7 +51,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - AI helpers ship free in `@svgrid/grid` and work with any model: `setAIProvider`, `aiFilter`, `aiSmartFill`, `aiSummarize`, `aiClassify`, `aiFindAnomalies`.
 - For coding assistants: an MCP server (`npx -y @svgrid/mcp`, MIT) serves the version-pinned API and demo sources; an Agent Skill installs with `npx skills add sv-grid/sv-grid`.
 - Paid add-on, not needed for anything above: `@svgrid/enterprise` adds Excel / PDF export, import, print, pivot tables, the Server-Side Row Model, alert rules and the Kanban board, Scheduler and Spreadsheet views. Prices start at $299 per developer: https://svgrid.com/pricing/ . A 30-day trial (one download with both packages and the demos to run offline, plus email support for the 30 days) starts from that page; without it, the package runs in full with a watermark until a key is set.
-- 451 live demos, each with its source: https://svgrid.com/demos/ . Source code: https://github.com/sv-grid/sv-grid
+- 534 live demos, each with its source: https://svgrid.com/demos/ . Source code: https://github.com/sv-grid/sv-grid
 
 ## Start here
 
@@ -444,6 +444,43 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - [SvTour](https://svgrid.com/docs/help/ui-components/sv-tour/): A guided product tour: it spotlights each target element in turn, anchors a popover with the step's copy, and walks the user through Back / Next / Done.
 - [SvRichText](https://svgrid.com/docs/help/ui-components/sv-rich-text/): A lightweight WYSIWYG editor: a formatting toolbar over a contentEditable region that emits HTML through a bindable value.
 
+### UI blocks
+
+- [UI blocks](https://svgrid.com/docs/help/ui-blocks/index/): A block is a whole page section built from the SvGrid UI components: a sign-in screen, a 404 page, a pricing table, an empty state.
+- [Sign-in & registration blocks](https://svgrid.com/docs/help/ui-blocks/auth/): Screens for getting a user into your app: sign in with a password, a provider or a magic link, create an account, prove it is them with a one-time code, and reset a forgotten password.
+- [Error page blocks](https://svgrid.com/docs/help/ui-blocks/error-pages/): Screens for when a request does not end on the page the user wanted: not found, server error, planned maintenance and access denied.
+- [Empty state blocks](https://svgrid.com/docs/help/ui-blocks/empty-states/): What a screen shows before it has data: an empty list, an empty files area, a search that matched nothing, a dashboard card with no source.
+- [Form layouts](https://svgrid.com/docs/help/ui-blocks/form-layouts/): Forms and settings pages: a stacked create form, settings split into sections, a notification matrix, a settings page with a side menu, and a danger zone.
+- [Page heading blocks](https://svgrid.com/docs/help/ui-blocks/page-headings/): The strip at the top of an app page: the title, where you are, and what you can do here. Each block is one .svelte file built from SvButton, SvMenu, SvBreadcrumb, SvTabs, SvBadge, SvSegmented and...
+- [Onboarding blocks](https://svgrid.com/docs/help/ui-blocks/onboarding/): Screens for a user's first minutes in your app: a setup wizard, a getting-started checklist.
+- [App shell & dashboard blocks](https://svgrid.com/docs/help/ui-blocks/app-shells/): Full-screen layouts for the inside of an app: the frame around every page, and the overview page users land on.
+- [KPI card blocks](https://svgrid.com/docs/help/ui-blocks/kpi-cards/): The metric tiles at the top of an app dashboard: a few numbers someone checks every morning, with enough context to tell whether they moved.
+- [Stats blocks](https://svgrid.com/docs/help/ui-blocks/stats/): Number sections for reports and status boards: large figures with labels, framed as a page section rather than a dashboard tile. There are two blocks, a weekly report and a status board.
+- [Filter panel blocks](https://svgrid.com/docs/help/ui-blocks/filter-panels/): Filters with the results they filter: a sidebar of facets beside a product list, a toolbar over a report list, removable chips over a support queue, and collapsible sections beside an SvGrid.
+- [Activity feed blocks](https://svgrid.com/docs/help/ui-blocks/activity-feeds/): Screens that show what happened and who did it: a project timeline, a notification panel, a comment thread and an audit log.
+- [AI assistant blocks](https://svgrid.com/docs/help/ui-blocks/ai/): Screens for putting a language model in front of your users: a chat with starter prompts, an ask bar over a table, and the assistant's settings page.
+- [Order blocks](https://svgrid.com/docs/help/ui-blocks/orders/): The screens around a customer's past orders: the list of them, and where a parcel is right now. Each block is one .svelte file.
+- [Banner blocks](https://svgrid.com/docs/help/ui-blocks/banners/): Messages that sit on top of or inside a page: an announcement bar, inline status banners, cookie consent and a failed-payment warning.
+- [Navbar blocks](https://svgrid.com/docs/help/ui-blocks/navbars/): Top bars for a site or an app: plain links with a call to action, a storefront bar with search and a cart, and a bar with dropdown and mega menus.
+- [Footer blocks](https://svgrid.com/docs/help/ui-blocks/footers/): Site footers for the bottom of every page: a sitemap with four link columns for a marketing site, and a one-row footer for an app.
+- [Checkout blocks](https://svgrid.com/docs/help/ui-blocks/checkout/): The pages between the cart and the receipt: a one-page checkout, a stepped checkout, a payment method picker and the order confirmation.
+- [Shopping cart blocks](https://svgrid.com/docs/help/ui-blocks/shopping-carts/): Two places a cart shows up in a store: the cart page, and a drawer that opens when you add something.
+- [Review blocks](https://svgrid.com/docs/help/ui-blocks/reviews/): The review section of a product page: a rating summary with a star distribution, the review feed, and the form to write one.
+- [Contact blocks](https://svgrid.com/docs/help/ui-blocks/contact/): Contact sections for a marketing site or an app's help page: a plain contact form, cards per team, and a support form with opening hours.
+- [Hero blocks](https://svgrid.com/docs/help/ui-blocks/hero/): The first screen of a landing page: a specific headline, one line of explanation and the action you want the visitor to take.
+- [Feature section blocks](https://svgrid.com/docs/help/ui-blocks/features/): The part of a landing page that lists what the product does, under the hero. There are two blocks: a grid of features with icons, and a feature list that switches a product screenshot.
+- [Call to action blocks](https://svgrid.com/docs/help/ui-blocks/cta/): Closing sections that ask the reader to sign up, start a trial or talk to sales. Each block is one .svelte file built from SvButton and SvToaster, themed from the --sg-* tokens.
+- [Pricing blocks](https://svgrid.com/docs/help/ui-blocks/pricing/): Plan tables for a pricing page or an upgrade screen, built from SvCard, SvButton, SvBadge, SvSegmented and SvNumberInput.
+- [FAQ blocks](https://svgrid.com/docs/help/ui-blocks/faq/): Question-and-answer sections for a pricing, help or product page. Each block is one .svelte file built from SvAccordion, SvTextInput, SvMark, SvSegmented and SvButton, themed from the --sg-* tokens.
+- [Bento grid blocks](https://svgrid.com/docs/help/ui-blocks/bento/): Feature sections laid out as a bento grid: a CSS grid where some tiles span two columns or two rows. The tile art is inline SVG or CSS drawn from the --sg-* tokens, so it follows the theme.
+- [Testimonial blocks](https://svgrid.com/docs/help/ui-blocks/testimonials/): Customer quotes for a landing, pricing or product page: a wall of quote cards and a one-at-a-time carousel.
+- [Logo cloud blocks](https://svgrid.com/docs/help/ui-blocks/logo-clouds/): A row of customer logos with one line of social proof, for a landing or pricing page. The block is one .svelte file built from SvButton, themed from the --sg-* tokens.
+- [Team blocks](https://svgrid.com/docs/help/ui-blocks/team/): The people section of an about or careers page. The block is one .svelte file built from SvAvatar, SvSegmented, SvBadge and SvButton, themed from the --sg-* tokens.
+- [Product card blocks](https://svgrid.com/docs/help/ui-blocks/product-cards/): Two ways to show products in a store: cards in a grid, and wide cards in a list. Each block is one .svelte file built from SvRating, SvBadge, SvNumberInput and SvButton, with a toast from...
+- [Product list blocks](https://svgrid.com/docs/help/ui-blocks/product-lists/): Two ways to lay out products in a store: a full category page with a sort and view toolbar, and a featured product beside a small grid.
+- [Product overview block](https://svgrid.com/docs/help/ui-blocks/product-overview/): The top of a product page: the gallery on one side and everything needed to buy on the other.
+- [Blog blocks](https://svgrid.com/docs/help/ui-blocks/blog/): The index pages of a blog: a filterable grid of post cards, and a lead article next to the latest posts.
+
 ## SvGrid Enterprise
 
 ### Rows
@@ -533,6 +570,8 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - [Build a base on Supabase](https://svgrid.com/docs/help/base/supabase/): This tutorial puts a project tracker in a Svelte app with its records in Supabase: two tables, Projects and Tasks, a link between them stored as a foreign key, and edits from other people arriving...
 - [Build a base on Postgres](https://svgrid.com/docs/help/base/postgres/): This tutorial keeps a base in your own Postgres database, behind your own SvelteKit server.
 - [Build a base on your API](https://svgrid.com/docs/help/base/rest-api/): When your data sits behind an API you already have, a base can use it as it is: it reads a table with one GET, and writes each change with POST, PATCH or DELETE.
+- [Let an AI agent work in your base](https://svgrid.com/docs/help/base/ai-agents/): An agent can do the first pass on a table your team works in: categorize the new records, set a priority, draft a reply. The hard part is not the edit.
+- [Review what an agent changed](https://svgrid.com/docs/help/base/review-queue/): An agent can be Claude Code with an MCP server, a worker that calls a model, or a script on a schedule.
 - [Field types](https://svgrid.com/docs/help/fields/): A column can say what it is - a rating, a URL, a single select with colored options, a list of files - with fieldType, and set that type's properties with fieldProps.
 
 ## SvGrid Studio

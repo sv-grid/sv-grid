@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte feature section laid out as a bento grid: one large tile with a mini results table and four smaller tiles with a bar chart, a threshold line, team avatars and export files, all drawn in inline SVG or CSS from the --sg-* tokens. Each tile has a title, one line of copy and a Read the guide link that reports which feature was opened; an SvBadge marks the new feature and an SvButton starts the trial. The grid collapses to two columns on tablets and one on phones.",
+  "keywords": [
+    "svelte bento grid",
+    "svelte 5 feature section",
+    "svelte bento layout css grid",
+    "svelte landing page features block",
+    "svelte feature tiles with illustrations"
+  ],
+  "faq": [
+    {
+      "question": "How do I change which tile is large?",
+      "answer": "Spans come from the tile data. Give a tile col: 2 and row: 2 in the tiles option of createBentoFeatures() and it covers two columns and two rows; tiles without them take one cell. tileProps() writes the spans as the --sv-bf-col and --sv-bf-row CSS variables, and spans wider than the columns option (4 by default) are clamped."
+    },
+    {
+      "question": "How do I make Read the guide open a real page?",
+      "answer": "Pass onOpen to createBentoFeatures(). It gets the tile object, so you can call goto(`/docs/${tile.id}`) or open a side panel there. The core also keeps the id of the last opened tile in opened, which you can use to highlight it."
+    },
+    {
+      "question": "What happens on a phone?",
+      "answer": "Below 900 px the grid drops to two columns and every tile spans one row. Below 560 px it is one column, the spans are ignored and each tile takes its order value from the data, so the sample moves the export tile above the shared workspaces tile. Tiles without an order keep their list position."
+    }
+  ]
+}

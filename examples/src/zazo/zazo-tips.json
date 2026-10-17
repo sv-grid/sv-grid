@@ -737,6 +737,580 @@
    "text": "Annual -20%"
   }
  },
+ "526-block-auth-providers": {
+  "text": "Click Single sign-on (SAML) to open the company domain field.",
+  "target": {
+   "sel": ".sv-providers button",
+   "text": "Single sign-on (SAML)"
+  }
+ },
+ "527-block-auth-forgot-password": {
+  "text": "Enter any email and press Send reset link to see the confirmation and resend timer.",
+  "target": {
+   "sel": ".sv-forgot button[type=submit]",
+   "text": "Send reset link"
+  }
+ },
+ "530-block-error-pages-404-links": {
+  "text": "Type \"rep\" in the search field to filter the popular pages.",
+  "target": {
+   "sel": ".sv-recover input",
+   "text": "Jobs, crews, reports"
+  }
+ },
+ "531-block-error-pages-500": {
+  "text": "Press Retry twice: the first try fails, the second brings the page back.",
+  "target": {
+   "sel": ".sv-srv button",
+   "text": "Retry"
+  }
+ },
+ "532-block-error-pages-maintenance": {
+  "text": "Type an email without an @ and press Notify me to see the field error.",
+  "target": {
+   "sel": ".sv-mnt input",
+   "text": "you@company.com"
+  }
+ },
+ "533-block-error-pages-403": {
+  "text": "Press Request access, add a note and send it to see the pending state.",
+  "target": {
+   "sel": ".sv-denied button",
+   "text": "Request access"
+  }
+ },
+ "534-block-empty-states-simple": {
+  "text": "Press New dashboard, name it and create it to see the list replace the empty state.",
+  "target": {
+   "sel": ".sv-boards button",
+   "text": "New dashboard"
+  }
+ },
+ "536-block-empty-states-drop-zone": {
+  "text": "Drop a PDF or image onto the dashed zone, or click browse, to see it upload.",
+  "target": {
+   "sel": ".sv-dropzone .sv-file__zone",
+   "text": "Drag files here"
+  }
+ },
+ "537-block-empty-states-no-results": {
+  "text": "Press Clear filters to bring the two Acme customers back.",
+  "target": {
+   "sel": ".sv-noresults button",
+   "text": "Clear filters"
+  }
+ },
+ "538-block-empty-states-card": {
+  "text": "Press Connect help desk to watch the empty card fill with ticket data.",
+  "target": {
+   "sel": ".sv-widgets button",
+   "text": "Connect help desk"
+  }
+ },
+ "540-block-form-layouts-stacked": {
+  "text": "Press Create project with the form empty to see each field's error, then fill it in.",
+  "target": {
+   "sel": ".sv-stacked button[type=submit]",
+   "text": "Create project"
+  }
+ },
+ "541-block-form-layouts-two-column": {
+  "text": "Break the email in Profile and press Save profile: only that section is checked.",
+  "target": {
+   "sel": ".sv-twocol button",
+   "text": "Save profile"
+  }
+ },
+ "542-block-form-layouts-settings": {
+  "text": "Flip any switch to bring up the save bar, then try Discard.",
+  "target": {
+   "sel": ".sv-notif [role=switch]",
+   "text": "Mentions by SMS"
+  }
+ },
+ "543-block-form-layouts-settings-nav": {
+  "text": "Open Team and invite someone by email to add them to the member list.",
+  "target": {
+   "sel": ".sv-setnav nav button",
+   "text": "Team"
+  }
+ },
+ "544-block-form-layouts-danger-zone": {
+  "text": "Open Delete project and type atlas-web exactly to enable the Delete button.",
+  "target": {
+   "sel": ".sv-danger button",
+   "text": "Delete project"
+  }
+ },
+ "546-block-page-headings-breadcrumbs": {
+  "text": "Click Publish release and watch the badge switch to Live.",
+  "target": {
+   "sel": ".sv-ph-crumbs button",
+   "text": "Publish release"
+  }
+ },
+ "547-block-page-headings-tabs": {
+  "text": "Run a sync and the Activity tab count goes up.",
+  "target": {
+   "sel": ".sv-ph-tabs button",
+   "text": "Run sync"
+  }
+ },
+ "548-block-page-headings-meta": {
+  "text": "Open Status and pause the posting to see the badge change.",
+  "target": {
+   "sel": ".sv-ph-meta button",
+   "text": "Status"
+  }
+ },
+ "549-block-page-headings-stats": {
+  "text": "Switch the range to 90d and watch the stats change.",
+  "target": {
+   "sel": ".sv-ph-stats [role=radio]",
+   "text": "90d"
+  }
+ },
+ "551-block-onboarding-wizard": {
+  "text": "Clear the name and press Next to see the step-one checks, or type Acme to hit a taken URL.",
+  "target": {
+   "sel": "button",
+   "text": "Next"
+  }
+ },
+ "552-block-onboarding-checklist": {
+  "text": "Press Open a template to complete a task and watch the progress bar move.",
+  "target": {
+   "sel": "button",
+   "text": "Open a template"
+  }
+ },
+ "556-block-kpi-cards-icon": {
+  "text": "Click Support tickets to see its last seven days in the panel below.",
+  "target": {
+   "sel": ".sv-kc-icon button",
+   "text": "Support tickets"
+  }
+ },
+ "557-block-kpi-cards-trend": {
+  "text": "Switch to 7d and watch churn rate drop and turn green.",
+  "target": {
+   "sel": ".sv-kc-trend [role=radio]",
+   "text": "7d"
+  }
+ },
+ "559-block-kpi-cards-sparkline": {
+  "text": "Turn Live off and the numbers and charts stop updating.",
+  "target": {
+   "sel": ".sv-kc-spark label",
+   "text": "Live"
+  }
+ },
+ "564-block-stats-trends": {
+  "text": "Click Export CSV to download this week's numbers as a CSV file.",
+  "target": {
+   "sel": "button",
+   "text": "Export CSV"
+  }
+ },
+ "565-block-stats-banded": {
+  "text": "Turn on Live updates to watch the board poll every 3 seconds.",
+  "target": {
+   "sel": "label",
+   "text": "Live updates"
+  }
+ },
+ "566-block-filter-panels-sidebar": {
+  "text": "Tick Ridgeback under Brand and watch the list and the other counts update.",
+  "target": {
+   "sel": ".sv-facets-side label",
+   "text": "Ridgeback"
+  }
+ },
+ "567-block-filter-panels-toolbar": {
+  "text": "Switch the view to Grid, then pick Finance under Team.",
+  "target": {
+   "sel": ".sv-reports-view",
+   "text": "Grid"
+  }
+ },
+ "568-block-filter-panels-chips": {
+  "text": "Open Add filter, pick Priority then Urgent, and watch the query string change.",
+  "target": {
+   "sel": ".sv-queue-head button",
+   "text": "Add filter"
+  }
+ },
+ "569-block-filter-panels-collapsible": {
+  "text": "Open Assignee, choose Maya Chen, and watch the grid drop to her tasks.",
+  "target": {
+   "sel": ".sv-acc__header",
+   "text": "Assignee"
+  }
+ },
+ "570-block-activity-feeds-timeline": {
+  "text": "Press Load more to pull in older events and see them land under their own day.",
+  "target": {
+   "sel": "button",
+   "text": "Load more"
+  }
+ },
+ "571-block-activity-feeds-notifications": {
+  "text": "Switch the panel to Unread, then archive one and press Undo in the toast.",
+  "target": {
+   "sel": "button",
+   "text": "Notifications"
+  }
+ },
+ "572-block-activity-feeds-comments": {
+  "text": "Press Reply under a comment to open a composer right below it, then post with Ctrl+Enter.",
+  "target": {
+   "sel": "button",
+   "text": "Reply"
+  }
+ },
+ "573-block-activity-feeds-audit-log": {
+  "text": "Open the Workspace row to see the before and after of each setting.",
+  "target": {
+   "sel": "button",
+   "text": "Show changes to Workspace"
+  }
+ },
+ "574-block-ai-prompt-suggestions": {
+  "text": "Click a starter card to send it, then press Stop while the reply is still appearing.",
+  "target": {
+   "sel": ".sv-suggest-starter",
+   "text": "Biggest deals"
+  }
+ },
+ "575-block-ai-ask-bar": {
+  "text": "Click a suggested question and watch the grid filter itself, then press Clear.",
+  "target": {
+   "sel": ".sv-askbar-chips",
+   "text": "Pending invoices over $5k"
+  }
+ },
+ "576-block-ai-settings": {
+  "text": "Turn on Create support tickets and watch the request payload update.",
+  "target": {
+   "sel": ".sv-aiset-tool",
+   "text": "Create support tickets"
+  }
+ },
+ "579-block-orders-history": {
+  "text": "Pick Open to see only orders still on their way, then press View on one.",
+  "target": {
+   "sel": "[role=radio]",
+   "text": "Open"
+  }
+ },
+ "580-block-orders-tracking": {
+  "text": "Press Refresh to pull the next carrier scan and watch the parcel reach Delivered.",
+  "target": {
+   "sel": "button",
+   "text": "Refresh"
+  }
+ },
+ "581-block-banners-announcement": {
+  "text": "Dismiss the bar, then press Undo in the toast to bring it back.",
+  "target": {
+   "sel": ".sv-bn-announce button[aria-label]",
+   "text": "Dismiss announcement"
+  }
+ },
+ "583-block-banners-info": {
+  "text": "Press Rotate key to see the warning resolve after a short loading state.",
+  "target": {
+   "sel": ".sv-bn-info button",
+   "text": "Rotate key"
+  }
+ },
+ "585-block-banners-cookie-consent": {
+  "text": "Open Customize, switch on Analytics and save to see the summary line.",
+  "target": {
+   "sel": ".sv-bn-consent-bar button",
+   "text": "Customize"
+  }
+ },
+ "586-block-banners-billing-warning": {
+  "text": "Update the payment method with 4242 4242 4242 4242 to clear the warning.",
+  "target": {
+   "sel": ".sv-bn-billing-banner button",
+   "text": "Update payment method"
+  }
+ },
+ "587-block-navbars-simple": {
+  "text": "Click Pricing to move the current-page marker and the page heading.",
+  "target": {
+   "sel": ".sv-nav-simple-links a",
+   "text": "Pricing"
+  }
+ },
+ "588-block-navbars-search": {
+  "text": "Type a product name and press Enter to run the search.",
+  "target": {
+   "sel": ".sv-nav-search-form input",
+   "text": "Search packs"
+  }
+ },
+ "591-block-navbars-dropdowns": {
+  "text": "Open Products and use the arrow keys to move through the mega menu.",
+  "target": {
+   "sel": ".sv-nav-dd-links button",
+   "text": "Products"
+  }
+ },
+ "593-block-footers-sitemap": {
+  "text": "Press Back to top to scroll the page back to its start.",
+  "target": {
+   "sel": ".sv-footer-sitemap-bottom button",
+   "text": "Back to top"
+  }
+ },
+ "595-block-footers-simple": {
+  "text": "Narrow the window to see the links move above the copyright.",
+  "target": {
+   "sel": ".sv-footer-simple-footer nav a",
+   "text": "Status"
+  }
+ },
+ "599-block-checkout-split": {
+  "text": "Press Pay with the card fields empty to see every field validate, then try 4242 4242 4242 4242.",
+  "target": {
+   "sel": ".sv-checkout-split-form button[type=submit]",
+   "text": "Pay"
+  }
+ },
+ "600-block-checkout-steps": {
+  "text": "Press Continue to payment with the form empty to see this step's validation.",
+  "target": {
+   "sel": ".sv-checkout-steps-nav button[type=submit]",
+   "text": "Continue to payment"
+  }
+ },
+ "601-block-checkout-payment-methods": {
+  "text": "Pick Invoice and press Continue to see the VAT number check.",
+  "target": {
+   "sel": ".sv-checkout-methods-option",
+   "text": "Invoice"
+  }
+ },
+ "602-block-checkout-confirmation": {
+  "text": "Copy the order number to the clipboard.",
+  "target": {
+   "sel": ".sv-checkout-done-copy",
+   "text": "Copy order number"
+  }
+ },
+ "603-block-shopping-carts-page": {
+  "text": "Type WELCOME15 in the promo code and press Apply to see the discount line.",
+  "target": {
+   "sel": ".sv-cart-page-summary input",
+   "text": "WELCOME15"
+  }
+ },
+ "604-block-shopping-carts-panel": {
+  "text": "Press Add to cart on the kettle and watch the drawer open with the count updated.",
+  "target": {
+   "sel": ".sv-cart-panel-product button",
+   "text": "Gooseneck kettle"
+  }
+ },
+ "607-block-reviews-summary": {
+  "text": "Click the 2-star row to filter the recent reviews to that rating.",
+  "target": {
+   "sel": ".sv-review-summary-row",
+   "text": "2 star reviews"
+  }
+ },
+ "608-block-reviews-list": {
+  "text": "Mark a review as helpful; each review takes one vote.",
+  "target": {
+   "sel": ".sv-review-list-helpful",
+   "text": "Helpful"
+  }
+ },
+ "609-block-reviews-write": {
+  "text": "Press Submit review with the form empty to see the field errors.",
+  "target": {
+   "sel": ".sv-review-write-actions button",
+   "text": "Submit review"
+  }
+ },
+ "610-block-contact-centered": {
+  "text": "Press Send message with the form empty to see every field error at once.",
+  "target": {
+   "sel": ".sv-contact-centered-form button[type=submit]",
+   "text": "Send message"
+  }
+ },
+ "612-block-contact-cards": {
+  "text": "Click Book a demo to request a call from the modal form.",
+  "target": {
+   "sel": ".sv-contact-cards-cta button",
+   "text": "Book a demo"
+  }
+ },
+ "614-block-contact-hours": {
+  "text": "Pick Urgent and watch the promised response times change.",
+  "target": {
+   "sel": ".sv-contact-hours-form [role=radio]",
+   "text": "Urgent"
+  }
+ },
+ "616-block-hero-centered": {
+  "text": "Press Start free: the demo handles the click in a toast instead of navigating; leave out onCta and it is a plain link.",
+  "target": {
+   "sel": ".sv-hero-centered a.sv-btn",
+   "text": "Start free"
+  }
+ },
+ "620-block-hero-signup": {
+  "text": "Enter taken@ledgerline.app and press Start free trial to see a refusal from the server under the field.",
+  "target": {
+   "sel": ".sv-hero-signup input",
+   "text": "you@agency.com"
+  }
+ },
+ "622-block-features-icons": {
+  "text": "Press Start a 14-day trial to see the button's loading state and the toast.",
+  "target": {
+   "sel": ".sv-fic-cta button",
+   "text": "Start a 14-day trial"
+  }
+ },
+ "624-block-features-screenshot": {
+  "text": "Click Alerts, or press the arrow keys in the list, to switch the screenshot.",
+  "target": {
+   "sel": ".sv-fss-tab",
+   "text": "Alerts"
+  }
+ },
+ "628-block-cta-centered": {
+  "text": "Press Start free trial to see the loading state and the status line it leaves behind.",
+  "target": {
+   "sel": ".sv-cta-center-actions .sv-btn--primary",
+   "text": "Start free trial"
+  }
+ },
+ "630-block-cta-justified": {
+  "text": "Click Get started: the buttons turn into a confirmation once the request resolves.",
+  "target": {
+   "sel": ".sv-cta-just-actions .sv-btn--primary",
+   "text": "Get started"
+  }
+ },
+ "634-block-pricing-highlighted": {
+  "text": "Raise Seats to 120 and watch the per-seat prices drop and Starter switch off.",
+  "target": {
+   "sel": ".sv-pseats-count",
+   "text": "Seats"
+  }
+ },
+ "635-block-pricing-comparison": {
+  "text": "Press Start trial on Growth to see the button's loading state.",
+  "target": {
+   "sel": ".sv-pcompare-is-popular button",
+   "text": "Start trial"
+  }
+ },
+ "640-block-faq-accordion": {
+  "text": "Type export or SSO in the search box to filter the questions and highlight every match.",
+  "target": {
+   "sel": ".sv-faqsearch input",
+   "text": "Try export or SSO"
+  }
+ },
+ "641-block-faq-centered": {
+  "text": "Switch to Data, then press Expand all to open every answer in that topic.",
+  "target": {
+   "sel": ".sv-faqctr button",
+   "text": "Expand all"
+  }
+ },
+ "642-block-bento-features": {
+  "text": "Press Read the guide on any tile; the core reports which feature you opened.",
+  "target": {
+   "sel": ".sv-bf-link",
+   "text": "Read the guide"
+  }
+ },
+ "646-block-testimonials-cards": {
+  "text": "Open a long quote with Read more to see the full text.",
+  "target": {
+   "sel": ".sv-tcards-more",
+   "text": "Read more"
+  }
+ },
+ "647-block-testimonials-carousel": {
+  "text": "Click a company name under the carousel to jump to its quote.",
+  "target": {
+   "sel": ".sv-tcarousel-logo",
+   "text": "Lumen Health"
+  }
+ },
+ "648-block-logo-clouds-grid": {
+  "text": "Hover or tab to a logo to see which customers have a story to read.",
+  "target": {
+   "sel": ".sv-logos-is-link",
+   "text": "Northwind"
+  }
+ },
+ "649-block-team-grid": {
+  "text": "Pick Customer to filter the team and see that department's open roles.",
+  "target": {
+   "sel": ".sv-team-head [role=radio]",
+   "text": "Customer"
+  }
+ },
+ "650-block-product-cards-grid": {
+  "text": "Tap the heart on the Arc table lamp to save it to your wishlist.",
+  "target": {
+   "sel": "button[aria-pressed]",
+   "text": "Arc table lamp"
+  }
+ },
+ "651-block-product-cards-horizontal": {
+  "text": "Add the Gooseneck kettle until all 3 units are in your cart and its button locks.",
+  "target": {
+   "sel": "button",
+   "text": "Add to cart, Gooseneck kettle"
+  }
+ },
+ "652-block-product-lists-toolbar": {
+  "text": "Switch to List to see each product with its description, then sort by price.",
+  "target": {
+   "sel": ".sv-plist-tools [role='radio']",
+   "text": "List"
+  }
+ },
+ "653-block-product-lists-featured": {
+  "text": "Press Add on the Glass carafe to see the button load while the cart updates.",
+  "target": {
+   "sel": ".sv-featured-grid button",
+   "text": "Glass carafe"
+  }
+ },
+ "654-block-product-overview-split": {
+  "text": "Press Add to cart before picking a size to see the size check, then pick one and try again.",
+  "target": {
+   "sel": "button",
+   "text": "Add to cart"
+  }
+ },
+ "655-block-blog-cards": {
+  "text": "Pick the Customers chip to see the empty state, then bring every post back.",
+  "target": {
+   "sel": ".sv-blogcards-chip",
+   "text": "Customers"
+  }
+ },
+ "656-block-blog-featured": {
+  "text": "Click a recent post title to open it; in your app the link goes to /blog/<slug>.",
+  "target": {
+   "sel": ".sv-blogfeat-item",
+   "text": "Saved views"
+  }
+ },
  "341-rich-text-editor": {
   "text": "Select a word and press Bold, then try a heading or a bullet list.",
   "target": {
@@ -3157,6 +3731,12 @@
   "text": "Drag a new hire through the pipeline, or open their checklist.",
   "target": {
    "sel": ".sv-board-card"
+  }
+ },
+ "700-base-ai-triage": {
+  "text": "Run the triage agent, then open a tinted ticket to see what it changed.",
+  "target": {
+   "sel": ".aitri-run"
   }
  }
 }

@@ -21,6 +21,7 @@
   import { nextEditorId, resolveMessages, type SvEditorProps } from './editor-contract'
   import { createDateTimePicker, type DateTimeValue, type DropDownDisplayMode } from './createDateTimePicker.svelte'
   import type { DateLike } from './datetime/date-core'
+  import { formatDate } from './datetime/date-format'
 
   /** User-facing strings (localizable via `messages`). */
   type DateTimeMessages = { dialog: string; date: string; time: string; clear: string; open: string }
@@ -130,6 +131,17 @@
     hint: () => hint,
     ariaLabel: () => ariaLabel,
   })
+
+  /** The value a form posts. A date-only picker posts the local calendar day
+   *  (yyyy-MM-dd) and a time-only picker the local time (HH:mm): toISOString()
+   *  would shift a date picked east of UTC to the previous day. Date and time
+   *  together post the ISO instant. */
+  function formValue(d: Date | null | undefined): string {
+    if (!d) return ''
+    if (dropDownDisplayMode === 'calendar') return formatDate(d, 'yyyy-MM-dd')
+    if (dropDownDisplayMode === 'time') return formatDate(d, 'HH:mm')
+    return d.toISOString()
+  }
 
   // --- Portalled dropdown positioning (DOM-bound; stays in the component) -----
   let triggerEl = $state<HTMLDivElement | null>(null)
@@ -246,7 +258,7 @@
     </div>
   {/if}
 
-  {#if name}<input type="hidden" {name} value={dtp.current ? dtp.current.toISOString() : ''} />{/if}
+  {#if name}<input type="hidden" {name} value={formValue(dtp.current)} />{/if}
 </div>
 </SvField>
 

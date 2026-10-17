@@ -1,0 +1,24 @@
+{
+  "description": "A Svelte 5 dashboard row of three SvCard widgets: a Revenue card with an SvStat value, delta and SvSparkline, a Signups card with a compact SvEmptyState waiting for its first event, and a Support tickets card asking you to connect a source. Connect help desk runs a toast.promise and the card fills with data. The row wraps to one column on phones.",
+  "keywords": [
+    "svelte dashboard empty card",
+    "svelte 5 widget empty state",
+    "svelte kpi card no data",
+    "svelte connect data source card",
+    "svelte stat sparkline card"
+  ],
+  "faq": [
+    {
+      "question": "How does a card switch from empty to data?",
+      "answer": "The Support tickets card renders SvEmptyState while the core's connected is false and SvStat with SvSparkline once it is true. The core's connect() sets it after the connect option resolves; in the demo that is a toast.promise."
+    },
+    {
+      "question": "Why does SvStat have no border inside the cards?",
+      "answer": "SvStat draws its own tile, so the block removes its border, padding and background inside the row and lets SvCard provide the frame."
+    },
+    {
+      "question": "How does the layout change on a phone?",
+      "answer": "The row is a three-column CSS grid. Below 760 px it becomes a single column and the cards stack in the same order."
+    }
+  ]
+}

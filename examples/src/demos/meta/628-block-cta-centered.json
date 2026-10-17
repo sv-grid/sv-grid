@@ -1,0 +1,24 @@
+{
+  "description": "A centered call-to-action section for Svelte 5 built from the SvGrid UI kit: a heading, one line of copy and two SvButtons on an accent band. Start free trial shows its loading state, reports through an SvToaster toast and leaves a status line under the buttons; Talk to sales runs the same tracked action flow.",
+  "keywords": [
+    "svelte call to action section",
+    "svelte 5 cta block",
+    "svelte centered cta with two buttons",
+    "svelte free trial banner",
+    "svelte landing page closing section"
+  ],
+  "faq": [
+    {
+      "question": "How do I track clicks on the buttons?",
+      "answer": "Pass onTrack to createCtaCentered(). It fires on every press with the action ({ id, label, href }) before anything else runs, so you can send the id to your analytics and still let the press continue."
+    },
+    {
+      "question": "Can the buttons just link to my signup page?",
+      "answer": "Yes. Each action has an href (/signup and /contact/sales by default) and SvButton renders it as a link. Leave out onAction and the core does not call preventDefault, so the browser follows the href after onTrack fires. Pass onAction when you want to run a request in place; a thrown error leaves the buttons idle and goes to onError."
+    },
+    {
+      "question": "How does the band stay readable with a light or orange accent?",
+      "answer": "Where the browser supports relative colors, the band mixes the accent 24% toward the inverse of --sg-on-accent, which darkens it under white text and lightens it under dark text, so body copy clears 4.5:1. The primary button is drawn inverted, in the text color with the band color as its label. Below 560 px the buttons stack at full width."
+    }
+  ]
+}

@@ -120,6 +120,7 @@
       if (e.key === 'Enter') { onCommit?.(commit()) }
       else if (e.key === 'Escape') onCancel?.()
     }}
+    id={uid}
     {...editorAria({ id: uid, invalid, required, error, hint, ariaLabel })}
   />
   {#if name}<input type="hidden" {name} value={value ?? ''} />{/if}

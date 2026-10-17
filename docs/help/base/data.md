@@ -157,6 +157,62 @@ const source = baseSource(createSupabaseDataSource({ client, table: 'tasks', sch
 Any other feed works the same way: a WebSocket message, a server-sent event,
 a poll.
 
+### What people see
+
+A change made elsewhere does not just appear. Until someone opens the record:
+
+- in a grid view, the cells that changed are tinted, and a record added
+  elsewhere is tinted across the row (Kanban and gallery cards are not);
+- the row number has a dot; hover it for "Ana Ruiz changed this record 2
+  minutes ago";
+- the view bar counts them, "3 changed by Ana Ruiz", and a click on the count
+  marks them all seen.
+
+Opening the record clears its marks. Its activity lists each change as
+"Ana Ruiz changed Priority", with the value before crossed out and the value
+now: Low → Urgent.
+
+The name comes from the record itself: its `lastModifiedBy` field (for a
+record added elsewhere, `createdBy` first). Whoever writes to the database
+writes their user id to that column, and the base looks it up in
+`setFieldUsers`. Without such a field the change is credited to "Someone
+else". Your own writes are never reported back to you: the base compares what
+it reads with what it last wrote.
+
+### An AI agent writing to the base
+
+The same path serves an agent: a script, a worker calling a model, or Claude
+Code with your database's MCP server. Give the agent a user id, add it to
+`setFieldUsers` with a name and an avatar, and have it set `modified_by` (or
+whichever column your `lastModifiedBy` field reads) on every row it writes.
+People then see exactly what it changed, review it in a view filtered on a
+"Needs review" field, correct what it got wrong, and approve the rest with a
+button field and an automation.
+
+[Let an AI agent work in your base](./ai-agents.md) walks through it with
+Claude Code and Supabase, and [Review what an agent changed](./review-queue.md)
+covers the review side on any database. Here the agent is a stand-in made of
+keyword rules, so the demo runs without a model or a key. It writes to the database with SQL; press "Run the triage
+agent", then open a ticket.
+
+<div data-docs-demo="700-base-ai-triage" data-height="900"></div>
+
+To act on changes made elsewhere in code (a notice, a log, a count of your
+own), pass `onRemoteChange` to `<SvBase>`. It gets each change once it is in
+the page:
+
+```ts
+import type { BaseRemoteChange } from '@svgrid/enterprise/base'
+
+function onRemoteChange(changes: BaseRemoteChange[]) {
+  for (const c of changes) {
+    // c.type: 'insert' | 'update' | 'delete'; c.table, c.id, c.record
+    // c.fields (updates): [{ field: 'priority', from: 'Low', to: 'Urgent' }]
+    if (c.type === 'update') console.log(c.id, c.fields)
+  }
+}
+```
+
 ## Status and errors
 
 The end of the tab bar says what the base is doing:

@@ -7,7 +7,9 @@
    * is written through the grid's own edit path, so undo, validation,
    * onCellValueChange and "last modified" fields behave as in the cell.
    * Fields hidden in the grid are listed under the others, folded. Beside
-   * the fields, the record's activity: its changes and its comments.
+   * the fields, the record's activity: its changes and its comments. A
+   * change made elsewhere (another user, an agent) shows who made it and what
+   * the field held before, and opening the record marks it seen.
    * Previous and next step through the rows in the grid's order.
    */
   import { onMount, untrack } from 'svelte'
@@ -16,7 +18,7 @@
   import FieldInput from './FieldInput.svelte'
   import { getFieldType } from './registry.svelte'
   import { cellText, fieldColumns, primaryIdOf, type FieldColumn } from './grid-access'
-  import { addComment, changesOf, commentsOf, timeAgo } from './activity.svelte'
+  import { addComment, changesOf, commentsOf, markSeen, timeAgo, unseenOf } from './activity.svelte'
   import { findFieldUser } from './sources.svelte'
 
   let {
@@ -141,17 +143,36 @@
 
   // ---- Activity ---------------------------------------------------------------
   const allCols = $derived([...columns, ...hidden])
+  type FeedItem = { key: string; at: number; by?: string; automation?: string; remote?: boolean; kind: 'edit' | 'added' | 'comment'; field: string; text: string; from?: string }
   const feed = $derived.by(() => {
     if (!row) return []
-    const edits = changesOf(ctrl, row.id).map((ch) => {
+    const edits = changesOf(ctrl, row.id).map((ch): FeedItem => {
+      if (ch.added) return { key: `a${ch.at}`, at: ch.at, by: ch.by, remote: true, kind: 'added', field: '', text: '' }
       const c = allCols.find((x) => x.id === ch.columnId)
-      return { key: `e${ch.at}${ch.columnId}`, at: ch.at, by: ch.by, automation: ch.automation, kind: 'edit' as const, field: c ? label(c) : ch.columnId, text: c ? cellText(asField(c), ch.value, row) : String(ch.value ?? '') }
+      const show = (v: unknown) => (c ? cellText(asField(c), v, row) : String(v ?? ''))
+      return {
+        key: `e${ch.at}${ch.columnId}`,
+        at: ch.at,
+        by: ch.by,
+        automation: ch.automation,
+        remote: ch.remote,
+        kind: 'edit',
+        field: c ? label(c) : ch.columnId,
+        text: show(ch.value),
+        // What it held before, for a change made elsewhere (nothing to show when it was empty).
+        ...('from' in ch && show(ch.from) ? { from: show(ch.from) } : {}),
+      }
     })
-    const notes = commentsOf(ctrl, row.id).map((n) => ({ key: n.id, at: n.at, by: n.by, automation: undefined, kind: 'comment' as const, field: '', text: n.text }))
+    const notes = commentsOf(ctrl, row.id).map((n): FeedItem => ({ key: n.id, at: n.at, by: n.by, kind: 'comment', field: '', text: n.text }))
     return [...edits, ...notes].sort((a, b) => a.at - b.at)
   })
-  const who = (item: { by?: string; automation?: string }) =>
-    item.automation ? `Automation: ${item.automation}` : item.by ? (findFieldUser(item.by)?.name ?? 'Someone') : 'You'
+  const who = (item: FeedItem) =>
+    item.automation ? `Automation: ${item.automation}` : item.by ? (findFieldUser(item.by)?.name ?? 'Someone') : item.remote ? 'Someone else' : 'You'
+  // Shown here: a change made elsewhere is seen, so the grid stops marking it.
+  $effect(() => {
+    const id = row?.id
+    if (id != null && unseenOf(ctrl, id)) untrack(() => markSeen(ctrl, id))
+  })
   function send() {
     if (!row || !comment.trim()) return
     addComment(ctrl, row.id, comment)
@@ -208,8 +229,12 @@
         <ol class="sv-frv-feed">
           {#each feed as item (item.key)}
             <li class="sv-frv-item" class:is-comment={item.kind === 'comment'}>
-              <div class="sv-frv-item-head"><strong>{who(item)}</strong>{item.kind === 'edit' ? ` changed ${item.field}` : ''}<span class="sv-frv-when">{timeAgo(item.at)}</span></div>
-              <div class="sv-frv-item-body">{item.text || (item.kind === 'edit' ? '(cleared)' : '')}</div>
+              <div class="sv-frv-item-head"><strong>{who(item)}</strong>{item.kind === 'edit' ? ` changed ${item.field}` : item.kind === 'added' ? ' added this record' : ''}<span class="sv-frv-when">{timeAgo(item.at)}</span></div>
+              {#if item.kind !== 'added'}
+                <div class="sv-frv-item-body">
+                  {#if item.from !== undefined}<span class="sv-frv-from">{item.from}</span><span class="sv-frv-arrow" aria-label="to">→</span>{/if}{item.text || (item.kind === 'edit' ? '(cleared)' : '')}
+                </div>
+              {/if}
             </li>
           {:else}
             <li class="sv-frv-none">No changes or comments yet.</li>
@@ -281,6 +306,8 @@
   .sv-frv-item { font-size: 12px; }
   .sv-frv-item-head { color: var(--sg-muted, #64748b); }
   .sv-frv-item-head strong { color: var(--sg-fg, #0f172a); font-weight: 600; }
+  .sv-frv-from { color: var(--sg-muted, #64748b); text-decoration: line-through; }
+  .sv-frv-arrow { margin: 0 5px; color: var(--sg-muted, #64748b); }
   .sv-frv-when { margin-inline-start: 6px; opacity: 0.8; }
   .sv-frv-item-body { margin-top: 2px; white-space: pre-wrap; word-break: break-word; }
   .sv-frv-item.is-comment .sv-frv-item-body {

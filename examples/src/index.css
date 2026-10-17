@@ -24,7 +24,7 @@
   --sg-row-alt-bg: #f8fafc;
   --sg-row-hover-bg: #eef2ff;
   --sg-row-height: 36px;
-  --sg-focus-ring: 0 0 0 2px #2563eb;
+  --sg-focus-ring: #2563eb;
   --sg-selection-bg: #dbeafe;
   --sg-accent: #2563eb;
   --sg-pill-active: #dcfce7;
@@ -148,7 +148,7 @@ button:focus-visible,
 a:focus-visible,
 [tabindex]:focus-visible {
   outline: none;
-  box-shadow: var(--sg-focus-ring);
+  box-shadow: 0 0 0 2px var(--sg-focus-ring);
 }
 /* The grid <table> carries a tabindex for keyboard nav, so the global
  * focus ring above lands on it - and the scroll container's overflow

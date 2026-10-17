@@ -1,0 +1,24 @@
+{
+  "description": "A full Svelte shopping cart page built from the SvGrid UI kit: line items with drawn product art, variant, unit price, an SvNumberInput quantity, a Remove link whose toast has Undo and a Save for later link that moves the item to a saved list. The order summary shows subtotal, estimated shipping, an SvTextInput promo code where WELCOME15 takes 15% off, the estimated total and an SvButton Checkout with a loading state. State and totals live in the headless createCartPage() core.",
+  "keywords": [
+    "svelte shopping cart page",
+    "svelte 5 cart with save for later",
+    "svelte promo code field",
+    "svelte cart quantity stepper",
+    "svelte headless cart component"
+  ],
+  "faq": [
+    {
+      "question": "How are the totals worked out?",
+      "answer": "Every amount is an integer number of cents. createCartPage derives subtotal from the lines, the discount from the applied promo percent, shipping (6.95, or free once the discounted subtotal reaches 150.00) and the total, so they update when a quantity, a line or the promo code changes. Intl.NumberFormat turns cents into currency only when the block displays them."
+    },
+    {
+      "question": "How does Save for later and Undo work?",
+      "answer": "saveForLater(id) takes the line out of items and puts it at the top of saved; moveToCart(id) does the reverse. remove(id) drops the line and calls your onRemove(item, undo) option; the demo passes undo to the toast's Undo action, which puts the line back at its old position unless it is already in the cart."
+    },
+    {
+      "question": "What changes on a phone?",
+      "answer": "Below 760 px the summary column moves under the items and stops being sticky. Each line keeps the art, name and line total on the first row and puts the quantity stepper on a second row under the name; saved items move their Move to cart button under the name too, so nothing overflows at 375 px."
+    }
+  ]
+}

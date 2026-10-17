@@ -134,3 +134,25 @@ describe('SvDateTimePicker dropdown', () => {
     } finally { destroy() }
   })
 })
+
+describe('SvDateTimePicker form value', () => {
+  const hidden = (t: HTMLElement) => t.querySelector<HTMLInputElement>('input[type="hidden"][name="due"]')!.value
+  // 00:30 local is the previous day in UTC east of Greenwich, which is exactly
+  // where toISOString() posted the wrong date for a date-only field.
+  const value = new Date(2026, 0, 5, 0, 30)
+
+  it('posts the local calendar day for a date-only picker', () => {
+    const { target, destroy } = mountDtp({ name: 'due', value, dropDownDisplayMode: 'calendar' })
+    try { expect(hidden(target)).toBe('2026-01-05') } finally { destroy() }
+  })
+
+  it('posts the local time for a time-only picker', () => {
+    const { target, destroy } = mountDtp({ name: 'due', value, dropDownDisplayMode: 'time' })
+    try { expect(hidden(target)).toBe('00:30') } finally { destroy() }
+  })
+
+  it('posts the ISO instant when it picks date and time', () => {
+    const { target, destroy } = mountDtp({ name: 'due', value })
+    try { expect(hidden(target)).toBe(value.toISOString()) } finally { destroy() }
+  })
+})

@@ -1,0 +1,24 @@
+{
+  "description": "A one-row footer for Svelte 5 built from the SvGrid UI kit: the copyright year on the left and Privacy, Terms and Status links on the right, with a green Operational SvBadge on the Status link. On phones the row stacks with the links above the copyright.",
+  "keywords": [
+    "svelte simple footer",
+    "svelte 5 one line footer",
+    "svelte app footer",
+    "svelte footer copyright links",
+    "svelte legal links footer"
+  ],
+  "faq": [
+    {
+      "question": "How do I change the links?",
+      "answer": "Pass links to createSimpleFooter(), an array of { label, href, status? }. A link with status: true gets a green SvBadge reading Operational after its label."
+    },
+    {
+      "question": "Does it mark the current page?",
+      "answer": "Yes, when you pass currentPath. linkProps(link) sets aria-current=\"page\" on the link whose href matches it, for example page.url.pathname from $app/state."
+    },
+    {
+      "question": "How does it change on a phone?",
+      "answer": "Below 560 px the footer switches to a reversed column, so the three links sit above the copyright, both aligned left."
+    }
+  ]
+}
