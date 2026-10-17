@@ -670,6 +670,15 @@
   /** Whether a `pointerover`/`pointerout` on a cell crossed the cell's own
    *  edge, as `pointerenter`/`pointerleave` would, rather than a move between
    *  its children. */
+  // A click on a control inside an open cell editor (a stepper button, a
+  // clear button, an option) belongs to the editor, not to the cell: handled
+  // as a cell click it moved focus to the grid while the editor stayed open,
+  // and the next Enter went to the grid instead of committing the edit.
+  function clickInOpenEditor(event: MouseEvent, editing: boolean): boolean {
+    if (!editing) return false;
+    const target = event.target as Element | null;
+    return !!target?.closest?.('button, input, select, textarea, [role="option"], [role="listbox"]');
+  }
   function crossedCell(event: PointerEvent & { currentTarget: EventTarget }): boolean {
     const other = event.relatedTarget as Node | null;
     return !other || !(event.currentTarget as Node).contains(other);
@@ -2037,7 +2046,10 @@
                           }}
                           ondblclick={() =>
                             emitCellDoubleClick(rowIndex, c.colIndex)}
-                          onclick={() => onCellClick(rowIndex, c.colIndex)}
+                          onclick={(event) => {
+                            if (clickInOpenEditor(event, !!ui && (ui.editing || ui.rowEdit))) return;
+                            onCellClick(rowIndex, c.colIndex);
+                          }}
                           oncontextmenu={(event) =>
                             openContextMenu(
                               event,

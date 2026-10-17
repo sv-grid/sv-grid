@@ -102,6 +102,25 @@ describe('the data type and the editor are separate', () => {
 })
 
 describe('registry wiring in SvGrid', () => {
+  it('a click on a control inside the open editor does not move focus to the grid', async () => {
+    // The cell's click handler treated a click on an editor's own button (a
+    // number stepper) as a cell click and focused the grid table while the
+    // editor stayed open, so the next Enter went to the grid (2026-10-17).
+    registerCellEditor('stars', { component: SvRating, props: (ctx) => ({ value: ctx.value }) })
+    const { api, target, destroy } = await mountGrid()
+    try {
+      api.startEditing(0, 'score')
+      await vi.waitFor(() => expect(target.querySelector('.sv-rating button')).not.toBeNull())
+      const button = target.querySelector<HTMLButtonElement>('.sv-rating button')!
+      button.focus()
+      button.click()
+      expect(document.activeElement).toBe(button)
+      expect(target.querySelector('.sv-rating')).not.toBeNull()
+    } finally {
+      destroy()
+    }
+  })
+
   it('a registered editor that commits ends the edit without an error', async () => {
     // The commit path end to end. The browser crash this guards against
     // (2026-10-17, svgrid.com hero grid) came from an editor reading a prop

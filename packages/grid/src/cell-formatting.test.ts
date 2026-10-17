@@ -184,11 +184,16 @@ describe('formatNumericWithConfig - number', () => {
     expect(formatNumericWithConfig(Infinity, { type: 'number' })).toBe('Infinity')
   })
 
-  it('treats null as 0 (Number(null) === 0) and undefined as String("")', () => {
-    // Number(null) === 0, so null formats as "0".
-    expect(formatNumericWithConfig(null, { type: 'number', locales: 'en-US' })).toBe('0')
-    // Number(undefined) === NaN -> falls back to String(undefined ?? '') -> "".
+  it('renders an empty cell (null, undefined, blank string) as empty, not 0', () => {
+    // Number(null) and Number('') are 0, so a cleared value used to render as
+    // "0" / "$0": a number nobody entered (2026-10-17).
+    expect(formatNumericWithConfig(null, { type: 'number', locales: 'en-US' })).toBe('')
+    expect(formatNumericWithConfig(null, { type: 'currency', currency: 'USD', locales: 'en-US' })).toBe('')
+    expect(formatNumericWithConfig('', { type: 'percent' })).toBe('')
+    expect(formatNumericWithConfig('  ', { type: 'number' })).toBe('')
     expect(formatNumericWithConfig(undefined, { type: 'number' })).toBe('')
+    // A real zero still formats.
+    expect(formatNumericWithConfig(0, { type: 'currency', currency: 'USD', locales: 'en-US' })).toBe('$0.00')
   })
 
   it('accepts strings that parse to numbers', () => {

@@ -16,6 +16,9 @@
     size?: 'sm' | 'md' | 'lg'
     variant?: 'primary' | 'secondary' | 'outline' | 'ghost'
     ariaLabel?: string
+    /** False: the button never takes focus or a Tab stop, so pressing it keeps
+     *  focus in the field it steps (a spinner beside an input). Default true. */
+    focusable?: boolean
     children?: Snippet
   }
 
@@ -27,6 +30,7 @@
     size = 'md',
     variant = 'secondary',
     ariaLabel,
+    focusable = true,
     children,
   }: Props = $props()
 
@@ -40,6 +44,10 @@
 
   function start(e: PointerEvent) {
     if (disabled || e.button !== 0) return
+    // Keep focus where it is (the input this button steps), so a click does
+    // not blur the field: preventing pointerdown's default suppresses the
+    // mousedown that would move focus.
+    if (!focusable) e.preventDefault()
     onclick?.() // fire once immediately
     delayTimer = setTimeout(() => {
       repeatTimer = setInterval(() => onclick?.(), Math.max(16, interval))
@@ -59,6 +67,7 @@
   class="sv-btn sv-btn--{variant} sv-btn--{size} sv-repeat"
   {disabled}
   aria-label={ariaLabel}
+  tabindex={focusable ? undefined : -1}
   onpointerdown={start}
   onpointerleave={stop}
   onkeydown={onKeydown}

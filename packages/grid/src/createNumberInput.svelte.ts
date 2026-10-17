@@ -126,7 +126,20 @@ export function createNumberInput(config: NumberInputConfig) {
     commit()
   }
   function onInput(e: Event) {
-    text = (e.currentTarget as HTMLInputElement).value
+    const el = e.currentTarget as HTMLInputElement
+    const next = el.value
+    // Reject a keystroke that can never be part of a number (a letter, a
+    // symbol): the field kept "4a5" and the value parsed to null or to a
+    // number the user did not type. Digits, the sign, a decimal point, a group
+    // separator, an exponent and the prefix / suffix text stay allowed.
+    const core = next.replace(prefix(), '').replace(suffix(), '')
+    if (/[^0-9.,\s+\-eE]/.test(core)) {
+      const caret = Math.max(0, (el.selectionStart ?? next.length) - (next.length - text.length))
+      el.value = text
+      el.setSelectionRange(caret, caret)
+      return
+    }
+    text = next
   }
   function onKeydown(e: KeyboardEvent) {
     if (e.key === 'ArrowUp') { e.preventDefault(); bump(1) }

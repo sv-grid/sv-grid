@@ -127,10 +127,10 @@
   {/if}
   {#if spinButtons}
     <div class="sv-num__spin">
-      <SvRepeatButton size="sm" variant="ghost" ariaLabel="Increment" onclick={num.increment}>
+      <SvRepeatButton size="sm" variant="ghost" ariaLabel="Increment" focusable={false} onclick={num.increment}>
         <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6" /></svg>
       </SvRepeatButton>
-      <SvRepeatButton size="sm" variant="ghost" ariaLabel="Decrement" onclick={num.decrement}>
+      <SvRepeatButton size="sm" variant="ghost" ariaLabel="Decrement" focusable={false} onclick={num.decrement}>
         <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6" /></svg>
       </SvRepeatButton>
     </div>
