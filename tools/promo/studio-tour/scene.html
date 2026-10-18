@@ -127,11 +127,11 @@ const SHOTS = [
   { id: 'generate', kind: 'clip', label: 'Generate', cap: 'Routes, schemas, sign-in, tests, a CI workflow', dur: 7.0, zoom: [1.28, '50% 50%', 1.0] },
   { id: 'deploy', kind: 'clip', label: 'Deploy', cap: 'Vercel, Netlify or Cloudflare', dur: 5.0, zoom: [1.6, '50% 50%', 0.9] },
   { id: 'samples', kind: 'clip', label: 'Sample apps', cap: 'Or start from a finished app', dur: 6.0, zoom: [1.28, '50% 46%', 0.9] },
-  { id: 'checks', kind: 'checks', dur: 9.6, head: 'Every generated app comes with', items: [
+  { id: 'checks', kind: 'checks', dur: 9.6, head: 'What you get', items: [
     'SvelteKit routes and API endpoints', 'Typed schemas, with tests',
-    'Sign-in, roles, OAuth and 2FA', 'A Drizzle data layer and migrations',
-    'A GitHub Actions CI workflow', 'Deploy to Vercel, Netlify, Cloudflare or Docker',
-    'Svelte 5 code you can read and edit', 'An MCP server, so AI agents can build with you',
+    'A GitHub Actions CI workflow', 'Deploy setup for Vercel, Netlify, Cloudflare or Node',
+    'Svelte 5 code you can read and edit', 'Sign-in, roles, OAuth and 2FA, when you want them',
+    'A Drizzle data layer, when you want one', 'An MCP server, so AI agents can build with you',
   ] },
   { id: 'value', kind: 'text', dur: 6.6, lines: [
     { t: 0.2, html: 'Generate the boring parts.' },
@@ -184,10 +184,13 @@ function art(kind, fg = '#1c1917', faint = '#d6d3d1') {
 let plan = []
 let clips = {}
 const nodes = []
-function build() {
+// durs: shot id -> seconds, from the narration (render.mjs); missing ids keep SHOTS.
+function build(durs = {}) {
   const stage = document.getElementById('stage')
+  stage.innerHTML = ''
+  nodes.length = 0
   let at = 0
-  plan = SHOTS.map((s) => { const p = { ...s, start: at, end: at + s.dur }; at += s.dur; return p })
+  plan = SHOTS.map((s) => { const dur = durs[s.id] ?? s.dur; const p = { ...s, dur, start: at, end: at + dur }; at += dur; return p })
   for (const s of plan) {
     const n = el('div', 'shot')
     n.dataset.id = s.id
@@ -315,6 +318,8 @@ function seek(t) {
 }
 
 build()
+window.__shots = () => SHOTS.map(({ id, kind, dur }) => ({ id, kind, dur }))
+window.__setDurations = (d) => { build(d); seek(0) }
 window.__plan = () => plan.map(({ id, kind, start, end, dur }) => ({ id, kind, start, end, dur }))
 window.__setClips = (c) => { clips = c }
 window.__seek = (t) => seek(t)

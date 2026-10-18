@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 /**
- * Render "SvGrid Studio, a tour" to a 1920 x 1080 MP4, music only.
+ * Render "SvGrid Studio, a tour" to a 1920 x 1080 MP4, narrated.
  *
- *   node tools/promo/studio-tour/render.mjs [--preview t1,t2,...] [--no-footage] [--only clip1,clip2]
+ *   node --env-file=.env tools/promo/studio-tour/render.mjs [--preview t1,t2,...] [--no-footage] [--only clip1,clip2]
  *
  * scene.html owns the shot list; this reads it, records each footage clip at
  * its shot's length from the Studio on svgrid.com (footage.mjs, STUDIO_URL to
- * point elsewhere), then seeks the scene frame by frame. The score is
- * synthesized here, cued to the shot list, so nothing is licensed.
+ * point elsewhere), then seeks the scene frame by frame. The narration
+ * (voice.mjs, ElevenLabs) sets each shot's length; the score is synthesized
+ * here, cued to the shot list, and ducks under the voice.
  *
- * Out: marketing/videos/studio-tour/studio-tour.mp4, poster.jpg.
+ * Out: marketing/videos/studio-tour/studio-tour.mp4, studio-tour.srt, poster.jpg.
  */
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
@@ -18,6 +19,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { chromium } from 'playwright'
 import { recordClip } from './footage.mjs'
+import { LEAD, mixArgs, prepareVoices, shotDurations, srt } from './voice.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..', '..')
@@ -107,7 +109,11 @@ try {
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 })
   await page.goto(pathToFileURL(join(HERE, 'scene.html')).href, { waitUntil: 'networkidle' })
   await page.evaluate(() => document.fonts.ready)
+  const voices = await prepareVoices(join(OUT, '.voice-cache'))
+  const durs = shotDurations(await page.evaluate(() => window.__shots()), voices)
+  await page.evaluate((d) => window.__setDurations(d), durs)
   const plan = await page.evaluate(() => window.__plan())
+  const at = Object.fromEntries(voices.map((v) => { const s = plan.find((x) => x.id === v.id); return [v.id, s.start + LEAD(s.kind)] }))
   const end = plan.at(-1).end
   for (const s of plan) console.log(`  ${s.start.toFixed(1).padStart(6)}-${s.end.toFixed(1).padEnd(6)} ${s.kind.padEnd(6)} ${s.id}`)
   console.log(`cut: ${end.toFixed(2)} s`)
@@ -154,12 +160,14 @@ try {
     const wav = join(tmp, 'score.wav')
     writeFileSync(wav, synthesize(plan, end))
     const mp4 = join(OUT, 'studio-tour.mp4')
-    execFileSync('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-framerate', String(FPS), '-i', join(frames, '%05d.jpg'), '-i', wav,
-      '-filter_complex', '[1:a]loudnorm=I=-16:TP=-1.5:LRA=9[aout]', '-map', '0:v', '-map', '[aout]',
+    const { inputs, graph } = mixArgs(wav, voices, at, 2)
+    execFileSync('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-framerate', String(FPS), '-i', join(frames, '%05d.jpg'), ...inputs,
+      '-filter_complex', graph, '-map', '0:v', '-map', '[aout]',
       '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-ar', '48000',
       '-t', end.toFixed(3), '-movflags', '+faststart', mp4], { stdio: 'inherit' })
     rmSync(tmp, { recursive: true, force: true })
     rmSync(frames, { recursive: true, force: true })
+    writeFileSync(join(OUT, 'studio-tour.srt'), srt(voices, at))
     console.log(`done: ${mp4}`)
   }
 } finally {
