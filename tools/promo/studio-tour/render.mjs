@@ -12,13 +12,12 @@
  *
  * Out: marketing/videos/studio-tour/studio-tour.mp4, studio-tour.srt, poster.jpg.
  */
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
-import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { chromium } from 'playwright'
-import { recordClip } from './footage.mjs'
+import { WORK, recordClip } from './footage.mjs'
 import { LEAD, mixArgs, prepareVoices, shotDurations, srt } from './voice.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -141,8 +140,7 @@ try {
     }
     console.log(`previews in ${OUT}`)
   } else {
-    const frames = join(tmpdir(), 'svgrid-studio-tour-frames')
-    rmSync(frames, { recursive: true, force: true })
+    const frames = join(WORK, 'frames')
     mkdirSync(frames, { recursive: true })
     const total = Math.ceil(end * FPS)
     for (let f = 0; f < total; f++) {
@@ -155,18 +153,19 @@ try {
     await page.evaluate((x) => window.__seek(x), poster.start + poster.dur * 0.3)
     await settle()
     await page.screenshot({ path: join(OUT, 'poster.jpg'), type: 'jpeg', quality: 90 })
-    const tmp = join(tmpdir(), 'svgrid-studio-tour-audio')
-    mkdirSync(tmp, { recursive: true })
-    const wav = join(tmp, 'score.wav')
+    const wav = join(WORK, 'score.wav')
     writeFileSync(wav, synthesize(plan, end))
     const mp4 = join(OUT, 'studio-tour.mp4')
+    // Encode beside it and rename at the end: an interrupted render leaves
+    // the last good cut in place instead of a file with no moov atom.
+    const partial = join(WORK, 'studio-tour.mp4')
     const { inputs, graph } = mixArgs(wav, voices, at, 2)
     execFileSync('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-framerate', String(FPS), '-i', join(frames, '%05d.jpg'), ...inputs,
       '-filter_complex', graph, '-map', '0:v', '-map', '[aout]',
       '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-ar', '48000',
-      '-t', end.toFixed(3), '-movflags', '+faststart', mp4], { stdio: 'inherit' })
-    rmSync(tmp, { recursive: true, force: true })
-    rmSync(frames, { recursive: true, force: true })
+      '-t', end.toFixed(3), '-movflags', '+faststart', partial], { stdio: 'inherit' })
+    copyFileSync(partial, mp4)
+    rmSync(WORK, { recursive: true, force: true })
     writeFileSync(join(OUT, 'studio-tour.srt'), srt(voices, at))
     console.log(`done: ${mp4}`)
   }

@@ -45,11 +45,9 @@
   .chip { display: inline-flex; align-items: center; gap: 16px; padding: 20px 30px 20px 22px; background: #fff; border: 1px solid var(--line); border-radius: 14px; font-size: 34px; font-weight: 600; box-shadow: 0 10px 30px -18px rgba(120, 60, 20, .35); }
   .chip i { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; font: 700 20px 'JetBrains Mono'; color: #fff; font-style: normal; }
 
-  .proof-top { position: absolute; left: 190px; top: 250px; font-size: 44px; font-weight: 600; color: var(--muted); }
-  .proof-big { position: absolute; left: 190px; top: 320px; font-size: 150px; font-weight: 800; letter-spacing: -.045em; line-height: 1; }
+  .proof-top { position: absolute; left: 190px; top: 420px; font-size: 44px; font-weight: 600; color: var(--muted); }
+  .proof-big { position: absolute; left: 190px; top: 490px; font-size: 150px; font-weight: 800; letter-spacing: -.045em; line-height: 1; }
   .proof-big small { font-size: 64px; font-weight: 600; color: var(--soft); letter-spacing: -.02em; margin-left: 24px; }
-  .names { position: absolute; left: 190px; right: 190px; top: 640px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 60px; }
-  .names span { font-size: 58px; font-weight: 800; letter-spacing: -.02em; color: #57534e; }
 
   .tiles { position: absolute; left: 190px; right: 190px; top: 330px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
   .tile { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 30px 34px; height: 300px; position: relative; box-shadow: 0 16px 40px -26px rgba(120, 60, 20, .45); }
@@ -217,11 +215,8 @@ function build(durs = {}) {
     } else if (s.kind === 'proof') {
       n.classList.add('light')
       add(n, el('div', 'proof-top', 'From the team behind jQWidgets'), 0.2)
-      const big = add(n, el('div', 'proof-big', '<span class="count">5,000+</span><small>customers, including</small>'), 0.6)
+      const big = add(n, el('div', 'proof-big', '<span class="count">5,000+</span><small>customers</small>'), 0.6)
       big.dataset.count = '1'
-      const names = el('div', 'names')
-      n.appendChild(names)
-      ;['Samsung', 'Boeing', 'NVIDIA', 'Microsoft', 'Nokia', 'Intel'].forEach((nm, i) => add(names, el('span', '', nm), 1.9 + i * 0.22))
     } else if (s.kind === 'tiles') {
       n.classList.add('light')
       add(n, el('div', 'rule'), 0.1)

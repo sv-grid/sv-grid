@@ -13,6 +13,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
+// Per process: two renders at once used to share these folders, and one
+// deleted the other's clip frames mid-encode (blank footage in the cut).
+export const WORK = join(tmpdir(), `svgrid-studio-tour-${process.pid}`)
+
 export const STUDIO = process.env.STUDIO_URL ?? 'https://svgrid.com/studio/crm'
 // 1680 css px is the narrowest width where the toolbar keeps Generate app on
 // screen; the scale gives 1800 x 1012 frames for the 1600 x 900 card.
@@ -39,7 +43,7 @@ async function openStudio(page) {
 
 /** Steps against frames: { f, aim?: () => locator | point, act?: (point) => Promise, each?: (i) => Promise, len? }. */
 async function film(page, name, frameCount, steps, check = {}) {
-  const dir = join(tmpdir(), 'svgrid-studio-tour', name)
+  const dir = join(WORK, 'clips', name)
   rmSync(dir, { recursive: true, force: true })
   mkdirSync(dir, { recursive: true })
   let cur = { x: W - 140, y: H - 110 }
