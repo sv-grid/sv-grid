@@ -28,3 +28,5 @@ in-cell editor:
   "Clear filters" button (`clearFilters`) that clears every filter surface.
   It used to be one unstyled line of text against the left edge. A
   consumer's `emptyMessage` still wins and hides the button.
+- The pager wraps onto a second line when the grid is narrower than it,
+  instead of overflowing off the left edge on a phone.

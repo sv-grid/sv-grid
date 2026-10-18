@@ -3091,9 +3091,15 @@ select.sv-grid-fr-editor {
    unstyled pager. Uses --sg-* tokens with fallbacks like the rest of the theme. */
 .sv-grid-pagination {
   display: flex;
+  /* Wraps onto a second line when the grid is narrower than the pager
+     (page size + range + page label + four buttons need about 430px). As one
+     unwrapped right-aligned row it overflowed on the LEFT on a phone: the
+     page-size control went off the grid and the screen, and the range text
+     squeezed to three lines. */
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 24px;
+  gap: 8px 24px;
   padding: 12px 16px;
   margin-top: 0;
   border: 1px solid var(--sg-border, #e2e8f0);
@@ -3174,8 +3180,12 @@ select.sv-grid-fr-editor {
   border-color: var(--sg-accent, #2563eb);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--sg-accent, #2563eb) 30%, transparent);
 }
+.sv-grid-pagination > * {
+  flex-shrink: 0;
+}
 .sv-grid-pagination-range {
   color: var(--sg-fg, #0f172a);
+  white-space: nowrap;
 }
 .sv-grid-pagination-nav {
   display: inline-flex;
@@ -3210,6 +3220,7 @@ select.sv-grid-fr-editor {
 .sv-grid-pagination-label {
   margin: 0 8px;
   color: var(--sg-fg, #0f172a);
+  white-space: nowrap;
 }
 
 /* ---- Menu / filter chrome completeness -----------------------------------
