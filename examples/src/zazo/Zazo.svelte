@@ -424,20 +424,30 @@
   }
 
   // ---- left alone: back to work ---------------------------------------------------
-  // Thirty seconds with nobody at him (popup shut; not talking, listening,
-  // pointing or walking) and he opens a laptop on his lap and types: he is
-  // working on SvGrid. A hover or a click puts the laptop away, and the half
-  // minute starts again once he is left alone.
-  const IDLE_MS = 30_000
+  // Once he has sat down and said hello, and whenever nobody is at him (popup
+  // shut; not greeting, talking, listening, pointing or walking), he opens a
+  // laptop on his lap and types, code rising off the screen: he is working on
+  // SvGrid. A hover or a click puts the laptop away; a few seconds after he is
+  // left alone it comes back out. It used to wait thirty seconds, so most
+  // visitors never saw him work (2026-10-18).
+  const IDLE_MS = 3_000
   // Shown in a bubble, not spoken: like the hello, it should not talk over the page.
   const WORKING_NOTE = "OK, if you need me, I'm here. While I'm idle, I'll continue improving SvGrid."
   let working = $state(false)
   let workNote = $state(false)
   let workNoteTimer = 0
   let idleRestart = $state(0)
+  // The mouse is on him: he stays off the laptop until it leaves (with the
+  // wait down to seconds, he would otherwise reopen it under the pointer).
+  let pointerOn = $state(false)
+  // The note is said once a visit: with the laptop back a few seconds after
+  // every hover, repeating it would nag.
+  let workNoteShown = false
   function startWorking() {
     working = true
     hello = false
+    if (workNoteShown) return
+    workNoteShown = true
     workNote = true
     clearTimeout(workNoteTimer)
     workNoteTimer = window.setTimeout(() => (workNote = false), 7000)
@@ -450,7 +460,7 @@
   }
   $effect(() => {
     void idleRestart
-    const calm = shown_ && !open && !hidden && !leaving && !arriving && !listening && !ring && !speaking
+    const calm = shown_ && !open && !hidden && !leaving && !arriving && !listening && !ring && !speaking && !hello && !pointerOn
     if (!calm) {
       untrack(() => { working = false; workNote = false })
       return
@@ -464,6 +474,7 @@
   // click: browsers let a page play sound once it has been clicked, so his
   // first words follow one.
   function onHover() {
+    pointerOn = true
     stopWorking()
     if (leaving) return
     // A heavy demo can hold up his entrance; the mouse reaching him brings him in now.
@@ -829,6 +840,7 @@
       aria-controls="zazo-panel"
       onclick={onFigureClick}
       onmouseenter={onHover}
+      onmouseleave={() => (pointerOn = false)}
     >
       <svg viewBox="0 -8 100 128" aria-hidden="true">
         <defs>

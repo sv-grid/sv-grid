@@ -1,15 +1,17 @@
 /**
- * E2E: left alone for 30 seconds, Zazo opens his laptop and works on SvGrid,
- * with a note in a bubble (shown, not spoken). A hover puts the laptop away.
+ * E2E: once he has sat down and said hello, Zazo opens his laptop and works
+ * on SvGrid within a few seconds, with a note in a bubble the first time
+ * (shown, not spoken). A hover puts the laptop away; left alone again, he goes
+ * back to work, without repeating the note.
  *
- * The page clock is Playwright's, so the half minute passes at once. He stays
- * away under automation unless the URL has `?zazo`.
+ * The page clock is Playwright's, so the waits pass at once. He stays away
+ * under automation unless the URL has `?zazo`.
  */
 import { expect, test, type Page } from '@playwright/test'
 
 async function seated(page: Page, path: string) {
   // Paused, not just installed: an installed clock still runs in real time,
-  // and a slow first compile then ate into his 30 seconds before we counted.
+  // and a slow first compile then ate into his wait before we counted.
   await page.clock.install({ time: new Date('2026-10-17T09:00:00') })
   await page.clock.pauseAt(new Date('2026-10-17T09:00:01'))
   // Not "load": on a cold dev server the home page's first compile can take
@@ -33,14 +35,12 @@ test.describe('Zazo, left alone', () => {
   // Room for a cold server's first compile; the half minute itself is instant.
   test.describe.configure({ timeout: 90_000 })
 
-  test('opens his laptop after 30 s, shows his note, and stops on hover', async ({ page }, info) => {
+  test('opens his laptop soon after he sits, shows his note, and stops on hover', async ({ page }, info) => {
     test.skip(info.project.name !== 'chromium', 'desktop only: he is hidden on phones')
     const figure = await seated(page, '/sv-grid/?zazo')
 
-    await page.clock.runFor(25_000)
-    await expect(figure).not.toHaveClass(/is-working/)
-
-    await page.clock.runFor(6_000)
+    // The hello bubble is up for 5 s after he sits; he does not work over it.
+    await page.clock.runFor(10_000)
     await expect(figure).toHaveClass(/is-working/)
     await expect(page.locator('.zazo-work-note')).toHaveText(
       "OK, if you need me, I'm here. While I'm idle, I'll continue improving SvGrid.",
@@ -50,6 +50,12 @@ test.describe('Zazo, left alone', () => {
     const box = await figure.boundingBox()
     await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 3, { steps: 4 })
     await expect(figure).not.toHaveClass(/is-working/)
+    await expect(page.locator('.zazo-work-note')).toHaveCount(0)
+
+    // Left alone again, he goes back to work, and the note is not repeated.
+    await page.mouse.move(10, 600)
+    await page.clock.runFor(4_000)
+    await expect(figure).toHaveClass(/is-working/)
     await expect(page.locator('.zazo-work-note')).toHaveCount(0)
   })
 
