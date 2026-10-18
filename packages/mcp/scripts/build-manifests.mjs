@@ -34,7 +34,7 @@ function readAll(dir, ext) {
 const demosDir = join(repoRoot, 'examples', 'src', 'demos')
 const docsDir = join(repoRoot, 'docs')
 
-// Gallery categories, so `list_examples` can be filtered instead of returning
+// Gallery categories, so `svgrid_search` can filter demos instead of returning
 // all 373 demos. The registry lives in the PRIVATE website submodule.
 //
 // Without it this used to warn and write "Other" for every example. That is
@@ -126,7 +126,7 @@ const routedDocs = readAll(docsDir, '.md')
       slug,
       path: 'docs/' + slug + '.md',
       title: titleMatch ? plainTitle(titleMatch[1]) : slug,
-      // Readable group name, so `list_docs` can be browsed a section at a time
+      // Readable group name, so `svgrid_search` can browse the docs a section at a time
       // rather than dumping all 370 pages.
       section: SECTION_TITLES[section] ?? (section || 'Overview'),
       markdown,
@@ -196,7 +196,7 @@ const apiReference = {
 }
 
 // The REAL exported surface, read out of the workspace sources. This is what
-// `check_svgrid_code` validates against, so it must be generated rather than
+// `svgrid_check_code` validates against, so it must be generated rather than
 // curated - a hand-kept list would go stale and start rejecting valid code.
 const apiSurface = buildApiSurface(repoRoot)
 // The JSON schemas (docs/schemas, built by tools/build-schemas.mjs), so a

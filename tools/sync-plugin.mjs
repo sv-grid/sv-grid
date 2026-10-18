@@ -138,7 +138,7 @@ wanted.set(
       '  surface of the installed version before you ever see the code.',
       '',
       'The hosted server needs no Node and no key. For the Svelte compiler pass and',
-      'the 27 Studio tools, point the server at `npx @svgrid/mcp` instead - see',
+      'the Studio tools, point the server at `npx @svgrid/mcp` instead - see',
       '<https://svgrid.com/docs/help/mcp-server/>.',
       '',
       'Privacy: the hosted server logs the tool name, timing, search text and the',

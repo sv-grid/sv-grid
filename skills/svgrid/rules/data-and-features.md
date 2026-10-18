@@ -67,7 +67,7 @@ try to read grid state by reaching into the DOM.
 
 Common methods: `setFilter`, `clearAllFilters`, `setSort`, `setGroupBy`,
 `getDisplayedRows`, `setPageSize`. When a name is uncertain, check
-`https://svgrid.com/schemas/svgrid-options.json` or the MCP `list_docs`
+`https://svgrid.com/schemas/svgrid-options.json` or the MCP `svgrid_search`
 tool - don't guess.
 
 ## Data is a plain reactive array

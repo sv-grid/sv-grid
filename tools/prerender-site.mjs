@@ -919,26 +919,25 @@ const PRICING_TIERS = [
 
 // The MCP page's audience is largely AI assistants reading the site, so it gets
 // a real crawlable body rather than the generic title + description stub.
+// The five tools packages/mcp lists by default (listedTools in src/index.ts).
 const MCP_DOC_TOOLS = [
-  ['check_svgrid_code', 'Check a file against the real exported surface of the installed version and return line-numbered diagnostics, each with the exact replacement.'],
-  ['list_examples', 'List every demo with id, title, and a one-line blurb.'],
-  ['get_example_source', 'Return the full .svelte source of one demo, verbatim, including imports.'],
-  ['list_docs', 'List every documentation page (slug + title).'],
-  ['get_doc', 'Return the markdown for a single doc page.'],
-  ['search_docs', 'Substring search across all docs, with an excerpt around the first hit.'],
-  ['get_api_reference', 'The curated public-API surface, grouped by category.'],
+  ['svgrid_check_code', 'Check a file against the real exported surface of the installed version and compile it. Returns line-numbered diagnostics and a corrected copy of the file when the fix is exact.'],
+  ['svgrid_search', 'Search the docs, every demo and the API surface in one call. No arguments returns an index.'],
+  ['svgrid_get', 'Read one thing in full: a doc slug, a demo id, or "api" for the curated API reference.'],
+  ['svgrid_preview', 'Render a live, interactive grid in the conversation from columns and rows, or from a demo id.'],
+  ['svgrid_scaffold', 'Turn a Drizzle schema, sample rows or an EntitySchema into runnable SvelteKit files. Commercial (SvGrid Studio).'],
 ]
 
 function mcpBody() {
   let html = `<main class="prerender-route" data-prerender="1"><h1>@svgrid/mcp - Model Context Protocol server for SvGrid</h1>`
   html += `<p>The SvGrid MCP server gives an AI coding agent real demo source, current documentation, and the curated API reference as callable tools - and then checks the code the agent writes against the real exported surface of the installed version, returning the exact replacement for every wrong prop, column key, and piece of Svelte 4 syntax. No API key. It is listed in the official MCP registry as <code>com.svgrid/svgrid</code>.</p>`
   html += `<h2>Connect</h2><p>Hosted, with nothing to install: point any MCP client at <code>https://mcp.svgrid.com/mcp</code>, or run <code>claude mcp add --transport http svgrid https://mcp.svgrid.com/mcp</code>. Locally over stdio, which adds the Svelte compiler pass and the SvGrid Studio tools and keeps every byte on your machine: <code>claude mcp add svgrid -- npx -y @svgrid/mcp</code>. Claude Desktop, Cursor, VS Code, and Zed each take the same thing in their own config format.</p>`
-  html += `<h2>Tools</h2><p>The local server exposes 36 tools and the hosted endpoint six. The verification, documentation and example tools are free; the SvGrid Studio generators are commercial.</p><ul>`
+  html += `<h2>Tools</h2><p>The local server lists ${MCP_DOC_TOOLS.length} tools. The verification, documentation, example and preview tools are free; the SvGrid Studio generators are commercial.</p><ul>`
   for (const [name, desc] of MCP_DOC_TOOLS) html += `<li><code>${name}</code> - ${escapeAttr(desc)}</li>`
   html += `</ul>`
-  html += `<p>The Studio generators are <code>introspect_source</code> (infer an EntitySchema from a Drizzle schema file or sample JSON rows) and <code>scaffold_entity</code> (generate runnable SvelteKit files from that schema), plus 27 <code>studio_*</code> tools that drive the same validated project model the visual designer uses: entities, screens, blocks, forms, auth, access, tenancy, data layer, deploy target, theme, and app generation.</p>`
+  html += `<p>Four more Studio tools are listed when you opt in with <code>SVGRID_MCP_STUDIO=1</code> or a license key: <code>studio_project</code>, <code>studio_apply</code>, <code>studio_configure</code> and <code>studio_build</code>. They drive the same validated project model the visual designer uses: entities, screens, blocks, forms, auth, access, tenancy, data layer, deploy target, theme, and app generation.</p>`
   html += `<h2>Licensing</h2><p>The verification and documentation tools are free and need no key. The Studio generators run unlicensed but prepend a notice comment to generated files; set <code>SVGRID_LICENSE_KEY</code> in the MCP server's environment for licensed use.</p>`
-  html += `<h2>Privacy</h2><p>Run locally and nothing leaves the machine: no telemetry, no outbound network calls, no key. The hosted endpoint receives whatever you pass a tool - including the source you give <code>check_svgrid_code</code> - and logs the tool name, duration and query, but never the submitted source itself. Use the local server if your code cannot leave the building.</p>`
+  html += `<h2>Privacy</h2><p>Run locally and nothing leaves the machine: no telemetry, no outbound network calls, no key. The hosted endpoint receives whatever you pass a tool - including the source you give <code>svgrid_check_code</code> - and logs the tool name, duration and query, but never the submitted source itself. Use the local server if your code cannot leave the building.</p>`
   html += `<p><a href="${BASE}docs/help/mcp-server/">MCP server documentation</a> · <a href="${BASE}docs/help/llm-grounding/">LLM grounding</a> · <a href="${BASE}pricing/">Pricing</a></p>`
   return html + `</main>`
 }

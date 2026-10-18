@@ -3379,7 +3379,7 @@ The two ways of running it differ here, so pick deliberately.
   calls, no API key.
 - Serves a documentation and example corpus bundled into the package at
   build time, so answers are pinned to the version you installed.
-- `check_svgrid_code` reads the source you pass it in-process and never
+- `svgrid_check_code` reads the source you pass it in-process and never
   sends it anywhere.
 
 **Hosted (`https://mcp.svgrid.com/mcp`)**
@@ -3439,7 +3439,7 @@ the commercial Studio code generators.
 
 Hosted (`https://mcp.svgrid.com/mcp`) if you want it working in one paste,
 with no Node and no config file. Local (`npx @svgrid/mcp`) if you want the
-Svelte compiler pass in `check_svgrid_code`, the 27 Studio tools, offline
+Svelte compiler pass in `svgrid_check_code`, the Studio tools, offline
 use, or your source never leaving the machine. See
 [Security model](#security-model) for what each one sends.
 
@@ -3447,7 +3447,7 @@ use, or your source never leaving the machine. See
 
 Two ways. It exposes the docs, example sources, and API reference as tools,
 so the assistant retrieves version-pinned answers instead of hallucinating an
-API from training data. And `check_svgrid_code` closes the loop: the model
+API from training data. And `svgrid_check_code` closes the loop: the model
 runs what it wrote past the real exported surface and gets told exactly what
 is wrong before you see it. That matters most for Svelte 5, where models
 routinely mix in outdated Svelte 4 syntax.
@@ -3457,7 +3457,7 @@ routinely mix in outdated Svelte 4 syntax.
 The local server answers for the version bundled in the `@svgrid/mcp` release
 you install, so pin it alongside `@svgrid/grid` if you are behind. The hosted
 server always tracks the current release. Either way, every
-`check_svgrid_code` result names the version it checked against in its
+`svgrid_check_code` result names the version it checked against in its
 `checkedAgainst` field.
 
 ## See also

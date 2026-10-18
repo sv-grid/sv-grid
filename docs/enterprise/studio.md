@@ -116,7 +116,7 @@ AI required).
 
 **2. [AI / MCP](./studio/ai-generation.md)** - with `@svgrid/mcp` configured, ask
 your agent (Claude Code, Cursor, ...) to build a screen for a table; it calls
-`introspect_source` -> `scaffold_entity`, and the output is compile-verified
+`svgrid_scaffold`, and the output is compile-verified
 before it's written.
 
 **3. [Visual app designer](./studio/app-designer.md)** - run `npx @svgrid/studio

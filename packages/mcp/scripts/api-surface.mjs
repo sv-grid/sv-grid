@@ -1,6 +1,6 @@
 /**
  * Extract the REAL public API surface of @svgrid/grid and @svgrid/enterprise
- * from the workspace sources, so `check_svgrid_code` validates against what the
+ * from the workspace sources, so `svgrid_check_code` validates against what the
  * packages actually export rather than a hand-kept list that drifts.
  *
  * Everything here is plain text analysis - no TypeScript compiler, no bundler -

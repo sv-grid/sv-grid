@@ -1,6 +1,6 @@
 /**
  * scaffold - turn an `EntitySchema` into runnable SvelteKit files. The shared
- * code-emit core: both the AI generator (MCP `scaffold_entity` tool) and the
+ * code-emit core: both the AI generator (MCP `svgrid_scaffold` tool) and the
  * visual designer's "Generate code" action call this one function, so there is
  * a single source of truth for what generated code looks like.
  *
