@@ -81,10 +81,11 @@ const hover = (page) => (p) => page.mouse.move(p.x, p.y)
 const must = (cond, msg) => { if (!cond) throw new Error(msg) }
 const at = (n, k) => Math.round(n * k)
 
-export const CLIPS = ['adddata', 'datamodel', 'overview', 'pipeline', 'forecast', 'deal360', 'themes', 'code', 'preview', 'generate', 'deploy', 'samples']
+export const CLIPS = ['adddata', 'datamodel', 'overview', 'pipeline', 'forecast', 'deal360', 'themes', 'dark', 'code', 'preview', 'generate', 'deploy', 'samples']
 
 export async function recordClip(browser, name, n) {
   const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: DSF })
+  if (name === 'dark') await ctx.addInitScript(() => { try { localStorage.setItem('sg-theme', 'dark') } catch { /* private mode */ } })
   const page = await ctx.newPage()
   const errors = []
   page.on('pageerror', (e) => errors.push(e.message))
@@ -141,25 +142,35 @@ export async function recordClip(browser, name, n) {
         },
       },
     ], { [n - 2]: async () => must(info.picked && (await text(info.picked)), `deal360: the record did not change (${info.picked})`) })
-  } else if (name === 'themes') {
-    let current = (await page.locator('button', { hasText: 'Salesforce' }).first().count()) ? 'Salesforce' : 'Ember'
+  } else if (name === 'themes' || name === 'dark') {
+    // `dark` is the same picker with the visitor's dark preference set before
+    // load (the site's own toggle stores it): every theme has a dark variant.
+    let current = 'Salesforce'
     const pop = page.locator('.sv-studio__theme-pop')
     const item = (theme) => page.locator('.sv-studio__theme-name', { hasText: new RegExp(`^${theme}$`) }).first()
     const pick = (f, theme) => [
-      // The picker can stay open after a pick: click the trigger only to open it.
       { f, aim: () => page.locator('button', { hasText: current }).first(), act: async (p) => { if (!(await pop.isVisible())) await page.mouse.click(p.x, p.y) } },
-      { f: f + 20, aim: async () => { await item(theme).scrollIntoViewIfNeeded(); return item(theme) }, act: async (p) => { await page.mouse.click(p.x, p.y); current = theme } },
+      // Picked, then the picker closes so the restyled app fills the frame.
+      { f: f + 20, aim: async () => { await item(theme).scrollIntoViewIfNeeded(); return item(theme) }, act: async (p) => { await page.mouse.click(p.x, p.y); current = theme; await page.waitForTimeout(150); await page.keyboard.press('Escape') } },
     ]
-    frames = await film(page, name, n, [...pick(16, 'Ember'), ...pick(at(n, 0.3), 'Dracula'), ...pick(at(n, 0.55), 'Material 3'), ...pick(at(n, 0.78), 'Excel')],
-      { [n - 2]: async () => must(await page.locator('button', { hasText: 'Excel' }).first().count(), 'themes: did not end on Excel') })
+    const picks = name === 'dark' ? [...pick(14, 'Dracula'), ...pick(at(n, 0.55), 'Ember')] : [...pick(14, 'Ember'), ...pick(at(n, 0.38), 'Material 3'), ...pick(at(n, 0.7), 'Excel')]
+    const last = name === 'dark' ? 'Ember' : 'Excel'
+    frames = await film(page, name, n, picks, {
+      [n - 2]: async () => {
+        must(await page.locator('button', { hasText: last }).first().count(), `${name}: did not end on ${last}`)
+        must(!(await pop.isVisible()), `${name}: the theme picker is still open`)
+        if (name === 'dark') must(await page.evaluate(() => document.documentElement.dataset.theme === 'dark'), 'dark: the page is not in dark mode')
+      },
+    })
     info.last = current
   } else if (name === 'code') {
     let before = ''
     frames = await film(page, name, n, [
       { f: 16, aim: () => page.getByText('Code', { exact: true }).first(), act: async (p) => { await page.mouse.click(p.x, p.y); await page.locator('.cm-content').first().waitFor(); before = await page.locator('.cm-content').first().innerText() } },
-      { f: at(n, 0.45), aim: () => page.locator('button', { hasText: 'Go to screen' }).first(), act: click(page) },
-      { f: at(n, 0.75), aim: () => page.locator('button', { hasText: 'Show a message' }).first(), act: click(page) },
-    ], { [n - 2]: async () => { const after = await page.locator('.cm-content').first().innerText(); must(after.length > before.length + 10, 'code: no action was inserted') } })
+      // The editor's own Insert row; the Add action list sits below the fold at this size.
+      { f: at(n, 0.42), aim: () => page.locator('button', { hasText: /^Feed kpi1$/ }).first(), act: click(page) },
+      { f: at(n, 0.72), aim: () => page.locator('button', { hasText: /^Export CSV$/ }).first(), act: click(page) },
+    ], { [n - 2]: async () => { const after = await page.locator('.cm-content').first().innerText(); info.code = after.split('\n').slice(0, 4).join(' | '); must(after !== before && /ctx\.\w/.test(after), `code: no snippet was inserted (editor: ${JSON.stringify(after.slice(0, 200))})`) } })
   } else if (name === 'preview') {
     frames = await film(page, name, n, [
       { f: 16, aim: () => page.locator('button', { hasText: /^Preview$/ }).first(), act: click(page) },

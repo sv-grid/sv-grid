@@ -109,23 +109,24 @@ const SHOTS = [
   { id: 'proof', kind: 'proof', dur: 6.0 },
   { id: 'tiles', kind: 'tiles', dur: 6.4, head: 'From tables to a running app.' },
   { id: 't-data', kind: 'title', n: '01', title: 'Data model', sub: 'Tables, fields and relationships', art: 'data', dur: 2.7 },
-  { id: 'adddata', kind: 'clip', label: 'Data model', cap: 'A database, a CSV, or an OpenAPI spec', dur: 5.0 },
-  { id: 'datamodel', kind: 'clip', label: 'Data model', cap: 'Entities and how they relate', dur: 5.4 },
+  { id: 'adddata', kind: 'clip', label: 'Data model', cap: 'A database, a CSV, or an OpenAPI spec', dur: 5.0, zoom: [1.8, '64% 10%', 0.9] },
+  { id: 'datamodel', kind: 'clip', label: 'Data model', cap: 'Entities and how they relate', dur: 5.4, zoom: [1.3, '50% 42%', 1.0] },
   { id: 't-screens', kind: 'title', n: '02', title: 'Screens', sub: 'Dashboards, grids, boards, record pages', art: 'screens', dur: 2.7 },
   { id: 'overview', kind: 'clip', label: 'Screens', cap: 'Blocks on a canvas, bound to your data', dur: 6.0 },
   { id: 'pipeline', kind: 'clip', label: 'Screens', cap: 'A pipeline board with filters', dur: 5.0 },
   { id: 'forecast', kind: 'clip', label: 'Screens', cap: 'KPIs, charts and a pivot table', dur: 5.0 },
   { id: 'deal360', kind: 'clip', label: 'Screens', cap: 'A record page for every table', dur: 5.0 },
   { id: 't-themes', kind: 'title', n: '03', title: 'Themes', sub: '20 themes, light and dark', art: 'themes', dur: 2.7 },
-  { id: 'themes', kind: 'clip', label: 'Themes', cap: 'Restyle the whole app in one click', dur: 9.0 },
+  { id: 'themes', kind: 'clip', label: 'Themes', cap: 'Restyle the whole app in one click', dur: 7.0 },
+  { id: 'dark', kind: 'clip', label: 'Themes', cap: 'Every theme has a dark mode', dur: 4.5 },
   { id: 't-logic', kind: 'title', n: '04', title: 'Logic', sub: 'Typed handlers, in code you own', art: 'logic', dur: 2.7 },
   { id: 'code', kind: 'clip', label: 'Logic', cap: 'Insert an action, keep writing TypeScript', dur: 6.5 },
   { id: 't-preview', kind: 'title', n: '05', title: 'Preview', sub: 'Desktop, tablet and phone', art: 'preview', dur: 2.7 },
   { id: 'preview', kind: 'clip', label: 'Preview', cap: 'Run it the way your users will', dur: 7.0 },
   { id: 't-ship', kind: 'title', n: '06', title: 'Generate and deploy', sub: 'A SvelteKit project, ready for CI', art: 'ship', dur: 2.7 },
-  { id: 'generate', kind: 'clip', label: 'Generate', cap: 'Routes, schemas, sign-in, tests, a CI workflow', dur: 7.0 },
-  { id: 'deploy', kind: 'clip', label: 'Deploy', cap: 'Vercel, Netlify or Cloudflare', dur: 5.0 },
-  { id: 'samples', kind: 'clip', label: 'Sample apps', cap: 'Or start from a finished app', dur: 6.0 },
+  { id: 'generate', kind: 'clip', label: 'Generate', cap: 'Routes, schemas, sign-in, tests, a CI workflow', dur: 7.0, zoom: [1.28, '50% 50%', 1.0] },
+  { id: 'deploy', kind: 'clip', label: 'Deploy', cap: 'Vercel, Netlify or Cloudflare', dur: 5.0, zoom: [1.6, '50% 50%', 0.9] },
+  { id: 'samples', kind: 'clip', label: 'Sample apps', cap: 'Or start from a finished app', dur: 6.0, zoom: [1.28, '50% 46%', 0.9] },
   { id: 'checks', kind: 'checks', dur: 9.6, head: 'Every generated app comes with', items: [
     'SvelteKit routes and API endpoints', 'Typed schemas, with tests',
     'Sign-in, roles, OAuth and 2FA', 'A Drizzle data layer and migrations',
@@ -299,8 +300,12 @@ function seek(t) {
         if (s.img.getAttribute('src') !== frames[i]) s.img.src = frames[i]
         s.img.style.display = 'block'
         ph.style.display = 'none'
-        // A slow push-in keeps a still screen alive.
-        s.img.style.transform = `scale(${1 + 0.03 * easeInOut(clamp(u / s.dur))})`
+        // A slow push-in keeps a still screen alive. A clip that opens a
+        // dialog also zooms to it once it is up: zoom = [scale, origin, at s].
+        const [z, origin, zAt] = s.zoom ?? [1, '50% 40%', 0]
+        const zk = s.zoom ? easeInOut(clamp((u - zAt) / 0.7)) : 0
+        s.img.style.transformOrigin = origin
+        s.img.style.transform = `scale(${(1 + (z - 1) * zk) * (1 + 0.03 * easeInOut(clamp(u / s.dur)))})`
       } else {
         s.img.style.display = 'none'
         ph.style.display = 'grid'
