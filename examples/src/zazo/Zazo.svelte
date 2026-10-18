@@ -1320,8 +1320,8 @@
   }
   /* The code off his screen, like smoke from a chimney: 0s and 1s leave the
      lid's top right corner one after another, rise beside his head with a
-     slight sway, and spread and fade as they climb. Eight digits 0.35 s
-     apart on a 2.8 s rise, so the column is never empty. A thin halo in the
+     slight sway, and spread and fade as they climb. Eight digits 0.2 s
+     apart on a 1.6 s rise: a quick, steady stream. A thin halo in the
      page colour keeps them legible over the header. */
   .zazo-glyph {
     font: 800 11px ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -1335,14 +1335,14 @@
   /* Each turns about its own middle, not the figure's corner (the rule for
      every other part of him). */
   .zazo-figure .zazo-glyph { transform-box: fill-box; transform-origin: center; }
-  .zazo-figure.is-working .zazo-glyph-1 { animation: zazo-smoke-a 2.8s ease-out 1.2s infinite; }
-  .zazo-figure.is-working .zazo-glyph-2 { animation: zazo-smoke-b 2.8s ease-out 1.55s infinite; }
-  .zazo-figure.is-working .zazo-glyph-3 { animation: zazo-smoke-a 2.8s ease-out 1.9s infinite; }
-  .zazo-figure.is-working .zazo-glyph-4 { animation: zazo-smoke-b 2.8s ease-out 2.25s infinite; }
-  .zazo-figure.is-working .zazo-glyph-5 { animation: zazo-smoke-a 2.8s ease-out 2.6s infinite; }
-  .zazo-figure.is-working .zazo-glyph-6 { animation: zazo-smoke-b 2.8s ease-out 2.95s infinite; }
-  .zazo-figure.is-working .zazo-glyph-7 { animation: zazo-smoke-a 2.8s ease-out 3.3s infinite; }
-  .zazo-figure.is-working .zazo-glyph-8 { animation: zazo-smoke-b 2.8s ease-out 3.65s infinite; }
+  .zazo-figure.is-working .zazo-glyph-1 { animation: zazo-smoke-a 1.6s ease-out 1.2s infinite; }
+  .zazo-figure.is-working .zazo-glyph-2 { animation: zazo-smoke-b 1.6s ease-out 1.4s infinite; }
+  .zazo-figure.is-working .zazo-glyph-3 { animation: zazo-smoke-a 1.6s ease-out 1.6s infinite; }
+  .zazo-figure.is-working .zazo-glyph-4 { animation: zazo-smoke-b 1.6s ease-out 1.8s infinite; }
+  .zazo-figure.is-working .zazo-glyph-5 { animation: zazo-smoke-a 1.6s ease-out 2s infinite; }
+  .zazo-figure.is-working .zazo-glyph-6 { animation: zazo-smoke-b 1.6s ease-out 2.2s infinite; }
+  .zazo-figure.is-working .zazo-glyph-7 { animation: zazo-smoke-a 1.6s ease-out 2.4s infinite; }
+  .zazo-figure.is-working .zazo-glyph-8 { animation: zazo-smoke-b 1.6s ease-out 2.6s infinite; }
   /* Each digit comes out of the laptop: it slides right from behind the lid
      while it fades in, clears his headphone, then rises with a sway (two
      sways, alternating, so the column wavers like smoke) and fades out over
