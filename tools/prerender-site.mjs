@@ -909,11 +909,11 @@ function faqIndexBody(items) {
   return html + `</main>`
 }
 
-// The three pricing tiers - kept in step with website/src/routes/Pricing.svelte.
+// The pricing tiers, in the page's price order - kept in step with website/src/routes/Pricing.svelte.
 const PRICING_TIERS = [
   { name: 'Community', price: '0', cadence: 'forever', desc: 'The full data grid, MIT-licensed and free for commercial use. No license key, no row-count cap. Sorting, Excel-style filters, grouping, virtualization, inline editing, master/detail, tree, server-side data, and WAI-ARIA.' },
-  { name: 'Enterprise - Grid Developer License', price: '599', cadence: 'per developer', desc: 'The enterprise grid, for an unlimited number of deployed production applications under your organisation. A perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime, keep your paid-term versions). Adds the Server-Side Row Model, Excel/PDF/CSV/TSV/HTML export, import, print, pivot tables with the drag-and-drop Pivot Designer, the Kanban board view, the scheduler / calendar view, ' + (isReleased('gantt') ? 'the Gantt view, ' : '') + 'no-code alert rules, and staged batch editing, plus email support within one business day, a private Slack channel, and prioritized bug fixes. No spreadsheet, no Studio.' },
   { name: 'Indie - Indie Developer License', price: '299', cadence: 'per developer', desc: 'The Enterprise (Grid Developer License) feature set for freelancers and companies with under $1M in yearly revenue, self-declared. Unlimited deployed production applications. A perpetual license with 1 year of updates, renewing yearly for updates only (cancel anytime). No email or Slack support: community support on GitHub issues. No spreadsheet, no Studio.' },
+  { name: 'Enterprise - Grid Developer License', price: '599', cadence: 'per developer', desc: 'The enterprise grid, for an unlimited number of deployed production applications under your organisation. A perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime, keep your paid-term versions). Adds the Server-Side Row Model, Excel/PDF/CSV/TSV/HTML export, import, print, pivot tables with the drag-and-drop Pivot Designer, the Kanban board view, the scheduler / calendar view, ' + (isReleased('gantt') ? 'the Gantt view, ' : '') + 'no-code alert rules, and staged batch editing, plus email support within one business day, a private Slack channel, and prioritized bug fixes. No spreadsheet, no Studio.' },
   { name: 'Enterprise Suite - Suite Developer License', price: '999', cadence: 'per developer', desc: 'Everything in Enterprise plus the Excel-style Spreadsheet (SvSheet, the formula engine, xlsx / xls / ods files), SvGrid Base (SvBase, a table database with field types, saved views, forms and records) and SvGrid Studio (the visual designer, the SvelteKit code generator, the SQL / REST / Supabase data sources). Unlimited deployed applications. A perpetual license that includes 1 year of updates and support and renews automatically each year (cancel anytime).' },
 ]
 
@@ -957,7 +957,7 @@ function pricingLd(url) {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: 'SvGrid',
-    description: 'SvGrid is a Svelte 5 data grid. Community is free under the MIT License; @svgrid/enterprise adds export, import, print, pivot, and AI helpers.',
+    description: 'SvGrid is a Svelte 5 data grid. Community is free under the MIT License, AI helpers included; @svgrid/enterprise adds the Server-Side Row Model, Excel / PDF export, import, print, pivot tables, and the Kanban board and scheduler views, and the Suite edition adds the Spreadsheet, SvGrid Base and SvGrid Studio.',
     brand: { '@type': 'Brand', name: 'SvGrid' },
     url,
     offers: PRICING_TIERS.map((t) => ({
@@ -1012,9 +1012,9 @@ function ogSvg({ eyebrow, line1, line2white, line2accent, sub1, sub2 }) {
 
 const OG_SECTIONS = {
   docs:    { eyebrow: 'DOCUMENTATION', line1: 'Guides for the', line2white: 'Svelte 5', line2accent: 'data grid.', sub1: 'Columns, rows, cells, filtering, editing,', sub2: 'each with copy-paste examples.' },
-  demos:   { eyebrow: 'EXAMPLES', line1: '400+ live', line2white: 'Svelte 5 grid', line2accent: 'demos.', sub1: 'Sorting, filtering, grouping, editing,', sub2: 'virtualization, server-side data, and more.' },
+  demos:   { eyebrow: 'EXAMPLES', line1: '500+ live', line2white: 'Svelte 5 grid', line2accent: 'demos.', sub1: 'Sorting, filtering, grouping, editing,', sub2: 'virtualization, server-side data, and more.' },
   compare: { eyebrow: 'COMPARISONS', line1: 'SvGrid vs the', line2white: 'other Svelte', line2accent: 'data grids.', sub1: 'Honest, feature-by-feature matrices.', sub2: '' },
-  pricing: { eyebrow: 'PRICING', line1: 'Free core.', line2white: 'Pro for export', line2accent: '& pivot.', sub1: 'Community is MIT-licensed and free.', sub2: '@svgrid/enterprise from $599/dev/yr.' },
+  pricing: { eyebrow: 'PRICING', line1: 'Free core.', line2white: 'Pro for export', line2accent: '& pivot.', sub1: 'Community is MIT-licensed and free.', sub2: '@svgrid/enterprise from $299 per developer.' },
   roadmap: { eyebrow: 'ROADMAP', line1: 'What SvGrid is', line2white: 'building', line2accent: 'next.', sub1: 'An honest, living feature list,', sub2: 'plus a recently-shipped track record.' },
   faq:     { eyebrow: 'FAQ', line1: 'Common questions', line2white: 'about', line2accent: 'SvGrid.', sub1: 'Production readiness, licensing, SSR,', sub2: 'bundle size, and the MCP server.' },
   api:     { eyebrow: 'API REFERENCE', line1: 'Every prop, type,', line2white: 'and', line2accent: 'export.', sub1: 'SvGrid, ColumnDef, the headless core,', sub2: 'and the imperative SvGridApi.' },
