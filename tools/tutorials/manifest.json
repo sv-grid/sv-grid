@@ -1430,6 +1430,87 @@
       ]
     },
     {
+      "id": "mk-ai-agent-base",
+      "kind": "marketing",
+      "player": true,
+      "title": "An AI agent and your team, one table: Claude Code, Supabase and SvGrid Base",
+      "description": "Claude Code triages a Supabase support inbox; SvGrid Base shows each change with the agent name on it, and a person reviews and approves.",
+      "demo": null,
+      "docsPage": "docs/help/base/ai-agents.md",
+      "anchor": "> SvGrid Base is part of the",
+      "tags": [
+        "svgrid base",
+        "ai agent",
+        "claude code",
+        "supabase mcp",
+        "human in the loop",
+        "svelte"
+      ],
+      "duration": 77.8,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-10-16",
+      "files": {
+        "mp4": "/tutorials/mk-ai-agent-base.mp4",
+        "poster": "/tutorials/mk-ai-agent-base.poster.webp",
+        "vtt": "/tutorials/mk-ai-agent-base.vtt"
+      },
+      "bytes": {
+        "mp4": 1980198,
+        "poster": 50100,
+        "master": 12729366
+      },
+      "transcript": [
+        {
+          "start": 0.85,
+          "end": 4.21,
+          "text": "Zazo: Hi, I'm Zazo. Let me show you something new in SvGrid Base."
+        },
+        {
+          "start": 5.06,
+          "end": 12.66,
+          "text": "Zazo: AI agents now work in the same data as your team. They update records, fill in fields, and draft replies."
+        },
+        {
+          "start": 13.51,
+          "end": 19.51,
+          "text": "Zazo: But when an agent edits a table, rows just change. What did it touch? And who checks it?"
+        },
+        {
+          "start": 20.36,
+          "end": 31.96,
+          "text": "Zazo: Here is a support inbox in SvGrid Base, on a real Supabase project. Ten new tickets. And Claude Code, connected to the same database through the Supabase MCP server."
+        },
+        {
+          "start": 32.81,
+          "end": 42.41,
+          "text": "Zazo: One instruction: triage the inbox. Claude writes straight to the database, and the base shows every change as it lands, with the agent's name on it."
+        },
+        {
+          "start": 47.81,
+          "end": 52.37,
+          "text": "Zazo: Open a record, and you see exactly what the agent changed, and what each field held before."
+        },
+        {
+          "start": 54.02,
+          "end": 59.3,
+          "text": "Zazo: Where you disagree, change it. Your edit goes to the same table, under your name."
+        },
+        {
+          "start": 60.95,
+          "end": 65.11,
+          "text": "Zazo: Then work through the Needs review view, and approve the rest with one click."
+        },
+        {
+          "start": 65.96,
+          "end": 74.6,
+          "text": "Zazo: The agent does the first pass. People make the call. Same table, your database. That is SvGrid Base, part of SvGrid Suite."
+        }
+      ],
+      "youtubeId": "HNMV1rTaDzE",
+      "publishedAt": "2026-10-16"
+    },
+    {
       "id": "mk-alerts",
       "kind": "marketing",
       "title": "Alert rules your users write themselves",
@@ -2070,6 +2151,107 @@
       ]
     },
     {
+      "id": "mk-meet-svgrid-base",
+      "kind": "marketing",
+      "player": true,
+      "title": "Meet SvGrid Base: tables inside your Svelte app, on your own database",
+      "description": "Zazo presents SvGrid Base: field types, views, records, automations, and an app built from a Supabase project or any SQL database.",
+      "demo": null,
+      "docsPage": "docs/help/base/quick-start.md",
+      "anchor": "![From a database to an app",
+      "tags": [
+        "svgrid base",
+        "airtable alternative",
+        "svelte database app",
+        "supabase",
+        "table database",
+        "no-code tables"
+      ],
+      "duration": 107.71,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-10-14",
+      "files": {
+        "mp4": "/tutorials/mk-meet-svgrid-base.mp4",
+        "poster": "/tutorials/mk-meet-svgrid-base.poster.webp",
+        "vtt": "/tutorials/mk-meet-svgrid-base.vtt"
+      },
+      "bytes": {
+        "mp4": 2854260,
+        "poster": 18116,
+        "master": 20900854
+      },
+      "transcript": [
+        {
+          "start": 0.85,
+          "end": 3.41,
+          "text": "Zazo: Hi, I'm Zazo. Let me show you what we've been building."
+        },
+        {
+          "start": 4.21,
+          "end": 11.89,
+          "text": "Zazo: Your team runs on tables. Projects, customers, hiring, inventory. Maybe you keep them in Airtable."
+        },
+        {
+          "start": 12.69,
+          "end": 19.33,
+          "text": "Zazo: That works. But the data sits in someone else's cloud, and your team works next to your app, not inside it."
+        },
+        {
+          "start": 20.13,
+          "end": 26.85,
+          "text": "Zazo: So meet SvGrid Base. An Airtable alternative that runs inside your Svelte app, on your own database."
+        },
+        {
+          "start": 28,
+          "end": 37.76,
+          "text": "Zazo: Tables with more than twenty field types. Selects, people, dates, files, links, lookups, rollups and formulas."
+        },
+        {
+          "start": 38.56,
+          "end": 44.64,
+          "text": "Zazo: And every table can be a grid, a Kanban board, a calendar, a gallery, or a form."
+        },
+        {
+          "start": 45.44,
+          "end": 51.92,
+          "text": "Zazo: Filter, group, sort and color any view. Open a record to see all of it, with comments."
+        },
+        {
+          "start": 52.72,
+          "end": 64.88,
+          "text": "Zazo: Now the best part. Point Base at your Supabase project, and it builds the app for you. Every table, its fields, its records, and views to work in. Automatically."
+        },
+        {
+          "start": 66.03,
+          "end": 74.19,
+          "text": "Zazo: And it stays in sync. Every edit is written straight to your database. When a colleague changes a record, you see it live, through Supabase Realtime."
+        },
+        {
+          "start": 74.99,
+          "end": 81.07,
+          "text": "Zazo: Not on Supabase? Point it at Postgres, MySQL, SQLite, SQL Server, or your own API."
+        },
+        {
+          "start": 81.87,
+          "end": 88.35,
+          "text": "Zazo: Starting from scratch? Design your base in the page, then download it as SQL, and that creates the tables."
+        },
+        {
+          "start": 89.15,
+          "end": 95.47,
+          "text": "Zazo: Add automations, too. When a record changes, update another one, call a webhook, or send an email."
+        },
+        {
+          "start": 96.27,
+          "end": 104.51,
+          "text": "Zazo: SvGrid Base. Your tables, your database, your app. It is part of SvGrid Suite, and you can try it free."
+        }
+      ],
+      "youtubeId": "rB-K65XMm7M",
+      "publishedAt": "2026-10-14"
+    },
+    {
       "id": "mk-million-rows",
       "kind": "marketing",
       "title": "A million rows in the browser",
@@ -2489,6 +2671,258 @@
           "text": "One getRows function against any backend, and a planner that turns each request into SQL. Details at svgrid.com."
         }
       ]
+    },
+    {
+      "id": "mk-studio-supabase-friday",
+      "kind": "marketing",
+      "player": true,
+      "title": "Friday, 5:47 PM: a Supabase admin panel by Monday",
+      "description": "An animated short: SvGrid Studio reads a Supabase project and writes a SvelteKit 3 app, shown running on the live Northwind sample data.",
+      "demo": null,
+      "docsPage": "docs/enterprise/studio/supabase.md",
+      "anchor": "**All the Supabase pages, one map.**",
+      "tags": [
+        "supabase admin panel",
+        "sveltekit supabase",
+        "svgrid studio",
+        "sveltekit 3",
+        "crud app generator",
+        "supabase"
+      ],
+      "duration": 46.9,
+      "width": 540,
+      "height": 960,
+      "recordedAt": "2026-10-11",
+      "youtubeId": "OsR_dvtlbbM",
+      "publishedAt": "2026-10-11",
+      "files": {
+        "mp4": "/tutorials/mk-studio-supabase-friday.mp4",
+        "poster": "/tutorials/mk-studio-supabase-friday.poster.webp",
+        "vtt": "/tutorials/mk-studio-supabase-friday.vtt"
+      },
+      "bytes": {
+        "mp4": 1633788,
+        "poster": 21330,
+        "master": 9831994
+      },
+      "transcript": [
+        {
+          "start": 0.5,
+          "end": 3.52,
+          "text": "Friday. Five forty-seven p.m."
+        },
+        {
+          "start": 3.82,
+          "end": 9.72,
+          "text": "CEO: Investors want an admin panel on our Supabase data. Monday, nine a.m."
+        },
+        {
+          "start": 10.07,
+          "end": 16.05,
+          "text": "Developer: Every table, every form... there goes my weekend."
+        },
+        {
+          "start": 16.55,
+          "end": 18.85,
+          "text": "The clock is running."
+        },
+        {
+          "start": 19.6,
+          "end": 22.38,
+          "text": "Developer: Or... one command."
+        },
+        {
+          "start": 27.78,
+          "end": 32.16,
+          "text": "A SvelteKit three app, on the live Supabase data."
+        },
+        {
+          "start": 36.66,
+          "end": 39.04,
+          "text": "CEO: ...It's Friday. Go home."
+        },
+        {
+          "start": 39.99,
+          "end": 45.65,
+          "text": "SvGrid Studio. Supabase in, SvelteKit three out."
+        }
+      ]
+    },
+    {
+      "id": "mk-studio-tour",
+      "kind": "marketing",
+      "player": true,
+      "title": "SvGrid Studio: from your database to a SvelteKit app",
+      "description": "A narrated tour of SvGrid Studio: the data model, screens, themes, logic, preview, and the SvelteKit app it generates and deploys.",
+      "demo": null,
+      "docsPage": "docs/enterprise/studio.md",
+      "anchor": "![A CRUD screen generated by SvGrid Studio",
+      "tags": [
+        "svgrid studio",
+        "sveltekit app builder",
+        "svelte crud generator",
+        "admin panel",
+        "internal tools",
+        "low code"
+      ],
+      "duration": 189.87,
+      "width": 960,
+      "height": 540,
+      "recordedAt": "2026-10-18",
+      "files": {
+        "mp4": "/tutorials/mk-studio-tour.mp4",
+        "poster": "/tutorials/mk-studio-tour.poster.webp",
+        "vtt": "/tutorials/mk-studio-tour.vtt"
+      },
+      "bytes": {
+        "mp4": 5786533,
+        "poster": 26786,
+        "master": 61139412
+      },
+      "transcript": [
+        {
+          "start": 3.8,
+          "end": 10.52,
+          "text": "Every internal tool starts the same way. Tables in a database, and the screens your team needs to work with them."
+        },
+        {
+          "start": 11.47,
+          "end": 17.47,
+          "text": "SvGrid Studio designs those screens with you, and writes them as a real SvelteKit app."
+        },
+        {
+          "start": 18.42,
+          "end": 31.94,
+          "text": "Start from the data you already have. Postgres, MySQL, SQL Server, SQLite, Supabase, a REST API, an OpenAPI spec, or a CSV file."
+        },
+        {
+          "start": 32.89,
+          "end": 38.33,
+          "text": "It comes from the team behind jQWidgets, used by more than five thousand customers."
+        },
+        {
+          "start": 39.28,
+          "end": 41.84,
+          "text": "Here is how you get from tables to a running app."
+        },
+        {
+          "start": 45.53,
+          "end": 47.53,
+          "text": "One. The data model."
+        },
+        {
+          "start": 48.38,
+          "end": 52.7,
+          "text": "Bring in a database, a CSV file, or an API spec."
+        },
+        {
+          "start": 53.65,
+          "end": 57.65,
+          "text": "Studio reads your tables, their fields, and how they relate."
+        },
+        {
+          "start": 58.9,
+          "end": 60.58,
+          "text": "Two. Screens."
+        },
+        {
+          "start": 61.75,
+          "end": 69.43,
+          "text": "A screen is a set of blocks on a canvas. KPI tiles, gauges and charts, each one bound to your data."
+        },
+        {
+          "start": 70.38,
+          "end": 71.9,
+          "text": "Boards with filters,"
+        },
+        {
+          "start": 75.38,
+          "end": 77.54,
+          "text": "trend charts and pivot tables,"
+        },
+        {
+          "start": 80.38,
+          "end": 82.7,
+          "text": "and a record page for every table."
+        },
+        {
+          "start": 85.23,
+          "end": 86.91,
+          "text": "Three. Themes."
+        },
+        {
+          "start": 88.08,
+          "end": 91.2,
+          "text": "Twenty themes restyle the whole app in one click."
+        },
+        {
+          "start": 95.08,
+          "end": 97.16,
+          "text": "And every one of them has a dark mode."
+        },
+        {
+          "start": 99.43,
+          "end": 101.11,
+          "text": "Four. Logic."
+        },
+        {
+          "start": 102.28,
+          "end": 109.96,
+          "text": "When you need behavior, write it in TypeScript, with typed access to every grid, chart and tile on the page."
+        },
+        {
+          "start": 110.76,
+          "end": 112.6,
+          "text": "Five. Preview."
+        },
+        {
+          "start": 113.61,
+          "end": 119.69,
+          "text": "Run the app the way your users will. On a desktop, a tablet, or a phone."
+        },
+        {
+          "start": 120.49,
+          "end": 122.81,
+          "text": "Six. Generate and deploy."
+        },
+        {
+          "start": 123.56,
+          "end": 131.4,
+          "text": "Studio writes a SvelteKit project. Routes, typed schemas with tests, sign-in, and a CI workflow."
+        },
+        {
+          "start": 132.35,
+          "end": 136.19,
+          "text": "Then deploy it to Vercel, Netlify or Cloudflare."
+        },
+        {
+          "start": 137.35,
+          "end": 146.47,
+          "text": "Or start from a sample app. A CRM, an online store, invoicing, inventory, a help desk, and more."
+        },
+        {
+          "start": 147.42,
+          "end": 163.1,
+          "text": "You get SvelteKit routes, typed schemas with tests, a CI workflow, and code you can read and edit. Switch on sign-in with roles, or a Drizzle data layer, when you need them. And an MCP server lets AI agents build with you."
+        },
+        {
+          "start": 164.05,
+          "end": 173.41,
+          "text": "Generate the boring parts. Keep the code. Every screen is built from SvGrid components, which we build, maintain and support."
+        },
+        {
+          "start": 174.36,
+          "end": 180.44,
+          "text": "Try SvGrid Studio in your browser, at svgrid dot com slash studio."
+        },
+        {
+          "start": 181.39,
+          "end": 185.71,
+          "text": "Or start a thirty day free trial, and build your first app this afternoon."
+        }
+      ],
+      "youtubeId": "1ryvuMVcItU",
+      "publishedAt": "2026-10-18"
     },
     {
       "id": "mk-svelte-gantt-chart",
@@ -3924,264 +4358,6 @@
           "text": "Nested objects work too: flatten them once with flattenTreeData, and the same prop takes it from there."
         }
       ]
-    },
-    {
-      "id": "mk-studio-supabase-friday",
-      "kind": "marketing",
-      "player": true,
-      "title": "Friday, 5:47 PM: a Supabase admin panel by Monday",
-      "description": "An animated short: SvGrid Studio reads a Supabase project and writes a SvelteKit 3 app, shown running on the live Northwind sample data.",
-      "demo": null,
-      "docsPage": "docs/enterprise/studio/supabase.md",
-      "anchor": "**All the Supabase pages, one map.**",
-      "tags": [
-        "supabase admin panel",
-        "sveltekit supabase",
-        "svgrid studio",
-        "sveltekit 3",
-        "crud app generator",
-        "supabase"
-      ],
-      "duration": 46.9,
-      "width": 540,
-      "height": 960,
-      "recordedAt": "2026-10-11",
-      "youtubeId": "OsR_dvtlbbM",
-      "publishedAt": "2026-10-11",
-      "files": {
-        "mp4": "/tutorials/mk-studio-supabase-friday.mp4",
-        "poster": "/tutorials/mk-studio-supabase-friday.poster.webp",
-        "vtt": "/tutorials/mk-studio-supabase-friday.vtt"
-      },
-      "bytes": {
-        "mp4": 1633788,
-        "poster": 21330,
-        "master": 9831994
-      },
-      "transcript": [
-        {
-          "start": 0.5,
-          "end": 3.52,
-          "text": "Friday. Five forty-seven p.m."
-        },
-        {
-          "start": 3.82,
-          "end": 9.72,
-          "text": "CEO: Investors want an admin panel on our Supabase data. Monday, nine a.m."
-        },
-        {
-          "start": 10.07,
-          "end": 16.05,
-          "text": "Developer: Every table, every form... there goes my weekend."
-        },
-        {
-          "start": 16.55,
-          "end": 18.85,
-          "text": "The clock is running."
-        },
-        {
-          "start": 19.6,
-          "end": 22.38,
-          "text": "Developer: Or... one command."
-        },
-        {
-          "start": 27.78,
-          "end": 32.16,
-          "text": "A SvelteKit three app, on the live Supabase data."
-        },
-        {
-          "start": 36.66,
-          "end": 39.04,
-          "text": "CEO: ...It's Friday. Go home."
-        },
-        {
-          "start": 39.99,
-          "end": 45.65,
-          "text": "SvGrid Studio. Supabase in, SvelteKit three out."
-        }
-      ]
-    },
-    {
-      "id": "mk-meet-svgrid-base",
-      "kind": "marketing",
-      "player": true,
-      "title": "Meet SvGrid Base: tables inside your Svelte app, on your own database",
-      "description": "Zazo presents SvGrid Base: field types, views, records, automations, and an app built from a Supabase project or any SQL database.",
-      "demo": null,
-      "docsPage": "docs/help/base/quick-start.md",
-      "anchor": "![From a database to an app",
-      "tags": [
-        "svgrid base",
-        "airtable alternative",
-        "svelte database app",
-        "supabase",
-        "table database",
-        "no-code tables"
-      ],
-      "duration": 107.71,
-      "width": 960,
-      "height": 540,
-      "recordedAt": "2026-10-14",
-      "files": {
-        "mp4": "/tutorials/mk-meet-svgrid-base.mp4",
-        "poster": "/tutorials/mk-meet-svgrid-base.poster.webp",
-        "vtt": "/tutorials/mk-meet-svgrid-base.vtt"
-      },
-      "bytes": {
-        "mp4": 2854260,
-        "poster": 18116,
-        "master": 20900854
-      },
-      "transcript": [
-        {
-          "start": 0.85,
-          "end": 3.41,
-          "text": "Zazo: Hi, I'm Zazo. Let me show you what we've been building."
-        },
-        {
-          "start": 4.21,
-          "end": 11.89,
-          "text": "Zazo: Your team runs on tables. Projects, customers, hiring, inventory. Maybe you keep them in Airtable."
-        },
-        {
-          "start": 12.69,
-          "end": 19.33,
-          "text": "Zazo: That works. But the data sits in someone else's cloud, and your team works next to your app, not inside it."
-        },
-        {
-          "start": 20.13,
-          "end": 26.85,
-          "text": "Zazo: So meet SvGrid Base. An Airtable alternative that runs inside your Svelte app, on your own database."
-        },
-        {
-          "start": 28,
-          "end": 37.76,
-          "text": "Zazo: Tables with more than twenty field types. Selects, people, dates, files, links, lookups, rollups and formulas."
-        },
-        {
-          "start": 38.56,
-          "end": 44.64,
-          "text": "Zazo: And every table can be a grid, a Kanban board, a calendar, a gallery, or a form."
-        },
-        {
-          "start": 45.44,
-          "end": 51.92,
-          "text": "Zazo: Filter, group, sort and color any view. Open a record to see all of it, with comments."
-        },
-        {
-          "start": 52.72,
-          "end": 64.88,
-          "text": "Zazo: Now the best part. Point Base at your Supabase project, and it builds the app for you. Every table, its fields, its records, and views to work in. Automatically."
-        },
-        {
-          "start": 66.03,
-          "end": 74.19,
-          "text": "Zazo: And it stays in sync. Every edit is written straight to your database. When a colleague changes a record, you see it live, through Supabase Realtime."
-        },
-        {
-          "start": 74.99,
-          "end": 81.07,
-          "text": "Zazo: Not on Supabase? Point it at Postgres, MySQL, SQLite, SQL Server, or your own API."
-        },
-        {
-          "start": 81.87,
-          "end": 88.35,
-          "text": "Zazo: Starting from scratch? Design your base in the page, then download it as SQL, and that creates the tables."
-        },
-        {
-          "start": 89.15,
-          "end": 95.47,
-          "text": "Zazo: Add automations, too. When a record changes, update another one, call a webhook, or send an email."
-        },
-        {
-          "start": 96.27,
-          "end": 104.51,
-          "text": "Zazo: SvGrid Base. Your tables, your database, your app. It is part of SvGrid Suite, and you can try it free."
-        }
-      ],
-      "youtubeId": "rB-K65XMm7M",
-      "publishedAt": "2026-10-14"
-    },
-    {
-      "id": "mk-ai-agent-base",
-      "kind": "marketing",
-      "player": true,
-      "title": "An AI agent and your team, one table: Claude Code, Supabase and SvGrid Base",
-      "description": "Claude Code triages a Supabase support inbox; SvGrid Base shows each change with the agent name on it, and a person reviews and approves.",
-      "demo": null,
-      "docsPage": "docs/help/base/ai-agents.md",
-      "anchor": "> SvGrid Base is part of the",
-      "tags": [
-        "svgrid base",
-        "ai agent",
-        "claude code",
-        "supabase mcp",
-        "human in the loop",
-        "svelte"
-      ],
-      "duration": 77.8,
-      "width": 960,
-      "height": 540,
-      "recordedAt": "2026-10-16",
-      "files": {
-        "mp4": "/tutorials/mk-ai-agent-base.mp4",
-        "poster": "/tutorials/mk-ai-agent-base.poster.webp",
-        "vtt": "/tutorials/mk-ai-agent-base.vtt"
-      },
-      "bytes": {
-        "mp4": 1980198,
-        "poster": 50100,
-        "master": 12729366
-      },
-      "transcript": [
-        {
-          "start": 0.85,
-          "end": 4.21,
-          "text": "Zazo: Hi, I'm Zazo. Let me show you something new in SvGrid Base."
-        },
-        {
-          "start": 5.06,
-          "end": 12.66,
-          "text": "Zazo: AI agents now work in the same data as your team. They update records, fill in fields, and draft replies."
-        },
-        {
-          "start": 13.51,
-          "end": 19.51,
-          "text": "Zazo: But when an agent edits a table, rows just change. What did it touch? And who checks it?"
-        },
-        {
-          "start": 20.36,
-          "end": 31.96,
-          "text": "Zazo: Here is a support inbox in SvGrid Base, on a real Supabase project. Ten new tickets. And Claude Code, connected to the same database through the Supabase MCP server."
-        },
-        {
-          "start": 32.81,
-          "end": 42.41,
-          "text": "Zazo: One instruction: triage the inbox. Claude writes straight to the database, and the base shows every change as it lands, with the agent's name on it."
-        },
-        {
-          "start": 47.81,
-          "end": 52.37,
-          "text": "Zazo: Open a record, and you see exactly what the agent changed, and what each field held before."
-        },
-        {
-          "start": 54.02,
-          "end": 59.3,
-          "text": "Zazo: Where you disagree, change it. Your edit goes to the same table, under your name."
-        },
-        {
-          "start": 60.95,
-          "end": 65.11,
-          "text": "Zazo: Then work through the Needs review view, and approve the rest with one click."
-        },
-        {
-          "start": 65.96,
-          "end": 74.6,
-          "text": "Zazo: The agent does the first pass. People make the call. Same table, your database. That is SvGrid Base, part of SvGrid Suite."
-        }
-      ],
-      "youtubeId": "HNMV1rTaDzE",
-      "publishedAt": "2026-10-16"
     }
   ]
 }
