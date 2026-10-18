@@ -1618,11 +1618,20 @@
     .zazo-figure.is-listening .zazo-ring,
     .zazo-figure.no-analyser .zazo-talk,
     .zazo-target { animation: none !important; }
-    /* At the laptop, still: open at once, no typing, no drifting code, a
-       finished line on a steady screen. */
+    /* At the laptop, still: open at once, no typing, a finished line on a
+       steady screen. The code does not drift; four bits stand around his head
+       instead, so what he is doing still reads without anything moving. They
+       used to be hidden, and with the system's reduce-animations setting on
+       he looked like he was only holding a laptop. */
     .zazo-type-l, .zazo-type-r, .zazo-screen-light { animation: none !important; }
     .zazo-laptop, .zazo-lid-open, .zazo-screen-light, .zazo-screen-rim, .zazo-logo-glow { transition: none !important; }
-    .zazo-glyphs { display: none; }
+    .zazo-figure.is-working .zazo-glyph { animation: none !important; opacity: 1; }
+    .zazo-figure.is-working .zazo-glyph-1 { transform: translate(-16px, -50px) rotate(-6deg); }
+    .zazo-figure.is-working .zazo-glyph-2 { transform: translate(10px, -50px) rotate(6deg); }
+    .zazo-figure.is-working .zazo-glyph-3 { transform: translate(-26px, -22px) rotate(-4deg); }
+    .zazo-figure.is-working .zazo-glyph-4 { transform: translate(14px, -22px) rotate(5deg); }
+    .zazo-figure.is-working .zazo-glyph-5,
+    .zazo-figure.is-working .zazo-glyph-6 { opacity: 0; }
   }
   /* Phones: the top bar has no room beside the search, and the screen is the demo's. */
   @media (max-width: 767px) {

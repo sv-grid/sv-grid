@@ -6,6 +6,8 @@ on:
     paths:
       - 'website/**'
       - 'examples/src/demos/**'
+      # Zazo, the site's helper, is imported from here by the home and demos pages.
+      - 'examples/src/zazo/**'
       - 'packages/grid/**'
       - 'docs/**'
       - '.github/workflows/deploy-website.yml'

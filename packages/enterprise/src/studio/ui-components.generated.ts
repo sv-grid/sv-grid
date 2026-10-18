@@ -4744,6 +4744,14 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "label": "Aria Label",
         "type": "string",
         "group": "advanced"
+      },
+      {
+        "key": "focusable",
+        "label": "Focusable",
+        "type": "boolean",
+        "default": true,
+        "description": "False: the button never takes focus or a Tab stop, so pressing it keeps focus in the field it steps (a spinner beside an input). Default true.",
+        "group": "common"
       }
     ],
     "events": [
