@@ -739,7 +739,7 @@ const GRID_ICON_GROUP_RULES: ReadonlyArray<{ label: string; match: (n: string) =
   { label: 'Filter operators', match: (n) => n.startsWith('op-') },
   { label: 'Pinning', match: (n) => n === 'pin-left' || n === 'pin-right' || n === 'unpin' },
   { label: 'Rows + grouping', match: (n) => ['group', 'group-add', 'row-number', 'pinned-row-top', 'pinned-row-bottom', 'drag-handle', 'breadcrumb-separator'].includes(n) },
-  { label: 'Toolbar + overlays', match: (n) => ['search', 'tool-panel', 'chart', 'advanced-filter', 'column-group-caret'].includes(n) },
+  { label: 'Toolbar + overlays', match: (n) => ['search', 'tool-panel', 'chart', 'advanced-filter', 'column-group-caret', 'no-rows', 'no-rows-filtered'].includes(n) },
   { label: 'Pager', match: (n) => n.startsWith('page-') },
   { label: 'Find + move', match: (n) => n.startsWith('find-') || n.startsWith('move-') },
   { label: 'Close + clear', match: (n) => ['x', 'close', 'clear', 'remove'].includes(n) },

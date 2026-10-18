@@ -106,6 +106,8 @@ export const GRID_ICON_NAMES: ReadonlyArray<GridIconName> = [
   'chart',
   'advanced-filter',
   'column-group-caret',
+  'no-rows',
+  'no-rows-filtered',
   'close',
   'clear',
   'remove',

@@ -445,9 +445,16 @@
   text-align: center;
 }
 .sv-grid-empty-icon {
+  display: inline-flex;
   width: 28px;
   height: 28px;
   opacity: 0.55;
+}
+.sv-grid-empty-icon > svg,
+.sv-grid-empty-icon > .sv-grid-icon-custom {
+  width: 100%;
+  height: 100%;
+  stroke-width: 1.6;
 }
 .sv-grid-empty-text {
   max-width: 36ch;

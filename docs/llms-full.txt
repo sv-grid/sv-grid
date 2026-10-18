@@ -43,7 +43,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## Key facts
 
-- Package: `@svgrid/grid` 3.0.14, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
+- Package: `@svgrid/grid` 3.0.15, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
 - Peer dependency: `svelte` ^5. Works in SvelteKit, including server-side rendering.
 - Size (gzip, Svelte external, measured 2026-09-22 on 3.0.4): 97.6 KB for the full `<SvGrid>` entry plus 10.5 KB CSS; 2.7 KB for the headless entry. Features load on demand.
 - Styling: `--sg-*` CSS custom properties, and 20 theme stylesheets, each with a light and a dark palette. No CSS framework is required; Tailwind and shadcn-svelte setups are documented.
@@ -9256,6 +9256,8 @@ restyling a filter operator should not silently repaint the pin menu.
 | `chart` | The chart panel toggle |
 | `advanced-filter` | The "advanced filter active" chip |
 | `column-group-caret` | Collapse caret on a column-group header |
+| `no-rows` | The empty-grid message when there is no data |
+| `no-rows-filtered` | The empty-grid message when the filters match no rows |
 
 ### Glyph icons
 
@@ -121960,6 +121962,8 @@ export const GRID_ICON_NAMES: ReadonlyArray<GridIconName> = [
   'chart',
   'advanced-filter',
   'column-group-caret',
+  'no-rows',
+  'no-rows-filtered',
   'close',
   'clear',
   'remove',

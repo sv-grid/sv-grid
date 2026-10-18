@@ -1023,6 +1023,12 @@
     {:else if name === "x" || name === "unpin"}
       <path d="M18 6L6 18" />
       <path d="M6 6l12 12" />
+    {:else if name === "no-rows"}
+      <!-- An empty table: the body row under a header row. -->
+      <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M9 9v11" />
+    {:else if name === "no-rows-filtered"}
+      <!-- A funnel: the filters, not the data, are why the body is empty. -->
+      <path d="M3 5h18l-7 8v6l-4 2v-8z" />
     {:else if name === "chevron-down" || name === "column-group-caret"}
       <path d="M6 9l6 6 6-6" />
     {:else if name === "chevron-right"}
@@ -3076,13 +3082,7 @@
                        back; plain empty data just says there is nothing. A
                        consumer's emptyMessage wins in both cases. -->
                   <div class="sv-grid-empty">
-                    <svg class="sv-grid-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      {#if ctrl.anyFilterActive}
-                        <path d="M3 5h18l-7 8v6l-4 2v-8z" />
-                      {:else}
-                        <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M9 9v11" />
-                      {/if}
-                    </svg>
+                    <span class="sv-grid-empty-icon">{@render icon(ctrl.anyFilterActive ? "no-rows-filtered" : "no-rows")}</span>
                     <span class="sv-grid-empty-text">{opt.emptyMessage ?? (ctrl.anyFilterActive ? messages.noRowsFiltered : messages.noRows)}</span>
                     {#if ctrl.anyFilterActive && opt.emptyMessage == null}
                       <button

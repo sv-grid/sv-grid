@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-10-18T11:18:19.330Z",
+  "generatedAt": "2026-10-18T12:24:30.038Z",
   "counts": {
     "pages": 461,
     "enterprise": 106,
@@ -3668,8 +3668,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1221,
-      "lastUpdated": "2026-09-16",
+      "words": 1246,
+      "lastUpdated": "2026-10-18",
       "demoIds": [
         "431-custom-icons"
       ]

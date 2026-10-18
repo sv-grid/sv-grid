@@ -141,6 +141,8 @@ restyling a filter operator should not silently repaint the pin menu.
 | `chart` | The chart panel toggle |
 | `advanced-filter` | The "advanced filter active" chip |
 | `column-group-caret` | Collapse caret on a column-group header |
+| `no-rows` | The empty-grid message when there is no data |
+| `no-rows-filtered` | The empty-grid message when the filters match no rows |
 
 ### Glyph icons
 

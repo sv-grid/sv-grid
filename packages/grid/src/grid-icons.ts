@@ -69,6 +69,8 @@ export type GridIconName =
   | 'chart'
   | 'advanced-filter'
   | 'column-group-caret'
+  | 'no-rows'
+  | 'no-rows-filtered'
   // ---- Glyph icons: the built-in is a character, not a path ----
   | 'close'
   | 'clear'
@@ -163,6 +165,8 @@ export const GRID_ICON_NAMES: ReadonlyArray<GridIconName> = [
   'chart',
   'advanced-filter',
   'column-group-caret',
+  'no-rows',
+  'no-rows-filtered',
   'close',
   'clear',
   'remove',
