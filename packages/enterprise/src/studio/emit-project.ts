@@ -361,10 +361,15 @@ ${gridIcons.decls}${exportBar}      <SvGrid
     }
     case 'gauge': {
       const gexpr = `reduceValue(${rowsExpr}, { ${cfg.measure ? `measure: '${cfg.measure}', ` : ''}reduce: '${cfg.reduce}' })`
-      const unit = cfg.unit ? ` unit=${JSON.stringify(cfg.unit)}` : ''
+      // Grouped like the KPI tiles; a currency symbol reads before the number
+      // ($428,250), any other unit (%, d, km) after it. SvGauge on its own
+      // appends `unit`, which printed a money gauge as 428250$.
+      const currency = !!cfg.unit && /^[$€£¥₹₩₽]$/.test(cfg.unit)
+      const unit = cfg.unit && !currency ? ` unit=${JSON.stringify(cfg.unit)}` : ''
+      const format = ` formatValue={(v) => ${currency ? `${JSON.stringify(cfg.unit)} + ` : ''}Math.round(v).toLocaleString()}`
       return `    <div ${span}${wrapperClass(block, 'gaugecard')}>
       <span class="kpi__label">${tLabel(cfg.label, block.id)}</span>
-      <SvGauge value={${gexpr}} min={${cfg.min}} max={${cfg.max}}${unit} size={172} />
+      <SvGauge value={${gexpr}} min={${cfg.min}} max={${cfg.max}}${unit}${format} size={172} />
     </div>`
     }
     case 'tree': {

@@ -685,6 +685,21 @@ describe('emitStudioProject (per-block screens)', () => {
     expect(page).toContain('.gaugecard')
   })
 
+  it('Gauge block: a currency unit leads a grouped number, other units trail it', () => {
+    let p = createProject([customers])
+    const sid = p.screens[0]!.id
+    p = addBlock(p, sid, 'gauge')
+    const gid = p.screens[0]!.blocks.at(-1)!.id
+    const emit = (unit: string) => emitStudioProject(updateBlock(p, sid, gid, { config: { unit } as never }))
+      .find((f) => f.path === 'src/routes/customers/+page.svelte')!.contents
+    const money = emit('$')
+    expect(money).toContain('formatValue={(v) => "$" + Math.round(v).toLocaleString()}')
+    expect(money).not.toContain('unit="$"')
+    const pct = emit('%')
+    expect(pct).toContain('unit="%"')
+    expect(pct).toContain('formatValue={(v) => Math.round(v).toLocaleString()}')
+  })
+
   it('Tree block: folds rows into SvTree nodes by a self-referential parent', () => {
     // A category entity that references itself via parent_id.
     const categories: EntitySchema = {
