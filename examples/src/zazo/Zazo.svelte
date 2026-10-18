@@ -958,18 +958,19 @@
              screen's light on his face and along the lid's top edge. It lands
              shut, the lid swings up, then the screen comes on. His hands are
              behind the lid on the keys; his elbows show at the sides. -->
-        <!-- What he is writing: a chimney of 0s and 1s rising off the lid's top
-             right corner, beside his head. Drawn before the laptop, so the lid
-             hides where they start. -->
+        <!-- What he is writing: a chimney of 0s and 1s. Each digit starts
+             behind the lid's top right corner, slides out to the right past
+             his headphone, then rises and fades. Drawn before the laptop, so
+             the lid hides where they start. -->
         <g class="zazo-glyphs" aria-hidden="true">
-          <text class="zazo-glyph zazo-glyph-1" x="80" y="70">1</text>
-          <text class="zazo-glyph zazo-glyph-2" x="82" y="70">0</text>
-          <text class="zazo-glyph zazo-glyph-3" x="79" y="70">1</text>
-          <text class="zazo-glyph zazo-glyph-4" x="81" y="70">1</text>
-          <text class="zazo-glyph zazo-glyph-5" x="80" y="70">0</text>
-          <text class="zazo-glyph zazo-glyph-6" x="82" y="70">1</text>
-          <text class="zazo-glyph zazo-glyph-7" x="79" y="70">0</text>
-          <text class="zazo-glyph zazo-glyph-8" x="81" y="70">0</text>
+          <text class="zazo-glyph zazo-glyph-1" x="74" y="72">1</text>
+          <text class="zazo-glyph zazo-glyph-2" x="73" y="72">0</text>
+          <text class="zazo-glyph zazo-glyph-3" x="73" y="72">1</text>
+          <text class="zazo-glyph zazo-glyph-4" x="72" y="72">1</text>
+          <text class="zazo-glyph zazo-glyph-5" x="74" y="72">0</text>
+          <text class="zazo-glyph zazo-glyph-6" x="73" y="72">1</text>
+          <text class="zazo-glyph zazo-glyph-7" x="73" y="72">0</text>
+          <text class="zazo-glyph zazo-glyph-8" x="72" y="72">0</text>
         </g>
         <g class="zazo-laptop">
           <g class="zazo-type-l">
@@ -1342,21 +1343,23 @@
   .zazo-figure.is-working .zazo-glyph-6 { animation: zazo-smoke-b 2.8s ease-out 2.95s infinite; }
   .zazo-figure.is-working .zazo-glyph-7 { animation: zazo-smoke-a 2.8s ease-out 3.3s infinite; }
   .zazo-figure.is-working .zazo-glyph-8 { animation: zazo-smoke-b 2.8s ease-out 3.65s infinite; }
-  /* Two sways, alternating, so the column wavers like smoke instead of
-     climbing in a ruler-straight line. */
+  /* Each digit comes out of the laptop: it slides right from behind the lid
+     while it fades in, clears his headphone, then rises with a sway (two
+     sways, alternating, so the column wavers like smoke) and fades out over
+     the second half of its climb. */
   @keyframes zazo-smoke-a {
-    0% { opacity: 0; transform: translate(0, 0) scale(0.7); }
-    10% { opacity: 1; transform: translate(1px, -8px) scale(0.85); }
-    35% { transform: translate(-3px, -30px) scale(0.95); }
-    60% { opacity: 0.85; transform: translate(3px, -54px) scale(1.05); }
-    100% { opacity: 0; transform: translate(8px, -88px) scale(1.2); }
+    0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
+    18% { opacity: 1; transform: translate(14px, -4px) scale(0.9); }
+    40% { opacity: 1; transform: translate(13px, -26px) scale(1); }
+    65% { opacity: 0.6; transform: translate(18px, -50px) scale(1.1); }
+    100% { opacity: 0; transform: translate(22px, -80px) scale(1.25); }
   }
   @keyframes zazo-smoke-b {
-    0% { opacity: 0; transform: translate(0, 0) scale(0.7); }
-    10% { opacity: 1; transform: translate(-1px, -8px) scale(0.85); }
-    35% { transform: translate(3px, -30px) scale(0.95); }
-    60% { opacity: 0.85; transform: translate(-2px, -54px) scale(1.05); }
-    100% { opacity: 0; transform: translate(4px, -88px) scale(1.2); }
+    0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
+    18% { opacity: 1; transform: translate(15px, -4px) scale(0.9); }
+    40% { opacity: 1; transform: translate(19px, -26px) scale(1); }
+    65% { opacity: 0.6; transform: translate(15px, -50px) scale(1.1); }
+    100% { opacity: 0; transform: translate(19px, -80px) scale(1.25); }
   }
   /* His line is longer than the hello: let it wrap. Two classes, so it beats
      the hello's nowrap, which comes later in this sheet. */
@@ -1627,9 +1630,9 @@
     .zazo-type-l, .zazo-type-r, .zazo-screen-light { animation: none !important; }
     .zazo-laptop, .zazo-lid-open, .zazo-screen-light, .zazo-screen-rim, .zazo-logo-glow { transition: none !important; }
     .zazo-figure.is-working .zazo-glyph { animation: none !important; opacity: 1; }
-    .zazo-figure.is-working .zazo-glyph-1 { transform: translate(0, -10px); }
-    .zazo-figure.is-working .zazo-glyph-2 { transform: translate(-1px, -22px); }
-    .zazo-figure.is-working .zazo-glyph-3 { transform: translate(2px, -34px); opacity: 0.7; }
+    .zazo-figure.is-working .zazo-glyph-1 { transform: translate(14px, -8px); }
+    .zazo-figure.is-working .zazo-glyph-2 { transform: translate(16px, -22px); }
+    .zazo-figure.is-working .zazo-glyph-3 { transform: translate(15px, -36px); opacity: 0.6; }
     .zazo-figure.is-working .zazo-glyph-4,
     .zazo-figure.is-working .zazo-glyph-5,
     .zazo-figure.is-working .zazo-glyph-6,
