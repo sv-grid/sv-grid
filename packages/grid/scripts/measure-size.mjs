@@ -531,6 +531,12 @@ const BUDGET_KB = {
   // and cellEdited from the edit, paste, fill, clear and toggle paths), each
   // one null check when nothing is registered. Everything the module draws
   // ships with it.
+  // Then up to 100.2 (2026-10-18, over the line) with the empty state's
+  // Clear filters button and its icons, number-editor and registered-editor
+  // fixes, and the pager wrap; back to 98.7 by moving row-drag.ts (-1.5) to
+  // a chunk loaded with the first `rowDragManaged`. Its handlers are attached
+  // only when that prop is on, so a grid that never drags rows never
+  // downloads it.
   'full render component (SvGrid)': 100.0,
   // 3.0 -> 3.5 (measured 3.2): the lazy first build of the row model above
   // (lazyRows / denseRows in getRowModel). createGrid builds rows too.

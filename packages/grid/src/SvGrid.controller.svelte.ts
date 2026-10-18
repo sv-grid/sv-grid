@@ -86,9 +86,6 @@ import {
     createColumns,
   } from "./columns";
 import {
-    createRowDrag,
-  } from "./row-drag";
-import {
     createAlignedGrids,
   } from "./aligned-grids";
 import {
@@ -5567,7 +5564,27 @@ export function createSvGridController<
   const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, commitAndMoveByTab, commitAndMoveByEnter, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste, armPasteFallback } = createEditing<TFeatures, TData>(ctx);
   const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, activeRangeRect, cellSelectionState, getSelectionRects, isInFillPreview, dragPreviewRect, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
   const { cellPinStyle, isColumnPinned, getCurrentColumnOrder, emitColumnOrder, setColumnOrderInternal, applyColumnDrop, onColumnHeaderDragStart, onColumnHeaderDragOver, onColumnHeaderDragLeave, onColumnHeaderDrop, onColumnHeaderDragEnd, pinColumnLeft, pinColumnRight, unpinColumn, toggleColumnVisibleInPanel, moveColumnInPanel, toggleGroupInPanel, getColumnBaseWidth, getColumnWidth, measureText, autosizeColumn, autosizeAllColumns, resetColumns } = createColumns<TFeatures, TData>(ctx);
-  const { onRowDragStart, onRowDragOver, onRowDragLeave, onRowDrop, onRowsContainerDragOver, onRowsContainerDrop, onRowDragEnd, onRowPointerDown, destroyRowDrag } = createRowDrag<TFeatures, TData>(ctx);
+  // Managed row dragging loads with the first `rowDragManaged`, not with the
+  // grid: SvGrid.svelte attaches these handlers only when the prop is on, they
+  // do nothing until the module lands (a frame on a warm cache), and a grid
+  // that never drags rows never downloads it. rowDropZone imports the same
+  // module, so the cross-grid bus is still one instance.
+  let rowDrag = $state.raw<ReturnType<typeof import("./row-drag").createRowDrag> | null>(null);
+  $effect(() => {
+    if (props.rowDragManaged === true && !rowDrag)
+      import("./row-drag").then((m) => {
+        if (!rowDrag) rowDrag = m.createRowDrag<TFeatures, TData>(ctx);
+      });
+  });
+  const onRowDragStart = (e: DragEvent, rowIndex: number) => rowDrag?.onRowDragStart(e, rowIndex);
+  const onRowDragOver = (e: DragEvent, rowIndex: number) => rowDrag?.onRowDragOver(e, rowIndex);
+  const onRowDragLeave = (rowIndex: number) => rowDrag?.onRowDragLeave(rowIndex);
+  const onRowDrop = (e: DragEvent, rowIndex: number) => rowDrag?.onRowDrop(e, rowIndex);
+  const onRowsContainerDragOver = (e: DragEvent) => rowDrag?.onRowsContainerDragOver(e);
+  const onRowsContainerDrop = (e: DragEvent) => rowDrag?.onRowsContainerDrop(e);
+  const onRowDragEnd = () => rowDrag?.onRowDragEnd();
+  const onRowPointerDown = (e: PointerEvent, rowIndex: number) => rowDrag?.onRowPointerDown(e, rowIndex);
+  const destroyRowDrag = () => rowDrag?.destroyRowDrag();
   const { register: registerAlignedGrid, broadcastScroll: broadcastAlignedScroll, broadcastWidths: broadcastAlignedWidths } = createAlignedGrids<TFeatures, TData>(ctx);
   const { buildApi } = createGridApi<TFeatures, TData>(ctx);
   const { readCellRaw, writeCellRaw, applyFillPattern, clearSelectedCellValues, startFillDrag, onFillPointerMove, onFillPointerUp, fillDownToNeighbour, isOnMoveGrabStrip, startMoveDrag, onMovePointerMove, onMovePointerUp, applyMoveRange, moveDestRect, trackEdgeScroll, stopEdgeScroll, toggleBooleanCell, copySelectionToClipboard, clearSelectedCells, cutSelectionToClipboard } = createClipboard(ctx);
