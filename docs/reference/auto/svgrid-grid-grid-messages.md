@@ -20,6 +20,10 @@ Every localizable chrome string, grouped by area in the comments.
 export type GridChromeMessages = {
   // Empty / loading state
   noRows: string
+  /** The empty state when a filter is what emptied the grid. */
+  noRowsFiltered: string
+  /** The button in that empty state that clears every filter. */
+  clearFilters: string
   loading: string
   // Tool panel
   columns: string
@@ -91,6 +95,17 @@ export type GridChromeMessages = {
   selectionBarMore: string
   selectionBarSelectAll: string
   selectionBarEditFields: string
+  selectionBarDelete: string
+  /** `{count}` is the number of selected rows. */
+  selectionBarDeleteConfirm: string
+  selectionBarCancel: string
+  // Pin splitter (`pinSplitter`)
+  pinSplitterLabel: string
+  pinSplitterHint: string
+  pinSplitterNone: string
+  pinSplitterOne: string
+  /** `{count}` is the number of pinned columns. */
+  pinSplitterMany: string
   // Bulk edit dialog
   bulkEditTitle: string
   bulkEditLead: string
@@ -128,6 +143,8 @@ English defaults - the literal strings the grid shipped before localization.
 ```ts
 export const defaultGridMessages: GridChromeMessages = {
   noRows: 'No rows to display.',
+  noRowsFiltered: 'No rows match the current filters.',
+  clearFilters: 'Clear filters',
   loading: 'Loading grid data...',
   columns: 'Columns',
   filters: 'Filters',
@@ -172,6 +189,14 @@ export const defaultGridMessages: GridChromeMessages = {
   selectionBarMore: 'More actions',
   selectionBarSelectAll: 'Select all',
   selectionBarEditFields: 'Edit fields',
+  selectionBarDelete: 'Delete',
+  selectionBarDeleteConfirm: 'Delete {count} rows?',
+  selectionBarCancel: 'Cancel',
+  pinSplitterLabel: 'Pinned columns',
+  pinSplitterHint: 'Drag to pin or unpin columns',
+  pinSplitterNone: 'No pinned columns',
+  pinSplitterOne: '1 pinned column',
+  pinSplitterMany: '{count} pinned columns',
   bulkEditTitle: 'Edit fields',
   bulkEditLead:
     'Changes apply to all {count} selected items. Fields you leave alone keep their existing values.',

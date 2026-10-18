@@ -958,19 +958,18 @@
              screen's light on his face and along the lid's top edge. It lands
              shut, the lid swings up, then the screen comes on. His hands are
              behind the lid on the keys; his elbows show at the sides. -->
-        <!-- What he is writing: bits of code sliding out from behind the
-             lid's right edge. Drawn before the laptop, so the lid hides where
-             they start. -->
+        <!-- What he is writing: a chimney of 0s and 1s rising off the lid's top
+             right corner, beside his head. Drawn before the laptop, so the lid
+             hides where they start. -->
         <g class="zazo-glyphs" aria-hidden="true">
-          <!-- Small bits that slide out of the lid's right edge and drift off to
-               his right, at three heights. Short tokens: he sits near the right
-               edge of the window, and they fade before they reach it. -->
-          <text class="zazo-glyph zazo-glyph-1" x="66" y="72">&lt;/&gt;</text>
-          <text class="zazo-glyph zazo-glyph-2" x="66" y="80">{'{ }'}</text>
-          <text class="zazo-glyph zazo-glyph-3" x="66" y="76">=&gt;</text>
-          <text class="zazo-glyph zazo-glyph-4" x="66" y="70">()</text>
-          <text class="zazo-glyph zazo-glyph-5" x="66" y="82">$</text>
-          <text class="zazo-glyph zazo-glyph-6" x="66" y="74">;</text>
+          <text class="zazo-glyph zazo-glyph-1" x="80" y="70">1</text>
+          <text class="zazo-glyph zazo-glyph-2" x="82" y="70">0</text>
+          <text class="zazo-glyph zazo-glyph-3" x="79" y="70">1</text>
+          <text class="zazo-glyph zazo-glyph-4" x="81" y="70">1</text>
+          <text class="zazo-glyph zazo-glyph-5" x="80" y="70">0</text>
+          <text class="zazo-glyph zazo-glyph-6" x="82" y="70">1</text>
+          <text class="zazo-glyph zazo-glyph-7" x="79" y="70">0</text>
+          <text class="zazo-glyph zazo-glyph-8" x="81" y="70">0</text>
         </g>
         <g class="zazo-laptop">
           <g class="zazo-type-l">
@@ -1318,14 +1317,15 @@
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-1.6px); }
   }
-  /* The code off his screen: small bits slide out from behind the lid's right
-     edge and drift away to his right, each at its own height, fading as they
-     go. Six of them half a second apart, so a few are always in the air. A
-     thin halo in the page colour keeps them legible over the header. */
+  /* The code off his screen, like smoke from a chimney: 0s and 1s leave the
+     lid's top right corner one after another, rise beside his head with a
+     slight sway, and spread and fade as they climb. Eight digits 0.35 s
+     apart on a 2.8 s rise, so the column is never empty. A thin halo in the
+     page colour keeps them legible over the header. */
   .zazo-glyph {
-    font: 800 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+    font: 800 11px ui-monospace, SFMono-Regular, Menlo, monospace;
     fill: var(--z-accent);
-    text-anchor: start;
+    text-anchor: middle;
     stroke: var(--z-bg);
     stroke-width: 2.5px;
     stroke-linejoin: round;
@@ -1334,17 +1334,29 @@
   /* Each turns about its own middle, not the figure's corner (the rule for
      every other part of him). */
   .zazo-figure .zazo-glyph { transform-box: fill-box; transform-origin: center; }
-  .zazo-figure.is-working .zazo-glyph-1 { animation: zazo-code-out 2.4s linear 1.2s infinite; }
-  .zazo-figure.is-working .zazo-glyph-2 { animation: zazo-code-out 2.4s linear 1.6s infinite; }
-  .zazo-figure.is-working .zazo-glyph-3 { animation: zazo-code-out 2.4s linear 2s infinite; }
-  .zazo-figure.is-working .zazo-glyph-4 { animation: zazo-code-out 2.4s linear 2.4s infinite; }
-  .zazo-figure.is-working .zazo-glyph-5 { animation: zazo-code-out 2.4s linear 2.8s infinite; }
-  .zazo-figure.is-working .zazo-glyph-6 { animation: zazo-code-out 2.4s linear 3.2s infinite; }
-  @keyframes zazo-code-out {
-    0% { opacity: 0; transform: translate(0, 0); }
-    15% { opacity: 1; transform: translate(9px, -1px); }
-    70% { opacity: 0.9; transform: translate(30px, -4px); }
-    100% { opacity: 0; transform: translate(40px, -6px); }
+  .zazo-figure.is-working .zazo-glyph-1 { animation: zazo-smoke-a 2.8s ease-out 1.2s infinite; }
+  .zazo-figure.is-working .zazo-glyph-2 { animation: zazo-smoke-b 2.8s ease-out 1.55s infinite; }
+  .zazo-figure.is-working .zazo-glyph-3 { animation: zazo-smoke-a 2.8s ease-out 1.9s infinite; }
+  .zazo-figure.is-working .zazo-glyph-4 { animation: zazo-smoke-b 2.8s ease-out 2.25s infinite; }
+  .zazo-figure.is-working .zazo-glyph-5 { animation: zazo-smoke-a 2.8s ease-out 2.6s infinite; }
+  .zazo-figure.is-working .zazo-glyph-6 { animation: zazo-smoke-b 2.8s ease-out 2.95s infinite; }
+  .zazo-figure.is-working .zazo-glyph-7 { animation: zazo-smoke-a 2.8s ease-out 3.3s infinite; }
+  .zazo-figure.is-working .zazo-glyph-8 { animation: zazo-smoke-b 2.8s ease-out 3.65s infinite; }
+  /* Two sways, alternating, so the column wavers like smoke instead of
+     climbing in a ruler-straight line. */
+  @keyframes zazo-smoke-a {
+    0% { opacity: 0; transform: translate(0, 0) scale(0.7); }
+    10% { opacity: 1; transform: translate(1px, -8px) scale(0.85); }
+    35% { transform: translate(-3px, -30px) scale(0.95); }
+    60% { opacity: 0.85; transform: translate(3px, -54px) scale(1.05); }
+    100% { opacity: 0; transform: translate(8px, -88px) scale(1.2); }
+  }
+  @keyframes zazo-smoke-b {
+    0% { opacity: 0; transform: translate(0, 0) scale(0.7); }
+    10% { opacity: 1; transform: translate(-1px, -8px) scale(0.85); }
+    35% { transform: translate(3px, -30px) scale(0.95); }
+    60% { opacity: 0.85; transform: translate(-2px, -54px) scale(1.05); }
+    100% { opacity: 0; transform: translate(4px, -88px) scale(1.2); }
   }
   /* His line is longer than the hello: let it wrap. Two classes, so it beats
      the hello's nowrap, which comes later in this sheet. */
@@ -1608,19 +1620,21 @@
     .zazo-figure.no-analyser .zazo-talk,
     .zazo-target { animation: none !important; }
     /* At the laptop, still: open at once, no typing, a finished line on a
-       steady screen. The code does not drift; three bits stand just off the
-       lid's right edge instead, so what he is doing still reads without
-       anything moving. They used to be hidden, and with the system's
+       steady screen. The chimney does not rise; a short still column of 0s and
+       1s stands over the lid's corner instead, so what he is doing still reads
+       without anything moving. It used to be hidden, and with the system's
        reduce-animations setting on he looked like he was only holding a laptop. */
     .zazo-type-l, .zazo-type-r, .zazo-screen-light { animation: none !important; }
     .zazo-laptop, .zazo-lid-open, .zazo-screen-light, .zazo-screen-rim, .zazo-logo-glow { transition: none !important; }
     .zazo-figure.is-working .zazo-glyph { animation: none !important; opacity: 1; }
-    .zazo-figure.is-working .zazo-glyph-1 { transform: translate(10px, -6px); }
-    .zazo-figure.is-working .zazo-glyph-2 { transform: translate(14px, 3px); }
-    .zazo-figure.is-working .zazo-glyph-3 { transform: translate(30px, -2px); }
+    .zazo-figure.is-working .zazo-glyph-1 { transform: translate(0, -10px); }
+    .zazo-figure.is-working .zazo-glyph-2 { transform: translate(-1px, -22px); }
+    .zazo-figure.is-working .zazo-glyph-3 { transform: translate(2px, -34px); opacity: 0.7; }
     .zazo-figure.is-working .zazo-glyph-4,
     .zazo-figure.is-working .zazo-glyph-5,
-    .zazo-figure.is-working .zazo-glyph-6 { opacity: 0; }
+    .zazo-figure.is-working .zazo-glyph-6,
+    .zazo-figure.is-working .zazo-glyph-7,
+    .zazo-figure.is-working .zazo-glyph-8 { opacity: 0; }
   }
   /* Phones: the top bar has no room beside the search, and the screen is the demo's. */
   @media (max-width: 767px) {

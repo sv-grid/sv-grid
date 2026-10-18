@@ -413,6 +413,63 @@
   border-right: 1px solid var(--sg-border, #e2e8f0);
   border-bottom: 1px solid var(--sg-border, #e2e8f0);
 }
+/* The empty state: one cell across the row, the message centred in the body
+   with room around it. It had no styles at all, so it read as a stray line of
+   text jammed against the left edge, under a blank body. */
+.sv-grid-table .sv-grid-empty-row {
+  width: 100%;
+}
+.sv-grid-table .sv-grid-empty-cell {
+  flex: 1 1 100%;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  white-space: normal;
+  user-select: text;
+}
+.sv-grid-empty {
+  /* The cell is a flex row (every grid cell is), so the block takes the
+     cell's full width explicitly or it hugs its content at the left. */
+  flex: 1 1 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 160px;
+  padding: 40px 16px;
+  color: var(--sg-muted, #64748b);
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+}
+.sv-grid-empty-icon {
+  width: 28px;
+  height: 28px;
+  opacity: 0.55;
+}
+.sv-grid-empty-text {
+  max-width: 36ch;
+}
+.sv-grid-empty-clear {
+  margin-top: 4px;
+  padding: 5px 12px;
+  border: 1px solid var(--sg-border, #e2e8f0);
+  border-radius: var(--sg-radius, 6px);
+  background: var(--sg-bg, #fff);
+  color: var(--sg-fg, #0f172a);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+.sv-grid-empty-clear:hover {
+  border-color: var(--sg-accent, #2563eb);
+}
+.sv-grid-empty-clear:focus-visible {
+  outline: 2px solid var(--sg-focus-ring, var(--sg-accent, #2563eb));
+  outline-offset: 2px;
+}
 /* The last cell / column in each row drops its right border so the grid's
    right edge stays clean (the shell provides the outer frame). */
 .sv-grid-table tr > :last-child.sv-grid-column,

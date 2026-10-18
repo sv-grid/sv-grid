@@ -3072,7 +3072,26 @@
                     (showRowSelectionEffective ? 1 : 0) +
                     (showDetailToggleEffective ? 1 : 0)}
                 >
-                  {opt.emptyMessage ?? messages.noRows}
+                  <!-- A filter that matched nothing says so and offers the way
+                       back; plain empty data just says there is nothing. A
+                       consumer's emptyMessage wins in both cases. -->
+                  <div class="sv-grid-empty">
+                    <svg class="sv-grid-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      {#if ctrl.anyFilterActive}
+                        <path d="M3 5h18l-7 8v6l-4 2v-8z" />
+                      {:else}
+                        <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M9 9v11" />
+                      {/if}
+                    </svg>
+                    <span class="sv-grid-empty-text">{opt.emptyMessage ?? (ctrl.anyFilterActive ? messages.noRowsFiltered : messages.noRows)}</span>
+                    {#if ctrl.anyFilterActive && opt.emptyMessage == null}
+                      <button
+                        type="button"
+                        class="sv-grid-empty-clear"
+                        onclick={() => ctrl.buildApi().clearAllFilters()}
+                      >{messages.clearFilters}</button>
+                    {/if}
+                  </div>
                 </td>
               </tr>
             {:else if rowVirtualizationEnabled}

@@ -32,6 +32,12 @@ export type CellEditorRegistration = {
   props?: (ctx: CellEditorContext) => Record<string, unknown>
   /** Hint that the editor should open its popover immediately on mount. */
   autoOpen?: boolean
+  /**
+   * Whether typing on a selected cell starts this editor with the typed
+   * character (`typed: true` on the context). A function decides per key,
+   * e.g. digits only for a number editor. Default: every printable key.
+   */
+  typeToEdit?: boolean | ((char: string) => boolean)
 }
 ```
 

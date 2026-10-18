@@ -43,7 +43,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## Key facts
 
-- Package: `@svgrid/grid` 3.0.13, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
+- Package: `@svgrid/grid` 3.0.14, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
 - Peer dependency: `svelte` ^5. Works in SvelteKit, including server-side rendering.
 - Size (gzip, Svelte external, measured 2026-09-22 on 3.0.4): 97.6 KB for the full `<SvGrid>` entry plus 10.5 KB CSS; 2.7 KB for the headless entry. Features load on demand.
 - Styling: `--sg-*` CSS custom properties, and 20 theme stylesheets, each with a light and a dark palette. No CSS framework is required; Tailwind and shadcn-svelte setups are documented.
@@ -55,7 +55,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## About this file
 
-The full SvGrid documentation, generated 2026-10-17 from 461 pages, 21 comparison pages, plus 72 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
+The full SvGrid documentation, generated 2026-10-18 from 461 pages, 21 comparison pages, plus 72 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
 
 <!-- =================================================================
      /docs/getting-started/  (community)
@@ -105446,6 +105446,8 @@ export function installEnterprise<
   enableSchedulerView()
   // Register the Kanban board view (no-op without the `board` prop).
   enableBoardView()
+  // Register the gallery view (no-op without the `gallery` prop).
+  enableGalleryView()
   // Register the Gantt view (no-op without the `gantt` prop).
   enableGanttView()
   enableSelectionBar()
@@ -109082,6 +109084,20 @@ export function hasAIProvider(): boolean {
 }
 ```
 
+### `type AIRowSource`
+
+What the read-only helpers need from a grid: its rows. A full `SvGridApi`
+satisfies it, and so does `{ getData: () => rows }`, which lets a chat or a
+report summarize data that is not on screen in a grid. `aiFilter` with
+`apply: true` and `aiExport` still need the grid itself.
+
+```ts
+export type AIRowSource<
+  TFeatures extends TableFeatures = TableFeatures,
+  TData extends RowData = RowData,
+> = Pick<SvGridApi<TFeatures, TData>, 'getData'>
+```
+
 ### `type AIFilterClause`
 
 One condition in a filter plan: a column, a comparison, and the value to match.
@@ -109783,6 +109799,9 @@ Format a numeric value for number / currency / percent column formats.
 
 ```ts
 export function formatNumericWithConfig(value: unknown, config: NumericFormatInput): string {
+  // An empty cell stays empty. Number(null) and Number('') are 0, so a cleared
+  // value in a currency column used to render as "$0", a number nobody entered.
+  if (value == null || (typeof value === 'string' && value.trim() === '')) return ''
   const n = typeof value === 'number' ? value : Number(value)
   if (!Number.isFinite(n)) return String(value ?? '')
 
@@ -117152,6 +117171,15 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
   header?: ColumnDefTemplate<HeaderContext<TData>>
   footer?: ColumnDefTemplate<HeaderContext<TData>>
   cell?: ColumnDefTemplate<CellContext<TData>>
+  /**
+   * A field type registered by `@svgrid/enterprise/fields` (`'attachment'`,
+   * `'rating'`, `'url'`, ...). With the module enabled the cell is drawn by
+   * that type; a column's own `cell` still wins. Without it the column draws
+   * as an ordinary one.
+   */
+  fieldType?: string
+  /** Properties of `fieldType` (options, precision, max files, ...). */
+  fieldProps?: Record<string, unknown>
   columns?: Array<ColumnDef<TFeatures, TData>>
   /**
    * Declarative cell spanning (merged cells). Return how many COLUMNS this
@@ -117166,17 +117194,20 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    */
   rowSpan?: (params: CellSpanParams<TData>) => number
   /**
-   * High-level data type for the column. A convenience that resolves to the
-   * right `editorType`, alignment, date `format`, and filter operators without
-   * setting each by hand:
-   *   'text' → text editor, left-aligned
-   *   'number' → number editor, right-aligned, numeric filter operators
-   *   'boolean' → checkbox editor, centered
-   *   'date' → date editor (Date values), right-aligned, `{ type: 'date' }` format
-   *   'dateString' → date editor for ISO date STRINGS (e.g. '2026-06-27')
-   * Anything you set explicitly (`editorType`, `align`, `format`) still wins -
-   * `cellDataType` only fills the gaps. Grid-level `inferColumnTypes` infers
-   * this from the first data row for columns that declare neither.
+   * What the column's values are. It decides sorting, filter operators and
+   * alignment, whatever edits the cell: `editorType` only picks the editor,
+   * so a number column can be typed in a text box or a custom editor and
+   * still sort, filter and align as numbers.
+   *   'text' → left-aligned, text filters (text editor by default)
+   *   'number' → right-aligned, numeric sort and filters (number editor)
+   *   'boolean' → centered, true / false filter (checkbox editor)
+   *   'date' → Date values, right-aligned, date sort and filters (date
+   *     editor, `{ type: 'date' }` format)
+   *   'dateString' → ISO date STRINGS (e.g. '2026-06-27'), as a date
+   * Anything you set explicitly (`editorType`, `align`, `format`) still wins.
+   * Without it, a built-in `editorType` (`number`, `date`, `datetime`,
+   * `checkbox`) implies the type, as before; grid-level `inferColumnTypes`
+   * infers it from the first data row for columns with neither.
    */
   cellDataType?: 'text' | 'number' | 'boolean' | 'date' | 'dateString'
   /**
@@ -117232,6 +117263,13 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    * `editorType` is treated as a hint for parsing the saved value.
    */
   cellEditor?: ColumnDefTemplate<EditorContext<TData>>
+  /**
+   * The text format of the date / datetime editor's box, in date-format
+   * tokens (`'MMMM d, yyyy'`, `'MM/dd/yyyy h:mm tt'`), so an edit shows the
+   * date the way the cell does. Default `'yyyy-MM-dd'`, with time
+   * `'yyyy-MM-dd HH:mm'`.
+   */
+  editorFormatString?: string
   /**
    * Per-column tooltip. String shows as a native `title=`; `(ctx) => string`
    * runs per cell so the tooltip can reflect the value. Returning an empty
@@ -117347,6 +117385,12 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
   editorSeparator?: string
   format?: CellFormatConfig
   formatter?: CellFormatter<TData>
+  /**
+   * The number this column sorts a value by, in place of the value: a status
+   * option's position in its list, say, so "To do" comes before "Done".
+   * Blanks and anything not a number sort first, as in a number column.
+   */
+  sortValue?: (value: unknown) => number | null | undefined
   /**
    * Aggregate this column's values into the group row when grouping is
    * active. `'sum' | 'avg' | 'min' | 'max' | 'count' | 'countDistinct' |
@@ -118354,11 +118398,13 @@ export function createSortedRowModel<TData extends RowData>(
     for (const clause of sorting) {
       const column = allColumns.find((col) => col.id === clause.id)
       if (!column) continue
-      const editorType = column.columnDef.editorType
+      // By the column's data type, not by what edits it: a number column
+      // edited in a text box still sorts as numbers.
+      const dataType = columnDataType(column.columnDef)
       const comparator =
-        editorType === 'number'
+        dataType === 'number'
           ? localSortFns.number
-          : editorType === 'date' || editorType === 'datetime'
+          : isDateDataType(dataType)
             ? localSortFns.date
             : localSortFns.auto
 
@@ -118381,7 +118427,12 @@ export function createSortedRowModel<TData extends RowData>(
       let autoMode: 'number' | 'mixed' | 'text' | undefined
       let rankCount: number | undefined
 
-      if (comparator === sortFns.number) {
+      const sortValue = column.columnDef.sortValue
+      if (typeof sortValue === 'function') {
+        keyOf = (row) => numberSortKey(sortValue(row.getCellValueByColumnId(columnId)))
+        for (let i = 0; i < n; i++) keys[i] = keyOf(rows[i]!)
+        compare = compareNumericKeys
+      } else if (comparator === sortFns.number) {
         keyOf = (row) => numberSortKey(row.getCellValueByColumnId(columnId))
         for (let i = 0; i < n; i++) keys[i] = keyOf(rows[i]!)
         compare = compareNumericKeys
@@ -118983,7 +119034,11 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
             c.field === prev.field &&
             c.id === prev.id &&
             c.header === prev.header &&
-            c.editorType === prev.editorType
+            c.editorType === prev.editorType &&
+            // A field's options and format live in fieldProps; a reused
+            // column would keep drawing the old ones.
+            c.fieldType === prev.fieldType &&
+            c.fieldProps === prev.fieldProps
           )
         })
       ) {
@@ -121597,6 +121652,12 @@ export type CellEditorRegistration = {
   props?: (ctx: CellEditorContext) => Record<string, unknown>
   /** Hint that the editor should open its popover immediately on mount. */
   autoOpen?: boolean
+  /**
+   * Whether typing on a selected cell starts this editor with the typed
+   * character (`typed: true` on the context). A function decides per key,
+   * e.g. digits only for a number editor. Default: every printable key.
+   */
+  typeToEdit?: boolean | ((char: string) => boolean)
 }
 ```
 
@@ -121944,6 +122005,10 @@ Every localizable chrome string, grouped by area in the comments.
 export type GridChromeMessages = {
   // Empty / loading state
   noRows: string
+  /** The empty state when a filter is what emptied the grid. */
+  noRowsFiltered: string
+  /** The button in that empty state that clears every filter. */
+  clearFilters: string
   loading: string
   // Tool panel
   columns: string
@@ -122015,6 +122080,17 @@ export type GridChromeMessages = {
   selectionBarMore: string
   selectionBarSelectAll: string
   selectionBarEditFields: string
+  selectionBarDelete: string
+  /** `{count}` is the number of selected rows. */
+  selectionBarDeleteConfirm: string
+  selectionBarCancel: string
+  // Pin splitter (`pinSplitter`)
+  pinSplitterLabel: string
+  pinSplitterHint: string
+  pinSplitterNone: string
+  pinSplitterOne: string
+  /** `{count}` is the number of pinned columns. */
+  pinSplitterMany: string
   // Bulk edit dialog
   bulkEditTitle: string
   bulkEditLead: string
@@ -122052,6 +122128,8 @@ English defaults - the literal strings the grid shipped before localization.
 ```ts
 export const defaultGridMessages: GridChromeMessages = {
   noRows: 'No rows to display.',
+  noRowsFiltered: 'No rows match the current filters.',
+  clearFilters: 'Clear filters',
   loading: 'Loading grid data...',
   columns: 'Columns',
   filters: 'Filters',
@@ -122096,6 +122174,14 @@ export const defaultGridMessages: GridChromeMessages = {
   selectionBarMore: 'More actions',
   selectionBarSelectAll: 'Select all',
   selectionBarEditFields: 'Edit fields',
+  selectionBarDelete: 'Delete',
+  selectionBarDeleteConfirm: 'Delete {count} rows?',
+  selectionBarCancel: 'Cancel',
+  pinSplitterLabel: 'Pinned columns',
+  pinSplitterHint: 'Drag to pin or unpin columns',
+  pinSplitterNone: 'No pinned columns',
+  pinSplitterOne: '1 pinned column',
+  pinSplitterMany: '{count} pinned columns',
   bulkEditTitle: 'Edit fields',
   bulkEditLead:
     'Changes apply to all {count} selected items. Fields you leave alone keep their existing values.',
@@ -122859,24 +122945,29 @@ export function applyRowPredicate<TRow>(
   }
   if (!hasGroup) return rows.filter(keep)
 
-  // One reverse pass. `survivorsBelow` counts leaves kept since we last closed
-  // out a banner, so a banner is kept when anything after it survived.
+  // Any leaf under a banner, through its subRows (the banner is collapsed).
+  const anyLeaf = (row: TRow): boolean =>
+    ((row as Tree<TRow>).subRows ?? []).some((sub) => (isGroup(sub) ? anyLeaf(sub) : keep(sub)))
+
+  // One forward pass. `open` holds the banners above the current row; a kept
+  // row keeps every one of them, and only them.
   const keepFlags = new Array<boolean>(rows.length).fill(false)
-  let survivorsSinceBanner = 0
-  for (let i = rows.length - 1; i >= 0; i -= 1) {
+  const open: number[] = []
+  const keepOpen = () => {
+    for (let k = open.length - 1; k >= 0 && !keepFlags[open[k]!]; k -= 1) keepFlags[open[k]!] = true
+  }
+  for (let i = 0; i < rows.length; i += 1) {
     const row = rows[i]!
+    const depth = depthOf(row)
+    while (open.length && depthOf(rows[open[open.length - 1]!]) >= depth) open.pop()
     if (isGroup(row)) {
-      if (survivorsSinceBanner > 0) {
-        keepFlags[i] = true
-        // The banner itself counts as surviving content for any banner above
-        // it, so nested groups keep their ancestors.
-        survivorsSinceBanner = 1
-      } else {
-        keepFlags[i] = false
-      }
+      open.push(i)
+      const next = rows[i + 1]
+      const collapsed = next === undefined || depthOf(next) <= depth
+      if (collapsed && anyLeaf(row)) keepOpen()
     } else if (keep(row)) {
       keepFlags[i] = true
-      survivorsSinceBanner += 1
+      keepOpen()
     }
   }
 
@@ -126374,8 +126465,11 @@ export type SvGridApi<
     format?: CellFormatConfig
     /** Effective horizontal alignment ('left' | 'center' | 'right'). */
     align?: 'left' | 'center' | 'right'
-    /** The column's declared `editorType`, when set. Lets a filter or
-     *  expression UI offer type-appropriate operators. */
+    /** The column's data type: `cellDataType`, or the one a built-in
+     *  `editorType` implies. Lets a filter or expression UI offer
+     *  type-appropriate operators whatever edits the cell. */
+    cellDataType?: 'text' | 'number' | 'boolean' | 'date' | 'dateString'
+    /** The column's `editorType`, when set: what edits it. */
     editorType?: string
   }>
 

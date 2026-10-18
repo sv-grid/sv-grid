@@ -4830,6 +4830,7 @@ export function createSvGridController<
     get paginationEnabled() { return paginationEnabled; },
     get groupingControlsEnabled() { return groupingControlsEnabled; },
     get globalFilter() { return globalFilter; },
+    get anyFilterActive() { return anyFilterActive; },
     set globalFilter(v) { globalFilter = v as never; },
     get scrollContainer() { return scrollContainer; },
     set scrollContainer(v) { scrollContainer = v as never; },

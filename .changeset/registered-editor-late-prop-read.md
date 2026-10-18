@@ -23,3 +23,8 @@ in-cell editor:
   part of a number, such as a letter, is rejected as it is typed.
 - `SvRepeatButton` has a `focusable` prop (default `true`) for buttons that
   step a field beside them.
+- The empty state is styled: centred in the body with an icon. When a filter
+  is what emptied the grid it says so (`noRowsFiltered`) and offers a
+  "Clear filters" button (`clearFilters`) that clears every filter surface.
+  It used to be one unstyled line of text against the left edge. A
+  consumer's `emptyMessage` still wins and hides the button.

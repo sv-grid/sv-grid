@@ -22,24 +22,29 @@ export function applyRowPredicate<TRow>(
   }
   if (!hasGroup) return rows.filter(keep)
 
-  // One reverse pass. `survivorsBelow` counts leaves kept since we last closed
-  // out a banner, so a banner is kept when anything after it survived.
+  // Any leaf under a banner, through its subRows (the banner is collapsed).
+  const anyLeaf = (row: TRow): boolean =>
+    ((row as Tree<TRow>).subRows ?? []).some((sub) => (isGroup(sub) ? anyLeaf(sub) : keep(sub)))
+
+  // One forward pass. `open` holds the banners above the current row; a kept
+  // row keeps every one of them, and only them.
   const keepFlags = new Array<boolean>(rows.length).fill(false)
-  let survivorsSinceBanner = 0
-  for (let i = rows.length - 1; i >= 0; i -= 1) {
+  const open: number[] = []
+  const keepOpen = () => {
+    for (let k = open.length - 1; k >= 0 && !keepFlags[open[k]!]; k -= 1) keepFlags[open[k]!] = true
+  }
+  for (let i = 0; i < rows.length; i += 1) {
     const row = rows[i]!
+    const depth = depthOf(row)
+    while (open.length && depthOf(rows[open[open.length - 1]!]) >= depth) open.pop()
     if (isGroup(row)) {
-      if (survivorsSinceBanner > 0) {
-        keepFlags[i] = true
-        // The banner itself counts as surviving content for any banner above
-        // it, so nested groups keep their ancestors.
-        survivorsSinceBanner = 1
-      } else {
-        keepFlags[i] = false
-      }
+      open.push(i)
+      const next = rows[i + 1]
+      const collapsed = next === undefined || depthOf(next) <= depth
+      if (collapsed && anyLeaf(row)) keepOpen()
     } else if (keep(row)) {
       keepFlags[i] = true
-      survivorsSinceBanner += 1
+      keepOpen()
     }
   }
 

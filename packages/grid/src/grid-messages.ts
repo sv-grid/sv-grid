@@ -27,6 +27,10 @@ export type GridMessages = GridChromeMessages & GridChartPanelMessages
 export type GridChromeMessages = {
   // Empty / loading state
   noRows: string
+  /** The empty state when a filter is what emptied the grid. */
+  noRowsFiltered: string
+  /** The button in that empty state that clears every filter. */
+  clearFilters: string
   loading: string
   // Tool panel
   columns: string
@@ -141,6 +145,8 @@ export type GridChromeMessages = {
 /** English defaults - the literal strings the grid shipped before localization. */
 export const defaultGridMessages: GridChromeMessages = {
   noRows: 'No rows to display.',
+  noRowsFiltered: 'No rows match the current filters.',
+  clearFilters: 'Clear filters',
   loading: 'Loading grid data...',
   columns: 'Columns',
   filters: 'Filters',

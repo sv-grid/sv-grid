@@ -78,6 +78,20 @@ export function hasAIProvider(): boolean {
 }
 ```
 
+### `type AIRowSource`
+
+What the read-only helpers need from a grid: its rows. A full `SvGridApi`
+satisfies it, and so does `{ getData: () => rows }`, which lets a chat or a
+report summarize data that is not on screen in a grid. `aiFilter` with
+`apply: true` and `aiExport` still need the grid itself.
+
+```ts
+export type AIRowSource<
+  TFeatures extends TableFeatures = TableFeatures,
+  TData extends RowData = RowData,
+> = Pick<SvGridApi<TFeatures, TData>, 'getData'>
+```
+
 ### `type AIFilterClause`
 
 One condition in a filter plan: a column, a comparison, and the value to match.

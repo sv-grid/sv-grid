@@ -200,6 +200,9 @@ Format a numeric value for number / currency / percent column formats.
 
 ```ts
 export function formatNumericWithConfig(value: unknown, config: NumericFormatInput): string {
+  // An empty cell stays empty. Number(null) and Number('') are 0, so a cleared
+  // value in a currency column used to render as "$0", a number nobody entered.
+  if (value == null || (typeof value === 'string' && value.trim() === '')) return ''
   const n = typeof value === 'number' ? value : Number(value)
   if (!Number.isFinite(n)) return String(value ?? '')
 
