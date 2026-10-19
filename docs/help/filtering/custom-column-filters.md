@@ -1,8 +1,105 @@
 # Custom column filters
 
 When the built-in operators and the set-filter pattern are not enough,
-take over the filter pipeline.
+give the column its own filter, or take over the filter pipeline.
 <div data-docs-demo="03-excel-filters" data-height="540"></div>
+
+## Your own filter control: `customFilter`
+
+A column's `customFilter` replaces the operator condition with your own
+model and control: a range slider that holds `[min, max]`, a tag picker that
+holds `string[]`, a "last N days" widget that holds a number.
+
+- `predicate(model)` returns the row test. It runs once per filter change,
+  so parse dates or build a `Set` there, not inside the returned function.
+  The test gets the column's value and the row's data.
+- `menu` is a snippet for the filter menu and the tool panel's Filters tab.
+  `floating` is one for the floating filter row. Each falls back to the
+  other, so one snippet can serve all three.
+- The snippet receives `{ column, model, setModel, surface, values, close }`.
+  `setModel(null)` clears the filter. `values()` returns the column's
+  distinct values under the other columns' filters, the same list the Values
+  checklist shows.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type CustomFilterContext, type GridColumns } from '@svgrid/grid'
+
+  type Deal = { id: number; company: string; stage: string; amount: number }
+
+  const deals: Deal[] = [
+    { id: 1, company: 'Northwind',  stage: 'Proposal',    amount: 4200 },
+    { id: 2, company: 'Contoso',    stage: 'Negotiation', amount: 18500 },
+    { id: 3, company: 'Fabrikam',   stage: 'Closed won',  amount: 32000 },
+    { id: 4, company: 'Tailspin',   stage: 'Proposal',    amount: 950 },
+    { id: 5, company: 'Litware',    stage: 'Negotiation', amount: 27400 },
+    { id: 6, company: 'Adventure',  stage: 'Closed won',  amount: 12800 },
+  ]
+
+  type Range = [number, number]
+
+  const columns: GridColumns<Deal> = [
+    { field: 'company', header: 'Company', width: 160 },
+    { field: 'stage',   header: 'Stage',   width: 140 },
+    {
+      field: 'amount',
+      header: 'Amount',
+      width: 220,
+      format: { type: 'currency', currency: 'USD' },
+      customFilter: {
+        predicate: ([min, max]: Range) => (value) => {
+          const n = Number(value)
+          return n >= min && n <= max
+        },
+        menu: amountRange,
+        floating: amountRange,
+      },
+    },
+  ]
+</script>
+
+{#snippet amountRange(f: CustomFilterContext<Deal, Range>)}
+  {@const max = f.model?.[1] ?? 40000}
+  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px;">
+    <input
+      type="range"
+      min="0"
+      max="40000"
+      step="1000"
+      value={max}
+      oninput={(e) => {
+        const next = Number(e.currentTarget.value)
+        f.setModel(next >= 40000 ? null : [0, next])
+      }}
+    />
+    <span>{max >= 40000 ? 'Any' : `up to ${max.toLocaleString()}`}</span>
+  </label>
+{/snippet}
+
+<SvGrid data={deals} {columns} filterable filterMode="row" />
+```
+
+The model is ANDed with the column's operator condition and its Values
+checklist, and is part of the rest of the filter state:
+
+- `api.setCustomFilter(columnId, model)` sets it, `null` clears it, and
+  `api.getCustomFilter(columnId)` reads it. `api.clearFilter` and
+  `api.clearAllFilters` clear it with everything else.
+- `api.getState()` returns `customFilters` while any model is set, and
+  `api.setState({ customFilters })` restores them. Keep the model
+  JSON-serializable if you save views.
+- `onFiltersChange` reports active models under `custom`, keyed by column id.
+  With `externalFilter` the grid only records the model, so a server
+  translates it into its query; `createServerDataSource` forwards it as
+  `filterModel.custom`.
+- An inactive model filters nothing and does not light the funnel. By
+  default `null`, `undefined`, `''` and `[]` are inactive; pass
+  `isActive(model)` for anything else.
+- `showValues: false` drops the Values checklist from the menu when it adds
+  nothing, as for a slider over thousands of distinct prices.
+
+A `customFilter` with only `predicate` keeps the built-in UI; the model is
+then set only through the API.
 
 ## Option A - supply a `filterFn`
 
@@ -70,11 +167,12 @@ Render a custom header (via `header: () => renderSnippet(...)`) that
 includes your own filter widget. Update controlled state from the widget;
 the grid will react. See [Custom header components](../columns/custom-header-components.md).
 
-## A predicate the operators cannot express
+## A control that lives outside the grid
 
-There is no per-column `filterFn`, so a custom rule lives outside the grid:
-narrow the array, hand the result to `data`. Everything downstream - sort,
-selection, the row count - follows the filtered set.
+When the filter control sits outside the grid, narrowing the array is the
+shortest path: filter it, hand the result to `data`. Everything downstream -
+sort, selection, the row count - follows the filtered set. For a control in
+the grid's own filter surfaces, use `customFilter` above.
 
 ```svelte {runnable}
 <script lang="ts">

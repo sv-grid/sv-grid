@@ -1224,6 +1224,13 @@
   min-width: 0;
 }
 
+/* A column's `customFilter` control fills the cell; there is no operator
+   button beside it. */
+.sv-grid-filter-row-custom > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 .sv-grid-filter-operator {
   flex: 2 1 0;
   min-width: 0;
@@ -2591,6 +2598,10 @@ select.sv-grid-fr-editor {
 
 .sv-grid-menu-filter {
   padding: 4px 6px 6px;
+}
+
+.sv-grid-menu-custom-filter {
+  padding-bottom: 6px;
 }
 
 .sv-grid-menu-filter-head {

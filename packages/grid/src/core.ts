@@ -135,6 +135,77 @@ export type EditorContext<TData extends RowData> = CellContext<TData> & {
 }
 
 /**
+ * What a custom filter control receives, in the filter menu and in the
+ * floating filter row. The grid owns the model; the control reads `model`
+ * and writes it back through `setModel`.
+ */
+export type CustomFilterContext<TData extends RowData, TModel = any> = {
+  column: Column<TData>
+  /** The column's current model, or `undefined` when none is set. */
+  model: TModel | undefined
+  /** Replace the model. `null` or `undefined` clears the filter. */
+  setModel: (next: TModel | null | undefined) => void
+  /**
+   * Which surface is rendering the control: the filter menu, the floating
+   * filter row, or the tool panel's Filters tab.
+   */
+  surface: 'menu' | 'floating' | 'panel'
+  /**
+   * The column's distinct values under every OTHER column's filter, the
+   * same list the menu's Values checklist shows. Computed on call, so a
+   * control that never asks pays nothing.
+   */
+  values: () => Array<string>
+  /** Close the filter menu. Does nothing on the other surfaces. */
+  close: () => void
+}
+
+/**
+ * A column filter whose state is your own model rather than an operator and
+ * a value: a range slider's `[min, max]`, a tag picker's `string[]`, a
+ * "last N days" count.
+ *
+ * The model lives in the grid (`api.setCustomFilter`, `getState().customFilters`)
+ * and is ANDed with the column's operator condition and its Values checklist,
+ * the same as those two are with each other. Keep it JSON-serializable if you
+ * save views.
+ *
+ *   customFilter: {
+ *     predicate: ([min, max]: [number, number]) => (value) =>
+ *       Number(value) >= min && Number(value) <= max,
+ *     menu: priceRange,      // a Snippet<[CustomFilterContext]>
+ *     floating: priceRange,
+ *   }
+ */
+export type CustomColumnFilter<TData extends RowData, TModel = any> = {
+  /**
+   * Build the row test for a model. Runs once per filter change, not once
+   * per row, so parse dates or build sets here. The returned function gets
+   * the column's value and the row's data.
+   */
+  predicate: (model: TModel) => (value: unknown, row: TData) => boolean
+  /**
+   * Whether a model narrows anything. An inactive model is kept (the control
+   * still shows it) but filters nothing and lights no funnel. Default: not
+   * `null` / `undefined` / `''` / an empty array.
+   */
+  isActive?: (model: TModel) => boolean
+  /**
+   * The control in the filter menu and the tool panel's Filters tab, in
+   * place of the operator condition. A Svelte snippet taking a
+   * {@link CustomFilterContext}. Falls back to `floating` when omitted.
+   */
+  menu?: (context: CustomFilterContext<TData, TModel>) => unknown
+  /**
+   * The control in the floating filter row, in place of the operator button
+   * and input. Falls back to `menu` when omitted.
+   */
+  floating?: (context: CustomFilterContext<TData, TModel>) => unknown
+  /** Keep the Values checklist under the custom control in the menu. Default `true`. */
+  showValues?: boolean
+}
+
+/**
  * Declarative cell formatting, applied through `Intl` - number, currency,
  * percent, date and datetime. Prefer this over a `formatter` function: it is
  * locale-aware, and export and the clipboard reuse the same configuration.
@@ -475,6 +546,13 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    * registered).
    */
   filterable?: boolean
+  /**
+   * Replace the built-in filter condition with your own control and model.
+   * See {@link CustomColumnFilter}. Without `menu` or `floating` the column
+   * keeps the built-in UI and the model is set only through
+   * `api.setCustomFilter`.
+   */
+  customFilter?: CustomColumnFilter<TData>
   /**
    * Options for `editorType: 'list' | 'chips'`. Either bare values (the
    * string is both value and label) or `{ value, label }` objects.

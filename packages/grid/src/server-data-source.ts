@@ -61,6 +61,12 @@ export type ServerFilterModel = {
    * filtering the loaded page itself - see `ServerState.expressionUnapplied`.
    */
   expression?: GridPredicateExpr
+  /**
+   * Models of the columns' `customFilter`s, keyed by column id, as the
+   * grid's `onFiltersChange` reports them. The grid cannot turn a custom
+   * model into a query; the backend translates each one itself.
+   */
+  custom?: Record<string, unknown>
 }
 
 /** The aggregate functions every backend helper understands. */
@@ -898,6 +904,7 @@ export function createServerDataSource<TData>(
         ? {
             global: filterModel.global,
             columns: toServerFilterColumns(filterModel as GridFilterState),
+            ...(filterModel.custom ? { custom: filterModel.custom } : {}),
           }
         : (filterModel as ServerFilterModel)
       state.pageIndex = 0

@@ -33,6 +33,15 @@ api.clearFilter('age')                   // same effect, sugared
 The wrapper internally writes into the `columnFilters` state slice and
 re-runs the filtered row model.
 
+A column with a [`customFilter`](./custom-column-filters.md) holds its own
+model rather than an operator and a value:
+
+```ts
+api.setCustomFilter('amount', [1000, 5000])  // whatever its predicate takes
+api.getCustomFilter('amount')                // [1000, 5000]
+api.setCustomFilter('amount', null)          // clear
+```
+
 ## Observe filter state
 
 For history, persistence, or server-side, subscribe via

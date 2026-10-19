@@ -25,6 +25,7 @@ function makeCtx(overrides: any = {}) {
   const ctx: any = {
     filterRowValues: {},
     filterMenuValues: {},
+    customFilterValues: {},
     valueFilters: {},
     columnMenuFor: null,
     filterMenuFor: null,

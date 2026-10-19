@@ -454,7 +454,7 @@ Be honest. Stay on AG Grid if you:
 
 - **Use multiple frameworks** - AG Grid has React, Angular, Vue, Solid, Qwik, vanilla adapters. SvGrid is Svelte-only.
 - **Need a push-based viewport row model** - SvGrid's server-side row model covers grouping, tree, pivot, transactions and select-all across unloaded rows, and its real-time page merges deltas into loaded rows, but the server cannot push the visible window over a socket the way the viewport model does.
-- **Need pluggable custom filter components or custom tool panels** - SvGrid's tool panel is a fixed Columns + Filters pair.
+- **Need custom tool panels** - SvGrid's tool panel is a fixed Columns + Filters pair. (Custom filter components are covered: a column's `customFilter` renders your own control in the filter menu, the floating filter row and the Filters tab.)
 - **Are mid-project and shipping in <2 weeks** - the migration is a few hours per grid, but only do it when you have buffer.
 - **Have a Svelte 4 codebase you can't upgrade** - SvGrid requires Svelte 5 runes. (Consider [htmlelements.com](https://www.htmlelements.com) for vanilla / multi-framework.)
 

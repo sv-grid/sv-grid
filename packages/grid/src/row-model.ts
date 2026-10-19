@@ -44,6 +44,8 @@ export type GridFilterState = {
     valueTo?: string
     selectedValues?: Array<string>
   }>
+  /** Active `customFilter` models keyed by column id, when any is active. */
+  custom?: Record<string, unknown>
 }
 
 /** The sort the grid hands a row model: column id and direction, in priority order. */

@@ -2445,6 +2445,11 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
       valueTo?: string;
       selectedValues?: Array<string>;
     }>;
+    /**
+     * Active `customFilter` models keyed by column id. Present only while
+     * one is active; a server translates each model itself.
+     */
+    custom?: Record<string, unknown>;
   }) => void;
   /**
    * Fires when an inline edit is committed (Enter / Tab / blur). Useful

@@ -25,6 +25,7 @@
 
   import type { SvGridController } from "./SvGrid.controller.svelte";
   import { createMenuActions } from "./menu-actions";
+  import { customFilterIsActive } from "./custom-filter";
   import { getGridExtension } from "./grid-extension.svelte";
 
   let { ctrl, icon }: { ctrl: SvGridController<TFeatures, TData>; icon: Snippet<[GridIconName]> } = $props();
@@ -345,13 +346,25 @@
       menuActiveOperator !== "notIn"}
     {@const searching =
       columnMenuVisibleFacets.length !== columnMenuFacetValues.length}
-    {@const conditionActive =
-      menuActiveOperator === "isBlank" ||
-      menuActiveOperator === "isNotBlank" ||
-      (filterMenuValues[colId]?.value ?? "").trim().length > 0}
+    {@const menuSlot = ctrl.customFilterSlot(menuColumn, "menu")}
+    {@const showValues = !menuSlot || menuColumn?.columnDef.customFilter?.showValues !== false}
+    {@const conditionActive = menuSlot
+      ? customFilterIsActive(menuColumn?.columnDef.customFilter, ctrl.customFilterValues[colId])
+      : menuActiveOperator === "isBlank" ||
+        menuActiveOperator === "isNotBlank" ||
+        (filterMenuValues[colId]?.value ?? "").trim().length > 0}
     {@const pickedCount = columnMenuSelectedFacets.size}
     {@const totalCount = columnMenuFacetValues.length}
     <div class="sv-grid-menu-filter">
+      {#if menuSlot && menuColumn}
+      <!-- The column's own control, in place of the operator condition. -->
+      <div class="sv-grid-menu-filter-head">
+        <span class="sv-grid-header-icon">{@render icon("filter")}</span> Filter
+      </div>
+      <div class="sv-grid-menu-custom-filter">
+        {@render menuSlot(ctrl.customFilterContext(menuColumn, "menu"))}
+      </div>
+      {:else}
       <div class="sv-grid-menu-filter-head">
         <span class="sv-grid-header-icon">{@render icon("filter")}</span> Filter
         condition
@@ -490,6 +503,8 @@
           </button>
         {/if}
       {/if}
+      {/if}
+      {#if showValues}
       <div class="sv-grid-menu-sep"></div>
       <div class="sv-grid-menu-filter-head">
         Values
@@ -547,6 +562,7 @@
           Showing {columnMenuVisibleFacets.length} of {columnMenuFacetValues.length}
         </div>
       {/if}
+      {/if}
       <div class="sv-grid-menu-actions">
         <button
           type="button"
@@ -569,7 +585,7 @@
     {@const menuCanSort = menuCol?.getCanSort?.() ?? false}
     {@const menuSortLabels = menuCol ? getGridExtension()?.sortLabels?.(menuCol.columnDef) : null}
     {@const menuLocked = !!getGridExtension()?.lockColumn?.(ctrl, menuColumnId)}
-    {@const menuCanFilter = (menuCol?.columnDef.field != null) && (menuCol?.columnDef.filterable !== false)}
+    {@const menuCanFilter = (menuCol?.columnDef.field != null || menuCol?.columnDef.customFilter != null) && (menuCol?.columnDef.filterable !== false)}
     {@const menuTab = ctrl.columnMenuTab}
     <div
       class="sv-grid-menu sv-grid-column-menu"

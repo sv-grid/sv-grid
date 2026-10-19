@@ -461,6 +461,17 @@ export function createGridApi<
       clearFilter(columnId) {
         ctx.clearColumnFilter(columnId);
       },
+      setCustomFilter(columnId, model) {
+        // Same `filterable` opt-out as `setFilter`. A column without a
+        // `customFilter` still stores the model, so a view restored before
+        // its columns arrive keeps it; it filters once the column has one.
+        const col = untrack(() => ctx.allColumns.find((c: any) => c.id === columnId));
+        if (col && !col.getCanFilter?.()) return;
+        ctx.setCustomFilter(columnId, model);
+      },
+      getCustomFilter(columnId) {
+        return ctx.customFilterValues[columnId];
+      },
       openContextMenu(event, rowIndex, colIndex) {
         const columnId = ctx.allColumns[colIndex]?.id;
         if (columnId == null) return;
@@ -490,6 +501,7 @@ export function createGridApi<
           // would strand rows nobody can see a cause for.
           ctx.filterMenuValues = {};
           ctx.filterRowValues = {};
+          ctx.customFilterValues = {};
           ctx.valueFilters = {};
           if (ctx.globalFilter !== "") ctx.globalFilter = "";
           if (ctx.advancedFilter !== null) ctx.advancedFilter = null;
@@ -916,6 +928,11 @@ export function createGridApi<
           // key would change every existing snapshot and force one spurious
           // save in every app on upgrade.
           ...(ctx.advancedFilter ? { advancedFilter: ctx.advancedFilter } : {}),
+          // Same reason as `advancedFilter`: present only when a column has a
+          // custom-filter model, so other grids' snapshots do not change.
+          ...(Object.keys(ctx.customFilterValues).length
+            ? { customFilters: { ...ctx.customFilterValues } }
+            : {}),
           ...(ctx.chartingEnabled
             ? {
                 chart: {
@@ -979,6 +996,11 @@ export function createGridApi<
         // "only the keys present are applied" contract).
         if ("advancedFilter" in state) {
           ctx.advancedFilter = state.advancedFilter ?? null;
+        }
+        // Present: replaces every custom model (null clears them). Absent:
+        // left alone, like `advancedFilter`.
+        if ("customFilters" in state) {
+          ctx.customFilterValues = { ...(state.customFilters ?? {}) };
         }
         if (Array.isArray(state.savedCharts) && ctx.chartingEnabled) ctx.applySavedCharts(state.savedCharts);
         if ((state.chart || state.charts) && ctx.chartingEnabled) {

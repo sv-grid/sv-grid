@@ -43,6 +43,12 @@ export type SvGridViewState = {
    * `null` clears the filter on `setState`.
    */
   advancedFilter?: GridPredicateExpr | null
+  /**
+   * Models of columns with a `customFilter`, keyed by column id. Omitted when
+   * no column has one, so older views round-trip unchanged. On `setState`,
+   * present replaces every model and `null` clears them.
+   */
+  customFilters?: Record<string, unknown> | null
   /** Built-in chart panel state (present only when `charting` is on): the
    *  ACTIVE chart, for back-compat + spread-and-tweak. */
   chart?: {
@@ -378,6 +384,16 @@ export type SvGridApi<
    * snapshots captured via `onFiltersChange`'s `selectedValues`.
    */
   setFacetFilter(columnId: string, values: ReadonlyArray<string> | null): void
+  /**
+   * Set the model of a column's `customFilter` (whatever its `predicate`
+   * takes: `[min, max]`, a tag list, ...). `null` clears it. ANDed with the
+   * column's operator filter and Values checklist. Ignored for a column with
+   * `filterable: false`.
+   */
+  setCustomFilter(columnId: string, model: unknown): void
+  /** A column's custom-filter model, or `undefined` when none is set. */
+  getCustomFilter(columnId: string): unknown
+  /** Clear every filter on the column: condition, Values checklist and custom model. */
   clearFilter(columnId: string): void
   /**
    * Drop cached async `editorOptions` so the next render refetches them.

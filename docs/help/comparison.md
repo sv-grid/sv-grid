@@ -70,8 +70,9 @@ they were read and the method behind the sizes.
   pivot, transactions and select-all across unloaded rows, and its
   real-time page merges deltas into loaded rows, but it does not have the
   viewport model.
-- You need **pluggable custom filter components or custom tool panels**.
-  SvGrid's tool panel is a fixed Columns + Filters pair.
+- You need **custom tool panels**. SvGrid's tool panel is a fixed
+  Columns + Filters pair. Custom filter components are covered by a
+  column's `customFilter`.
 - You need **AG Charts** for maps, network graphs, 3D or a canvas renderer.
   SvGrid's chart is SVG with decimation, and it ships 29 types, a configurable
   axis model, synchronized charts, a financial toolkit with indicator panes

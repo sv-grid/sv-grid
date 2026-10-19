@@ -47,6 +47,8 @@ export {
   type CellSpanParams,
   type ValueParserParams,
   type EditorContext,
+  type CustomColumnFilter,
+  type CustomFilterContext,
   type CellData,
   type ActiveCellState,
   type CellFormatConfig,

@@ -126,7 +126,7 @@ sparklines, collaboration). The genuine remaining gaps:
 | Gap | Note | Effort |
 | --- | ---- | ------ |
 | ~~**Multi Filter** (two conditions on one column)~~ | **shipped** - a column filter takes a second condition joined by AND / OR, in the menu and via `api.setFilter` | ✓ |
-| **Custom filter / floating-filter component** slot | first-class pluggable filter. Needs a MODEL seam as well as a render one: menu filters compile through `compileExcelFilter` from the closed `FilterOperator` union, so there is nowhere for a consumer predicate to enter today | L |
+| ~~**Custom filter / floating-filter component** slot~~ | **shipped** - a column's `customFilter` takes a `predicate(model)` plus `menu` / `floating` snippets; the model is in `api.setCustomFilter`, `getState().customFilters` and `onFiltersChange`'s `custom`. See [Custom column filters](./filtering/custom-column-filters.md) | ✓ |
 | **Custom tool panels** | panel is fixed Columns + Filters (`toolPanelDefaultTab` is a `"columns" \| "filters"` union, with no registry) | M |
 | ~~**UI-string localisation**~~ | **shipped** - the `localization` prop takes `{ locale, text }`, where `text` is a partial `GridMessages`; every menu/panel/chrome string is overridable. Note there is no `localeText` prop, and no translation catalogues ship in the box - you supply the strings. See [i18n and RTL](./i18n-rtl.md) | ✓ |
 | ~~**Row-grouping display modes** + group-level footers~~ | **shipped** - `groupDisplayMode: 'groupRows' \| 'singleColumn' \| 'multipleColumns'` plus `groupFooters` and `grandTotalRow`; demo `427-group-footers` | ✓ |

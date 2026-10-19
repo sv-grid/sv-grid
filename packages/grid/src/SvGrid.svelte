@@ -2858,6 +2858,10 @@
                     {@const activeOperator =
                       filterMenuValues[rendered.column.id]?.operator ??
                       defaultOperatorFor(rendered.column)}
+                    {@const customSlot = ctrl.customFilterSlot(
+                      rendered.column,
+                      "floating",
+                    )}
                     {#if rendered.gap > 0}{@render columnGap(rendered.gap)}{/if}
                     <th
                       class="sv-grid-column"
@@ -2865,6 +2869,19 @@
                         undefined}
                       style={`width: ${rendered.item.size}px; min-width: ${rendered.item.size}px; max-width: ${rendered.item.size}px; ${cellPinStyle(rendered.column.id)}`}
                     >
+                      {#if customSlot}
+                        <!-- The column's own control replaces the operator
+                             button and input. It writes the custom model,
+                             not the operator condition. -->
+                        <div
+                          class="sv-grid-filter-row-control sv-grid-filter-row-custom"
+                          data-svgrid-filter-col={rendered.column.id}
+                        >
+                          {@render customSlot(
+                            ctrl.customFilterContext(rendered.column, "floating"),
+                          )}
+                        </div>
+                      {:else}
                       <div class="sv-grid-filter-row-control">
                         <button
                           type="button"
@@ -3036,6 +3053,7 @@
                           {/if}
                         {/if}
                       </div>
+                      {/if}
                     </th>
                   {/each}
                   {#if showRightSpacer}
@@ -3485,7 +3503,8 @@
                  the same filterMenuValues state as the column menu / filter row. -->
             <div class="sv-grid-tool-panel-filters">
               {#each toolPanelColumns as column (column.id)}
-                {#if column.columnDef.field && column.columnDef.filterable !== false}
+                {#if (column.columnDef.field || column.columnDef.customFilter) && column.columnDef.filterable !== false}
+                  {@const tpSlot = ctrl.customFilterSlot(column, "panel")}
                   {@const active =
                     filterMenuValues[column.id]?.operator ??
                     defaultOperatorFor(column)}
@@ -3510,6 +3529,11 @@
                         >
                       {/if}
                     </div>
+                    {#if tpSlot}
+                      <div class="sv-grid-tp-filter-custom">
+                        {@render tpSlot(ctrl.customFilterContext(column, "panel"))}
+                      </div>
+                    {:else}
                     <select
                       class="sv-grid-tp-filter-op"
                       aria-label={`${toolPanelHeaderLabel(column)} filter condition`}
@@ -3565,6 +3589,7 @@
                             )}
                         />
                       {/if}
+                    {/if}
                     {/if}
                   </div>
                 {/if}

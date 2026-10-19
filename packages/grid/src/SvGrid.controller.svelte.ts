@@ -20,6 +20,7 @@ import {
     type CellEditorOption,
     type Column,
     type ColumnDef,
+    type CustomFilterContext,
     type Row,
     type RowData,
     type TableFeatures,
@@ -96,6 +97,7 @@ import {
     hiddenLeavesForCollapse,
   } from "./column-groups";
 import { resolveColumnId } from "./column-id";
+import { customFilterIsActive } from "./custom-filter";
 import { buildAutoGroupColumns, insertGroupFooters, paginateGroupedRows } from "./group-display";
 import {
     createGridApi,
@@ -138,7 +140,7 @@ import {
     getColumnAccessorValue,
     columnDefMatchesId,
   } from "./cell-values";
-import { untrack } from "svelte";
+import { untrack, type Snippet } from "svelte";
 
 /**
  * Conservative fallback for the browser's max element height, used during SSR
@@ -445,6 +447,13 @@ export function createSvGridController<
       }
     >
   >({});
+  // Models of columns with a `customFilter`, keyed by column id. A separate
+  // store rather than a field on `filterMenuValues`: those entries are an
+  // operator + value pair that every API reader (getFilters, onFiltersChange,
+  // the server models) assumes, and a custom model is neither. `$state.raw`:
+  // every writer replaces the whole object, and the model is handed back as
+  // the caller gave it rather than as a deep proxy.
+  let customFilterValues = $state.raw<Record<string, unknown>>({});
   let verticalScrollbarEl: HTMLElement | null = $state(null);
   let horizontalScrollbarEl: HTMLElement | null = $state(null);
   let scrollVersion = $state(0);
@@ -1760,6 +1769,31 @@ export function createSvGridController<
       }
     }
 
+    // Custom filters: each column compiles its model once, then the row loop
+    // only calls the compiled tests. A column whose `customFilter` was removed
+    // (columns prop changed) keeps its stored model but filters nothing.
+    const customStages: Array<{
+      readValue: (row: Row<TData>) => unknown;
+      test: (value: unknown, row: TData) => boolean;
+    }> = [];
+    for (const [columnId, model] of Object.entries(customFilterValues)) {
+      if (columnId === excludeColumnId) continue;
+      const column = allColumns.find((entry: any) => entry.id === columnId);
+      const custom = column?.columnDef.customFilter;
+      if (!custom || !customFilterIsActive(custom, model)) continue;
+      customStages.push({
+        readValue: makeColumnReader(columnId),
+        test: custom.predicate(model),
+      });
+    }
+    if (customStages.length) {
+      rows = denseRows(rows).filter((row) =>
+        customStages.every(({ readValue, test }) =>
+          test(readValue(row), row.original),
+        ),
+      );
+    }
+
     const valueFilterEntries = Object.entries(valueFilters).filter(
       ([id]) => id !== excludeColumnId,
     );
@@ -2267,6 +2301,7 @@ export function createSvGridController<
       advancedFilter !== null ||
       Object.keys(filterRowValues).length > 0 ||
       Object.keys(filterMenuValues).length > 0 ||
+      Object.keys(customFilterValues).length > 0 ||
       Object.keys(valueFilters).length > 0,
   );
 
@@ -2731,10 +2766,12 @@ export function createSvGridController<
     const facets = Object.fromEntries(
       Object.entries(valueFilters).map(([k, set]) => [k, Array.from(set)]),
     );
+    const custom = activeCustomFilters();
     const filterModel = {
       facets,
       columns: { ...filterMenuValues },
       global: globalFilter,
+      ...(custom ? { custom } : {}),
     } as Record<string, unknown>;
     void chartCfg?.refreshKey;
     const seq = ++chartReqSeq;
@@ -3070,10 +3107,25 @@ export function createSvGridController<
           : entry,
       );
     }
+    const custom = activeCustomFilters();
     return {
       global: globalFilter,
       columns: Array.from(merged.values()),
+      // Only when a custom filter is active, so payloads from grids without
+      // one serialize exactly as before.
+      ...(custom ? { custom } : {}),
     };
+  }
+
+  /** Active custom-filter models keyed by column id, or null when none is. */
+  function activeCustomFilters(): Record<string, unknown> | null {
+    let out: Record<string, unknown> | null = null;
+    for (const [columnId, model] of Object.entries(customFilterValues)) {
+      const column = allColumns.find((entry: any) => entry.id === columnId);
+      if (!customFilterIsActive(column?.columnDef.customFilter, model)) continue;
+      (out ??= {})[columnId] = model;
+    }
+    return out;
   }
   // Seeded from the starting filters (empty), so mounting is not a change.
   let lastFiltersSerialized = JSON.stringify(untrack(currentFilters));
@@ -4597,6 +4649,48 @@ export function createSvGridController<
   }
 
   /**
+   * What a column's `customFilter` control is rendered with. Built in the
+   * template, so reading `model` here ties the render to this column's entry.
+   * `values` is untracked: it scans every row, and a control that lists the
+   * values should not re-render on each data tick for it.
+   */
+  /**
+   * The snippet a column's `customFilter` renders on a surface, falling back
+   * to the other surface's, or null for the built-in UI. Typed here so the
+   * templates need no cast: the column def holds it as a plain function.
+   */
+  function customFilterSlot(
+    column: Column<TData> | undefined,
+    surface: CustomFilterContext<TData>["surface"],
+  ): Snippet<[CustomFilterContext<TData>]> | null {
+    const custom = column?.columnDef.customFilter;
+    if (!custom) return null;
+    // The tool panel is as wide as the menu, so it takes the menu control.
+    const slot =
+      surface === "floating"
+        ? (custom.floating ?? custom.menu)
+        : (custom.menu ?? custom.floating);
+    return (slot as Snippet<[CustomFilterContext<TData>]> | undefined) ?? null;
+  }
+
+  function customFilterContext(
+    column: Column<TData>,
+    surface: CustomFilterContext<TData>["surface"],
+  ): CustomFilterContext<TData> {
+    const columnId = column.id;
+    return {
+      column,
+      model: customFilterValues[columnId],
+      setModel: (next) => setCustomFilter(columnId, next),
+      surface,
+      values: () => untrack(() => facetValuesForColumn(columnId)),
+      close: () => {
+        if (surface === "menu") closeMenus();
+      },
+    };
+  }
+
+  /**
    * The values a column's checklist offers, with the row count behind each.
    *
    * Scoped to the rows passing every OTHER column's filters, not to the whole
@@ -4837,6 +4931,8 @@ export function createSvGridController<
     set filterRowValues(v) { filterRowValues = v as never; },
     get filterMenuValues() { return filterMenuValues; },
     set filterMenuValues(v) { filterMenuValues = v as never; },
+    get customFilterValues() { return customFilterValues; },
+    set customFilterValues(v) { customFilterValues = v as never; },
     get advancedFilter() { return advancedFilter; },
     set advancedFilter(v) { advancedFilter = v as never; },
     get verticalScrollbarEl() { return verticalScrollbarEl; },
@@ -5519,6 +5615,9 @@ export function createSvGridController<
     get defaultOperatorFor() { return defaultOperatorFor; },
     get operatorLabelFor() { return operatorLabelFor; },
     get isColumnFiltered() { return isColumnFiltered; },
+    get setCustomFilter() { return setCustomFilter; },
+    get customFilterContext() { return customFilterContext; },
+    get customFilterSlot() { return customFilterSlot; },
     get closeMenus() { return closeMenus; },
     get measureCanvas() { return measureCanvas; },
     set measureCanvas(v) { measureCanvas = v as never; },
@@ -5559,7 +5658,7 @@ export function createSvGridController<
   // needs). Plain assignment during init - no effect, so SSR gets it too.
   summarize = computeSummaries;
 
-  const { updateFilterRow, updateFilterOperator, updateFilterMenuValue, updateFilterMenuValueTo, addFilterToken, removeFilterToken, toggleFilterToken, toggleCheckboxWithKeyboard, isColumnFiltered, closeMenus, openInSuggest, closeInSuggest, openColumnMenu, openFilterMenu, openOperatorMenu, setFilterTokens, clearColumnFilter, changePage, goToPage, setPageSize, openContextMenu } = createMenus<TFeatures, TData>(ctx);
+  const { updateFilterRow, updateFilterOperator, updateFilterMenuValue, updateFilterMenuValueTo, addFilterToken, removeFilterToken, toggleFilterToken, toggleCheckboxWithKeyboard, isColumnFiltered, setCustomFilter, closeMenus, openInSuggest, closeInSuggest, openColumnMenu, openFilterMenu, openOperatorMenu, setFilterTokens, clearColumnFilter, changePage, goToPage, setPageSize, openContextMenu } = createMenus<TFeatures, TData>(ctx);
   const { cellConditionalFormat, computeRowClass, computeCellClass, computeCellTooltip, computeCellValidity, computeCellNote, getColumnEditorOptions, areEditorOptionsLoading, formatListCellValue, formatCellValue, formatPinnedValue, computePinnedCellClass } = createCellRender<TFeatures, TData>(ctx);
   const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, commitAndMoveByTab, commitAndMoveByEnter, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste, armPasteFallback } = createEditing<TFeatures, TData>(ctx);
   const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, activeRangeRect, cellSelectionState, getSelectionRects, isInFillPreview, dragPreviewRect, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);

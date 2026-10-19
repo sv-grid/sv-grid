@@ -13,6 +13,7 @@ import {
   cssEscape,
 } from "./SvGrid.helpers";
 import { splitInTokens, joinInTokens } from "./filtering/excel-filters";
+import { customFilterIsActive } from "./custom-filter";
 
 export function createMenus<
   TFeatures extends TableFeatures = TableFeatures,
@@ -114,8 +115,30 @@ export function createMenus<
     toggle();
   }
 
+  /**
+   * Set or clear a column's custom-filter model. `untrack` for the same
+   * reason as `clearColumnFilter`: it is reachable from `api.setCustomFilter`,
+   * which a consumer may call from inside an effect.
+   */
+  function setCustomFilter(columnId: string, model: unknown) {
+    untrack(() => {
+      const next = { ...ctx.customFilterValues };
+      if (model == null) {
+        if (!(columnId in next)) return;
+        delete next[columnId];
+      } else {
+        next[columnId] = model;
+      }
+      ctx.customFilterValues = next;
+    });
+  }
+
   function isColumnFiltered(columnId: string) {
     if (ctx.valueFilters[columnId]) return true;
+    if (columnId in ctx.customFilterValues) {
+      const column = ctx.allColumns.find((c: any) => c.id === columnId);
+      if (customFilterIsActive(column?.columnDef.customFilter, ctx.customFilterValues[columnId])) return true;
+    }
     const menuFilter = ctx.filterMenuValues[columnId];
     return Boolean(
       menuFilter &&
@@ -175,12 +198,20 @@ export function createMenus<
       // Find the row-mode filter input and focus it. The input is
       // tagged with `data-svgrid-filter-col` so we can target by id
       // without depending on column position.
-      const input = (ctx.scrollContainer as HTMLElement | null)?.querySelector<HTMLInputElement>(
+      const target = (ctx.scrollContainer as HTMLElement | null)?.querySelector<HTMLElement>(
         `[data-svgrid-filter-col="${cssEscape(columnId)}"]`,
       );
+      // A custom filter control tags its wrapper instead; focus the first
+      // control inside it.
+      const input =
+        target && !(target instanceof HTMLInputElement)
+          ? target.querySelector<HTMLElement>(
+              "input, select, textarea, button, [tabindex]:not([tabindex='-1'])",
+            )
+          : target;
       if (input) {
         input.focus();
-        input.select();
+        if (input instanceof HTMLInputElement) input.select();
         // Brief pulse so the user sees where focus landed.
         input.classList.add("sv-grid-filter-value-pulse");
         setTimeout(() => input.classList.remove("sv-grid-filter-value-pulse"), 700);
@@ -227,6 +258,11 @@ export function createMenus<
         const next = { ...ctx.filterRowValues };
         delete next[columnId];
         ctx.filterRowValues = next;
+      }
+      if (columnId in ctx.customFilterValues) {
+        const next = { ...ctx.customFilterValues };
+        delete next[columnId];
+        ctx.customFilterValues = next;
       }
     });
   }
@@ -317,6 +353,7 @@ export function createMenus<
     toggleFilterToken,
     toggleCheckboxWithKeyboard,
     isColumnFiltered,
+    setCustomFilter,
     closeMenus,
     openInSuggest,
     closeInSuggest,

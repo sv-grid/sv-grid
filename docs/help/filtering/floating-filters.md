@@ -124,6 +124,12 @@ still carries the full operator list for the times that is not enough.
 <SvGrid data={people} {columns} filterable filterMode="menu" showFilterRow />
 ```
 
+## Your own control in the row
+
+A column's `customFilter.floating` snippet takes the place of the operator
+button and input in that column's cell; the other columns keep theirs. See
+[Custom column filters](./custom-column-filters.md).
+
 ## See also
 
 - [Overview](./overview.md)
