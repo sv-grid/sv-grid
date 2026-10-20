@@ -112,6 +112,10 @@ tools/seed-community-discussions.mjs
 tools/capture-launch-assets.mjs
 tools/make-brand-logo.mjs
 tools/scorecard.mjs
+# Promo videos (cartoons, Shorts, product tours) and TikTok slideshow decks.
+# Nothing in the build, CI or the site imports them; they stay local.
+tools/promo/
+tools/slides/
 
 # One-off blog + demo maintenance scripts (not wired into any build)
 tools/assign-blog-authors.mjs
