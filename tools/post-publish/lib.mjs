@@ -5,6 +5,7 @@
  * template that pinned an unpublished enterprise passed CI.
  */
 import { spawn } from 'node:child_process'
+import { request as httpRequest } from 'node:http'
 import { createServer } from 'node:net'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
@@ -65,6 +66,26 @@ export function kill(child) {
   }
 }
 
+/**
+ * A plain HTTP request to a local test server, shaped like fetch's response
+ * ({ status, text() }). Not fetch: on macOS, Node 24.21's undici threw
+ * `setTypeOfService EINVAL` from inside a socket callback, which no try/catch
+ * reaches, and the whole run died. node:http has no such path.
+ */
+export function request(url, { method = 'GET', headers = {}, body, timeout = 30_000 } = {}) {
+  return new Promise((resolve, reject) => {
+    const req = httpRequest(url, { method, headers, timeout }, (res) => {
+      let data = ''
+      res.setEncoding('utf8')
+      res.on('data', (d) => (data += d))
+      res.on('end', () => resolve({ status: res.statusCode ?? 0, text: async () => data }))
+    })
+    req.on('timeout', () => req.destroy(new Error(`${method} ${url} timed out after ${timeout} ms`)))
+    req.on('error', reject)
+    req.end(body)
+  })
+}
+
 /** A free TCP port. */
 export function freePort() {
   return new Promise((resolve, reject) => {
@@ -92,7 +113,7 @@ export async function serve(cmd, { cwd, url, timeout = 120_000, env = {} }) {
     if (child.exitCode !== null) throw new Error(`server exited (${child.exitCode}) before ${url} answered:\n${tail(log)}`)
     try {
       // Any HTTP answer means it is up; whether the page is right is the check's job.
-      await fetch(url, { signal: AbortSignal.timeout(2000) })
+      await request(url, { timeout: 2000 })
       return { url, stop: () => kill(child), log: () => log }
     } catch {
       // not up yet

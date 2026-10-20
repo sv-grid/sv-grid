@@ -346,7 +346,8 @@ async function orderCheck(url, schemaSql, shot) {
   const typeInto = async (row, text) => {
     await cell(row).dblclick()
     await page.waitForSelector('[role=grid] input:not([type=checkbox]), [role=grid] textarea', { timeout: 10_000 })
-    await page.keyboard.press('Control+A')
+    // Cmd+A on macOS: Control+A there moves the caret, and the text was appended.
+    await page.keyboard.press('ControlOrMeta+A')
     await page.keyboard.type(text)
     await page.keyboard.press('Enter')
     await sleep(1500)

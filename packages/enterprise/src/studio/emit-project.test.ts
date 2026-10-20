@@ -2965,7 +2965,11 @@ describe('emitStudioAppBundle (full runnable app)', () => {
     // Vite 8's Rolldown bundler crashes in the WebContainer; pin the Rollup-based stack.
     expect(pkg.devDependencies['vite']).toBe('^7.0.0')
     expect(pkg.devDependencies['@sveltejs/vite-plugin-svelte']).toBe('^6.0.0')
-    expect(pkg.devDependencies['vitest']).toMatch(/^\^4\./) // vitest 4 supports vite 7
+    // vitest 3.2 supports vite 7 too, and unlike 4 it installs on npm 10 (Node 22),
+    // whose peer resolver crashes on every vitest 4 release.
+    expect(pkg.devDependencies['vitest']).toMatch(/^\^3\.2\./)
+    // .svelte-kit/tsconfig.json exists right after install, so `npm test` runs first time.
+    expect(pkg.scripts.prepare).toBe("svelte-kit sync || echo ''")
     // engine-strict must not hard-fail install in a sandbox whose Node may differ.
     expect(bundle.find((f) => f.path === '.npmrc')!.contents).toContain('engine-strict=false')
   })

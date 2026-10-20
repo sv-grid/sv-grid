@@ -105,6 +105,14 @@ const ctx = {
   },
 }
 
+// An exception thrown from a socket or timer callback reaches no step's
+// try/catch and used to end the whole run (Node 24.21 on macOS, inside fetch).
+// Record it against the check that was running and carry on.
+process.on('uncaughtException', (e) => {
+  results.push({ check: ctx.current, label: '(uncaught exception)', ok: false, ms: 0, error: String(e?.stack ?? e) })
+  console.log(`  UNCAUGHT in [${ctx.current}]: ${e?.stack ?? e}`)
+})
+
 for (const m of selected) {
   ctx.current = m.name
   console.log(`[${m.name}] ${m.description}`)

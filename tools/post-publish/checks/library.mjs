@@ -6,7 +6,7 @@
  * `@svgrid/create` sveltekit template, so this tests what `npm create` gives.
  */
 import { cpSync, mkdirSync } from 'node:fs'
-import { REPO, existsSync, freePort, join, loadPage, readJson, registryDoc, semverFrom, serve, tail, writeFileSync } from '../lib.mjs'
+import { REPO, existsSync, freePort, join, loadPage, readJson, registryDoc, request, semverFrom, serve, tail, writeFileSync } from '../lib.mjs'
 
 export const name = 'library'
 export const description = 'grid + enterprise in SvelteKit (SSR, adapter-node), Node imports, plain Vite + Svelte'
@@ -269,7 +269,7 @@ export async function run(ctx) {
       if (up) {
         for (const [route, spec] of Object.entries(ROUTES)) {
           await ctx.step(`kit /${route}: SSR HTML 200`, async () => {
-            const res = await fetch(`${base}/${route}`)
+            const res = await request(`${base}/${route}`)
             const html = await res.text()
             expect(res.status === 200, `HTTP ${res.status}:\n${tail(html.replace(/<[^>]+>/g, ' '), 10)}\nserver log:\n${tail(server.log(), 15)}`)
             expect(html.includes(`<h1>${route}</h1>`), 'the HTML has no server-rendered page content')

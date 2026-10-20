@@ -33,7 +33,17 @@ export const SVELTEKIT_3_DEV_DEPENDENCIES: Readonly<Record<string, string>> = {
   'svelte-check': '^4.7.5',
   typescript: '^6.0.0',
   vite: '^8.0.12',
+  // A SvelteKit 2 app pins vitest 3 (see emit-project.ts); vite 8 needs 4.
+  vitest: '^4.1.5',
 }
+
+/**
+ * vitest 4 makes npm 10 (what Node 22 ships) crash in `npm install` with
+ * "Cannot read properties of null (reading 'edgesOut')", while resolving peers.
+ * Without peer resolution it installs; every peer this app needs is already a
+ * direct dependency, so nothing is lost. npm 11 does not need it.
+ */
+const NPMRC_3_EXTRA = `# vitest 4 crashes npm 10's peer resolver ("reading 'edgesOut'"); every peer\n# this app needs is listed in package.json, so npm does not have to resolve them.\nlegacy-peer-deps=true\n`
 
 /**
  * The first major of each adapter whose peerDependency is `@sveltejs/kit ^3`,
@@ -74,6 +84,10 @@ export function toSvelteKit3(files: readonly GeneratedFile[]): GeneratedFile[] {
     }
     if (file.path === 'tsconfig.json') {
       out.push({ ...file, contents: TSCONFIG_3 })
+      continue
+    }
+    if (file.path === '.npmrc') {
+      out.push({ ...file, contents: file.contents.replace(/\n?$/, '\n') + NPMRC_3_EXTRA })
       continue
     }
     if (SOURCE.test(file.path) && file.path !== 'drizzle.config.ts') {

@@ -5354,7 +5354,10 @@ export function runtimeDeps(project: StudioProject, allSource: string): Record<s
 function packageJson(project: StudioProject, allSource: string): string {
   const dependencies = runtimeDeps(project, allSource)
   const drizzle = !!dependencies['drizzle-orm']
-  const scripts: Record<string, string> = { dev: 'vite dev', build: 'vite build', preview: 'vite preview', check: 'svelte-kit sync && svelte-check --tsconfig ./tsconfig.json', test: 'vitest run', deploy: deployPlan(project).deployScript }
+  // `prepare` writes .svelte-kit/tsconfig.json on install, which tsconfig.json
+  // extends: without it `npm test` straight after `npm install` failed to load
+  // the config until something else had run `svelte-kit sync`.
+  const scripts: Record<string, string> = { dev: 'vite dev', build: 'vite build', preview: 'vite preview', prepare: "svelte-kit sync || echo ''", check: 'svelte-kit sync && svelte-check --tsconfig ./tsconfig.json', test: 'vitest run', deploy: deployPlan(project).deployScript }
   if (drizzle) {
     scripts['db:generate'] = 'drizzle-kit generate'
     scripts['db:migrate'] = 'drizzle-kit migrate'
@@ -5381,7 +5384,11 @@ function packageJson(project: StudioProject, allSource: string): string {
       'svelte-check': '^4.4.6',
       typescript: '^5.7.0',
       vite: '^7.0.0',
-      vitest: '^4.1.5',
+      // 3.x, not 4.x: every vitest 4 release makes npm 10 (what Node 22 ships)
+      // crash in `npm install` with "Cannot read properties of null (reading
+      // 'edgesOut')". 3.2 runs these tests on vite 7 and installs on npm 10 and
+      // 11. The SvelteKit 3 path needs vite 8 and so vitest 4; see sveltekit3.ts.
+      vitest: '^3.2.4',
       // Driver typings so the connected route + data layer type-check cleanly.
       ...(dependencies['pg'] ? { '@types/pg': '^8.11.0' } : {}),
       ...(dependencies['better-sqlite3'] ? { '@types/better-sqlite3': '^7.6.0' } : {}),

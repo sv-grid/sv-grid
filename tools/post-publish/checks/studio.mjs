@@ -10,7 +10,7 @@
  */
 import { readFileSync as readText } from 'node:fs'
 import { join, resolve } from 'node:path'
-import { existsSync, freePort, loadPage, readJson, registryDoc, semverFrom, serve, sleep, tail, writeFileSync } from '../lib.mjs'
+import { existsSync, freePort, loadPage, readJson, registryDoc, request, semverFrom, serve, sleep, tail, writeFileSync } from '../lib.mjs'
 
 export const name = 'studio'
 export const description = 'create-studio starter, --from prisma, studio init (dataset, sqlite) and add --all, installed and run'
@@ -210,7 +210,7 @@ export async function run(ctx) {
         try {
           await ctx.step(`${L}: server-rendered /orders shows customer names`, async () => {
             const { customers, orders } = seedFromStore(join(dir, 'src', 'lib', 'server', 'store.ts'))
-            const res = await fetch(`${url}/orders`)
+            const res = await request(`${url}/orders`)
             const html = await res.text()
             if (res.status !== 200) throw new Error(`GET /orders: HTTP ${res.status}\n${html.slice(0, 400)}`)
             // Only the markup: the hydration payload in <script> also holds the names.
@@ -291,7 +291,7 @@ export async function run(ctx) {
           await ctx.step(`${L}: /api routes return the SQLite rows`, async () => {
             const notes = []
             for (const [table, want] of [['customers', 'Ada Corp'], ['orders', 'ORD-1']]) {
-              const res = await fetch(`${url}/api/${table}`, {
+              const res = await request(`${url}/api/${table}`, {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({ kind: 'query', request: { startRow: 0, endRow: 50, pageIndex: 0, pageSize: 50, sortModel: [], filterModel: {} } }),

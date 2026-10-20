@@ -18,7 +18,7 @@ function v2Bundle(extra: GeneratedFile[] = []): GeneratedFile[] {
         'svelte-check': '^4.4.6',
         typescript: '^5.7.0',
         vite: '^7.0.0',
-        vitest: '^4.1.5',
+        vitest: '^3.2.4',
       },
     }, null, 2) + '\n'),
     f('svelte.config.js', `import adapter from '@sveltejs/adapter-node'\nexport default { kit: { adapter: adapter() } }\n`),
@@ -51,9 +51,16 @@ describe('toSvelteKit3', () => {
     expect(pkg.devDependencies.vite).toBe('^8.0.12')
     expect(pkg.devDependencies.typescript).toBe('^6.0.0')
     expect(pkg.devDependencies['@sveltejs/adapter-node']).toBe(SVELTEKIT_3_ADAPTERS['@sveltejs/adapter-node'])
-    // Untouched: not part of the SvelteKit toolchain.
+    // vite 8 needs vitest 4; a SvelteKit 2 app pins 3 for npm 10's sake.
     expect(pkg.devDependencies.vitest).toBe('^4.1.5')
     expect(pkg.imports).toEqual({ '#lib': './src/lib/index.js', '#lib/*': './src/lib/*' })
+  })
+
+  it('keeps npm 10 from crashing on vitest 4, and keeps the existing .npmrc lines', () => {
+    const out = toSvelteKit3(v2Bundle([f('.npmrc', 'engine-strict=false\n')]))
+    const npmrc = byPath(out, '.npmrc')!.contents
+    expect(npmrc).toContain('engine-strict=false\n')
+    expect(npmrc).toContain('legacy-peer-deps=true\n')
   })
 
   it('extends $app/tsconfig instead of the generated .svelte-kit one', () => {
