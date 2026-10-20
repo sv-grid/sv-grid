@@ -249,7 +249,7 @@ jobs:
       # Runs here rather than with the other guardrails because it drives the
       # built server over stdio, so it needs the dist from the step above.
       - name: MCP tool guardrails
-        run: pnpm vitest run tools/mcp-tools.test.ts
+        run: pnpm vitest run tools/mcp-tools.test.ts tools/mcp-check-fixes.test.ts
 
       # The server ships its whole corpus, so it must answer with no network at
       # all. The competing MCP servers are thin proxies to a vendor backend and

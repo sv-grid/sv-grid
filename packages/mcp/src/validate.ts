@@ -391,12 +391,18 @@ function checkImports(ctx: Ctx) {
       const ours = names.filter((n) => has(surface.grid, n) || has(surface.enterprise, n))
       if (ours.length) {
         const from = ours.every((n) => !has(surface.grid, n)) ? '@svgrid/enterprise' : '@svgrid/grid'
+        // Every name is ours, so swapping the specifier is the whole fix and
+        // `applyFixes` can make it. A mix keeps the advice only: the other
+        // names belong to the package that was imported.
+        const exact = ours.length === names.length && (ours.every((n) => has(surface.grid, n)) || from === '@svgrid/enterprise')
         push(ctx, {
           rule: 'svgrid/lookalike-package',
           severity: 'error',
-          line,
+          // The specifier's line: a multi-line import starts several lines up.
+          line: exact ? lineAt(raw, specStart) : line,
           message: `"${spec}" is an unrelated project; \`${ours[0]}\` comes from ${from}.`,
           fix: `import { ${ours.join(', ')} } from '${from}'`,
+          ...(exact ? { rename: { from: spec, to: from } } : {}),
         })
       }
       continue
@@ -819,7 +825,7 @@ function checkSvelteVersion(ctx: Ctx) {
   const { scan, raw, isSvelte } = ctx
   const usesRunes = /\$state\b|\$props\b|\$derived\b|\$effect\b|\$bindable\b/.test(scan)
 
-  const rules: { re: RegExp; rule: string; severity: Severity; message: string; fix: string }[] = [
+  const rules: { re: RegExp; rule: string; severity: Severity; message: string; fix: string | ((m: RegExpExecArray) => string) }[] = [
     {
       re: /(^|\n)\s*export\s+let\s+([A-Za-z_$][\w$]*)/g,
       rule: 'svelte/legacy-export-let',
@@ -827,7 +833,7 @@ function checkSvelteVersion(ctx: Ctx) {
       message: usesRunes
         ? '`export let` is not allowed in runes mode, and this file uses runes.'
         : '`export let` is the Svelte 4 way to declare a prop.',
-      fix: 'let { name } = $props()',
+      fix: (m) => `let { ${m[2]} } = $props()`,
     },
     {
       re: /(^|\n)\s*\$:\s/g,
@@ -871,12 +877,16 @@ function checkSvelteVersion(ctx: Ctx) {
   for (const r of rules) {
     if (!isSvelte && (r.rule === 'svelte/legacy-slot' || r.rule === 'svelte/legacy-component-tag')) continue
     for (let m: RegExpExecArray | null; (m = r.re.exec(scan)); ) {
+      // The line of the first non-space character: these patterns start with
+      // `(^|\n)\s*`, so m.index sits on the newline (or blank lines) before
+      // the code and reported `export let` on line 2 when it was on line 4.
+      const at = m.index + (m[0].length - m[0].trimStart().length)
       push(ctx, {
         rule: r.rule,
         severity: r.severity,
-        line: lineAt(raw, m.index),
+        line: lineAt(raw, at),
         message: r.message,
-        fix: r.fix,
+        fix: typeof r.fix === 'function' ? r.fix(m) : r.fix,
       })
     }
   }
