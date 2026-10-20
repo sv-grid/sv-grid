@@ -77,10 +77,11 @@ jobs:
         # the grid build above because these resolve @svgrid/grid through dist.
         run: pnpm --filter @svgrid/enterprise test
 
-      - name: Migration codemod tests
+      - name: Migration codemod and sv add-on tests
         # Not covered by `pnpm test` either. Includes the check that the list of
-        # grid exports the codemod imports from is current.
-        run: pnpm --filter @svgrid/migrate test
+        # grid exports the codemod imports from is current, and that the add-on
+        # declares the sv major it is tested on (sv warns on every run otherwise).
+        run: pnpm --filter @svgrid/migrate test && pnpm --filter @svgrid/sv test
 
       - name: Web component tests
         # Its suite loads the BUILT bundle, so the build is part of the test.

@@ -29,6 +29,19 @@ function makeWorkspace(overrides = {}) {
   }
 }
 
+describe('the sv version it declares', () => {
+  // sv reads the FIRST version in the add-on's `sv` peer range and warns
+  // "was built for sv@X" when that major differs from the running sv. A range
+  // of "^0.17.0 || ^1.0.0" therefore warned on every sv 1.x run.
+  test('starts with the major of the sv it is tested against', async () => {
+    const { readFileSync } = await import('node:fs')
+    const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'))
+    const sv = JSON.parse(readFileSync(new URL('./node_modules/sv/package.json', import.meta.url), 'utf8'))
+    const declaredMajor = /\d+/.exec(pkg.peerDependencies.sv)[0]
+    expect(declaredMajor).toBe(sv.version.split('.')[0])
+  })
+})
+
 describe('@svgrid/sv add-on', () => {
   test('declares the shape the sv contract requires', () => {
     expect(addon.id).toBe('svgrid')
