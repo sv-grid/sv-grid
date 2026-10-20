@@ -2449,6 +2449,10 @@ select.sv-grid-fr-editor {
   border: 1px solid var(--sg-border, #d6dee9);
   border-radius: 8px;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+  /* GridMenus renders after .sv-grid-root, not inside it, so the menus do
+     not inherit the root's font: in an app with no body font they drew in
+     the browser's serif default while the grid drew in --sg-font. */
+  font-family: var(--sg-font, inherit);
   font-size: 13px;
   color: var(--sg-fg, #1f2937);
 }
@@ -2979,6 +2983,8 @@ select.sv-grid-fr-editor {
   background: #0f172a;
   color: #f1f5f9;
   border-radius: var(--sg-radius, 6px);
+  /* Outside .sv-grid-root, like the menus: name the grid font. */
+  font-family: var(--sg-font, inherit);
   font-size: 12px;
   line-height: 1.45;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.28);
