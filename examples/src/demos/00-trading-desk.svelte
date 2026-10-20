@@ -18,8 +18,10 @@
    * Implementation notes:
    *   - Rows live in `$state.raw` so the grid sees one new array reference
    *     per tick instead of 10k per-cell mutations
-   *   - `pulses` map is replaced (not appended to) each tick - pulses GC
-   *     themselves by being absent from the next tick's map
+   *   - The flash direction rides on the ticked row itself (`pulse`,
+   *     `pulseAt`), so a tick re-renders only the rows that moved. A shared
+   *     pulse map read by every cell re-ran every visible cell twice a
+   *     second and made scrolling stutter on each tick
    *   - Sparkline path is recomputed only when the row reference changes
    *     (i.e. only ticked rows), so static rows pay no SVG cost
    */
@@ -63,6 +65,8 @@
     positionCap: number; // risk cap in shares (for the % bar)
     pnl: number; // mark-to-market P&L in USD
     risk: RiskTier;
+    pulse?: "up" | "down"; // direction of the last tick that moved this row
+    pulseAt?: number; // tick number of that move
   };
 
   const features = tableFeatures({ rowSortingFeature, columnFilteringFeature });
@@ -295,7 +299,10 @@
 
   const ROW_COUNT = 10_000;
   let rows = $state.raw<Security[]>(makeSeed(ROW_COUNT));
-  let pulses = $state.raw<Record<string, "up" | "down">>({});
+  // The current tick number, deliberately NOT reactive: a cell reads it only
+  // when its own row changed (or it scrolls into view), so it can tell a fresh
+  // move from an old one without every cell subscribing to the tick counter.
+  let pulseTick = 0;
   let paused = $state(false);
   let ticks = $state(0);
   let sectorFilter = $state<Sector | "All">("All");
@@ -353,21 +360,8 @@
     return () => window.removeEventListener("mousedown", onDown);
   });
 
-  // Columns that should flash on tick. Symbol / Name / Sector are static
-  // so they're excluded - pulsing them is misleading.
-  const PULSED_COLS = [
-    "last",
-    "change",
-    "pctChange",
-    "bid",
-    "ask",
-    "volume",
-    "spread",
-    "pnl",
-  ];
-
   function tick() {
-    const nextPulses: Record<string, "up" | "down"> = {};
+    pulseTick += 1;
     // Update ~5 % of rows per tick. Touching every row each tick is
     // expensive AND distracting visually - 500 active rows per tick is
     // the sweet spot for "feels alive but readable".
@@ -402,17 +396,15 @@
         volume: row.volume + Math.floor(50 + rand() * 4_000),
         history,
         pnl: round(row.position * change, 0),
+        pulse: direction,
+        pulseAt: pulseTick,
       };
-      for (const col of PULSED_COLS) {
-        nextPulses[`${row.symbol}:${col}`] = direction;
-      }
       nextRows[idx] = next;
       if (!topMover || Math.abs(next.pctChange) > Math.abs(topMover.pctChange)) {
         topMover = next;
       }
     }
     rows = nextRows;
-    pulses = nextPulses;
     ticks += 1;
     // Occasionally surface the standout mover as a bell notification.
     if (
@@ -430,12 +422,14 @@
     return () => clearInterval(id);
   });
 
-  function pulseClass(
-    row: Security,
-    colId: string,
-  ): "sv-pulse-up" | "sv-pulse-down" | "" {
-    const dir = pulses[`${row.symbol}:${colId}`];
-    return dir === "up" ? "sv-pulse-up" : dir === "down" ? "sv-pulse-down" : "";
+  // Flash only on the tick that moved the row. A row that moved earlier and
+  // scrolls into view now mounts without the class, so scrolling does not
+  // light up every row that ever ticked. The price cells wrap their span in
+  // `{#key row.pulseAt}` so a second move in the same direction replays the
+  // animation instead of leaving an unchanged class in place.
+  function pulseClass(row: Security): "td-pulse-up" | "td-pulse-down" | "" {
+    if (row.pulseAt !== pulseTick) return "";
+    return row.pulse === "up" ? "td-pulse-up" : "td-pulse-down";
   }
 
   // Pipe user edits back into the parent `rows` state. Without this, every
@@ -530,13 +524,17 @@
   }
 
   // ---- Formatters
-  function fmtUsd(n: number, frac = 2): string {
-    return n.toLocaleString("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: frac,
-      maximumFractionDigits: frac,
-    });
+  // One formatter, built once. `toLocaleString` with options builds a new
+  // Intl.NumberFormat on every call, which showed up in the scroll profile:
+  // every Last cell that scrolls into view formats a price.
+  const USD = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  function fmtUsd(n: number): string {
+    return USD.format(n);
   }
   function fmtUsdShort(n: number): string {
     const abs = Math.abs(n);
@@ -620,40 +618,47 @@
 {/snippet}
 
 {#snippet LastCell(props: { row: Security })}
-  <span class={`td-tick ${pulseClass(props.row, "last")}`}>
-    {fmtUsd(props.row.last)}
-  </span>
+  {#key props.row.pulseAt}
+    <span class={`td-tick ${pulseClass(props.row)}`}>
+      {fmtUsd(props.row.last)}
+    </span>
+  {/key}
 {/snippet}
 
 {#snippet ChangeCell(props: { row: Security })}
   {@const positive = props.row.change >= 0}
-  <span
-    class={`td-tick ${pulseClass(props.row, "change")} ${positive ? "td-up" : "td-down"}`}
-  >
-    <svg viewBox="0 0 12 12" width="9" height="9" aria-hidden="true">
-      {#if positive}
-        <path d="M6 2 L11 9 L1 9 Z" fill="currentColor" />
-      {:else}
-        <path d="M6 10 L1 3 L11 3 Z" fill="currentColor" />
-      {/if}
-    </svg>
-    {Math.abs(props.row.change).toFixed(2)}
-  </span>
+  {#key props.row.pulseAt}
+    <span
+      class={`td-tick ${pulseClass(props.row)} ${positive ? "td-up" : "td-down"}`}
+    >
+      <svg viewBox="0 0 12 12" width="9" height="9" aria-hidden="true">
+        {#if positive}
+          <path d="M6 2 L11 9 L1 9 Z" fill="currentColor" />
+        {:else}
+          <path d="M6 10 L1 3 L11 3 Z" fill="currentColor" />
+        {/if}
+      </svg>
+      {Math.abs(props.row.change).toFixed(2)}
+    </span>
+  {/key}
 {/snippet}
 
 {#snippet PctChangeCell(props: { row: Security })}
   {@const positive = props.row.pctChange >= 0}
-  <span
-    class={`td-tick ${pulseClass(props.row, "pctChange")} ${positive ? "td-up" : "td-down"}`}
-  >
-    {positive ? "+" : ""}{props.row.pctChange.toFixed(2)}%
-  </span>
+  {#key props.row.pulseAt}
+    <span
+      class={`td-tick ${pulseClass(props.row)} ${positive ? "td-up" : "td-down"}`}
+    >
+      {positive ? "+" : ""}{props.row.pctChange.toFixed(2)}%
+    </span>
+  {/key}
 {/snippet}
 
 {#snippet TrendCell(props: { row: Security })}
   {@const h = props.row.history}
   {@const positive = h[h.length - 1]! >= h[0]!}
   {@const pct = ((h[h.length - 1]! - h[0]!) / h[0]!) * 100}
+  {@const line = sparkPath(h, 120, 32)}
   <span class="td-trend">
     <svg
       class={`td-spark ${positive ? "td-up" : "td-down"}`}
@@ -663,12 +668,12 @@
       aria-hidden="true"
     >
       <path
-        d={`${sparkPath(h, 120, 32)} L 120 32 L 0 32 Z`}
+        d={`${line} L 120 32 L 0 32 Z`}
         fill="currentColor"
         opacity="0.12"
       />
       <path
-        d={sparkPath(h, 120, 32)}
+        d={line}
         fill="none"
         stroke="currentColor"
         stroke-width="1.6"
@@ -684,30 +689,38 @@
 {/snippet}
 
 {#snippet BidCell(props: { row: Security })}
-  <span class={`td-tick ${pulseClass(props.row, "bid")}`}
-    >{props.row.bid.toFixed(2)}</span
-  >
+  {#key props.row.pulseAt}
+    <span class={`td-tick ${pulseClass(props.row)}`}
+      >{props.row.bid.toFixed(2)}</span
+    >
+  {/key}
 {/snippet}
 
 {#snippet AskCell(props: { row: Security })}
-  <span class={`td-tick ${pulseClass(props.row, "ask")}`}
-    >{props.row.ask.toFixed(2)}</span
-  >
+  {#key props.row.pulseAt}
+    <span class={`td-tick ${pulseClass(props.row)}`}
+      >{props.row.ask.toFixed(2)}</span
+    >
+  {/key}
 {/snippet}
 
 {#snippet SpreadCell(props: { row: Security })}
   {@const tight = props.row.spread < 0.05}
-  <span
-    class={`td-tick ${pulseClass(props.row, "spread")} ${tight ? "td-up" : "td-down"}`}
-  >
-    {props.row.spread.toFixed(3)}
-  </span>
+  {#key props.row.pulseAt}
+    <span
+      class={`td-tick ${pulseClass(props.row)} ${tight ? "td-up" : "td-down"}`}
+    >
+      {props.row.spread.toFixed(3)}
+    </span>
+  {/key}
 {/snippet}
 
 {#snippet VolumeCell(props: { row: Security })}
-  <span class={`td-tick ${pulseClass(props.row, "volume")} td-vol`}>
-    {fmtUsdShort(props.row.volume)}
-  </span>
+  {#key props.row.pulseAt}
+    <span class={`td-tick ${pulseClass(props.row)} td-vol`}>
+      {fmtUsdShort(props.row.volume)}
+    </span>
+  {/key}
 {/snippet}
 
 {#snippet PositionCell(props: { row: Security })}
@@ -734,11 +747,13 @@
 
 {#snippet PnlCell(props: { row: Security })}
   {@const positive = props.row.pnl >= 0}
-  <span
-    class={`td-tick td-pnl ${pulseClass(props.row, "pnl")} ${positive ? "td-up" : "td-down"}`}
-  >
-    {fmtPnl(props.row.pnl)}
-  </span>
+  {#key props.row.pulseAt}
+    <span
+      class={`td-tick td-pnl ${pulseClass(props.row)} ${positive ? "td-up" : "td-down"}`}
+    >
+      {fmtPnl(props.row.pnl)}
+    </span>
+  {/key}
 {/snippet}
 
 <!-- ─────────────────────────  LAYOUT  ───────────────────────── -->
@@ -1062,23 +1077,34 @@
     gap: 4px;
   }
   .td-pulse-dot {
+    position: relative;
     display: inline-block;
     width: 7px;
     height: 7px;
     border-radius: 50%;
     background: #16a34a;
-    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.5);
+  }
+  /* The ring is a scaled, fading copy of the dot: transform + opacity run on
+     the compositor. Animating box-shadow repainted on the main thread every
+     frame, forever, and competed with the grid for every scroll frame. */
+  .td-pulse-dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(22, 163, 74, 0.45);
     animation: td-dot-pulse 1.6s ease-out infinite;
   }
   @keyframes td-dot-pulse {
     0% {
-      box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.45);
+      transform: scale(1);
+      opacity: 1;
     }
-    70% {
-      box-shadow: 0 0 0 8px rgba(22, 163, 74, 0);
-    }
+    70%,
     100% {
-      box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+      /* 7px dot + 8px ring each side = 23px */
+      transform: scale(3.3);
+      opacity: 0;
     }
   }
 

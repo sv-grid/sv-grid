@@ -902,25 +902,60 @@ export function createSvGridController<
   // `data` is optional on the type (a `rowModel` may supply the rows
   // instead), so every read falls back to empty rather than to undefined.
   const EMPTY_DATA: ReadonlyArray<TData> = [];
-  // Seeded as a copy, for the same reason the sync effect below makes one: the
-  // row model tells data apart by array identity, so the grid has to own an
-  // array the consumer cannot grow behind its back.
-  let internalData = $state.raw<ReadonlyArray<TData>>(
-    props.data?.length ? props.data.slice() : EMPTY_DATA,
+  // The grid's own copy of `props.data`. A derived, not a `$state` an effect
+  // writes: Svelte re-runs every `{#if}` / `{#each}` block reached from a
+  // signal written inside an effect without checking whether its inputs
+  // changed (eager block effects). Written from the sync effect this used to
+  // be, a 10k-row live feed re-ran ~9,000 cell blocks per tick for the ~25
+  // cells that moved, and vertical scrolling stuttered on every tick.
+  //
+  // A fresh array object, because `getRowModel` memoises on identity. The
+  // elements are the same objects, so a row that did not move keeps its row
+  // object and a field write still reaches its cell through the proxy.
+  // Windowed data (a server row model's rows) is already a fresh array per
+  // change and copying it would read every one of its `length` entries.
+  const syncedData = $derived.by(() => {
+    const next = props.data ?? EMPTY_DATA;
+    // Reading `length` is what subscribes this to a `$state` array's own
+    // length signal, so `rows.push(...)` and `rows.splice(...)` re-derive it.
+    // Without this read nothing in the grid tracks the row count at all:
+    // `getRowModel` reads `.length` only inside its cache miss, and the miss is
+    // keyed on the array reference, which a mutation does not change.
+    const length = next.length;
+    if (length === 0) return EMPTY_DATA;
+    if (isWindowedData(next)) return next;
+    // Untracked: the copy reads every index of a `$state` array, and an index
+    // write alone (same array, same length) never re-synced before either.
+    return untrack(() => next.slice());
+  });
+  // The imperative API (add / remove / move rows, paste, undo) replaces the
+  // rows without a round-trip through the consumer. Its array stands until the
+  // consumer passes data again: it is tied to the `syncedData` it was made
+  // from, and a new one from the parent wins.
+  let dataOverride = $state.raw<{ from: ReadonlyArray<TData>; data: ReadonlyArray<TData> } | null>(null);
+  const internalData = $derived(
+    dataOverride !== null && dataOverride.from === syncedData ? dataOverride.data : syncedData,
   );
-  // What the last sync saw, so the effect can tell a replacement (drop the
-  // cell edits) from a push or splice (keep them) and skip a no-op run.
+  function setInternalData(next: ReadonlyArray<TData>) {
+    dataOverride = { from: untrack(() => syncedData), data: next };
+  }
+  // What the last sync saw, so the edit-reset effect below can tell a
+  // replacement (drop the cell edits) from a push or splice (keep them).
   // svelte-ignore state_referenced_locally
   let lastData: ReadonlyArray<TData> = props.data ?? EMPTY_DATA;
-  // svelte-ignore state_referenced_locally
-  let lastDataLength = props.data?.length ?? 0;
   // Resolve `cellDataType` / `inferColumnTypes` into concrete editorType +
   // format defaults once, up front, so every downstream reader sees a normal
   // column. Explicit fields on the ColumnDef always win.
   // svelte-ignore state_referenced_locally
   // Field-type columns are filled in by an opt-in module (grid-extension) first.
+  // The sample row only matters when inferring, and as a derived it settles to
+  // the same row object across data replacements, so the column sync below
+  // re-runs when row 0 changes, not on every new array. Read straight from
+  // `props.data` in the sync effect, it re-resolved and re-published every
+  // column on every tick of a live feed.
+  const inferSampleRow = $derived(props.inferColumnTypes === true ? props.data?.[0] : undefined);
   const resolveCols = (cols: Array<ColumnDef<TFeatures, TData>>) =>
-    resolveColumnTypes(applyFieldColumns(cols), props.data?.[0], props.inferColumnTypes === true);
+    resolveColumnTypes(applyFieldColumns(cols), inferSampleRow, props.inferColumnTypes === true);
   // svelte-ignore state_referenced_locally
   let internalColumns = $state.raw<Array<ColumnDef<TFeatures, TData>>>(
     resolveCols(props.columns),
@@ -961,30 +996,23 @@ export function createSvGridController<
     return collapsedColumnGroups.has(groupId);
   }
 
-  $effect(() => {
+  // When the consumer replaces `data` (e.g. a "Reset" button), drop any
+  // accumulated cell-edit overrides - otherwise `getCellDisplayValue` would
+  // keep returning the old edited values from `editedCellValues` even though
+  // the underlying data has been replaced. Growing or shrinking the array is
+  // not a reset, so it keeps them.
+  //
+  // Only when there is something to drop. Every rendered cell reads
+  // `editedCellValues`, so writing a fresh `{}` re-ran all of them on each
+  // replacement, and a write from inside an effect makes Svelte re-run every
+  // block it reaches without a dirty check (see `syncedData` above). Read
+  // untracked so the effect does not re-run on every cell edit. `.pre` so the
+  // cells never paint the new rows under the old edits.
+  $effect.pre(() => {
     const next = props.data ?? EMPTY_DATA;
-    // Reading `length` is what subscribes this effect to a `$state` array's own
-    // length signal, so `rows.push(...)` and `rows.splice(...)` re-run it.
-    // Without this read nothing in the grid tracks the row count at all:
-    // `getRowModel` reads `.length` only inside its cache miss, and the miss is
-    // keyed on the array reference, which a mutation does not change.
-    const length = next.length;
-    const replaced = next !== lastData;
-    if (!replaced && length === lastDataLength) return;
+    if (next === lastData) return;
     lastData = next;
-    lastDataLength = length;
-    // A fresh array object, because `getRowModel` memoises on identity. The
-    // elements are the same objects, so a row that did not move keeps its row
-    // object and a field write still reaches its cell through the proxy.
-    // Windowed data (a server row model's rows) is already a fresh array per
-    // change and copying it would read every one of its `length` entries.
-    internalData = length === 0 ? EMPTY_DATA : isWindowedData(next) ? next : next.slice();
-    // When the consumer replaces `data` (e.g. a "Reset" button), drop any
-    // accumulated cell-edit overrides - otherwise `getCellDisplayValue`
-    // would keep returning the old edited values from `editedCellValues`
-    // even though the underlying data has been replaced. Growing or shrinking
-    // the array is not a reset, so it keeps them.
-    if (replaced) editedCellValues = {};
+    if (untrack(() => Object.keys(editedCellValues).length > 0)) editedCellValues = {};
   });
   $effect(() => {
     internalColumns = resolveCols(props.columns);
@@ -5083,7 +5111,7 @@ export function createSvGridController<
     get scheduleScrollSync() { return scheduleScrollSync; },
     get syncScrollNow() { return syncScrollNow; },
     get internalData() { return internalData; },
-    set internalData(v) { internalData = v as never; },
+    set internalData(v) { setInternalData(v as never); },
     get internalColumns() { return internalColumns; },
     set internalColumns(v) { internalColumns = v as never; },
     get hiddenColumns() { return hiddenColumns; },
