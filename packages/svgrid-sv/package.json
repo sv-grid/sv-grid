@@ -1,6 +1,6 @@
 {
   "name": "@svgrid/sv",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "Svelte CLI add-on for SvGrid: npx sv add @svgrid",
   "type": "module",
   "license": "MIT",
