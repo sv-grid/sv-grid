@@ -96,7 +96,8 @@ rmSync(join(generatedDir, 'index.ts'), { force: true })
 // pnpm workspace (same as svgrid-vote), so a `workspace:^` dependency is not
 // available here; copying the built artifact keeps one source of truth without
 // dragging the worker into the root install.
-for (const file of ['validate.js', 'validate.d.ts', 'search.js', 'search.d.ts', 'enterprise.js', 'enterprise.d.ts']) {
+// tool-defs: preview.js imports the preview tool's definition from it.
+for (const file of ['validate.js', 'validate.d.ts', 'search.js', 'search.d.ts', 'enterprise.js', 'enterprise.d.ts', 'tool-defs.js', 'tool-defs.d.ts']) {
   copyFileSync(join(mcpDist, file), join(generatedDir, file))
 }
 
