@@ -42,6 +42,39 @@ function contrast(fg: string, bg: string): number {
 const round = (n: number) => Math.round(n * 100) / 100
 
 /**
+ * APCA lightness contrast (Lc) of text on a background, per the W3C draft
+ * (0.0.98G-4g constants). Signed: positive for dark text on light, negative
+ * for light on dark; its magnitude is what is compared.
+ */
+function apca(text: string, bg: string): number {
+  const y = (hex: string) => {
+    const h = hex.replace('#', '')
+    const [r, g, b] = [0, 2, 4].map((i) => (parseInt(h.slice(i, i + 2), 16) / 255) ** 2.4) as [number, number, number]
+    const v = 0.2126729 * r + 0.7151522 * g + 0.072175 * b
+    return v < 0.022 ? v + (0.022 - v) ** 1.414 : v
+  }
+  const t = y(text)
+  const b = y(bg)
+  if (b > t) {
+    const s = (b ** 0.56 - t ** 0.57) * 1.14
+    return s < 0.1 ? 0 : (s - 0.027) * 100
+  }
+  const s = (b ** 0.65 - t ** 0.62) * 1.14
+  return s > -0.1 ? 0 : (s + 0.027) * 100
+}
+
+/**
+ * A preset may declare its own `onAccent` where WCAG 2's formula and the eye
+ * disagree (WCAG 2 is known to favour black on saturated oranges and reds).
+ * Such a choice is held to APCA instead: Lc 60, APCA's floor for content text
+ * that is not body copy (a button label), and it must read stronger than the
+ * colour the WCAG pick would have used. It is a product decision, so the list
+ * of presets making it is pinned below and cannot grow unnoticed.
+ */
+const APCA_ON_ACCENT = 60
+const DECLARED_ON_ACCENT = ['ember']
+
+/**
  * Pairs that actually meet a user's eye. Each is [foreground, background,
  * threshold, what it is] - named so a failure says which surface is unreadable
  * rather than just which token.
@@ -88,6 +121,13 @@ describe('built-in theme contrast (WCAG 2.1 AA)', () => {
       // flat hex - those cannot be judged without painting, and are called out
       // in docs as the consumer's responsibility.
       if (!fg || !bg || !/^#/.test(fg) || !/^#/.test(bg)) continue
+      if (fgToken === '--sg-on-accent' && preset[mode].onAccent) {
+        const lc = Math.abs(apca(fg, bg))
+        const other = fg.toLowerCase() === '#ffffff' ? '#18181b' : '#ffffff'
+        if (lc < APCA_ON_ACCENT) failures.push(`${label}: declared ${fg} on ${bg} = APCA Lc ${round(lc)} (needs ${APCA_ON_ACCENT})`)
+        if (lc <= Math.abs(apca(other, bg))) failures.push(`${label}: declared ${fg} reads weaker than ${other} on ${bg} under APCA too`)
+        continue
+      }
       const ratio = contrast(fg, bg)
       if (ratio < threshold) {
         failures.push(
@@ -97,6 +137,17 @@ describe('built-in theme contrast (WCAG 2.1 AA)', () => {
     }
 
     expect(failures, `${id} (${mode}) contrast failures:\n  ${failures.join('\n  ')}`).toEqual([])
+  })
+
+  it('only the pinned presets declare their own text-on-accent colour', () => {
+    const declaring = themePresets.filter((p) => p.light.onAccent || p.dark.onAccent).map((p) => p.id)
+    expect(declaring).toEqual(DECLARED_ON_ACCENT)
+  })
+
+  it('computes known APCA values', () => {
+    // The draft's reference pair: black on white is about Lc 106, white on black about -108.
+    expect(Math.round(apca('#000000', '#ffffff'))).toBe(106)
+    expect(Math.round(apca('#ffffff', '#000000'))).toBe(-108)
   })
 
   it('checks a meaningful number of presets', () => {

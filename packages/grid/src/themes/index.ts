@@ -35,6 +35,14 @@ export type ThemePalette = {
   pinnedBorder?: string
   /** Drop shadow cast by a pinned column into the scroll area. */
   pinnedShadow?: string
+  /**
+   * Text on an accent-filled control, when the preset decides it rather than
+   * the WCAG 2 pick in `onAccent`. Ember sets white: on its saturated orange,
+   * WCAG 2's formula prefers near-black (5.01 vs 3.53:1) while APCA, the
+   * perceptual model behind the WCAG 3 draft, reads white as far stronger
+   * (Lc 66.6 vs 41.4), and so does the eye. An accent override recomputes it.
+   */
+  onAccent?: string
   /* Semantic status colors. The UI kit reads these for destructive buttons,
      validation errors, alert variants, badges and the rating star. A preset
      that omits them gets the mode-appropriate defaults below, which match the
@@ -90,9 +98,11 @@ export const themePresets: ThemePreset[] = [
   { id: 'ember', name: 'Ember', radius: 6, font: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
     headerType: { weight: '500' },
     light: { bg: '#ffffff', fg: '#1c1917', muted: '#78716c', border: '#e7e5e4', headerBg: '#fafaf9', headerFg: '#78716c', accent: '#ff3e00', rowAlt: '#ffffff', rowHover: '#f5f5f4', selectionBg: '#ffece3',
+      onAccent: '#ffffff',
       bgSubtle: '#fafaf9',
       pinnedBg: '#fafaf9', pinnedHeaderBg: '#f5f5f4', pinnedDivider: '#e7e5e4', pinnedBorder: '#e7e5e4', pinnedShadow: 'rgba(28, 25, 23, 0.10)' },
     dark: { bg: '#0c0a09', fg: '#fafaf9', muted: '#a8a29e', border: '#292524', headerBg: '#1c1917', headerFg: '#a8a29e', accent: '#ff5a1f', rowAlt: '#0c0a09', rowHover: '#1c1917', selectionBg: '#3a2318',
+      onAccent: '#ffffff',
       bgSubtle: '#1c1917',
       pinnedBg: '#151312', pinnedHeaderBg: '#1c1917', pinnedDivider: '#292524', pinnedBorder: '#292524', pinnedShadow: 'rgba(0, 0, 0, 0.50)' } },
   { id: 'shadcn', name: 'shadcn/ui', radius: 6, font: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -245,7 +255,7 @@ export function resolveThemeTokens(preset: ThemePreset | undefined, mode: ThemeM
     '--sg-input-bg': p.bg,
     '--sg-input-border': p.border,
     '--sg-accent': accent,
-    '--sg-on-accent': onAccent(accent),
+    '--sg-on-accent': (!accentOverride && p.onAccent) || onAccent(accent),
     '--sg-radius': `${resolved.radius}px`,
     '--sg-font': resolved.font,
     // Semantic status colors. Same reasoning as the scrollbar tokens below:
