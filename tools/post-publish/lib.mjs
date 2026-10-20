@@ -25,7 +25,7 @@ const IS_WIN = process.platform === 'win32'
 export function sh(cmd, { cwd, timeout = 10 * 60_000, env = {}, input } = {}) {
   return new Promise((resolve) => {
     const t0 = Date.now()
-    const child = spawn(cmd, { cwd, shell: true, env: { ...process.env, ...env } })
+    const child = spawnShell(cmd, { cwd, env })
     let out = ''
     child.stdout.on('data', (d) => (out += d))
     child.stderr.on('data', (d) => (out += d))
@@ -42,11 +42,27 @@ export function sh(cmd, { cwd, timeout = 10 * 60_000, env = {}, input } = {}) {
   })
 }
 
-/** Kill a process and, on Windows, its whole tree (npm/npx spawn children). */
+/**
+ * Spawn a shell command. On macOS and Linux it gets its own process group, so
+ * `kill` can take down what the shell started (npx -> vite preview); killing
+ * only the `sh -c` left the server running and holding its port.
+ */
+export function spawnShell(cmd, { cwd, env = {} } = {}) {
+  return spawn(cmd, { cwd, shell: true, env: { ...process.env, ...env }, detached: !IS_WIN })
+}
+
+/** Kill a process and its whole tree (npm/npx spawn children). */
 export function kill(child) {
   if (!child || child.exitCode !== null) return
-  if (IS_WIN) spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' })
-  else child.kill('SIGTERM')
+  if (IS_WIN) {
+    spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' })
+    return
+  }
+  try {
+    process.kill(-child.pid, 'SIGTERM')
+  } catch {
+    child.kill('SIGTERM')
+  }
 }
 
 /** A free TCP port. */
@@ -67,7 +83,7 @@ export function freePort() {
  * answers. Returns { url, stop, log() }.
  */
 export async function serve(cmd, { cwd, url, timeout = 120_000, env = {} }) {
-  const child = spawn(cmd, { cwd, shell: true, env: { ...process.env, ...env } })
+  const child = spawnShell(cmd, { cwd, env })
   let log = ''
   child.stdout.on('data', (d) => (log += d))
   child.stderr.on('data', (d) => (log += d))

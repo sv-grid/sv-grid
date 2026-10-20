@@ -11,11 +11,10 @@
  *
  * SVGRID_PP_CREATE=base-browser,minimal limits the run to those scenarios.
  */
-import { spawn } from 'node:child_process'
 import { readdirSync, statSync } from 'node:fs'
 import { stripTypeScriptTypes } from 'node:module'
 import { join, relative } from 'node:path'
-import { browser, existsSync, freePort, kill, loadPage, readFileSync, readJson, registryDoc, semverFrom, serve, sleep, tail, writeFileSync } from '../lib.mjs'
+import { browser, existsSync, freePort, kill, spawnShell, loadPage, readFileSync, readJson, registryDoc, semverFrom, serve, sleep, tail, writeFileSync } from '../lib.mjs'
 
 export const name = 'create'
 export const description = 'npm create @svgrid: every template and Base variant scaffolds, installs, builds, checks and renders'
@@ -88,7 +87,7 @@ function renderedRows(page, headless) {
  */
 function spawnUntil(cmd, ready, { cwd, env = {}, timeout = 120_000 } = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(cmd, { cwd, shell: true, env: { ...process.env, ...env } })
+    const child = spawnShell(cmd, { cwd, env })
     let log = ''
     const timer = setTimeout(() => {
       kill(child)

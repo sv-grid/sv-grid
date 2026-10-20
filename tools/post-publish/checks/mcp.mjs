@@ -7,8 +7,7 @@
  * past the 30 s an MCP client waits for the `initialize` reply. It gets its
  * own empty cache, not the run's: other checks fill the shared one first.
  */
-import { spawn } from 'node:child_process'
-import { join, kill, tail, writeFileSync } from '../lib.mjs'
+import { join, kill, spawnShell, tail, writeFileSync } from '../lib.mjs'
 
 export const name = 'mcp'
 export const description = 'npx @svgrid/mcp cold start, every tool/resource/prompt over stdio, project-local Studio'
@@ -54,7 +53,7 @@ const SVELTE4_SNIPPET = `<script lang="ts">
  */
 function startServer(cmd, { cwd, env }) {
   const t0 = Date.now()
-  const child = spawn(cmd, { cwd, shell: true, env: { ...process.env, ...env } })
+  const child = spawnShell(cmd, { cwd, env })
   const pending = new Map()
   const stray = []
   let stdout = ''

@@ -1,0 +1,83 @@
+name: Post-publish checks
+
+# Runs tools/post-publish (`pnpm smoke:published`) against what is on npm, on
+# the platforms the local run does not cover. It installs the published
+# packages with an empty npm cache and uses them the way a user does, so a
+# failure here is a bug in a release, not in this repository's tree.
+#
+# Manual: Actions -> Post-publish checks -> Run workflow (optionally a
+# comma-separated list of checks; `--list` locally shows them).
+
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'Checks to run, comma separated (empty = all): registry,create,studio,library,wc,mcp,ui,migrate,sv'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: ${{ matrix.os }} / Node ${{ matrix.node }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            node: 22
+          - os: macos-latest
+            node: 24
+          - os: ubuntu-latest
+            node: 22
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v5
+
+      # The repo's own install provides Playwright; a frozen install needs the
+      # private website submodule as a workspace member (see test.yml).
+      - name: Check out the private website submodule
+        env:
+          WEBSITE_TOKEN: ${{ secrets.WEBSITE_TOKEN }}
+        run: |
+          git config --global url."https://x-access-token:${WEBSITE_TOKEN}@github.com/".insteadOf https://github.com/
+          git submodule update --init website
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run the post-publish checks
+        env:
+          ONLY: ${{ inputs.only }}
+        run: |
+          if [ -n "$ONLY" ]; then
+            node tools/post-publish/run.mjs --keep --dir "$RUNNER_TEMP/pp" --only "$ONLY"
+          else
+            node tools/post-publish/run.mjs --keep --dir "$RUNNER_TEMP/pp"
+          fi
+
+      - name: Upload the report and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: post-publish-${{ matrix.os }}-node${{ matrix.node }}
+          path: |
+            ${{ runner.temp }}/pp/report.json
+            ${{ runner.temp }}/pp/**/*.png
+          if-no-files-found: ignore
+          retention-days: 14
