@@ -3255,6 +3255,8 @@
   let hashMeasure: CanvasRenderingContext2D | null = null
   function hashesFor(text: string, c: number, entry: CellFormatEntry | undefined, r = -1, general?: number): string | null {
     if (!text) return null
+    // Cells render on the server too; there is nothing to measure there.
+    if (typeof document === 'undefined') return null
     hashMeasure ??= document.createElement('canvas').getContext('2d')
     if (!hashMeasure) return null
     const size = entry?.fontSize ?? 13

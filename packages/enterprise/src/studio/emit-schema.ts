@@ -1051,7 +1051,11 @@ export function layoutFile(nav: NavItem[], opts: { shell?: ShellConfig; title?: 
     contents: `<script lang="ts">
   import '../app.css'
   import '../custom.css'
-  import { page } from '$app/state'${opts.access ? `\n  import { currentRole, canScreen } from '$lib/access'` : ''}${opts.i18n ? `\n  import { t, currentLocale, locales } from '$lib/i18n'` : ''}${opts.auth ? `\n  import type { LayoutData } from './$types'` : ''}${opts.supabaseAuth ? `\n  import { SvAuthGate, type SupabaseAuthClientLike } from '@svgrid/enterprise'\n  import { supabaseClient } from '$lib/connections'` : ''}
+  import { page } from '$app/state'
+  import { setLicenseKey } from '@svgrid/enterprise'${opts.access ? `\n  import { currentRole, canScreen } from '$lib/access'` : ''}${opts.i18n ? `\n  import { t, currentLocale, locales } from '$lib/i18n'` : ''}${opts.auth ? `\n  import type { LayoutData } from './$types'` : ''}${opts.supabaseAuth ? `\n  import { SvAuthGate, type SupabaseAuthClientLike } from '@svgrid/enterprise'\n  import { supabaseClient } from '$lib/connections'` : ''}
+
+  // VITE_SVPRO_KEY in .env is your SvGrid license key; it removes the unlicensed watermark.
+  if (import.meta.env.VITE_SVPRO_KEY) setLicenseKey(import.meta.env.VITE_SVPRO_KEY)
 
   let { children${opts.auth ? ', data' : ''} }${opts.auth ? ": { children: import('svelte').Snippet; data: LayoutData }" : ''} = $props()
   const nav = ${JSON.stringify(links)}
@@ -1267,5 +1271,8 @@ export function emitStudioApp(schemas: EntitySchema[]): GeneratedFile[] {
     const n = namesFor(s)
     return { href: `/${n.route}`, label: n.label }
   })
-  return [...files, ...prepared.map((s) => entityScreenPage(s)), layoutFile(nav), homeFile(nav)]
+  // The layout imports ../custom.css after app.css; emitStudioAppBundle writes it
+  // too, so an app built here needs its own copy or the build cannot resolve it.
+  const customCss: GeneratedFile = { path: 'src/custom.css', description: 'Your custom styles (imported after app.css so it overrides).', userOwned: true, contents:'/* Your custom styles. Imported after app.css, so these rules override the defaults. */\n' }
+  return [...files, ...prepared.map((s) => entityScreenPage(s)), layoutFile(nav), homeFile(nav), customCss]
 }

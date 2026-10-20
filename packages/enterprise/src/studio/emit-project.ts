@@ -57,19 +57,30 @@ function columnFormatExpr(fmt: NonNullable<GridColumnConfig['format']>): string 
 }
 
 /** The visible grid columns: configured order, per-column header/width/align overrides, editability per mode. */
-function gridColumnsExpr(schemaVar: string, block: Block, typeName?: string): string {
+function gridColumnsExpr(schemaVar: string, block: Block, typeName?: string, relDisplay?: Map<string, string>): string {
   if (block.config.kind !== 'grid') return `schemaToColumns(${schemaVar})`
   const cfg = block.config
   const idSafe = block.id.replace(/-/g, '_')
-  const visible = cfg.columns.filter((c) => c.show)
+  const shown = cfg.columns.filter((c) => c.show)
+  // The prepared schema hides a relation's FK from the grid and shows its label
+  // column instead (`customer_id` -> `customer`), so a configured FK column maps
+  // to the label column - unless that one is configured too.
+  const shownFields = new Set(shown.map((c) => c.field))
+  const seen = new Set<string>()
+  const visible = shown
+    .map((c) => {
+      const d = relDisplay?.get(c.field)
+      return { c, col: d && !shownFields.has(d) ? d : c.field }
+    })
+    .filter((v) => !seen.has(v.col) && !!seen.add(v.col))
   // Only inline editing keeps cells editable; form / read-only grids are not editable in place.
   const editablePart = cfg.editing === 'inline' ? '' : ', editable: false'
   if (visible.length === 0) {
     return editablePart ? `schemaToColumns(${schemaVar}).map((c) => ({ ...c${editablePart} }))` : `schemaToColumns(${schemaVar})`
   }
-  const order = visible.map((c) => `'${c.field}'`)
+  const order = visible.map((v) => `'${v.col}'`)
   const ovEntries = visible
-    .map((c) => {
+    .map(({ c, col }) => {
       const parts: string[] = []
       if (c.header) parts.push(`header: ${JSON.stringify(c.header)}`)
       if (c.width != null) parts.push(`width: ${c.width}`)
@@ -81,7 +92,7 @@ function gridColumnsExpr(schemaVar: string, block: Block, typeName?: string): st
       // A rich cell renderer (badge / progress / link) wins over plain value formatting.
       else if (c.cellType && typeName) parts.push(`cell: (ctx: CellContext<${typeName}>) => renderSnippet(${cellSnippetName(idSafe, c.field)}, { value: ctx.getValue() })`)
       else if (c.format) parts.push(`format: ${columnFormatExpr(c.format)}`)
-      return parts.length ? `'${c.field}': { ${parts.join(', ')} }` : null
+      return parts.length ? `'${col}': { ${parts.join(', ')} }` : null
     })
     .filter((x): x is string => !!x)
   const ovDecl = ovEntries.length ? ` const ov: Record<string, Partial<(typeof all)[number]>> = { ${ovEntries.join(', ')} };` : ''
@@ -2080,7 +2091,7 @@ function screenPage(schema: EntitySchema, rawSchema: EntitySchema, screen: Scree
   for (const b of blocks) {
     if (b.config.kind === 'grid') {
       const idSafe = b.id.replace(/-/g, '_')
-      const colExpr = gridColumnsExpr(n.schemaVar, b, n.type)
+      const colExpr = gridColumnsExpr(n.schemaVar, b, n.type, relationDisplayFields(rawSchema, resolve))
       let colValue = i18nEnabled ? `localizeCols(${colExpr}, ${JSON.stringify(schema.name)}, $t)` : colExpr
       // An "edit" action needs the form; drop it if this grid has no edit modal.
       const actions = (b.config.rowActions ?? []).filter((a) => a.kind !== 'edit' || wantsForm)
@@ -2467,7 +2478,7 @@ function attrs(f: EntityField): string {
 }
 
 /** The `+page.server.ts` + SSR `+page.svelte` for a single-grid CRUD screen. */
-function emitSsrGridScreen(schema: EntitySchema, screen: Screen, routed: RoutedEntity, accessEnabled: boolean, screenIds: string[], byName: Map<string, EntitySchema>): GeneratedFile[] {
+function emitSsrGridScreen(schema: EntitySchema, screen: Screen, routed: RoutedEntity, accessEnabled: boolean, screenIds: string[], byName: Map<string, EntitySchema>, rawSchema: EntitySchema = schema): GeneratedFile[] {
   const n = namesFor(schema)
   // Routed (SQL, or in-memory rows held on the server): a same-origin client over
   // the entity's /api route. Otherwise REST, whose source is imported from
@@ -2499,24 +2510,35 @@ function emitSsrGridScreen(schema: EntitySchema, screen: Screen, routed: RoutedE
 
   // Relation fields render as a native <select> whose options are prefetched in
   // load - from the related entity's /api route when it has one, else from its
-  // in-process source in $lib/data (see relSource below).
+  // in-process source in $lib/data (see relSourceOf below).
   const isRel = (f: EntityField) => f.type === 'relation' && !!f.relation && byName.has(f.relation!.entity)
+  const relSourceOf = (rs: EntitySchema) => routed(rs.name)
+    ? `createKitDataSource<Record<string, unknown>>({ endpoint: ${jsStr('/api/' + namesFor(rs).route)}, fetch })`
+    : namesFor(rs).sourceVar
+  // The grid shows each relation as its label column (`customer_id` -> `customer`).
+  // The $lib/data sources fill it with withRelationLabels; rows read through the
+  // /api route come back without it, so load wraps that client the same way:
+  // one batched `id IN (...)` lookup per relation for the ids on this page only.
+  // Names come from the RAW schema, as everywhere else that has to match
+  // withRelationLabels.
+  const relDisplay = relationDisplayFields(rawSchema, (name) => byName.get(name))
+  const labelFields = isSql ? schema.fields.filter((f) => isRel(f) && schema.fields.some((x) => x.field === relDisplay.get(f.field))) : []
   const relFields = formFields.filter(isRel)
   const relRouted = relFields.some((f) => routed(relSchemaOf(f).name))
-  const relSourceVars = [...new Set(relFields.filter((f) => !routed(relSchemaOf(f).name)).map((f) => namesFor(relSchemaOf(f)).sourceVar))]
+  const relSourceVars = [...new Set([...relFields, ...labelFields].filter((f) => !routed(relSchemaOf(f).name)).map((f) => namesFor(relSchemaOf(f)).sourceVar))]
   const relPrefetch = relFields
     .map((f) => {
       const rs = relSchemaOf(f)
-      const rel = namesFor(rs)
       const relId = relIdOf(rs)
       const labelF = f.relation!.labelField ?? relId
-      const relSource = routed(rs.name)
-        ? `createKitDataSource<Record<string, unknown>>({ endpoint: ${jsStr('/api/' + rel.route)}, fetch })`
-        : rel.sourceVar
-      return `  const ${f.field}Options = (await ${relSource}.getRows({ startRow: 0, endRow: 100, pageIndex: 0, pageSize: 100, sortModel: [], filterModel: {} })).rows.map((r: Record<string, unknown>) => ({ value: String(r[${jsStr(relId)}] ?? ''), label: String(r[${jsStr(labelF)}] ?? '') }))`
+      return `  const ${f.field}Options = (await ${relSourceOf(rs)}.getRows({ startRow: 0, endRow: 100, pageIndex: 0, pageSize: 100, sortModel: [], filterModel: {} })).rows.map((r: Record<string, unknown>) => ({ value: String(r[${jsStr(relId)}] ?? ''), label: String(r[${jsStr(labelF)}] ?? '') }))`
     })
     .join('\n')
   const relReturn = relFields.map((f) => `, ${f.field}Options`).join('')
+  const labelSpecs = labelFields.map((f) => {
+    const rs = relSchemaOf(f)
+    return `{ fk: ${jsStr(f.field)}, as: ${jsStr(relDisplay.get(f.field)!)}, lookup: createRelationLookup({ source: ${relSourceOf(rs)}, valueField: ${jsStr(relIdOf(rs))}, labelField: ${jsStr(f.relation!.labelField ?? relIdOf(rs))} }) }`
+  })
 
   // Source acquisition:
   //  - routed: build a same-origin client over the entity's /api/<entity> route
@@ -2535,6 +2557,7 @@ function emitSsrGridScreen(schema: EntitySchema, screen: Screen, routed: RoutedE
     'validateAll',
     ...(conditional ? ['stripHiddenValues'] : []),
     ...(isSql || relRouted ? ['createKitDataSource'] : []),
+    ...(labelSpecs.length ? ['createRelationLookup', 'withRelationLabels'] : []),
   ].join(', ')
   const dataImports = [...new Set([...(isSql ? [] : [n.sourceVar]), ...relSourceVars])]
   const sourceImport = dataImports.length ? `import { ${dataImports.join(', ')} } from '$lib/data'\n` : ''
@@ -2578,7 +2601,7 @@ function formToValues(fd: FormData): Record<string, unknown> {
 
 export const load: PageServerLoad = async ({ url${loadFetchArg}${localsArg} }) => {
 ${readGuard}  const plan = planFromSearchParams(url, ${pageSize})
-  const { rows, rowCount } = await ${src}.getRows(plan)
+  const { rows, rowCount } = await ${labelSpecs.length ? `withRelationLabels(${src}, [\n    ${labelSpecs.join(',\n    ')},\n  ])` : src}.getRows(plan)
 ${relPrefetch ? relPrefetch + '\n' : ''}  return { rows, total: rowCount, page: plan.pageIndex, size: plan.pageSize, sort: plan.sortModel${relReturn} }
 }
 
@@ -2993,7 +3016,7 @@ export function emitStudioProject(project: StudioProject): GeneratedFile[] {
     // load-only server file, and the SAME page markup renders from data.*.
     if (isSsrScreen(project, screen)) {
       if (ssrScreenShape(project, screen) === 'grid') {
-        pages.push(...emitSsrGridScreen(schema, screen, routed, accessEnabled, screensByEntity.get(screen.entity) ?? [], byName))
+        pages.push(...emitSsrGridScreen(schema, screen, routed, accessEnabled, screensByEntity.get(screen.entity) ?? [], byName, rawByName.get(screen.entity) ?? schema))
       } else {
         pages.push(
           ssrReadServerFile(schema, screen, routed, accessEnabled, screensByEntity.get(screen.entity) ?? [], resolve),
@@ -5013,7 +5036,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - run: npm install
       - run: npm run build
       - run: npm test
@@ -5033,7 +5056,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - run: npm install
 ${steps}`
 }
@@ -5107,7 +5130,7 @@ function deployPlan(project: StudioProject): DeployPlan {
         adapterModule: '@sveltejs/adapter-node',
         adapterDep: ['@sveltejs/adapter-node', '^5.2.0'],
         files: [
-          { path: 'Dockerfile', description: 'Container image (multi-stage: build then run `node build`).', contents: `# Build stage\nFROM node:20-alpine AS build\nWORKDIR /app\nCOPY package*.json ./\nRUN npm install\nCOPY . .\nRUN npm run build\nRUN npm prune --omit=dev\n\n# Run stage\nFROM node:20-alpine\nWORKDIR /app\nENV NODE_ENV=production\nCOPY --from=build /app/build ./build\nCOPY --from=build /app/node_modules ./node_modules\nCOPY --from=build /app/package.json ./package.json\nEXPOSE 3000\nCMD ["node", "build"]\n` },
+          { path: 'Dockerfile', description: 'Container image (multi-stage: build then run `node build`).', contents: `# Build stage\nFROM node:22-alpine AS build\nWORKDIR /app\nCOPY package*.json ./\nRUN npm install\nCOPY . .\nRUN npm run build\nRUN npm prune --omit=dev\n\n# Run stage\nFROM node:22-alpine\nWORKDIR /app\nENV NODE_ENV=production\nCOPY --from=build /app/build ./build\nCOPY --from=build /app/node_modules ./node_modules\nCOPY --from=build /app/package.json ./package.json\nEXPOSE 3000\nCMD ["node", "build"]\n` },
           { path: '.dockerignore', description: 'Files kept out of the image.', contents: `node_modules\n.svelte-kit\nbuild\n.env\n.env.*\n.git\n.github\n` },
         ],
         cli: 'npm run build && node build',
@@ -5138,7 +5161,7 @@ export function studioDeployInfo(project: StudioProject): { label: string; cli: 
 /** DEPLOY.md - the runbook: required env vars, then Git-integration / CI / CLI paths. */
 function deployDocs(project: StudioProject, plan: DeployPlan, envKeys: string[], hasMigrations: boolean, opts: { hasDdl?: boolean; hasSeedScript?: boolean } = {}): string {
   const envBlock = envKeys.length
-    ? `## Environment variables\n\nSet these on your host (and locally in \`.env\` - copy \`.env.example\`):\n\n${envKeys.map((k) => `- \`${k}\``).join('\n')}\n\nOptional: \`VITE_SVPRO_KEY\` (your SvGrid license key) removes the unlicensed watermark - call \`setLicenseKey(import.meta.env.VITE_SVPRO_KEY)\` once at startup (see the docs).\n\n`
+    ? `## Environment variables\n\nSet these on your host (and locally in \`.env\` - copy \`.env.example\`):\n\n${envKeys.map((k) => `- \`${k}\``).join('\n')}\n\nOptional: \`VITE_SVPRO_KEY\` (your SvGrid license key) removes the unlicensed watermark - the root layout passes it to \`setLicenseKey\`. It is read at build time, so set it before \`npm run build\`.\n\n`
     : ''
   const migrations = hasMigrations
     ? `## Database migrations\n\nThis app has a typed Drizzle schema (\`src/lib/server/db/schema.ts\`). Create + apply the tables:\n\n\`\`\`bash\nnpm run db:generate   # SQL migrations from the schema\nnpm run db:migrate    # apply them to DATABASE_URL\n${opts.hasSeedScript ? 'npm run db:seed       # optional: insert the sample rows\n' : ''}\`\`\`\n\n(Run these against your production database as part of your release step.)\n\n`
@@ -5146,16 +5169,22 @@ function deployDocs(project: StudioProject, plan: DeployPlan, envKeys: string[],
   const ddl = opts.hasDdl
     ? `## Database tables\n\nThis app's SQL entities expect their tables to exist. Run \`db/schema.sql\` against the database your \`DATABASE_URL\` points at (psql / mysql / sqlite3 / sqlcmd, or your provider's SQL console) before first use - and optionally \`db/seed.sql\` for sample rows. Tip: enable the Drizzle data layer in Studio for real, versioned migrations instead.\n\n`
     : ''
+  // Letter the options that exist, so a target without a dashboard or a deploy
+  // workflow does not skip from A to C.
+  const letters = ['A', 'B', 'C']
+  const gitLetter = plan.dashboard ? letters.shift()! : ''
+  const ciLetter = plan.deployWorkflow ? letters.shift()! : ''
+  const cliLetter = letters.shift()!
   const gitIntegration = plan.dashboard
-    ? `## Option A - Git integration (simplest, no secrets)\n\n1. Push this repo to GitHub.\n2. Import it at <${plan.dashboard}> - the SvelteKit build is auto-detected.\n3. Add the environment variables above in the host's dashboard.\n\nEvery push to \`main\` then redeploys automatically.\n\n`
+    ? `## Option ${gitLetter} - Git integration (simplest, no CI secrets)\n\n1. Push this repo to GitHub.\n2. Import it at <${plan.dashboard}> - the SvelteKit build is auto-detected.\n${envKeys.length ? "3. Add the environment variables above in the host's dashboard.\n" : ''}\nEvery push to \`main\` then redeploys automatically.\n\n`
     : ''
   const ci = plan.deployWorkflow
-    ? `## Option B - GitHub Actions (included)\n\n\`.github/workflows/deploy.yml\` deploys on every push to \`main\`. Add these repository secrets to enable it (Settings -> Secrets and variables -> Actions):\n\n${plan.secrets.map((s) => `- \`${s}\``).join('\n')}\n\nUntil the secrets are set the deploy step is skipped, so CI stays green. Prefer Option A? Delete \`deploy.yml\`.\n\n`
+    ? `## Option ${ciLetter} - GitHub Actions (included)\n\n\`.github/workflows/deploy.yml\` deploys on every push to \`main\`. Add these repository secrets to enable it (Settings -> Secrets and variables -> Actions):\n\n${plan.secrets.map((s) => `- \`${s}\``).join('\n')}\n\nUntil the secrets are set the deploy step is skipped, so CI stays green.${gitLetter ? ` Prefer Option ${gitLetter}? Delete \`deploy.yml\`.` : ''}\n\n`
     : ''
   const dockerNote = project.deploy === 'node'
     ? `## Container\n\nA \`Dockerfile\` is included:\n\n\`\`\`bash\ndocker build -t ${appSlug(project.title)} .\ndocker run -p 3000:3000 --env-file .env ${appSlug(project.title)}\n\`\`\`\n\nThe server listens on \`PORT\` (default 3000).\n\n`
     : ''
-  const cli = `## Option C - Deploy from your machine\n\n\`\`\`bash\nnpm run deploy\n\`\`\`\n\n(runs \`${plan.deployScript}\`)\n`
+  const cli = `## Option ${cliLetter} - Deploy from your machine\n\n\`\`\`bash\nnpm run deploy\n\`\`\`\n\n(runs \`${plan.deployScript}\`)\n`
   return `# Deploying ${project.title}\n\nConfigured for **${plan.label}** (SvelteKit \`${plan.adapterModule}\`). A CI workflow (\`.github/workflows/ci.yml\`) builds + tests every push.\n\n${envBlock}${ddl}${migrations}${gitIntegration}${ci}${dockerNote}${cli}`
 }
 
@@ -5198,13 +5227,20 @@ function supabaseConnOf(project: StudioProject): { url: string; key: string } | 
  *  random `SESSION_SECRET` filled in, so the app is secure out of the box (no
  *  hardcoded dev secret), and the Supabase URL + anon key the model already
  *  holds, so a Supabase app runs as generated instead of failing on an empty
- *  URL. Only emitted when there is something to fill in. */
-function envDotFile(allSource: string, project: StudioProject): string | null {
+ *  URL. Only emitted when there is something to fill in.
+ *
+ *  `databaseUrl` is the connection the app was built from (`studio init --db
+ *  sqlite --url ./shop.db`). Only a SQLite file path is written: it is not a
+ *  secret, and without it the app opens an empty data.db. Server URLs carry a
+ *  password, so those stay for the user to paste. */
+function envDotFile(allSource: string, project: StudioProject, databaseUrl?: string): string | null {
   const example = envExample(allSource)
   if (!example) return null
   const supa = allSource.includes('PUBLIC_SUPABASE_URL') ? supabaseConnOf(project) : null
-  if (!allSource.includes('SESSION_SECRET') && !supa) return null
+  const sqliteFile = databaseUrl && allSource.includes("import Database from 'better-sqlite3'") && /^DATABASE_URL=$/m.test(example) ? databaseUrl : null
+  if (!allSource.includes('SESSION_SECRET') && !supa && !sqliteFile) return null
   let env = example.replace('SESSION_SECRET=change-me-to-a-long-random-string', `SESSION_SECRET=${randomSecret()}`)
+  if (sqliteFile) env = env.replace(/^DATABASE_URL=$/m, `DATABASE_URL=${sqliteFile}`)
   // The anon key is public / browser-safe; access is governed by RLS.
   if (supa) env = env.replace(/^PUBLIC_SUPABASE_URL=$/m, `PUBLIC_SUPABASE_URL=${supa.url}`).replace(/^PUBLIC_SUPABASE_ANON_KEY=$/m, `PUBLIC_SUPABASE_ANON_KEY=${supa.key}`)
   return env
@@ -5287,7 +5323,10 @@ export function runtimeDeps(project: StudioProject, allSource: string): Record<s
   if (allSource.includes("import pg from 'pg'")) dependencies['pg'] = '^8.11.0'
   if (allSource.includes("from 'mysql2/promise'")) dependencies['mysql2'] = '^3.9.0'
   if (allSource.includes("import mssql from 'mssql'")) dependencies['mssql'] = '^10.0.0'
-  if (allSource.includes("import Database from 'better-sqlite3'")) dependencies['better-sqlite3'] = '^11.0.0'
+  // 11.x and 12.0.0 ship no Node 24 prebuild, so npm falls back to node-gyp and
+  // the install fails without a C++ toolchain. 12.1+ has one; 13.x bundles N-API
+  // prebuilds that load on any Node >= 22.
+  if (allSource.includes("import Database from 'better-sqlite3'")) dependencies['better-sqlite3'] = BETTER_SQLITE3_RANGE
   if (allSource.includes("from '@libsql/client'")) dependencies['@libsql/client'] = '^0.14.0'
   if (allSource.includes("from '@electric-sql/pglite'")) dependencies['@electric-sql/pglite'] = '^0.5.0'
   // Optional feature deps: only added when a generated file actually imports them, so a
@@ -5397,12 +5436,21 @@ ${blocks.join('\n\n')}
 `
 }
 
-const VITEST_CONFIG = `import { defineConfig } from 'vitest/config'
+/** The better-sqlite3 range a generated app installs. Mirrored in the studio
+ *  package's designer-server.ts RUNTIME_DEPS. */
+const BETTER_SQLITE3_RANGE = '^12.1.0 || ^13.0.0'
 
-// Node-only test runner for the generated smoke tests (no Svelte/DOM needed).
-// Kept separate from vite.config so the SvelteKit plugin doesn't load here.
+const VITEST_CONFIG = `import { defineConfig } from 'vitest/config'
+import { svelte } from '@sveltejs/vite-plugin-svelte'
+
+// Test runner for the generated smoke tests, in Node (no DOM). Kept separate from
+// vite.config so the SvelteKit plugin doesn't load here. The tests import the
+// @svgrid/enterprise root, which re-exports .svelte components: the svelte plugin
+// compiles them, and inlining @svgrid/* routes them through it instead of Node's
+// own loader (which rejects the .svelte extension).
 export default defineConfig({
-  test: { environment: 'node', include: ['src/**/*.test.ts'] },
+  plugins: [svelte()],
+  test: { environment: 'node', include: ['src/**/*.test.ts'], server: { deps: { inline: [/@svgrid\\//] } } },
 })
 `
 
@@ -5472,14 +5520,17 @@ ${steps}`,
   }]
 }
 
-export function emitStudioAppBundle(project: StudioProject): GeneratedFile[] {
+export function emitStudioAppBundle(project: StudioProject, opts: { databaseUrl?: string } = {}): GeneratedFile[] {
   const generated = emitStudioProject(project)
   const allSource = generated.map((f) => f.contents).join('\n')
+  const dotEnv = envDotFile(allSource, project, opts.databaseUrl)
+  const hasConnections = generated.some((f) => f.path === 'src/lib/connections.ts')
+  const readmeConnections = `SQL entities read their connection from \`.env\` (\`DATABASE_URL\`)${hasConnections ? ';\nSupabase entities use the shared client in `src/lib/connections.ts`, which reads\n`PUBLIC_SUPABASE_URL` and `PUBLIC_SUPABASE_ANON_KEY` from `.env`' : ''}.\n`
   const plan = deployPlan(project)
   const deploySteps = plan.dashboard
     ? `1. Push this folder to a Git repo (GitHub / GitLab / Bitbucket).\n2. Import it at <${plan.dashboard}> - build settings are detected automatically.\n\nOr deploy straight from your machine with the CLI:\n\n\`\`\`bash\n${plan.cli}\n\`\`\``
     : `Build and run the server:\n\n\`\`\`bash\n${plan.cli}\n\`\`\``
-  const readme = `# ${project.title}\n\nGenerated with SvGrid Studio.\n\n\`\`\`bash\nnpm install\nnpm run dev\n\`\`\`\n\nSQL / Supabase entities read their connection from \`.env\` (\`DATABASE_URL\`) or\n\`src/lib/connections.ts\`. Everything else runs on seeded in-memory data.\n\n## Deploy (${plan.label})\n\nThis app is configured for **${plan.label}** (SvelteKit \`${plan.adapterModule}\`).\n\n${deploySteps}\n\nTo target a different host, pick another **Deploy target** in the designer and\nre-generate, or swap the adapter in \`svelte.config.js\`. Entities on **Local\ndatabase** (PGlite) or **In-memory** need no server env; SQL / Supabase entities\nneed their connection set in the host's environment variables.\n\n## Round-tripping back into the designer\n\nThis app ships its own design model in \`studio.config.json\`. To keep editing\nvisually, open the SvGrid Studio designer and **Load** that file - your entities,\nscreens, blocks, theme, RBAC, i18n, etc. come back exactly as generated, and you\ncan re-generate from there.\n\nThe designer regenerates the files under \`src/routes\` and \`src/lib\` from the\nmodel, so **keep your own custom code in new files/modules and import it**, rather\nthan editing the generated screens in place - that way a re-generate never\nclobbers your work. (The CLI workflow, \`npx @svgrid/studio add\`, is the\nalternative: it wraps generated code in \`svgrid:managed\` markers and preserves\nanything you write outside them.)\n`
+  const readme = `# ${project.title}\n\nGenerated with SvGrid Studio.\n\n\`\`\`bash\nnpm install\nnpm run dev\n\`\`\`\n\n${readmeConnections}Everything else runs on seeded in-memory data.\n\n## Deploy (${plan.label})\n\nThis app is configured for **${plan.label}** (SvelteKit \`${plan.adapterModule}\`).\n\n${deploySteps}\n\nTo target a different host, pick another **Deploy target** in the designer and\nre-generate, or swap the adapter in \`svelte.config.js\`. Entities on **Local\ndatabase** (PGlite) or **In-memory** need no server env; SQL / Supabase entities\nneed their connection set in the host's environment variables.\n\n## Round-tripping back into the designer\n\nThis app ships its own design model in \`studio.config.json\`. To keep editing\nvisually, open the SvGrid Studio designer and **Load** that file - your entities,\nscreens, blocks, theme, RBAC, i18n, etc. come back exactly as generated, and you\ncan re-generate from there.\n\nThe designer regenerates the files under \`src/routes\` and \`src/lib\` from the\nmodel, so **keep your own custom code in new files/modules and import it**, rather\nthan editing the generated screens in place - that way a re-generate never\nclobbers your work. (The CLI workflow, \`npx @svgrid/studio add\`, is the\nalternative: it wraps generated code in \`svgrid:managed\` markers and preserves\nanything you write outside them.)\n`
   const scaffold: GeneratedFile[] = [
     { path: 'package.json', description: 'Dependencies + scripts (npm install, npm run dev).', contents: packageJson(project, allSource) },
     { path: 'svelte.config.js', description: `SvelteKit config (${plan.adapterModule}).`, contents: svelteConfig(plan) },
@@ -5490,7 +5541,7 @@ export function emitStudioAppBundle(project: StudioProject): GeneratedFile[] {
     rootLayoutModule(project),
     ...SCAFFOLD_STATIC,
     ...(envExample(allSource) ? [{ path: '.env.example', description: 'Environment variables the app reads (copy to .env and fill in).', contents: envExample(allSource)! }] : []),
-    ...(envDotFile(allSource, project) ? [{ path: '.env', description: 'Local env (git-ignored): a real random SESSION_SECRET and the Supabase connection the design holds are pre-filled, so the app runs as generated; fill in the rest.', contents: envDotFile(allSource, project)! }] : []),
+    ...(dotEnv ? [{ path: '.env', description: 'Local env (git-ignored): a real random SESSION_SECRET, the Supabase connection the design holds and a SQLite file path are pre-filled, so the app runs as generated; fill in the rest.', contents: dotEnv }] : []),
     { path: 'src/app.css', description: 'App theme tokens + page styles.', contents: appCss(project) },
     // Your styles: a dedicated CSS file the layout imports AFTER app.css, so its rules
     // win. Edited in the designer's Styles panel; regenerated from the model.

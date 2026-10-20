@@ -95,7 +95,8 @@ import is re-pointed and the features SvGrid does not have are removed.
 | `columnHelper.accessor('x', { ... })` | `{ field: 'x', ... }` |
 | `columnHelper.accessor(fn, { id, ... })` | `{ fieldFn: fn, id, ... }` |
 | `columnHelper.display({ ... })` / `.group({ ... })` | the plain object it built |
-| `createColumnHelper<Row>()` | deleted - SvGrid columns are plain objects |
+| `columnHelper.columns([ ... ])` | the array itself |
+| `createColumnHelper<Row>()` | deleted (kept, with a warning, if a call it could not flatten still uses it); the column array is typed `GridColumns<Row>` |
 | `size: 140` | `width: 140` |
 | `enableSorting: false` | `sortable: false` |
 | `enableColumnFilter: false` | `filterable: false` |
@@ -106,6 +107,7 @@ import is re-pointed and the features SvGrid does not have are removed.
 | `columnVisibilityFeature` | removed - use `visible: false` per column |
 | `columnResizingFeature` | removed - resizing is built in |
 | `let sorting = $state([])` + `onSortingChange` | deleted; SvGrid owns that state |
+| a TanStack type @svgrid/grid does not export (`RowSelectionState`) | removed from the import, with a warning |
 | `createSvelteTable(...)`, `<Table.Root>`, `FlexRender` | deleted |
 
 Because the shadcn layout keeps `features` in its own module, the codemod

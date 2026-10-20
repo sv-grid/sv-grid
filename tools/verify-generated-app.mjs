@@ -3,10 +3,12 @@
  * Prove a generated app actually works.
  *
  *   node tools/verify-generated-app.mjs [sample-id] [--keep]
+ *   node tools/verify-generated-app.mjs --from prisma|drizzle|<schema file>
  *
  * Emits a real app from a sample project, installs it against the LOCAL
- * packages, and runs the app's own `svelte-check`. Unit tests assert what the
- * emitter *writes*; only this says the result compiles.
+ * packages, and runs the app's own `svelte-check` and `npm test` (when the app
+ * has a test script). Unit tests assert what the emitter *writes*; only this
+ * says the result compiles and its own tests pass.
  *
  * Why local matters: a generated app depends on a published `@svgrid/*`. Left to
  * resolve from npm, this script would type-check today's codegen against
@@ -33,6 +35,42 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const ENTERPRISE = join(ROOT, 'packages', 'enterprise')
 const GRID = join(ROOT, 'packages', 'grid')
 
+// Schemas for --from. Neither names an entity the create-studio starter seeds
+// (customers / orders / products), so a starter screen left behind fails the
+// type-check: it imports a schema the generated schemas.ts does not export.
+const FROM_FIXTURES = {
+  prisma: `model Account {
+  id       Int       @id @default(autoincrement())
+  name     String
+  invoices Invoice[]
+}
+
+model Invoice {
+  id        Int     @id @default(autoincrement())
+  number    String
+  amount    Float
+  paid      Boolean @default(false)
+  account   Account @relation(fields: [accountId], references: [id])
+  accountId Int
+}
+`,
+  drizzle: `import { pgTable, serial, text, integer, boolean, real } from 'drizzle-orm/pg-core'
+
+export const accounts = pgTable('accounts', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+})
+
+export const invoices = pgTable('invoices', {
+  id: serial('id').primaryKey(),
+  number: text('number').notNull(),
+  amount: real('amount'),
+  paid: boolean('paid'),
+  accountId: integer('account_id').references(() => accounts.id),
+})
+`,
+}
+
 const args = process.argv.slice(2)
 const keep = args.includes('--keep')
 // --kit 3 emits the opt-in SvelteKit 3 shape instead of the default v2 one.
@@ -47,18 +85,32 @@ if (kit !== 2 && kit !== 3) {
 // --run also serves the built app and loads every screen in a browser (see the
 // end of this file). It implies --build.
 const runApp = args.includes('--run')
-const build = runApp || args.includes('--build')
 // --dataset <id> builds the app `svgrid-studio init --dataset <id>` builds
 // (crudAppFromSchemas, with its SSR defaults) instead of a curated sample.
 const datasetAt = args.indexOf('--dataset')
 const datasetId = datasetAt >= 0 ? args[datasetAt + 1] : undefined
-const valueFlags = new Set(['--kit', '--deploy', '--dataset'])
+// --from <prisma|drizzle|path> scaffolds with `npm create @svgrid/studio -- --from`
+// instead: the create-studio template plus emitStudioApp, a different code path
+// from the bundle the samples go through. `prisma` / `drizzle` use the fixtures
+// below. It implies --build: the first bug it caught was a build failure.
+const fromAt = args.indexOf('--from')
+const fromArg = fromAt >= 0 ? args[fromAt + 1] : undefined
+if (fromAt >= 0 && !fromArg) {
+  console.error('verify-generated-app: --from needs prisma, drizzle or a schema file path')
+  process.exit(1)
+}
+if (fromArg && (runApp || datasetId || kit === 3 || args.includes('--all-paths'))) {
+  console.error('verify-generated-app: --from cannot be combined with --run, --dataset, --kit 3 or --all-paths')
+  process.exit(1)
+}
+const build = runApp || !!fromArg || args.includes('--build')
+const valueFlags = new Set(['--kit', '--deploy', '--dataset', '--from'])
 const sampleId = args.find((a, i) => !a.startsWith('-') && !valueFlags.has(args[i - 1])) ?? 'crm'
 
 const run = (cmd, cmdArgs, cwd) =>
   execFileSync(cmd, cmdArgs, { cwd, encoding: 'utf8', shell: process.platform === 'win32', stdio: 'pipe' })
 
-console.log(`verify-generated-app: building ${datasetId ? `the "${datasetId}" dataset app` : `the "${sampleId}" sample`}`)
+console.log(`verify-generated-app: building ${fromArg ? `a create-studio app --from ${fromArg}` : datasetId ? `the "${datasetId}" dataset app` : `the "${sampleId}" sample`}`)
 
 // The Node bundle is what the CLI and MCP server use; rebuild so this checks the
 // current source rather than a stale copy.
@@ -66,7 +118,9 @@ run('node', ['./scripts/build-node.mjs'], ENTERPRISE)
 const studio = await import(pathToFileURL(join(ENTERPRISE, 'dist', 'node', 'studio.js')).href)
 
 let project
-if (datasetId) {
+if (fromArg) {
+  // No project model on this path: create-studio emits straight from the schema.
+} else if (datasetId) {
   const dataset = studio.getStarterDataset(datasetId)
   if (!dataset) {
     console.error(`verify-generated-app: no dataset "${datasetId}". Try: ${studio.starterDatasets.map((d) => d.id).join(', ')}`)
@@ -118,7 +172,7 @@ if (args.includes('--all-paths')) {
 }
 if (kit === 3) project = studio.setKitVersion(project, 3)
 console.log(`verify-generated-app: targeting SvelteKit ${kit}`)
-const blocking = studio.validateProject(project).filter((i) => i.level === 'error')
+const blocking = project ? studio.validateProject(project).filter((i) => i.level === 'error') : []
 if (blocking.length) {
   console.error('verify-generated-app: the project itself is invalid:')
   for (const i of blocking) console.error(`  - ${i.message}`)
@@ -126,7 +180,7 @@ if (blocking.length) {
 }
 
 const dir = mkdtempSync(join(tmpdir(), 'svgrid-verify-'))
-const bundle = studio.emitStudioAppBundle(project)
+const bundle = project ? studio.emitStudioAppBundle(project) : []
 
 // --all-paths must prove it reached the paths, not just that what it did reach
 // compiles. The first version passed while emitting no Drizzle layer and no
@@ -151,6 +205,23 @@ for (const file of bundle) {
   const path = join(dir, file.path)
   mkdirSync(dirname(path), { recursive: true })
   writeFileSync(path, file.contents)
+}
+
+if (fromArg) {
+  // The scaffolder resolves @svgrid/enterprise/studio from the workspace, so it
+  // runs the dist/node bundle rebuilt above. stdin is not a TTY: no prompts.
+  // A fixture goes beside the app folder, not in it, as a user's schema would.
+  const schemaPath = FROM_FIXTURES[fromArg] ? `${dir}-schema.${fromArg === 'prisma' ? 'prisma' : 'ts'}` : resolve(fromArg)
+  if (FROM_FIXTURES[fromArg]) writeFileSync(schemaPath, FROM_FIXTURES[fromArg])
+  try {
+    run('node', [join(ROOT, 'packages', 'create-studio', 'index.mjs'), dir, '--from', schemaPath, '--force'], tmpdir())
+  } catch (err) {
+    console.error('verify-generated-app: create-studio --from failed\n' + (err.stdout ?? '') + (err.stderr ?? ''))
+    process.exit(1)
+  } finally {
+    if (FROM_FIXTURES[fromArg]) rmSync(schemaPath, { force: true })
+  }
+  console.log(`verify-generated-app: scaffolded with create-studio --from ${fromArg}`)
 }
 
 // Pack the workspace packages and point the app at those tarballs. `overrides`
@@ -205,6 +276,21 @@ if (errors > 0) {
 
 console.log(`verify-generated-app: type-check OK - ${summary[1]} files, 0 errors, ${summary[3]} warnings`)
 
+// The generated CI runs `npm test`, so a failing one is a red build on the
+// user's first push. The create-studio template has no test script.
+const hasTests = !!JSON.parse(readFileSync(pkgPath, 'utf8')).scripts?.test
+if (hasTests) {
+  console.log('verify-generated-app: running the app\'s tests')
+  try {
+    run('npm', ['test'], dir)
+  } catch (err) {
+    console.error('verify-generated-app: the generated app\'s tests failed:\n' + `${err.stdout ?? ''}${err.stderr ?? ''}`.slice(-3000))
+    console.error(`\nThe app is in ${dir}`)
+    process.exit(1)
+  }
+  console.log('verify-generated-app: tests OK')
+}
+
 if (build) {
   console.log('verify-generated-app: building the app')
   try {
@@ -228,7 +314,7 @@ if (runApp) {
   console.log('verify-generated-app: run OK - every screen loaded with no errors')
 }
 
-console.log(`verify-generated-app: OK (SvelteKit ${kit}${runApp ? ', type-check + build + run' : build ? ', type-check + build' : ', type-check'})`)
+console.log(`verify-generated-app: OK (SvelteKit ${kit}, type-check${hasTests ? ' + test' : ''}${build ? ' + build' : ''}${runApp ? ' + run' : ''})`)
 if (keep) console.log(`verify-generated-app: kept ${dir}`)
 else rmSync(dir, { recursive: true, force: true })
 

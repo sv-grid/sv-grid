@@ -17,10 +17,16 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 // pickers, the menus) gets the styles of the components inside it, injected
 // when that chunk loads. With one sheet the chart's stylesheet alone put
 // 5.7 KiB gzip into the entry of a page that never charts. A lazy chunk hands
-// its CSS to `__SVGRID_WC_ADD_CSS__` so the shadow element can adopt it into
-// every open root, or queues it on `__SVGRID_WC_CSS_CHUNKS__` when it loads
-// before adopt-styles does.
-function inlineCss() {
+// its CSS to `__SVGRID_WC_ADD_CSS_BY_BUILD__[build]` so the shadow element can
+// adopt it into every open root, or queues it on
+// `__SVGRID_WC_CSS_CHUNKS_BY_BUILD__[build]` when it loads before adopt-styles.
+//
+// Everything is keyed by BUILD (grid / shadow / chart), because a page can and
+// does load several: <sv-grid> next to <sv-chart> is the documented
+// rowsToChartSpec pairing. With one unkeyed <style> and one global, the first
+// bundle's style blocked the others' and the last bundle's CSS won the global,
+// so the chart painted a black fill and showed its hidden data table.
+function inlineCss(build) {
   return {
     name: '@svgrid/grid-wc:inline-css',
     apply: 'build',
@@ -38,23 +44,33 @@ function inlineCss() {
         }
         return css
       }
+      const key = JSON.stringify(build)
       for (const chunk of Object.values(bundle)) {
         if (chunk.type !== 'chunk') continue
         const css = cssOf(chunk)
         if (!css) continue
         const json = JSON.stringify(css)
+        // fileName, not name: SvChartMenu and friends exist in every build
+        // under the same name, and each build's copy must still land.
+        const chunkKey = JSON.stringify(`${build}:${chunk.fileName}`)
+        // One head <style> per key, and none when another build already put
+        // the identical text there: the grid and shadow builds compile the same
+        // grid, so a page with both elements keeps one copy, while the chart
+        // build's different sheet still lands.
+        const toHead = (attr, k) =>
+          `if(typeof document==='undefined')return;` +
+          `var x=document.querySelectorAll('style[${attr}]');` +
+          `for(var i=0;i<x.length;i++)if(x[i].getAttribute('${attr}')===${k}||x[i].textContent===c)return;` +
+          `var s=document.createElement('style');s.setAttribute('${attr}',${k});` +
+          `s.textContent=c;document.head.appendChild(s);`
         const inject = chunk.isEntry
-          ? `(function(){try{if(typeof globalThis!=='undefined')globalThis.__SVGRID_WC_CSS__=${json};` +
-            `if(typeof document==='undefined')return;` +
-            `if(document.querySelector('style[data-svgrid-grid-wc]'))return;` +
-            `var s=document.createElement('style');s.setAttribute('data-svgrid-grid-wc','');` +
-            `s.textContent=${json};document.head.appendChild(s);}catch(e){}})();\n`
-          : `(function(){try{var c=${json};if(typeof globalThis!=='undefined'){var f=globalThis.__SVGRID_WC_ADD_CSS__;` +
-            `if(typeof f==='function')f(c);else(globalThis.__SVGRID_WC_CSS_CHUNKS__=globalThis.__SVGRID_WC_CSS_CHUNKS__||[]).push(c);}` +
-            `if(typeof document==='undefined')return;` +
-            `if(document.querySelector('style[data-svgrid-grid-wc-chunk=${JSON.stringify(chunk.name)}]'))return;` +
-            `var s=document.createElement('style');s.setAttribute('data-svgrid-grid-wc-chunk',${JSON.stringify(chunk.name)});` +
-            `s.textContent=c;document.head.appendChild(s);}catch(e){}})();\n`
+          ? `(function(){try{var c=${json},g=globalThis;if(typeof g!=='undefined')(g.__SVGRID_WC_CSS_BY_BUILD__=g.__SVGRID_WC_CSS_BY_BUILD__||{})[${key}]=c;` +
+            toHead('data-svgrid-grid-wc', key) +
+            `}catch(e){}})();\n`
+          : `(function(){try{var c=${json},g=globalThis;if(typeof g!=='undefined'){var f=(g.__SVGRID_WC_ADD_CSS_BY_BUILD__||{})[${key}];` +
+            `if(typeof f==='function')f(c);else{var q=g.__SVGRID_WC_CSS_CHUNKS_BY_BUILD__=g.__SVGRID_WC_CSS_CHUNKS_BY_BUILD__||{};(q[${key}]=q[${key}]||[]).push(c);}}` +
+            toHead('data-svgrid-grid-wc-chunk', chunkKey) +
+            `}catch(e){}})();\n`
         chunk.code = inject + chunk.code
       }
       // Any stylesheet no chunk claimed (there should be none) still goes into
@@ -68,7 +84,7 @@ function inlineCss() {
       }
       if (orphan) {
         const entry = Object.values(bundle).find((c) => c.type === 'chunk' && c.isEntry)
-        if (entry) entry.code = `(function(){try{if(typeof document==='undefined')return;var s=document.createElement('style');s.setAttribute('data-svgrid-grid-wc-orphan','');s.textContent=${JSON.stringify(orphan)};document.head.appendChild(s);}catch(e){}})();\n` + entry.code
+        if (entry) entry.code = `(function(){try{if(typeof document==='undefined')return;var s=document.createElement('style');s.setAttribute('data-svgrid-grid-wc-orphan',${key});s.textContent=${JSON.stringify(orphan)};document.head.appendChild(s);}catch(e){}})();\n` + entry.code
       }
     },
   }
@@ -82,8 +98,9 @@ function inlineCss() {
 // a common eager chunk, and <sv-grid>'s initial payload went 102.6 -> 133.1 KB
 // gzip - a 30% regression on the existing element, to add a second one nobody
 // loading the first will use. Separate builds duplicate the lazy chunks on
-// disk instead, which costs bytes in the tarball and nothing at runtime,
-// because a page loads one element or the other.
+// disk instead, which costs bytes in the tarball. A page that loads two
+// builds (grid + chart is the common pair) downloads two runtimes, and each
+// build's CSS is keyed by BUILD below so they do not overwrite each other.
 //
 // Svelte's runtime and @svgrid/grid are bundled IN (not externalized) so each
 // build is a zero-dependency drop-in for a CDN <script> tag or a non-Svelte
@@ -96,6 +113,9 @@ const CHART = process.env.SVGRID_WC_ELEMENT === 'chart'
 const ENTRY = CHART ? 'src/sv-chart-element.svelte' : SHADOW ? 'src/sv-grid-shadow-element.svelte' : 'src/sv-grid-element.svelte'
 const FILE = CHART ? 'sv-chart-element.js' : SHADOW ? 'sv-grid-shadow-element.js' : 'sv-grid-element.js'
 const OUT_DIR = CHART ? 'dist/chart' : SHADOW ? 'dist/shadow' : 'dist'
+// The key inlineCss stamps on this build's <style> tags and CSS globals.
+// adopt-styles.js reads the 'shadow' entry.
+const BUILD = CHART ? 'chart' : SHADOW ? 'shadow' : 'grid'
 
 export default defineConfig({
   plugins: [
@@ -113,7 +133,7 @@ export default defineConfig({
         }
       },
     }),
-    inlineCss(),
+    inlineCss(BUILD),
   ],
   build: {
     lib: {

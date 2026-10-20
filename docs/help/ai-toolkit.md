@@ -265,7 +265,7 @@ data within a boundary before it reaches a provider.
 | `api.ai.filter` / `smartFill` / `summarize` / `classify` / `export` / `findAnomalies` | `@svgrid/enterprise` | The in-grid helpers, added by `installEnterprise(api)`. |
 | `svgrid_search`, `svgrid_get` | `@svgrid/mcp` | Build-time MCP tools your coding agent calls: find anything across docs, demos and the API, then read it in full. |
 | `svgrid_check_code` | `@svgrid/mcp` | Verifies generated code against the real API surface before you see it. |
-| `svgrid_scaffold`, `studio_*` | `@svgrid/mcp` | Studio generation tools (schema -> CRUD screen, project model). Studio tools are opt-in: set `SVGRID_MCP_STUDIO=1` or a licence key. |
+| `svgrid_scaffold`, `studio_*` | `@svgrid/mcp` | Studio generation tools (schema -> CRUD screen, project model). Studio tools are opt-in: set `SVGRID_MCP_STUDIO=1` or a licence key. Both need `@svgrid/enterprise` beside the server: `npm i -D @svgrid/mcp @svgrid/enterprise`, then run `npx svgrid-mcp`. |
 
 Auto-generated per-symbol reference: [`@svgrid/grid` · `ai.ts`](../reference/auto/svgrid-grid-ai.md).
 

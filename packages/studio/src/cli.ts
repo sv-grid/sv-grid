@@ -318,10 +318,15 @@ async function runInit(flags: InitFlags): Promise<void> {
   }
 }
 
-function report(name: string, written: string[], verifyLine: string): void {
+function report(name: string, written: string[], verifyLine: string, conflicts: { path: string; parkedAs: string }[] = []): void {
   process.stdout.write(`Scaffolded "${name}":\n`)
   for (const path of written) process.stdout.write(`  + ${path}\n`)
   process.stdout.write(`  ${verifyLine}\n`)
+  if (conflicts.length) {
+    process.stdout.write(`\n  ! ${conflicts.length} file(s) already existed without svgrid:managed markers, so they were left alone.\n`)
+    process.stdout.write(`    The generated version was written NEXT TO each (merge or replace, then delete it):\n`)
+    for (const c of conflicts) process.stdout.write(`    - ${c.path}  ->  ${c.parkedAs}\n`)
+  }
 }
 
 async function main(): Promise<void> {
@@ -521,7 +526,7 @@ async function main(): Promise<void> {
         schemas.push(await introspectDatabase({ dialect: opts.db, table, execute }))
       }
       const res = await runStudioAddApp(schemas, { dataSource: ds, theme: opts.theme, dark: opts.dark, appTitle: opts.title }, io)
-      report(`app (${schemas.length} entities)`, res.written, summarizeVerify(res.verify))
+      report(`app (${schemas.length} entities)`, res.written, summarizeVerify(res.verify), res.conflicts)
       process.stdout.write(`\nRun \`npm run dev\` and open /\n`)
       return
     }
@@ -529,7 +534,7 @@ async function main(): Promise<void> {
     const table = opts.table ?? opts.route!
     const schema = await introspectDatabase({ dialect: opts.db, table, execute })
     const res = await runStudioAdd({ schema, route: opts.route ?? table, dataSource: ds, theme: opts.theme, dark: opts.dark }, io)
-    report(table, res.written, summarizeVerify(res.verify))
+    report(table, res.written, summarizeVerify(res.verify), res.conflicts)
     process.stdout.write(`\nRun \`npm run dev\` and open /${opts.route ?? table}\n`)
     return
   }
@@ -548,7 +553,7 @@ async function main(): Promise<void> {
       process.exit(1)
     }
     const res = await runStudioAddApp(schemas, { dataSource: opts.dataSource, theme: opts.theme, dark: opts.dark, appTitle: opts.title }, io)
-    report(`app (${schemas.length} entities)`, res.written, summarizeVerify(res.verify))
+    report(`app (${schemas.length} entities)`, res.written, summarizeVerify(res.verify), res.conflicts)
     process.stdout.write(`\nRun \`npm run dev\` and open /\n`)
     return
   }
@@ -557,7 +562,7 @@ async function main(): Promise<void> {
     { from: opts.from, table: opts.table, route: opts.route, apiRoute: opts.apiRoute, dataSource: opts.dataSource, theme: opts.theme, dark: opts.dark },
     io,
   )
-  report(result.schema.name, result.written, summarizeVerify(result.verify))
+  report(result.schema.name, result.written, summarizeVerify(result.verify), result.conflicts)
   process.stdout.write(`\nRun \`npm run dev\` and open /${opts.route ?? result.schema.name}\n`)
 }
 

@@ -102,6 +102,15 @@ The `studio_*` tools let an agent build and edit the **same validated project mo
 server's env. Tools that need a licence to be useful should not cost every
 other user context on every request.
 
+These tools and `svgrid_scaffold` run on `@svgrid/enterprise`, an optional
+peer that `npx -y @svgrid/mcp` does not install (it would double the cold
+start). Install both in the project and run the local server:
+
+```bash
+npm i -D @svgrid/mcp @svgrid/enterprise
+claude mcp add svgrid -- npx svgrid-mcp
+```
+
 | Tool | Purpose |
 | --- | --- |
 | `studio_project` | `new`, `load`, `describe`, `config`, `capabilities`. |

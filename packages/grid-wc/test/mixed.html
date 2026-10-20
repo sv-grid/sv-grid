@@ -1,0 +1,44 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>grid + chart + shadow on one page</title>
+<!-- Three element builds on one page, against the BUILT bundles (the CSS
+     injection is a build-only plugin). Each build must keep its own styles:
+     when they shared one <style> and one global, the chart painted a black
+     area and showed its hidden data table, and the shadow grid lost its sheet.
+     Serve with `pnpm preview` (port 4205) and open /test/mixed.html.
+     jsdom counterpart: test/mixed-bundles.test.ts. -->
+<style>
+  body { margin:0; font:14px system-ui; padding:20px; }
+  sv-grid, sv-grid-shadow { display:block; height:260px; border:1px solid #cbd5e1; margin-bottom:24px; }
+  sv-chart { display:block; margin-bottom:24px; }
+</style></head>
+<body>
+<h3>&lt;sv-grid&gt;</h3>
+<sv-grid id="g"></sv-grid>
+<h3>&lt;sv-chart&gt;</h3>
+<sv-chart id="c" width="560" height="280"></sv-chart>
+<h3>&lt;sv-grid-shadow&gt;</h3>
+<sv-grid-shadow id="s"></sv-grid-shadow>
+<script type="module">
+  import '../dist/sv-grid-element.js'
+  import '../dist/chart/sv-chart-element.js'
+  import '../dist/shadow/sv-grid-shadow-element.js'
+  const rows = Array.from({ length: 12 }, (_, i) => ({
+    id: i + 1, city: ['Sofia', 'Berlin', 'Lisbon', 'Oslo'][i % 4], amount: (i * 37) % 900,
+  }))
+  const cols = [
+    { id: 'id', field: 'id', header: 'ID', width: 70 },
+    { id: 'city', field: 'city', header: 'City' },
+    { id: 'amount', field: 'amount', header: 'Amount', cellDataType: 'number' },
+  ]
+  for (const id of ['g', 's']) {
+    const el = document.getElementById(id)
+    el.data = rows
+    el.columns = cols
+  }
+  document.getElementById('c').spec = {
+    type: 'bar',
+    categories: ['Q1', 'Q2', 'Q3', 'Q4'],
+    series: [{ label: 'Revenue', values: [120, 180, 150, 210] }],
+  }
+</script>
+</body></html>

@@ -12,7 +12,7 @@
 import type { EntitySchema } from '../schema.js'
 import { introspectDrizzle, introspectDrizzleAll, introspectJson } from './introspect.js'
 import { introspectPrisma, introspectPrismaAll } from './introspect-prisma.js'
-import { mergeManaged, scaffold, skipUserOwned, type ScaffoldOptions } from './scaffold.js'
+import { MANAGED_START, mergeManaged, scaffold, skipUserOwned, type ScaffoldOptions } from './scaffold.js'
 import { scaffoldApp, type ScaffoldAppOptions } from './scaffold-app.js'
 import { verifyScaffold, type VerifyResult } from './verify.js'
 
@@ -45,6 +45,8 @@ export type AddResult = {
   schema: EntitySchema
   /** Paths written, in order. */
   written: string[]
+  /** Existing files without managed markers, left alone; the new version went to `parkedAs`. */
+  conflicts: ParkedFile[]
   verify: VerifyResult
 }
 
@@ -74,9 +76,40 @@ export async function resolveSchemas(from: string, io: StudioIO): Promise<Entity
   return isPrismaSource(from, src) ? introspectPrismaAll(src) : introspectDrizzleAll(src)
 }
 
-/** Merge-write a set of generated files, preserving user edits outside managed regions. */
-async function writeAll(files: { path: string; contents: string; userOwned?: boolean }[], io: StudioIO): Promise<string[]> {
+/** A generated file that was not written over an existing one, and where it went instead. */
+export type ParkedFile = { path: string; parkedAs: string }
+
+/**
+ * Where to park a generated file next to `path`: `<path>.new`, unless that holds
+ * something else (an earlier run's copy the user may be merging), then the first
+ * free `<path>.new.1`, `.new.2`, ... A slot already holding these exact contents
+ * is reused, so re-running does not pile up copies.
+ */
+async function freeNewPath(path: string, contents: string, io: StudioIO): Promise<string> {
+  for (let i = 0; ; i++) {
+    const candidate = i === 0 ? `${path}.new` : `${path}.new.${i}`
+    const there = await io.readFile(candidate)
+    if (there == null || there === contents) return candidate
+  }
+}
+
+/**
+ * Merge-write a set of generated files, preserving user edits outside managed
+ * regions.
+ *
+ * A file already on disk with no managed markers is somebody's own code (the
+ * create-studio starter's nav layout, a hand-written page), and a merge would
+ * replace it whole. Those get the new version beside them as `<file>.new`, the
+ * same convention the designer uses for a hand-edited file, and come back in
+ * `conflicts`. Unlike the designer, an existing `.new` with other contents is
+ * kept: the copy goes to `.new.1` and up (see freeNewPath). A folder `init` generated (it has studio.config.json) is the
+ * exception: its files are Studio's own output, and regenerating them is the
+ * point.
+ */
+async function writeAll(files: { path: string; contents: string; userOwned?: boolean }[], io: StudioIO): Promise<{ written: string[]; conflicts: ParkedFile[] }> {
   const written: string[] = []
+  const conflicts: ParkedFile[] = []
+  const studioApp = (await io.readFile('studio.config.json')) != null
   for (const file of files) {
     const existing = await io.readFile(file.path)
     // User-owned companions (a screen's `handlers.ts`) carry no managed markers -
@@ -84,22 +117,33 @@ async function writeAll(files: { path: string; contents: string; userOwned?: boo
     // already exists so a regenerate never clobbers hand-written logic. See
     // HANDLERS-DESIGN.md (the round-trip contract).
     if (skipUserOwned(file, existing != null)) continue
+    if (existing != null && !studioApp && existing !== file.contents && !existing.includes(MANAGED_START)) {
+      const parkedAs = await freeNewPath(file.path, file.contents, io)
+      await io.writeFile(parkedAs, file.contents)
+      conflicts.push({ path: file.path, parkedAs })
+      continue
+    }
     // Regenerating? Replace only the managed region, keep the user's edits.
     await io.writeFile(file.path, mergeManaged(existing, file.contents))
     written.push(file.path)
   }
-  return written
+  return { written, conflicts }
 }
 
 export async function runStudioAdd(options: AddOptions, io: StudioIO): Promise<AddResult> {
   const schema = await resolveSchema(options, io)
   const { files } = scaffold(schema, options)
-  const written = await writeAll(files, io)
+  const { written, conflicts } = await writeAll(files, io)
   const verify = await verifyScaffold(files)
-  return { schema, written, verify }
+  return { schema, written, conflicts, verify }
 }
 
-export type AddAppResult = { written: string[]; verify: VerifyResult }
+export type AddAppResult = {
+  written: string[]
+  /** Existing files without managed markers, left alone; the new version went to `parkedAs`. */
+  conflicts: ParkedFile[]
+  verify: VerifyResult
+}
 
 /** The stylesheets an `init`-generated layout imports, in cascade order. */
 const APP_STYLESHEETS = ['app.css', 'custom.css']
@@ -166,7 +210,7 @@ export async function runStudioAddApp(
   io: StudioIO,
 ): Promise<AddAppResult> {
   const { files } = scaffoldApp(schemas, await appShellDefaults(options, io))
-  const written = await writeAll(files, io)
+  const { written, conflicts } = await writeAll(files, io)
   const verify = await verifyScaffold(files)
-  return { written, verify }
+  return { written, conflicts, verify }
 }

@@ -58,6 +58,39 @@ export type SqlDataSourceConfig<TData extends RowData> = {
    * Names outside this list never reach SQL.
    */
   aggregators?: ReadonlyArray<string>
+  /**
+   * How rows come back when the request has no sort, e.g. creation order:
+   * `[{ field: 'createdAt' }]`. Default: a field on a `created_at` or
+   * `inserted_at` column when the schema has one, else the primary key. The
+   * primary key is appended to every leaf order as a tie-breaker, so paging
+   * is deterministic.
+   */
+  defaultOrder?: ReadonlyArray<{ field: string; desc?: boolean }>
+}
+
+/** Columns that hold when a row was made, by the usual conventions (Supabase, Rails, Ecto). */
+const CREATION_COLUMNS = new Set(['created_at', 'inserted_at'])
+
+/**
+ * The order rows come back in while nothing is sorted: `defaultOrder` when
+ * given (each field checked against the schema), else a field on a
+ * `created_at` / `inserted_at` column, else none. The SQL and Supabase
+ * sources then add the primary key as the tie-breaker.
+ */
+export function unsortedOrder<TData extends RowData>(
+  schema: EntitySchema<TData>,
+  defaultOrder: ReadonlyArray<{ field: string; desc?: boolean }> | undefined,
+  columnOf: (field: string) => string = (f) => f,
+): Array<{ field: string; desc: boolean }> {
+  const known = new Set(schema.fields.map((f) => String(f.field)))
+  if (defaultOrder) {
+    for (const o of defaultOrder) {
+      if (!known.has(o.field)) throw new Error(`defaultOrder field "${o.field}" is not in the schema`)
+    }
+    return defaultOrder.map((o) => ({ field: o.field, desc: !!o.desc }))
+  }
+  const creation = schema.fields.find((f) => CREATION_COLUMNS.has(columnOf(String(f.field)).toLowerCase()))
+  return creation ? [{ field: String(creation.field), desc: false }] : []
 }
 
 function quoter(dialect: SqlDialect) {
@@ -101,6 +134,18 @@ export function createSqlDataSource<TData extends RowData>(
     : '*'
   const planDialect: SqlDialect = hasRenames ? { ...dialect, column: columnOf } : dialect
   const RET = returning ? ` RETURNING ${projection}` : ''
+  // Without an ORDER BY, Postgres returns an updated row last and LIMIT /
+  // OFFSET pages in no fixed order. Unsorted rows go in creation order where
+  // that is known (a text key such as a UUID orders 1, 10, 2 and at random),
+  // and the key breaks ties under any order.
+  const key = schema.fields.some((f) => f.field === idField) ? idField : null
+  const unsorted = unsortedOrder(schema, config.defaultOrder, columnOf)
+  const orderText = (sort: ReadonlyArray<{ field: string; desc: boolean }>): string => {
+    const order = sort.length ? sort : unsorted
+    const parts = order.map((o) => `${col(o.field)} ${o.desc ? 'DESC' : 'ASC'}`)
+    if (key && !order.some((o) => o.field === key)) parts.push(`${col(key)} ASC`)
+    return parts.length ? `ORDER BY ${parts.join(', ')}` : ''
+  }
 
   return {
     async getRows(request: ServerRequest): Promise<ServerResult<TData>> {
@@ -130,7 +175,7 @@ export function createSqlDataSource<TData extends RowData>(
             `SELECT ${select} FROM ${t} ${sql.whereText} ${sql.groupByText} ${sql.orderByText} LIMIT ${sql.limit} OFFSET ${sql.offset}`,
           )
         : squish(
-            `SELECT ${projection} FROM ${t} ${sql.whereText} ${sql.orderByText} LIMIT ${sql.limit} OFFSET ${sql.offset}`,
+            `SELECT ${projection} FROM ${t} ${sql.whereText} ${orderText(plan.orderBy)} LIMIT ${sql.limit} OFFSET ${sql.offset}`,
           )
       const countSql = squish(`SELECT ${sql.countText} AS count FROM ${t} ${sql.whereText}`)
       const rows = await execute(rowsSql, sql.params)

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { runStudioInit, parseSelection, type DbGateway, type PromptIO } from './init-flow.js'
+import { runStudioInit, parseSelection, fileFromApp, type DbGateway, type PromptIO } from './init-flow.js'
 import { isUserError } from './user-error.js'
 import type { StudioIO } from './cli.js'
 import { parseProject, validateProject, type GridConfig } from './project.js'
@@ -591,5 +591,68 @@ describe('runStudioInit --from a schema file', () => {
     )
     expect(isUserError(err)).toBe(true)
     expect((err as Error).message).toContain('--dataset')
+  })
+})
+
+/** A fake SQLite file with one table, answering the PRAGMA / sqlite_master queries. */
+function fakeSqlite(): DbGateway {
+  return {
+    ensureDriver: async () => ({ ok: true }),
+    connect: async () => async (sql: string) => {
+      if (/count\(\*\)/i.test(sql)) return [{ n: 3 }]
+      if (/sqlite_master/i.test(sql)) return [{ name: 'customers' }]
+      if (/table_info/i.test(sql)) return [
+        { name: 'id', type: 'INTEGER', notnull: 1, pk: 1 },
+        { name: 'name', type: 'TEXT', notnull: 1, pk: 0 },
+      ]
+      return [] // no foreign keys
+    },
+  }
+}
+
+// `studio init --db sqlite --url <file>` then `npm run dev`: the app opened an
+// empty data.db and every API call failed with "no such table".
+describe('runStudioInit - the SQLite file reaches .env', () => {
+  it('writes DATABASE_URL for the file it read', async () => {
+    const fs = memoryIo()
+    await runStudioInit({ db: 'sqlite', url: './shop.db', yes: true, force: true }, scriptedPrompts([]).io, fakeSqlite(), fs.io)
+    expect(fs.files.get('.env')).toMatch(/^DATABASE_URL=\.\/shop\.db$/m)
+  })
+
+  it('re-expresses a relative path from the app folder', async () => {
+    const fs = memoryIo()
+    await runStudioInit({ db: 'sqlite', url: './shop.db', yes: true, out: 'apps/shop' }, scriptedPrompts([]).io, fakeSqlite(), fs.io)
+    expect(fs.files.get('apps/shop/.env')).toMatch(/^DATABASE_URL=\.\.\/\.\.\/shop\.db$/m)
+  })
+
+  it('keeps a server connection string (it carries a password) out of .env', async () => {
+    const fs = memoryIo()
+    await runStudioInit({ db: 'postgres', url: 'postgres://u:secret@localhost/app', yes: true }, scriptedPrompts([]).io, fakeDb(), fs.io)
+    for (const [path, contents] of fs.files) {
+      if (path === '.env' || path === '.env.example') expect(contents).not.toContain('secret')
+    }
+  })
+})
+
+describe('fileFromApp', () => {
+  it('passes a path through when the app is the current folder or the path is absolute', () => {
+    expect(fileFromApp('./data.db', '.')).toBe('./data.db')
+    expect(fileFromApp('/var/db/app.db', 'my-app')).toBe('/var/db/app.db')
+    expect(fileFromApp('C:\\db\\app.db', 'my-app')).toBe('C:\\db\\app.db')
+    expect(fileFromApp(':memory:', 'my-app')).toBe(':memory:')
+  })
+
+  it('climbs out of a relative app folder', () => {
+    expect(fileFromApp('./data.db', 'my-app')).toBe('../data.db')
+    expect(fileFromApp('db/data.db', './a/b/')).toBe('../../db/data.db')
+  })
+
+  it('rewrites a relative file: URL and leaves an absolute one alone', () => {
+    expect(fileFromApp('file:./data.db', 'my-app')).toBe('file:../data.db')
+    expect(fileFromApp('file:data.db', 'a/b')).toBe('file:../../data.db')
+    expect(fileFromApp('file:./data.db', '.')).toBe('file:./data.db')
+    expect(fileFromApp('file:/var/db/app.db', 'my-app')).toBe('file:/var/db/app.db')
+    expect(fileFromApp('file:///var/db/app.db', 'my-app')).toBe('file:///var/db/app.db')
+    expect(fileFromApp('file:C:/db/app.db', 'my-app')).toBe('file:C:/db/app.db')
   })
 })

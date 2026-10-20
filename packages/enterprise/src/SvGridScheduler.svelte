@@ -299,18 +299,23 @@
 
   // --- resources: full list (for the legend/grouping) derived from config or
   // the data. `hiddenResources` is a per-view filter applied to `viewEvents`. ---
+  // Read from every row, not only the events in the visible range: built from
+  // `events`, an empty week had no resources, so a grouped Week/Day view drew
+  // zero day columns, and the columns changed as the user paged through time.
+  // Events still feed in after the rows, for ids the rows do not carry.
   const resources = $derived.by<SchedulerResource[]>(() => {
     if (!resourceField) return [];
     if (scheduler.resources?.length) return [...scheduler.resources];
     const seen = new Set<string>();
     const out: SchedulerResource[] = [];
-    for (const e of events) {
-      const id = e.resourceId ?? "";
+    const add = (id: string) => {
       if (!seen.has(id)) {
         seen.add(id);
         out.push({ id, title: id || "(none)" });
       }
-    }
+    };
+    for (const r of data) add(spec.getResource?.(r) ?? "");
+    for (const e of events) add(e.resourceId ?? "");
     return out;
   });
   let hiddenResources = $state<Set<string>>(new Set());
@@ -360,7 +365,8 @@
   }
 
   // Resource grouping applies to the time-grid (Week / Day) views.
-  const resourcesEnabled = $derived(!!resourceField && (view === "day" || view === "week"));
+  // No resources at all (no rows yet) means plain day columns, not zero columns.
+  const resourcesEnabled = $derived(!!resourceField && (view === "day" || view === "week") && resources.length > 0);
   const groupByDate = $derived(scheduler.groupByDate === true);
 
   // --- timeline views (horizontal: time left→right, resources as rows) ---
@@ -4314,10 +4320,13 @@
     line-height: 1.4;
   }
   .sv-sched-btn:hover { background: color-mix(in srgb, var(--sg-fg, #1f2937) 8%, transparent); }
-  .sv-sched-btn-active {
+  /* `:hover` listed too: `.sv-sched-btn:hover` outranks the bare class, so the
+     active view button lost its fill under the pointer. */
+  .sv-sched-btn-active,
+  .sv-sched-btn-active:hover {
     background: var(--sv-sched-accent);
     border-color: var(--sv-sched-accent);
-    color: #fff;
+    color: var(--sg-on-accent, #fff);
   }
 
   /* month */

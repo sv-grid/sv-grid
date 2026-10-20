@@ -184,7 +184,7 @@ const EMPTY_SCHEMA = `-- Your tables. Every table here becomes a tab of the base
 `
 
 /** Lay the chosen data setup over the template and write db/schema.sql. */
-async function applyBase(destDir, choice) {
+async function applyBase(destDir, choice, projectName) {
   if (!choice) return
   const variants = join(destDir, 'variants')
   const variant = join(variants, choice.data)
@@ -210,6 +210,16 @@ async function applyBase(destDir, choice) {
   const schema = choice.sample === 'none' ? EMPTY_SCHEMA : await readFile(join(destDir, 'db', 'templates', `${choice.sample}.sql`), 'utf8')
   await writeFile(join(destDir, 'db', 'schema.sql'), schema)
   await rm(variants, { recursive: true, force: true })
+  // browser: one IndexedDB database per project, or every base on
+  // localhost:5173 opens the first one's tables.
+  const dbPath = join(destDir, 'src', 'lib', 'db.ts')
+  const db = await readFile(dbPath, 'utf8').catch(() => null)
+  if (db != null) await writeFile(dbPath, db.replace('idb://svgrid-base-__project__', `idb://svgrid-base-${baseDbName(projectName)}`))
+}
+
+/** The project name as an IndexedDB name part: lowercase letters, digits and dashes. */
+function baseDbName(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'app'
 }
 
 const THEME_IDS = [
@@ -602,7 +612,7 @@ async function main() {
   await applyMode(destDir, themeChoice)
   await applyModeMinimal(destDir, themeChoice)
   await applyModeSvelteKit(destDir, themeChoice)
-  await applyBase(destDir, baseChoice)
+  await applyBase(destDir, baseChoice, projectName)
   await writeAgentsNotes(destDir, template)
 
   // 5. Next steps.

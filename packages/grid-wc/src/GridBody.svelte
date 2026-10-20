@@ -88,6 +88,10 @@
   `selectable` is then neutralised with an explicit `undefined`, because it is
   this element's own prop and means something else on <SvGrid>. Order matters:
   the explicit attributes below must follow the spread to win.
+
+  `showRowSelection` ends in `?? false`: the README publishes `selectable` as
+  default-off, and left undefined <SvGrid> shows checkboxes for
+  selectionMode 'row', which this element sets.
 -->
 <div style="height: 100%; min-height: 320px;">
   <SvGrid
@@ -96,7 +100,7 @@
     {features}
     data={rest.data ?? []}
     columns={rest.columns ?? []}
-    showRowSelection={rest.showRowSelection ?? rest.selectable}
+    showRowSelection={rest.showRowSelection ?? rest.selectable ?? false}
     sortable={rest.sortable ?? true}
     filterable={rest.filterable ?? true}
     filterMode={rest.filterMode ?? 'menu'}

@@ -24,7 +24,8 @@ import { createSupabaseRealtime, type SupabaseRealtimeClientLike } from '../sour
 import { introspectSupabaseTable, listSupabaseTables } from '../sources/introspect-supabase'
 import type { SqlDialect } from '../sveltekit/sql'
 import { applyBaseComments, baseSpecFromSchemas, baseTablesFromSpec, withInverses, type BaseComments, type BaseTableSpec, type ColumnValues } from './base-schema'
-import { SQL_COMMENT_PREFIX } from './base-sql'
+import { BASE_ORDER_COLUMN, SQL_COMMENT_PREFIX } from './base-sql'
+import type { WritableDataSource } from '../sveltekit/types'
 import type { BaseTable } from './base-tables'
 
 export type DatabaseOptions = {
@@ -44,6 +45,46 @@ const SQL_DIALECT: Record<SqlDialectName, SqlDialect> = {
   mysql: { quote: '`', placeholders: '?' },
   sqlite: { placeholders: '?' },
   mssql: { placeholders: '@' },
+}
+
+// ---- The order column (BASE_ORDER_COLUMN) -----------------------------------
+// A table made by baseToSql numbers its records in insertion order. The base
+// reads in that order while nothing is sorted, but the column is not a field:
+// it is left out of what the base shows and validates, out of the rows it
+// gets, and out of every write (generated always, so writing it would fail).
+
+const hasOrder = (s: EntitySchema) => s.fields.some((f) => f.field === BASE_ORDER_COLUMN)
+const ORDER = [{ field: BASE_ORDER_COLUMN }]
+
+/** The schema the base shows: without the order column. */
+function shown(s: EntitySchema): EntitySchema {
+  return hasOrder(s) ? { ...s, fields: s.fields.filter((f) => f.field !== BASE_ORDER_COLUMN) } : s
+}
+
+function dropOrder<T>(row: T): T {
+  if (!row || typeof row !== 'object' || !(BASE_ORDER_COLUMN in row)) return row
+  const copy = { ...row } as Record<string, unknown>
+  delete copy[BASE_ORDER_COLUMN]
+  return copy as T
+}
+
+/** A source that never hands out or writes the order column. */
+function hideOrder<T extends WritableDataSource<Record<string, unknown>>>(source: T): T {
+  return {
+    ...source,
+    getRows: async (request) => {
+      const result = await source.getRows(request)
+      return { ...result, rows: result.rows.map(dropOrder) }
+    },
+    createRow: async (input) => dropOrder(await source.createRow(dropOrder(input))),
+    updateRow: async (id, patch) => dropOrder(await source.updateRow(id, dropOrder(patch))),
+  }
+}
+
+/** A table on SQL, in insertion order when it has the order column. */
+function sqlSource(schema: EntitySchema, table: string, dialect: SqlDialectName, execute: DbExecute) {
+  const source = createSqlDataSource({ schema, table, dialect: SQL_DIALECT[dialect], execute, ...(hasOrder(schema) ? { defaultOrder: ORDER } : {}) })
+  return hasOrder(schema) ? hideOrder(source) : source
 }
 
 const quote = (dialect: SqlDialectName, name: string) =>
@@ -159,8 +200,9 @@ async function makesKeys(o: DatabaseOptions, dialect: SqlDialectName, s: EntityS
 async function readDatabase(o: DatabaseOptions): Promise<{ specs: BaseTableSpec[]; schemas: Map<string, EntitySchema> }> {
   const dialect = o.dialect ?? 'postgres'
   const names = o.tables ?? (await listDatabaseTables(dialect, o.execute))
-  const list: EntitySchema[] = []
-  for (const table of names) list.push(await introspectDatabase({ dialect, table, execute: o.execute }))
+  const all: EntitySchema[] = []
+  for (const table of names) all.push(await introspectDatabase({ dialect, table, execute: o.execute }))
+  const list = all.map(shown)
   // A junction table the list leaves out still carries a link to many.
   const values = o.choices === false ? {} : await readValues(o, dialect, list)
   const keys = new Map<string, boolean>()
@@ -169,7 +211,8 @@ async function readDatabase(o: DatabaseOptions): Promise<{ specs: BaseTableSpec[
   const kept = hasComments(comments)
   let specs = baseSpecFromSchemas(list, { values, serverIds: (s) => keys.get(s.name) ?? false, order: o.tables ? 'given' : 'links', inverses: !kept })
   if (kept) specs = withComments(specs, comments, !!o.tables)
-  return { specs, schemas: new Map(list.map((s) => [s.name, s])) }
+  // The sources read with the order column; the base never sees it.
+  return { specs, schemas: new Map(all.map((s) => [s.name, s])) }
 }
 
 /** The tables of a database, described as a base: plain JSON (what an endpoint sends). */
@@ -187,7 +230,7 @@ export async function describeDatabase(options: DatabaseOptions): Promise<BaseTa
 export async function baseFromDatabase(options: DatabaseOptions): Promise<BaseTable[]> {
   const dialect = options.dialect ?? 'postgres'
   const { specs, schemas } = await readDatabase(options)
-  return baseTablesFromSpec(specs, (table) => createSqlDataSource({ schema: schemas.get(table)!, table, dialect: SQL_DIALECT[dialect], execute: options.execute }))
+  return baseTablesFromSpec(specs, (table) => sqlSource(schemas.get(table)!, table, dialect, options.execute))
 }
 
 export type BaseEndpointOptions = DatabaseOptions & {
@@ -229,8 +272,8 @@ export function createBaseEndpoint(options: BaseEndpointOptions) {
       let h = handlers.get(table)
       if (!h) {
         h = createKitHandlers({
-          schema,
-          source: createSqlDataSource({ schema, table, dialect: SQL_DIALECT[dialect], execute: options.execute }),
+          schema: shown(schema),
+          source: sqlSource(schema, table, dialect, options.execute),
           ...(options.authorize ? { authorize: options.authorize(table) } : {}),
           ...(options.audit ? { audit: options.audit(table) } : {}),
         })
@@ -307,11 +350,15 @@ export async function baseFromSupabase(options: SupabaseBaseOptions): Promise<Ba
   const comments = await readSupabaseComments(options)
   const kept = hasComments(comments)
   // Supabase makes the keys: its source inserts without the page's id.
-  let specs = baseSpecFromSchemas(schemas, { values, serverIds: () => true, order: options.tables ? 'given' : 'links', inverses: !kept })
+  let specs = baseSpecFromSchemas(schemas.map(shown), { values, serverIds: () => true, order: options.tables ? 'given' : 'links', inverses: !kept })
   if (kept) specs = withComments(specs, comments, !!options.tables)
   return baseTablesFromSpec(
     specs,
-    (table) => createSupabaseDataSource({ client: options.client, table, schema: byName.get(table)! }) as ServerDataSource<any>,
+    (table) => {
+      const schema = byName.get(table)!
+      const source = createSupabaseDataSource({ client: options.client, table, schema, ...(hasOrder(schema) ? { defaultOrder: ORDER } : {}) })
+      return (hasOrder(schema) ? hideOrder(source) : source) as ServerDataSource<any>
+    },
     (s) =>
       options.realtime === false
         ? {}

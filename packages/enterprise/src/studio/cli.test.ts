@@ -236,3 +236,58 @@ describe('runStudioAddApp over an app init generated', () => {
     expect(layout).not.toContain('custom.css')
   })
 })
+
+// `studio add --all` in the create-studio starter replaced its +layout.svelte and
+// +page.svelte whole (no managed markers to merge into) and the nav was gone.
+describe('runStudioAddApp over files it did not write', () => {
+  const starterLayout = "<script lang=\"ts\">\n  import '../app.css'\n  const nav = [{ href: '/customers', label: 'Customers' }]\n</script>\n"
+  const starterHome = '<h1>Welcome to your data app</h1>\n'
+
+  it('leaves an unmanaged file alone and writes the new version beside it', async () => {
+    const { io, files } = memIO({ 'schema.ts': linkedDrizzle, 'src/routes/+layout.svelte': starterLayout, 'src/routes/+page.svelte': starterHome })
+    const res = await runStudioAddApp(await resolveSchemas('schema.ts', io), {}, io)
+    expect(files.get('src/routes/+layout.svelte')).toBe(starterLayout)
+    expect(files.get('src/routes/+page.svelte')).toBe(starterHome)
+    expect(files.get('src/routes/+layout.svelte.new')).toContain(MANAGED_START)
+    expect(files.get('src/routes/+page.svelte.new')).toContain(MANAGED_START)
+    expect(res.conflicts).toEqual([
+      { path: 'src/routes/+layout.svelte', parkedAs: 'src/routes/+layout.svelte.new' },
+      { path: 'src/routes/+page.svelte', parkedAs: 'src/routes/+page.svelte.new' },
+    ])
+    expect(res.written).not.toContain('src/routes/+layout.svelte')
+    // Files that were not there are written as usual.
+    expect(res.written).toContain('src/routes/posts/+page.svelte')
+  })
+
+  it('still merges into a file that carries the markers', async () => {
+    const { io, files } = memIO({ 'schema.ts': linkedDrizzle })
+    const schemas = await resolveSchemas('schema.ts', io)
+    await runStudioAddApp(schemas, {}, io)
+    const res = await runStudioAddApp(schemas, {}, io)
+    expect(res.conflicts).toEqual([])
+    expect(files.has('src/routes/+layout.svelte.new')).toBe(false)
+  })
+
+  it('a single-entity add parks a hand-written page the same way', async () => {
+    const mine = '<h1>my users page</h1>\n'
+    const { io, files } = memIO({ 'schema.ts': drizzle, 'src/routes/users/+page.svelte': mine })
+    const res = await runStudioAdd({ from: 'schema.ts', table: 'users' }, io)
+    expect(files.get('src/routes/users/+page.svelte')).toBe(mine)
+    expect(res.conflicts).toEqual([{ path: 'src/routes/users/+page.svelte', parkedAs: 'src/routes/users/+page.svelte.new' }])
+    expect(files.get('src/routes/users/+page.svelte.new')).toContain(MANAGED_START)
+  })
+
+  it('never overwrites a .new that holds something else', async () => {
+    const half = 'my half-merged copy\n'
+    const { io, files } = memIO({ 'schema.ts': linkedDrizzle, 'src/routes/+layout.svelte': starterLayout, 'src/routes/+layout.svelte.new': half })
+    const schemas = await resolveSchemas('schema.ts', io)
+    const first = await runStudioAddApp(schemas, {}, io)
+    expect(files.get('src/routes/+layout.svelte.new')).toBe(half)
+    expect(files.get('src/routes/+layout.svelte.new.1')).toContain(MANAGED_START)
+    expect(first.conflicts[0]).toEqual({ path: 'src/routes/+layout.svelte', parkedAs: 'src/routes/+layout.svelte.new.1' })
+    // Re-running with the same output reuses that slot instead of adding .new.2.
+    const again = await runStudioAddApp(schemas, {}, io)
+    expect(again.conflicts[0]!.parkedAs).toBe('src/routes/+layout.svelte.new.1')
+    expect(files.has('src/routes/+layout.svelte.new.2')).toBe(false)
+  })
+})

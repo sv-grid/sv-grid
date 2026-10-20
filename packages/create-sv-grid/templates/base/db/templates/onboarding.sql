@@ -3,6 +3,7 @@
 
 create table "people" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "name" text,
   "photo" jsonb,
   "status" text,
@@ -14,6 +15,7 @@ create table "people" (
 );
 create table "checklist" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "item" text,
   "person_id" text,
   "owner" text,
@@ -22,6 +24,7 @@ create table "checklist" (
 );
 create table "departments" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "department" text,
   "head" text
 );

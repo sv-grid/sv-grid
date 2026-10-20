@@ -56,7 +56,7 @@ describe('createSqlDataSource reads', () => {
     expect(res.rows[0]?.name).toBe('Ann')
 
     expect(calls[0]!.sql).toBe(
-      'SELECT * FROM "customers" WHERE "age" > ? ORDER BY "name" ASC LIMIT 25 OFFSET 50',
+      'SELECT * FROM "customers" WHERE "age" > ? ORDER BY "name" ASC, "id" ASC LIMIT 25 OFFSET 50',
     )
     expect(calls[0]!.params).toEqual([20])
     expect(calls[1]!.sql).toBe('SELECT COUNT(*) AS count FROM "customers" WHERE "age" > ?')
@@ -74,6 +74,89 @@ describe('createSqlDataSource reads', () => {
     const src2 = createSqlDataSource({ schema, table: 'customers', dbSchema: 'analytics', execute: ex2 })
     await src2.createRow({ name: 'Zed' } as never)
     expect(c2[0]!.sql).toContain('INSERT INTO "analytics"."customers"')
+  })
+
+  it('orders unsorted rows by the primary key, and breaks ties under a sort with it', async () => {
+    const { execute, calls } = recorder([[], [{ count: 0 }]])
+    await createSqlDataSource({ schema, table: 'customers', execute }).getRows(req({ startRow: 25, pageSize: 25 }))
+    expect(calls[0]!.sql).toBe('SELECT * FROM "customers" ORDER BY "id" ASC LIMIT 25 OFFSET 25')
+    // A sort on a column that repeats pages in a fixed order too.
+    await createSqlDataSource({ schema, table: 'customers', execute }).getRows(req({ sortModel: [{ id: 'age', desc: true }] }))
+    expect(calls[2]!.sql).toBe('SELECT * FROM "customers" ORDER BY "age" DESC, "id" ASC LIMIT 50 OFFSET 0')
+    // A sort on the key itself needs no tie-breaker.
+    await createSqlDataSource({ schema, table: 'customers', execute }).getRows(req({ sortModel: [{ id: 'id', desc: true }] }))
+    expect(calls[4]!.sql).toBe('SELECT * FROM "customers" ORDER BY "id" DESC LIMIT 50 OFFSET 0')
+    // MySQL quoting and a renamed key column.
+    const renamed: EntitySchema<Customer> = { ...schema, fields: [{ field: 'id', dbColumn: 'customer_id', type: 'text', primaryKey: true }, ...schema.fields.slice(1)] }
+    await createSqlDataSource({ schema: renamed, table: 'customers', execute, dialect: { quote: '`' } }).getRows(req({}))
+    expect(calls[6]!.sql).toContain('ORDER BY `customer_id` ASC LIMIT 50 OFFSET 0')
+  })
+
+  it('orders unsorted rows by a created_at / inserted_at column, or by defaultOrder', async () => {
+    type Made = Customer & { createdAt: string }
+    const made: EntitySchema<Made> = { ...schema, fields: [...schema.fields, { field: 'createdAt', dbColumn: 'created_at', type: 'datetime' }] } as EntitySchema<Made>
+    const { execute, calls } = recorder([[], [{ count: 0 }]])
+    await createSqlDataSource({ schema: made, table: 'customers', execute }).getRows(req({}))
+    expect(calls[0]!.sql).toContain('ORDER BY "created_at" ASC, "id" ASC LIMIT 50')
+    // A user sort still wins over creation order.
+    await createSqlDataSource({ schema: made, table: 'customers', execute }).getRows(req({ sortModel: [{ id: 'name', desc: false }] }))
+    expect(calls[2]!.sql).toContain('ORDER BY "name" ASC, "id" ASC LIMIT 50')
+    const inserted: EntitySchema<Customer> = { ...schema, fields: [...schema.fields, { field: 'inserted_at', type: 'datetime' }] } as EntitySchema<Customer>
+    await createSqlDataSource({ schema: inserted, table: 'customers', execute }).getRows(req({}))
+    expect(calls[4]!.sql).toContain('ORDER BY "inserted_at" ASC, "id" ASC')
+    // An explicit order wins over the convention.
+    await createSqlDataSource({ schema: made, table: 'customers', execute, defaultOrder: [{ field: 'age', desc: true }] }).getRows(req({}))
+    expect(calls[6]!.sql).toContain('ORDER BY "age" DESC, "id" ASC LIMIT 50')
+    expect(() => createSqlDataSource({ schema, table: 'customers', execute, defaultOrder: [{ field: 'nope' }] })).toThrow('defaultOrder field "nope" is not in the schema')
+  })
+
+  // PGlite boots a real Postgres: past vitest's 5 s default when other suites share the machine.
+  it('keeps rows in insertion order with text and UUID keys, across an update and a new insert', { timeout: 30_000 }, async () => {
+    const { PGlite } = await import('@electric-sql/pglite')
+    const db = new PGlite()
+    // The shape of a Base table: a text key the database fills with a UUID,
+    // seed ids that sort as text (1, 10, 2), and an identity column that
+    // numbers the rows in the order they were written.
+    await db.exec(`create table customers (
+        id text primary key default gen_random_uuid()::text,
+        name text, age int,
+        seq bigint generated always as identity);
+      insert into customers (id, name, age) values
+        ('1', 'Ann', 30), ('2', 'Bob', 40), ('10', 'Cy', 50), ('3f2b9c1e-0000-4000-8000-000000000000', 'Dee', 60), ('11', 'Eve', 70);`)
+    type Seq = Customer & { seq: number }
+    const seqSchema = { ...schema, fields: [...schema.fields, { field: 'seq', type: 'number' }] } as EntitySchema<Seq>
+    const execute: SqlExecutor = async (sql, params) => (await db.query<Record<string, unknown>>(sql, params)).rows
+    const src = createSqlDataSource({ schema: seqSchema, table: 'customers', execute, dialect: { placeholders: '$' }, defaultOrder: [{ field: 'seq' }] })
+    const names = async (r: Partial<ServerRequest> = {}) => (await src.getRows(req(r))).rows.map((x) => x.name)
+    expect(await names()).toEqual(['Ann', 'Bob', 'Cy', 'Dee', 'Eve'])
+    await src.updateRow('1', { age: 31 })
+    expect(await names()).toEqual(['Ann', 'Bob', 'Cy', 'Dee', 'Eve'])
+    // Added in the app: no id, the database makes a UUID; it goes last.
+    await src.createRow({ name: 'Fay', age: 20 })
+    await src.createRow({ name: 'Gus', age: 21 })
+    expect(await names()).toEqual(['Ann', 'Bob', 'Cy', 'Dee', 'Eve', 'Fay', 'Gus'])
+    // Pages line up with the whole list.
+    expect([...(await names({ startRow: 0, pageSize: 3 })), ...(await names({ startRow: 3, pageSize: 3 })), ...(await names({ startRow: 6, pageSize: 3 }))])
+      .toEqual(['Ann', 'Bob', 'Cy', 'Dee', 'Eve', 'Fay', 'Gus'])
+    // The key alone is not an order for these: text order puts 10 before 2.
+    const byKey = createSqlDataSource({ schema, table: 'customers', execute, dialect: { placeholders: '$' } })
+    // (The seed rows only: a random UUID can sort anywhere among them.)
+    const seeds = new Set(['Ann', 'Bob', 'Cy', 'Dee', 'Eve'])
+    expect((await byKey.getRows(req({}))).rows.map((x) => x.name).filter((n) => seeds.has(n))).toEqual(['Ann', 'Cy', 'Eve', 'Bob', 'Dee'])
+    await db.close()
+  })
+
+  it('takes LIMIT and OFFSET only as non-negative integers', async () => {
+    const { execute, calls } = recorder([[], [{ count: 0 }]])
+    const src = createSqlDataSource({ schema, table: 'customers', execute })
+    for (const bad of ['10; DROP TABLE customers', -1, 1.5, Number.NaN, Infinity, null]) {
+      await expect(src.getRows(req({ pageSize: bad as never }))).rejects.toThrow(/limit must be a non-negative integer/)
+      await expect(src.getRows(req({ startRow: bad as never }))).rejects.toThrow(/offset must be a non-negative integer/)
+    }
+    expect(calls).toEqual([])
+    // A digit string, as a hand-written client may send, still reads.
+    await src.getRows(req({ pageSize: '20' as never, startRow: '40' as never }))
+    expect(calls[0]!.sql).toContain('LIMIT 20 OFFSET 40')
   })
 
   it('honors the Postgres dialect ($ placeholders)', async () => {
@@ -225,7 +308,7 @@ describe('createSqlDataSource server grouping', () => {
     await src.getRows(req({ groupBy: ['name'], groupKeys: ['Ann'] }))
 
     // The innermost level is leaves: the projection, scoped by the path.
-    expect(calls[0]!.sql).toBe('SELECT * FROM "customers" WHERE "name" = ? LIMIT 50 OFFSET 0')
+    expect(calls[0]!.sql).toBe('SELECT * FROM "customers" WHERE "name" = ? ORDER BY "id" ASC LIMIT 50 OFFSET 0')
     expect(calls[0]!.params).toEqual(['Ann'])
   })
 

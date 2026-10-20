@@ -6,6 +6,11 @@ import ts from 'typescript'
 import { emitStudioProject, emitStudioAppBundle, emitStudioFragment, studioDeployInfo, ctxCompletions, ctxAmbientDts } from './emit-project'
 import { crudAppFromSchemas } from './screen-suites'
 import { UI_COMPONENT_REGISTRY } from './ui-components'
+import { createInMemoryDataSource } from '../sveltekit/in-memory'
+import { createKitDataSource, createKitHandlers } from '../sveltekit/transport'
+import { createRelationLookup } from '../sources/relation-lookup'
+import { withRelationLabels } from '../sources/with-relation-labels'
+import { Script } from 'node:vm'
 
 /** Type-check a handler BODY against a generated ambient ctx `.d.ts` using the real
  *  TypeScript compiler - the same surface the in-editor language service uses.
@@ -3561,5 +3566,136 @@ describe('code companion (design + your own code)', () => {
     const companion = emitStudioProject(p).find((f) => f.path === `src/routes/${route}/handlers.ts`)!
     expect(companion.contents).toContain('export function onDestroy(ctx: PageContext): void')
     expect(companion.contents).toContain('clearInterval(timer)')
+  })
+})
+
+// Bugs found by installing the published packages and running a generated app.
+describe('generated app: install, test, run', () => {
+  const fileOf = (files: { path: string; contents: string }[], path: string) => files.find((f) => f.path === path)?.contents
+
+  it('npm test compiles the .svelte files the @svgrid/enterprise root re-exports', () => {
+    const bundle = emitStudioAppBundle(createProject([customers]))
+    const config = fileOf(bundle, 'vitest.config.ts')!
+    expect(config).toContain("import { svelte } from '@sveltejs/vite-plugin-svelte'")
+    expect(config).toContain('plugins: [svelte()]')
+    expect(config).toContain('server: { deps: { inline: [/@svgrid\\//] } }')
+    // The plugin the config imports is installed.
+    expect(JSON.parse(fileOf(bundle, 'package.json')!).devDependencies['@sveltejs/vite-plugin-svelte']).toBeTruthy()
+  })
+
+  it('pins a better-sqlite3 with a Node 24 prebuild', () => {
+    const p = setEntityDataSource(createProject([customers]), 'customers', { kind: 'sql', table: 'customers', dialect: 'sqlite' })
+    const deps = JSON.parse(fileOf(emitStudioAppBundle(p), 'package.json')!).dependencies
+    expect(deps['better-sqlite3']).toBe('^12.1.0 || ^13.0.0')
+  })
+
+  it('writes the SQLite file the app was built from into .env', () => {
+    const p = setEntityDataSource(createProject([customers]), 'customers', { kind: 'sql', table: 'customers', dialect: 'sqlite' })
+    expect(fileOf(emitStudioAppBundle(p, { databaseUrl: './shop.db' }), '.env')).toMatch(/^DATABASE_URL=\.\/shop\.db$/m)
+    // Without one there is nothing to pre-fill.
+    expect(fileOf(emitStudioAppBundle(p), '.env') ?? '').not.toMatch(/^DATABASE_URL=./m)
+  })
+
+  it('never writes a server connection string into .env', () => {
+    const p = setEntityDataSource(createProject([customers]), 'customers', { kind: 'sql', table: 'customers', dialect: 'postgres' })
+    const env = fileOf(emitStudioAppBundle(p, { databaseUrl: 'postgres://u:secret@db/app' }), '.env') ?? ''
+    expect(env).not.toContain('secret')
+  })
+
+  it('README names src/lib/connections.ts only when the app has one', () => {
+    const plain = emitStudioAppBundle(createProject([customers]))
+    expect(plain.some((f) => f.path === 'src/lib/connections.ts')).toBe(false)
+    expect(fileOf(plain, 'README.md')).not.toContain('connections.ts')
+    const supa = emitStudioAppBundle(setEntityDataSource(createProject([customers]), 'customers', { kind: 'supabase', table: 'customers', url: 'https://x.supabase.co', key: 'anon' }))
+    expect(supa.some((f) => f.path === 'src/lib/connections.ts')).toBe(true)
+    expect(fileOf(supa, 'README.md')).toContain('src/lib/connections.ts')
+  })
+
+  it('DEPLOY.md letters the options it has, and points at env vars only when there are some', () => {
+    // Node: no dashboard and no deploy workflow, so the CLI option is A.
+    const node = fileOf(emitStudioAppBundle(setDeployTarget(createProject([customers]), 'node')), 'DEPLOY.md')!
+    expect(node).toContain('## Option A - Deploy from your machine')
+    expect(node).not.toMatch(/## Option [BC]/)
+    // Auto: a dashboard but no workflow - A then B, never C.
+    const auto = fileOf(emitStudioAppBundle(createProject([customers])), 'DEPLOY.md')!
+    expect(auto).toContain('## Option A - Git integration')
+    expect(auto).toContain('## Option B - Deploy from your machine')
+    expect(auto).not.toContain('## Option C')
+    // An in-memory app reads no env vars, so there are none "above" to add.
+    expect(auto).not.toContain('## Environment variables')
+    expect(auto).not.toContain('environment variables above')
+    // Netlify has both, so all three letters appear in order.
+    const netlify = fileOf(emitStudioAppBundle(setDeployTarget(createProject([customers]), 'netlify')), 'DEPLOY.md')!
+    expect(netlify.indexOf('## Option A')).toBeLessThan(netlify.indexOf('## Option B'))
+    expect(netlify.indexOf('## Option B')).toBeLessThan(netlify.indexOf('## Option C'))
+  })
+
+  it('an SSR list labels the relation of every row on the page, however far down the related table it is', async () => {
+    const p0 = createProject([customers, orders])
+    const p: StudioProject = { ...p0, screens: p0.screens.map((s) => (s.entity === 'orders' ? { ...s, renderMode: 'ssr' as const } : s)) }
+    const files = emitStudioProject(p)
+    const server = fileOf(files, 'src/routes/orders/+page.server.ts')!
+    // Labels come from a batched lookup of the page's ids, not the select's
+    // first-100 options.
+    expect(server).toContain('await withRelationLabels(source(fetch), [')
+    expect(server).toContain("{ fk: 'customer_id', as: 'customer', lookup: createRelationLookup({ source: createKitDataSource<Record<string, unknown>>({ endpoint: '/api/customers', fetch }), valueField: 'id', labelField: 'name' }) }")
+
+    // Run the generated load against the /api routes it calls: 150 customers,
+    // and an order that points at the 140th.
+    const transpile = (src: string) => ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2021 } }).outputText
+    const load = (src: string, deps: Record<string, unknown>) => {
+      const mod = { exports: {} as Record<string, unknown> }
+      // A CommonJS wrapper in this realm, so Request / URL are the ones the handlers use.
+      const run = new Script(`(function (require, module, exports) {\n${transpile(src)}\n})`).runInThisContext() as (req: (id: string) => unknown, m: typeof mod, e: typeof mod.exports) => void
+      run((id: string) => {
+        if (!(id in deps)) throw new Error(`unexpected import ${id}`)
+        return deps[id]
+      }, mod, mod.exports)
+      return mod.exports
+    }
+    const enterprise = { createKitDataSource, createRelationLookup, withRelationLabels, validateAll: async () => ({}) }
+    const schemasMod = load(fileOf(files, 'src/lib/schemas.ts')!, { '@svgrid/enterprise': enterprise })
+    const queryMod = load(fileOf(files, 'src/lib/server/query.ts')!, {})
+    const page = load(server, {
+      '@sveltejs/kit': { fail: () => null },
+      '@svgrid/enterprise': enterprise,
+      '$lib/schemas': schemasMod,
+      '$lib/server/query': queryMod,
+    }) as { load: (e: { url: URL; fetch: typeof fetch }) => Promise<{ rows: Record<string, unknown>[]; customer_idOptions: unknown[] }> }
+
+    const customerRows = Array.from({ length: 150 }, (_, i) => ({ id: `c${i + 1}`, name: `Customer ${i + 1}`, tier: 'free', mrr: 0 }))
+    const orderRows = [{ id: 'o1', total: 10, customer_id: 'c140' }, { id: 'o2', total: 20, customer_id: 'c2' }]
+    const routes: Record<string, ReturnType<typeof createKitHandlers>> = {
+      '/api/customers': createKitHandlers({ source: createInMemoryDataSource(customerRows, schemasMod.customersSchema as EntitySchema<(typeof customerRows)[number]>), schema: schemasMod.customersSchema as EntitySchema<(typeof customerRows)[number]> }),
+      '/api/orders': createKitHandlers({ source: createInMemoryDataSource(orderRows, schemasMod.ordersSchema as EntitySchema<(typeof orderRows)[number]>), schema: schemasMod.ordersSchema as EntitySchema<(typeof orderRows)[number]> }),
+    }
+    const queries: unknown[] = []
+    const fakeFetch = (async (input: string, init?: RequestInit) => {
+      if (input === '/api/customers') queries.push(JSON.parse(String(init?.body)).request)
+      return routes[input]!.handle(new Request(`http://app${input}`, init))
+    }) as unknown as typeof fetch
+
+    const data = await page.load({ url: new URL('http://app/orders'), fetch: fakeFetch })
+    expect(data.rows.find((r) => r.id === 'o1')?.customer).toBe('Customer 140')
+    expect(data.rows.find((r) => r.id === 'o2')?.customer).toBe('Customer 2')
+    // The label lookup asked for exactly the ids on the page.
+    const lookup = queries.find((q) => JSON.stringify(q).includes('selectedValues')) as { filterModel: { columns: Record<string, { selectedValues: string[] }> } }
+    expect(lookup.filterModel.columns.id!.selectedValues.sort()).toEqual(['c140', 'c2'])
+
+    // A list with no relation reads its rows unwrapped.
+    const plain = fileOf(emitStudioProject({ ...p0, screens: p0.screens.map((s) => (s.entity === 'customers' ? { ...s, renderMode: 'ssr' as const } : s)) }), 'src/routes/customers/+page.server.ts')!
+    expect(plain).toContain('const { rows, rowCount } = await source(fetch).getRows(plan)')
+    expect(plain).not.toContain('withRelationLabels')
+  })
+
+  it('a client grid shows the relation label column for a configured FK column', () => {
+    const p = createProject([customers, orders])
+    const screen = p.screens.find((s) => s.entity === 'orders')!
+    const grid = screen.blocks.find((b) => b.config.kind === 'grid')!.config as GridConfig
+    expect(grid.columns.find((c) => c.field === 'customer_id')?.show).toBe(true)
+    const page = fileOf(emitStudioProject(p), `src/routes/${screen.route}/+page.svelte`)!
+    // The prepared schema hides customer_id from the grid; looking it up found nothing.
+    expect(page).toMatch(/\[[^\]]*'customer'[^\]]*\]\.map\(\(f\) => all\.find/)
+    expect(page).not.toMatch(/\[[^\]]*'customer_id'[^\]]*\]\.map\(\(f\) => all\.find/)
   })
 })

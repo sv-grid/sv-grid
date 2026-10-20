@@ -39,7 +39,7 @@ npm run check    # svelte-check (types)
 | `src/routes/+layout.svelte` | App shell: sidebar nav + top bar |
 | `src/routes/+page.svelte` | Overview: KPI cards + a recent-orders grid |
 | `src/routes/orders/+page.svelte` | Full grid: sort, filter, **row select**, inline edit, pagination |
-| `src/routes/customers/+page.svelte` | Grid with **column grouping** (drag a column to the group bar) |
+| `src/routes/customers/+page.svelte` | Grid with **column grouping** (a column menu's "Group by this column") |
 | `src/lib/data.ts` | Deterministic sample data - swap for your API / `load()` |
 | `src/lib/types.ts` | `Order` / `Customer` row types |
 

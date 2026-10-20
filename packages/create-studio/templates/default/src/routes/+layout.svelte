@@ -1,6 +1,10 @@
 <script lang="ts">
   import '../app.css'
   import { page } from '$app/state'
+  import { setLicenseKey } from '@svgrid/enterprise'
+
+  // VITE_SVPRO_KEY in .env is your SvGrid license key; it removes the unlicensed watermark.
+  if (import.meta.env.VITE_SVPRO_KEY) setLicenseKey(import.meta.env.VITE_SVPRO_KEY)
 
   let { children } = $props()
 

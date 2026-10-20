@@ -316,3 +316,106 @@ describe('migrateTanstack - the emitted SvGrid tag only names what exists', () =
     expect(out.warnings.join(' ')).toMatch(/`columns` is not declared/)
   })
 })
+
+/**
+ * v9's `columnHelper.columns([...])`, a typed `$state<T>()`, and a TanStack type
+ * with no SvGrid export. All three used to hand back a file that did not
+ * compile: the `.columns()` calls survived while their helper's declaration and
+ * import were deleted (`Cannot find name 'columnHelper'` per call, no warning),
+ * `$state<SortingState>([])` was not recognised as state SvGrid owns, and
+ * `RowSelectionState` was re-pointed at `@svgrid/grid`, which has no such export.
+ */
+const V9_SVELTE = `<script lang="ts">
+  import { createSvelteTable, createColumnHelper, tableFeatures, rowSortingFeature, rowSelectionFeature } from '@tanstack/svelte-table'
+  import type { SortingState, RowSelectionState } from '@tanstack/svelte-table'
+
+  type Person = { id: number; first: string; last: string }
+
+  const features = tableFeatures({ rowSortingFeature, rowSelectionFeature })
+  const columnHelper = createColumnHelper<typeof features, Person>()
+
+  const columns = columnHelper.columns([
+    columnHelper.accessor('id', { header: 'ID' }),
+    columnHelper.accessor('first', { header: 'First' }),
+    columnHelper.accessor((row) => row.first + ' ' + row.last, { id: 'full', header: 'Full name' }),
+  ])
+
+  let { data }: { data: Person[] } = $props()
+  let sorting = $state<SortingState>([])
+  let rowSelection = $state<RowSelectionState>({})
+
+  const table = createSvelteTable({ features, columns, get data() { return data } })
+</script>
+
+<table><tbody></tbody></table>
+`
+
+describe('migrateTanstack - v9 columnHelper.columns, typed $state, unknown types', () => {
+  const out = migrateTanstack(V9_SVELTE)
+
+  test('unwraps columnHelper.columns([...]) to the flattened array', () => {
+    expect(out.code).not.toContain('.columns(')
+    expect(out.code).toContain("field: 'id'")
+    expect(out.code).toContain("field: 'first'")
+    expect(out.code).toContain('fieldFn: (row) => row.first')
+  })
+
+  test('no helper reference is left behind its deleted declaration', () => {
+    expect(out.code).not.toContain('columnHelper')
+    expect(out.code).not.toContain('createColumnHelper')
+  })
+
+  test("types the array with the helper's row type, and imports GridColumns", () => {
+    expect(out.code).toContain('const columns: GridColumns<Person> = [')
+    expect(out.code).toMatch(/import \{[^}]*\btype GridColumns\b[^}]*\} from '@svgrid\/grid'/)
+  })
+
+  test('drops `$state<T>()` state SvGrid owns', () => {
+    expect(out.code).not.toContain('let sorting')
+    expect(out.code).not.toContain('let rowSelection')
+  })
+
+  test('deleting the helper keeps the next line intact, and a typed $props() binds data', () => {
+    expect(out.code).toContain('\n\n  const columns: GridColumns<Person> = [')
+    expect(out.warnings.join(' ')).not.toMatch(/`data` is not declared/)
+  })
+
+  test('removes RowSelectionState from the import, and says so', () => {
+    expect(out.code).not.toContain('RowSelectionState')
+    expect(out.warnings.join(' ')).toMatch(/`RowSelectionState` is not exported by @svgrid\/grid/)
+    // SortingState IS exported, so it stays.
+    expect(out.code).toMatch(/import type \{ SortingState \} from '@svgrid\/grid'/)
+  })
+
+  test('a .ts module typed via v8 createColumnHelper<Row>() gets a type import', () => {
+    const src = `import { createColumnHelper } from '@tanstack/table-core'
+export type Row = { id: number }
+const h = createColumnHelper<Row>()
+export const columns = [h.accessor('id', { header: 'ID' })]
+`
+    const ts = migrateTanstack(src, { svelte: false })
+    expect(ts.code).toContain('export const columns: GridColumns<Row> = [')
+    expect(ts.code).toContain("import type { GridColumns } from '@svgrid/grid'")
+    expect(ts.code).not.toContain('createColumnHelper')
+  })
+
+  test('keeps a helper that is still referenced, and warns instead of breaking the file', () => {
+    const src = `import { createColumnHelper } from '@tanstack/table-core'
+type Row = { id: number }
+const h = createColumnHelper<Row>()
+export const columns = [h.accessor('id', { header: 'ID' })]
+export const extra = h.somethingElse('x')
+`
+    const ts = migrateTanstack(src, { svelte: false })
+    expect(ts.code).toContain('const h = createColumnHelper<Row>()')
+    expect(ts.warnings.join(' ')).toMatch(/`h` is still used/)
+  })
+
+  test('a non-helper `.columns([...])` is left alone', () => {
+    const src = `import type { ColumnDef } from '@tanstack/table-core'
+export const x = layout.columns([1, 2])
+`
+    const ts = migrateTanstack(src, { svelte: false })
+    expect(ts.code).toContain('layout.columns([1, 2])')
+  })
+})

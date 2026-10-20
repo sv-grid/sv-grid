@@ -76,6 +76,24 @@ describe('createSupabaseDataSource reads', () => {
     expect(has(calls, 'or')[0]![1][0]).toBe('name.ilike.%ada%,email.ilike.%ada%,tier.ilike.%ada%')
   })
 
+  it('orders leaves in a fixed order: key tie-breaker, creation order or defaultOrder when unsorted', async () => {
+    const orders = async (s: EntitySchema<any>, r: Partial<ServerRequest>, defaultOrder?: Array<{ field: string; desc?: boolean }>) => {
+      const { client, calls } = makeClient({ data: [], count: 0, error: null })
+      await createSupabaseDataSource({ client, table: 'customers', schema: s, ...(defaultOrder ? { defaultOrder } : {}) }).getRows(req(r))
+      return has(calls, 'order').map((c) => c[1])
+    }
+    // Unsorted: the key, so range() pages in a fixed order.
+    expect(await orders(schema, {})).toEqual([['id', { ascending: true }]])
+    // A sort on a column that repeats gets the key after it; a sort on the key does not.
+    expect(await orders(schema, { sortModel: [{ id: 'tier', desc: false }] })).toEqual([['tier', { ascending: true }], ['id', { ascending: true }]])
+    expect(await orders(schema, { sortModel: [{ id: 'id', desc: true }] })).toEqual([['id', { ascending: false }]])
+    // A created_at column orders unsorted rows; defaultOrder wins over it.
+    const made = { ...schema, fields: [...schema.fields, { field: 'created_at', type: 'datetime' }] } as EntitySchema<any>
+    expect(await orders(made, {})).toEqual([['created_at', { ascending: true }], ['id', { ascending: true }]])
+    expect(await orders(made, {}, [{ field: 'mrr', desc: true }])).toEqual([['mrr', { ascending: false }], ['id', { ascending: true }]])
+    expect(() => createSupabaseDataSource({ client: makeClient({}).client, table: 'customers', schema, defaultOrder: [{ field: 'nope' }] })).toThrow('defaultOrder field "nope"')
+  })
+
   it('throws on a query error', async () => {
     const { client } = makeClient({ data: null, count: null, error: { message: 'boom' } })
     const src = createSupabaseDataSource({ client, table: 'customers', schema })

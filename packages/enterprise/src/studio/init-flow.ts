@@ -172,6 +172,8 @@ type Gathered = {
   seed: Record<string, Record<string, unknown>[]>
   kind: DataSourceKind
   title?: string
+  /** A SQLite file the app should open, as given (relative to where init ran). */
+  sqliteFile?: string
 }
 
 /** Step 1-2: where does the data come from, and what tables does it have? */
@@ -327,7 +329,7 @@ async function gatherFromDatabase(flags: InitFlags, prompts: PromptIO, db: DbGat
   }
   if (schemas.length === 0) throw new UserError('None of the picked tables could be read.')
   prompts.say(`  Read ${schemas.length} ${schemas.length === 1 ? 'table' : 'tables'}.`)
-  return { schemas, sources, seed: {}, kind: 'sql' }
+  return { schemas, sources, seed: {}, kind: 'sql', ...(isFileDialect(dialect) ? { sqliteFile: url } : {}) }
 }
 
 /**
@@ -493,6 +495,26 @@ async function askTheme(flags: InitFlags, prompts: PromptIO): Promise<ProjectThe
 const inDir = (outDir: string, path: string): string =>
   (!outDir || outDir === '.' ? '' : outDir.replace(/[\\/]+$/, '') + '/') + path
 
+/**
+ * A file path given relative to where init ran, re-expressed relative to the
+ * app folder, which is where the app runs (`npm run dev` in `outDir`). Absolute
+ * paths pass through. An absolute or `..` out dir has no relative answer without
+ * the cwd, so the path is made absolute when the runtime has one.
+ */
+export function fileFromApp(file: string, outDir: string): string {
+  // `file:./x.db` is relative like `./x.db`; `file:/x.db` and `file:///x.db` are not.
+  const fileUrl = /^file:(?![\\/])(.+)$/.exec(file)
+  if (fileUrl) return `file:${fileFromApp(fileUrl[1]!, outDir)}`
+  if (!outDir || outDir === '.' || file === ':memory:' || /^([a-zA-Z]:[\\/]|[\\/]|file:)/.test(file)) return file
+  const rel = file.replace(/^\.[\\/]/, '')
+  const segments = outDir.split(/[\\/]+/).filter((s) => s && s !== '.')
+  if (/^([a-zA-Z]:[\\/]|[\\/])/.test(outDir) || segments.includes('..')) {
+    const cwd = (globalThis as { process?: { cwd?: () => string } }).process?.cwd?.()
+    return cwd ? `${cwd.replace(/\\/g, '/').replace(/\/+$/, '')}/${rel.replace(/\\/g, '/')}` : file
+  }
+  return '../'.repeat(segments.length) + rel
+}
+
 /** Which marker files are present in `outDir` right now. */
 async function markersIn(outDir: string, io: StudioIO): Promise<Set<string>> {
   const found = new Set<string>()
@@ -598,7 +620,7 @@ export async function runStudioInit(
   // same object below, so the designer reopens it as the same SvelteKit major.
   const project = flags.kit === 3 ? setKitVersion(built, 3) : built
 
-  const files = emitStudioAppBundle(project)
+  const files = emitStudioAppBundle(project, data.sqliteFile ? { databaseUrl: fileFromApp(data.sqliteFile, outDir) } : {})
   const written = await writeAll(files, outDir, io)
   // The design itself, so `svgrid-studio designer` reopens exactly this app.
   const configPath = inDir(outDir, 'studio.config.json')

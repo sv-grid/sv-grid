@@ -115,6 +115,10 @@ export function planToSql(plan: QueryPlan, dialect: SqlDialect = {}): SqlPlan {
     if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(fn)) throw new Error(`planToSql: "${fn}" is not an aggregate function name`)
     return fn.toUpperCase()
   }
+  // LIMIT and OFFSET are pasted in raw too, and come from the request body
+  // (`pageSize`, `startRow`), so only a non-negative integer gets through.
+  const limit = sqlCount(plan.limit, 'limit')
+  const offset = sqlCount(plan.offset, 'offset')
 
   /**
    * Render predicates + search into one WHERE body, binding into `into`.
@@ -272,8 +276,8 @@ export function planToSql(plan: QueryPlan, dialect: SqlDialect = {}): SqlPlan {
     orderBy,
     orderByText: orderBy ? `ORDER BY ${orderBy}` : '',
     params,
-    limit: plan.limit,
-    offset: plan.offset,
+    limit,
+    offset,
     select,
     groupBy,
     groupByText: groupBy ? `GROUP BY ${groupBy}` : '',
@@ -284,6 +288,15 @@ export function planToSql(plan: QueryPlan, dialect: SqlDialect = {}): SqlPlan {
     pivotKeysSelect,
     pivotSelect,
   }
+}
+
+/** A row count for LIMIT / OFFSET: a non-negative safe integer, or a digit string of one. */
+function sqlCount(value: unknown, what: string): number {
+  const n = typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value
+  if (typeof n !== 'number' || !Number.isSafeInteger(n) || n < 0) {
+    throw new Error(`planToSql: ${what} must be a non-negative integer, got ${String(JSON.stringify(value)).slice(0, 40)}`)
+  }
+  return n
 }
 
 function predicateSql(

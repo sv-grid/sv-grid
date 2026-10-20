@@ -3,6 +3,7 @@
 
 create table "events" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "event" text,
   "date" date,
   "status" text,
@@ -13,6 +14,7 @@ create table "events" (
 );
 create table "attendees" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "name" text,
   "event_id" text,
   "ticket" text,
@@ -22,6 +24,7 @@ create table "attendees" (
 );
 create table "checklist" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "item" text,
   "event_id" text,
   "team" text,

@@ -3,6 +3,7 @@
 
 create table "tasks" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "task" text,
   "no" double precision,
   "status" text,
@@ -22,6 +23,7 @@ create table "tasks" (
 );
 create table "milestones" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "name" text,
   "date" date
 );

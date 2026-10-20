@@ -1,9 +1,14 @@
 ## Your data
 
 The base reads your Postgres through `src/routes/api/base/+server.ts`; the
-page never sees the connection string.
+page never sees the connection string. Set it up before the first run:
 
-1. Copy `.env.example` to `.env` and set `DATABASE_URL`.
-2. `npm run db:setup` creates the tables in `db/schema.sql` (skip it to use
-   tables you already have: the base shows every table it finds).
-3. `npm run dev`.
+```bash
+npm install
+cp .env.example .env   # set DATABASE_URL
+npm run db:setup       # creates the tables in db/schema.sql
+npm run dev
+```
+
+Skip `npm run db:setup` to use tables you already have: the base shows every
+table it finds.

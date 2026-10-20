@@ -16,11 +16,11 @@
  * why the text half has to stand on its own rather than say "see the preview".
  */
 import { examples } from './data.js'
+import { UI_RESOURCE_URI, UI_RESOURCE_META_KEY } from './tool-defs.js'
+export { UI_RESOURCE_URI, PREVIEW_TOOL } from './tool-defs.js'
 
 /** MCP Apps constants, inlined rather than depending on the extension SDK server-side. */
 export const UI_MIME_TYPE = 'text/html;profile=mcp-app'
-export const UI_RESOURCE_URI = 'ui://svgrid/preview.html'
-const UI_RESOURCE_META_KEY = 'ui/resourceUri'
 
 /**
  * The published versions the preview loads from the CDN.
@@ -121,38 +121,6 @@ export function readPreviewResource(uri: string) {
   return { contents: [{ uri, mimeType: UI_MIME_TYPE, text: PREVIEW_HTML }] }
 }
 
-export const PREVIEW_TOOL = {
-  name: 'svgrid_preview',
-  title: 'Preview a grid',
-  description:
-    'Render a REAL, interactive SvGrid in the conversation - sortable, filterable, scrollable - from columns and rows you pass, or from a demo id. Use it to show the user what a grid will look like before they build it, and after svgrid_check_code to demonstrate the result. In clients without UI support it returns a text summary instead, so it is always safe to call.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      columns: {
-        type: 'array',
-        description:
-          'Column definitions, e.g. [{ "field": "name", "header": "Name", "width": 160 }]. Required unless `demo` is set.',
-      },
-      data: {
-        type: 'array',
-        description: 'Rows to display. Required unless `demo` is set. Keep it under a few hundred for a preview.',
-      },
-      demo: {
-        type: 'string',
-        description:
-          'Preview a shipped demo instead, by id (e.g. "11-stock-market"). Its source is returned as text; find ids with svgrid_search.',
-      },
-      title: { type: 'string', description: 'Caption shown above the grid.' },
-      sortable: { type: 'boolean', description: 'Sortable headers. Default true.' },
-      filterable: { type: 'boolean', description: 'Filtering. Default true.' },
-      pageable: { type: 'boolean', description: 'Pagination footer.' },
-      groupBy: { type: 'array', description: 'Group by these column ids.' },
-    },
-    required: [],
-  },
-  _meta: { [UI_RESOURCE_META_KEY]: UI_RESOURCE_URI },
-}
 
 type ToolResult = {
   isError?: boolean

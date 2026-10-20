@@ -35,7 +35,7 @@ import { enableGanttView } from './gantt/gantt'
 import { enableSelectionBar } from './selection-bar'
 import { enableAdvancedFilter } from './advanced-filter-enable'
 import { enablePivot } from './pivot-enable'
-import { enableSheet } from './sheet-enable'
+import { registerSheetKeymap } from './sheet-enable'
 import { enableServerRowModel } from './server/enable'
 
 /** The `api.ai.*` namespace added by the enterprise install. */
@@ -155,8 +155,8 @@ export function installEnterprise<
   enableAdvancedFilter()
   // Register the Excel keymap (Ctrl+Arrow, Ctrl+D, Ctrl+A and the rest). The
   // grid interprets a key itself only when nothing claims it, so a free grid
-  // is unaffected.
-  enableSheet()
+  // is unaffected. No spreadsheet nudge: this app may only export or pivot.
+  registerSheetKeymap()
   // Raise the unlicensed nudge for the server-side row model. No registry to fill -
   // the model hands the grid ordinary rows - so this only nudges when unlicensed.
   enableServerRowModel()

@@ -2,10 +2,13 @@
  * Put the bundle's CSS inside a shadow root.
  *
  * The build's `inlineCss` plugin splits the stylesheet per chunk: the entry's
- * CSS goes on `globalThis.__SVGRID_WC_CSS__` and into `document.head`; each
- * lazy chunk (the chart, the date pickers, the menus) carries its own CSS and
- * announces it through `globalThis.__SVGRID_WC_ADD_CSS__` when it loads, so a
- * page that never charts never downloads the chart's styles. The light-DOM
+ * CSS goes on `globalThis.__SVGRID_WC_CSS_BY_BUILD__.shadow` and into
+ * `document.head`; each lazy chunk (the chart, the date pickers, the menus)
+ * carries its own CSS and announces it through
+ * `globalThis.__SVGRID_WC_ADD_CSS_BY_BUILD__.shadow` when it loads, so a page
+ * that never charts never downloads the chart's styles. The globals are maps
+ * keyed by build because the <sv-grid> and <sv-chart> builds write their own
+ * entries on the same page. The light-DOM
  * element needs only the head copies. The shadow element needs BOTH:
  *
  *  - in the shadow root, because a `<style>` in the document does not cross the
@@ -19,6 +22,9 @@
  * plainly: page CSS cannot reach into the grid, but the grid's own stylesheet
  * is still present in the page for the popups' sake.
  */
+
+/** This build's key in the inlineCss globals (see vite.config.js). */
+const BUILD = 'shadow'
 
 /** Every open root that adopted the styles, so a chunk loaded later reaches it. */
 const roots = new Set()
@@ -62,7 +68,7 @@ function applyTo(root, sheet, css, key) {
  * the element's disconnect.
  */
 export function adoptGridStyles(root) {
-  const css = globalThis.__SVGRID_WC_CSS__
+  const css = globalThis.__SVGRID_WC_CSS_BY_BUILD__?.[BUILD]
   if (!root || typeof css !== 'string' || css === '') return () => {}
 
   // Constructable stylesheets are shared, so N elements cost one sheet.
@@ -87,8 +93,8 @@ function addChunkCss(css) {
 
 if (typeof globalThis !== 'undefined') {
   // Chunks that loaded before this module queued their CSS; drain it.
-  const pending = globalThis.__SVGRID_WC_CSS_CHUNKS__
-  globalThis.__SVGRID_WC_ADD_CSS__ = addChunkCss
+  const pending = globalThis.__SVGRID_WC_CSS_CHUNKS_BY_BUILD__?.[BUILD]
+  ;(globalThis.__SVGRID_WC_ADD_CSS_BY_BUILD__ ??= {})[BUILD] = addChunkCss
   if (Array.isArray(pending)) {
     for (const css of pending) addChunkCss(css)
     pending.length = 0

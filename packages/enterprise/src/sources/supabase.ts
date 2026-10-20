@@ -14,6 +14,7 @@
  */
 import type { RowData, ServerRequest, ServerResult } from '@svgrid/grid'
 import { resolveIdField, type EntitySchema } from '../schema'
+import { unsortedOrder } from '../sveltekit/sql-source'
 import { nudgeEnterpriseFor } from '../license'
 import type { WritableDataSource } from '../sveltekit/types'
 import { normalizeFilters } from './filters'
@@ -43,6 +44,13 @@ export type SupabaseDataSourceConfig<TData extends RowData> = {
    * pivoted request is answered as plain grouping, with a warning once.
    */
   pivot?: (request: ServerRequest) => Promise<ServerResult<TData>>
+  /**
+   * How rows come back when the request has no sort, e.g. creation order.
+   * Default: a `created_at` / `inserted_at` field when the schema has one.
+   * The primary key is appended to every leaf order as the tie-breaker, so
+   * paging with `range` is deterministic.
+   */
+  defaultOrder?: ReadonlyArray<{ field: string; desc?: boolean }>
 }
 
 const sanitize = (term: string) => term.replace(/[%,()]/g, '')
@@ -58,6 +66,8 @@ export function createSupabaseDataSource<TData extends RowData>(
     schema.fields.filter((f) => f.type === 'text' || f.type === 'enum').map((f) => String(f.field))
 
   let warnedPivot = false
+  const key = schema.fields.some((f) => f.field === idField) ? idField : null
+  const unsorted = unsortedOrder(schema, config.defaultOrder)
 
   return {
     async getRows(request: ServerRequest): Promise<ServerResult<TData>> {
@@ -153,7 +163,12 @@ export function createSupabaseDataSource<TData extends RowData>(
           q = q.order(groupField, { ascending: true })
         }
       } else {
-        for (const s of request.sortModel) q = q.order(s.id, { ascending: !s.desc })
+        // Without an order PostgREST pages in no fixed order. Unsorted rows go
+        // in creation order where it is known; the key breaks ties.
+        const sorted = request.sortModel.map((s) => ({ field: s.id, desc: !!s.desc }))
+        const order = sorted.length ? sorted : unsorted
+        for (const o of order) q = q.order(o.field, { ascending: !o.desc })
+        if (key && !order.some((o) => o.field === key)) q = q.order(key, { ascending: true })
       }
 
       const { data, count, error } = await q.range(request.startRow, request.endRow - 1)

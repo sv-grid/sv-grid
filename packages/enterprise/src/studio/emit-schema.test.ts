@@ -109,3 +109,25 @@ describe('emitStudioApp', () => {
     expect(schemas).not.toMatch(/tags: string(?!\[)/) // not the scalar `string`
   })
 })
+
+// `npm create @svgrid/studio -- --from schema.prisma` built an app whose layout
+// imported ../custom.css, which nothing wrote: `vite build` could not resolve it.
+describe('emitStudioApp - files the layout imports', () => {
+  const files = emitStudioApp(schemas)
+  const layout = files.find((f) => f.path === 'src/routes/+layout.svelte')!.contents
+
+  it('writes every stylesheet the layout imports', () => {
+    for (const m of layout.matchAll(/import '\.\.\/([\w.-]+\.css)'/g)) {
+      if (m[1] === 'app.css') continue // the create-studio template ships app.css
+      expect(files.some((f) => f.path === `src/${m[1]}`), `src/${m[1]}`).toBe(true)
+    }
+    // Written once, then the user's: a re-run must not wipe their styles.
+    expect(files.find((f) => f.path === 'src/custom.css')?.userOwned).toBe(true)
+  })
+
+  it('passes VITE_SVPRO_KEY to setLicenseKey', () => {
+    expect(layout).toContain("import { setLicenseKey } from '@svgrid/enterprise'")
+    expect(layout).toContain('if (import.meta.env.VITE_SVPRO_KEY) setLicenseKey(import.meta.env.VITE_SVPRO_KEY)')
+    expect(() => compile(layout, { generate: 'client' })).not.toThrow()
+  })
+})

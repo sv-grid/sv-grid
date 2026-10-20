@@ -3,6 +3,7 @@
 
 create table "expenses" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "what" text,
   "amount" double precision,
   "budget_id" text,
@@ -15,6 +16,7 @@ create table "expenses" (
 );
 create table "budgets" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "category" text,
   "monthly" double precision
 );

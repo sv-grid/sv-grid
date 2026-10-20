@@ -3,6 +3,7 @@
 
 create table "items" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "item" text,
   "photo" jsonb,
   "category" text,
@@ -17,6 +18,7 @@ create table "items" (
 );
 create table "suppliers" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "name" text,
   "email" text,
   "lead_days" double precision

@@ -36,6 +36,7 @@
     "tanstack.mjs",
     "transform.mjs",
     "scan.mjs",
+    "grid-exports.generated.mjs",
     "README.md",
     "LICENSE"
   ],

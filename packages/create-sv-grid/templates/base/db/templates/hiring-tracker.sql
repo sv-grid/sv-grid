@@ -3,6 +3,7 @@
 
 create table "candidates" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "name" text,
   "photo" jsonb,
   "role_id" text,
@@ -18,6 +19,7 @@ create table "candidates" (
 );
 create table "roles" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "name" text,
   "team" text,
   "manager" text,

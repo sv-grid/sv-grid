@@ -3,6 +3,7 @@
 
 create table "features" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "feature" text,
   "quarter" text,
   "status" text,
@@ -17,6 +18,7 @@ create table "features" (
 );
 create table "feedback" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "request" text,
   "customer" text,
   "plan" text,

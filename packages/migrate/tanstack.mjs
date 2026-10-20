@@ -15,6 +15,7 @@
  */
 
 import { findCall, matchBracket, readObjectProps, splitTopLevel } from './scan.mjs'
+import { GRID_EXPORTS } from './grid-exports.generated.mjs'
 
 export const TANSTACK_PACKAGES = [
   '@tanstack/svelte-table',
@@ -98,8 +99,8 @@ function bindsIdentifier(script, name) {
   return (
     // const/let/var features = ...
     new RegExp('\\b(?:const|let|var)\\s+' + n + '\\b').test(script) ||
-    // let { data, columns } = $props()
-    new RegExp('\\b(?:const|let|var)\\s*\\{[^}]*\\b' + n + '\\b[^}]*\\}\\s*=').test(script) ||
+    // let { data, columns } = $props(), also with a `: { data: Row[] }` annotation
+    new RegExp('\\b(?:const|let|var)\\s*\\{[^}]*\\b' + n + '\\b[^}]*\\}\\s*(?::[^=]+)?=').test(script) ||
     // import { columns } from './columns'  (the shadcn layout)
     new RegExp('^[^\\S\\n]*import\\b[^\\n]*\\b' + n + '\\b[^\\n]*$', 'm').test(script) ||
     // export let data   (Svelte 4 props)
@@ -384,29 +385,166 @@ function findScript(source) {
   return { tag: m[0], openStart: m.index, openEnd, body: source.slice(openEnd, close), closeStart: close }
 }
 
-/** Rewrite every column array in `src`, returning the new text. */
+/** The last top-level argument of a type-argument list: `typeof f, Person` -> `Person`. */
+function lastTypeArg(args) {
+  let depth = 0
+  let cut = 0
+  for (let i = 0; i < args.length; i++) {
+    const c = args[i]
+    if ('<([{'.includes(c)) depth++
+    else if ('>)]}'.includes(c)) depth--
+    else if (c === ',' && depth === 0) cut = i + 1
+  }
+  return args.slice(cut).trim()
+}
+
+/**
+ * Every `createColumnHelper` declaration: helper name -> its row type, or ''
+ * when it has none. v9 writes `createColumnHelper<typeof features, Person>()`
+ * and v8 `createColumnHelper<Person>()`; the row is the last argument in both.
+ */
+function readColumnHelpers(src) {
+  const helpers = new Map()
+  const re = /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::[^=\n]+)?=\s*createColumnHelper\s*(?:<([^()]*)>)?\s*\(/g
+  for (let m; (m = re.exec(src)); ) helpers.set(m[1], m[2] ? lastTypeArg(m[2]) : '')
+  return helpers
+}
+
+/** `const x = ` -> `const x: GridColumns<Row> = `, unless it is already typed. */
+function typeDeclaration(decl, row) {
+  if (!row || /:/.test(decl)) return decl
+  return decl.replace(/\s*=\s*$/, ': GridColumns<' + row + '> = ')
+}
+
+/**
+ * Rewrite every column array in `src`, returning the new text.
+ *
+ * Two shapes: `const columns = [ ... ]`, and v9's `helper.columns([ ... ])`,
+ * which only exists to type the array and is unwrapped to it. Missing the
+ * second left the calls in place while `dropColumnHelper` deleted the helper
+ * they call, so the output did not compile.
+ *
+ * Columns built with a typed helper lose that type when flattened to plain
+ * objects (`field` widens to string, a `fieldFn` row is implicitly any), so the
+ * declaration gets `: GridColumns<Row>` from the helper's row type. `typed`
+ * tells the caller to import `GridColumns`.
+ */
 function rewriteColumnArrays(src, warnings) {
-  // Match `const columns ... = [` and `columns: ColumnDef<...>[] = [`.
-  const re = /(\b(?:const|let|var)\s+columns\b[^=]*=\s*)\[/g
+  const helpers = readColumnHelpers(src)
+  // Group 1: `const columns ... = [` and `columns: ColumnDef<...>[] = [`.
+  // Group 2: the receiver of `<helper>.columns([`.
+  const re = /(\b(?:const|let|var)\s+columns\b[^=]*=\s*)\[|\b([A-Za-z_$][\w$]*)\s*\.\s*columns\s*\(\s*\[/g
   let out = ''
   let last = 0
   let m
   let touched = 0
+  let typed = false
   while ((m = re.exec(src))) {
+    const helperCall = m[2] !== undefined
+    if (helperCall && !helpers.has(m[2])) continue
     const arrStart = m.index + m[0].length - 1
     const arrEnd = matchBracket(src, arrStart)
     if (arrEnd === -1) continue
-    const entries = splitTopLevel(src.slice(arrStart + 1, arrEnd), ',')
-      .map((e) => rewriteColumn(e, warnings))
-      .filter(Boolean)
+    let end = arrEnd + 1
+    if (helperCall) {
+      // `helper.columns([ ... ])` - consume the closing paren with the array.
+      const tail = /^\s*,?\s*\)/.exec(src.slice(end))
+      if (!tail) {
+        warnings.push('`' + m[2] + '.columns(...)` takes more than one array; it was left as-is.')
+        continue
+      }
+      end += tail[0].length
+    }
+    const raw = splitTopLevel(src.slice(arrStart + 1, arrEnd), ',')
+    const entries = raw.map((e) => rewriteColumn(e, warnings)).filter(Boolean)
     if (!entries.length) continue
-    out += src.slice(last, m.index) + m[1] + '[\n' + entries.map((e) => INDENT + e).join(',\n') + '\n]'
-    last = arrEnd + 1
+    const array = '[\n' + entries.map((e) => INDENT + e).join(',\n') + '\n]'
+
+    // The helper whose row type the array carries: the `.columns()` receiver,
+    // or the first `helper.accessor(...)` style entry.
+    const helper = helperCall ? m[2] : (/^([A-Za-z_$][\w$]*)\s*\./.exec(raw.find((e) => HELPER_CALL.test(e)) ?? '') || [])[1]
+    const row = helper ? helpers.get(helper) : ''
+
+    let before = src.slice(last, m.index)
+    let decl = helperCall ? '' : m[1]
+    if (row) {
+      const d = helperCall ? /\b(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*$/.exec(before) : null
+      if (d) {
+        const t = typeDeclaration(d[0], row)
+        typed ||= t !== d[0]
+        before = before.slice(0, d.index) + t
+      } else if (!helperCall) {
+        const t = typeDeclaration(decl, row)
+        typed ||= t !== decl
+        decl = t
+      }
+    }
+    out += before + decl + array
+    last = end
     touched++
-    re.lastIndex = arrEnd + 1
+    re.lastIndex = end
   }
   out += src.slice(last)
-  return { code: out, touched }
+  return { code: out, touched, typed }
+}
+
+/**
+ * Make sure `GridColumns` is imported from `@svgrid/grid` when a column array
+ * was typed with it. Joins an existing named import when there is one.
+ */
+function ensureGridColumnsImport(src) {
+  if (/\bimport\b[^\n]*\bGridColumns\b[^\n]*'@svgrid\/grid'/.test(src)) return src
+  const named = /^([^\S\n]*)import\s*\{([^}]*)\}\s*from\s*'@svgrid\/grid'/m
+  if (named.test(src)) {
+    return src.replace(named, (_all, indent, names) => indent + 'import { ' + [...splitTopLevel(names, ','), 'type GridColumns'].join(', ') + " } from '@svgrid/grid'")
+  }
+  const firstImport = /^([^\S\n]*)import\b/m.exec(src)
+  if (firstImport) {
+    const at = firstImport.index
+    return src.slice(0, at) + firstImport[1] + "import type { GridColumns } from '@svgrid/grid'\n" + src.slice(at)
+  }
+  // No imports at all: open the script (or module) with one.
+  const lead = /^\s*/.exec(src)[0]
+  const indent = /[^\S\n]*$/.exec(lead)[0]
+  return lead + "import type { GridColumns } from '@svgrid/grid'\n" + indent + src.slice(lead.length)
+}
+
+/**
+ * Drop import specifiers `@svgrid/grid` does not export.
+ *
+ * TanStack imports are re-pointed wholesale, and some of their names have no
+ * SvGrid counterpart (`RowSelectionState`). Left in, the import does not
+ * resolve. Every drop is reported; one whose name the file still uses says so,
+ * because the reader has to replace those uses.
+ */
+function dropUnknownGridImports(src, warnings) {
+  const NAMED = /^([^\S\n]*)import\s+(type\s+)?\{([^}]*)\}\s*from\s*'@svgrid\/grid'(.*)$/
+  const lines = []
+  const dropped = []
+  for (const line of src.split('\n')) {
+    const m = NAMED.exec(line)
+    if (!m) {
+      lines.push(line)
+      continue
+    }
+    const [, indent, typeOnly = '', names, tail] = m
+    const kept = splitTopLevel(names, ',').filter((n) => {
+      const bare = n.replace(/^type\s+/, '').split(/\s+as\s+/)[0].trim()
+      if (GRID_EXPORTS.has(bare)) return true
+      dropped.push(n.split(/\s+as\s+/).pop().replace(/^type\s+/, '').trim())
+      return false
+    })
+    if (kept.length) lines.push(indent + 'import ' + typeOnly + '{ ' + kept.join(', ') + " } from '@svgrid/grid'" + tail)
+  }
+  const out = lines.join('\n')
+  for (const name of dropped) {
+    const used = new RegExp('(^|[^\\w$.])' + name.replace(/[$]/g, '\\$&') + '(?![\\w$])').test(out)
+    warnings.push(
+      '`' + name + '` is not exported by @svgrid/grid and was removed from the import.' +
+        (used ? ' The file still uses it - replace those uses.' : ''),
+    )
+  }
+  return out
 }
 
 /**
@@ -423,9 +561,11 @@ export function migrateTanstack(source, { svelte = true, readImport = null } = {
 
   // ---- a plain .ts module (columns.ts / data-table-features.ts) ----
   if (!svelte || !/<script\b/i.test(source)) {
-    const { code, touched } = rewriteColumnArrays(source, warnings)
+    const { code, touched, typed } = rewriteColumnArrays(source, warnings)
     const { props, drop } = readFeatures(source, warnings, notes)
-    const next = dropColumnHelper(stripFeatures(rewriteColumnTypes(repointImports(code)), drop))
+    let next = dropColumnHelper(stripFeatures(rewriteColumnTypes(repointImports(code)), drop), warnings)
+    next = dropUnknownGridImports(next, warnings)
+    if (typed) next = ensureGridColumnsImport(next)
     if (!touched && !props.size && next === source) {
       return { applicable: false, code: source, warnings, notes }
     }
@@ -461,10 +601,12 @@ export function migrateTanstack(source, { svelte = true, readImport = null } = {
     }
   }
 
-  let body = rewriteColumnArrays(script.body, warnings).code
-  body = repointImports(body, { wantSvGrid: true })
+  const columnArrays = rewriteColumnArrays(script.body, warnings)
+  let body = repointImports(columnArrays.code, { wantSvGrid: true })
   body = stripFeatures(rewriteColumnTypes(body), drop)
-  body = dropColumnHelper(dropTableWiring(body, warnings))
+  body = dropColumnHelper(dropTableWiring(body, warnings), warnings)
+  body = dropUnknownGridImports(body, warnings)
+  if (columnArrays.typed) body = ensureGridColumnsImport(body)
 
   const pageSize = (script.body.match(/pageSize\s*:\s*(\d+)/) || [])[1]
 
@@ -601,21 +743,37 @@ function repointImports(src, { wantSvGrid = false } = {}) {
  * Runs for `.ts` modules as well as components, because the shadcn layout keeps
  * columns in their own file - which is exactly where the helper is declared.
  * Its columns have already been flattened by the time this runs, so the
- * declaration is dead; left behind it would reference an import that is gone.
+ * declaration is usually dead.
+ *
+ * Only usually: a call shape the flattening does not know leaves a reference
+ * behind, and deleting the declaration under it gave `Cannot find name` with no
+ * warning. So a helper that is still referenced keeps its declaration, and the
+ * reader is told why the file will not compile yet.
  */
-function dropColumnHelper(src) {
+function dropColumnHelper(src, warnings) {
   // Matched with a regex rather than `findCall`, which looks for `name(` and so
   // never sees the usual `createColumnHelper<Person>()`. `[^()]*` inside the
   // angle brackets carries nested generics without being able to run past the
   // call itself.
-  const DECL = /^[^\S\n]*(?:const|let|var)\s+[\w$]+\s*(?::[^=\n]+)?=\s*createColumnHelper\s*(?:<[^()]*>)?\s*\(\s*\)\s*;?[^\S\n]*\r?\n?/gm
-  return src.replace(DECL, '')
+  const DECL = /^[^\S\n]*(?:const|let|var)\s+([\w$]+)\s*(?::[^=\n]+)?=\s*createColumnHelper\s*(?:<[^()]*>)?\s*\(\s*\)[^\S\n]*;?[^\S\n]*\r?\n?/gm
+  const without = src.replace(DECL, '')
+  return src.replace(DECL, (decl, name) => {
+    const ref = new RegExp('(^|[^\\w$.])' + name.replace(/[$]/g, '\\$&') + '(?![\\w$])', 'm').exec(without)
+    if (!ref) return ''
+    const at = without.slice(ref.index + ref[1].length).split('\n')[0].trim().slice(0, 40)
+    warnings.push(
+      '`' + name + '` is still used (`' + at + '`), so its `createColumnHelper` declaration was kept. ' +
+        '@svgrid/grid has no createColumnHelper: rewrite that use as a plain column object.',
+    )
+    return decl
+  })
 }
 
 function dropTableWiring(src, warnings) {
   let out = src
 
-  const STATE = /^\s*let\s+(sorting|columnFilters|globalFilter|rowSelection|pagination|columnVisibility|columnOrder)\b[^\n]*\$state\([^\n]*\n/gm
+  // `$state<SortingState>([])` as well as `$state([])`.
+  const STATE = /^\s*let\s+(sorting|columnFilters|globalFilter|rowSelection|pagination|columnVisibility|columnOrder)\b[^\n]*\$state\s*(?:<[^\n]*?>)?\s*\([^\n]*\n/gm
   out = out.replace(STATE, '')
 
   for (const name of ['createSvelteTable', 'useTable', 'createTable']) {

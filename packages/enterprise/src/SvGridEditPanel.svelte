@@ -992,7 +992,6 @@
   /* The heading owns the gap above its fields, so the group reads as one thing. */
   .sv-ep__section-title + .sv-ep__body, .sv-ep__section-desc + .sv-ep__body { padding-top: 10px; }
   .sv-ep__discard { margin-right: auto; font-size: 12.5px; font-weight: 600; color: var(--ep-danger); }
-  .sv-ep__btn--danger { border-color: var(--ep-danger); background: var(--ep-danger); color: #fff; }
   .sv-ep__section .sv-ep__body { flex: 0 0 auto; overflow: visible; }
   .sv-ep-field {
     display: flex;
@@ -1150,7 +1149,21 @@
     background: var(--ep-accent);
     border-color: var(--ep-accent);
   }
+  /* Restate the fill: `.sv-ep__btn:hover:not(:disabled)` outranks the modifier
+     class and painted the subtle background under white text. */
   .sv-ep__btn--primary:hover:not(:disabled) {
+    background: var(--ep-accent);
+    filter: brightness(1.06);
+  }
+  /* After `.sv-ep__btn`, not before it: at equal specificity the base rule
+     came later and the Discard button rendered as a plain one. */
+  .sv-ep__btn--danger {
+    color: #fff;
+    background: var(--ep-danger);
+    border-color: var(--ep-danger);
+  }
+  .sv-ep__btn--danger:hover:not(:disabled) {
+    background: var(--ep-danger);
     filter: brightness(1.06);
   }
   .sv-ep__btn:disabled {

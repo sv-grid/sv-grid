@@ -97,9 +97,9 @@ npm run dev
 Open `http://localhost:5173`. You get:
 
 - A **nav shell** and a home page (`src/routes/+layout.svelte`).
-- Two linked entities - **Customers** and **Orders** - each a full grid +
-  modal create/edit/delete screen. Orders has a searchable lookup back to
-  Customers, so you can see how relations work.
+- Three linked entities - **Customers**, **Orders** and **Products** - each a
+  full grid + modal create/edit/delete screen. Orders has a searchable lookup
+  back to Customers, so you can see how relations work.
 - **Seeded in-memory data** - nothing to install or configure, no database.
 - The **theme and mode you picked**, applied to the whole app - not just the grid.
 

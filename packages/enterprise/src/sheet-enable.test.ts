@@ -38,12 +38,42 @@ function fakeCmd(cells: unknown[][]) {
 async function freshSheet() {
   vi.resetModules()
   const registry = await import('@svgrid/grid/shortcuts')
-  const { enableSheet } = await import('./sheet-enable')
+  const { enableSheet, registerSheetKeymap } = await import('./sheet-enable')
   registry.clearGridShortcuts()
-  return { enableSheet, ...registry }
+  return { enableSheet, registerSheetKeymap, ...registry }
 }
 
-describe('enableSheet', () => {
+/** The same fresh graph, with the license nudge spied on. */
+async function freshSheetWithNudge() {
+  vi.resetModules()
+  const nudge = vi.fn()
+  vi.doMock('./license', () => ({ nudgeEnterpriseFor: nudge }))
+  const sheet = await freshSheet()
+  vi.doUnmock('./license')
+  return { ...sheet, nudge }
+}
+
+// vi.resetModules() makes each test re-import the sheet graph cold, which can
+// pass vitest's 5 s default when other suites share the machine.
+describe('registerSheetKeymap (what installEnterprise calls)', { timeout: 20_000 }, () => {
+  it('registers the keymap without naming the spreadsheet', async () => {
+    const { registerSheetKeymap, hasGridShortcuts, nudge } = await freshSheetWithNudge()
+    registerSheetKeymap()
+    expect(hasGridShortcuts()).toBe(true)
+    expect(nudge).not.toHaveBeenCalled()
+  })
+
+  it('leaves enableSheet to nudge once, after the keymap is already on', async () => {
+    const { registerSheetKeymap, enableSheet, nudge } = await freshSheetWithNudge()
+    registerSheetKeymap()
+    enableSheet()
+    enableSheet()
+    expect(nudge).toHaveBeenCalledTimes(1)
+    expect(nudge).toHaveBeenCalledWith('spreadsheet', 'Spreadsheet')
+  })
+})
+
+describe('enableSheet', { timeout: 20_000 }, () => {
   it('registers nothing until it is called', async () => {
     const { hasGridShortcuts } = await freshSheet()
     expect(hasGridShortcuts()).toBe(false)

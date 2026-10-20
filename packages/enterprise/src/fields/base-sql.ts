@@ -37,6 +37,15 @@ export type BaseJunctionComment = { v: 1; junction: { owner: string; field: stri
 
 export const SQL_COMMENT_PREFIX = 'svgrid:'
 
+/**
+ * A column baseToSql gives every table: an identity that numbers the records
+ * in the order they were written. Text keys (seed ids, UUIDs) do not sort that
+ * way, so the base reads rows in this order while nothing is sorted. It is not
+ * a field: baseFromDatabase, createBaseEndpoint and baseFromSupabase leave it
+ * out of the base and never write it.
+ */
+export const BASE_ORDER_COLUMN = 'svgrid_order'
+
 /** `fixedOn` -> `fixed_on`, `Key results` -> `key_results`. */
 export function sqlName(s: string): string {
   const out = String(s)
@@ -160,7 +169,7 @@ export function baseToSql(tables: ReadonlyArray<BaseTable>, options: BaseToSqlOp
     const name = nameOf.get(t.id)!
     const columns: Plan['columns'] = []
     const extra: Def[] = []
-    const taken = new Set(['id'])
+    const taken = new Set(['id', BASE_ORDER_COLUMN])
     const column = (base: string) => {
       let c = sqlName(base)
       while (taken.has(c)) c = `${c}_2`
@@ -193,8 +202,9 @@ export function baseToSql(tables: ReadonlyArray<BaseTable>, options: BaseToSqlOp
       columns.push({ def: d, column: column(field) })
     }
     // The database makes the key of a record added later: a Supabase insert
-    // carries no id. The records below bring their own.
-    const lines = [`  "id" text primary key default gen_random_uuid()::text`,...columns.map((c) => `  ${quote(c.column)} ${c.fk ? 'text' : sqlType(c.def)}`)]
+    // carries no id. The records below bring their own. The order column
+    // numbers them as they are inserted, so the records keep the order below.
+    const lines = [`  "id" text primary key default gen_random_uuid()::text`, `  ${quote(BASE_ORDER_COLUMN)} bigint generated always as identity`, ...columns.map((c) => `  ${quote(c.column)} ${c.fk ? 'text' : sqlType(c.def)}`)]
     plans.push({ table: t, columns, extra, sql: `create table ${quote(name)} (\n${lines.join(',\n')}\n);` })
   }
 

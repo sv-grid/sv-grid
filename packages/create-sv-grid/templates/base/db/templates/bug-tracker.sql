@@ -3,6 +3,7 @@
 
 create table "bugs" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "bug" text,
   "severity" text,
   "status" text,
@@ -16,6 +17,7 @@ create table "bugs" (
 );
 create table "releases" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "version" text,
   "ships" date,
   "notes" text

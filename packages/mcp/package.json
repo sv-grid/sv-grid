@@ -41,11 +41,19 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
-    "@svgrid/enterprise": "workspace:^",
     "svelte": "^5.55.5",
     "zod": "^3.23.8"
   },
+  "peerDependencies": {
+    "@svgrid/enterprise": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "@svgrid/enterprise": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@svgrid/enterprise": "workspace:^",
     "@types/node": "^22.10.7",
     "typescript": "6.0.3"
   },

@@ -168,6 +168,20 @@ describe('SvBase with tables', () => {
     expect(b.state.tables[2]).toMatchObject({ name: 'Table', primaryField: 'name' })
     await until(() => b.target.querySelector('[role="tab"][aria-selected="true"]')?.textContent?.trim() === 'Table', 'the new tab shown')
   })
+
+  it('an empty database still gets the tab bar, and "Add table" starts the first table', async () => {
+    const b = mountBase([])
+    expect(b.tabs()).toEqual([])
+    const add = b.target.querySelector('.sv-btabs-add') as HTMLElement | null
+    expect(add?.textContent).toContain('Add table')
+    expect(b.target.querySelector('.sv-fbase-slot')?.children.length).toBe(0)
+    add!.click()
+    flushSync()
+    await until(() => b.tabs().length === 1, 'the first tab')
+    expect(b.state.tables).toHaveLength(1)
+    await until(() => !!b.state.api && !!gridOf(b.state.api), 'its grid')
+    expect(b.target.querySelector('[role="tab"][aria-selected="true"]')?.textContent?.trim()).toBe('Table')
+  })
 })
 
 describe('BaseTabs', () => {

@@ -49,7 +49,9 @@ const templates = ['minimal', 'sveltekit', 'base', 'pivot-dashboard', 'admin-das
 // never asked and never told which preset to use.
 const themedTemplates = ['minimal', 'sveltekit', 'base', 'pivot-dashboard', 'admin-dashboard']
 
-describe('create-sv-grid templates', () => {
+// Each test spawns the CLI and copies a template; base alone takes 2-3 s on
+// Windows, past vitest's 5 s default once two test files share the machine.
+describe('create-sv-grid templates', { timeout: 30_000 }, () => {
   // A coding assistant reads AGENTS.md before it decides to hand-write a table.
   // The scaffolded section must say the same thing `npx sv add @svgrid` writes.
   it.each(templates.filter((t) => t !== 'headless'))('%s tells coding assistants to use <SvGrid>', async (template) => {

@@ -33,7 +33,7 @@ your own `--sg-*` values instead, see
 ## Next steps
 
 - Add more features: `rowExpandingFeature`, `columnGroupingFeature`, pagination, pinned rows. See the [docs](https://svgrid.com/docs/).
-- Browse [370+ live demos](https://svgrid.com/demos/) for copy-paste recipes.
+- Browse the [live demos](https://svgrid.com/demos/) for copy-paste recipes.
 - Need Excel/PDF export, import, print, or pivot tables? Add [`@svgrid/enterprise`](https://svgrid.com/pricing/).
 - Want a full app shell with routing? Scaffold the admin starter instead:
   `npm create @svgrid@latest my-admin -- --template admin-dashboard`

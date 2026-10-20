@@ -54,4 +54,18 @@ describe('sv-grid built bundle', () => {
     await new Promise((r) => setTimeout(r, 50))
     expect(el.children.length).toBeGreaterThan(0)
   })
+
+  it('shows row checkboxes only when `selectable` is set (README: default false)', async () => {
+    const mount = async (selectable: boolean) => {
+      const el = document.createElement('sv-grid') as HTMLElement & { data?: unknown; columns?: unknown }
+      if (selectable) el.setAttribute('selectable', '')
+      el.columns = [{ field: 'name', header: 'Name' }]
+      el.data = [{ name: 'Ada' }, { name: 'Linus' }]
+      document.body.appendChild(el)
+      await new Promise((r) => setTimeout(r, 50))
+      return el.querySelectorAll('.sv-grid-checkbox').length
+    }
+    expect(await mount(false)).toBe(0)
+    expect(await mount(true)).toBeGreaterThan(0)
+  })
 })

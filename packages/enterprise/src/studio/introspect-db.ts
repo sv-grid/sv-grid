@@ -41,10 +41,22 @@ export function mapSqlType(raw: string): EntityFieldType {
   return 'text'
 }
 
-function fieldFrom(name: string, rawType: string, pk: boolean, notNull: boolean): EntityField {
+/**
+ * A Base table's insertion-order column, `BASE_ORDER_COLUMN` in
+ * fields/base-sql.ts (not imported: that module pulls in a .svelte registry,
+ * and this one runs in the Node bundle). `base-sql.dom.test.ts` keeps the two
+ * equal.
+ */
+export const BASE_ORDER_COLUMN_NAME = 'svgrid_order'
+
+function fieldFrom(name: string, rawType: string, pk: boolean, notNull: boolean, generated = false): EntityField {
   const field: EntityField = { field: name, type: mapSqlType(rawType) }
   if (pk) {
     field.primaryKey = true
+    field.readonly = true
+  } else if (generated) {
+    // Identity and generated columns: the database fills them and rejects a
+    // written value, so a form must neither require nor send one.
     field.readonly = true
   } else if (notNull) {
     field.required = true
@@ -52,10 +64,20 @@ function fieldFrom(name: string, rawType: string, pk: boolean, notNull: boolean)
   return field
 }
 
-/** Map catalog rows (aliased name/type/nullable/pk) from information_schema dialects. */
+/**
+ * A Base table's order column stays in the schema (base-connect finds it there
+ * and reads in its order) but is never shown or written by a generated app.
+ */
+export function hideBaseOrderColumn<F extends Pick<EntityField, 'required' | 'readonly' | 'hidden'> & { field: unknown }>(field: F): F {
+  if (field.field !== BASE_ORDER_COLUMN_NAME) return field
+  const { required: _required, ...rest } = field
+  return { ...rest, readonly: true, hidden: true } as F
+}
+
+/** Map catalog rows (aliased name/type/nullable/pk/generated) from information_schema dialects. */
 function infoSchemaFields(rows: Array<Record<string, unknown>>): EntityField[] {
   return rows.map((r) =>
-    fieldFrom(String(r.name), String(r.type ?? ''), truthy(r.pk), !truthy(r.nullable)),
+    hideBaseOrderColumn(fieldFrom(String(r.name), String(r.type ?? ''), truthy(r.pk), !truthy(r.nullable), truthy(r.generated))),
   )
 }
 
@@ -93,7 +115,8 @@ const POSTGRES: DialectDef = {
   columns: (table) => ({
     sql: `SELECT c.column_name AS name, c.data_type AS type,
        CASE WHEN c.is_nullable = 'YES' THEN 1 ELSE 0 END AS nullable,
-       CASE WHEN pk.column_name IS NOT NULL THEN 1 ELSE 0 END AS pk
+       CASE WHEN pk.column_name IS NOT NULL THEN 1 ELSE 0 END AS pk,
+       CASE WHEN (c.is_identity = 'YES' AND c.identity_generation = 'ALWAYS') OR c.is_generated = 'ALWAYS' THEN 1 ELSE 0 END AS generated
 FROM information_schema.columns c
 LEFT JOIN (
   SELECT kcu.column_name
@@ -129,7 +152,8 @@ const MYSQL: DialectDef = {
   columns: (table) => ({
     sql: `SELECT COLUMN_NAME AS name, DATA_TYPE AS type,
        CASE WHEN IS_NULLABLE = 'YES' THEN 1 ELSE 0 END AS nullable,
-       CASE WHEN COLUMN_KEY = 'PRI' THEN 1 ELSE 0 END AS pk
+       CASE WHEN COLUMN_KEY = 'PRI' THEN 1 ELSE 0 END AS pk,
+       CASE WHEN EXTRA LIKE '%GENERATED%' THEN 1 ELSE 0 END AS generated
 FROM information_schema.columns
 WHERE TABLE_NAME = ? AND TABLE_SCHEMA = DATABASE()
 ORDER BY ORDINAL_POSITION`,

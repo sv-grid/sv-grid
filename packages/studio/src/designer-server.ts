@@ -94,7 +94,8 @@ const RUNTIME_DEPS: Array<[needle: string, dep: string, version: string]> = [
   ["import pg from 'pg'", 'pg', '^8.11.0'],
   ["from 'mysql2/promise'", 'mysql2', '^3.9.0'],
   ["import mssql from 'mssql'", 'mssql', '^10.0.0'],
-  ["import Database from 'better-sqlite3'", 'better-sqlite3', '^11.0.0'],
+  // Same range as the emitter (emit-project.ts): 11.x has no Node 24 prebuild.
+  ["import Database from 'better-sqlite3'", 'better-sqlite3', '^12.1.0 || ^13.0.0'],
 ]
 
 /** Resolve the shipped static designer bundle (`dist/designer`). */

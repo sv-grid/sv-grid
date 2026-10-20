@@ -3,6 +3,7 @@
 
 create table "posts" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "title" text,
   "stage" text,
   "channels" text[],
@@ -16,6 +17,7 @@ create table "posts" (
 );
 create table "campaigns" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "name" text,
   "goal" text,
   "owner" text,

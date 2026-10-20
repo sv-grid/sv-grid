@@ -49,7 +49,7 @@
 
 <section class="flex h-full flex-col gap-3">
   <p class="text-sm" style="color: var(--app-muted);">
-    {rows.length} customers · drag the <strong>Plan</strong> column into the group bar to group by plan.
+    {rows.length} customers · open the <strong>Plan</strong> column menu and choose "Group by this column" to group by plan.
   </p>
 
   <div class="min-h-0 flex-1 rounded-xl border p-2 shadow-sm" style="border-color: var(--app-border); background: var(--app-panel);">

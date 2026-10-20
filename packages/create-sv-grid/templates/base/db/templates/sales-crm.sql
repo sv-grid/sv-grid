@@ -3,6 +3,7 @@
 
 create table "deals" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "deal" text,
   "account_id" text,
   "contact_id" text,
@@ -17,6 +18,7 @@ create table "deals" (
 );
 create table "accounts" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "name" text,
   "industry" text,
   "employees" double precision,
@@ -24,6 +26,7 @@ create table "accounts" (
 );
 create table "contacts" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "name" text,
   "title" text,
   "account_id" text,

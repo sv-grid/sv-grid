@@ -3,6 +3,7 @@
 
 create table "key_results" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "kr" text,
   "objective_id" text,
   "confidence" text,
@@ -14,6 +15,7 @@ create table "key_results" (
 );
 create table "objectives" (
   "id" text primary key default gen_random_uuid()::text,
+  "svgrid_order" bigint generated always as identity,
   "objective" text,
   "quarter" text,
   "owner" text

@@ -179,6 +179,50 @@ describe.skipIf(!hasDist)('the server works with no network', () => {
     expect(transports, `network client(s) added to @svgrid/mcp: ${transports.join(', ')}`).toEqual([])
   })
 
+  it('does not install @svgrid/enterprise to start', async () => {
+    // As a dependency, enterprise and the grid it peers on doubled what
+    // `npx -y @svgrid/mcp` unpacks, and a cold start on Windows ran past the
+    // 30 s a client waits to connect. Studio loads it when it is present.
+    const pkg = JSON.parse(readFileSync(join(ROOT, 'packages/mcp/package.json'), 'utf8')) as {
+      dependencies?: Record<string, string>
+      peerDependenciesMeta?: Record<string, { optional?: boolean }>
+    }
+    expect(Object.keys(pkg.dependencies ?? {})).not.toContain('@svgrid/enterprise')
+    expect(Object.keys(pkg.dependencies ?? {})).not.toContain('@svgrid/grid')
+    expect(pkg.peerDependenciesMeta?.['@svgrid/enterprise']?.optional).toBe(true)
+  })
+
+  it('never imports @svgrid/enterprise statically', async () => {
+    const { readdirSync } = await import('node:fs')
+    const dir = join(ROOT, 'packages', 'mcp', 'src')
+    const offenders = readdirSync(dir)
+      .filter((f: string) => f.endsWith('.ts') && f !== 'data.ts' && !f.endsWith('.test.ts'))
+      .filter((f: string) => {
+        const src = readFileSync(join(dir, f), 'utf8')
+        // Each statement up to its own specifier: [^'"] cannot run into the next import.
+        const specs = [...src.matchAll(/^import\s+(?!type\b)[^'"]*?\bfrom\s+['"]([^'"]+)['"]/gm)].map((m) => m[1])
+        return specs.some((s) => s.startsWith('@svgrid/enterprise')) && !['project-tools.ts', 'studio-tools.ts'].includes(f)
+      })
+    // project-tools and studio-tools import it, and index.ts loads those two
+    // with import() only.
+    expect(offenders).toEqual([])
+    const index = readFileSync(join(dir, 'index.ts'), 'utf8')
+    expect(index).not.toMatch(/^import\s[^;]*from\s+['"]\.\/(project|studio)-tools/m)
+  })
+
+  it('answers initialize and tools/list without loading the corpus', async () => {
+    // The first load of data.js (about 12 MB) after a fresh install took 7 s
+    // and held the event loop, so a client waiting on `initialize` timed out.
+    // index.ts may only reach it through import(); the tool definitions live
+    // in tool-defs.ts, which must not import it either.
+    const dir = join(ROOT, 'packages', 'mcp', 'src')
+    const staticSpecs = (f: string) =>
+      [...readFileSync(join(dir, f), 'utf8').matchAll(/^import\s+(?!type\b)[^'"]*?\bfrom\s+['"]([^'"]+)['"]/gm)].map((m) => m[1])
+    const corpusModules = ['./data.js', './core-tools.js', './resources.js', './preview.js']
+    expect(staticSpecs('index.ts').filter((s) => corpusModules.includes(s!))).toEqual([])
+    expect(staticSpecs('tool-defs.ts')).toEqual([])
+  })
+
   it('makes no outbound call anywhere in the server source', async () => {
     // data.ts is excluded on purpose: it is the corpus, and the demo sources
     // inside it are full of `fetch(` as example code.

@@ -525,11 +525,12 @@
   })
 </script>
 
-{#if tables && current}
+<!-- An empty list still gets the tabs, so "Add table" is there. -->
+{#if tables}
   <div class="sv-fbase-tables" style:height>
     <BaseTabs
       {tables}
-      activeId={current.id}
+      activeId={current?.id ?? ''}
       onSwitch={switchTo}
       onAdd={addTable}
       onRename={renameTable}
@@ -539,37 +540,39 @@
       status={syncLine}
     />
     <div class="sv-fbase-slot">
-      {#key current.id}
-        <BaseTableView
-          {...gridProps}
-          bare
-          data={gridData}
-          columns={current.columns}
-          views={current.views ?? GRID_ONLY}
-          bind:activeView={viewOf[current.id]}
-          onViewsChange={(v: FieldView[]) => commit(pulled({ views: v }))}
-          table={current}
-          tables={() => pulled()}
-          runner={automations ? runner : undefined}
-          {serverRuns}
-          onAutomationsChange={(list: BaseAutomation[]) => commit(pulled({ automations: list }))}
-          onFormSubmit={(row: Row, viewId: string) => void runner.handle({ type: 'form', table: current!.id, record: row, view: viewId })}
-          newRecord={() => ({ id: newRecordId() })}
-          {viewTypes}
-          {rowHeights}
-          containerHeight="100%"
-          onApiReady={(a: any) => {
-            api = a
-            onApiReady?.(a)
-            const rowId = pendingOpen
-            pendingOpen = null
-            if (rowId) queueMicrotask(() => {
-              const ctrl = gridOf(a)
-              if (ctrl) openRecord({ ctrl, rowId })
-            })
-          }}
-        />
-      {/key}
+      {#if current}
+        {#key current.id}
+          <BaseTableView
+            {...gridProps}
+            bare
+            data={gridData}
+            columns={current.columns}
+            views={current.views ?? GRID_ONLY}
+            bind:activeView={viewOf[current.id]}
+            onViewsChange={(v: FieldView[]) => commit(pulled({ views: v }))}
+            table={current}
+            tables={() => pulled()}
+            runner={automations ? runner : undefined}
+            {serverRuns}
+            onAutomationsChange={(list: BaseAutomation[]) => commit(pulled({ automations: list }))}
+            onFormSubmit={(row: Row, viewId: string) => void runner.handle({ type: 'form', table: current!.id, record: row, view: viewId })}
+            newRecord={() => ({ id: newRecordId() })}
+            {viewTypes}
+            {rowHeights}
+            containerHeight="100%"
+            onApiReady={(a: any) => {
+              api = a
+              onApiReady?.(a)
+              const rowId = pendingOpen
+              pendingOpen = null
+              if (rowId) queueMicrotask(() => {
+                const ctrl = gridOf(a)
+                if (ctrl) openRecord({ ctrl, rowId })
+              })
+            }}
+          />
+        {/key}
+      {/if}
     </div>
   </div>
 {:else}

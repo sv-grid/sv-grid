@@ -11,7 +11,8 @@
   "homepage": "https://svgrid.com/pricing",
   "type": "module",
   "sideEffects": [
-    "**/*.css"
+    "**/*.css",
+    "./dist/wc/sv-sheet-element.js"
   ],
   "types": "./dist/index.d.ts",
   "module": "./dist/index.js",
@@ -129,13 +130,25 @@
     "@svgrid/grid": "workspace:^",
     "jszip": "^3.10.0",
     "pdfmake": "^0.2.0",
-    "svelte": "^5.0.0"
+    "react": ">=17",
+    "react-dom": ">=17",
+    "svelte": "^5.0.0",
+    "vue": ">=3.3"
   },
   "peerDependenciesMeta": {
     "jszip": {
       "optional": true
     },
     "pdfmake": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "vue": {
       "optional": true
     }
   },

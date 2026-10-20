@@ -13,6 +13,7 @@
 import type { RowData } from '@svgrid/grid'
 import type { EntityFieldType, EntitySchema } from '../schema.js'
 import { buildEntitySchema, type IntrospectedColumn } from './schema-from-columns.js'
+import { hideBaseOrderColumn } from '../studio/introspect-db.js'
 
 export type IntrospectSupabaseOptions = {
   /** Project URL, e.g. `https://xxxx.supabase.co`. */
@@ -107,21 +108,34 @@ async function viaSample(o: Required<IntrospectSupabaseOptions>, base: string): 
 }
 
 /** List a Supabase project's tables from its PostgREST OpenAPI doc (URL + anon key).
- *  Returns the exposed table names (sorted), or `[]` when the doc can't be read
- *  (CORS-blocked, bad key). Lets the Studio wizard offer a table picker instead of
- *  making the user hand-type the table name. */
+ *  Returns the exposed table names (sorted). `[]` means the project answered and
+ *  lists none, or answered 401/403 without naming the key as invalid (the doc is
+ *  restricted for this key; each table can still be introspected by name).
+ *  Throws, naming the URL, when the project cannot be reached (wrong URL, CORS),
+ *  answers with another error status, says the key is invalid, or sends something
+ *  that is not an API description. */
 export async function listSupabaseTables(url: string, key: string, fetchFn: typeof fetch = globalThis.fetch): Promise<string[]> {
   const base = url.replace(/\/+$/, '')
+  const at = `${base}/rest/v1/`
   let res: Response
   try {
-    res = await fetchFn(`${base}/rest/v1/`, { headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: 'application/json' } })
-  } catch {
-    return []
+    res = await fetchFn(at, { headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: 'application/json' } })
+  } catch (e) {
+    throw new Error(`Could not reach ${at} (${e instanceof Error ? e.message : String(e)})`, { cause: e })
   }
-  if (!res.ok) return []
+  if (!res.ok) {
+    let body = ''
+    try { body = await res.text() } catch { /* no body */ }
+    const badKey = /invalid api key/i.test(body)
+    if ((res.status === 401 || res.status === 403) && !badKey) return []
+    throw new Error(`${at} answered ${res.status}${badKey ? ' (invalid API key)' : ''}`)
+  }
   let spec: any
-  try { spec = await res.json() } catch { return [] }
-  const defs: Record<string, unknown> = spec?.definitions ?? spec?.components?.schemas ?? {}
+  try { spec = await res.json() } catch { spec = null }
+  if (!spec || typeof spec !== 'object' || !(spec.definitions || spec.components || spec.paths)) {
+    throw new Error(`${at} did not answer with an API description: is this a Supabase project URL?`)
+  }
+  const defs: Record<string, unknown> = spec.definitions ?? spec.components?.schemas ?? {}
   // PostgREST also lists RPCs under `paths` as `/rpc/...`; `definitions` are the tables/views.
   return Object.keys(defs).sort((a, b) => a.localeCompare(b))
 }
@@ -138,5 +152,6 @@ export async function introspectSupabaseTable<TData extends RowData = RowData>(
   const columns =
     (await viaOpenApi(o, base)) ?? (await viaSample(o, base)) ?? (await viaCsv(o, base))
   if (!columns || !columns.length) return null
-  return buildEntitySchema<TData>(o.table, columns)
+  const schema = buildEntitySchema<TData>(o.table, columns)
+  return { ...schema, fields: schema.fields.map((f) => hideBaseOrderColumn(f)) }
 }

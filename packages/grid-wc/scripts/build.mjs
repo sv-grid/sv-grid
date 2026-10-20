@@ -46,8 +46,8 @@ function run(label, args, env = {}) {
 // rejected: sharing a build makes rollup hoist the code both entries touch into
 // a common eager chunk, and <sv-grid>'s initial payload went 102.5 -> 133.1 KiB
 // gzip. Separate builds duplicate the lazy chunks on disk instead, which costs
-// bytes in the tarball and nothing at runtime, because a page loads one element
-// or the other.
+// bytes in the tarball. A page may load more than one (grid + chart is the
+// documented pair); vite.config.js keys each build's CSS so they coexist.
 for (const shadow of ['0', '1']) {
   run(shadow === '1' ? '<sv-grid-shadow>' : '<sv-grid>', [vite, 'build'], {
     SVGRID_WC_SHADOW: shadow,

@@ -37,7 +37,7 @@ export function makeOrders(count = 240): Order[] {
     return {
       id: `ORD-${(10000 + i).toString()}`,
       customer,
-      email: `${customer.toLowerCase().replace(/[^a-z]/g, '.')}@example.com`,
+      email: `${customer.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, '.')}@example.com`,
       product: PRODUCTS[Math.floor(rng() * PRODUCTS.length)],
       status: STATUSES[Math.floor(rng() * STATUSES.length)],
       quantity,
@@ -58,7 +58,7 @@ export function makeCustomers(count = 120): Customer[] {
     return {
       id: `CUS-${(2000 + i).toString()}`,
       name,
-      email: `${name.toLowerCase().replace(/[^a-z]/g, '.')}@example.com`,
+      email: `${name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, '.')}@example.com`,
       company: COMPANIES[Math.floor(rng() * COMPANIES.length)],
       plan,
       mrr: seats * perSeat,

@@ -77,6 +77,11 @@ jobs:
         # the grid build above because these resolve @svgrid/grid through dist.
         run: pnpm --filter @svgrid/enterprise test
 
+      - name: Migration codemod tests
+        # Not covered by `pnpm test` either. Includes the check that the list of
+        # grid exports the codemod imports from is current.
+        run: pnpm --filter @svgrid/migrate test
+
       - name: Web component tests
         # Its suite loads the BUILT bundle, so the build is part of the test.
         # `build` runs `generate-surface.mjs --check` first, so a prop added to
@@ -190,7 +195,11 @@ jobs:
         # (app.css, the data-theme on the HTML shell, and the runtime picker's
         # starting value). A mismatch between any two shows up as a colour flash
         # or a picker that disagrees with the screen, and nothing else catches it.
-        run: pnpm vitest run tools/scaffold-templates.test.ts
+        # create-template-pins: @svgrid/create 3.0.5 shipped a Base template that
+        # pinned an enterprise version never published, and a vite.config.ts
+        # that did not parse. create-studio/index.test.ts: `--from <schema>` left a
+        # starter screen importing a schema it had deleted.
+        run: pnpm vitest run tools/scaffold-templates.test.ts tools/create-template-pins.test.ts packages/create-studio/index.test.ts
 
       - name: SSR renders rows
         # <SvGrid> silently stopped server-rendering its rows once: both

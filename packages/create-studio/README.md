@@ -61,9 +61,9 @@ npm create @svgrid/studio@latest my-app -- --project ./studio.config.json
 ## Pick a theme
 
 Running interactively, you'll be asked to pick a theme (one of `@svgrid/grid`'s
-19 built-in presets - shadcn, Tailwind, Material, Excel, Fluent, and more) and
-whether to start in light or dark mode. Both are also available as flags for
-scripted use:
+built-in presets - shadcn, Tailwind, Material, Excel, Fluent, and more; `--help`
+lists every id) and whether to start in light or dark mode. Both are also
+available as flags for scripted use:
 
 ```bash
 npm create @svgrid/studio@latest my-app -- --theme material --dark
@@ -78,8 +78,8 @@ A full [SvelteKit](https://svelte.dev/docs/kit) app - not a snippet - wired end 
 
 - **Nav shell + theme** (plain CSS, light/dark aware, no Tailwind) - your pick
   from `@svgrid/grid`'s built-in presets.
-- **Two linked entities** - Customers and Orders - where an order references a
-  customer through a **searchable lookup** field.
+- **Three entities** - Customers, Orders and Products - where an order
+  references a customer through a **searchable lookup** field.
 - **Grid + modal CRUD** on every screen: sort, filter, global search, paging,
   multi-select delete, and a draggable / resizable / pinnable edit modal - all
   driven by a single `EntitySchema` per entity.
@@ -102,7 +102,9 @@ The grid, form, sorting, filtering, and paging keep working unchanged.
 
 ## Requirements
 
-- Node.js >= 18
+- Node.js 20.19+, 22.12+ or 24+ (what Vite 8 and `@sveltejs/vite-plugin-svelte` 7
+  support). The app's `.npmrc` sets `engine-strict`, so `npm install` stops on an
+  older Node instead of failing later.
 
 ## Links
 

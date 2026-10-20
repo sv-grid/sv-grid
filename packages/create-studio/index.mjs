@@ -5,9 +5,10 @@
 //   pnpm create @svgrid/studio my-app            # into ./my-app
 //   npm  create @svgrid/studio@latest my-app -- --force
 //
-// One command -> a full SvelteKit app: nav shell, two linked entities
-// (Customers + Orders with a searchable lookup), grid + modal CRUD, and a
-// modern theme, running on seeded in-memory data with no backend to set up.
+// One command -> a full SvelteKit app: nav shell, three linked entities
+// (Customers, Orders with a searchable customer lookup, Products), grid + modal
+// CRUD, and a modern theme, running on seeded in-memory data with no backend
+// to set up.
 //
 // Zero runtime dependencies - Node built-ins only. Copies the bundled template,
 // renames `_`-prefixed dotfiles, and rewrites the project name.
@@ -68,8 +69,8 @@ ${color('bold', 'Usage')}
 
 ${color('bold', 'What you get')}
   A runnable SvelteKit app: nav shell, grid + modal CRUD per entity, and a
-  modern theme. Without --from you get seeded Customers + Orders; with --from
-  you get a screen for every table/model in your schema.
+  modern theme. Without --from you get seeded Customers, Orders and Products;
+  with --from you get a screen for every table/model in your schema.
 
 ${color('bold', 'Options')}
   --from <path>      Generate the app from a Drizzle (.ts) or Prisma (.prisma)
@@ -223,8 +224,10 @@ async function applyFromSchema(destDir, fromPath) {
 
   const files = studio.emitStudioApp(schemas)
 
-  // Drop the seeded example screens (their schemas/data no longer exist).
-  for (const ex of ['customers', 'orders']) {
+  // Drop the seeded example screens: they import schemas the generated
+  // schemas.ts no longer exports. Read from the template, so a starter entity
+  // added there later is dropped too.
+  for (const ex of await starterEntityRoutes()) {
     await rm(join(destDir, 'src', 'routes', ex), { recursive: true, force: true })
   }
   // Write generated files (overwrites schemas.ts / data.ts / +layout / +page).
@@ -234,6 +237,14 @@ async function applyFromSchema(destDir, fromPath) {
     await writeFile(full, f.contents)
   }
   return schemas.map((s) => s.label ?? s.name)
+}
+
+/** The template's per-entity route folders (customers, orders, ...): every
+ *  folder under src/routes that is not a SvelteKit group or param route. */
+async function starterEntityRoutes() {
+  const routes = join(TEMPLATE_DIR, 'src', 'routes')
+  const entries = await readdir(routes, { withFileTypes: true })
+  return entries.filter((e) => e.isDirectory() && !/^[([+]/.test(e.name)).map((e) => e.name)
 }
 
 function sanitizeName(name) {

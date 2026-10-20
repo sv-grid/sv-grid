@@ -29,26 +29,98 @@ import {
   ListToolsRequestSchema,
   ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js'
-import { apiSurface } from './data.js'
-import { CORE_TOOLS, handleCoreTool, type ToolResult } from './core-tools.js'
-import { handleProjectTool } from './project-tools.js'
-import { STUDIO_TOOLS, handleStudioTool, studioEnabled } from './studio-tools.js'
-import { listResources, readResource } from './resources.js'
-import { PREVIEW_TOOL, handlePreview, readPreviewResource } from './preview.js'
+import type { ToolResult } from './core-tools.js'
+import { CORE_TOOLS, PREVIEW_TOOL } from './tool-defs.js'
 import { PROMPTS, getPrompt } from './prompts.js'
 import { installedGrid, versionNote } from './installed.js'
 import { applyFixes, checkSvGridCode, type ApiSurface } from './validate.js'
 import { compileWithSvelte } from './compile-svelte.js'
 import { ENTERPRISE_LINE, checkNeedsEnterprise } from './enterprise.js'
-import {
-  checkLicenseKey,
-  introspectDrizzle,
-  introspectJson,
-  scaffold,
-  summarizeVerify,
-  verifyScaffold,
-  type EntitySchema,
-} from '@svgrid/enterprise/studio'
+import type { EntitySchema } from '@svgrid/enterprise/studio'
+
+/**
+ * Studio and scaffolding run on `@svgrid/enterprise`, an optional peer.
+ *
+ * It used to be a dependency, so `npx -y @svgrid/mcp` unpacked enterprise and
+ * the grid it peers on (about 2,200 files) before the server could answer. On
+ * Windows that took 30-46 s cold, past the 30 s an MCP client waits to connect,
+ * and every mcp release (one per docs change) made the next start cold again.
+ * The retrieval and checking tools need none of it. So enterprise loads on the
+ * first request that needs it, when it is installed beside this package (a
+ * project with `npm i -D @svgrid/mcp @svgrid/enterprise`), and the Studio tools
+ * answer with those steps when it is not.
+ */
+/**
+ * The corpus (`data.js`, about 12 MB of docs, demos and API surface) and the
+ * modules that read it load after the transport connects. A client times the
+ * connect up to the `initialize` reply, which needs none of it, and the first
+ * load of a freshly installed corpus took about 7 s on Windows. Every handler
+ * that needs it awaits `corpus()`.
+ */
+type Corpus = {
+  apiSurface: typeof import('./data.js')['apiSurface']
+  core: typeof import('./core-tools.js')
+  resources: typeof import('./resources.js')
+  preview: typeof import('./preview.js')
+}
+let corpusLoad: Promise<Corpus> | undefined
+function corpus(): Promise<Corpus> {
+  if (!corpusLoad) {
+    corpusLoad = Promise.all([
+      import('./data.js'),
+      import('./core-tools.js'),
+      import('./resources.js'),
+      import('./preview.js'),
+    ]).then(([data, core, resources, preview]) => ({ apiSurface: data.apiSurface, core, resources, preview }))
+    void corpusLoad.then(banner).catch(() => {})
+  }
+  return corpusLoad
+}
+
+type StudioApi = typeof import('@svgrid/enterprise/studio')
+type StudioToolsModule = typeof import('./studio-tools.js')
+type ProjectToolsModule = typeof import('./project-tools.js')
+let studioApi: StudioApi | null = null
+let studioTools: StudioToolsModule | null = null
+let projectTools: ProjectToolsModule | null = null
+
+const NEEDS_ENTERPRISE =
+  'This tool runs on @svgrid/enterprise, which is not installed beside the MCP server. ' +
+  'Install both in the project, `npm i -D @svgrid/mcp @svgrid/enterprise`, and run the local server ' +
+  '(Claude Code: `claude mcp add svgrid -- npx svgrid-mcp`). ' +
+  'It runs without a license key and watermarks generated apps until one is set. https://svgrid.com/pricing'
+
+let studioLoad: Promise<void> | undefined
+function loadStudio(): Promise<void> {
+  studioLoad ??= (async () => {
+    try {
+      studioApi = await import('@svgrid/enterprise/studio')
+      studioTools = await import('./studio-tools.js')
+      projectTools = await import('./project-tools.js')
+    } catch (err) {
+      studioApi = studioTools = projectTools = null
+      // Enterprise not installed is the expected case. Anything else, a module
+      // missing INSIDE enterprise included, is a real failure to load it, and
+      // saying so beats a Studio that silently never turns on.
+      const code = (err as { code?: string })?.code
+      const message = String((err as Error)?.message ?? err)
+      const absent =
+        (code === 'ERR_MODULE_NOT_FOUND' || code === 'MODULE_NOT_FOUND') &&
+        /Cannot find (package|module) '@svgrid\/enterprise/.test(message)
+      if (!absent) process.stderr.write(`@svgrid/mcp: could not load @svgrid/enterprise/studio: ${message}\n`)
+    }
+  })()
+  return studioLoad
+}
+
+function studioEnabled(): boolean {
+  return studioTools?.studioEnabled() ?? false
+}
+
+/** The names that run on enterprise, for a useful answer when it is missing. */
+function needsEnterprise(name: string): boolean {
+  return name === 'svgrid_scaffold' || name === 'introspect_source' || name === 'scaffold_entity' || name.startsWith('studio')
+}
 
 /**
  * Soft commercial gate. Uses the SAME classifier as the browser
@@ -56,8 +128,8 @@ import {
  * blocks - unlicensed generation still runs, it just prepends a nudge (and the
  * generated app itself watermarks until a key is set).
  */
-function studioNote(): string {
-  return checkLicenseKey(process.env.SVGRID_LICENSE_KEY ?? null).valid
+function studioNoteFor(api: StudioApi): string {
+  return api.checkLicenseKey(process.env.SVGRID_LICENSE_KEY ?? null).valid
     ? ''
     : '// SvGrid Studio is a commercial feature. Set SVGRID_LICENSE_KEY (in your MCP\n' +
         '// server config env) for licensed use. https://svgrid.com/pricing\n\n'
@@ -128,22 +200,31 @@ const SCAFFOLD_TOOL = {
   },
 }
 
-function listedTools() {
+async function listedTools() {
+  // The definitions, not the corpus: listing must not wait for data.js.
+  await loadStudio()
   const tools: unknown[] = [...CORE_TOOLS, CHECK_TOOL, PREVIEW_TOOL, SCAFFOLD_TOOL]
-  if (studioEnabled()) tools.push(...STUDIO_TOOLS)
+  if (studioTools && studioEnabled()) tools.push(...studioTools.STUDIO_TOOLS)
   return tools
 }
 
-server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: listedTools() }))
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+  const tools = await listedTools()
+  // Warm the corpus once this reply is on the wire, so its first load overlaps
+  // the model choosing a tool rather than the first call.
+  setTimeout(() => void corpus().catch(() => {}), 50)
+  return { tools }
+})
 
 // ---- resources ------------------------------------------------------------
 
 server.setRequestHandler(ListResourcesRequestSchema, async (req) =>
-  listResources(req.params?.cursor),
+  (await corpus()).resources.listResources(req.params?.cursor),
 )
 
 server.setRequestHandler(ReadResourceRequestSchema, async (req) => {
-  const found = readPreviewResource(req.params.uri) ?? readResource(req.params.uri)
+  const { preview, resources } = await corpus()
+  const found = preview.readPreviewResource(req.params.uri) ?? resources.readResource(req.params.uri)
   if (!found) throw new Error(`No SvGrid resource at "${req.params.uri}".`)
   return found
 })
@@ -165,6 +246,7 @@ async function runCheck(args: Record<string, unknown>): Promise<ToolResult> {
   if (typeof source !== 'string' || !source.trim()) {
     return errText('source (the file contents to check) is required')
   }
+  const { apiSurface } = await corpus()
   const result = await checkSvGridCode(source, apiSurface as ApiSurface, {
     filename: typeof args.filename === 'string' ? args.filename : undefined,
     compile: compileWithSvelte,
@@ -197,6 +279,10 @@ async function runCheck(args: Record<string, unknown>): Promise<ToolResult> {
 }
 
 async function runScaffold(args: Record<string, unknown>): Promise<ToolResult> {
+  const api = studioApi
+  if (!api) return errText(NEEDS_ENTERPRISE)
+  const { introspectDrizzle, introspectJson, scaffold, verifyScaffold, summarizeVerify } = api
+  const studioNote = () => studioNoteFor(api)
   const from = String(args.from ?? '')
   try {
     let schema: EntitySchema
@@ -272,18 +358,19 @@ const LEGACY_TARGET: Record<string, string> = {
 server.setRequestHandler(CallToolRequestSchema, async (req) => {
   const { name, arguments: rawArgs } = req.params
   const args = (rawArgs ?? {}) as Record<string, unknown>
+  const [{ core: coreTools, preview }] = await Promise.all([corpus(), loadStudio()])
 
   // Retrieval tools, old names mapped onto the new ones.
   const legacy = LEGACY[name]
   if (legacy) {
-    const mapped = handleCoreTool(LEGACY_TARGET[name]!, legacy(args))
+    const mapped = coreTools.handleCoreTool(LEGACY_TARGET[name]!, legacy(args))
     if (mapped) return mapped
   }
 
-  const core = handleCoreTool(name, args)
+  const core = coreTools.handleCoreTool(name, args)
   if (core) return core
 
-  if (name === 'svgrid_preview') return handlePreview(args)
+  if (name === 'svgrid_preview') return preview.handlePreview(args)
   if (name === 'svgrid_check_code' || name === 'check_svgrid_code') return runCheck(args)
 
   if (name === 'svgrid_scaffold') return runScaffold(args)
@@ -303,10 +390,14 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
 
   // Consolidated Studio tools, then the 27 individual pre-3.0 ones, which the
   // project dispatcher still understands.
-  const studio = handleStudioTool(name, args)
-  if (studio) return studio
-  const project = handleProjectTool(name, args)
-  if (project) return project
+  if (studioTools && projectTools) {
+    const studio = studioTools.handleStudioTool(name, args)
+    if (studio) return studio
+    const project = projectTools.handleProjectTool(name, args)
+    if (project) return project
+  } else if (needsEnterprise(name)) {
+    return errText(NEEDS_ENTERPRISE)
+  }
 
   return {
     isError: true,
@@ -314,7 +405,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       {
         type: 'text',
         text:
-          `Unknown tool: ${name}. Available: ${listedTools()
+          `Unknown tool: ${name}. Available: ${(await listedTools())
             .map((t) => (t as { name: string }).name)
             .join(', ')}` +
           (studioEnabled()
@@ -326,14 +417,23 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
 })
 
 async function main() {
+  // Connect and nothing else: `initialize` is answered by the SDK and needs
+  // neither the corpus nor enterprise. They load on the first request that
+  // does (normally tools/list). Loading them eagerly after connect did not
+  // help: the first read of the 12 MB corpus held the event loop for seconds,
+  // and the initialize reply waited behind it.
   const transport = new StdioServerTransport()
   await server.connect(transport)
-  // The MCP SDK keeps the process alive on the stdio transport, so we just log
-  // a startup banner to stderr (stdout is reserved for the JSON-RPC protocol)
-  // and let the SDK take over.
-  // Name both versions up front. A corpus that describes a different grid than
-  // the one installed is the quietest way for this server to be confidently
-  // wrong, and the banner is where someone would actually notice.
+  process.stderr.write(`@svgrid/mcp ${pkgVersion} on stdio\n`)
+}
+
+/** The fuller banner, once the corpus is in, naming both grid versions. */
+async function banner() {
+  const [{ apiSurface }] = await Promise.all([corpus(), loadStudio()])
+  // stderr: stdout is reserved for the JSON-RPC protocol.
+  // Name both versions. A corpus that describes a different grid than the one
+  // installed is the quietest way for this server to be confidently wrong, and
+  // the banner is where someone would actually notice.
   const found = installedGrid()
   const versions =
     found && found.version !== apiSurface.gridVersion
@@ -341,8 +441,8 @@ async function main() {
       : ` - grid ${apiSurface.gridVersion}${found ? ' (matches installed)' : ''}`
 
   process.stderr.write(
-    `@svgrid/mcp ${pkgVersion} on stdio - ${listedTools().length} tools` +
-      (studioEnabled() ? ' (Studio on)' : '') +
+    `@svgrid/mcp ${pkgVersion} ready - ${(await listedTools()).length} tools` +
+      (studioEnabled() ? ' (Studio on)' : studioApi ? '' : ' (Studio off: @svgrid/enterprise not installed)') +
       versions +
       '\n',
   )

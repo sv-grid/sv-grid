@@ -12,8 +12,8 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { enableFields } from './index'
-import { baseToSql, sqlName } from './base-sql'
-import { baseFromDatabase, baseFromSupabase } from './base-connect'
+import { BASE_ORDER_COLUMN, baseToSql, sqlName } from './base-sql'
+import { baseFromDatabase, baseFromEndpoint, baseFromSupabase, createBaseEndpoint } from './base-connect'
 import { createBaseSync } from './base-sync'
 import { tableFields } from './automations.svelte'
 import { registerFieldType } from './registry.svelte'
@@ -69,6 +69,13 @@ function template(): BaseTable[] {
   ]
 }
 
+describe('the order column name', () => {
+  it('is the one Studio introspection hides (it keeps its own copy)', async () => {
+    const { BASE_ORDER_COLUMN_NAME } = await import('../studio/introspect-db')
+    expect(BASE_ORDER_COLUMN_NAME).toBe(BASE_ORDER_COLUMN)
+  })
+})
+
 describe('a base to SQL and back', () => {
   it('names tables and columns the SQL way', () => {
     expect(sqlName('Key results')).toBe('key_results')
@@ -81,6 +88,8 @@ describe('a base to SQL and back', () => {
     expect(sql).toContain('create table "bugs"')
     expect(sql).toContain('"release_id" text')
     expect(sql).toContain('create table "bugs_blocked_by"')
+    // Each table numbers its records in the order they are written.
+    expect(sql).toContain('"svgrid_order" bigint generated always as identity')
     expect(sql).toContain('"areas" text[]')
     expect(sql).toContain('current_date - 3')
     // The quote in the record survives.
@@ -187,6 +196,81 @@ describe('a base to SQL and back', () => {
   })
 })
 
+/** A table whose ids sort as text (1, 10, 2) and a UUID, like a Base template's after a record is added. */
+function ordered(): BaseTable[] {
+  return [
+    {
+      id: 'items',
+      name: 'Items',
+      primaryField: 'name',
+      columns: [{ field: 'name', header: 'Name', fieldType: 'text' }],
+      data: ['1', '2', '10', '3f2b9c1e-0000-4000-8000-000000000000', '11'].map((id, i) => ({ id, name: `Item ${i + 1}` })),
+    },
+  ]
+}
+const names = (t: BaseTable) => t.data.map((r) => r.name)
+
+describe('records keep the order they were written in', () => {
+  it('through baseFromDatabase: after an edit, and with a record added in the page last', async () => {
+    const db = new PGlite()
+    await db.exec(baseToSql(ordered(), { today: TODAY }))
+    const execute = async (sql: string, params: unknown[]) => (await db.query(sql, params)).rows as Record<string, unknown>[]
+    const open = async () => {
+      let tables = await baseFromDatabase({ execute })
+      const sync = createBaseSync({ getTables: () => tables, apply: (n) => (tables = n) })
+      await sync.load()
+      return { get: () => tables, set: (n: BaseTable[]) => (tables = n), sync }
+    }
+    let base = await open()
+    // Not a field, and not in the rows.
+    expect(base.get()[0]!.columns.map((d) => d.field)).toEqual(['name'])
+    expect(base.get()[0]!.data.some((r) => BASE_ORDER_COLUMN in r)).toBe(false)
+    expect(names(base.get()[0]!)).toEqual(['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5'])
+
+    // An edit, then a reload: the record stays where it was.
+    base.set(base.get().map((t) => ({ ...t, data: t.data.map((r) => (r.id === '1' ? { ...r, name: 'Item 1 (edited)' } : r)) })))
+    base.sync.push(base.get())
+    await base.sync.settled()
+    base = await open()
+    expect(names(base.get()[0]!)).toEqual(['Item 1 (edited)', 'Item 2', 'Item 3', 'Item 4', 'Item 5'])
+
+    // A record added in the page gets a UUID from the database and goes last.
+    base.set(base.get().map((t) => ({ ...t, data: [...t.data, { id: 'rec-new', name: 'Item 6' }] })))
+    base.sync.push(base.get())
+    await base.sync.settled()
+    base = await open()
+    expect(names(base.get()[0]!)).toEqual(['Item 1 (edited)', 'Item 2', 'Item 3', 'Item 4', 'Item 5', 'Item 6'])
+    expect(String(base.get()[0]!.data[5]!.id)).toMatch(/^[0-9a-f-]{36}$/)
+  })
+
+  it('through createBaseEndpoint: the order column is never described, read or written', async () => {
+    const db = new PGlite()
+    await db.exec(baseToSql(ordered(), { today: TODAY }))
+    const endpoint = createBaseEndpoint({ execute: async (sql, params) => (await db.query(sql, params)).rows as Record<string, unknown>[] })
+    const specs = (await (await endpoint.GET()).json()) as Array<{ columns: Array<{ field: string }> }>
+    expect(JSON.stringify(specs)).not.toContain(BASE_ORDER_COLUMN)
+    const post = async (body: unknown) =>
+      (await endpoint.POST({ request: new Request('http://app.local/api/base?table=items', { method: 'POST', body: JSON.stringify(body) }) })).json()
+    // A value for it in a write (a copied row, an import) is dropped, not sent to a generated column.
+    const made = await post({ kind: 'mutate', op: 'create', input: { name: 'Item 6', [BASE_ORDER_COLUMN]: 1 } })
+    expect(made).toMatchObject({ name: 'Item 6' })
+    expect(BASE_ORDER_COLUMN in made).toBe(false)
+    await post({ kind: 'mutate', op: 'update', id: '2', patch: { name: 'Item 2 (edited)', [BASE_ORDER_COLUMN]: 99 } })
+    const page = await post({ kind: 'query', request: { startRow: 0, endRow: 50, pageIndex: 0, pageSize: 50, sortModel: [], filterModel: {} } })
+    expect(page.rows.map((r: Record<string, unknown>) => r.name)).toEqual(['Item 1', 'Item 2 (edited)', 'Item 3', 'Item 4', 'Item 5', 'Item 6'])
+    expect(page.rows.some((r: Record<string, unknown>) => BASE_ORDER_COLUMN in r)).toBe(false)
+    // And the page reads the same order.
+    const fetch = (async (input: string | URL, init?: RequestInit) => {
+      const request = new Request(new URL(String(input), 'http://app.local'), init)
+      return request.method === 'GET' ? endpoint.GET() : endpoint.POST({ request })
+    }) as typeof globalThis.fetch
+    let tables = await baseFromEndpoint('/api/base', { fetch })
+    const sync = createBaseSync({ getTables: () => tables, apply: (n) => (tables = n) })
+    await sync.load()
+    expect(names(tables[0]!)).toEqual(['Item 1', 'Item 2 (edited)', 'Item 3', 'Item 4', 'Item 5', 'Item 6'])
+  })
+})
+
 /** What PostgREST serves at /rest/v1/: a table's comment as its description, a column's with notes after it. */
 async function postgrestDescription(db: PGlite) {
   const q = async <T,>(sql: string) => (await db.query<T>(sql)).rows
@@ -244,5 +328,8 @@ describe('the template SQL npm create ships', () => {
     const sync = createBaseSync({ getTables: () => tables, apply: (n) => (tables = n) })
     await sync.load()
     expect(tables[0]!.data.length).toBeGreaterThan(2)
+    // The records in the order the file writes them, not in key order.
+    const written = await db.query<{ id: string }>(`select id from "${tables[0]!.id}" order by ${BASE_ORDER_COLUMN}`)
+    expect(tables[0]!.data.map((r) => String(r.id))).toEqual(written.rows.map((r) => r.id))
   })
 })

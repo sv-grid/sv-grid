@@ -125,7 +125,23 @@ describe('listSupabaseTables', () => {
     expect(tables).toEqual(['customers', 'deals', 'orders'])
   })
 
-  it('returns [] when the OpenAPI doc is blocked or the key is wrong', async () => {
+  it('returns [] for a project with no tables, and for a doc restricted for this key', async () => {
+    expect(await listSupabaseTables('https://x.supabase.co', 'anon', fetchFor({ openapi: { definitions: {} } }))).toEqual([])
+    // 401 / 403 that does not call the key invalid: each table still introspects by name.
     expect(await listSupabaseTables('https://x.supabase.co', 'anon', fetchFor({ openapiStatus: 401 }))).toEqual([])
+    expect(await listSupabaseTables('https://x.supabase.co', 'anon', fetchFor({ openapiStatus: 403 }))).toEqual([])
+  })
+
+  it('throws, naming the URL, when the project cannot be reached or does not answer as one', async () => {
+    const down = (async () => { throw new TypeError('fetch failed') }) as unknown as typeof fetch
+    await expect(listSupabaseTables('https://typo.supabase.co/', 'anon', down)).rejects.toThrow('Could not reach https://typo.supabase.co/rest/v1/ (fetch failed)')
+    const answer = (status: number, text: string) => (async () => resp({ status, text })) as unknown as typeof fetch
+    await expect(listSupabaseTables('https://x.supabase.co', 'bad', answer(401, '{"message":"Invalid API key"}'))).rejects.toThrow('https://x.supabase.co/rest/v1/ answered 401 (invalid API key)')
+    await expect(listSupabaseTables('https://x.supabase.co', 'anon', answer(404, 'Not Found'))).rejects.toThrow('https://x.supabase.co/rest/v1/ answered 404')
+    await expect(listSupabaseTables('https://x.supabase.co', 'anon', answer(500, ''))).rejects.toThrow('answered 500')
+    // A 200 that is not an API description: an ordinary web page at that URL.
+    const page = (async () => ({ ...resp({}), json: async () => { throw new SyntaxError('Unexpected token <') } })) as unknown as typeof fetch
+    await expect(listSupabaseTables('https://example.com', 'anon', page)).rejects.toThrow('https://example.com/rest/v1/ did not answer with an API description')
+    await expect(listSupabaseTables('https://example.com', 'anon', fetchFor({ openapi: { hello: 'world' } }))).rejects.toThrow('did not answer with an API description')
   })
 })

@@ -5,8 +5,9 @@ import { test, expect, type Page } from '@playwright/test'
  *
  * Runs against the BUILT bundles on :4205, not a dev server, because the piece
  * this feature turns on is a build-only plugin: it inlines each chunk's CSS into
- * that chunk, puts the entry's on `globalThis.__SVGRID_WC_CSS__` for the root
- * to adopt, appends it to `document.head` for the popups that portal out of
+ * that chunk, puts the entry's in `globalThis.__SVGRID_WC_CSS_BY_BUILD__` (keyed
+ * by build, so the grid, shadow and chart bundles do not overwrite each other)
+ * for the root to adopt, appends it to `document.head` for the popups that portal out of
  * the root, and hands a lazy chunk's CSS to adopt-styles when the chunk loads.
  * In dev that global does not exist and `adoptGridStyles` correctly no-ops, so
  * a dev-server test would pass while asserting nothing.

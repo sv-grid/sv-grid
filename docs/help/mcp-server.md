@@ -235,6 +235,19 @@ Studio adds four more, and only when you ask for them - set
 licence to be useful, so they are not charged to everyone else's context
 window.
 
+`svgrid_scaffold` and the Studio tools run on `@svgrid/enterprise`, which the
+server loads only when it is installed beside it. `npx -y @svgrid/mcp` leaves
+it out so the server starts fast. To scaffold, install both in the project and
+run the local server:
+
+```bash
+npm i -D @svgrid/mcp @svgrid/enterprise
+claude mcp add svgrid -- npx svgrid-mcp
+```
+
+Without `-y`, `npx` runs the installed copy instead of downloading one, so
+there is no install on the first connect.
+
 The **hosted** server carries `search`, `fetch`, `list_examples`,
 `get_example_source`, `get_api_reference`, `check_svgrid_code` and
 `svgrid_preview`, plus the same resources and prompts. The first two are named
@@ -399,7 +412,10 @@ server rather than recall SvGrid from training data, and each ends at
 ### SvGrid Studio (commercial)
 
 Off unless enabled. Set `SVGRID_MCP_STUDIO=1`, or a valid
-`SVGRID_LICENSE_KEY`, in the server's env.
+`SVGRID_LICENSE_KEY`, in the server's env, and run the server from a project
+that has `@svgrid/enterprise` installed beside it
+(`npm i -D @svgrid/mcp @svgrid/enterprise`, then `npx svgrid-mcp`). Without it
+these tools answer with those steps instead of running.
 
 #### `svgrid_scaffold`
 

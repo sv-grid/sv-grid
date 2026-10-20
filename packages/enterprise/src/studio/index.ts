@@ -387,6 +387,7 @@ export {
   type AddOptions,
   type AddResult,
   type AddAppResult,
+  type ParkedFile,
 } from './cli.js'
 
 // Re-export the schema surface so consumers get everything from one entry.

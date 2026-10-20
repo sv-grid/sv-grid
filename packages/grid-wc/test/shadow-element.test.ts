@@ -55,9 +55,13 @@ describe('sv-grid-shadow built bundle', () => {
   })
 
   it('exposes the CSS on a global so the root can adopt the same text', () => {
-    const css = (globalThis as { __SVGRID_WC_CSS__?: string }).__SVGRID_WC_CSS__
+    // Keyed by build: <sv-grid> and <sv-chart> write their own entries on the
+    // same page, and this element must adopt its own.
+    const css = (globalThis as { __SVGRID_WC_CSS_BY_BUILD__?: Record<string, string> })
+      .__SVGRID_WC_CSS_BY_BUILD__?.shadow
     expect(typeof css).toBe('string')
     expect(css!.length).toBeGreaterThan(1000)
+    expect(document.querySelector('style[data-svgrid-grid-wc]')!.getAttribute('data-svgrid-grid-wc')).toBe('shadow')
   })
 
   it('attaches an OPEN shadow root, so a consumer can reach their own grid', async () => {

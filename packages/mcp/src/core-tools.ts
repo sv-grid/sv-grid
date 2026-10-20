@@ -16,6 +16,7 @@
 import { apiReference, apiSurface, docs, examples, schemas } from './data.js'
 import { meaningfulTerms, rankDocs } from './search.js'
 import { ENTERPRISE_LINE, ENTERPRISE_NOTE, importsEnterprise, isEnterpriseDoc, isPaidQuestion } from './enterprise.js'
+export { CORE_TOOLS } from './tool-defs.js'
 
 export type ToolResult = {
   isError?: boolean
@@ -81,78 +82,6 @@ const apiNames: { name: string; group: string }[] = (() => {
 const enterpriseDocs = new Set(docs.filter((d) => isEnterpriseDoc(d.slug, d.markdown)).map((d) => d.slug))
 const enterpriseExamples = new Set(examples.filter((e) => importsEnterprise(e.source)).map((e) => e.id))
 
-export const CORE_TOOLS = [
-  {
-    name: 'svgrid_search',
-    title: 'Search SvGrid',
-    description:
-      'Search SvGrid docs, example demos and the API surface in ONE call. Start here for any "how do I ..." question - it covers all three, so you do not have to guess which one holds the answer. Call with no arguments for an index of doc sections, demo categories and API groups. Returns ids/slugs you can pass to svgrid_get.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        query: {
-          type: 'string',
-          description:
-            'What you are trying to do, e.g. "pin a column", "server side pagination", "kanban swimlanes". Omit for the index.',
-        },
-        kind: {
-          type: 'string',
-          enum: ['all', 'docs', 'examples', 'api'],
-          description: 'Restrict the search. Default "all".',
-          default: 'all',
-        },
-        detail: {
-          type: 'string',
-          enum: ['concise', 'full'],
-          description:
-            '"concise" (default) returns titles plus a short excerpt. "full" returns the matching doc excerpts at length - more tokens, fewer follow-up calls.',
-          default: 'concise',
-        },
-        section: {
-          type: 'string',
-          description:
-            'Restrict docs to one section, exactly, e.g. "Help". Call with no arguments to see the sections.',
-        },
-        category: {
-          type: 'string',
-          description:
-            'Restrict demos to one category, exactly, e.g. "Kanban". Call with no arguments to see the categories.',
-        },
-        limit: { type: 'number', description: 'Max results per corpus. Default 10, max 50.', default: 10 },
-      },
-      required: [],
-    },
-  },
-  {
-    name: 'svgrid_get',
-    title: 'Read a doc or demo',
-    description:
-      'Fetch one thing in full by reference: a doc slug ("help/columns/column-definitions"), a demo id ("11-stock-market"), or "api" for the curated API reference. Use svgrid_search first to find the reference.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        ref: {
-          type: 'string',
-          description:
-            'A doc slug, a demo id, "api", or a schema id such as "chart-spec" (or "chart spec schema"). The kind is inferred; pass `kind` to force it.',
-        },
-        kind: {
-          type: 'string',
-          enum: ['auto', 'doc', 'example', 'api', 'schema'],
-          description: 'Override the inferred kind. Default "auto".',
-          default: 'auto',
-        },
-        detail: {
-          type: 'string',
-          enum: ['concise', 'full'],
-          description: '"full" (default) returns the whole thing; "concise" truncates long content.',
-          default: 'full',
-        },
-      },
-      required: ['ref'],
-    },
-  },
-] as const
 
 /** Rank examples by a term match over id/title/blurb, optionally within a category. */
 function searchExamples(query: string, limit: number, category: string) {
