@@ -7,8 +7,9 @@
  * dependency lines and one file, this uses only `sv`'s own API and ships as a
  * single hand-written module.
  *
- * API verified against sv@0.17.0. Community add-ons are still marked
- * experimental upstream, so treat the shape here as pinned to that version.
+ * API verified against sv@1.1.1 (written against 0.17.0; the add-on API did
+ * not change between them). Community add-ons are still marked experimental
+ * upstream, so re-check this shape on each sv minor.
  */
 import { defineAddon, defineAddonOptions } from 'sv'
 

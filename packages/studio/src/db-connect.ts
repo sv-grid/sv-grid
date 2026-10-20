@@ -7,10 +7,9 @@
  * is held in a variable so it isn't a hard dependency of this package. Shared by
  * the `add --db` command and the `designer` connect wizard (`/api/introspect`).
  */
-import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
-import { join } from 'node:path'
 import type { DbExecute, SqlDialectName } from '@svgrid/enterprise/studio'
+import { resolveFromProject } from './driver-install.js'
 
 /**
  * Load a driver from the *project's* node_modules (the current working
@@ -20,8 +19,10 @@ import type { DbExecute, SqlDialectName } from '@svgrid/enterprise/studio'
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function loadDriver(spec: string): Promise<any> {
-  const requireFromCwd = createRequire(pathToFileURL(join(process.cwd(), 'noop.js')))
-  const resolved = requireFromCwd.resolve(spec)
+  // resolveFromProject also covers a driver this same process just installed,
+  // which a plain in-process resolve misses (see its comment).
+  const resolved = resolveFromProject(spec, process.cwd())
+  if (!resolved) throw new Error(`Cannot find "${spec}" from ${process.cwd()}. Install it in this project: npm install ${spec}`)
   return import(pathToFileURL(resolved).href)
 }
 

@@ -323,7 +323,7 @@ function stripFeatures(src, drop) {
   }
 
   // Now the import specifiers that no longer refer to anything used.
-  return out
+  return collapseGridImports(out)
     .split('\n')
     .map((line) => {
       const m = /^([^\S\n]*)import\s*\{([^}]*)\}\s*from\s*('@svgrid\/grid')(.*)$/.exec(line)
@@ -680,6 +680,26 @@ const DEAD_IMPORTS = new Set([
 ])
 
 /**
+ * Put every named import from `@svgrid/grid` on one line. The import passes
+ * here read a line at a time, and Prettier spreads a long import over several,
+ * so `createSvelteTable` and `createColumnHelper` survived in a multi-line
+ * import and the output did not compile. Comments inside the braces go: a line
+ * comment would swallow the rest of the collapsed line.
+ */
+function collapseGridImports(src) {
+  return src.replace(/^([^\S\n]*)import\s*\{([^}]*)\}\s*from\s*'@svgrid\/grid'/gm, (whole, indent, names) => {
+    if (!names.includes('\n')) return whole
+    const list = names
+      .replace(/\/\/[^\n]*/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .split(',')
+      .map((n) => n.trim())
+      .filter(Boolean)
+    return `${indent}import { ${list.join(', ')} } from '@svgrid/grid'`
+  })
+}
+
+/**
  * Re-point TanStack imports at `@svgrid/grid`, which exports the same names,
  * then drop the specifiers that no longer refer to anything. `wantSvGrid` adds
  * the component itself, since the markup we emit needs it.
@@ -692,6 +712,7 @@ function repointImports(src, { wantSvGrid = false } = {}) {
       "'@svgrid/grid'",
     )
   }
+  out = collapseGridImports(out)
 
   // A default import of the render component has no counterpart at all.
   out = out.replace(/^[^\S\n]*import\s+(?:FlexRender|flexRender)\s+from\s+'@svgrid\/grid'[^\n]*\n?/gm, '')

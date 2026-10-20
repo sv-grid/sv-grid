@@ -1,0 +1,4 @@
+@import '@svgrid/grid/themes/ember.css';
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; background: var(--sg-bg); color: var(--sg-fg); }

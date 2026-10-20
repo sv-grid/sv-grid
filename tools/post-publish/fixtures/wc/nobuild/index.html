@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>post-publish grid-wc, no build</title>
+    <!-- The README's CDN snippet, with the CDN host swapped for the unpacked tarball.
+         __GRID_WC__ and __CHART__ are filled in from the package's unpkg field and
+         the chart path the README gives. -->
+    <script type="module" src="__GRID_WC__"></script>
+    <script type="module" src="__CHART__"></script>
+    <style>body { margin: 0; padding: 16px; font: 14px system-ui, sans-serif; }</style>
+  </head>
+  <body>
+    <sv-grid id="grid" sortable filterable style="display:block;height:420px"></sv-grid>
+    <sv-chart id="chart" legend="right" style="display:block;width:600px"></sv-chart>
+
+    <script type="module">
+      window.__check = { rowclicks: [] }
+      const grid = document.getElementById('grid')
+      grid.columns = [
+        { field: 'name', header: 'Name', editorType: 'text', width: 200 },
+        { field: 'salary', header: 'Salary', align: 'right', format: { type: 'currency', currency: 'USD' } },
+      ]
+      grid.data = [
+        { name: 'Ada Lovelace', salary: 145000 },
+        { name: 'Alan Turing', salary: 160000 },
+      ]
+      grid.addEventListener('rowclick', (e) => window.__check.rowclicks.push(e.detail))
+
+      document.getElementById('chart').spec = {
+        type: 'line',
+        categories: ['2026-01-01', '2026-01-02', '2026-01-03'],
+        series: [{ label: 'Close', values: [10, 12, 11] }],
+        xType: 'ordinal-time',
+      }
+    </script>
+  </body>
+</html>

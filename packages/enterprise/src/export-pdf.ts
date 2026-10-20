@@ -62,6 +62,20 @@ export type PdfMakeLike = {
  * `vfs` property as well, which older versions read. Returns whether a map
  * was found to register.
  */
+/**
+ * The PDF as a Blob from either pdfmake line. 0.2 hands it to a callback; 0.3
+ * made `getBlob` async and never calls one, so waiting on the callback alone
+ * hung every export once pnpm or yarn installed 0.3 for `pnpm add pdfmake`.
+ */
+export function pdfBlob(doc: { getBlob(cb?: (b: Blob) => void): unknown }): Promise<Blob> {
+  return new Promise<Blob>((resolve, reject) => {
+    const returned = doc.getBlob(resolve)
+    if (returned && typeof (returned as PromiseLike<Blob>).then === 'function') {
+      ;(returned as PromiseLike<Blob>).then(resolve, reject)
+    }
+  })
+}
+
 export function registerPdfFonts(pdfMake: PdfMakeLike, vfsModule: unknown): boolean {
   const vfs = resolvePdfVfs(vfsModule)
   if (!vfs) return false

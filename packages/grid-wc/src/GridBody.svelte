@@ -93,7 +93,7 @@
   default-off, and left undefined <SvGrid> shows checkboxes for
   selectionMode 'row', which this element sets.
 -->
-<div style="height: 100%; min-height: 320px;">
+<div style="height: 100%;">
   <SvGrid
     {...rest}
     selectable={undefined}
@@ -111,3 +111,18 @@
     {...callbacks}
   />
 </div>
+
+<style>
+  /*
+    The element's size is the host's: a page sets `height` on <sv-grid> (the
+    README does, style="display:block;height:420px"). A host with no height
+    gets 320px. This used to be a min-height on the wrapper above, which also
+    overrode a shorter host: at height:260px the grid drew 320px and painted
+    over whatever came next. :where() keeps this default at zero specificity,
+    so any height the page sets wins.
+  */
+  :global(:where(sv-grid, sv-grid-shadow)) {
+    display: block;
+    height: 320px;
+  }
+</style>

@@ -41,10 +41,10 @@
     "lint": "eslint ."
   },
   "peerDependencies": {
-    "sv": "^0.17.0"
+    "sv": "^0.17.0 || ^1.0.0"
   },
   "devDependencies": {
-    "sv": "^0.17.0",
+    "sv": "^1.1.1",
     "vitest": "^4.1.7"
   }
 }

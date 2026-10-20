@@ -148,8 +148,10 @@ function managed(body: string): string {
 }
 
 export function scaffold(schema: EntitySchema, options: ScaffoldOptions = {}): { files: GeneratedFile[] } {
-  const route = options.route ?? schema.name
-  const apiRoute = options.apiRoute ?? `/api/${route}`
+  // `route` is documented as "/people"; the paths below join it after a slash,
+  // so a leading one gave src/routes//people and an endpoint of /api//people.
+  const route = (options.route ?? schema.name).replace(/^\/+|\/+$/g, '')
+  const apiRoute = `/${(options.apiRoute ?? `/api/${route}`).replace(/^\/+|\/+$/g, '')}`
   const schemaImport = options.schemaImport ?? `$lib/${route}.schema`
   const constName = `${camel(schema.name)}Schema`
   const rowType = `${pascal(schema.name)}Row`

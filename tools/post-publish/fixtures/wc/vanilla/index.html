@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>post-publish grid-wc</title>
+    <style>
+      body { margin: 0; padding: 16px; font: 14px system-ui, sans-serif; background: #fff; }
+      sv-grid { display: block; height: 260px; margin-bottom: 16px; }
+      sv-chart { display: block; width: 600px; margin-bottom: 16px; }
+    </style>
+  </head>
+  <body>
+    <!-- No `selectable`: no row checkboxes. -->
+    <sv-grid id="plain"></sv-grid>
+    <sv-chart id="chart" width="600" height="260"></sv-chart>
+    <sv-grid id="picking" selectable style="height: 200px"></sv-grid>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

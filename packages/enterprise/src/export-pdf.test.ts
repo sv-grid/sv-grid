@@ -1,5 +1,22 @@
 import { describe, expect, it } from 'vitest'
-import { buildPdfDocDefinition, cssColorToHex, hexLuminance, readGridPdfTheme, registerPdfFonts, resolvePdfCharts, resolvePdfVfs } from './export-pdf'
+import { buildPdfDocDefinition, cssColorToHex, hexLuminance, pdfBlob, readGridPdfTheme, registerPdfFonts, resolvePdfCharts, resolvePdfVfs } from './export-pdf'
+
+describe('pdfBlob', () => {
+  const blob = new Blob(['%PDF-1.3'], { type: 'application/pdf' })
+
+  it('takes the blob from the callback (pdfmake 0.2)', async () => {
+    await expect(pdfBlob({ getBlob: (cb) => void cb?.(blob) })).resolves.toBe(blob)
+  })
+
+  it('takes it from the returned promise when no callback is called (pdfmake 0.3)', async () => {
+    // 0.3's getBlob is async and ignores its argument; waiting on the callback hung forever.
+    await expect(pdfBlob({ getBlob: async () => blob })).resolves.toBe(blob)
+  })
+
+  it('rejects when 0.3 rejects, rather than hanging', async () => {
+    await expect(pdfBlob({ getBlob: async () => { throw new Error('font missing') } })).rejects.toThrow('font missing')
+  })
+})
 
 const columns = [
   { header: 'Company', align: 'left' as const },

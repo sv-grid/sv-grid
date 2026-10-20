@@ -339,6 +339,12 @@ async function cmdAdd(registry, tokens, args) {
   const written = []
   const skipped = []
   const deps = new Set()
+  if (args.headless) {
+    const notBlocks = items.filter((it) => !isBlock(it)).map((it) => it.id)
+    if (notBlocks.length) {
+      stdout.write(`${color('yellow', 'Note:')} --headless applies to page blocks only; ${notBlocks.join(', ')} ${notBlocks.length === 1 ? 'is written as a full component' : 'are written as full components'}.\n`)
+    }
+  }
   for (const it of items) {
     for (const d of it.deps ?? []) deps.add(d)
     for (const file of it.files ?? []) {
@@ -422,7 +428,15 @@ async function cmdAdd(registry, tokens, args) {
         `  ${color('dim', 'Start an app:')} ${color('cyan', 'npm create @svgrid@latest')} ${color('dim', '(then run add inside it)')}\n`,
     )
   } else {
-    if (isBlock(first)) {
+    const core = args.headless && isBlock(first) ? written.find((w) => w.endsWith('.svelte.ts')) : undefined
+    if (core) {
+      // --headless wrote the block's core, a module exporting a create<Name>()
+      // factory, not a component: the default-import hint would not resolve.
+      const src = await readFile(join(dest, core), 'utf8')
+      const fn = /export\s+function\s+(\w+)/.exec(src)?.[1] ?? `create${first.id.split('-').map((s) => s[0].toUpperCase() + s.slice(1)).join('')}`
+      const from = relFromCwd(projectRoot, join(dest, core)).split('\\').join('/').replace(/^src\/lib\//, '$lib/').replace(/\.svelte\.ts$/, '.svelte.js')
+      stdout.write(`  ${color('dim', 'Use it:')}  import { ${fn} } from '${from}'  ${color('dim', '(the state and handlers; the markup is yours)')}\n`)
+    } else if (isBlock(first)) {
       const file = first.files?.[0]?.write ?? `${first.id}.svelte`
       const name = first.id.split('-').map((s) => s[0].toUpperCase() + s.slice(1)).join('')
       const from = relFromCwd(projectRoot, join(dest, file)).split('\\').join('/').replace(/^src\/lib\//, '$lib/')
@@ -430,8 +444,9 @@ async function cmdAdd(registry, tokens, args) {
     } else {
       stdout.write(`  ${color('dim', 'Use it:')}  import { ${exportName(first)} } from '@svgrid/grid'\n`)
     }
-    // "See it" - skip when we already wrote preview routes just above.
-    if (!(args.preview && isSvelteKit(projectRoot))) {
+    // "See it" - skip when we already wrote preview routes just above, and for a
+    // headless core, which has no markup to show.
+    if (!core && !(args.preview && isSvelteKit(projectRoot))) {
       stdout.write(`  ${color('dim', 'See it:')}  ${color('cyan', `npx @svgrid/ui try ${ids}`)} ${color('dim', '(opens in your browser)')}\n`)
       if (isSvelteKit(projectRoot)) {
         stdout.write(`  ${color('dim', 'In app:')}  re-run with ${color('cyan', '--preview')} to add a /preview/${first.id} route\n`)

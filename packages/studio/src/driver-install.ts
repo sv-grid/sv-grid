@@ -8,7 +8,7 @@
  * bundle. The driver package names mirror `DRIVER_PACKAGE` in
  * `@svgrid/enterprise/studio`.
  */
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join as joinNative } from 'node:path'
@@ -53,16 +53,33 @@ export function installArgs(pm: PackageManager, pkg: string): string[] {
   }
 }
 
+/**
+ * The absolute path of `pkg` as the project at `cwd` resolves it, or null.
+ *
+ * In-process first. A miss is then re-asked in a child process, because Node
+ * caches package lookups for the life of the process: after this CLI installs a
+ * driver into a project that already had a node_modules, every in-process
+ * resolve kept missing (better-sqlite3 on Node 24), and `init --db sqlite`
+ * failed until it was run a second time. A child has no cache, and the path it
+ * returns is imported directly, so the cached lookup is never consulted again.
+ */
+export function resolveFromProject(pkg: string, cwd: string): string | null {
+  try {
+    return createRequire(toFileURL(joinNative(cwd, 'noop.js'))).resolve(pkg)
+  } catch {
+    // fall through to a fresh process
+  }
+  const r = spawnSync(process.execPath, ['-e', 'process.stdout.write(require.resolve(process.argv[1]))', pkg], {
+    cwd,
+    encoding: 'utf8',
+    timeout: 15_000,
+  })
+  return r.status === 0 && r.stdout ? r.stdout : null
+}
+
 /** Is the driver already resolvable from the project? (skip a needless install). */
 export function isDriverInstalled(dialect: SqlDialectName, cwd: string): boolean {
-  const pkg = DRIVER_FOR[dialect]
-  try {
-    const requireFromCwd = createRequire(toFileURL(joinNative(cwd, 'noop.js')))
-    requireFromCwd.resolve(pkg)
-    return true
-  } catch {
-    return false
-  }
+  return resolveFromProject(DRIVER_FOR[dialect], cwd) !== null
 }
 
 export type InstallResult = {

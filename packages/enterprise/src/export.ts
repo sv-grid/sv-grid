@@ -19,7 +19,7 @@ import {
 } from './export-serialize'
 import { serializeSpreadsheetML } from './export-xls'
 import { buildXlsxParts, packageXlsx, type XlsxCell, type XlsxCondFormat, type XlsxTableSpec } from './export-ooxml'
-import { buildPdfDocDefinition, readGridPdfTheme, registerPdfFonts, resolvePdfCharts, type PdfBodyRow, type PdfExportOptions, type PdfMakeLike } from './export-pdf'
+import { buildPdfDocDefinition, pdfBlob, readGridPdfTheme, registerPdfFonts, resolvePdfCharts, type PdfBodyRow, type PdfExportOptions, type PdfMakeLike } from './export-pdf'
 import { buildConditionalResolver, type ExportCellVisualFn } from './export-conditional'
 import type { ConditionalFormat } from '@svgrid/grid/format'
 
@@ -380,7 +380,7 @@ async function ensureGlobals(format: ExportFormat): Promise<void> {
       )
     }
     const pdfMake = ((pdfMakeMod as { default?: unknown }).default ?? pdfMakeMod) as PdfMakeLike & {
-      createPdf: (def: unknown) => { download(name: string): void; getBlob(cb: (b: Blob) => void): void }
+      createPdf: (def: unknown) => { download(name: string): void; getBlob(cb?: (b: Blob) => void): unknown }
     }
     // Explicit, on this instance: the fonts module's own registration is a
     // side effect on a global that can point at a stale instance.
@@ -999,7 +999,7 @@ async function exportPdf<
     pdfMake?: {
       createPdf: (def: unknown) => {
         download(name: string): void
-        getBlob(cb: (b: Blob) => void): void
+        getBlob(cb?: (b: Blob) => void): unknown
       }
     }
   }).pdfMake
@@ -1083,7 +1083,7 @@ async function exportPdf<
     })
   }
   const filename = (opts.filename ?? 'grid').trim() || 'grid'
-  const blob = await new Promise<Blob>((resolve) => pdfMake.createPdf(def).getBlob(resolve))
+  const blob = await pdfBlob(pdfMake.createPdf(def))
   opts.onProgress?.({ phase: 'write', ratio: 1, total: sourceRows.length })
   return deliver(blob, ensureExt(filename, 'pdf'), 'application/pdf', sourceRows.length, opts.download)
 }

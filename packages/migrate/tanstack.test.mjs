@@ -350,6 +350,23 @@ const V9_SVELTE = `<script lang="ts">
 <table><tbody></tbody></table>
 `
 
+describe('migrateTanstack - a multi-line import, as Prettier writes it', () => {
+  // Line-at-a-time import passes missed it: createSvelteTable and
+  // createColumnHelper were re-pointed at @svgrid/grid and kept.
+  const spread = V9_SVELTE.replace(
+    "import { createSvelteTable, createColumnHelper, tableFeatures, rowSortingFeature, rowSelectionFeature } from '@tanstack/svelte-table'",
+    "import {\n    createSvelteTable,\n    createColumnHelper, // the v9 helper\n    tableFeatures,\n    rowSortingFeature,\n    rowSelectionFeature,\n  } from '@tanstack/svelte-table'",
+  )
+  const out = migrateTanstack(spread)
+
+  test('drops the names @svgrid/grid does not export, same as the one-line form', () => {
+    expect(spread).toContain('createColumnHelper, // the v9 helper')
+    expect(out.code).not.toContain('createSvelteTable')
+    expect(out.code).not.toContain('createColumnHelper')
+    expect(out.code).toBe(migrateTanstack(V9_SVELTE).code)
+  })
+})
+
 describe('migrateTanstack - v9 columnHelper.columns, typed $state, unknown types', () => {
   const out = migrateTanstack(V9_SVELTE)
 

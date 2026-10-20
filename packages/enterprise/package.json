@@ -129,7 +129,7 @@
   "peerDependencies": {
     "@svgrid/grid": "workspace:^",
     "jszip": "^3.10.0",
-    "pdfmake": "^0.2.0",
+    "pdfmake": "^0.2.0 || ^0.3.0",
     "react": ">=17",
     "react-dom": ">=17",
     "svelte": "^5.0.0",

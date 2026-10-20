@@ -29,6 +29,19 @@ describe('scaffold', () => {
     ])
   })
 
+  it('takes a route written with slashes, the way the MCP tool documents it', () => {
+    // route "/people" used to give src/routes//people and an endpoint of /api//people.
+    const out = scaffold(schema, { route: '/people/', apiRoute: 'api/people/' }).files
+    expect(out.map((f) => f.path).sort()).toEqual([
+      'src/lib/people.schema.ts',
+      'src/routes/api/people/+server.ts',
+      'src/routes/people/+page.svelte',
+    ])
+    const text = out.map((f) => f.contents).join('\n')
+    expect(text).not.toContain('//people')
+    expect(text).toContain(`endpoint: '/api/people'`)
+  })
+
   it('the page ships the theme tokens (default Ember) in a cascade layer so a host app keeps its own', () => {
     const page = byPath['src/routes/customers/+page.svelte']!.contents
     expect(page).toContain('<svelte:head><style>')

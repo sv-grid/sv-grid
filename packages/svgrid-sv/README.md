@@ -36,8 +36,8 @@ project rather than installing a grid that cannot run.
 ## Stability
 
 Community add-ons are still marked **experimental** by the Svelte CLI, and the
-authoring API can change between `sv` minors. This add-on is written and tested
-against `sv@0.17.0`. If `npx sv add @svgrid` misbehaves after an `sv` upgrade,
+authoring API can change between `sv` minors. This add-on is tested against
+`sv@1.1.1` and was written against `0.17`. If `npx sv add @svgrid` misbehaves after an `sv` upgrade,
 `npm install @svgrid/grid` does the same job with no CLI involved.
 
 ## License
