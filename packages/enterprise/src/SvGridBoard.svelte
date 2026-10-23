@@ -901,6 +901,19 @@
       overRow = null;
     }
   }
+  // The rest of the lane (its "+ Add a card" row, the space under the list)
+  // takes a drop too, as the last card. Without it the marker from the last
+  // dragover stayed up there and the drop was lost.
+  function onLaneShellDragOver(e: DragEvent, laneId: string, swimId: string | null) {
+    if (!dragRow) return;
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+    if (!(e.target as Element).closest(".sv-board-lane-body")) {
+      overLane = laneId;
+      overSwim = swimId;
+      overRow = null;
+    }
+  }
   function onLaneDrop(e: DragEvent, laneId: string, swimId: string | null) {
     e.preventDefault();
     const row = dragRow;
@@ -1300,6 +1313,8 @@
     class:is-collapsed={isCollapsed}
     style={lane.color ? `--sv-board-accent: ${lane.color};` : undefined}
     aria-label={laneTitle(lane)}
+    ondragover={isCollapsed ? undefined : (e) => onLaneShellDragOver(e, lane.id, swimId)}
+    ondrop={isCollapsed ? undefined : (e) => onLaneDrop(e, lane.id, swimId)}
   >
     <!-- A reorderable lane header is a keyboard handle (Ctrl+arrows move the lane). -->
     <!-- svelte-ignore a11y_no_noninteractive_tabindex -->

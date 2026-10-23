@@ -184,6 +184,30 @@ describe('SvGridBoard drag to move (built-in)', () => {
     } finally { destroy() }
   })
 
+  it('takes a drop below the card list (the lane footer) as the last card', () => {
+    // The marker stays up while the pointer is under the list, so the drop
+    // has to land there too.
+    const onCardMove = vi.fn()
+    const { target, destroy } = mountOn({ data, columns, board: { groupBy: 'status', onCardMove, composer: true, onCardAdd: () => {} } })
+    try {
+      const lanes = target.querySelectorAll('.sv-board-lane')
+      const card = lanes[0]!.querySelector('.sv-board-card')! // "Design spec" in todo
+      const footer = lanes[1]!.querySelector('.sv-board-composer-btn')!
+      expect(lanes[1]!.querySelector('.sv-board-lane-body')!.contains(footer)).toBe(false)
+
+      fire(card, 'dragstart')
+      fire(footer, 'dragover')
+      expect(lanes[1]!.querySelector('.sv-board-drop-marker')).not.toBeNull()
+      fire(footer, 'drop')
+
+      expect(onCardMove).toHaveBeenCalledTimes(1)
+      const e = onCardMove.mock.calls[0]![0]
+      expect(e.row.id).toBe(1)
+      expect(e.toLane).toBe('done')
+      expect(e.toIndex).toBe(1)
+    } finally { destroy() }
+  })
+
   it('does not fire onCardMove for a no-op drop onto its own single-card lane', () => {
     const onCardMove = vi.fn()
     const { target, destroy } = mountOn({ data, columns, board: { groupBy: 'status', onCardMove } })
