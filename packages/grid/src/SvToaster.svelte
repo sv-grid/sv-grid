@@ -109,6 +109,9 @@
   :global(.sv-toaster) {
     position: fixed; z-index: 2147483001; display: flex; flex-direction: column; gap: 8px;
     padding: 16px; max-width: min(92vw, 380px); pointer-events: none;
+    /* Portaled to <body>, outside any .sv-grid-root: name the grid font, or
+       an app with no body font shows toasts in the browser's serif default. */
+    font-family: var(--sg-font, inherit);
   }
   :global(.sv-toaster--top-left) { top: 0; left: 0; }
   :global(.sv-toaster--top-center) { top: 0; left: 50%; transform: translateX(-50%); align-items: center; }
@@ -153,7 +156,7 @@
   :global(.sv-toast__action--cancel:hover) { background: var(--sg-row-hover-bg, #f1f5f9); color: var(--sg-fg, #0f172a); }
   :global(.sv-toast__x) {
     flex: none; width: 22px; height: 22px; display: grid; place-items: center; margin: -2px -2px 0 0;
-    background: none; border: 0; color: var(--sg-muted, #64748b); cursor: pointer; border-radius: 5px; font-size: 17px; line-height: 1;
+    background: none; border: 0; color: var(--sg-muted, #64748b); cursor: pointer; border-radius: 5px; font-family: inherit; font-size: 17px; line-height: 1;
   }
   :global(.sv-toast__x:hover) { background: var(--sg-row-hover-bg, #f1f5f9); color: var(--sg-fg, #0f172a); }
 </style>
