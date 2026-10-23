@@ -21,7 +21,7 @@
     RenderComponentConfig,
   } from "./render-component";
   import { mergeDrawAt } from "./merges";
-  import { localizeOperatorLabel } from "./filter-operators";
+  import { localizeOperatorLabel, takesNoValue } from "./filter-operators";
   import { GRID_ICON_GLYPHS, type GridIconName } from "./grid-icons";
   // The whole editor UI - including the lazy SvGridDropdown / SvDateTimePicker
   // and the custom-editor registry - now lives in SvGridCellEditor.svelte, which
@@ -2961,7 +2961,7 @@
                               }}
                             />
                           </div>
-                        {:else if activeOperator !== "isBlank" && activeOperator !== "isNotBlank" && activeOperator !== "regex" && FilterDatePicker && usesRichDateFilter(rendered.column.columnDef)}
+                        {:else if !takesNoValue(activeOperator) && activeOperator !== "regex" && FilterDatePicker && usesRichDateFilter(rendered.column.columnDef)}
                           <!-- Same picker the cell editor uses, so a date
                                column looks the same wherever you touch it.
                                `regex` keeps the text box - a pattern is not
@@ -3012,7 +3012,7 @@
                                 updateFilterRow(rendered.column.id, toIsoDateLocal(d))}
                             />
                           {/if}
-                        {:else if activeOperator !== "isBlank" && activeOperator !== "isNotBlank"}
+                        {:else if !takesNoValue(activeOperator)}
                           {@const frType = getEditorInputType(
                             rendered.column.columnDef.editorType ?? "text",
                           )}
@@ -3550,7 +3550,7 @@
                         >
                       {/each}
                     </select>
-                    {#if active !== "isBlank" && active !== "isNotBlank"}
+                    {#if !takesNoValue(active)}
                       {@const tpIsSetOp = active === "in" || active === "notIn"}
                       <!-- in/notIn drives the shared value-suggestions dropdown
                            (a windowed checklist) rather than a native datalist,

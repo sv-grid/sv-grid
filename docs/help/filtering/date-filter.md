@@ -2,7 +2,8 @@
 
 A column with `editorType: 'date'` (or `'datetime'`) gets the **date**
 filter operator set: `equals`, `lessThan`, `greaterThan`,
-**`between`**, `isBlank`.
+**`between`**, `isBlank`. `@svgrid/enterprise` adds days-from-today
+operators (below).
 <div data-docs-demo="64-filter-between-operator" data-height="540"></div>
 
 ```ts
@@ -57,18 +58,43 @@ applyExcelFilter('2026-05-27', {
 
 The filter is inactive until both endpoints are non-empty.
 
-## Today / yesterday / last 7 days
+## Today, overdue, next 7 days (Enterprise)
 
-Not built in. Apply via the imperative API:
+`@svgrid/enterprise` adds five operators to every date column's filter menu
+once `enableRelativeDateFilters()` has run (`installEnterprise` runs it too;
+[setup](../../enterprise/README.md#grid-filter-and-sort-additions)). They count whole days from today, in the user's
+local time, and take no value, so picking one in the menu filters at once:
+
+| Operator      | Menu label   | Keeps                                        |
+| ------------- | ------------ | -------------------------------------------- |
+| `today`       | Today        | today                                        |
+| `beforeToday` | Before today | every earlier day: overdue items             |
+| `afterToday`  | After today  | every later day                              |
+| `next7Days`   | Next 7 days  | today through the same weekday next week     |
+| `last7Days`   | Last 7 days  | the same weekday last week through today     |
+
+Blank cells never match. A bare `'2026-05-27'` counts as that day in local
+time, not UTC midnight. From code they are ordinary operators:
 
 ```ts
-function lastNDays(api: SvGridApi<{}, Person>, columnId: string, n: number) {
-  const cutoff = new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10)
-  api.setFilter(columnId, { operator: 'greaterThan', value: cutoff })
-}
-
-lastNDays(api, 'joinedAt', 7)
+api.setFilter('due', { operator: 'beforeToday' })
 ```
+
+"Today" is read when the filter is applied, so a page left open past midnight
+keeps the old day until the filter changes.
+
+**Server-side data.** A server data source never receives these operators.
+The grid sends the absolute filter they mean at request time: `beforeToday` as
+`lessThan` today's date, `next7Days` as `between` today and a week out, dates as
+local `YYYY-MM-DD`. Under `externalFilter`, `onFiltersChange` passes the
+relative operator through, so a saved view still means "overdue" tomorrow;
+`resolveRelativeDateFilter(filter)` from `@svgrid/enterprise` turns it into
+dates when you build the query. Demo 701 shows the operators on a review
+queue.
+
+The grid side is the extension's `filterOperators` seam: a module can add an
+operator for any column type, with its own test and the filter a server gets in
+its place.
 
 ## Timezones
 
@@ -163,6 +189,14 @@ and the menu end up in one state rather than fighting.
 
 <SvGrid data={people} {columns} filterable filterMode="menu" onApiReady={(next) => (api = next)} />
 ```
+
+## More examples
+
+### Overdue filters, cell labels and a row count
+
+Enterprise filter and sort additions on a review queue. Due's filter menu offers Today, Before today, Next 7 days and the rest, with nothing to type; Status is stored as codes and its checklist reads Approved and Failed, as the cells do; the status bar counts rows, "6 of 24 rows" under a filter; and reviews with no due date stay last whichever way Due sorts.
+
+<div data-docs-demo="701-enterprise-grid-filters" data-height="460"></div>
 
 ## See also
 

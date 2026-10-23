@@ -21,6 +21,7 @@
  *      constants.
  */
 import { compileExcelFilter } from '@svgrid/grid/filtering'
+import { compileRelativeDateFilter, isRelativeDateOperator } from '../relative-date-core'
 import type { PredicateExpr, ScalarExpr, ComparisonOp } from './expression-types'
 import { getPredicateKind } from './kinds'
 
@@ -274,16 +275,19 @@ function compileInternal<TRow>(
       return test ?? (() => true)
     }
     case 'cmp': {
-      // The needle-side work happens once, here.
-      const test = compileExcelFilter(
-        {
-          id: expr.column,
-          operator: expr.op,
-          value: expr.value as never,
-          valueTo: expr.valueTo as never,
-        },
-        { locale: opts.locale },
-      )
+      // The needle-side work happens once, here. The relative date operators
+      // are this package's, not the grid's.
+      const test = isRelativeDateOperator(expr.op)
+        ? compileRelativeDateFilter(expr.op)
+        : compileExcelFilter(
+            {
+              id: expr.column,
+              operator: expr.op,
+              value: expr.value as never,
+              valueTo: expr.valueTo as never,
+            },
+            { locale: opts.locale },
+          )
       const column = expr.column
       return (row) => test(opts.getValue(row, column))
     }

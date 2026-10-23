@@ -4,6 +4,7 @@
  * exactly; scalar maths and change detection are handled here.
  */
 import { applyExcelFilter } from '@svgrid/grid/filtering'
+import { compileRelativeDateFilter, isRelativeDateOperator } from '../relative-date-core'
 import { getPredicateKind } from './kinds'
 import type {
   ChangeExpr,
@@ -183,6 +184,8 @@ export function evaluatePredicate<TData = ExprRow>(
     case 'not':
       return !evaluatePredicate(expr.expr, ctx)
     case 'cmp':
+      // The relative date operators are this package's, not the grid's.
+      if (isRelativeDateOperator(expr.op)) return compileRelativeDateFilter(expr.op)(readValue(ctx, ctx.row, expr.column))
       return applyExcelFilter(
         readValue(ctx, ctx.row, expr.column),
         { id: expr.column, operator: expr.op, value: expr.value, valueTo: expr.valueTo },

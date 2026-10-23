@@ -595,6 +595,14 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    */
   sortValue?: (value: unknown) => number | null | undefined
   /**
+   * Compare two of this column's values yourself, in place of the built-in
+   * order. `desc` is the direction being sorted; the grid reverses your result
+   * for a descending sort, so return the ascending order unless you want a
+   * value held at one end in both directions (`@svgrid/enterprise`'s
+   * `blanksLast` does that). `sortValue` wins over it.
+   */
+  sortComparator?: (a: unknown, b: unknown, desc: boolean) => number
+  /**
    * Aggregate this column's values into the group row when grouping is
    * active. `'sum' | 'avg' | 'min' | 'max' | 'count' | 'countDistinct' |
    * 'extent' | 'first'`, or a custom `(values, rows) => unknown`. The result
@@ -1670,8 +1678,11 @@ export function createSortedRowModel<TData extends RowData>(
       // By the column's data type, not by what edits it: a number column
       // edited in a text box still sorts as numbers.
       const dataType = columnDataType(column.columnDef)
-      const comparator =
-        dataType === 'number'
+      // A column's own comparator takes the plain raw-value path below.
+      const custom = column.columnDef.sortComparator
+      const comparator = custom
+        ? (a: unknown, b: unknown) => custom(a, b, clause.desc)
+        : dataType === 'number'
           ? localSortFns.number
           : isDateDataType(dataType)
             ? localSortFns.date

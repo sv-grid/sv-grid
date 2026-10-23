@@ -147,7 +147,7 @@ export type {
 export { registerGanttView, getGanttView, hasGanttView } from './gantt-view.svelte'
 // Bulk-action bar over the row selection. Prop + types free, renderer Pro.
 export { registerSelectionBarView, getSelectionBarView, hasSelectionBarView } from './selection-bar-view.svelte'
-export { registerGridExtension, getGridExtension, type GridExtension, type GridExtensionMenuItem } from './grid-extension.svelte'
+export { registerGridExtension, getGridExtension, type GridExtension, type GridExtensionMenuItem, type GridFilterOperator } from './grid-extension.svelte'
 // Chart view. The `chart` prop + its config live in the free grid AND so does the
 // renderer (SvGridChartView wraps the free SvChart) - so unlike board/scheduler
 // it works out of the box. This seam only lets a host OVERRIDE the built-in view.
@@ -941,6 +941,7 @@ export {
   type ExcelFilter,
   type ExcelFilterOperator,
   type ExcelFilterOptions,
+  type FilterOperatorExtensions,
 } from './filtering/excel-filters'
 export {
   ALL_FILTER_OPERATORS,

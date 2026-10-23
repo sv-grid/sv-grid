@@ -100,6 +100,37 @@ const columns = [
 Blanks, and anything that is not a number, sort first ascending, as in a
 number column.
 
+### Your own comparator
+
+`sortComparator` compares two of a column's values in place of the built-in
+order. It also gets the direction being sorted, `desc`. The grid reverses your
+result for a descending sort, so return the ascending order; `desc` is there
+for a value you want held at one end both ways. `sortValue` wins when a column
+sets both.
+
+```ts
+const columns = [
+  { field: 'code', header: 'Code', sortComparator: (a, b) => String(a).length - String(b).length },
+]
+```
+
+### Keep blanks at one end (Enterprise)
+
+`@svgrid/enterprise` ships comparators that hold blank cells at the bottom or
+the top in both directions, so tasks with no due date stay below the dated
+ones whichever way Due runs. The other values sort as the grid sorts them
+([setup](../../enterprise/README.md#grid-filter-and-sort-additions)):
+
+```ts
+// blanksLast is exported by @svgrid/enterprise
+const columns = [
+  { field: 'due', header: 'Due', cellDataType: 'dateString', sortComparator: blanksLast('date') },
+]
+```
+
+`blanksFirst` holds them at the top. Pass `'number'`, `'date'` or `'auto'`
+(the default) for how the other values compare.
+
 ## Programmatic sort
 
 ```ts

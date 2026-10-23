@@ -8,6 +8,8 @@ import {
   SET_OPERATOR_IDS,
   VALUELESS_OPERATOR_IDS,
 } from "./filtering/filter-operator-catalogue";
+import { addedOperator } from "./grid-extension.svelte";
+export { addedOperator, takesNoValue } from "./grid-extension.svelte";
 
 export const filterOperatorOptions: Array<FilterOption> = [
   { value: "contains", label: "Contains", iconName: "op-contains" },
@@ -79,9 +81,10 @@ export const fallbackOperatorOption: FilterOption = {
 };
 
 export function operatorOption(value: FilterOperator): FilterOption {
+  const added = addedOperator(value);
   return (
     filterOperatorOptions.find((option) => option.value === value) ??
-    fallbackOperatorOption
+    (added ? { value, label: added.label, iconName: "op-between" } : fallbackOperatorOption)
   );
 }
 

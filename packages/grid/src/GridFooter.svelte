@@ -10,6 +10,7 @@
   import type { Snippet } from "svelte";
   import type { GridIconName } from "./grid-icons";
   import type { SvGridController } from "./SvGrid.controller.svelte";
+  import { getGridExtension } from "./grid-extension.svelte";
 
   let {
     ctrl,
@@ -61,6 +62,13 @@
   const paginationEnabled = $derived(ctrl.paginationEnabled);
   const statusBarEnabled = $derived(ctrl.statusBarEnabled);
   const statusBarAggregates = $derived(ctrl.statusBarAggregates);
+  // `statusBar.rows`: the count is drawn by the module that registers it
+  // (Enterprise's enableRowCount), so the free grid carries none of it.
+  const RowCount = $derived(
+    typeof ctrl.props.statusBar === "object" && ctrl.props.statusBar.rows
+      ? (getGridExtension()?.statusBarRows?.(ctrl) ?? null)
+      : null,
+  );
   const statusBarStats = $derived(ctrl.statusBarStats);
   const changePage = $derived(ctrl.changePage);
   const goToPage = $derived(ctrl.goToPage);
@@ -68,9 +76,16 @@
   const messages = $derived(ctrl.messages);
 </script>
 
-    {#if showStatus && statusBarEnabled && statusBarStats}
-      {@const s = statusBarStats}
-      <div class="sv-grid-status-bar" role="status" aria-live="polite">
+    {#if showStatus && statusBarEnabled && (statusBarStats || RowCount)}
+      <div class="sv-grid-status-bar">
+        {#if RowCount}
+          <!-- Outside the live region: the grid already announces filter
+               results, so a count in there would be read out twice. -->
+          <RowCount {ctrl} />
+        {/if}
+        {#if statusBarStats}
+        {@const s = statusBarStats}
+        <span class="sv-grid-status-aggregates" role="status" aria-live="polite">
         {#each statusBarAggregates as agg (agg)}
           {#if agg === "count"}
             <span class="sv-grid-status-item"
@@ -98,6 +113,8 @@
             >
           {/if}
         {/each}
+        </span>
+        {/if}
       </div>
     {/if}
 

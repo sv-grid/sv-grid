@@ -13,6 +13,8 @@
  * ```
  */
 import type { Component } from 'svelte'
+import { isValuelessOperator } from './filtering/filter-operator-catalogue'
+import { addedFilterOperators } from './filter-operator-registry'
 
 export type GridExtension = {
   /**
@@ -75,7 +77,42 @@ export type GridExtension = {
   columnMenuItems?: (ctrl: any, columnId: string) => ReadonlyArray<GridExtensionMenuItem>
   /** Extra classes for the grid root, e.g. where marks are painted. */
   rootClass?: (ctrl: any) => string | null | undefined
+  /**
+   * A column's filter checklist (and its in / not-in suggestions) as shown:
+   * relabel or reorder `options`, keeping each `value`, which is what the
+   * filter matches. Runs in the menu chunk.
+   */
+  facetOptions?: (ctrl: any, column: any, options: Array<{ value: string; label: string; hint?: string }>) => Array<{ value: string; label: string; hint?: string }>
+  /**
+   * Drawn at the start of the status bar while `statusBar.rows` is on, outside
+   * its live region (null: nothing). Props: `{ ctrl }`.
+   */
+  statusBarRows?: (ctrl: any) => Component<any> | null | undefined
+  /**
+   * Filter operators added to every grid, by id: the filter menu offers each
+   * on columns of its `types`, the rows are filtered with its `compile`, and a
+   * server data source receives what its `toServer` returns.
+   */
+  filterOperators?: Record<string, GridFilterOperator>
 }
+
+/** A filter operator a module adds (Enterprise's relative date operators). */
+export type GridFilterOperator = {
+  /** The filter menu label. */
+  label: string
+  /** Column data types whose filter menu offers it. */
+  types: ReadonlyArray<'text' | 'number' | 'date' | 'boolean'>
+  /** Takes no value, like Blank: the menu shows no value box. */
+  valueless?: boolean
+  /** The filter's own work once, then a test per cell. */
+  compile: (filter: { value?: unknown; valueTo?: unknown }) => (cellValue: unknown) => boolean
+  /**
+   * The filter a backend receives in its place, in built-in operators, for an
+   * operator a server cannot know (one measured from the browser's today).
+   */
+  toServer?: <T extends { operator: string; value?: unknown; valueTo?: unknown }>(filter: T) => T
+}
+
 
 /** One column-menu item from an extension. `icon` is SVG path data (24x24, stroked). */
 export type GridExtensionMenuItem = {
@@ -93,6 +130,7 @@ let extension = $state.raw<GridExtension | null>(null)
 /** Register (or extend) the grid extension. Enterprise modules call this. */
 export function registerGridExtension(ext: GridExtension): void {
   extension = { ...extension, ...ext }
+  if (ext.filterOperators) Object.assign(addedFilterOperators, ext.filterOperators)
 }
 
 /**
@@ -112,6 +150,12 @@ export function applyFieldColumns<A extends readonly unknown[]>(cols: A, leaves?
 function leafColumns(cols: ReadonlyArray<any>): any[] {
   return cols.flatMap((c) => (c?.columns?.length ? leafColumns(c.columns) : [c]))
 }
+
+/** The filter operator a module added under this id (`filterOperators`). */
+export const addedOperator = (op: string): GridFilterOperator | undefined => addedFilterOperators[op]
+
+/** Takes no value input: Blank, Not blank, or an added operator that says so. */
+export const takesNoValue = (op: string): boolean => isValuelessOperator(op as never) || !!addedOperator(op)?.valueless
 
 /** The registered extension, or null when no module has registered one. */
 export function getGridExtension(): GridExtension | null {

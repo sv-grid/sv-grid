@@ -26,7 +26,9 @@
   import type { SvGridController } from "./SvGrid.controller.svelte";
   import { createMenuActions } from "./menu-actions";
   import { customFilterIsActive } from "./custom-filter";
+  import { takesNoValue } from "./filter-operators";
   import { getGridExtension } from "./grid-extension.svelte";
+  import { columnDataType, isDateDataType } from "./column-types";
 
   let { ctrl, icon }: { ctrl: SvGridController<TFeatures, TData>; icon: Snippet<[GridIconName]> } = $props();
 
@@ -61,7 +63,20 @@
   const updateFilterOperator = $derived(ctrl.updateFilterOperator);
   const updateFilterMenuValue = $derived(ctrl.updateFilterMenuValue);
   const updateFilterMenuValueTo = $derived(ctrl.updateFilterMenuValueTo);
-  const operatorsForColumn = $derived(ctrl.operatorsForColumn);
+  // Plus the operators a module added (Enterprise's relative dates), for the
+  // column's type and before Blank / Not blank. Done here, in the menu chunk,
+  // so the base bundle carries none of it.
+  const operatorsForColumn = $derived((column: any) => {
+    const options = ctrl.operatorsForColumn(column);
+    const added = getGridExtension()?.filterOperators;
+    if (!added) return options;
+    const type = columnDataType(column?.columnDef);
+    const kind = type === "number" ? "number" : isDateDataType(type) ? "date" : type === "boolean" ? "boolean" : "text";
+    const extra = Object.entries(added)
+      .filter(([, op]) => op.types.includes(kind))
+      .map(([value, op]) => ({ value: value as FilterOperator, label: op.label, iconName: "op-between" as const }));
+    return extra.length ? [...options.slice(0, -2), ...extra, ...options.slice(-2)] : options;
+  });
   const defaultOperatorFor = $derived(ctrl.defaultOperatorFor);
   const operatorLabelFor = $derived(ctrl.operatorLabelFor);
   const filterRowValues = $derived(ctrl.filterRowValues);
@@ -239,10 +254,18 @@
     event.preventDefault();
     closeMenus();
   }
-  const columnMenuFacetOptions = $derived(ctrl.columnMenuFacetOptions);
+  // A module may label and reorder a checklist (Enterprise's cell-text
+  // labels). Here, in the menu chunk, so the base bundle carries none of it.
+  type FacetOption = { value: string; label: string; hint?: string };
+  function relabel(columnId: string | null | undefined, options: Array<FacetOption>): Array<FacetOption> {
+    const hook = getGridExtension()?.facetOptions;
+    const column = hook && columnId ? allColumns.find((c) => c.id === columnId) : null;
+    return hook && column ? hook(ctrl, column, options) : options;
+  }
+  const columnMenuFacetOptions = $derived(relabel(filterMenuFor ?? columnMenuFor, ctrl.columnMenuFacetOptions));
   const columnMenuSelectedFacets = $derived(ctrl.columnMenuSelectedFacets);
   const setFilterTokens = $derived(ctrl.setFilterTokens);
-  const inSuggestOptions = $derived(ctrl.inSuggestOptions);
+  const inSuggestOptions = $derived(relabel(inSuggestFor, ctrl.inSuggestOptions));
   const openInSuggest = $derived(ctrl.openInSuggest);
   const closeInSuggest = $derived(ctrl.closeInSuggest);
 
@@ -339,8 +362,7 @@
     {@const menuInputType = getEditorInputType((menuColumn?.columnDef.editorType ?? "text") as CellEditorType)}
     {@const richDate =
       usesRichDateFilter(menuColumn?.columnDef) &&
-      menuActiveOperator !== "isBlank" &&
-      menuActiveOperator !== "isNotBlank" &&
+      !takesNoValue(menuActiveOperator) &&
       menuActiveOperator !== "regex" &&
       menuActiveOperator !== "in" &&
       menuActiveOperator !== "notIn"}
@@ -350,8 +372,7 @@
     {@const showValues = !menuSlot || menuColumn?.columnDef.customFilter?.showValues !== false}
     {@const conditionActive = menuSlot
       ? customFilterIsActive(menuColumn?.columnDef.customFilter, ctrl.customFilterValues[colId])
-      : menuActiveOperator === "isBlank" ||
-        menuActiveOperator === "isNotBlank" ||
+      : takesNoValue(menuActiveOperator) ||
         (filterMenuValues[colId]?.value ?? "").trim().length > 0}
     {@const pickedCount = columnMenuSelectedFacets.size}
     {@const totalCount = columnMenuFacetValues.length}
@@ -380,7 +401,7 @@
           <option value={option.value}>{operatorLabelFor(option, menuColumn)}</option>
         {/each}
       </select>
-      {#if menuActiveOperator !== "isBlank" && menuActiveOperator !== "isNotBlank"}
+      {#if !takesNoValue(menuActiveOperator)}
       {#if richDate}
         <!-- Same controls the filter row uses, so a date column behaves the
              same wherever you touch it: a picker, or a range field for
@@ -478,7 +499,7 @@
               <option value={option.value}>{operatorLabelFor(option, menuColumn)}</option>
             {/each}
           </select>
-          {#if op2 !== "isBlank"}
+          {#if !takesNoValue(op2)}
             <input
               class="sv-grid-menu-condition-value"
               type={menuInputType}

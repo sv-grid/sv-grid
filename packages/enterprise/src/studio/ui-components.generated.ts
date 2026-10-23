@@ -7187,7 +7187,7 @@ export const GENERATED_UI_SURFACE: Record<string, { props: GeneratedUiProp[]; ev
         "key": "statusBar",
         "label": "Status Bar",
         "type": "boolean",
-        "description": "Excel-style status bar under the grid showing live aggregates of the selected cell range (count, numeric count, sum, average, min, max). `true` shows the default set; pass `{ aggregates: [...] }` to choose which. Requires `enableCellSelection`.",
+        "description": "Excel-style status bar under the grid showing live aggregates of the selected cell range (count, numeric count, sum, average, min, max). `true` shows the default set; pass `{ aggregates: [...] }` to choose which. The aggregates need `enableCellSelection`. `rows: true` adds a row count that is always shown, \"250 rows\" or \"12 of 250 rows\" while filters hide some, once `@svgrid/enterprise`'s `enableRowCount()` has run. `{ rows: true, aggregates: [] }` shows the count alone.",
         "group": "common"
       },
       {

@@ -16,7 +16,9 @@
  *                        | "CONTAINS"|"STARTSWITH"|"ENDSWITH"|"MATCHES" scalar
  *                        | "IN" "(" scalarList ")"
  *                        | "BETWEEN" scalar "AND" scalar
- *                        | "ISBLANK" | "ISNOTBLANK" )
+ *                        | "ISBLANK" | "ISNOTBLANK"
+ *                        | "ISTODAY" | "BEFORETODAY" | "AFTERTODAY"
+ *                        | "INNEXT7DAYS" | "INLAST7DAYS" )
  *   scalar     := add ; add := mul (("+"|"-") mul)* ; mul := unary (("*"|"/"|"%") unary)*
  *   unary      := "-" unary | atom
  *   atom       := number | string | TRUE|FALSE|NULL | colRef
@@ -49,7 +51,22 @@ const KEYWORDS = new Set([
   'AND', 'OR', 'NOT', 'TRUE', 'FALSE', 'NULL',
   'CONTAINS', 'STARTSWITH', 'ENDSWITH', 'MATCHES',
   'IN', 'BETWEEN', 'ISBLANK', 'ISNOTBLANK',
+  'ISTODAY', 'BEFORETODAY', 'AFTERTODAY', 'INNEXT7DAYS', 'INLAST7DAYS',
 ])
+
+/** The operators that take no value, written after the column: `Due ISTODAY`. */
+const POSTFIX_OPS: Readonly<Record<string, ExcelFilterOperator>> = {
+  ISBLANK: 'isBlank',
+  ISNOTBLANK: 'isNotBlank',
+  ISTODAY: 'today',
+  BEFORETODAY: 'beforeToday',
+  AFTERTODAY: 'afterToday',
+  INNEXT7DAYS: 'next7Days',
+  INLAST7DAYS: 'last7Days',
+}
+const POSTFIX_KEYWORD: Partial<Record<ExcelFilterOperator, string>> = Object.fromEntries(
+  Object.entries(POSTFIX_OPS).map(([kw, op]) => [op, kw]),
+)
 
 const AGG_KEYWORDS = new Set(['SUM', 'AVG', 'COUNT'])
 
@@ -249,9 +266,10 @@ class Parser {
     const t = this.peek()
 
     // Postfix valueless keyword ops.
-    if (this.isKw('ISBLANK') || this.isKw('ISNOTBLANK')) {
-      const op: ExcelFilterOperator = this.next().value === 'ISBLANK' ? 'isBlank' : 'isNotBlank'
-      return { kind: 'cmp', column: this.expectColumn(left), op }
+    const postfix = t.kind === 'kw' ? POSTFIX_OPS[t.value] : undefined
+    if (postfix) {
+      this.next()
+      return { kind: 'cmp', column: this.expectColumn(left), op: postfix }
     }
     // Keyword text/set/range ops.
     if (t.kind === 'kw') {
@@ -497,8 +515,8 @@ export function stringifyPredicate(
       return getPredicateKind(expr.type)?.describe?.(expr.payload, (id) => columnLabel(columns, id)) ?? `[${expr.type}]`
     case 'cmp': {
       const col = columnRefText(columns, expr.column)
-      if (expr.op === 'isBlank') return `${col} ISBLANK`
-      if (expr.op === 'isNotBlank') return `${col} ISNOTBLANK`
+      const postfix = POSTFIX_KEYWORD[expr.op]
+      if (postfix) return `${col} ${postfix}`
       if (expr.op === 'between') return `${col} BETWEEN ${litText(expr.value)} AND ${litText(expr.valueTo)}`
       if (expr.op === 'in' || expr.op === 'notIn') {
         const items = Array.isArray(expr.value) ? expr.value : String(expr.value ?? '').split(/[\n,]/)

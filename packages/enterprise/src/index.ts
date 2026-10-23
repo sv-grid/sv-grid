@@ -84,6 +84,21 @@ export * from './gantt/index'
 // the renderer so `<SvGrid selectionBar={...}>` floats a bar over the grid while
 // rows are selected. The prop + its config types live in @svgrid/grid.
 export { enableSelectionBar, SvGridSelectionBar } from './selection-bar'
+// Filter and sort additions for every grid (Pro), each through a grid seam so
+// the free grid carries none of it: relative date operators, checklist labels
+// taken from the cells, a status-bar row count, and blanks held at one end.
+export {
+  enableRelativeDateFilters,
+  resolveRelativeDateFilter,
+  compileRelativeDateFilter,
+  isRelativeDateOperator,
+  relativeDateOperators,
+  RELATIVE_DATE_OPERATOR_IDS,
+  type RelativeDateOperator,
+} from './relative-dates'
+export { enableFilterLabels, labelFacetOptions } from './filter-labels'
+export { enableRowCount, getRowCounts, SvGridRowCount } from './row-count'
+export { blanksLast, blanksFirst, type BlanksSortType } from './sort-blanks'
 // Bulk edit engine behind the bar's `editFields` button - exported so an app
 // can drive the same write from its own UI.
 export { applyBulkEdit, bulkEditableFields, bulkEditInitialValues, coerceBulkValue, type BulkEditField, type BulkEditResult } from './bulk-edit'

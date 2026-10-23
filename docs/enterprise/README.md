@@ -123,6 +123,43 @@ same grid is in progress and due on 1 November 2026.
   wraps the grid in a ribbon, formula bar, gutter and sheet tabs over the
   [formula engine](../help/spreadsheet-formulas.md).
 
+### Grid filter and sort additions
+
+Four additions to the grid's own filtering and sorting, each switched on once
+(`installEnterprise(api)` runs the three `enable` calls) and then used through
+ordinary column options. They plug into small grid seams, so a grid without
+them carries none of their code.
+
+```ts
+import {
+  enableRelativeDateFilters,
+  enableFilterLabels,
+  enableRowCount,
+  blanksLast,
+} from '@svgrid/enterprise'
+
+enableRelativeDateFilters() // Today, Before today, After today, Next 7 days, Last 7 days
+enableFilterLabels()        // the filter checklist reads as the cells do
+enableRowCount()            // statusBar={{ rows: true }}: "12 of 250 rows"
+
+const columns = [
+  { field: 'due', header: 'Due', cellDataType: 'dateString', sortComparator: blanksLast('date') },
+]
+```
+
+- [Relative date operators](../help/filtering/date-filter.md#today-overdue-next-7-days-enterprise)
+  take no value; a server data source receives the dates they mean.
+  `resolveRelativeDateFilter(filter)` does the same for an `externalFilter` query.
+- [Checklist labels](../help/filtering/set-filter.md#labels-from-the-cells-enterprise)
+  come from a `cell` that returns text, static `editorOptions`, or the
+  `formatter`; the filter still matches the stored value.
+- [The row count](../help/status-bar.md#row-count-enterprise) sits outside the
+  bar's live region; `getRowCounts(api)` returns `{ total, filtered }`.
+- [`blanksLast` / `blanksFirst`](../help/rows/row-sorting.md#keep-blanks-at-one-end-enterprise)
+  hold blank cells at one end whichever way the column sorts.
+
+Demo 701 shows all four on a review queue.
+
 ## Licensing
 
 You can evaluate the pack without asking for a key. Until a valid

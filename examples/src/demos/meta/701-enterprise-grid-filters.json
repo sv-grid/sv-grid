@@ -1,0 +1,27 @@
+{
+  "description": "A review queue in a Svelte 5 data grid with the Enterprise filter additions: Today, Before today and Next 7 days on a date column with nothing to type, a Status checklist that reads as the cells do while the data stays as codes, a row count in the status bar, and rows with no due date held last in either sort direction.",
+  "keywords": [
+    "svelte data grid overdue filter",
+    "svelte grid relative date filter",
+    "svelte data grid row count status bar",
+    "sort empty values last svelte grid"
+  ],
+  "faq": [
+    {
+      "question": "What does Before today compare against?",
+      "answer": "The user's local calendar day, read when the filter is applied. A bare YYYY-MM-DD value counts as that local day, not UTC midnight, and a blank cell never matches."
+    },
+    {
+      "question": "Does a server data source need to understand the new operators?",
+      "answer": "No. The grid sends the dates they stand for: Before today goes out as lessThan today's date and Next 7 days as between today and a week out. With externalFilter, onFiltersChange keeps the operator, and resolveRelativeDateFilter turns it into dates when you build the query."
+    },
+    {
+      "question": "Why does the Status checklist show Approved when the data says APPROVED?",
+      "answer": "enableFilterLabels lists each value the way its cell renders it, taken from a cell renderer that returns text, static editorOptions labels, or the column's formatter. The filter still matches the stored value."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "These are part of the Grid edition of @svgrid/enterprise. Without a key they run with a watermark, so the demo can be evaluated as is."
+    }
+  ]
+}

@@ -64,7 +64,7 @@ function referenceSort(
 
 function actualSort(
   rows: Row[],
-  columns: Array<{ field: string; editorType?: string; sortValue?: (value: unknown) => number | null | undefined }>,
+  columns: Array<{ field: string; editorType?: string; sortValue?: (value: unknown) => number | null | undefined; sortComparator?: (a: unknown, b: unknown, desc: boolean) => number }>,
   sorting: SortingState,
   fns: typeof sortFns = sortFns,
 ): Row[] {
@@ -445,5 +445,27 @@ describe('createSortedRowModel - work budget', () => {
     const small = countColumnLookups(500, [{ id: 'num', desc: false }])
     const large = countColumnLookups(20_000, [{ id: 'num', desc: false }])
     expect(large).toBe(small)
+  })
+})
+
+describe('sortComparator', () => {
+  const rows: Row[] = [{ id: 1, v: 3 }, { id: 2, v: null }, { id: 3, v: 1 }, { id: 4, v: 2 }]
+  // Ascending by value, blanks held last in both directions.
+  const blanksLast = (a: unknown, b: unknown, desc: boolean) => {
+    if (a == null || b == null) return a == null && b == null ? 0 : (a == null) !== desc ? 1 : -1
+    return Number(a) - Number(b)
+  }
+  const ids = (r: Row[]) => r.map((x) => x.id)
+
+  it('orders by the comparator and hands it the direction', () => {
+    const cols = [{ field: 'v', sortComparator: blanksLast }]
+    expect(ids(actualSort(rows, cols, [{ id: 'v', desc: false }]))).toEqual([3, 4, 1, 2])
+    expect(ids(actualSort(rows, cols, [{ id: 'v', desc: true }]))).toEqual([1, 4, 3, 2])
+  })
+
+  it('gives way to sortValue', () => {
+    // Every value ranks 0, so the stable sort keeps the input order.
+    const cols = [{ field: 'v', sortValue: () => 0, sortComparator: blanksLast }]
+    expect(ids(actualSort(rows, cols, [{ id: 'v', desc: false }]))).toEqual([1, 2, 3, 4])
   })
 })

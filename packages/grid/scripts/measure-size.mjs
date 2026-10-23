@@ -579,7 +579,13 @@ const BUDGET_KB = {
   // check and the split between the overscan at rest and while scrolling.
   // The virtualizer module alone went 1,581 -> 1,754 bytes gzip with it, and
   // this entry exports the virtualizers, so it carries all of that.
-  'headless subpath (@svgrid/grid/core)': 9.9,
+  //
+  // 9.9 -> 10.0 (measured 9.932, 9.897 before) for the column
+  // `sortComparator` (2026-10-23): one ternary that hands a column's own
+  // comparator the sort direction. @svgrid/enterprise's blanksLast /
+  // blanksFirst need the direction to hold blanks at one end both ways, and
+  // only the core sees it. 35 bytes gzip; the entry had 3 bytes of headroom.
+  'headless subpath (@svgrid/grid/core)': 10.0,
   // Measured 26.3 KB: SvGridChart.svelte plus the chart.ts engine it statically
   // imports. Nobody pays this unless they chart - SvGrid reaches both through
   // `import()` - but it is the biggest deferred thing in the package and until

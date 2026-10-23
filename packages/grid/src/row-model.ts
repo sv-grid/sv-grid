@@ -33,6 +33,7 @@
  * so adopting this is never all-or-nothing.
  */
 import type { FilterOperator } from './SvGrid.types'
+import { addedFilterOperators } from './filter-operator-registry'
 
 /** The filter state as the grid reports it, straight from `onFiltersChange`. */
 export type GridFilterState = {
@@ -133,6 +134,10 @@ export type GridRowModel<TData> = {
  * Turn the grid's filter payload into the column-keyed map a `ServerRequest`
  * carries. Exported because a hand-written `GridRowModel` needs exactly this
  * conversion, and copying it is how the two shapes drift apart.
+ *
+ * A registered operator with a `toServer` (the Enterprise relative date
+ * operators) goes out as the built-in filter it means now, so a backend never
+ * meets an operator it cannot know.
  */
 export function toServerFilterColumns(
   filters: GridFilterState,
@@ -141,14 +146,17 @@ export function toServerFilterColumns(
   { operator: string; value: string; valueTo?: string; selectedValues?: Array<string> }
 > {
   return Object.fromEntries(
-    filters.columns.map((c) => [
-      c.id,
-      {
-        operator: c.operator,
-        value: c.value,
-        ...(c.valueTo !== undefined ? { valueTo: c.valueTo } : {}),
-        ...(c.selectedValues !== undefined ? { selectedValues: c.selectedValues } : {}),
-      },
-    ]),
+    filters.columns.map((filter) => {
+      const c = addedFilterOperators[filter.operator]?.toServer?.(filter) ?? filter
+      return [
+        c.id,
+        {
+          operator: c.operator,
+          value: c.value,
+          ...(c.valueTo !== undefined ? { valueTo: c.valueTo } : {}),
+          ...(c.selectedValues !== undefined ? { selectedValues: c.selectedValues } : {}),
+        },
+      ]
+    }),
   )
 }

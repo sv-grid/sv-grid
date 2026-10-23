@@ -20,6 +20,7 @@ import {
   isSetOperator as gridIsSetOperator,
   isValuelessOperator as gridIsValuelessOperator,
 } from '@svgrid/grid/filtering'
+import { isRelativeDateOperator } from '../relative-date-core'
 import type { ExcelFilterOperator } from '@svgrid/grid'
 
 /** Coarse value type used to decide which operators a column offers. */
@@ -76,12 +77,17 @@ const OPERATOR_PRESENTATION: ReadonlyArray<{
   { value: 'notIn', label: 'Not in', types: ['text', 'number'] },
   { value: 'isBlank', label: 'Is blank', types: ALL },
   { value: 'isNotBlank', label: 'Is not blank', types: ALL },
+  { value: 'today', label: 'Is today', types: DATES },
+  { value: 'beforeToday', label: 'Before today', types: DATES },
+  { value: 'afterToday', label: 'After today', types: DATES },
+  { value: 'next7Days', label: 'In the next 7 days', types: DATES },
+  { value: 'last7Days', label: 'In the last 7 days', types: DATES },
 ]
 
 /** The full operator catalogue, ordered as the editor should present it. */
 export const OPERATORS: ReadonlyArray<OperatorMeta> = OPERATOR_PRESENTATION.map((op) => ({
   ...op,
-  ...(gridIsValuelessOperator(op.value) ? { valueless: true } : {}),
+  ...(isValueless(op.value) ? { valueless: true } : {}),
   ...(gridIsSetOperator(op.value) ? { set: true } : {}),
   ...(gridIsRangeOperator(op.value) ? { range: true } : {}),
 }))
@@ -101,9 +107,12 @@ export function operatorsForType(type: ExprColumnType | undefined): OperatorMeta
   return OPERATORS.filter((op) => op.types.includes(t))
 }
 
-/** Whether an operator needs no value input. Delegates to the grid catalogue. */
+/**
+ * Whether an operator needs no value input: the grid catalogue's, or one of
+ * the relative date operators this package adds.
+ */
 export function isValueless(op: ExcelFilterOperator): boolean {
-  return gridIsValuelessOperator(op)
+  return gridIsValuelessOperator(op) || isRelativeDateOperator(op)
 }
 
 /** Whether an operator takes a multi-value token list. */

@@ -6,6 +6,7 @@ import {
   isValuelessOperator as gridIsValuelessOperator,
 } from '@svgrid/grid/filtering'
 import { OPERATORS, isValueless, isSetOperator, isRangeOperator } from './expression-columns'
+import { RELATIVE_DATE_OPERATOR_IDS } from '../relative-date-core'
 
 /**
  * The expression editor and the grid's filter row present the same operators.
@@ -14,10 +15,19 @@ import { OPERATORS, isValueless, isSetOperator, isRangeOperator } from './expres
  * omits an operator the grid offers. These tests are the guard.
  */
 describe('expression operator catalogue vs the grid catalogue', () => {
-  it('covers exactly the operators the grid defines', () => {
+  it('covers exactly the grid operators plus the relative date ones this package adds', () => {
     const mine = OPERATORS.map((o) => o.value).sort()
-    const grid = [...ALL_FILTER_OPERATORS].sort()
-    expect(mine).toEqual(grid)
+    const expected = [...ALL_FILTER_OPERATORS, ...RELATIVE_DATE_OPERATOR_IDS].sort()
+    expect(mine).toEqual(expected)
+  })
+
+  it('marks the relative date operators valueless, for dates only', () => {
+    for (const op of RELATIVE_DATE_OPERATOR_IDS) {
+      const meta = OPERATORS.find((o) => o.value === op)!
+      expect(meta.valueless).toBe(true)
+      expect(isValueless(op)).toBe(true)
+      expect([...meta.types].sort()).toEqual(['date', 'datetime'])
+    }
   })
 
   it('lists each operator once', () => {

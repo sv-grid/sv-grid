@@ -2164,6 +2164,16 @@ select.sv-grid-fr-editor {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
 }
+.sv-grid-status-aggregates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+}
+/* With a row count on the left, the aggregates sit at the right, as in a spreadsheet. */
+.sv-grid-status-rows + .sv-grid-status-aggregates {
+  margin-left: auto;
+}
 .sv-grid-status-label {
   color: var(--sg-muted, #64748b);
   font-weight: 400;

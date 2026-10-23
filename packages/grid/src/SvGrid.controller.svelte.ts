@@ -123,6 +123,8 @@ import {
     operatorsForColumn,
     defaultOperatorFor,
     operatorLabelFor,
+    takesNoValue,
+    addedOperator,
   } from "./filter-operators";
 import {
     type FacetBucket,
@@ -1726,7 +1728,7 @@ export function createSvGridController<
 
     // A single condition is "active" if it has the value(s) it needs.
     const condActive = (op: FilterOperator, value: string, valueTo?: string): boolean => {
-      if (op === "isBlank" || op === "isNotBlank") return true;
+      if (takesNoValue(op)) return true;
       if (op === "between") return value.trim().length > 0 && (valueTo ?? "").trim().length > 0;
       return value.trim().length > 0;
     };
@@ -1740,6 +1742,8 @@ export function createSvGridController<
       value: string,
       valueTo?: string,
     ): CompiledExcelFilter =>
+      // An operator a module added filters with its own compiler.
+      addedOperator(op)?.compile({ value, valueTo }) ??
       compileExcelFilter(
         { id: columnId, operator: op, value, valueTo: op === "between" ? valueTo : undefined },
         { locale: (props.filterLocale ?? props.localization?.locale) },
@@ -3096,7 +3100,7 @@ export function createSvGridController<
   function currentFilters() {
     const menuEntries = Object.entries(filterMenuValues)
       .filter(([, f]) => {
-        if (f.operator === "isBlank" || f.operator === "isNotBlank") return true;
+        if (takesNoValue(f.operator)) return true;
         if (f.operator === "between") {
           return f.value.trim().length > 0 && (f.valueTo ?? "").trim().length > 0;
         }

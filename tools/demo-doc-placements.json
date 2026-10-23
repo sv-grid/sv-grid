@@ -529,5 +529,8 @@
   "docs/help/ui-blocks/blog.md": [
     "655-block-blog-cards",
     "656-block-blog-featured"
+  ],
+  "docs/help/filtering/date-filter.md": [
+    "701-enterprise-grid-filters"
   ]
 }

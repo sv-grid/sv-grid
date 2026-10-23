@@ -13,6 +13,21 @@ export type ExcelFilterOperator =
   | 'between'
   | 'isBlank'
   | 'isNotBlank'
+  | keyof FilterOperatorExtensions
+
+/**
+ * Operators a module adds through the grid extension's `filterOperators`, by
+ * id. Empty in the grid; the module widens `ExcelFilterOperator` by augmenting
+ * it, so its ids type-check only where it is installed:
+ *
+ * ```ts
+ * declare module '@svgrid/grid/filtering' {
+ *   interface FilterOperatorExtensions { overdue: true }
+ * }
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface FilterOperatorExtensions {}
 
 export type ExcelFilter = {
   id: string

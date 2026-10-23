@@ -497,6 +497,7 @@ import BaseOkrs522              from '../demos/522-base-okrs.svelte'
 import BaseExpenses523          from '../demos/523-base-expenses.svelte'
 import BaseOnboarding524        from '../demos/524-base-onboarding.svelte'
 import BaseAiTriage700          from '../demos/700-base-ai-triage.svelte'
+import EnterpriseGridFilters701 from '../demos/701-enterprise-grid-filters.svelte'
 import BaseHiring514            from '../demos/514-base-hiring-tracker.svelte'
 import BaseRoadmap513           from '../demos/513-base-product-roadmap.svelte'
 import BaseCrm512               from '../demos/512-base-sales-crm.svelte'
@@ -600,6 +601,9 @@ export type DemoCategory =
   | 'Industry Templates'
   // Enterprise product lanes (@svgrid/enterprise). Split out of the old
   // single 'Pro' lane so each shows as its own Enterprise category.
+  // Paid additions to the grid itself: the selection bar, staged editing,
+  // relative date filters, checklist labels, the row count.
+  | 'Enterprise Grid'
   | 'Data Export & Import'
   | 'Pivot Grid'
   | 'Studio'
@@ -632,6 +636,7 @@ export const ENTERPRISE_CATEGORIES = new Set<DemoCategory>([
   // unloaded rows, all in @svgrid/enterprise. 'Server-Side Data' is the free
   // half (the datasource contract and the flat controller) and stays MIT.
   'Server-Side Row Model',
+  'Enterprise Grid',
   'Data Export & Import',
   'Pivot Grid',
   'Kanban',
@@ -687,6 +692,7 @@ export const CATEGORY_ORDER: DemoCategory[] = [
   // AI helpers and the chart engine are both free @svgrid/grid features.
   'AI',
   'Charts',
+  'Enterprise Grid',
   'Server-Side Row Model',
   'Kanban',
   'Gallery',
@@ -1079,7 +1085,7 @@ const baseDemos: Demo[] = [
   demo('144-status-bar',            'Status bar (range aggregates)','Excel-style bar under the grid with live aggregates of the selected cell range: Count, Sum, Avg, Min, Max. Enable with statusBar + enableCellSelection, then drag a rectangle across numeric cells. Choose the aggregate set via statusBar={ aggregates }.', 'Selection & Clipboard', StatusBar),
   demo('118-range-selection',       'Range selection (Excel-style)','Drag any rectangle of cells (mouse or Shift+arrows), or Ctrl/Cmd+drag to add MORE ranges - all stay highlighted and copy together. Toolbar issues common ranges via api.selectCells; live SUM/AVG/MIN/MAX/COUNT status bar; copy as TSV.', 'Selection & Clipboard', RangeSelection),
   demo('23-bulk-actions',           'Bulk actions toolbar',        'Select rows → sticky action bar with Mark / Delete / Copy as TSV. The Gmail / Linear pattern.', 'Selection & Clipboard', BulkActions),
-  demo('430-selection-bar',         'Bulk-action bar',             'selectionBar floats a bar over the grid while rows are selected: the count, your actions, and Clear. Actions get the selected rows in display order; hidden / disabled re-check against the live selection, so Merge appears at 2+ rows and Mark done greys out once everything picked is closed.', 'Selection & Clipboard', SelectionBar430),
+  demo('430-selection-bar',         'Bulk-action bar',             'selectionBar floats a bar over the grid while rows are selected: the count, your actions, and Clear. Actions get the selected rows in display order; hidden / disabled re-check against the live selection, so Merge appears at 2+ rows and Mark done greys out once everything picked is closed.', 'Enterprise Grid', SelectionBar430, { pro: true }),
   demo('67-context-menu',           'Right-click context menu',    'Custom row context menu (copy, duplicate, move up/down, delete) wired via a contextmenu listener + the wrapper\'s data-svgrid-row attribute.', 'Selection & Clipboard', ContextMenu),
 
   // ----- Columns
@@ -1165,6 +1171,7 @@ const baseDemos: Demo[] = [
   demo('523-base-expenses', 'Expense approvals', 'Expense approvals, ready to use: Expenses and Budgets as linked tables, with receipts, approval statuses and what is left of each budget. Views for this month, an approvals board, spend by category, receipts and a submit form, with automations that route big expenses for approval and an Approve button.', 'Base', BaseExpenses523, { pro: true }),
   demo('524-base-onboarding', 'Employee onboarding', 'Employee onboarding, ready to use: People, their Checklist and Departments as linked tables. Views for the hiring pipeline, a photo directory, start dates on a calendar and a new hire form, with an automation that creates the checklist for IT, HR and the manager of each new hire.', 'Base', BaseOnboarding524, { pro: true }),
   demo('700-base-ai-triage', 'An AI agent and your team, one table', 'An AI agent and your team in one table: a support inbox on Postgres in the page. Run the triage agent and it writes each ticket\'s category, priority and a draft reply to the database with SQL; the base shows what it changed, tinted until someone opens the record, and the record\'s activity says Triage agent changed Priority from what to what. Review the agent\'s work in the Needs review view, set its one wrong call right, and Approve.', 'Base', BaseAiTriage700, { pro: true }),
+  demo('701-enterprise-grid-filters', 'Overdue filters, cell labels and a row count', 'Enterprise filter and sort additions on a review queue. Due\'s filter menu offers Today, Before today, Next 7 days and the rest, with nothing to type; Status is stored as codes and its checklist reads Approved and Failed, as the cells do; the status bar counts rows, "6 of 24 rows" under a filter; and reviews with no due date stay last whichever way Due sorts.', 'Enterprise Grid', EnterpriseGridFilters701, { pro: true }),
   demo('505-gallery-catalog', 'Product catalog (gallery)', 'One <SvGrid> as a storefront: the `gallery` prop shows the rows as product cards drawn by a card snippet (photo, brand, rating, sale price, a badge), and Table shows the same rows. The category filter, search and sort are the grid, so both views agree; a click opens the product in a panel with Add to cart.', 'Gallery', GalleryCatalog505, { pro: true }),
   demo('506-gallery-team-directory', 'Team directory (custom cards)', 'A gallery whose cards you draw yourself: `gallery.card` is a snippet that gets each row, so a person shows as a profile card with photo, role, team and a mail link. The search box and the Team filter buttons narrow the same rows the Table view shows.', 'Gallery', GalleryTeam506, { pro: true }),
   demo('507-gallery-listings', 'Real estate listings', 'Listings drawn by a card snippet: the photo with its status and a save button, the price, beds, baths and size, the address and the agent. The cards are the grid filtered and sorted rows: status buttons and a beds filter set column filters, the sort menu calls api.setSort, the search box is the quick filter.', 'Gallery', GalleryListings507, { pro: true }),
@@ -1316,7 +1323,7 @@ const baseDemos: Demo[] = [
   demo('199-studio-computed-hooks',   'SvGrid Studio · computed & hooks', 'Business logic on the schema. `total` is a COMPUTED field (qty * price) - read-only in grid + form, recomputed live as you type, never stored or submitted. withEntityRules materializes it onto every row and runs the schema hooks: beforeCreate stamps createdAt, and a cross-field validate rejects a non-positive quantity.', 'Studio', StudioComputedHooks,   { pro: true }),
   demo('200-studio-dashboard',        'SvGrid Studio · dashboard',    'A schema-driven dashboard above the grid. SvSchemaDashboard renders a declarative spec of KPI tiles (count / sum / avg) + charts (SvSchemaChart) over the same EntitySchema - a data view, not a page builder. Click a chart category to drill the grid; create / edit / delete and the KPIs and charts update.', 'Studio', StudioDashboard,        { pro: true }),
   demo('53-excel-import',             'Excel / CSV import',             'File picker + column mapping + per-row validation preview before commit. Reads xlsx / csv / tsv / json with format auto-detect.',     'Data Export & Import', ExcelImport,            { pro: true }),
-  demo('88-staged-editing',           'Staged / batch editing',         'Edits buffer into a draft; user reviews every change in a side panel, then commits the batch (one server roundtrip) or reverts back to originals.', 'Editing', StagedEditing,          { pro: true }),
+  demo('88-staged-editing',           'Staged / batch editing',         'Edits buffer into a draft; user reviews every change in a side panel, then commits the batch (one server roundtrip) or reverts back to originals.', 'Enterprise Grid', StagedEditing,          { pro: true }),
   demo('51-ai-assistant',             'AI assistant',                   'NL filter / smart-fill / summarise / classify driven by a BYO model adapter. Runs end-to-end against the bundled mock provider so no API key is required.', 'AI', AiAssistant),
   demo('75-ai-smart-paste',           'AI Smart Paste',                 'Paste CSV / TSV / free-form text - the assistant parses it into typed rows with a preview panel. Swap mockAssistant for your LLM endpoint and ship.', 'AI', AiSmartPaste,           { pro: true }),
   demo('92-nl-filter-bar',            'NL filter bar (AI)',             'Type "EMEA active over 50k" - the AI Platform parses your phrase into api.setFilter / setSort / topN calls. Demo ships a rule-based fallback so you can evaluate without a key; wire your own model with setAIProvider.', 'AI', NlFilterBar),

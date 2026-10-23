@@ -20,10 +20,42 @@ The column menu's Values tab is the default set filter. Click the funnel icon on
 
 What you get without writing any code:
 
-- Distinct values from the current dataset.
+- Distinct values from the current dataset, labelled the way the cells show
+  them.
 - Type-ahead search.
 - Select-all / clear toggle.
 - Mixed-state preserved as the user scrolls.
+
+### Labels from the cells (Enterprise)
+
+The free grid lists the stored values. With `@svgrid/enterprise`,
+`enableFilterLabels()` ([setup](../../enterprise/README.md#grid-filter-and-sort-additions)) lists each value under the text its cell shows, and the
+filter still matches the stored value. The label comes from the first of these
+the column has:
+
+1. a `cell` renderer that returns a string,
+2. static `editorOptions` (`{ value, label }`),
+3. `formatter` or `format`.
+
+So a status stored as `MARKED_AS_FAILED` and drawn as "Failed" is offered as
+"Failed", and the column's accessor can stay the raw value that sorting needs:
+
+```ts
+// after enableFilterLabels() from @svgrid/enterprise has run once
+const STATUS_TEXT: Record<string, string> = { APPROVED: 'Approved', MARKED_AS_FAILED: 'Failed' }
+const columns = [
+  { field: 'status', header: 'Status', cell: ({ getValue }) => STATUS_TEXT[String(getValue())] },
+  { field: 'reviews', header: 'Reviews', cellDataType: 'number' },
+]
+```
+
+Text values are ordered by label. Number and date values stay in value order,
+since "$1,000" would collate before "$200". A `cell` that renders markup has
+no text to borrow, so its column falls through to the next source. The search
+box above the list matches the stored values. Demo 701 shows it.
+
+The grid side is the extension's `facetOptions` hook, which runs in the menu
+chunk, so a grid without the module carries none of it.
 
 Programmatic equivalent for "remember and restore":
 

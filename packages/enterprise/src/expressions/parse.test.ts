@@ -15,6 +15,7 @@ const columns: ExprColumn[] = [
   { id: 'qty', name: 'Qty', type: 'number' },
   { id: 'name', name: 'Name', type: 'text' },
   { id: 'region', name: 'Region', type: 'text' },
+  { id: 'due', name: 'Due', type: 'date' },
 ]
 
 describe('parsePredicate', () => {
@@ -79,6 +80,15 @@ describe('stringifyPredicate', () => {
       const ast = parsePredicate(src, columns)
       const back = stringifyPredicate(ast, columns)
       expect(stringifyPredicate(parsePredicate(back, columns), columns)).toBe(back)
+    }
+  })
+
+  it('writes the date operators measured from today as postfix keywords', () => {
+    const ops = { ISTODAY: 'today', BEFORETODAY: 'beforeToday', AFTERTODAY: 'afterToday', INNEXT7DAYS: 'next7Days', INLAST7DAYS: 'last7Days' }
+    for (const [kw, op] of Object.entries(ops)) {
+      const ast = parsePredicate(`due ${kw.toLowerCase()}`, columns)
+      expect(ast).toEqual({ kind: 'cmp', column: 'due', op })
+      expect(stringifyPredicate(ast, columns)).toBe(`Due ${kw}`)
     }
   })
 

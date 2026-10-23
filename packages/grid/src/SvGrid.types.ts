@@ -16,6 +16,7 @@ import type { ChartMessages } from "./chart-messages";
 import type { GridIconName, GridIcons } from "./grid-icons";
 import type { GridPivotConfig } from "./pivot-view.svelte";
 import type { GridPredicateExpr } from "./filtering/predicate-expr";
+import type { FilterOperatorExtensions } from "./filtering/excel-filters";
 import type { MenuItem } from "./SvMenuList.svelte";
 
 /** The calendar views the scheduler can render. {@link SchedulerConfig}. The
@@ -2299,7 +2300,12 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * Excel-style status bar under the grid showing live aggregates of the
    * selected cell range (count, numeric count, sum, average, min, max).
    * `true` shows the default set; pass `{ aggregates: [...] }` to choose
-   * which. Requires `enableCellSelection`.
+   * which. The aggregates need `enableCellSelection`.
+   *
+   * `rows: true` adds a row count that is always shown, "250 rows" or "12 of
+   * 250 rows" while filters hide some, once `@svgrid/enterprise`'s
+   * `enableRowCount()` has run. `{ rows: true, aggregates: [] }` shows the
+   * count alone.
    */
   statusBar?:
     | boolean
@@ -2307,6 +2313,7 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
         aggregates?: ReadonlyArray<
           "count" | "numericCount" | "sum" | "avg" | "min" | "max"
         >;
+        rows?: boolean;
       };
   /**
    * Show the docked tool panel - the enterprise sidebar with Columns and
@@ -2959,7 +2966,10 @@ export type FilterOperator =
   | "lessThan"
   | "between"
   | "isBlank"
-  | "isNotBlank";
+  | "isNotBlank"
+  // Operators a module registers (`registerFilterOperator`), typed where it
+  // augments `FilterOperatorExtensions`.
+  | keyof FilterOperatorExtensions;
 export type FilterOption = {
   value: FilterOperator;
   label: string;

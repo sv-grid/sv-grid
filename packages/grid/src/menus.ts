@@ -8,6 +8,7 @@ import {
 import "./sv-grid-scrollbar";
 import { untrack } from "svelte";
 import type { FilterOperator } from "./SvGrid.types";
+import { takesNoValue } from "./filter-operators";
 import {
   clampMenuX,
   cssEscape,
@@ -142,8 +143,7 @@ export function createMenus<
     const menuFilter = ctx.filterMenuValues[columnId];
     return Boolean(
       menuFilter &&
-        (menuFilter.operator === "isBlank" ||
-          menuFilter.operator === "isNotBlank" ||
+        (takesNoValue(menuFilter.operator) ||
           menuFilter.value.trim()),
     );
   }

@@ -45,6 +45,7 @@ const CATEGORY_HINTS = {
   Recipes: ['recipes/'],
   Selection: ['help/selection', 'help/rows/'],
   'Selection & Clipboard': ['help/selection', 'help/clipboard'],
+  'Enterprise Grid': ['help/filtering/', 'help/status-bar', 'help/rows/row-sorting', 'help/selection', 'help/editing/'],
   Inputs: ['help/ui-components/'],
   Editing: ['help/editing/'],
   'Tree & Hierarchy': ['help/rows/tree', 'help/rows/'],

@@ -33,6 +33,9 @@ import { enableBoardView } from './board'
 import { enableGalleryView } from './gallery'
 import { enableGanttView } from './gantt/gantt'
 import { enableSelectionBar } from './selection-bar'
+import { enableRelativeDateFilters } from './relative-dates'
+import { enableFilterLabels } from './filter-labels'
+import { enableRowCount } from './row-count'
 import { enableAdvancedFilter } from './advanced-filter-enable'
 import { enablePivot } from './pivot-enable'
 import { registerSheetKeymap } from './sheet-enable'
@@ -148,6 +151,11 @@ export function installEnterprise<
   // Register the Gantt view (no-op without the `gantt` prop).
   enableGanttView()
   enableSelectionBar()
+  // Relative date operators, cell-text checklist labels and the status-bar row
+  // count (each a no-op until a grid uses it).
+  enableRelativeDateFilters()
+  enableFilterLabels()
+  enableRowCount()
   // Register the export engine so built-in AI exports (aiExport) can write the
   // enterprise formats (xlsx / pdf / ...); free grids without it get the plan only.
   registerExportProvider(exportGrid as never)

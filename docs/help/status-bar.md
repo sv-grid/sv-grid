@@ -64,6 +64,27 @@ Pass an object to pick which:
 | `avg`          | Mean of the numeric cells.                           |
 | `min` / `max`  | Smallest / largest numeric value.                    |
 
+## Row count (Enterprise)
+
+With `@svgrid/enterprise`, `rows: true` adds a count on the left of the bar
+that is always there, with or without a selection: "250 rows", or "12 of 250
+rows" while filters hide some. It needs no `enableCellSelection`. To show the
+count alone, pass no aggregates. It is drawn once `enableRowCount()` has run
+([setup](../enterprise/README.md#grid-filter-and-sort-additions)):
+
+```svelte
+<SvGrid {data} {columns} statusBar={{ rows: true, aggregates: [] }} />
+```
+
+The count leaves out group banners and ignores pagination. For a header or a
+count of your own, `getRowCounts(api)` from `@svgrid/enterprise` returns
+`{ total, filtered }`; with grouping on, its `filtered` counts the group rows
+too. Under `externalFilter` or `externalPagination` the grid holds one page,
+so the bar shows the `rowCount` you pass.
+
+The count is not announced to screen readers on each change; the grid already
+announces filter results. Without the module, `rows: true` shows nothing.
+
 ## Behavior
 
 - The numeric aggregates (`sum`, `avg`, `min`, `max`) only appear when the
