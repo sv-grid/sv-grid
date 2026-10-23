@@ -1,0 +1,4 @@
+# Zazo's voice clips are rendered locally (tools/zazo-voice.mjs) and not
+# committed: only documentation media goes to GitHub. The clips committed
+# before this rule stay tracked; new ones are ignored.
+*.mp3

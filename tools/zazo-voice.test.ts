@@ -3,6 +3,11 @@
  * line, a new tip, or a change to the voice settings, without a re-render,
  * would leave him silent on that one (or speaking stale words), and nothing
  * else would notice. Fix: `node --env-file=.env tools/zazo-voice.mjs`.
+ *
+ * The clips are not committed: media goes to GitHub only when it belongs to
+ * the documentation, and Zazo is the demo helper. So the two clip checks run
+ * where the clips are rendered and skip in CI; a clip missing from a build
+ * leaves him silent on that line (Zazo.svelte drops a clip it cannot find).
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
@@ -16,12 +21,12 @@ const manifest: Record<string, { text: string; sound: string }> = JSON.parse(rea
 const want = wantedClips(ROOT) as Map<string, string>
 
 describe('Zazo voice clips', () => {
-  it('every clip he can play exists', () => {
+  it.skipIf(!!process.env.CI)('every clip he can play exists', () => {
     const missing = [...want.keys()].filter((clip) => !existsSync(join(DIR, `${clip}.mp3`)))
     expect(missing, 'run: node --env-file=.env tools/zazo-voice.mjs').toEqual([])
   })
 
-  it('every clip says the current words, in the current voice', () => {
+  it.skipIf(!!process.env.CI)('every clip says the current words, in the current voice', () => {
     const stale = [...want].filter(([clip, text]) => manifest[clip]?.text !== text || manifest[clip]?.sound !== SOUND).map(([clip]) => clip)
     expect(stale, 'run: node --env-file=.env tools/zazo-voice.mjs').toEqual([])
   })
