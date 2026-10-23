@@ -495,7 +495,7 @@ export const ELEMENT_PROPS = [
     "name": "statusBar",
     "type": "Boolean",
     "attribute": "status-bar",
-    "ts": "| boolean | { aggregates?: ReadonlyArray< \"count\" | \"numericCount\" | \"sum\" | \"avg\" | \"min\" | \"max\" >; }"
+    "ts": "| boolean | { aggregates?: ReadonlyArray< \"count\" | \"numericCount\" | \"sum\" | \"avg\" | \"min\" | \"max\" >; rows?: boolean; }"
   },
   {
     "name": "toolPanel",

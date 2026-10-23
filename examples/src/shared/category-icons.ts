@@ -36,7 +36,7 @@ export const CATEGORY_ICON_PATHS: Record<string, string> = {
   'Studio': 'M3 4h18v4H3z M3 12h6v8H3z M13 12h8v8h-8z',
   'Alerts': 'M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z M10 21h4',
   // A table with a check mark: paid additions to the grid itself.
-  'Enterprise Grid': 'M3 5h18v14H3z M3 10h18 M9 10v9 M13 15l2 2 4-4',
+  'Misc': 'M3 5h18v14H3z M3 10h18 M9 10v9 M13 15l2 2 4-4',
   // A table of typed fields: a header row over columns.
   'Base': 'M3 5h18v14H3z M3 10h18 M9 10v9 M15 10v9',
   // An application window: a sidebar beside a content area under a title bar.

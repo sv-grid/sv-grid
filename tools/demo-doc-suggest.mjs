@@ -63,7 +63,7 @@ const SECTION = {
   Editing: [/^docs\/help\/editing\//],
   'Rows & Cells': [/^docs\/help\/(rows|cells)\//],
   'Selection & Clipboard': [/^docs\/help\/(cells|rows)\//],
-  'Enterprise Grid': [/^docs\/help\/(filtering|status-bar|rows\/row-sorting|selection|editing)/],
+  Misc: [/^docs\/help\/(filtering|status-bar|rows\/row-sorting|selection|editing)/],
   'Tree & Hierarchy': [/^docs\/help\/rows\//],
   'Real-time & Streaming': [/^docs\/help\/(real-time|rows)\//],
   Alerts: [/^docs\/help\/alerts/],
