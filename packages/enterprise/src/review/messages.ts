@@ -33,8 +33,6 @@ export const REVIEW_MESSAGES = {
   keep: 'Keep {value}',
   // Groups
   badgeRule: 'Rule',
-  badgeCheck: 'Check',
-  badgeEach: 'Each',
   hintRule: 'Every change in this group follows the rule.',
   hintMapping: 'Check the mapping before accepting.',
   hintFill: 'Check the sample: the least sure ones come first.',

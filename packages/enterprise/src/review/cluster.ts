@@ -329,13 +329,19 @@ export function visibleSpaces(s: string): string {
   return s.replace(/^\s+|\s+$/g, (m) => '·'.repeat(m.length)).replace(/ {2,}/g, (m) => '·'.repeat(m.length))
 }
 
-/** A value as a group label shows it: short, quoted, `(empty)` for blank, spaces visible. */
+/**
+ * A value as a group label shows it: short, `(empty)` for blank, spaces
+ * visible. A string is quoted only where the quotes tell something: around
+ * spaces at its ends, or when it reads as a number, a boolean or the blank mark.
+ */
 export function showValue(v: unknown, empty = '(empty)'): string {
   if (isBlank(v)) return empty
   if (v instanceof Date) return v.toISOString().slice(0, 10)
   const s = typeof v === 'string' ? v : typeof v === 'object' ? JSON.stringify(v) : String(v)
   const short = s.length > 40 ? s.slice(0, 39) + '...' : s
-  return typeof v === 'string' ? `"${visibleSpaces(short)}"` : short
+  if (typeof v !== 'string') return short
+  const quote = /^\s|\s$/.test(s) || /^-?[\d.,]+$|^(true|false)$/i.test(s) || s === empty
+  return quote ? `"${visibleSpaces(short)}"` : visibleSpaces(short)
 }
 
 function labelOf(kind: GroupKind, param: string, field: string, members: Proposal[], m: ReviewMessages): string {

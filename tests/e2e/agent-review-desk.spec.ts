@@ -45,8 +45,8 @@ test('Accept rule groups leaves only the groups that need a person', async ({ pa
   // The demo's rule groups hold more changes than confirmOver (50): it asks first.
   await expect(page.locator('.sv-review-confirm')).toContainText('rule groups')
   await page.locator('.sv-review-confirm').getByRole('button', { name: /^Yes/ }).click()
-  await expect(page.locator('.sv-review-badge.is-rule')).toHaveCount(0)
-  await expect(page.locator('.sv-review-badge.is-check').first()).toBeVisible()
+  await expect(page.locator('.sv-review-badge')).toHaveCount(0)
+  await expect(page.locator('.sv-review-group').first()).toBeVisible()
 })
 
 test('a sample line takes the grid to its row and lights it', async ({ page }) => {

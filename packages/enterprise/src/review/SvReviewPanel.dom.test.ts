@@ -220,7 +220,7 @@ it('takes its wording from the review, and a panel can override it', async () =>
     props: {
       initial,
       columns,
-      messages: { labelWhitespace: 'Leerzeichen in {field} kürzen', changes: '{count} Änderungen', acceptAll: 'Alle annehmen' },
+      messages: { labelWhitespace: 'Leerzeichen in {field} kürzen', changes: '{count} Änderungen', badgeRule: 'Regel', acceptAll: 'Alle annehmen' },
       panelMessages: { acceptAll: 'Alles übernehmen' },
       onReady: (x: typeof h) => (h = x),
     },
@@ -232,7 +232,7 @@ it('takes its wording from the review, and a panel can override it', async () =>
   ] })
   flushSync()
   expect(target.querySelector('.sv-review-label')!.textContent).toBe('Leerzeichen in Name kürzen')
-  expect(target.querySelector('.sv-review-conf')!.textContent!.replace(/\s+/g, ' ').trim()).toBe('2 Änderungen')
+  expect(target.querySelector('.sv-review-conf')!.textContent!.replace(/\s+/g, ' ').trim()).toBe('Regel 2 Änderungen')
   // The panel's own override wins over the review's.
   expect([...target.querySelectorAll('button')].some((b) => b.textContent?.trim() === 'Alles übernehmen')).toBe(true)
   unmount(app)
@@ -293,7 +293,7 @@ describe('one change at a time', () => {
     // Four pairs; accepting one AMER leaves a singleton, which pools under another key.
     const { review, target, destroy } = await setupMany(PAIRS)
     const head = () => target.querySelector('.sv-review-group.is-open .sv-review-label')?.textContent
-    expect(head()).toBe('Fill empty Region with "AMER"')
+    expect(head()).toBe('Fill empty Region with AMER')
     ;(target.querySelector('.sv-review-line [aria-label="Accept this change"]') as HTMLButtonElement).click()
     await vi.waitFor(() => expect(review.pending()).toHaveLength(7))
     flushSync()
@@ -329,6 +329,50 @@ describe('one change at a time', () => {
   it('says which keys drive the list', async () => {
     const { target, destroy } = await setupMany()
     expect(target.querySelector('.sv-review-keys')!.textContent).toContain('J / K')
+    destroy()
+  })
+})
+
+describe('the panel reads like a review', () => {
+  it('a line names its row by the first text column, and not when that column is the one changed', async () => {
+    const { review, target, destroy } = await setup()
+    review.add({
+      source: AGENT,
+      proposals: [
+        { rowId: 'c', field: 'region', before: '', after: 'APAC' },
+        { rowId: 'a', field: 'name', before: '  Acme', after: 'Acme' },
+      ],
+    })
+    flushSync()
+    const open = (label: string) => {
+      const head = [...target.querySelectorAll('.sv-review-group-head')].find((h) => h.textContent!.includes(label)) as HTMLButtonElement
+      head.click()
+      flushSync()
+      return head.closest('.sv-review-group')!
+    }
+    expect(open('Region').querySelector('.sv-review-who')!.textContent).toBe('Initech')
+    expect(open('Name').querySelector('.sv-review-who')).toBeNull()
+    destroy()
+  })
+
+  it('the proven changes get the primary button, not Accept all', async () => {
+    const { review, target, destroy } = await setup()
+    review.add({
+      source: AGENT,
+      proposals: [
+        { rowId: 'a', field: 'name', before: '  Acme', after: 'Acme' },
+        { rowId: 'c', field: 'region', before: '', after: 'APAC' },
+      ],
+    })
+    flushSync()
+    const primary = [...target.querySelectorAll('.sv-review-all .sv-btn--primary')].map((b) => b.textContent!.trim())
+    expect(primary).toEqual(['Accept rule groups (1)'])
+    // Only rule groups left: Accept all takes the primary.
+    review.reject(review.pending().filter((p) => p.field === 'region').map((p) => p.id))
+    flushSync()
+    expect([...target.querySelectorAll('.sv-review-all .sv-btn--primary')].map((b) => b.textContent!.trim())).toEqual(['Accept all'])
+    // A rule badge on the rule group only.
+    expect(target.querySelectorAll('.sv-review-badge')).toHaveLength(1)
     destroy()
   })
 })

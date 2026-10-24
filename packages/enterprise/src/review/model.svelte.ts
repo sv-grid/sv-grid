@@ -80,6 +80,12 @@ export type ReviewOptions<TData> = {
    * decision stands. Also kept as `review.lastError`, which the panel announces.
    */
   onError?: (error: unknown, during: 'undo' | 'redo') => void
+  /**
+   * What names a row on the panel's lines, such as its company, so a reviewer
+   * knows whose record a change is in. Default: the row's first visible text
+   * column, left out when that column is the one the change is to.
+   */
+  rowLabel?: (row: TData) => string | null | undefined
 }
 
 export type ReviewDecision = {
@@ -905,6 +911,25 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
     return { id: target.p.id, hidden }
   }
 
+  // Row index for labels, rebuilt when the grid's data array changes.
+  let labelIndex: { data: unknown; map: Map<string, number> } | null = null
+  function rowLabel(p: Proposal): string | null {
+    const api = getApi()
+    if (!api || !api.getOption('getRowId')) return null
+    const data = api.getData()
+    if (labelIndex?.data !== data) labelIndex = { data, map: indexRows(api) }
+    const i = labelIndex.map.get(p.rowId)
+    if (i === undefined) return null
+    const row = data[i] as TData
+    if (opts.rowLabel) return opts.rowLabel(row) || null
+    for (const c of api.getColumns()) {
+      if (!c.visible || !c.field) continue
+      const v = (row as Record<string, unknown>)[c.field]
+      if (typeof v === 'string' && v.trim()) return c.field === p.field ? null : v.trim()
+    }
+    return null
+  }
+
   const review = {
     get version() {
       return version
@@ -921,6 +946,8 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
       return all.get(id)
     },
     proposals: () => list(),
+    /** What names the proposal's row (`rowLabel`), or null. */
+    rowLabel,
     pending: () => list('pending'),
     conflicts: () => list('conflict'),
     groups,

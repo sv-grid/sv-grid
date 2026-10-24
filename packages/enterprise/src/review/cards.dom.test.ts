@@ -47,7 +47,7 @@ describe('card marks', () => {
     await vi.waitFor(() => expect(target.querySelectorAll('.sv-card-proposed')).toHaveLength(1))
     const mark = target.querySelector('.sv-card-proposed')!
     expect(mark.textContent).toContain('2 proposed')
-    expect(mark.getAttribute('title')).toBe('Region → "EMEA", Name → "Acme Inc"')
+    expect(mark.getAttribute('title')).toBe('Region → EMEA, Name → Acme Inc')
     review.reject(review.pending().map((p) => p.id))
     flushSync()
     await vi.waitFor(() => expect(target.querySelectorAll('.sv-card-proposed')).toHaveLength(0))
@@ -69,7 +69,7 @@ describe('card marks', () => {
     review.add({ source: { kind: 'agent', id: 'x', label: 'X' }, proposals: [{ rowId: 'a', field: 'region', before: 'AMER', after: 'EMEA' }] })
     flushSync()
     await vi.waitFor(() => expect(target.querySelector('.sv-sched-proposed')).not.toBeNull())
-    expect(target.querySelector('.sv-sched-proposed')!.getAttribute('title')).toBe('1 proposed: Region → "EMEA"')
+    expect(target.querySelector('.sv-sched-proposed')!.getAttribute('title')).toBe('1 proposed: Region → EMEA')
     destroy()
   })
 })

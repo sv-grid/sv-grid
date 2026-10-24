@@ -128,9 +128,9 @@ pending proposal in one group by the change it makes. The first four kinds are
 | `case` | same letters, different case | Change Email to lower case |
 | `format` | same characters apart from punctuation, the same unambiguous date, or text that parses to the number | Reformat Phone as 999-999-9999 |
 | `scale` | `after / before` is one number, 5 or more members | Divide Revenue by 100 |
-| `same-mapping` | several `before` values each mapped to one `after` at least twice | Country: 6 values → "United States" |
-| `fill-empty` | blank `before`, one group per proposed value | Fill empty Region with "EMEA" |
-| `constant-target` | many different `before` values, one `after` | Set Status to "Closed" |
+| `same-mapping` | several `before` values each mapped to one `after` at least twice | Country: 6 values → United States |
+| `fill-empty` | blank `before`, one group per proposed value | Fill empty Region with EMEA |
+| `constant-target` | many different `before` values, one `after` | Set Status to Closed |
 | `unpatterned` | everything else, per field | Notes: no shared pattern |
 
 A few cases are kept out of the rule groups on purpose. `"3.5"` to `"35"` keeps
@@ -214,8 +214,29 @@ staleness there.
 
 **Accept rule groups** accepts every rule group at once (trims, case changes,
 reformats, one numeric factor), the changes that are proven by their rule, and
-leaves the groups that need a person. A click on a sample line shows that row
-in the grid, and the row lights up for a moment so the eye finds it.
+leaves the groups that need a person. It is the panel's primary button, and
+rule groups are the only ones marked, with a "Rule" badge. **Accept all** is
+the primary button only when every group left is a rule group: deciding
+everything unseen is what a review is there to prevent.
+
+A line in an open group names its row, then the change, then the reason and
+confidence the source gave. The name is the row's first visible text column
+(the company, say), and a line leaves it out when that column is the one being
+changed, since the old value already names the row. Set `rowLabel` on
+`createReview` to choose it yourself:
+
+```ts
+const review = createReview<Customer>({
+  api: () => api,
+  setRows: (next) => (rows = next),
+  rowLabel: (row) => `${row.company} (${row.city})`,
+})
+```
+
+A click on a line shows that row in the grid, and the row lights up for a
+moment so the eye finds it. A value is quoted only where the quotes say
+something: around spaces at its ends (shown as dots), or when text reads as a
+number or a boolean.
 
 Each line of an open group has its own accept and reject, for a group that is
 mostly right: reject the two wrong guesses, then accept the group. A judgment

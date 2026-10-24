@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clusterProposals } from './cluster'
+import { clusterProposals, showValue } from './cluster'
 import type { Proposal, ProposalSource } from './types'
 import { crmCleanupFixture } from './test-fixtures/crm-cleanup'
 
@@ -80,19 +80,19 @@ describe('judgment detectors', () => {
   it('same-mapping: one group per target, read as a mapping table', () => {
     const ps = [p('c', 'usa', 'United States'), p('c', 'usa', 'United States'), p('c', 'U.S.', 'United States'), p('c', 'U.S.', 'United States')]
     const g = only(ps)
-    expect(g).toMatchObject({ kind: 'same-mapping', rule: false, label: 'c: 2 values → "United States"' })
+    expect(g).toMatchObject({ kind: 'same-mapping', rule: false, label: 'c: 2 values → United States' })
     expect(g.beforeDistribution).toEqual([{ value: 'usa', count: 2 }, { value: 'U.S.', count: 2 }])
   })
 
   it('fill-empty: split by value, singletons pooled', () => {
     const ps = [p('r', '', 'EMEA'), p('r', null, 'EMEA'), p('r', '', 'APAC'), p('r', undefined, 'AMER')]
-    expect(clusterProposals(ps).map((g) => g.label).sort()).toEqual(['Fill empty r (different values)', 'Fill empty r with "EMEA"'])
+    expect(clusterProposals(ps).map((g) => g.label).sort()).toEqual(['Fill empty r (different values)', 'Fill empty r with EMEA'])
   })
 
   it('constant-target: three or more, with the before distribution', () => {
     const ps = ['a', 'b', 'c', 'd', 'e', 'f', 'g'].map((b) => p('s', b, 'X'))
     const g = only(ps)
-    expect(g).toMatchObject({ kind: 'constant-target', label: 'Set s to "X"' })
+    expect(g).toMatchObject({ kind: 'constant-target', label: 'Set s to X' })
     expect(g.beforeDistribution).toHaveLength(6)
     expect(g.beforeDistribution![5]).toEqual({ value: undefined, count: 2, other: true })
     expect(kinds(ps.slice(0, 2))).toEqual([['unpatterned', 2]])
@@ -183,4 +183,16 @@ it('100k proposals cluster in well under a second', () => {
   expect(gs.reduce((s, g) => s + g.count, 0)).toBe(100_000)
   // Plan target is 500 ms in a production bench; jsdom under CI load gets headroom.
   expect(ms).toBeLessThan(1500)
+})
+
+describe('showValue', () => {
+  it('quotes a string only where the quotes tell something', () => {
+    expect(showValue('EMEA')).toBe('EMEA')
+    expect(showValue(' Acme')).toBe('"·Acme"')
+    expect(showValue('42')).toBe('"42"')
+    expect(showValue(42)).toBe('42')
+    expect(showValue('true')).toBe('"true"')
+    expect(showValue('(empty)')).toBe('"(empty)"')
+    expect(showValue('')).toBe('(empty)')
+  })
 })

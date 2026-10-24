@@ -97,18 +97,14 @@
   let revealed = $state<Record<string, { id: string | null; hidden: number }>>({})
   let listEl = $state<HTMLElement | null>(null)
 
-  const badgeOf = (kind: ProposalGroup['kind']): { text: string; tone: 'rule' | 'check' | 'each'; hint: string } => {
+  /** What to check in a group of this kind, on hover over its heading. */
+  const hintOf = (kind: ProposalGroup['kind']): string => {
     switch (kind) {
-      case 'whitespace': case 'case': case 'format': case 'scale':
-        return { text: m.badgeRule, tone: 'rule', hint: m.hintRule }
-      case 'same-mapping':
-        return { text: m.badgeCheck, tone: 'check', hint: m.hintMapping }
-      case 'fill-empty':
-        return { text: m.badgeCheck, tone: 'check', hint: m.hintFill }
-      case 'constant-target':
-        return { text: m.badgeCheck, tone: 'check', hint: m.hintConstant }
-      case 'unpatterned':
-        return { text: m.badgeEach, tone: 'each', hint: m.hintEach }
+      case 'whitespace': case 'case': case 'format': case 'scale': return m.hintRule
+      case 'same-mapping': return m.hintMapping
+      case 'fill-empty': return m.hintFill
+      case 'constant-target': return m.hintConstant
+      case 'unpatterned': return m.hintEach
     }
   }
 
@@ -263,7 +259,9 @@
   <header class="sv-review-head">
     <div class="sv-review-titlerow">
       <h2 class="sv-review-title" tabindex="-1" bind:this={headingEl}>{heading}</h2>
-      {#if tally.total}<span class="sv-review-decided">{fill(m.decided, { decided: decidedCount, total: tally.total })}</span>{/if}
+      <span class="sv-review-count">
+        {pendingCount ? fill(groups.length === 1 ? m.pendingInOneGroup : m.pendingInGroups, { count: pendingCount, groups: groups.length }) : m.nothingPending}{conflicts.length ? fill(m.inConflict, { count: conflicts.length }) : ''}
+      </span>
     </div>
     {#if tally.total}
       <div
@@ -273,21 +271,22 @@
         aria-valuemin={0}
         aria-valuemax={tally.total}
         aria-valuenow={decidedCount}
+        aria-valuetext={fill(m.decided, { decided: decidedCount, total: tally.total })}
+        title={fill(m.decided, { decided: decidedCount, total: tally.total })}
       >
         <span class="is-accepted" style:width="{(tally.accepted / tally.total) * 100}%"></span>
         <span class="is-rejected" style:width="{((tally.rejected + tally.stale) / tally.total) * 100}%"></span>
       </div>
     {/if}
-    <p class="sv-review-count">
-      {pendingCount ? fill(groups.length === 1 ? m.pendingInOneGroup : m.pendingInGroups, { count: pendingCount, groups: groups.length }) : m.nothingPending}{conflicts.length ? fill(m.inConflict, { count: conflicts.length }) : ''}
-    </p>
     {#if pendingCount}
+      <!-- The proven changes are the safe bulk step, so they get the primary
+           button; Accept all is primary only when every group is a rule group. -->
       <div class="sv-review-all">
-        <SvButton size="sm" disabled={busy || conflicts.length > 0} onclick={acceptAll}>{m.acceptAll}</SvButton>
         {#if ruleGroups.length && ruleGroups.length < groups.length}
-          <SvButton size="sm" variant="outline" disabled={busy} onclick={acceptRules}>{fill(m.acceptRuleGroups, { count: ruleCount })}</SvButton>
+          <SvButton size="sm" disabled={busy} onclick={acceptRules}>{fill(m.acceptRuleGroups, { count: ruleCount })}</SvButton>
         {/if}
-        <SvButton size="sm" variant="outline" disabled={busy} onclick={rejectAll}>{m.rejectAll}</SvButton>
+        <SvButton size="sm" variant={ruleGroups.length === groups.length ? 'primary' : 'secondary'} disabled={busy || conflicts.length > 0} onclick={acceptAll}>{m.acceptAll}</SvButton>
+        <SvButton size="sm" variant="secondary" disabled={busy} onclick={rejectAll}>{m.rejectAll}</SvButton>
       </div>
       {#if conflicts.length}<p class="sv-review-hint">{m.resolveFirst}</p>{/if}
     {/if}
@@ -337,7 +336,6 @@
     <ul class="sv-review-groups" bind:this={listEl} onkeydown={onKeydown}>
       {#each groups as g, i (g.key)}
         {@const open = openedKey === g.key}
-        {@const badge = badgeOf(g.kind)}
         {@const [pre, post] = around(g.count === 1 ? m.oneChange : m.changes)}
         <li class="sv-review-group" class:is-rule={g.rule} class:is-open={open}>
           <div class="sv-review-row">
@@ -347,16 +345,16 @@
               aria-expanded={open}
               tabindex={i === Math.min(focusIndex, groups.length - 1) ? 0 : -1}
               onfocus={() => (focusIndex = i)}
+              title={hintOf(g.kind)}
               onclick={() => toggle(g)}
             >
-              <span class="sv-review-badge is-{badge.tone}" title={badge.hint}>{badge.text}</span>
               <span class="sv-review-text">
                 <span class="sv-review-label">{g.label}</span>
                 <span class="sv-review-conf">
-                  {pre}<span class="sv-review-n">{g.count}</span>{post}
+                  {#if g.rule}<span class="sv-review-badge">{m.badgeRule}</span>{/if}
+                  <span>{pre}<span class="sv-review-n">{g.count}</span>{post}</span>
                   {#if g.minConfidence !== undefined}
-                    <span class="sv-review-meter" class:is-low={g.minConfidence < 0.6} aria-hidden="true"><span style:width={pct(g.minConfidence)}></span></span>
-                    {confidenceText(g)}
+                    <span class:is-low={g.minConfidence < 0.6}>{confidenceText(g)}</span>
                   {/if}
                 </span>
               </span>
@@ -380,11 +378,13 @@
                   {/each}
                 </ul>
               {/if}
-              <p class="sv-review-subtitle">{g.kind === 'unpatterned' || showAll ? (g.count > 200 ? fill(m.firstN, { count: 200 }) : m.everyChange) : fill(m.sampleOf, { count: g.count })}</p>
+              <p class="sv-review-subtitle">{g.kind === 'unpatterned' || showAll || g.sample.length >= g.count ? (g.count > 200 ? fill(m.firstN, { count: 200 }) : m.everyChange) : fill(m.sampleOf, { count: g.count })}</p>
               <ul class="sv-review-sample">
                 {#each listed(g) as p (p.id)}
+                  {@const who = review.rowLabel(p)}
                   <li class="sv-review-line">
-                    <button type="button" class="sv-review-sample-row" title={fill(m.showRow, { row: p.rowId })} onclick={() => review.reveal([p.id])}>
+                    <button type="button" class="sv-review-sample-row" title={fill(m.showRow, { row: who ?? p.rowId })} onclick={() => review.reveal([p.id])}>
+                    {#if who}<span class="sv-review-who">{who}</span>{/if}
                     <span class="sv-review-pair">
                       <span class="sv-review-before">{show(p.before)}</span>
                       <span class="sv-review-arrow" aria-hidden="true">→</span>
@@ -477,7 +477,6 @@
   }
   .sv-review-titlerow { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
   .sv-review-title { margin: 0; font-size: 15px; font-weight: 650; letter-spacing: -0.01em; }
-  .sv-review-decided { font-size: 12px; color: var(--sg-muted, #6b7280); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .sv-review-progress {
     display: flex;
     height: 4px;
@@ -486,9 +485,11 @@
     background: color-mix(in srgb, var(--sg-fg, #111827) 12%, transparent);
   }
   .sv-review-progress span { transition: width 0.3s ease; }
-  .sv-review-progress .is-accepted { background: var(--sg-success, #16a34a); }
-  .sv-review-progress .is-rejected { background: var(--sg-muted, #9ca3af); }
-  .sv-review-count, .sv-review-hint { margin: 0; color: var(--sg-muted, #6b7280); }
+  /* Neutral: the bar shows how far along the review is, not good and bad. */
+  .sv-review-progress .is-accepted { background: color-mix(in srgb, var(--sg-fg, #111827) 62%, transparent); }
+  .sv-review-progress .is-rejected { background: color-mix(in srgb, var(--sg-fg, #111827) 28%, transparent); }
+  .sv-review-count { font-size: 12px; color: var(--sg-muted, #6b7280); font-variant-numeric: tabular-nums; text-align: right; }
+  .sv-review-hint { margin: 0; color: var(--sg-muted, #6b7280); }
   .sv-review-hint { font-size: 12px; }
   .sv-review-subtitle { margin: 10px 0 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--sg-muted, #6b7280); }
   .sv-review-all { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
@@ -570,7 +571,10 @@
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
   .sv-review-group.is-open { border-color: color-mix(in srgb, var(--sg-fg, #111827) 22%, var(--sg-border, #e5e7eb)); box-shadow: 0 1px 3px color-mix(in srgb, var(--sg-fg, #111827) 8%, transparent); }
-  .sv-review-row { display: flex; align-items: stretch; }
+  /* The hover tint covers the whole heading row, actions included. */
+  .sv-review-row { display: flex; align-items: flex-start; border-radius: calc(var(--sg-radius, 8px) - 1px); }
+  .sv-review-row:hover { background: var(--sg-row-hover-bg, #f9fafb); }
+  .sv-review-group.is-open .sv-review-row { border-radius: calc(var(--sg-radius, 8px) - 1px) calc(var(--sg-radius, 8px) - 1px) 0 0; }
   .sv-review-group-head {
     flex: 1;
     min-width: 0;
@@ -583,10 +587,9 @@
     color: inherit;
     background: none;
     border: 0;
-    border-radius: var(--sg-radius, 8px) 0 0 var(--sg-radius, 8px);
+    border-radius: var(--sg-radius, 8px);
     cursor: pointer;
   }
-  .sv-review-group-head:hover { background: var(--sg-row-hover-bg, #f9fafb); }
   .sv-review-group-head:focus-visible, .sv-review-act:focus-visible, .sv-review-keep:focus-visible {
     outline: 2px solid var(--sg-focus-ring, var(--sg-accent, #2563eb));
     outline-offset: -2px;
@@ -599,43 +602,50 @@
   .sv-review-label { overflow-wrap: break-word; font-weight: 550; }
   .sv-review-conf { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; color: var(--sg-muted, #6b7280); font-size: 12px; }
   .sv-review-n { font-variant-numeric: tabular-nums; font-weight: 650; color: var(--sg-fg, #111827); }
-  .sv-review-meter { display: inline-block; width: 36px; height: 4px; border-radius: 999px; background: color-mix(in srgb, var(--sg-fg, #111827) 12%, transparent); overflow: hidden; }
-  .sv-review-meter span { display: block; height: 100%; background: var(--sg-success, #16a34a); }
-  .sv-review-meter.is-low span { background: var(--sg-warning, #d97706); }
+  /* A low confidence is the one signal in a heading: bold text and a dot, no colour wash. */
+  .sv-review-conf .is-low { color: var(--sg-fg, #111827); font-weight: 600; }
+  .sv-review-conf .is-low::before, .sv-review-meta .is-low::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-right: 5px;
+    vertical-align: 1px;
+    border-radius: 50%;
+    background: var(--sg-warning, #d97706);
+  }
+  /* Rule groups are the only marked ones: their changes are proven by their rule. */
   .sv-review-badge {
-    flex: none;
-    margin-top: 1px;
     font-size: 10.5px;
     font-weight: 650;
     letter-spacing: 0.02em;
-    padding: 1px 7px;
+    padding: 0 6px;
     border-radius: 999px;
+    color: var(--sg-muted, #6b7280);
+    background: color-mix(in srgb, var(--sg-fg, #111827) 8%, transparent);
   }
-  .sv-review-badge.is-rule { color: var(--sg-muted, #6b7280); background: color-mix(in srgb, var(--sg-fg, #111827) 8%, transparent); }
-  .sv-review-badge.is-check { color: color-mix(in srgb, var(--sg-warning, #d97706) 70%, var(--sg-fg, #111827)); background: color-mix(in srgb, var(--sg-warning, #d97706) 15%, transparent); }
-  .sv-review-badge.is-each { color: color-mix(in srgb, var(--sg-danger, #dc2626) 75%, var(--sg-fg, #111827)); background: color-mix(in srgb, var(--sg-danger, #dc2626) 12%, transparent); }
 
-  .sv-review-acts { display: flex; flex: none; border-left: 1px solid var(--sg-border, #e5e7eb); }
+  /* Accept and reject sit on the label line as icons, named by aria-label and
+     titled on hover, so the label keeps the panel's width. */
+  .sv-review-acts { display: flex; flex: none; gap: 2px; padding: 7px 7px 0 0; }
   .sv-review-act {
     position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 0 10px;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 550;
-    border: 0;
-    background: none;
-    color: var(--sg-muted, #6b7280);
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--sg-border, #e5e7eb);
+    border-radius: 6px;
+    background: var(--sg-bg, #fff);
+    color: var(--sg-fg, #111827);
     cursor: pointer;
   }
-  .sv-review-act + .sv-review-act { border-left: 1px solid var(--sg-border, #e5e7eb); }
-  .sv-review-act:last-child { border-radius: 0 var(--sg-radius, 8px) var(--sg-radius, 8px) 0; }
+  .sv-review-act span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .sv-review-act svg { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-  .sv-review-act.is-accept { color: var(--sg-fg, #111827); }
-  .sv-review-act.is-accept:hover { color: var(--sg-success, #16a34a); background: color-mix(in srgb, var(--sg-success, #16a34a) 8%, transparent); }
-  .sv-review-act:not(.is-accept):hover { color: var(--sg-danger, #dc2626); background: color-mix(in srgb, var(--sg-danger, #dc2626) 7%, transparent); }
+  .sv-review-act:not(.is-accept) { color: var(--sg-muted, #6b7280); }
+  .sv-review-act.is-accept:hover { color: var(--sg-success, #16a34a); border-color: color-mix(in srgb, var(--sg-success, #16a34a) 45%, var(--sg-border, #e5e7eb)); }
+  .sv-review-act:not(.is-accept):hover { color: var(--sg-danger, #dc2626); border-color: color-mix(in srgb, var(--sg-danger, #dc2626) 45%, var(--sg-border, #e5e7eb)); }
   .sv-review-act:disabled { opacity: 0.45; cursor: default; }
 
   .sv-review-body { padding: 2px 12px 12px; border-top: 1px solid var(--sg-border, #e5e7eb); }
@@ -702,22 +712,16 @@
   .sv-review-pair { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
   .sv-review-before { color: var(--sg-muted, #6b7280); text-decoration: line-through; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sv-review-arrow { color: var(--sg-muted, #6b7280); flex: none; }
-  .sv-review-after { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sv-review-who { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sv-review-after { font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sv-review-meta { display: flex; gap: 8px; color: var(--sg-muted, #6b7280); font-size: 12px; }
-  .sv-review-meta .is-low { color: color-mix(in srgb, var(--sg-warning, #d97706) 80%, var(--sg-fg, #111827)); font-weight: 600; }
+  .sv-review-meta .is-low { color: var(--sg-fg, #111827); font-weight: 600; white-space: nowrap; }
 
   .sv-review-empty { padding: 18px 4px 6px; text-align: left; }
   .sv-review-empty-title { margin: 0 0 2px; font-weight: 650; }
   .sv-review-stale summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--sg-muted, #6b7280); }
   .sv-review-stale ul { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
   .sv-review-live { margin: 0; min-height: 1em; font-size: 12px; font-weight: 550; }
-  /* A narrow panel keeps its width for the labels: Accept and Reject become
-     icons, named by their aria-label and titled on hover. */
-  @container (max-width: 420px) {
-    .sv-review-act { padding: 0 11px; }
-    .sv-review-act span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-    .sv-review-act svg { width: 16px; height: 16px; }
-  }
   @media (prefers-reduced-motion: reduce) {
     .sv-review-progress span, .sv-review-group, .sv-review-switch, .sv-review-switch::after { transition: none; }
   }
