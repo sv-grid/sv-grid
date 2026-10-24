@@ -75,6 +75,21 @@
   const stale = $derived(review.log().filter((p) => p.status === 'stale'))
 
   let openKey = $state<string | null>(null)
+  // What the open group held. A decision can move the rest of it under another
+  // key (two "AMER" fills less one is a singleton, pooled with the others), and
+  // the group the reviewer is working in should stay open as it moves.
+  let openIds: ReadonlySet<string> = new Set()
+  let showAll = $state(false)
+  const openedKey = $derived.by(() => {
+    if (openKey === null || groups.some((g) => g.key === openKey)) return openKey
+    return groups.find((g) => g.ids.some((id) => openIds.has(id)))?.key ?? null
+  })
+  function toggle(g: ProposalGroup) {
+    if (openedKey === g.key) return void (openKey = null)
+    openKey = g.key
+    openIds = new Set(g.ids)
+    showAll = false
+  }
   let focusIndex = $state(0)
   let busy = $state(false)
   let announce = $state('')
@@ -162,6 +177,15 @@
     } else headingEl?.focus()
   }
 
+  async function acceptOne(p: Proposal) {
+    busy = true
+    try {
+      say(await review.accept([p.id]))
+    } finally {
+      busy = false
+    }
+  }
+
   const acceptGroup = (g: ProposalGroup) => {
     const index = groups.indexOf(g)
     guard(fill(m.confirmAcceptGroup, { count: g.count, label: g.label }), g.count, () => {
@@ -201,7 +225,7 @@
 
   /** What an open group lists: every member of a no-pattern group (it has no rule to trust), else the sample. */
   function listed(g: ProposalGroup): Proposal[] {
-    const ids = g.kind === 'unpatterned' ? g.ids.slice(0, 200) : g.sample
+    const ids = g.kind === 'unpatterned' || showAll ? g.ids.slice(0, 200) : g.sample
     return ids.map((id) => review.get(id)).filter((p): p is Proposal => !!p)
   }
 
@@ -213,12 +237,13 @@
   const maxOf = (g: ProposalGroup) => Math.max(1, ...(g.beforeDistribution ?? []).map((d) => d.count))
 
   function onKeydown(e: KeyboardEvent) {
-    if (busy || !groups.length || (e.target as HTMLElement).closest('button.sv-review-act')) return
+    // Keys inside an open group (a line, its accept / reject, Show all) are the buttons' own.
+    if (busy || !groups.length || (e.target as HTMLElement).closest('button.sv-review-act, .sv-review-body')) return
     const g = groups[Math.min(focusIndex, groups.length - 1)]!
     const key = e.key.toLowerCase()
     if (key === 'j' || e.key === 'ArrowDown') focusIndex = Math.min(groups.length - 1, focusIndex + 1)
     else if (key === 'k' || e.key === 'ArrowUp') focusIndex = Math.max(0, focusIndex - 1)
-    else if (e.key === 'Enter') openKey = openKey === g.key ? null : g.key
+    else if (e.key === 'Enter') toggle(g)
     else if (key === 'a') acceptGroup(g)
     else if (key === 'r') rejectGroup(g)
     else return
@@ -311,7 +336,7 @@
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <ul class="sv-review-groups" bind:this={listEl} onkeydown={onKeydown}>
       {#each groups as g, i (g.key)}
-        {@const open = openKey === g.key}
+        {@const open = openedKey === g.key}
         {@const badge = badgeOf(g.kind)}
         {@const [pre, post] = around(g.count === 1 ? m.oneChange : m.changes)}
         <li class="sv-review-group" class:is-rule={g.rule} class:is-open={open}>
@@ -322,7 +347,7 @@
               aria-expanded={open}
               tabindex={i === Math.min(focusIndex, groups.length - 1) ? 0 : -1}
               onfocus={() => (focusIndex = i)}
-              onclick={() => (openKey = open ? null : g.key)}
+              onclick={() => toggle(g)}
             >
               <span class="sv-review-badge is-{badge.tone}" title={badge.hint}>{badge.text}</span>
               <span class="sv-review-text">
@@ -355,10 +380,10 @@
                   {/each}
                 </ul>
               {/if}
-              <p class="sv-review-subtitle">{g.kind === 'unpatterned' ? (g.count > 200 ? fill(m.firstN, { count: 200 }) : m.everyChange) : fill(m.sampleOf, { count: g.count })}</p>
+              <p class="sv-review-subtitle">{g.kind === 'unpatterned' || showAll ? (g.count > 200 ? fill(m.firstN, { count: 200 }) : m.everyChange) : fill(m.sampleOf, { count: g.count })}</p>
               <ul class="sv-review-sample">
                 {#each listed(g) as p (p.id)}
-                  <li>
+                  <li class="sv-review-line">
                     <button type="button" class="sv-review-sample-row" title={fill(m.showRow, { row: p.rowId })} onclick={() => review.reveal([p.id])}>
                     <span class="sv-review-pair">
                       <span class="sv-review-before">{show(p.before)}</span>
@@ -372,9 +397,16 @@
                       </span>
                     {/if}
                     </button>
+                    <span class="sv-review-line-acts">
+                      <button type="button" class="sv-review-line-act is-accept" disabled={busy} aria-label={m.acceptOne} title={m.acceptOne} onclick={() => void acceptOne(p)}>{@render check()}</button>
+                      <button type="button" class="sv-review-line-act" disabled={busy} aria-label={m.rejectOne} title={m.rejectOne} onclick={() => say(review.reject([p.id]))}>{@render cross()}</button>
+                    </span>
                   </li>
                 {/each}
               </ul>
+              {#if g.kind !== 'unpatterned' && !showAll && g.count > g.sample.length}
+                <button type="button" class="sv-review-more" onclick={() => (showAll = true)}>{fill(m.showAll, { count: g.count })}</button>
+              {/if}
               <div class="sv-review-all">
                 <SvButton size="sm" variant="ghost" onclick={() => showInGrid(g)}>
                   {revealed[g.key]?.id ? m.nextInGrid : m.showInGrid}
@@ -411,6 +443,7 @@
     </details>
   {/if}
 
+  {#if groups.length}<p class="sv-review-hint sv-review-keys">{m.keysHint}</p>{/if}
   <p class="sv-review-live" role="status" aria-live="polite">{announce}</p>
   {#if pendingCount || announce}<p class="sv-review-hint">{m.undoHint}</p>{/if}
 </section>
@@ -612,6 +645,41 @@
   .sv-review-dist-bar { height: 6px; border-radius: 999px; background: color-mix(in srgb, var(--sg-fg, #111827) 12%, transparent); overflow: hidden; }
   .sv-review-dist-bar span { display: block; height: 100%; background: color-mix(in srgb, var(--sg-fg, #111827) 35%, transparent); }
   .sv-review-sample li { border-top: 1px dashed var(--sg-border, #e5e7eb); }
+  /* A line: the change (a click shows its row) and its own accept / reject. */
+  .sv-review-line { display: flex; align-items: flex-start; gap: 4px; }
+  .sv-review-line .sv-review-sample-row { flex: 1; min-width: 0; margin: 0; }
+  .sv-review-line-acts { display: flex; flex: none; gap: 2px; padding-top: 4px; }
+  .sv-review-line-act {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    background: none;
+    color: var(--sg-muted, #6b7280);
+    cursor: pointer;
+  }
+  .sv-review-line-act svg { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .sv-review-line-act.is-accept:hover { color: var(--sg-success, #16a34a); border-color: color-mix(in srgb, var(--sg-success, #16a34a) 35%, transparent); }
+  .sv-review-line-act:not(.is-accept):hover { color: var(--sg-danger, #dc2626); border-color: color-mix(in srgb, var(--sg-danger, #dc2626) 35%, transparent); }
+  .sv-review-line-act:focus-visible { outline: 2px solid var(--sg-focus-ring, var(--sg-accent, #2563eb)); outline-offset: 1px; }
+  .sv-review-line-act:disabled { opacity: 0.45; cursor: default; }
+  .sv-review-more {
+    margin-top: 4px;
+    padding: 2px 0;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--sg-fg, #111827);
+    background: none;
+    border: 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+  .sv-review-keys { margin-top: 2px; }
   /* A sample line is a button: a click shows that row in the grid. */
   .sv-review-sample-row {
     display: flex;

@@ -254,3 +254,81 @@ it('after a keyboard decision the focus moves to the next group, then to the hea
   await vi.waitFor(() => expect(document.activeElement?.classList.contains('sv-review-title')).toBe(true))
   destroy()
 })
+
+describe('one change at a time', () => {
+  const many = Array.from({ length: 8 }, (_, i) => ({ id: `r${i}`, name: `Co ${i}`, region: '', done: false }))
+  const DISTINCT = ['AMER', 'EMEA', 'APAC', 'LATAM', 'ANZ', 'DACH', 'NORDICS', 'BENELUX']
+  const PAIRS = ['AMER', 'EMEA', 'APAC', 'LATAM', 'AMER', 'EMEA', 'APAC', 'LATAM']
+
+  async function setupMany(regions = DISTINCT) {
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    let h!: { review: Review<any>; api: any; rows: () => any[] }
+    const app = mount(Harness, { target, props: { initial: many, columns, onReady: (x: typeof h) => (h = x) } })
+    await vi.waitFor(() => expect(h).toBeDefined())
+    h.review.add({ source: AGENT, proposals: many.map((r, i) => ({ rowId: r.id, field: 'region', before: '', after: regions[i] })) })
+    flushSync()
+    ;(target.querySelector('.sv-review-group-head') as HTMLButtonElement).click()
+    flushSync()
+    return { ...h, target, destroy: () => { unmount(app); target.remove() } }
+  }
+
+  it('a line accepts or rejects its own change and leaves the rest of the group pending', async () => {
+    const { review, target, rows, destroy } = await setupMany()
+    const accept = target.querySelector('.sv-review-line [aria-label="Accept this change"]') as HTMLButtonElement
+    accept.click()
+    await vi.waitFor(() => expect(review.pending()).toHaveLength(7))
+    const written = rows().filter((r) => r.region)
+    expect(written).toHaveLength(1)
+    const reject = target.querySelector('.sv-review-line [aria-label="Reject this change"]') as HTMLButtonElement
+    await vi.waitFor(() => expect(reject.disabled).toBe(false))
+    reject.click()
+    flushSync()
+    expect(review.pending()).toHaveLength(6)
+    expect(rows().filter((r) => r.region)).toHaveLength(1)
+    destroy()
+  })
+
+  it('the open group stays open when a decision moves the rest of it to another group', async () => {
+    // Four pairs; accepting one AMER leaves a singleton, which pools under another key.
+    const { review, target, destroy } = await setupMany(PAIRS)
+    const head = () => target.querySelector('.sv-review-group.is-open .sv-review-label')?.textContent
+    expect(head()).toBe('Fill empty Region with "AMER"')
+    ;(target.querySelector('.sv-review-line [aria-label="Accept this change"]') as HTMLButtonElement).click()
+    await vi.waitFor(() => expect(review.pending()).toHaveLength(7))
+    flushSync()
+    expect(target.querySelectorAll('.sv-review-group.is-open')).toHaveLength(1)
+    expect(target.querySelector('.sv-review-group.is-open .sv-review-line')!.textContent).toContain('AMER')
+    destroy()
+  })
+
+  it('Show all lists every change of a judgment group past the sample', async () => {
+    const { target, destroy } = await setupMany()
+    const before = target.querySelectorAll('.sv-review-line').length
+    expect(before).toBeLessThan(8)
+    const more = target.querySelector('.sv-review-more') as HTMLButtonElement
+    expect(more.textContent).toBe('Show all 8')
+    more.click()
+    flushSync()
+    expect(target.querySelectorAll('.sv-review-line')).toHaveLength(8)
+    expect(target.querySelector('.sv-review-more')).toBeNull()
+    destroy()
+  })
+
+  it('keys on a line stay with the line: the group does not close under it', async () => {
+    const { target, destroy } = await setupMany()
+    const line = target.querySelector('.sv-review-line [aria-label="Accept this change"]') as HTMLButtonElement
+    const e = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
+    line.dispatchEvent(e)
+    flushSync()
+    expect(e.defaultPrevented).toBe(false)
+    expect(target.querySelectorAll('.sv-review-group.is-open')).toHaveLength(1)
+    destroy()
+  })
+
+  it('says which keys drive the list', async () => {
+    const { target, destroy } = await setupMany()
+    expect(target.querySelector('.sv-review-keys')!.textContent).toContain('J / K')
+    destroy()
+  })
+})

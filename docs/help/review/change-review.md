@@ -217,6 +217,13 @@ reformats, one numeric factor), the changes that are proven by their rule, and
 leaves the groups that need a person. A click on a sample line shows that row
 in the grid, and the row lights up for a moment so the eye finds it.
 
+Each line of an open group has its own accept and reject, for a group that is
+mostly right: reject the two wrong guesses, then accept the group. A judgment
+group lists its sample first; **Show all** lists every change in it, up to
+200. A decision can move what is left of a group under another heading (two
+"EMEA" fills less one is a single fill, pooled with the others), and the open
+group follows its remaining changes rather than closing.
+
 It is a plain panel, not a drawer, so the grid stays usable beside it. Inside
 the group list, **J** and **K** move between groups, **Enter** opens one, **A**
 accepts it and **R** rejects it. "Show in grid" goes to the group's next row
