@@ -82,6 +82,8 @@ export const REVIEW_MESSAGES = {
   announceCommittedStale: '{count} saved but not shown: the cell changed while saving',
   announceNotSaved: 'not saved: {error}',
   announceNothing: 'Nothing to decide',
+  undoFailed: 'Undo not saved: {error}',
+  redoFailed: 'Redo not saved: {error}',
   // Marks
   cardProposed: '{count} proposed',
   proposes: '{source} proposes {value}',

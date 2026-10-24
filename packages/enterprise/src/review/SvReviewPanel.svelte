@@ -15,6 +15,7 @@
   header stays in view.
 -->
 <script lang="ts">
+  import { tick } from 'svelte'
   import { SvButton } from '@svgrid/grid'
   import { showValue } from './cluster'
   import { fill, reviewMessages, type ReviewMessages } from './messages'
@@ -109,6 +110,14 @@
     onDecide?.(out)
   }
 
+  // A failed undo / redo save is announced where the decisions are.
+  $effect(() => {
+    const e = review.lastError
+    if (!e) return
+    const text = e.error instanceof Error ? e.error.message : String(e.error)
+    announce = fill(e.during === 'undo' ? m.undoFailed : m.redoFailed, { error: text })
+  })
+
   function confirmYes() {
     const c = confirming
     confirming = null
@@ -129,10 +138,36 @@
     }
   }
 
-  const acceptGroup = (g: ProposalGroup) =>
-    guard(fill(m.confirmAcceptGroup, { count: g.count, label: g.label }), g.count, () => void acceptIds(g.ids))
-  const rejectGroup = (g: ProposalGroup) =>
-    guard(fill(m.confirmRejectGroup, { count: g.count, label: g.label }), g.count, () => say(review.reject(g.ids)))
+  let headingEl = $state<HTMLElement | null>(null)
+  /**
+   * A decided group leaves the list, and the focus would fall to the page.
+   * When it was inside the panel, it moves to the group that took the decided
+   * one's place, or to the heading when none are left.
+   */
+  async function keepFocus(index: number) {
+    const panel = listEl?.closest('.sv-review')
+    const active = document.activeElement
+    const wasHere = !active || active === document.body || (panel?.contains(active) ?? false)
+    await tick()
+    if (!wasHere) return
+    const heads = listEl?.querySelectorAll<HTMLElement>('.sv-review-group-head') ?? []
+    if (heads.length) {
+      focusIndex = Math.min(index, heads.length - 1)
+      heads[focusIndex]!.focus()
+    } else headingEl?.focus()
+  }
+
+  const acceptGroup = (g: ProposalGroup) => {
+    const index = groups.indexOf(g)
+    guard(fill(m.confirmAcceptGroup, { count: g.count, label: g.label }), g.count, () => void acceptIds(g.ids).then(() => keepFocus(index)))
+  }
+  const rejectGroup = (g: ProposalGroup) => {
+    const index = groups.indexOf(g)
+    guard(fill(m.confirmRejectGroup, { count: g.count, label: g.label }), g.count, () => {
+      say(review.reject(g.ids))
+      void keepFocus(index)
+    })
+  }
 
   /** The groups whose every member is proven to follow its rule. */
   const ruleGroups = $derived(groups.filter((g) => g.rule))
@@ -193,7 +228,7 @@
 <section class="sv-review" aria-label={heading}>
   <header class="sv-review-head">
     <div class="sv-review-titlerow">
-      <h2 class="sv-review-title">{heading}</h2>
+      <h2 class="sv-review-title" tabindex="-1" bind:this={headingEl}>{heading}</h2>
       {#if tally.total}<span class="sv-review-decided">{fill(m.decided, { decided: decidedCount, total: tally.total })}</span>{/if}
     </div>
     {#if tally.total}

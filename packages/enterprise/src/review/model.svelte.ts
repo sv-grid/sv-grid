@@ -75,6 +75,11 @@ export type ReviewOptions<TData> = {
    * row model there are no rows to edit: `rows` is undefined.
    */
   onApply?: (applied: Proposal[], how: 'accept' | 'undo' | 'redo', rows?: TData[]) => void
+  /**
+   * An undo or redo whose `onCommit` failed: nothing was written and the
+   * decision stands. Also kept as `review.lastError`, which the panel announces.
+   */
+  onError?: (error: unknown, during: 'undo' | 'redo') => void
 }
 
 export type ReviewDecision = {
@@ -114,6 +119,52 @@ export type ReviewJSON = { v: 1; sets: ChangeSet[] }
 
 export type Review<TData = unknown> = ReturnType<typeof createReview<TData>>
 
+const STATUSES = new Set(['pending', 'accepted', 'rejected', 'stale', 'conflict'])
+const SOURCE_KINDS = new Set(['agent', 'ai', 'import', 'bulk', 'sync', 'rule', 'user'])
+const isStr = (v: unknown): v is string => typeof v === 'string' && v.length > 0
+
+/**
+ * An export, checked before it is trusted: it may come from another person,
+ * another session or an agent. A wrong shape throws; a malformed proposal is
+ * dropped and counted.
+ */
+function checkExport(json: unknown): { sets: ChangeSet[]; dropped: number } {
+  const root = json as { v?: unknown; sets?: unknown } | null
+  if (!root || typeof root !== 'object' || root.v !== 1 || !Array.isArray(root.sets)) {
+    throw new Error('[svgrid review] not a change review export (expected { v: 1, sets: [...] })')
+  }
+  let dropped = 0
+  const sets: ChangeSet[] = []
+  for (const raw of root.sets as unknown[]) {
+    const set = raw as Partial<ChangeSet> | null
+    const src = set?.source as Partial<ProposalSource> | undefined
+    if (!set || !isStr(set.id) || !Array.isArray(set.proposals) || !src || !isStr(src.id) || !SOURCE_KINDS.has(src.kind as string)) {
+      throw new Error('[svgrid review] a set in the export has no id, source or proposals')
+    }
+    const source: ProposalSource = { kind: src.kind!, id: src.id, label: typeof src.label === 'string' ? src.label : src.id }
+    const proposals: Proposal[] = []
+    for (const p of set.proposals as Array<Partial<Proposal> | null>) {
+      const rowId = typeof p?.rowId === 'number' ? String(p.rowId) : p?.rowId
+      if (!p || !isStr(p.id) || !isStr(rowId) || !isStr(p.field) || !STATUSES.has(p.status as string)) {
+        dropped++
+        continue
+      }
+      proposals.push({
+        id: p.id, op: 'update', rowId, field: p.field, before: p.before, after: p.after, source,
+        reason: typeof p.reason === 'string' ? p.reason : undefined,
+        confidence: typeof p.confidence === 'number' && p.confidence >= 0 && p.confidence <= 1 ? p.confidence : undefined,
+        createdAt: typeof p.createdAt === 'number' ? p.createdAt : Date.now(),
+        status: p.status as ProposalStatus,
+        note: typeof p.note === 'string' ? p.note : undefined,
+        decidedBy: typeof p.decidedBy === 'string' ? p.decidedBy : undefined,
+        decidedAt: typeof p.decidedAt === 'number' ? p.decidedAt : undefined,
+      })
+    }
+    sets.push({ id: set.id, title: typeof set.title === 'string' ? set.title : source.label, source, createdAt: typeof set.createdAt === 'number' ? set.createdAt : Date.now(), proposals })
+  }
+  return { sets, dropped }
+}
+
 let uid = 0
 const nextId = (prefix: string) => `${prefix}${Date.now().toString(36)}-${(uid++).toString(36)}`
 const SEP = '\u0000'
@@ -136,6 +187,11 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
   const inFlight = new Set<string>()
   /** Decision order for the log: timestamps tie within one millisecond. */
   const decidedOrder = new Map<string, number>()
+  let lastError = $state<{ error: unknown; during: 'undo' | 'redo'; at: number } | null>(null)
+  function failed(error: unknown, during: 'undo' | 'redo') {
+    lastError = { error, during, at: Date.now() }
+    opts.onError?.(error, during)
+  }
   let decisionSeq = 0
   const stamp = (p: Proposal) => decidedOrder.set(p.id, ++decisionSeq)
   let version = $state(0)
@@ -521,21 +577,25 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
           opts.server!.refresh()
           flip(undo, live)
           opts.onApply?.(live, how)
-        }, () => {})
+        }, (error) => failed(error, how))
         return
       }
-      const holds = (p: Proposal) => sameValue(currentValue(api, indexRows(api), p), p[from])
+      // One row index per pass (rebuilt after an async save), not one per proposal.
+      const holdsIn = () => {
+        const index = indexRows(api)
+        return (p: Proposal) => sameValue(currentValue(api, index, p), p[from])
+      }
       const write = (ok: Proposal[]) => {
         if (!ok.length) return
         writeValues(api, ok.map((p) => [p.rowId, p.field, p[to]] as const), (next) => opts.onApply?.(ok, how, next))
         flip(undo, ok)
       }
-      const ok = live.filter(holds)
+      const ok = live.filter(holdsIn())
       if (!opts.onCommit) return write(ok)
       // The backend holds the accepted values: save the reverse there first.
       Promise.resolve(opts.onCommit(ok.map((p) => ({ ...p, before: p[from], after: p[to] })))).then(
-        () => write(ok.filter(holds)),
-        () => {},
+        () => write(ok.filter(holdsIn())),
+        (error) => failed(error, how),
       )
     }
     api.getCommandContext().recordUndo(
@@ -608,9 +668,15 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
     }
   }
 
-  function load(json: ReviewJSON): void {
+  /**
+   * Replace everything with an export. The export is checked first: a wrong
+   * shape throws and leaves the review as it was; a malformed proposal is
+   * dropped. Returns how many were dropped.
+   */
+  function load(json: ReviewJSON): { dropped: number } {
+    const { sets: valid, dropped } = checkExport(json)
     clear()
-    for (const set of json.sets) {
+    for (const set of valid) {
       sets.set(set.id, { id: set.id, title: set.title, source: set.source, createdAt: set.createdAt, ids: set.proposals.map((p) => p.id) })
       for (const p of set.proposals) {
         all.set(p.id, { ...p })
@@ -618,6 +684,7 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
       }
     }
     bump()
+    return { dropped }
   }
 
   /**
@@ -627,8 +694,9 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
    * with a live proposal from another source becomes a conflict); decided ones
    * are kept as history.
    */
-  function merge(json: ReviewJSON): void {
-    for (const set of json.sets) {
+  function merge(json: ReviewJSON): { dropped: number } {
+    const { sets: valid, dropped } = checkExport(json)
+    for (const set of valid) {
       if (sets.has(set.id)) continue
       const live = set.proposals.filter((p) => p.status === 'pending' || p.status === 'conflict')
       const history = set.proposals.filter((p) => !live.includes(p) && !all.has(p.id))
@@ -637,6 +705,7 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
       sets.get(set.id)!.ids.push(...history.map((p) => p.id))
     }
     bump()
+    return { dropped }
   }
 
   // ---- history ------------------------------------------------------------
@@ -684,11 +753,20 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
   // ---- grid display -------------------------------------------------------
 
   /** A card's mark (board, gallery): how many proposals its row has and what they set. */
+  let liveByRow: { v: number; rows: Map<string, Proposal[]> } | null = null
   function cardMark(rowId: string): CardMark | null {
-    void version
-    const ps: Proposal[] = []
-    for (const p of all.values()) if (p.rowId === rowId && (p.status === 'pending' || p.status === 'conflict')) ps.push(p)
-    if (!ps.length) return null
+    if (liveByRow?.v !== version) {
+      const rows = new Map<string, Proposal[]>()
+      for (const p of all.values()) {
+        if (p.status !== 'pending' && p.status !== 'conflict') continue
+        const list = rows.get(p.rowId)
+        if (list) list.push(p)
+        else rows.set(p.rowId, [p])
+      }
+      liveByRow = { v: version, rows }
+    }
+    const ps = liveByRow.rows.get(rowId)
+    if (!ps) return null
     const labels = fieldLabels()
     return {
       count: ps.length,
@@ -831,6 +909,10 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
     },
     /** The wording in effect: English with `messages` laid over it. */
     messages: msg,
+    /** The last undo or redo whose save failed, or null. */
+    get lastError() {
+      return lastError
+    },
     add,
     get: (id: string) => {
       void version

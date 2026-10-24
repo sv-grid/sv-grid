@@ -474,3 +474,35 @@ it('a merged proposal keeps when it was made', () => {
   approver.merge(json)
   expect(approver.pending()[0]!.createdAt).toBe(1_700_000_000_000)
 })
+
+describe('enterprise hardening', () => {
+  it('load refuses something that is not an export and leaves the review as it was', () => {
+    const { review } = setup()
+    review.add({ source: AGENT, proposals: props(['a', 'region', '', 'EMEA']) })
+    expect(() => review.load({ v: 2, sets: [] } as never)).toThrow(/not a change review export/)
+    expect(() => review.load({ v: 1, sets: [{ id: 's', proposals: [] }] } as never)).toThrow(/no id, source or proposals/)
+    expect(review.pending()).toHaveLength(1)
+  })
+
+  it('merge drops a malformed proposal and counts it', () => {
+    const author = setup().review
+    author.add({ source: AGENT, proposals: props(['a', 'region', '', 'EMEA'], ['b', 'name', 'Globex', 'Globex Inc']) })
+    const json = JSON.parse(JSON.stringify(author.toJSON()))
+    json.sets[0].proposals[1].status = 'hacked'
+    const approver = setup().review
+    expect(approver.merge(json)).toEqual({ dropped: 1 })
+    expect(approver.pending()).toHaveLength(1)
+  })
+
+  it('a failed undo save is reported, not swallowed', async () => {
+    let fail = false
+    const { review, undo } = setup({ onCommit: async () => { if (fail) throw new Error('offline') } })
+    review.add({ source: AGENT, proposals: props(['a', 'region', '', 'EMEA']) })
+    await review.accept(review.pending().map((p) => p.id))
+    fail = true
+    undo.at(-1)!.u()
+    await vi.waitFor(() => expect(review.lastError?.during).toBe('undo'))
+    expect((review.lastError!.error as Error).message).toBe('offline')
+    expect(review.pending()).toHaveLength(0) // the decision stands
+  })
+})

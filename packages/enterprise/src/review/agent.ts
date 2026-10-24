@@ -44,6 +44,8 @@ export type GridToolsOptions = {
   maxRows?: number
   /** Prefix for tool names. Default 'grid_'. */
   prefix?: string
+  /** Most edits one grid_propose_edits call may carry. Default 500. */
+  maxEdits?: number
 }
 
 type Where = { field: string; op: 'equals' | 'notEquals' | 'contains' | 'blank' | 'notBlank' | 'gt' | 'lt'; value?: unknown }
@@ -62,10 +64,25 @@ function matches(v: unknown, w: Where): boolean {
   }
 }
 
+/**
+ * Why a value does not fit its column, or null. A model can send a string for
+ * a number or an object for a text cell; those are skipped, not proposed.
+ */
+function wrongType(type: string | undefined, current: unknown, value: unknown): string | null {
+  if (value === null || value === undefined || value === '') return null // clearing a cell
+  if (Array.isArray(current)) return Array.isArray(value) ? null : 'expects a list'
+  if (typeof value === 'object') return 'expects a single value, not an object or a list'
+  if (type === 'number' && (typeof value !== 'number' || !Number.isFinite(value))) return 'expects a number'
+  if (type === 'boolean' && typeof value !== 'boolean') return 'expects true or false'
+  if ((type === 'date' || type === 'dateString') && (typeof value !== 'string' || Number.isNaN(Date.parse(value)))) return 'expects a date (YYYY-MM-DD)'
+  return null
+}
+
 export function createGridTools(opts: GridToolsOptions): GridTool[] {
   const prefix = opts.prefix ?? 'grid_'
   const source = opts.source ?? { kind: 'agent', id: 'agent', label: 'Agent' }
   const maxRows = opts.maxRows ?? 200
+  const maxEdits = opts.maxEdits ?? 500
   const api = (): ToolApi => {
     const a = typeof opts.api === 'function' ? (opts.api as () => ToolApi | null | undefined)() : opts.api
     if (!a) throw new Error('the grid is not ready yet')
@@ -156,6 +173,7 @@ export function createGridTools(opts: GridToolsOptions): GridTool[] {
         edits: {
           type: 'array',
           minItems: 1,
+          maxItems: maxEdits,
           items: {
             type: 'object',
             properties: {
@@ -174,15 +192,20 @@ export function createGridTools(opts: GridToolsOptions): GridTool[] {
     },
     async execute(input: { title?: string; edits: Array<{ rowId: string; field: string; value: unknown; reason?: string; confidence?: number }> }) {
       const a = api()
+      const edits = Array.isArray(input?.edits) ? input.edits : []
+      if (edits.length > maxEdits) throw new Error(`at most ${maxEdits} edits per call; send the rest in another call`)
       const id = rowIdOf(a)
       const canWrite = writable(a)
+      const typeOf = new Map(a.getColumns().filter((c) => c.field).map((c) => [c.field!, c.cellDataType ?? 'text']))
       const rows = new Map(a.getData().map((row, i) => [String(id(row, i)), row as Record<string, unknown>]))
       const skipped: Array<{ index: number; why: string }> = []
       const proposals: ProposalInput[] = []
-      ;(input.edits ?? []).forEach((e, index) => {
-        const row = rows.get(String(e.rowId))
-        if (!row) return skipped.push({ index, why: `no row with rowId "${e.rowId}"` })
+      edits.forEach((e, index) => {
+        const row = rows.get(String(e?.rowId))
+        if (!row) return skipped.push({ index, why: `no row with rowId "${e?.rowId}"` })
         if (!canWrite.has(e.field)) return skipped.push({ index, why: `field "${e.field}" is not writable` })
+        const why = wrongType(typeOf.get(e.field), row[e.field], e.value)
+        if (why) return skipped.push({ index, why: `${e.field} ${why}` })
         if (sameValue(row[e.field], e.value)) return skipped.push({ index, why: 'the cell already holds this value' })
         const confidence = typeof e.confidence === 'number' ? Math.min(1, Math.max(0, e.confidence)) : undefined
         proposals.push({ rowId: String(e.rowId), field: e.field, before: row[e.field], after: e.value, reason: e.reason, confidence })

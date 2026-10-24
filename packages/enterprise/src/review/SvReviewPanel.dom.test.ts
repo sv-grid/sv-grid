@@ -238,3 +238,19 @@ it('takes its wording from the review, and a panel can override it', async () =>
   unmount(app)
   target.remove()
 })
+
+it('after a keyboard decision the focus moves to the next group, then to the heading', async () => {
+  const { review, target, destroy } = await setup()
+  review.add({ source: AGENT, proposals: [
+    { rowId: 'a', field: 'name', before: '  Acme', after: 'Acme' },
+    { rowId: 'c', field: 'region', before: '', after: 'APAC' },
+  ] })
+  flushSync()
+  const list = target.querySelector('.sv-review-groups') as HTMLElement
+  ;(target.querySelector('.sv-review-group-head') as HTMLElement).focus()
+  list.dispatchEvent(new KeyboardEvent('keydown', { key: 'r', bubbles: true }))
+  await vi.waitFor(() => expect(document.activeElement?.classList.contains('sv-review-group-head')).toBe(true))
+  ;(document.activeElement as HTMLElement).dispatchEvent(new KeyboardEvent('keydown', { key: 'r', bubbles: true }))
+  await vi.waitFor(() => expect(document.activeElement?.classList.contains('sv-review-title')).toBe(true))
+  destroy()
+})

@@ -113,3 +113,22 @@ it('query_rows clamps a negative or string offset instead of slicing from the en
   expect(out.offset).toBe(0)
   expect(out.rows.map((r: any) => r.rowId)).toEqual(['a'])
 })
+
+describe('agent tool hardening', () => {
+  it('refuses more edits than maxEdits in one call', async () => {
+    const { tool } = setup(['region'])
+    const edits = Array.from({ length: 501 }, () => ({ rowId: 'a', field: 'region', value: 'X' }))
+    await expect(tool('grid_propose_edits').execute({ edits })).rejects.toThrow(/at most 500 edits/)
+  })
+
+  it('skips a value that does not fit its column', async () => {
+    const { tool, review } = setup(['amount', 'region'])
+    const out = (await tool('grid_propose_edits').execute({ edits: [
+      { rowId: 'a', field: 'amount', value: 'lots' },
+      { rowId: 'a', field: 'region', value: { evil: true } },
+      { rowId: 'b', field: 'amount', value: 300 },
+    ] })) as any
+    expect(out.skipped.map((s: any) => s.why)).toEqual(['amount expects a number', 'region expects a single value, not an object or a list'])
+    expect(review.pending().map((p) => p.after)).toEqual([300])
+  })
+})
