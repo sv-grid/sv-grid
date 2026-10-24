@@ -777,6 +777,42 @@ describe.skipIf(!hasDist)('svgrid_check_code corrects what it can', () => {
     expect(checkStatic(fixed, apiSurface, 'Broken.svelte')).toEqual([])
   }, 30_000)
 
+  it('lists related props when no spelling is close, and never applies them', async () => {
+    // "Not a prop, go search" makes the model guess again. `detailRenderer` is
+    // no typo of anything, but it is about the same thing as `renderDetailRow`.
+    const { checkStatic, applyFixes, apiSurface } = await load()
+    const src = "<script>\n  import { SvGrid } from '@svgrid/grid'\n</script>\n<SvGrid data={[]} columns={[]} detailRenderer={x} />"
+    const diagnostics = checkStatic(src, apiSurface, 'X.svelte')
+    const d = diagnostics.find((x: { rule: string }) => x.rule === 'svgrid/unknown-prop')
+    expect(d.fix).toMatch(/^Related props: `renderDetailRow`/)
+    expect(d.rename).toBeUndefined()
+    expect(applyFixes(src, diagnostics).applied).toEqual([])
+  }, 30_000)
+
+  it('says nothing related when the only shared word is a common one', async () => {
+    const { checkStatic, apiSurface } = await load()
+    const src = "<script>\n  import { SvGrid } from '@svgrid/grid'\n</script>\n<SvGrid data={[]} columns={[]} rowFoo />"
+    const d = checkStatic(src, apiSurface, 'X.svelte').find((x: { rule: string }) => x.rule === 'svgrid/unknown-prop')
+    expect(d.fix).not.toContain('Related')
+  }, 30_000)
+
+  it('renames the same words in another order', async () => {
+    const { nearest, apiSurface } = await load()
+    const props = apiSurface.props.map((p: { name: string }) => p.name)
+    expect(nearest('rowHeightAuto', props)).toBe('autoRowHeight')
+  }, 30_000)
+
+  it('does not take a spelling match that means something else', async () => {
+    // Three edits apart, opposite meaning. This used to be applied as a rename.
+    const { nearest, related, apiSurface } = await load()
+    const props = apiSurface.props.map((p: { name: string }) => p.name)
+    expect(nearest('onRowSelected', props)).toBeNull()
+    expect(related('onRowSelected', props)[0]).toBe('onRowSelectionChange')
+    // Plain typos still resolve.
+    expect(nearest('sortabel', props)).toBe('sortable')
+    expect(nearest('onCelClick', props)).toBe('onCellClick')
+  }, 30_000)
+
   it('never applies a rename that means "delete this"', async () => {
     // Several PROP_RENAMES map to '' - "there is no equivalent, take it out".
     // Applying that as a rename would splice the name away and leave `={...}`.

@@ -16,8 +16,7 @@ and well under the 1 MB upload limit.
 2. Scroll to **Social preview** -> **Edit** -> upload one of the PNGs above.
 
 (The image lives in GitHub's settings, not in code - it is not auto-read from
-the repo. These files are kept here as the source of truth + for reuse on other
-social cards.)
+the repo. The PNGs are gitignored; render them with the script below.)
 
 ## Regenerate
 

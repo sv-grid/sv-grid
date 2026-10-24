@@ -3745,6 +3745,12 @@
    "sel": ".seg"
   }
  },
+ "703-test-run-tree": {
+  "text": "Wait a few seconds, then press the reload icon on Run 2: only that run is fetched again, and its new results arrive with the tree still open.",
+  "target": {
+   "sel": ".tr703-reload"
+  }
+ },
  "702-change-review": {
   "text": "Press Run cleanup agent, open a group in the panel, reject one guess with its own cross, then accept the rest. Ctrl+Z in the grid takes it back.",
   "target": {

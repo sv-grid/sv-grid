@@ -414,6 +414,7 @@ import SideDrawerEdit            from '../demos/97-side-drawer-edit.svelte'
 import AdvancedFilterBuilder     from '../demos/98-advanced-filter-builder.svelte'
 import TopNFilter                from '../demos/99-top-n-filter.svelte'
 import TreeCheckboxCascade       from '../demos/102-tree-checkbox-cascade.svelte'
+import TestRunTree703 from '../demos/703-test-run-tree.svelte'
 import AsyncValidation           from '../demos/103-async-validation.svelte'
 import ValueParser               from '../demos/175-value-parser.svelte'
 import ProgrammaticEditing       from '../demos/176-programmatic-editing.svelte'
@@ -1126,6 +1127,7 @@ const baseDemos: Demo[] = [
   demo('31-lazy-tree-load',         'Lazy tree (load on expand)',  'Region → Country → State → City. Children fetched async on first expand with a "Loading…" placeholder row; subtrees are cached on second expand.', 'Tree & Hierarchy', LazyTree),
   demo('08-tree-and-master-detail', 'Tree + master/detail',        'Hierarchical file-system rows and an order/line-item master-detail view.', 'Tree & Hierarchy', TreeAndMasterDetail),
   demo('102-tree-checkbox-cascade', 'Tree checkbox cascade',       'Permissions matrix as a tree: workspaces → resources → actions. Checking a parent checks descendants; partial state on parents. Live cost rollup as you click.', 'Tree & Hierarchy', TreeCheckboxCascade),
+  demo('703-test-run-tree', 'Test results tree with subtree reload', 'A release-qualification board as a tree: test environments hold reported issues and test plans, plans hold runs, runs hold their Failed, Passed and Skipped results. The reload icon on an environment, plan or run re-reads that subtree only and splices it back in place, so open nodes stay open; the lab keeps reporting results in the background and a running run shows them after a reload. Rerun, Add result, Add issue and bulk Approve or Reject go through the same server, logged under the grid.', 'Tree & Hierarchy', TestRunTree703),
 
   // ----- Master-Detail & Forms
   demo('40-forms-master-detail',    'Forms-in-grid (master/detail)','Master grid + tabbed detail form. Dirty tracking, inline validation, atomic Save / Discard, contact subgrid.', 'Master-Detail & Forms', FormsMasterDetail),

@@ -112,6 +112,13 @@ export const ROUTE_SEO = {
     keywords: ['sveltekit crud app builder', 'svelte app builder', 'svgrid studio', 'sveltekit code generator', 'svelte admin panel builder', 'svelte crud generator'],
     path: '/studio',
   },
+  base: {
+    title: 'SvGrid Base - A Table Database for Svelte Apps',
+    description:
+      'Open a ready-made base in the browser: project tracker, sales CRM, content calendar, roadmap, inventory and more. Typed fields, linked tables, Kanban, calendar and gallery views, forms and automations, all one Svelte 5 component.',
+    keywords: ['svelte table database', 'svgrid base', 'svelte database ui', 'svelte crm template', 'svelte project tracker', 'svelte kanban database'],
+    path: '/base',
+  },
   'theme-builder': {
     title: 'Theme Builder - Match SvGrid to Your Brand',
     description:

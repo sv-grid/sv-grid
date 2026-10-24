@@ -258,7 +258,8 @@
   ],
   "docs/help/rows/tree-data.md": [
     "29-wbs-project-tree",
-    "30-bom-tree"
+    "30-bom-tree",
+    "703-test-run-tree"
   ],
   "docs/help/cells/cell-text-selection.md": [
     "90-selection-api",

@@ -1,0 +1,23 @@
+{
+  "description": "A release-qualification board in a Svelte 5 tree grid: test environments hold their reported issues and test plans, plans hold runs, and runs hold Failed, Passed and Skipped results. The reload icon on an environment, plan or run asks the server for that subtree only and splices it back into the flat rows, so every open node stays open. The in-memory server keeps reporting results for running runs, and the grid shows them after a reload.",
+  "keywords": [
+    "svelte tree grid refresh subtree",
+    "svelte test results dashboard",
+    "svelte 5 tree data reload children",
+    "svelte grid keep expanded state after reload"
+  ],
+  "faq": [
+    {
+      "question": "How does reloading one subtree keep the rest of the tree open?",
+      "answer": "Each row's id is its path, set through getRowId, and expansion is a controlled expanded map keyed by those ids. A reload replaces the node and its descendants in the flat data array with what the server returned; ids that survive keep their entry in the map, so the grid redraws them open."
+    },
+    {
+      "question": "Why are the ids paths like env:arm64-rpi5-8gb/plans/automated/runs/1?",
+      "answer": "A path makes the subtree test a string prefix check, so the demo finds the rows to replace without walking parent links, and the API URL for a node falls out of its id. Any stable unique id works if you keep a parent lookup instead."
+    },
+    {
+      "question": "Does this need the Enterprise server row model?",
+      "answer": "No. It is the free grid's treeData prop over a plain array you own. The server row model in @svgrid/enterprise is the fit when a level is too large to load whole and has to arrive in blocks."
+    }
+  ]
+}

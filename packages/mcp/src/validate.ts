@@ -197,6 +197,12 @@ export function nearest(word: string, candidates: readonly string[]): string | n
   const core = (s: string) => s.replace(/^(?:get|set|create|make|build|use|enable|with)/i, '')
   const lowerCore = core(lower)
 
+  // `rowHeightAuto` for `autoRowHeight`: the same words in another order is as
+  // certain as a typo, and edit distance cannot see it.
+  const order = (s: string) => words(s).sort().join(' ')
+  const sameWords = candidates.filter((c) => c !== word && order(c) === order(word))
+  if (sameWords.length === 1) return sameWords[0]
+
   const budget = word.length <= 4 ? 1 : word.length <= 8 ? 2 : 3
   let best: string | null = null
   let bestScore = Infinity
@@ -208,7 +214,99 @@ export function nearest(word: string, candidates: readonly string[]): string | n
       best = c
     }
   }
+  // Three edits turn `onRowSelected` into `onRowsDelete`, the opposite. When
+  // another name shares more of the words, the spelling match is a
+  // coincidence, and since a guess here is applied as a rename, offer none.
+  if (best) {
+    const top = related(word, candidates, 1)[0]
+    if (top && top !== best && sharedStems(word, top) > sharedStems(word, best)) return null
+  }
   return best
+}
+
+/** `onRowSelectionChange` -> `on row selection change`. */
+function words(name: string): string[] {
+  return name
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+}
+
+// Words that say how a prop is switched on, not what it is about.
+const FILLER_WORDS = new Set(['enable', 'show', 'allow', 'use', 'is', 'has', 'get', 'set', 'with'])
+const STEM_SUFFIXES = ['ations', 'ation', 'ings', 'ing', 'able', 'ion', 'ed', 'es', 's']
+const STEM_ALIASES: Record<string, string> = { pagin: 'pag', paginat: 'pag', renderer: 'render' }
+
+/** Crude stem, so `sorting`, `sortable` and `sorted` all read as `sort`. */
+function stem(word: string): string {
+  let w = STEM_ALIASES[word] ?? word
+  for (const s of STEM_SUFFIXES) {
+    if (w.length - s.length >= 3 && w.endsWith(s)) {
+      w = w.slice(0, -s.length)
+      break
+    }
+  }
+  if (w.length > 3 && w.endsWith('e')) w = w.slice(0, -1)
+  return STEM_ALIASES[w] ?? w
+}
+
+const stems = (name: string) => new Set(words(name).filter((w) => !FILLER_WORDS.has(w)).map(stem))
+
+function sharedStems(a: string, b: string): number {
+  const other = stems(b)
+  let n = 0
+  for (const w of stems(a)) if (other.has(w)) n++
+  return n
+}
+
+/**
+ * Known names about the same thing as `word`, best first, for when `nearest`
+ * found no spelling to offer. `detailRenderer` is no typo of anything, but it
+ * shares "detail" with `renderDetailRow` and `isDetailRow`, and that short list
+ * is what lets a model pick instead of guessing again.
+ *
+ * Advice only - never a rename. A shared word must be one that few candidates
+ * carry, so `rowFoo` does not come back with every prop that starts with `row`.
+ */
+export function related(word: string, candidates: readonly string[], limit = 5): string[] {
+  const mine = stems(word)
+  if (!mine.size) return []
+  const sets = candidates.map((c) => ({ name: c, stems: stems(c) }))
+  const df = new Map<string, number>()
+  for (const { stems: s } of sets) for (const w of s) df.set(w, (df.get(w) ?? 0) + 1)
+  const distinctive = Math.max(2, Math.floor(candidates.length / 10))
+
+  const scored: { name: string; score: number }[] = []
+  for (const { name, stems: s } of sets) {
+    if (name === word) continue
+    let score = 0
+    let sharp = false
+    for (const w of mine) {
+      if (!s.has(w)) continue
+      const n = df.get(w)!
+      score += Math.log(1 + candidates.length / n)
+      if (n <= distinctive) sharp = true
+    }
+    if (!sharp) continue
+    // Of two names sharing the same words, the one with fewer others is closer.
+    scored.push({ name, score: score - 0.1 * (s.size - 1) })
+  }
+  return scored
+    .sort((a, b) => b.score - a.score || a.name.length - b.name.length)
+    .slice(0, limit)
+    .map((s) => s.name)
+}
+
+/** "`a`, `b` (boolean)" - a member's type rides along when it is short enough to help. */
+function listMembers(names: readonly string[], members?: readonly TypeMember[]): string {
+  return names
+    .map((n) => {
+      const type = members?.find((m) => m.name === n)?.type.replace(/\s+/g, ' ')
+      return type && type.length <= 40 ? `\`${n}\` (${type})` : `\`${n}\``
+    })
+    .join(', ')
 }
 
 /** Index of the bracket matching the one at `open`, or -1. */
@@ -660,6 +758,7 @@ function checkGridProps(ctx: Ctx) {
       }
 
       const guess = nearest(name, known)
+      const near = guess ? [] : related(name, known)
       push(ctx, {
         rule: 'svgrid/unknown-prop',
         severity: 'error',
@@ -667,7 +766,9 @@ function checkGridProps(ctx: Ctx) {
         message: `\`${name}\` is not a prop of <SvGrid> in @svgrid/grid@${surface.gridVersion}.`,
         fix: guess
           ? `Did you mean \`${guess}\`?`
-          : 'Call svgrid_search with the prop name, or read the reference/SvGrid doc for the prop list.',
+          : near.length
+            ? `Related props: ${listMembers(near, surface.props)}. If none fits, call svgrid_search with what the prop should do.`
+            : 'Call svgrid_search with the prop name, or read the reference/SvGrid doc for the prop list.',
         rename: guess ? { from: name, to: guess } : undefined,
         see: 'reference/SvGrid',
       })
@@ -802,12 +903,15 @@ function checkColumns(ctx: Ctx) {
           continue
         }
         const guess = nearest(key, known)
+        const near = guess ? [] : related(key, known, 3)
         push(ctx, {
           rule: 'svgrid/unknown-column-key',
           severity: 'error',
           line,
           message: `\`${key}\` is not a key of ColumnDef in @svgrid/grid@${surface.gridVersion}.`,
-          fix: guess ? `Did you mean \`${guess}\`?` : `Valid keys: ${known.join(', ')}.`,
+          fix: guess
+            ? `Did you mean \`${guess}\`?`
+            : `${near.length ? `Related: ${listMembers(near, surface.columnDef)}. ` : ''}Valid keys: ${known.join(', ')}.`,
           see: 'help/columns/column-definitions',
         })
       }
@@ -1031,12 +1135,17 @@ function checkEnterpriseUsage(ctx: Ctx) {
       const hint = API_METHOD_HINTS[method]
       const spelling = nearest(method, all)
       const guess = hint ?? spelling
+      const near = guess ? [] : related(method, all)
       push(ctx, {
         rule: 'svgrid/unknown-api-method',
         severity: 'error',
         line,
         message: `The grid API has no \`${method}()\` in @svgrid/grid@${ctx.surface.gridVersion}.`,
-        fix: guess ? `Use \`${guess}\`.` : 'Call svgrid_get with ref:"api" for the api surface.',
+        fix: guess
+          ? `Use \`${guess}\`.`
+          : near.length
+            ? `Related methods: ${listMembers(near)}. If none fits, call svgrid_get with ref:"api" for the api surface.`
+            : 'Call svgrid_get with ref:"api" for the api surface.',
         // Only the spelling guess is a bare identifier. An API_METHOD_HINTS
         // value is a call expression - `exportData({ format: "xlsx" })` - and
         // substituting that for an identifier would emit `api.exportData({...})(...)`.

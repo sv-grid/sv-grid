@@ -1,7 +1,7 @@
 {
   "/": {
-    "hash": "60b9a0ae0823",
-    "date": "2026-10-16"
+    "hash": "1640ea37a1ce",
+    "date": "2026-10-18"
   },
   "/about/": {
     "hash": "79398a92c875",
@@ -14,6 +14,10 @@
   "/api/": {
     "hash": "24be9f05c5a9",
     "date": "2026-09-03"
+  },
+  "/base/": {
+    "hash": "7ddff51490b5",
+    "date": "2026-10-18"
   },
   "/blog/": {
     "hash": "5e36aeb68ee0",
@@ -3120,8 +3124,8 @@
     "date": "2026-08-19"
   },
   "/docs/compliance/soc2/": {
-    "hash": "2f592c70f4fc",
-    "date": "2026-08-23"
+    "hash": "73675a66d5e7",
+    "date": "2026-10-18"
   },
   "/docs/compliance/vpat/": {
     "hash": "fbdcd73d34f9",
@@ -3136,12 +3140,12 @@
     "date": "2026-10-06"
   },
   "/docs/enterprise/licensing/": {
-    "hash": "6e7fce80d737",
-    "date": "2026-10-14"
+    "hash": "7b2f48f4a898",
+    "date": "2026-10-18"
   },
   "/docs/enterprise/studio/": {
-    "hash": "4cf1fcdcdd2b",
-    "date": "2026-10-06"
+    "hash": "34734712cfdc",
+    "date": "2026-10-18"
   },
   "/docs/enterprise/studio/access-control/": {
     "hash": "a6dfb32224b3",
@@ -3464,8 +3468,8 @@
     "date": "2026-10-13"
   },
   "/docs/help/base/templates/": {
-    "hash": "498d40dd9572",
-    "date": "2026-10-14"
+    "hash": "bfdb9f11cefd",
+    "date": "2026-10-18"
   },
   "/docs/help/base/views/": {
     "hash": "ad59c07d70df",
@@ -3824,8 +3828,8 @@
     "date": "2026-09-20"
   },
   "/docs/help/icons/": {
-    "hash": "e03aa9158bc9",
-    "date": "2026-09-18"
+    "hash": "c570525953d7",
+    "date": "2026-10-18"
   },
   "/docs/help/import/": {
     "hash": "52c0422facaa",
@@ -3840,8 +3844,8 @@
     "date": "2026-10-14"
   },
   "/docs/help/mcp-server/": {
-    "hash": "105226487af4",
-    "date": "2026-10-08"
+    "hash": "027f2d54a20a",
+    "date": "2026-10-18"
   },
   "/docs/help/migrating-from-ag-grid/": {
     "hash": "2cfa851536d8",
@@ -4052,8 +4056,8 @@
     "date": "2026-09-03"
   },
   "/docs/help/security/": {
-    "hash": "3c73a39de2e4",
-    "date": "2026-09-03"
+    "hash": "3619d474e120",
+    "date": "2026-10-18"
   },
   "/docs/help/server-side-data/": {
     "hash": "1043aa478864",
@@ -4780,8 +4784,8 @@
     "date": "2026-10-10"
   },
   "/docs/legal/EULA/": {
-    "hash": "75c181def31f",
-    "date": "2026-10-08"
+    "hash": "d6fc2388f1c5",
+    "date": "2026-10-18"
   },
   "/docs/recipes/autosave-with-debounce/": {
     "hash": "ed95b7b0ef3d",
@@ -4960,12 +4964,12 @@
     "date": "2026-10-14"
   },
   "/mcp/": {
-    "hash": "6ec31c12119d",
-    "date": "2026-09-03"
+    "hash": "fb7b0aa21577",
+    "date": "2026-10-18"
   },
   "/pricing/": {
-    "hash": "96c47fec52b0",
-    "date": "2026-10-14"
+    "hash": "207d53d0f116",
+    "date": "2026-10-18"
   },
   "/privacy/": {
     "hash": "3c3d71a53421",
@@ -5070,5 +5074,9 @@
   "/tools/json-to-table/": {
     "hash": "2eb789e18f67",
     "date": "2026-10-10"
+  },
+  "/trust/": {
+    "hash": "cb3fceb6a3e3",
+    "date": "2026-10-18"
   }
 }

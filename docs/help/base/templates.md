@@ -4,6 +4,10 @@ Each base below is one `<SvBase>` with sample data: the fields, the saved
 views and the forms a team would set up on day one. Open the source of any of
 them, replace the sample rows with your own, and it is your app's tool.
 
+To try one with nothing installed, open it full screen at
+[svgrid.com/base](https://svgrid.com/base); the bar at the top switches between
+them.
+
 All of them share the same parts, so what works in one works in all: the table
 tabs (where a base has more than one table), the view bar (Hide fields, Filter, Group, Sort, Color, Row height, search), the
 expanded record with its changes and comments, Space on a row to open it,

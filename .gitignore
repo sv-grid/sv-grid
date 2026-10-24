@@ -116,6 +116,21 @@ tools/scorecard.mjs
 # Nothing in the build, CI or the site imports them; they stay local.
 tools/promo/
 tools/slides/
+# Rendered marketing images. The social cards come from
+# tools/render-social-preview.mjs and are uploaded to GitHub settings by hand;
+# the hero screenshot the READMEs show is served from website/public/brand/.
+docs/brand/social/*.png
+docs/brand/screenshots/
+# Stray mock-app screenshots (not in the enterprise package's "files").
+packages/enterprise/_mock_*.png
+# Video renders, wherever a script drops them. The muted docs cuts under
+# website/public/tutorials/ belong to the website submodule, which this file
+# does not reach, so they stay tracked there.
+*.mp4
+*.webm
+*.mov
+*.mkv
+*.avi
 
 # One-off blog + demo maintenance scripts (not wired into any build)
 tools/assign-blog-authors.mjs

@@ -51,7 +51,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - AI helpers ship free in `@svgrid/grid` and work with any model: `setAIProvider`, `aiFilter`, `aiSmartFill`, `aiSummarize`, `aiClassify`, `aiFindAnomalies`.
 - For coding assistants: an MCP server (`npx -y @svgrid/mcp`, MIT) serves the version-pinned API and demo sources; an Agent Skill installs with `npx skills add sv-grid/sv-grid`.
 - Paid add-on, not needed for anything above: `@svgrid/enterprise` adds Excel / PDF export, import, print, pivot tables, the Server-Side Row Model, alert rules and the Kanban board, Scheduler and Spreadsheet views. Prices start at $299 per developer: https://svgrid.com/pricing/ . A 30-day trial (one download with both packages and the demos to run offline, plus email support for the 30 days) starts from that page; without it, the package runs in full with a watermark until a key is set.
-- 537 live demos, each with its source: https://svgrid.com/demos/ . Source code: https://github.com/sv-grid/sv-grid
+- 538 live demos, each with its source: https://svgrid.com/demos/ . Source code: https://github.com/sv-grid/sv-grid
 
 ## About this file
 
@@ -28227,6 +28227,13 @@ instead - see [Server tree data](../server/server-tree-data.md). The two share
 the same treegrid keyboard and ARIA contract.
 
 ## More examples
+
+### Test results tree with subtree reload
+
+A release-qualification board as a tree: test environments hold reported issues and test plans, plans hold runs, runs hold their Failed, Passed and Skipped results. The reload icon on an environment, plan or run re-reads that subtree only and splices it back in place, so open nodes stay open; the lab keeps reporting results in the background and a running run shows them after a reload. Rerun, Add result, Add issue and bulk Approve or Reject go through the same server, logged under the grid.
+
+<div data-docs-demo="703-test-run-tree" data-height="580"></div>
+
 
 ### Project WBS tree
 
@@ -86979,6 +86986,10 @@ what the tabs do.
 Each base below is one `<SvBase>` with sample data: the fields, the saved
 views and the forms a team would set up on day one. Open the source of any of
 them, replace the sample rows with your own, and it is your app's tool.
+
+To try one with nothing installed, open it full screen at
+[svgrid.com/base](https://svgrid.com/base); the bar at the top switches between
+them.
 
 All of them share the same parts, so what works in one works in all: the table
 tabs (where a base has more than one table), the view bar (Hide fields, Filter, Group, Sort, Color, Row height, search), the

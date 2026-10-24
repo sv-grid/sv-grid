@@ -150,6 +150,13 @@ the same treegrid keyboard and ARIA contract.
 
 ## More examples
 
+### Test results tree with subtree reload
+
+A release-qualification board as a tree: test environments hold reported issues and test plans, plans hold runs, runs hold their Failed, Passed and Skipped results. The reload icon on an environment, plan or run re-reads that subtree only and splices it back in place, so open nodes stay open; the lab keeps reporting results in the background and a running run shows them after a reload. Rerun, Add result, Add issue and bulk Approve or Reject go through the same server, logged under the grid.
+
+<div data-docs-demo="703-test-run-tree" data-height="580"></div>
+
+
 ### Project WBS tree
 
 Phase → task → subtask with % complete that rolls up via effort-weighted average when you edit any leaf.
