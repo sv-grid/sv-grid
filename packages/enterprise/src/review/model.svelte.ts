@@ -136,6 +136,7 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
   let pendingOnly = $state(false)
   let filterNonce = 0
   let pendingRows: { v: number; ids: Set<string> } | null = null
+  const pendingSource = { hasPendingRow: (rowId: string) => hasPendingRow(rowId) }
   function hasPendingRow(rowId: string): boolean {
     if (pendingRows?.v !== version) {
       const ids = new Set<string>()
@@ -169,7 +170,7 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
     const api = getApi()
     if (!api) return
     if (on) {
-      trackPendingSource(filterToken, { hasPendingRow })
+      trackPendingSource(filterToken, pendingSource)
       filterNonce = 0
       pendingOnly = true
       api.setAdvancedFilter(withPending(api.getAdvancedFilter(), filterToken, ++filterNonce))
@@ -211,7 +212,8 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
         id: raw.id ?? nextId('pr-'),
         op: 'update',
         source: input.source,
-        createdAt,
+        // A merged proposal keeps when it was made.
+        createdAt: typeof (raw as { createdAt?: unknown }).createdAt === 'number' ? (raw as unknown as { createdAt: number }).createdAt : createdAt,
         status: 'pending',
       }
       const key = cellKey(p.rowId, p.field)

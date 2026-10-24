@@ -448,3 +448,13 @@ describe('found in review', () => {
     expect(review.sets().map((s) => s.count)).toEqual([0, 1])
   })
 })
+
+it('a merged proposal keeps when it was made', () => {
+  const author = setup().review
+  author.add({ source: AGENT, proposals: props(['a', 'region', '', 'EMEA']) })
+  const json = JSON.parse(JSON.stringify(author.toJSON()))
+  json.sets[0].proposals[0].createdAt = 1_700_000_000_000
+  const approver = setup().review
+  approver.merge(json)
+  expect(approver.pending()[0]!.createdAt).toBe(1_700_000_000_000)
+})

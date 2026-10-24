@@ -14,7 +14,8 @@ import { registerPredicateKind } from '../expressions/kinds'
 export const PENDING_KIND = 'reviewPending'
 
 type Source = { hasPendingRow(rowId: string): boolean }
-const sources = new Map<string, Source>()
+// Weak: the review holds its source; once the review is gone, so is the entry's target.
+const sources = new Map<string, WeakRef<Source>>()
 let registered = false
 
 function register(): void {
@@ -22,8 +23,12 @@ function register(): void {
   registered = true
   registerPredicateKind(PENDING_KIND, {
     compile: (payload) => {
-      const source = sources.get((payload as { token?: string } | null)?.token ?? '')
-      if (!source) return null
+      const token = (payload as { token?: string } | null)?.token ?? ''
+      const source = sources.get(token)?.deref()
+      if (!source) {
+        sources.delete(token)
+        return null
+      }
       return (row) => {
         const id = (row as { id?: unknown } | null)?.id
         return id != null && source.hasPendingRow(String(id))
@@ -37,7 +42,7 @@ function register(): void {
 export function trackPendingSource(token: string, source: Source): void {
   register()
   enableAdvancedFilter()
-  sources.set(token, source)
+  sources.set(token, new WeakRef(source))
 }
 
 /** The user's expression without any of our nodes; null when nothing is left. */
