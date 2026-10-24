@@ -192,6 +192,17 @@
       </div>
       {#if conflicts.length}<p class="sv-review-hint">Resolve the conflicts before accepting everything.</p>{/if}
     {/if}
+    {#if pendingCount || conflicts.length || review.pendingOnly}
+      <button
+        type="button"
+        class="sv-review-only"
+        aria-pressed={review.pendingOnly}
+        onclick={() => review.showPendingOnly(!review.pendingOnly)}
+      >
+        <span class="sv-review-switch" aria-hidden="true"></span>
+        Only rows with changes
+      </button>
+    {/if}
   </header>
 
   {#if confirming}
@@ -371,6 +382,44 @@
   .sv-review-hint { font-size: 12px; }
   .sv-review-subtitle { margin: 10px 0 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--sg-muted, #6b7280); }
   .sv-review-all { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+  .sv-review-only {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    align-self: flex-start;
+    padding: 2px 0;
+    font: inherit;
+    font-size: 12.5px;
+    color: var(--sg-fg, #111827);
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+  .sv-review-only:focus-visible { outline: 2px solid var(--sg-focus-ring, var(--sg-accent, #2563eb)); outline-offset: 2px; border-radius: 4px; }
+  .sv-review-switch {
+    position: relative;
+    width: 26px;
+    height: 15px;
+    flex: none;
+    border-radius: 999px;
+    background: var(--sg-muted-bg, #e5e7eb);
+    box-shadow: inset 0 0 0 1px var(--sg-border, #d1d5db);
+    transition: background 0.15s ease;
+  }
+  .sv-review-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--sg-bg, #fff);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--sg-fg, #111827) 25%, transparent);
+    transition: transform 0.15s ease;
+  }
+  .sv-review-only[aria-pressed='true'] .sv-review-switch { background: var(--sg-fg, #111827); box-shadow: none; }
+  .sv-review-only[aria-pressed='true'] .sv-review-switch::after { transform: translateX(11px); }
 
   .sv-review-confirm {
     padding: 10px 12px;
@@ -505,6 +554,6 @@
     .sv-review-act svg { width: 16px; height: 16px; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .sv-review-progress span, .sv-review-group { transition: none; }
+    .sv-review-progress span, .sv-review-group, .sv-review-switch, .sv-review-switch::after { transition: none; }
   }
 </style>

@@ -135,3 +135,42 @@ describe('SvReviewPanel in a grid', () => {
     destroy()
   })
 })
+
+describe('only rows with changes', () => {
+  it('ANDs onto the user filter, drops decided rows, and gives the user filter back', async () => {
+    const { review, api, target, destroy } = await setup()
+    const own = { kind: 'cmp' as const, column: 'done', op: 'equals' as const, value: false }
+    api.setAdvancedFilter(own)
+    review.add({
+      source: AGENT,
+      proposals: [
+        { rowId: 'a', field: 'region', before: '', after: 'AMER' },
+        { rowId: 'b', field: 'region', before: 'EMEA', after: 'APAC' },
+      ],
+    })
+    flushSync()
+    ;(target.querySelector('.sv-review-only') as HTMLButtonElement).click()
+    flushSync()
+    // b is done: the user filter still applies, so only a shows.
+    await vi.waitFor(() => expect(api.getDisplayedRows().map((r: any) => r.id)).toEqual(['a']))
+    expect(target.querySelector('.sv-review-only')!.getAttribute('aria-pressed')).toBe('true')
+    await review.accept(review.pending().filter((p) => p.rowId === 'a').map((p) => p.id))
+    flushSync()
+    await vi.waitFor(() => expect(api.getDisplayedRows()).toHaveLength(0))
+    review.showPendingOnly(false)
+    flushSync()
+    expect(api.getAdvancedFilter()).toEqual(own)
+    await vi.waitFor(() => expect(api.getDisplayedRows().map((r: any) => r.id)).toEqual(['a', 'c']))
+    destroy()
+  })
+})
+
+it('the toggle reads off once the grid clears the advanced filter itself', async () => {
+  const { review, api, destroy } = await setup()
+  review.add({ source: AGENT, proposals: [{ rowId: 'a', field: 'region', before: '', after: 'AMER' }] })
+  review.showPendingOnly(true)
+  expect(review.pendingOnly).toBe(true)
+  api.clearAdvancedFilter()
+  expect(review.pendingOnly).toBe(false)
+  destroy()
+})

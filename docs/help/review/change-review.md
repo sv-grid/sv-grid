@@ -218,6 +218,14 @@ accepts it and **R** rejects it. "Show in grid" scrolls to the group's rows on
 the current page without moving the active cell, and says how many are on
 other pages.
 
+**Only rows with changes** narrows the grid to the rows with a pending or
+conflicting proposal, on top of whatever the user filtered: it adds one
+condition to the advanced filter with AND, and switching it off takes that
+condition back out and leaves the rest. Rows leave the view as their
+proposals are decided, like an inbox. From code:
+`review.showPendingOnly(true)`, and `review.pendingOnly` tells whether it is
+on. It needs the advanced filter engine, which it turns on itself.
+
 ## Agents
 
 `createGridTools` gives an AI agent four tools over the grid's data. None of
@@ -339,8 +347,9 @@ What a base shows:
   multiple select, user, phone, email, URL, barcode, button, rating, link,
   created by and last modified by. So do long text set to rich text and a
   percent drawn as a bar.
-- **The grid view only.** Kanban, gallery, calendar and form views do not
-  mark pending changes.
+- **Cards too.** Kanban and gallery cards with pending proposals show
+  "2 proposed", with the fields and values on hover. Calendar and form views
+  do not mark them.
 - **Sync.** With `createBaseSync`, an accepted value is a change like any
   other and is saved with the rest. Changes made elsewhere are still marked as
   before; a review is the step before that, where an agent proposes and a

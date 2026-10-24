@@ -28,13 +28,17 @@ import { nudgeEnterprise } from '../license'
 import { clusterProposals, type ClusterOptions } from './cluster'
 import { sameValue } from './equal'
 import { pendingFormats } from './formats'
+import { hasPending, stripPending, trackPendingSource, withPending } from './pending-filter'
+import { registerCardMarks, type CardMark } from './card-marks.svelte'
+import { showValue } from './cluster'
 import { wrapColumns } from './ghost'
 import type { ChangeSet, Proposal, ProposalGroup, ProposalInput, ProposalSource } from './types'
 
 /** The part of the grid api a review uses. Any `SvGridApi` satisfies it. */
 export type ReviewGridApi = Pick<
   SvGridApi<any, any>,
-  'getData' | 'getOption' | 'getActiveCell' | 'getRowId' | 'getColumns' | 'getCommandContext' | 'stopEditing' | 'scrollToRow' | 'getDisplayedRows'
+  | 'getData' | 'getOption' | 'getActiveCell' | 'getRowId' | 'getColumns' | 'getCommandContext' | 'stopEditing' | 'scrollToRow' | 'getDisplayedRows'
+  | 'getAdvancedFilter' | 'setAdvancedFilter'
 >
 
 export type ReviewOptions<TData> = {
@@ -120,7 +124,54 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
   let decisionSeq = 0
   const stamp = (p: Proposal) => decidedOrder.set(p.id, ++decisionSeq)
   let version = $state(0)
-  const bump = () => (version += 1)
+  // "Only rows with changes": our node ANDed onto the advanced filter. Put on
+  // again after every change so the grid filters with the new pending set.
+  const filterToken = nextId('rv-')
+  let pendingOnly = $state(false)
+  let filterNonce = 0
+  let pendingRows: { v: number; ids: Set<string> } | null = null
+  function hasPendingRow(rowId: string): boolean {
+    if (pendingRows?.v !== version) {
+      const ids = new Set<string>()
+      for (const p of all.values()) if (p.status === 'pending' || p.status === 'conflict') ids.add(p.rowId)
+      pendingRows = { v: version, ids }
+    }
+    return pendingRows.ids.has(rowId)
+  }
+  function applyPendingFilter() {
+    const api = getApi()
+    if (!api) return
+    const current = api.getAdvancedFilter()
+    // The user's own filter tools may have dropped the node: then the toggle is off.
+    if (filterNonce > 0 && !hasPending(current)) {
+      pendingOnly = false
+      return
+    }
+    api.setAdvancedFilter(withPending(current, filterToken, ++filterNonce))
+  }
+  const bump = () => {
+    version += 1
+    if (pendingOnly) applyPendingFilter()
+  }
+
+  /**
+   * Show only rows with a pending or conflicting proposal, on top of the
+   * user's own filters; off takes our condition back out and leaves theirs.
+   * Rows leave the view as their proposals are decided.
+   */
+  function showPendingOnly(on: boolean): void {
+    const api = getApi()
+    if (!api) return
+    if (on) {
+      trackPendingSource(filterToken, { hasPendingRow })
+      filterNonce = 0
+      pendingOnly = true
+      api.setAdvancedFilter(withPending(api.getAdvancedFilter(), filterToken, ++filterNonce))
+    } else {
+      pendingOnly = false
+      api.setAdvancedFilter(stripPending(api.getAdvancedFilter()))
+    }
+  }
 
   const getApi = (): ReviewGridApi | null =>
     (typeof opts.api === 'function' ? (opts.api as () => ReviewGridApi | undefined | null)() : opts.api) ?? null
@@ -141,6 +192,8 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
   // ---- adding -------------------------------------------------------------
 
   function add(input: AddInput): ChangeSet {
+    const linked = getApi()
+    if (linked) linkCards(linked)
     const setId = input.id ?? nextId('cs-')
     const createdAt = Date.now()
     const ids: string[] = []
@@ -534,10 +587,30 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
 
   // ---- grid display -------------------------------------------------------
 
+  /** A card's mark (board, gallery): how many proposals its row has and what they set. */
+  function cardMark(rowId: string): CardMark | null {
+    void version
+    const ps: Proposal[] = []
+    for (const p of all.values()) if (p.rowId === rowId && (p.status === 'pending' || p.status === 'conflict')) ps.push(p)
+    if (!ps.length) return null
+    const labels = fieldLabels()
+    return { count: ps.length, text: ps.map((p) => `${labels(p.field)} → ${showValue(p.after)}`).join(', ') }
+  }
+  let marksFor: unknown = null
+  /** Register for the board and gallery cards of the grid, once its getRowId is known. */
+  function linkCards(api: ReviewGridApi) {
+    const fn = api.getOption('getRowId') as object | undefined
+    if (fn && fn !== marksFor) {
+      marksFor = fn
+      registerCardMarks(fn, { cardMark })
+    }
+  }
+
   const formats = $derived.by((): ConditionalFormat<any>[] => {
     void version
     const api = getApi()
     if (!api || !api.getOption('getRowId')) return []
+    linkCards(api)
     return pendingFormats(list('pending'), rowIdFn(api), api.getColumns())
   })
 
@@ -558,6 +631,9 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
 
   let columnsCache: { input: unknown; fields: string; output: unknown } | null = null
   function columns<C extends ReadonlyArray<any>>(cols: C): C {
+    // The grid reads its columns in every view (table, board, gallery), so cards link here too.
+    const linked = getApi()
+    if (linked) linkCards(linked)
     const fields = pendingFields
     if (columnsCache && columnsCache.input === cols && columnsCache.fields === fields) return columnsCache.output as C
     const output = wrapColumns(cols, new Set(fields ? fields.split(SEP) : []), review, sampleValue)
@@ -619,6 +695,11 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
     },
     columns,
     reveal,
+    showPendingOnly,
+    /** On while our condition is in the grid's advanced filter (the grid's own Clear takes it out too). */
+    get pendingOnly() {
+      return pendingOnly && hasPending(getApi()?.getAdvancedFilter() ?? null)
+    },
     toJSON,
     load,
     merge,

@@ -13,6 +13,7 @@
   //     `onCardMove` fires purely as a notification for persistence / mirroring
   // Themes entirely from the grid's `--sg-*` tokens.
   import { tick, untrack } from "svelte";
+  import { cardMarkFor, type CardMark } from "./review/card-marks.svelte";
   import type {
     ColumnDef,
     RowData,
@@ -1155,6 +1156,12 @@
   });
 </script>
 
+{#snippet proposedMark(mark: CardMark | null)}
+  <!-- Proposals from a change review (@svgrid/enterprise/review) waiting on this row. -->
+  {#if mark}<span class="sv-card-proposed" title={mark.text}><span class="sv-card-proposed-dot" aria-hidden="true"></span>{mark.count} proposed</span>{/if}
+{/snippet}
+
+
 <div
   class="sv-board"
   class:is-swim={!!swimField}
@@ -1439,6 +1446,7 @@
             onkeydown={(e) => onCardKeydown(e, row, lane.id)}
           >
             {#if isFlagged(row)}<span class="sv-board-card-flag" aria-label="Blocked"></span>{/if}
+            {@render proposedMark(cardMarkFor(getRowId, row, indexOf.get(row) ?? 0))}
             {#if isEditing}
               <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
               <form
@@ -1907,6 +1915,22 @@
   .sv-board-lane-body.is-virtual .sv-board-card {
     margin-bottom: 8px;
   }
+
+  .sv-card-proposed {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    align-self: flex-start;
+    margin-bottom: 4px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    color: color-mix(in srgb, var(--sg-warning, #d97706) 75%, var(--sg-fg, #111827));
+    background: color-mix(in srgb, var(--sg-warning, #d97706) 14%, transparent);
+  }
+  .sv-card-proposed-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--sg-warning, #d97706); }
+
   .sv-board-card {
     background: var(--sg-bg, #fff);
     border: 1px solid var(--sg-border, #e4e7ec);

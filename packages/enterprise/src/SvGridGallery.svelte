@@ -15,6 +15,7 @@
   // Themes entirely from the grid's `--sg-*` tokens.
   import type { ColumnDef, GalleryConfig, RowData, TableFeatures } from "@svgrid/grid";
   import { formatValueForExport, getGridExtension } from "@svgrid/grid";
+  import { cardMarkFor, type CardMark } from "./review/card-marks.svelte";
 
   let {
     data,
@@ -140,6 +141,12 @@
   };
 </script>
 
+{#snippet proposedMark(mark: CardMark | null)}
+  <!-- Proposals from a change review (@svgrid/enterprise/review) waiting on this row. -->
+  {#if mark}<span class="sv-card-proposed" title={mark.text}><span class="sv-card-proposed-dot" aria-hidden="true"></span>{mark.count} proposed</span>{/if}
+{/snippet}
+
+
 <div class="sv-gal" style:--sv-gal-card={`${cardWidth}px`} role="list" aria-label="Records">
   {#each shown as row, i (keyOf(row, i))}
     {@const url = coverUrl(row)}
@@ -168,6 +175,7 @@
       <!-- svelte-ignore a11y_click_events_have_key_events -->
       <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
       <div class="sv-gal-card" class:is-clickable={!!gallery.onCardClick} role="listitem" onclick={() => open(row)}>
+        {@render proposedMark(cardMarkFor(getRowId, row, i))}
         {#if coverField}
           <div class="sv-gal-cover" class:is-contain={gallery.coverFit === "contain"} class:is-empty={!url}>
             {#if url}<img src={url} alt="" loading="lazy" decoding="async" />{/if}
@@ -283,4 +291,19 @@
     .sv-gal-card, .sv-gal-cover img { transition: none; }
     .sv-gal-card.is-clickable:hover, .sv-gal-card.is-clickable:hover .sv-gal-cover img { transform: none; }
   }
+
+  .sv-card-proposed {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    align-self: flex-start;
+    margin-bottom: 4px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    color: color-mix(in srgb, var(--sg-warning, #d97706) 75%, var(--sg-fg, #111827));
+    background: color-mix(in srgb, var(--sg-warning, #d97706) 14%, transparent);
+  }
+  .sv-card-proposed-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--sg-warning, #d97706); }
 </style>
