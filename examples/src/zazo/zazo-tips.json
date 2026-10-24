@@ -3744,5 +3744,19 @@
   "target": {
    "sel": ".seg"
   }
+ },
+ "702-change-review": {
+  "text": "Press Run cleanup agent, open a group in the panel, reject one guess with its own cross, then accept the rest. Ctrl+Z in the grid takes it back.",
+  "target": {
+   "sel": "button",
+   "text": "Run cleanup agent"
+  }
+ },
+ "704-agent-review-desk": {
+  "text": "Press Accept rule groups: the trims and reformats are proven, so they go in one step, and the guesses stay for you to check.",
+  "target": {
+   "sel": "button",
+   "text": "Accept rule groups"
+  }
  }
 }
