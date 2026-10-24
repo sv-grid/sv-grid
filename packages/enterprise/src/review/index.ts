@@ -26,13 +26,15 @@
  * context.
  */
 export { createReview } from './model.svelte'
-export type { Review, ReviewOptions, ReviewOutcome, ReviewGridApi, ReviewJSON, AddInput } from './model.svelte'
+export type { Review, ReviewOptions, ReviewOutcome, ReviewGridApi, ReviewJSON, ReviewDecision, AddInput } from './model.svelte'
+export { createGridTools, registerWebMcpTools } from './agent'
+export type { GridTool, GridToolsOptions } from './agent'
 export { clusterProposals, showValue } from './cluster'
 export type { ClusterOptions } from './cluster'
 export { sameValue, isBlank } from './equal'
 export { pendingFormats, PENDING_BG, PENDING_ICON } from './formats'
 export { canGhost } from './ghost'
-export { fromSmartFill, fromClassify, fromRows, reviewSmartFill, reviewClassify, blankTargets } from './adapters'
+export { fromSmartFill, fromClassify, fromRows, fromStaged, reviewSmartFill, reviewClassify, blankTargets } from './adapters'
 export type { AdapterResult } from './adapters'
 export type { Proposal, ProposalInput, ProposalSource, ProposalStatus, ChangeSet, GroupKind, ProposalGroup } from './types'
 export { default as SvReviewPanel } from './SvReviewPanel.svelte'

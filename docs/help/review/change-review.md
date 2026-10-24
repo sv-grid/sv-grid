@@ -218,11 +218,77 @@ accepts it and **R** rejects it. "Show in grid" scrolls to the group's rows on
 the current page without moving the active cell, and says how many are on
 other pages.
 
-## Saving and routing a review
+## Agents
 
-`review.toJSON()` returns every set with its proposals and their status, as
-plain JSON. `review.load(json)` restores it, in another session or for another
-person to decide.
+`createGridTools` gives an AI agent four tools over the grid's data. None of
+them writes the data: the agent's edits arrive in the review like any other
+proposals, and a person decides.
+
+| Tool | What it does |
+|---|---|
+| `grid_describe` | The columns (field, header, type), the row count, and which fields the agent may edit. |
+| `grid_query_rows` | Rows matching `where` conditions (`equals`, `contains`, `blank`, `gt`, ...), with their `rowId`, paged and capped at `maxRows`. |
+| `grid_propose_edits` | Adds edits as proposals, with a reason and a confidence. Unknown rows, fields the agent may not edit, and edits that change nothing are skipped and reported. |
+| `grid_review_status` | How many of the agent's proposals are pending, accepted, rejected or stale, so it can learn from the review. |
+
+```ts
+import { createGridTools, registerWebMcpTools } from '@svgrid/enterprise/review'
+
+const tools = createGridTools({
+  review,
+  api: () => api,
+  fields: ['region', 'phone'],   // what the agent may propose edits to
+  source: { kind: 'agent', id: 'crm-agent', label: 'CRM agent' },
+})
+```
+
+Each tool is `{ name, description, inputSchema, execute }`: hand them to the
+tool loop of your LLM SDK, or to an MCP server of your own.
+`registerWebMcpTools(tools)` registers them with the browser's WebMCP API
+(`document.modelContext`), so an agent driving the page can call them. WebMCP
+is a draft; where a browser does not have it, the call returns
+`{ supported: false }` and does nothing.
+
+## Audit log and revert
+
+`onDecision` is called after every accept and reject, and after their undo and
+redo, with copies of the proposals it moved and who decided. Write these to
+your own audit log:
+
+```ts
+createReview({
+  api: () => api,
+  setRows: (next) => (rows = next),
+  user: currentUser.email,
+  onDecision: (d) => audit.write({ action: d.action, by: d.by, at: d.at, changes: d.proposals }),
+})
+```
+
+`review.log()` lists the decided proposals in this session, in the order they
+were decided.
+
+Ctrl+Z covers the last decisions. To take back a whole set later,
+`review.revertSet(setId)` adds a new set that proposes each accepted value's
+reverse. It is reviewed and accepted like any other, so a cell edited after the
+original accept is not overwritten.
+
+## Routing to an approver
+
+`review.toJSON({ setIds })` exports sets with their proposals as plain JSON.
+On the approver's page, `review.merge(json)` adds them beside what that review
+already holds. A cell that also has a pending proposal there from another
+source becomes a conflict. `review.load(json)` replaces everything instead.
+
+A person's own staged edits can take the same route. `fromStaged` turns a
+`createStagedEditing` buffer into proposals. Staged edits have already been
+written into the grid, so revert the stage first:
+
+```ts
+const changes = stage.changes()
+stage.revert((rowIndex, columnId, value) => api.setCellValue(rowIndex, columnId, value))
+review.add(fromStaged(changes, { api, source: { kind: 'user', id: me.id, label: `${me.name} (staged)` } }))
+const forApprover = JSON.stringify(review.toJSON({ setIds: [review.sets().at(-1)!.id] }))
+```
 
 ## Licensing
 

@@ -155,3 +155,23 @@ export async function reviewClassify(
   review.add(set)
   return set
 }
+
+/**
+ * Lift a `createStagedEditing` buffer into proposals, to route a person's
+ * staged edits to someone else for approval instead of committing them.
+ *
+ * Staged editing has already written its values into the grid, and a
+ * proposal is checked against the value it saw (`before`). So revert the
+ * stage first (`stage.revert(...)`), then add these: the cells hold the
+ * original values again and the proposals carry the staged ones.
+ */
+export function fromStaged(
+  changes: ReadonlyArray<{ rowId: string; columnId: string; original: unknown; staged: unknown }>,
+  opts: { api: Pick<ReviewGridApi, 'getColumns'>; source: ProposalSource; title?: string },
+): AdapterResult {
+  const fieldOf = new Map(opts.api.getColumns().map((c) => [c.id, c.field ?? c.id]))
+  const proposals: ProposalInput[] = changes
+    .filter((c) => !sameValue(c.original, c.staged))
+    .map((c) => ({ rowId: c.rowId, field: fieldOf.get(c.columnId) ?? c.columnId, before: c.original, after: c.staged }))
+  return { source: opts.source, title: opts.title ?? opts.source.label, proposals, dropped: 0 }
+}

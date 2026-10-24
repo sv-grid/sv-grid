@@ -285,3 +285,76 @@ it('toJSON / load round-trips to identical groups', () => {
   other.load(json)
   expect(other.groups().map((g) => [g.key, g.ids])).toEqual(review.groups().map((g) => [g.key, g.ids]))
 })
+
+describe('history and routing', () => {
+  it('onDecision reports accept, reject, undo and redo with copies of the proposals', async () => {
+    const decisions: any[] = []
+    const rows: Row[] = [{ id: 'a', name: 'Acme ', region: '', amount: 1 }]
+    let data = rows
+    const undo: Array<{ u: () => void; r: () => void }> = []
+    const api = {
+      getData: () => data,
+      getOption: (k: string) => (k === 'getRowId' ? (r: Row) => r.id : undefined),
+      getActiveCell: () => null,
+      getRowId: () => null,
+      getColumns: () => [],
+      getCommandContext: () => ({ recordUndo: (u: () => void, r: () => void) => undo.push({ u, r }) }),
+      stopEditing: () => false,
+      scrollToRow() {},
+      getDisplayedRows: () => data,
+    } as unknown as ReviewGridApi
+    const review = createReview<Row>({ api, setRows: (n) => (data = n), user: 'dana', onDecision: (d) => decisions.push(d) })
+    review.add({ source: AGENT, proposals: props(['a', 'name', 'Acme ', 'Acme'], ['a', 'region', '', 'EU']) })
+    const [name, region] = review.pending()
+    await review.accept([name!.id])
+    review.reject([region!.id])
+    undo[0]!.u()
+    undo[0]!.r()
+    expect(decisions.map((d) => [d.action, d.of, d.proposals.length, d.by])).toEqual([
+      ['accept', undefined, 1, 'dana'],
+      ['reject', undefined, 1, 'dana'],
+      ['undo', 'accept', 1, 'dana'],
+      ['redo', 'accept', 1, 'dana'],
+    ])
+    expect(decisions[0].proposals[0]).not.toBe(review.get(name!.id))
+  })
+
+  it('log lists decided proposals in decision order', async () => {
+    const { review, gridWrite } = setup()
+    review.add({ source: AGENT, proposals: props(['a', 'name', 'Acme ', 'Acme'], ['c', 'region', '', 'APAC'], ['b', 'name', 'Globex', 'Globex Inc']) })
+    const [a, c, b] = review.pending()
+    review.reject([b!.id])
+    gridWrite('c', 'region', 'typed')
+    await review.accept([a!.id, c!.id])
+    expect(review.log().map((p) => [p.rowId, p.status])).toEqual([['b', 'rejected'], ['c', 'stale'], ['a', 'accepted']])
+  })
+
+  it('revertSet proposes the reverse of what a set wrote, and the stale check still guards it', async () => {
+    const { review, cell, gridWrite } = setup()
+    const set = review.add({ source: AGENT, title: 'Cleanup', proposals: props(['a', 'name', 'Acme ', 'Acme'], ['c', 'region', '', 'APAC']) })
+    await review.accept(review.pending().map((p) => p.id))
+    gridWrite('c', 'region', 'Japan') // edited after the accept
+    const revert = review.revertSet(set.id)!
+    expect(revert.source).toMatchObject({ kind: 'user', label: 'Revert: Cleanup' })
+    const out = await review.accept(revert.proposals.map((p) => p.id))
+    expect(out.accepted).toHaveLength(1)
+    expect(out.stale).toHaveLength(1)
+    expect(cell('a', 'name')).toBe('Acme ')
+    expect(cell('c', 'region')).toBe('Japan')
+    expect(review.revertSet('nope')).toBeNull()
+  })
+
+  it('an export of one set merges into another review beside what it has', () => {
+    const author = setup().review
+    const keep = author.add({ source: AGENT, proposals: props(['a', 'region', '', 'EMEA']) })
+    author.add({ source: IMPORT, proposals: props(['b', 'name', 'Globex', 'Globex Inc']) })
+    const json = JSON.parse(JSON.stringify(author.toJSON({ setIds: [keep.id] })))
+    expect(json.sets).toHaveLength(1)
+    const approver = setup().review
+    approver.add({ source: IMPORT, proposals: props(['a', 'region', '', 'AMER']) })
+    approver.merge(json)
+    approver.merge(json) // a second merge of the same set is skipped
+    expect(approver.sets().map((s) => s.count)).toEqual([1, 1])
+    expect(approver.conflicts()).toHaveLength(2) // EMEA from the author vs AMER here
+  })
+})

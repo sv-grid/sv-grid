@@ -7,7 +7,7 @@
 
 /** What produced a proposal. `id` keeps two runs of the same kind apart. */
 export type ProposalSource = {
-  kind: 'agent' | 'ai' | 'import' | 'bulk' | 'sync' | 'rule'
+  kind: 'agent' | 'ai' | 'import' | 'bulk' | 'sync' | 'rule' | 'user'
   id: string
   label: string
 }

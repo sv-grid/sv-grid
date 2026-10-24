@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { setAIProvider } from '@svgrid/grid'
-import { blankTargets, fromClassify, fromRows, fromSmartFill, reviewSmartFill } from './adapters'
+import { blankTargets, fromClassify, fromRows, fromSmartFill, fromStaged, reviewSmartFill } from './adapters'
 import type { ReviewGridApi } from './model.svelte'
 import type { ProposalSource } from './types'
 
@@ -89,4 +89,16 @@ it('reviewSmartFill snapshots, asks only for blank cells, and adds the result', 
   expect(set.dropped).toBe(1)
   expect(added).toHaveLength(1)
   expect(prompt.length).toBeGreaterThan(0)
+})
+
+it('fromStaged maps column ids to fields and drops no-ops', () => {
+  const api = { getColumns: () => [{ id: 'reg', field: 'region', header: 'Region', visible: true }] } as never
+  const set = fromStaged(
+    [
+      { rowId: 'r1', columnId: 'reg', original: '', staged: 'EMEA' },
+      { rowId: 'r2', columnId: 'reg', original: 'APAC', staged: 'APAC' },
+    ],
+    { api, source: { kind: 'user', id: 'dana', label: 'Dana (staged)' } },
+  )
+  expect(set.proposals).toEqual([{ rowId: 'r1', field: 'region', before: '', after: 'EMEA' }])
 })

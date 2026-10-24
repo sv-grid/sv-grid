@@ -52,6 +52,20 @@ export type ReviewOptions<TData> = {
   /** Who decides, stamped on each decided proposal. */
   user?: string
   cluster?: ClusterOptions
+  /**
+   * Called after every decision, its undo and its redo, with copies of the
+   * proposals it moved. Write these to an audit log of your own.
+   */
+  onDecision?: (decision: ReviewDecision) => void
+}
+
+export type ReviewDecision = {
+  action: 'accept' | 'reject' | 'undo' | 'redo'
+  /** For undo / redo: which decision was undone or redone. */
+  of?: 'accept' | 'reject'
+  proposals: Proposal[]
+  by?: string
+  at: number
 }
 
 export type ReviewOutcome = {
@@ -92,6 +106,10 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
   /** Live proposals (pending or in conflict) per cell. */
   const byCell = new Map<string, Set<string>>()
   const inFlight = new Set<string>()
+  /** Decision order for the log: timestamps tie within one millisecond. */
+  const decidedOrder = new Map<string, number>()
+  let decisionSeq = 0
+  const stamp = (p: Proposal) => decidedOrder.set(p.id, ++decisionSeq)
   let version = $state(0)
   const bump = () => (version += 1)
 
@@ -226,6 +244,8 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
   function markStale(p: Proposal, note: string, out: ReviewOutcome) {
     p.status = 'stale'
     p.note = note
+    p.decidedAt = Date.now()
+    stamp(p)
     leaveCell(p)
     out.stale.push(p.id)
   }
@@ -309,12 +329,18 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
       p.note = undefined
       p.decidedBy = opts.user
       p.decidedAt = at
+      stamp(p)
       leaveCell(p)
       out.accepted.push(p.id)
     }
     recordUndo(api, take, 'accepted')
+    decided('accept', take)
     bump()
     return out
+  }
+
+  function decided(action: ReviewDecision['action'], ps: Proposal[], of?: ReviewDecision['of']) {
+    if (ps.length) opts.onDecision?.({ action, of, proposals: ps.map((p) => ({ ...p })), by: opts.user, at: Date.now() })
   }
 
   function reject(ids: ReadonlyArray<string>): ReviewOutcome {
@@ -327,11 +353,13 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
       p.status = 'rejected'
       p.decidedBy = opts.user
       p.decidedAt = at
+      stamp(p)
       leaveCell(p)
       taken.push(p)
       out.rejected.push(id)
     }
     if (taken.length) recordUndo(getApi(), taken, 'rejected')
+    decided('reject', taken)
     bump()
     return out
   }
@@ -341,10 +369,10 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
    * filters on. Undoing an accept writes `before` back only where the cell
    * still holds `after`; anything edited since is left as it is.
    */
-  function recordUndo(api: ReviewGridApi | null, ps: Proposal[], decided: 'accepted' | 'rejected') {
+  function recordUndo(api: ReviewGridApi | null, ps: Proposal[], kind: 'accepted' | 'rejected') {
     if (!api) return
     const prior = new Map(ps.map((p) => [p.id, { decidedBy: p.decidedBy, decidedAt: p.decidedAt }]))
-    const flip = (to: 'pending' | typeof decided, which: Proposal[]) => {
+    const flip = (to: 'pending' | typeof kind, which: Proposal[]) => {
       for (const p of which) {
         p.status = to
         if (to === 'pending') {
@@ -356,11 +384,12 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
           leaveCell(p)
         }
       }
+      decided(to === 'pending' ? 'undo' : 'redo', which, kind === 'accepted' ? 'accept' : 'reject')
       bump()
     }
-    const move = (from: 'before' | 'after', to: 'before' | 'after', status: 'pending' | typeof decided) => {
-      const live = ps.filter((p) => p.status === (status === 'pending' ? decided : 'pending'))
-      if (decided === 'rejected') return flip(status, live)
+    const move = (from: 'before' | 'after', to: 'before' | 'after', status: 'pending' | typeof kind) => {
+      const live = ps.filter((p) => p.status === (status === 'pending' ? kind : 'pending'))
+      if (kind === 'rejected') return flip(status, live)
       if (opts.server) {
         const inverse = live.map((p) => ({ ...p, before: p[from], after: p[to] }))
         Promise.resolve(opts.onCommit!(inverse)).then(() => {
@@ -376,7 +405,7 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
     }
     api.getCommandContext().recordUndo(
       () => move('after', 'before', 'pending'),
-      () => move('before', 'after', decided),
+      () => move('before', 'after', kind),
     )
   }
 
@@ -400,10 +429,15 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
 
   // ---- serialising --------------------------------------------------------
 
-  function toJSON(): ReviewJSON {
+  /**
+   * Every set with its proposals and their status, as plain JSON. Pass
+   * `setIds` to export only some, to hand them to someone else to decide.
+   */
+  function toJSON(opts: { setIds?: ReadonlyArray<string> } = {}): ReviewJSON {
+    const only = opts.setIds ? new Set(opts.setIds) : null
     return {
       v: 1,
-      sets: [...sets.values()].map(({ ids, ...meta }) => ({
+      sets: [...sets.values()].filter((set) => !only || only.has(set.id)).map(({ ids, ...meta }) => ({
         ...meta,
         proposals: ids.map((i) => all.get(i)).filter((p): p is Proposal => !!p).map((p) => ({ ...p })),
       })),
@@ -420,6 +454,60 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
       }
     }
     bump()
+  }
+
+  /**
+   * Add the sets of an export to this review, keeping what is here: an
+   * approver's page merges what the author exported. A set already present is
+   * skipped. Pending proposals go through the same rules as `add` (a cell
+   * with a live proposal from another source becomes a conflict); decided ones
+   * are kept as history.
+   */
+  function merge(json: ReviewJSON): void {
+    for (const set of json.sets) {
+      if (sets.has(set.id)) continue
+      const live = set.proposals.filter((p) => p.status === 'pending' || p.status === 'conflict')
+      const history = set.proposals.filter((p) => !live.includes(p) && !all.has(p.id))
+      add({ id: set.id, title: set.title, source: set.source, proposals: live.filter((p) => !all.has(p.id)) })
+      for (const p of history) all.set(p.id, { ...p })
+      sets.get(set.id)!.ids.push(...history.map((p) => p.id))
+    }
+    bump()
+  }
+
+  // ---- history ------------------------------------------------------------
+
+  /** Every decided proposal (accepted, rejected or stale), oldest decision first. */
+  function log(): Proposal[] {
+    void version
+    return [...all.values()]
+      .filter((p) => p.status === 'accepted' || p.status === 'rejected' || p.status === 'stale')
+      .sort((a, b) => (decidedOrder.get(a.id) ?? 0) - (decidedOrder.get(b.id) ?? 0))
+      .map((p) => ({ ...p }))
+  }
+
+  /**
+   * Propose undoing what a set wrote, after the fact: a new set with each
+   * accepted proposal reversed (`after` back to `before`). It is reviewed and
+   * accepted like any other set, so the stale check keeps a later edit.
+   * Returns null when nothing of the set was accepted.
+   */
+  function revertSet(setId: string): ChangeSet | null {
+    const set = sets.get(setId)
+    if (!set) return null
+    const accepted = set.ids.map((id) => all.get(id)).filter((p): p is Proposal => p?.status === 'accepted')
+    if (!accepted.length) return null
+    return add({
+      source: { kind: 'user', id: `revert:${setId}`, label: `Revert: ${set.title}` },
+      title: `Revert: ${set.title}`,
+      proposals: accepted.map((p) => ({ rowId: p.rowId, field: p.field, before: p.after, after: p.before, reason: `reverts ${p.source.label}` })),
+    })
+  }
+
+  /** The sets in this review, newest last, without their proposals. */
+  function sets_(): Array<Omit<ChangeSet, 'proposals'> & { count: number }> {
+    void version
+    return [...sets.values()].map(({ ids, ...meta }) => ({ ...meta, count: ids.length }))
   }
 
   function clear(): void {
@@ -518,6 +606,10 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
     reveal,
     toJSON,
     load,
+    merge,
+    log,
+    revertSet,
+    sets: sets_,
     clear,
   }
   return review
