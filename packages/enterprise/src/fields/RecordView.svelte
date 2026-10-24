@@ -143,7 +143,7 @@
 
   // ---- Activity ---------------------------------------------------------------
   const allCols = $derived([...columns, ...hidden])
-  type FeedItem = { key: string; at: number; by?: string; automation?: string; remote?: boolean; kind: 'edit' | 'added' | 'comment'; field: string; text: string; from?: string }
+  type FeedItem = { key: string; at: number; by?: string; automation?: string; via?: string; remote?: boolean; kind: 'edit' | 'added' | 'comment'; field: string; text: string; from?: string }
   const feed = $derived.by(() => {
     if (!row) return []
     const edits = changesOf(ctrl, row.id).map((ch): FeedItem => {
@@ -155,6 +155,7 @@
         at: ch.at,
         by: ch.by,
         automation: ch.automation,
+        via: ch.via,
         remote: ch.remote,
         kind: 'edit',
         field: c ? label(c) : ch.columnId,
@@ -166,8 +167,10 @@
     const notes = commentsOf(ctrl, row.id).map((n): FeedItem => ({ key: n.id, at: n.at, by: n.by, kind: 'comment', field: '', text: n.text }))
     return [...edits, ...notes].sort((a, b) => a.at - b.at)
   })
+  const person = (item: FeedItem) => (item.by ? (findFieldUser(item.by)?.name ?? 'Someone') : item.remote ? 'Someone else' : 'You')
+  // A proposal someone accepted (change review) is credited to what proposed it, and to them.
   const who = (item: FeedItem) =>
-    item.automation ? `Automation: ${item.automation}` : item.by ? (findFieldUser(item.by)?.name ?? 'Someone') : item.remote ? 'Someone else' : 'You'
+    item.automation ? `Automation: ${item.automation}` : item.via ? `${item.via} (accepted by ${person(item)})` : person(item)
   // Shown here: a change made elsewhere is seen, so the grid stops marking it.
   $effect(() => {
     const id = row?.id

@@ -247,6 +247,45 @@ function stampModified(ctrl: any, row: Record<string, unknown> | null, columnId:
   }
 }
 
+/**
+ * Change review (`@svgrid/enterprise/review`) in SvGrid Base: what an edit
+ * does, done for each accepted proposal. Last modified time / by fields are
+ * stamped, and the record's activity notes the change, credited to the
+ * signed-in user who accepted it and to what proposed it ("CRM agent
+ * (accepted by Dana)"). An undo is noted as the user's own change.
+ *
+ * ```ts
+ * const review = createReview({ api: () => api, setRows, onApply: baseReviewApplied(() => api) })
+ * ```
+ */
+export function baseReviewApplied(
+  api: unknown,
+): (
+  applied: ReadonlyArray<{ rowId: string; field: string; source: { label: string } }>,
+  how: 'accept' | 'undo' | 'redo',
+  rows?: ReadonlyArray<unknown>,
+) => void {
+  return (applied, how, next) => {
+    const ctrl = gridOf(typeof api === 'function' ? (api as () => unknown)() : api)
+    if (!ctrl) return
+    const gridApi = ctrl.buildApi?.()
+    const idOf = gridApi?.getOption?.('getRowId') as ((row: unknown, index: number) => string) | undefined
+    const rows = new Map<string, Record<string, unknown>>()
+    // The rows about to be written: a stamp goes into the same write.
+    ;((next ?? gridApi?.getData?.() ?? []) as Array<Record<string, unknown>>).forEach((r, i) => rows.set(String(idOf ? idOf(r, i) : i), r))
+    const columnOf = new Map(
+      ((ctrl.allColumns ?? []) as Array<{ id: string; columnDef?: { field?: string } }>).map((c) => [c.columnDef?.field, c.id]),
+    )
+    for (const p of applied) {
+      const row = rows.get(p.rowId)
+      const columnId = columnOf.get(p.field)
+      if (!row || !columnId) continue
+      stampModified(ctrl, row, columnId)
+      noteChange(ctrl, p.rowId, columnId, row[p.field], undefined, how === 'undo' ? undefined : p.source.label)
+    }
+  }
+}
+
 /** The record's activity: what a cell now holds after an edit. */
 function noteEdit(ctrl: any, row: Record<string, unknown> | null, columnId: string): void {
   if (!row) return

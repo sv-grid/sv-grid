@@ -57,6 +57,15 @@ export type ReviewOptions<TData> = {
    * proposals it moved. Write these to an audit log of your own.
    */
   onDecision?: (decision: ReviewDecision) => void
+  /**
+   * Called as accepted values (or an undo / redo of them) are written, with
+   * the proposals and the new rows just before they go to `setRows`, so
+   * bookkeeping that edits a row lands in the same write. SvGrid Base stamps
+   * "last modified" and notes the record's activity with
+   * `baseReviewApplied(api)` from `@svgrid/enterprise/base`. With a server
+   * row model there are no rows to edit: `rows` is undefined.
+   */
+  onApply?: (applied: Proposal[], how: 'accept' | 'undo' | 'redo', rows?: TData[]) => void
 }
 
 export type ReviewDecision = {
@@ -251,7 +260,7 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
   }
 
   /** Write `value` per (rowId, field) into a copy of the grid's current data. */
-  function writeValues(api: ReviewGridApi, writes: ReadonlyArray<readonly [string, string, unknown]>) {
+  function writeValues(api: ReviewGridApi, writes: ReadonlyArray<readonly [string, string, unknown]>, beforeSet?: (next: TData[]) => void) {
     const data = api.getData()
     const index = indexRows(api)
     const next = data.slice() as TData[]
@@ -265,7 +274,9 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
       }
       ;(next[i] as Record<string, unknown>)[field] = value
     }
-    if (copied.size) opts.setRows!(next)
+    if (!copied.size) return
+    beforeSet?.(next)
+    opts.setRows!(next)
   }
 
   function currentValue(api: ReviewGridApi, index: Map<string, number>, p: Proposal): unknown {
@@ -321,8 +332,11 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
       bump()
       return out
     }
-    if (opts.setRows && api) writeValues(api, take.map((p) => [p.rowId, p.field, p.after] as const))
-    else opts.server?.refresh()
+    if (opts.setRows && api) writeValues(api, take.map((p) => [p.rowId, p.field, p.after] as const), (next) => opts.onApply?.(take, 'accept', next))
+    else {
+      opts.server?.refresh()
+      opts.onApply?.(take, 'accept')
+    }
     const at = Date.now()
     for (const p of take) {
       p.status = 'accepted'
@@ -395,12 +409,13 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
         Promise.resolve(opts.onCommit!(inverse)).then(() => {
           opts.server!.refresh()
           flip(status, live)
+          opts.onApply?.(live, status === 'pending' ? 'undo' : 'redo')
         }, () => {})
         return
       }
       const index = indexRows(api)
       const ok = live.filter((p) => sameValue(currentValue(api, index, p), p[from]))
-      writeValues(api, ok.map((p) => [p.rowId, p.field, p[to]] as const))
+      writeValues(api, ok.map((p) => [p.rowId, p.field, p[to]] as const), (next) => opts.onApply?.(ok, status === 'pending' ? 'undo' : 'redo', next))
       flip(status, ok)
     }
     api.getCommandContext().recordUndo(

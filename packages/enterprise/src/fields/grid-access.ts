@@ -20,16 +20,25 @@ export type FieldColumn = {
 
 // The grid behind each api object (the grid keeps one api per grid).
 const grids = new WeakMap<object, any>()
+// The same, by one of the api's methods. An app that keeps the api in
+// `$state` hands over a proxy of it, which is not the object above; Svelte
+// does not proxy functions, so the proxy's methods are the api's own.
+const byMethod = new WeakMap<object, any>()
 
 /** Called on every draw of a grid with fields turned on. */
 export function rememberGrid(ctrl: any): void {
   const api = ctrl?.buildApi?.()
-  if (api && !grids.has(api)) grids.set(api, ctrl)
+  if (api && !grids.has(api)) {
+    grids.set(api, ctrl)
+    if (typeof api.getData === 'function') byMethod.set(api.getData, ctrl)
+  }
 }
 
-/** The grid an api belongs to; undefined until that grid has drawn once. */
+/** The grid an api belongs to (or a `$state` proxy of it); undefined until that grid has drawn once. */
 export function gridOf(api: unknown): any {
-  return api && typeof api === 'object' ? grids.get(api) : undefined
+  if (!api || typeof api !== 'object') return undefined
+  const getData = (api as { getData?: unknown }).getData
+  return grids.get(api) ?? (typeof getData === 'function' ? byMethod.get(getData) : undefined)
 }
 
 export const columnIdOf = (def: Record<string, any>): string => String(def.id ?? def.field ?? '')

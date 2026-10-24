@@ -296,6 +296,68 @@ review.add(fromStaged(changes, { api, source: { kind: 'user', id: me.id, label: 
 const forApprover = JSON.stringify(review.toJSON({ setIds: [review.sets().at(-1)!.id] }))
 ```
 
+## With SvGrid Base
+
+`SvBase` hands any prop it does not use to its grid, so a review attaches the
+same way. Add `onApply: baseReviewApplied(...)` so an accept does what an edit
+does in a base: "Last modified time" and "Last modified by" fields are stamped
+in the same write, and the record's activity credits the change to what
+proposed it and to the person who accepted it ("CRM agent (accepted by Dana)").
+
+```svelte
+<script lang="ts">
+  import { SvBase, enableBase, baseReviewApplied } from '@svgrid/enterprise/base'
+  import { createReview, SvReviewPanel } from '@svgrid/enterprise/review'
+
+  enableBase()
+  let records = $state(initialRecords)
+  let api = $state(null)
+  const review = createReview({
+    api: () => api,
+    setRows: (next) => (records = next),
+    onApply: baseReviewApplied(() => api),
+  })
+</script>
+
+<SvBase
+  data={records}
+  columns={review.columns(columns)}
+  conditionalFormats={review.formats}
+  primaryField="name"
+  onApiReady={(a) => (api = a)}
+/>
+<SvReviewPanel {review} />
+```
+
+What a base shows:
+
+- **The proposed value in the cell** for field types that draw no cell of
+  their own: single line text, long text, date, number, currency, percent,
+  duration, formula, autonumber, lookup, rollup, count, created time and last
+  modified time. Types with a cell of their own keep it and show the tint and
+  the dot, and the panel shows their values: attachment, checkbox, single and
+  multiple select, user, phone, email, URL, barcode, button, rating, link,
+  created by and last modified by. So do long text set to rich text and a
+  percent drawn as a bar.
+- **The grid view only.** Kanban, gallery, calendar and form views do not
+  mark pending changes.
+- **Sync.** With `createBaseSync`, an accepted value is a change like any
+  other and is saved with the rest. Changes made elsewhere are still marked as
+  before; a review is the step before that, where an agent proposes and a
+  person decides.
+
+With several tables (`tables`), keep one review per table: proposals are keyed
+by record id, and ids can repeat across tables. Give the active table's review
+to the grid and write into that table's rows:
+
+```ts
+const review = createReview({
+  api: () => api,
+  setRows: (next) => (tables = tables.map((t) => (t.id === 'tasks' ? { ...t, data: next } : t))),
+  onApply: baseReviewApplied(() => api),
+})
+```
+
 ## Licensing
 
 Change review is part of SvGrid Enterprise. Without a license key it runs with

@@ -40,6 +40,8 @@ export type RecordChange = {
   by?: string
   /** The automation that made it, by name. */
   automation?: string
+  /** What proposed it, when `by` accepted a proposal (change review): "CRM agent". */
+  via?: string
   /** Made elsewhere (another user, a script, an agent) and read from the database. */
   remote?: boolean
   /** The record was added elsewhere: one entry, with no field. */
@@ -113,13 +115,14 @@ export function setRecordComments(next: RecordCommentStore | null): void {
 /**
  * Note a change to a cell (called after every edit, paste, fill and clear).
  * `scope` is the grid, or the table (its base and id) for a change made
- * outside it (an automation). `automation` names the automation that made it.
+ * outside it (an automation). `automation` names the automation that made it;
+ * `via` names what proposed a change the signed-in user accepted.
  */
-export function noteChange(scope: ActivityScope, rowId: string, columnId: string, value: unknown, automation?: string): void {
+export function noteChange(scope: ActivityScope, rowId: string, columnId: string, value: unknown, automation?: string, via?: string): void {
   const byRow = rowsOf(changes, scope, true)!
   const list = byRow.get(rowId) ?? []
   // Kept short: the panel shows the latest.
-  list.push({ at: Date.now(), ...(automation ? { automation } : { by: getCurrentUser()?.id }), columnId, value: Array.isArray(value) ? [...value] : value })
+  list.push({ at: Date.now(), ...(automation ? { automation } : { by: getCurrentUser()?.id }), ...(via ? { via } : {}), columnId, value: Array.isArray(value) ? [...value] : value })
   if (list.length > 50) list.splice(0, list.length - 50)
   byRow.set(rowId, list)
   version += 1
