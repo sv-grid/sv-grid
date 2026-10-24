@@ -1,0 +1,27 @@
+{
+  "description": "AI and import edits to a Svelte 5 data grid held as proposals: each changed cell shows the proposed value with the old one struck through beside it, a review panel groups the proposals by what they change, and a person accepts or rejects a group at a time, with one Ctrl+Z per decision.",
+  "keywords": [
+    "svelte data grid review ai edits",
+    "human in the loop data grid",
+    "svelte grid pending changes",
+    "approve ai changes table svelte"
+  ],
+  "faq": [
+    {
+      "question": "Does an accepted proposal overwrite a cell someone edited meanwhile?",
+      "answer": "No. Before writing, each proposal's cell is compared with the value the proposal saw, once before your onCommit runs and again after it. A cell that changed, by typing, a paste or a fill, is marked stale and left as it is."
+    },
+    {
+      "question": "How are the groups decided?",
+      "answer": "By fixed rules, with no model call: trimmed spaces, a case change, the same characters in a new format, one numeric factor, the same mapping repeated, empty cells filled with one value, many values set to one, and the rest per column. The first four prove their rule for every member, so they sort last; groups that need judgment sort first."
+    },
+    {
+      "question": "Can the AI helpers feed it?",
+      "answer": "Yes. reviewSmartFill and reviewClassify run aiSmartFill and aiClassify and add their predictions as proposals, keyed by row id, with the model's confidence and rationale shown in the panel."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "Change review is part of @svgrid/enterprise. Without a key it runs with a watermark, so the demo can be evaluated as is. It adds nothing to the free @svgrid/grid bundle."
+    }
+  ]
+}

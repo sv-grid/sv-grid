@@ -532,5 +532,8 @@
   ],
   "docs/help/filtering/date-filter.md": [
     "701-enterprise-grid-filters"
+  ],
+  "docs/help/review/change-review.md": [
+    "702-change-review"
   ]
 }

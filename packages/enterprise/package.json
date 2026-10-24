@@ -68,6 +68,11 @@
       "svelte": "./dist/base/index.js",
       "import": "./dist/base/index.js"
     },
+    "./review": {
+      "types": "./dist/review/index.d.ts",
+      "svelte": "./dist/review/index.js",
+      "import": "./dist/review/index.js"
+    },
     "./worker": {
       "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js"
@@ -157,6 +162,7 @@
     "@sveltejs/package": "^2.5.7",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@svgrid/grid": "workspace:^",
+    "axe-core": "^4.13.0",
     "jszip": "^3.10.1",
     "pdfmake": "^0.2.10",
     "svelte": "^5.55.5",

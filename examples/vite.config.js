@@ -51,6 +51,7 @@ export default defineConfig({
       '@svgrid/enterprise/server': path.resolve(repoRoot, 'packages/enterprise/src/server/index.ts'),
       '@svgrid/enterprise/fields': path.resolve(repoRoot, 'packages/enterprise/src/fields/index.ts'),
       '@svgrid/enterprise/base': path.resolve(repoRoot, 'packages/enterprise/src/base/index.ts'),
+      '@svgrid/enterprise/review': path.resolve(repoRoot, 'packages/enterprise/src/review/index.ts'),
       // What runs inside a Web Worker (demo 500's orders.worker.ts).
       '@svgrid/enterprise/worker': path.resolve(repoRoot, 'packages/enterprise/src/worker/index.ts'),
       // Private: visual designer components (only used by git-ignored demos).

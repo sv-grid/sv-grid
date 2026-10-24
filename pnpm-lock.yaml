@@ -163,6 +163,9 @@ importers:
       '@svgrid/grid':
         specifier: workspace:^
         version: link:../grid
+      axe-core:
+        specifier: ^4.13.0
+        version: 4.13.0
       jszip:
         specifier: ^3.10.1
         version: 3.10.1

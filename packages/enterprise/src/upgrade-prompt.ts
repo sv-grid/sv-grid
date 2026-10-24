@@ -43,6 +43,7 @@ export type EnterpriseFeatureLabel =
   | 'Spreadsheet'
   | 'SvGrid Base'
   | 'Studio'
+  | 'Change review'
 
 /**
  * Show the contextual upgrade prompt for `feature`. No-ops if one has already

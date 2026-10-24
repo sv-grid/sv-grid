@@ -73,6 +73,7 @@ const SECTION_TITLES = {
   'help/kanban':       'Kanban',
   'help/scheduler':    'Scheduler',
   'help/alerts':       'Alerts & scheduling',
+  'help/review':       'Change review',
   'help/ui-components':'UI components',
   'help/ui-blocks':    'UI blocks',
   'help/web-components':'Web components',
@@ -121,6 +122,7 @@ const SECTION_PILLAR = {
   'help/kanban':       'enterprise',
   'help/scheduler':    'enterprise',
   'help/alerts':       'enterprise',
+  'help/review':       'enterprise',
   'recipes':           'grid',
   'reference':         'grid',
   'enterprise/studio': 'studio',
@@ -180,7 +182,7 @@ const SECTION_ORDER = [
   'help/cells', 'help/columns', 'help/rows',
   'help/editing', 'help/filtering', 'help/grouping',
   'help/headless', 'help/server', 'help/state', 'help/charts', 'help/gantt', 'help/sheet', 'help/base',
-  'help/export', 'help/pivot', 'help/kanban', 'help/scheduler', 'help/alerts',
+  'help/export', 'help/pivot', 'help/kanban', 'help/scheduler', 'help/alerts', 'help/review',
   // Before recipes, matching CATEGORY_ORDER in website/src/lib/docs.ts - this
   // list drives docs.json and llms.txt, that one drives the visible sidebar,
   // and a reader following the topic map should meet them in the same order.

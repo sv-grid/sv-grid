@@ -1,0 +1,137 @@
+/**
+ * Change review in a real `<SvGrid>`: the tint and the proposed value drawn in
+ * the cell, the panel's groups, an accept written through the app's data, and
+ * one Ctrl+Z to undo it.
+ */
+import { describe, expect, it, vi } from 'vitest'
+import { flushSync, mount, unmount } from 'svelte'
+import axe from 'axe-core'
+import Harness from './test-fixtures/ReviewHarness.svelte'
+import type { Review } from './model.svelte'
+import type { ProposalSource } from './types'
+
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  ;(globalThis as any).ResizeObserver = class { observe() {} unobserve() {} disconnect() {} }
+}
+
+const AGENT: ProposalSource = { kind: 'agent', id: 'cleanup', label: 'Cleanup agent' }
+const initial = [
+  { id: 'a', name: '  Acme', region: '', done: false },
+  { id: 'b', name: 'Globex ', region: 'EMEA', done: true },
+  { id: 'c', name: 'Initech', region: '', done: false },
+]
+const columns = [
+  { field: 'name', header: 'Name', width: 160, editable: true },
+  { field: 'region', header: 'Region', width: 120 },
+  { field: 'done', header: 'Done', width: 80 },
+]
+
+async function setup(confirmOver = 50) {
+  const target = document.createElement('div')
+  document.body.appendChild(target)
+  let h!: { review: Review<any>; api: any; rows: () => any[] }
+  const app = mount(Harness, { target, props: { initial, columns, confirmOver, onReady: (x: typeof h) => (h = x) } })
+  await vi.waitFor(() => expect(h).toBeDefined())
+  return { ...h, target, destroy: () => { unmount(app); target.remove() } }
+}
+
+describe('SvReviewPanel in a grid', () => {
+  it('draws the proposal in the cell, tints it, and lists groups risky-first', async () => {
+    const { review, target, destroy } = await setup()
+    review.add({
+      source: AGENT,
+      proposals: [
+        { rowId: 'a', field: 'name', before: '  Acme', after: 'Acme' },
+        { rowId: 'b', field: 'name', before: 'Globex ', after: 'Globex' },
+        { rowId: 'a', field: 'region', before: '', after: 'AMER', confidence: 0.4 },
+        { rowId: 'b', field: 'done', before: true, after: false },
+      ],
+    })
+    flushSync()
+    await vi.waitFor(() => expect(target.querySelector('.sv-review-ghost')).not.toBeNull())
+    const ghosts = [...target.querySelectorAll('.sv-review-ghost')].map((g) => g.textContent!.replace(/\s+/g, ' ').trim())
+    expect(ghosts).toContain('Acme Acme')
+    expect(ghosts).toContain('AMER')
+    // The boolean column keeps its checkbox: it is tinted, never wrapped.
+    expect(target.querySelectorAll('.sv-grid-checkbox').length).toBeGreaterThan(0)
+    const labels = [...target.querySelectorAll('.sv-review-label')].map((l) => l.textContent)
+    expect(labels).toEqual(['Done: no shared pattern', 'Fill empty Region (different values)', 'Trim spaces in Name'])
+    expect(target.querySelector('.sv-review-count')!.textContent).toContain('4 pending in 3 groups')
+    destroy()
+  })
+
+  it('accepting a group writes the app data; Ctrl+Z puts it back and the proposals return', async () => {
+    const { review, api, rows, target, destroy } = await setup()
+    review.add({
+      source: AGENT,
+      proposals: [
+        { rowId: 'a', field: 'name', before: '  Acme', after: 'Acme' },
+        { rowId: 'b', field: 'name', before: 'Globex ', after: 'Globex' },
+      ],
+    })
+    flushSync()
+    const accept = target.querySelector('.sv-review-act.is-accept') as HTMLButtonElement
+    accept.click()
+    await vi.waitFor(() => expect(rows()[0].name).toBe('Acme'))
+    expect(rows()[1].name).toBe('Globex')
+    await vi.waitFor(() => expect(target.querySelector('.sv-review-live')!.textContent).toBe('2 accepted'))
+    expect(review.pending()).toHaveLength(0)
+    expect(api.canUndo()).toBe(true)
+    api.undo()
+    flushSync()
+    expect(rows()[0].name).toBe('  Acme')
+    expect(review.pending()).toHaveLength(2)
+    destroy()
+  })
+
+  it('asks before deciding more than confirmOver at once', async () => {
+    const { review, target, destroy } = await setup(1)
+    review.add({
+      source: AGENT,
+      proposals: [
+        { rowId: 'a', field: 'name', before: '  Acme', after: 'Acme' },
+        { rowId: 'b', field: 'name', before: 'Globex ', after: 'Globex' },
+      ],
+    })
+    flushSync()
+    ;(target.querySelector('.sv-review-act:not(.is-accept)') as HTMLButtonElement).click()
+    flushSync()
+    expect(target.querySelector('.sv-review-confirm')!.textContent).toContain('Reject 2 changes')
+    expect(review.pending()).toHaveLength(2)
+    destroy()
+  })
+
+  it('keyboard: J moves, Enter opens, R rejects the focused group', async () => {
+    const { review, target, destroy } = await setup()
+    review.add({
+      source: AGENT,
+      proposals: [
+        { rowId: 'a', field: 'name', before: '  Acme', after: 'Acme' },
+        { rowId: 'c', field: 'region', before: '', after: 'APAC' },
+      ],
+    })
+    flushSync()
+    const list = target.querySelector('.sv-review-groups') as HTMLElement
+    const heads = () => [...target.querySelectorAll<HTMLElement>('.sv-review-group-head')]
+    heads()[0]!.focus()
+    list.dispatchEvent(new KeyboardEvent('keydown', { key: 'j', bubbles: true }))
+    list.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    flushSync()
+    expect(heads()[1]!.getAttribute('aria-expanded')).toBe('true')
+    list.dispatchEvent(new KeyboardEvent('keydown', { key: 'r', bubbles: true }))
+    flushSync()
+    expect(review.pending().map((p) => p.field)).toEqual(['region'])
+    destroy()
+  })
+
+  it('has no axe violations', async () => {
+    const { review, target, destroy } = await setup()
+    review.add({ source: AGENT, proposals: [{ rowId: 'a', field: 'name', before: '  Acme', after: 'Acme' }] })
+    flushSync()
+    ;(target.querySelector('.sv-review-group-head') as HTMLButtonElement).click()
+    flushSync()
+    const result = await axe.run(target.querySelector('.sv-review')!, { rules: { 'color-contrast': { enabled: false } } })
+    expect(result.violations.map((v) => v.id)).toEqual([])
+    destroy()
+  })
+})
