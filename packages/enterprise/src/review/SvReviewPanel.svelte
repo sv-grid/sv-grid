@@ -17,23 +17,36 @@
 <script lang="ts">
   import { SvButton } from '@svgrid/grid'
   import { showValue } from './cluster'
+  import { fill, reviewMessages, type ReviewMessages } from './messages'
   import type { Review, ReviewOutcome } from './model.svelte'
   import type { Proposal, ProposalGroup } from './types'
 
   let {
     review,
-    title = 'Review changes',
+    title,
     confirmOver = 50,
     onDecide,
+    messages,
   }: {
     review: Review<any>
+    /** The heading; default `messages.title`. */
     title?: string
+    /** Wording for this panel, over the review's own `messages`. */
+    messages?: Partial<ReviewMessages>
     /** Ask before deciding more than this many proposals at once. */
     confirmOver?: number
     /** Called after each decision with what happened. */
     onDecide?: (outcome: ReviewOutcome) => void
   } = $props()
 
+  const m = $derived(reviewMessages(review.messages, messages))
+  const heading = $derived(title ?? m.title)
+  /** A message with `{count}` split out, so the number can be set in bold. */
+  const around = (template: string) => {
+    const at = template.indexOf('{count}')
+    return at < 0 ? [template, ''] : [template.slice(0, at), template.slice(at + 7)]
+  }
+  const show = (v: unknown) => showValue(v, m.empty)
   const groups = $derived(review.groups())
   const conflicts = $derived(review.conflicts())
   /** Conflicting proposals by cell, one entry per cell. */
@@ -68,26 +81,31 @@
   let revealed = $state<Record<string, { id: string | null; hidden: number }>>({})
   let listEl = $state<HTMLElement | null>(null)
 
-  const BADGE: Record<ProposalGroup['kind'], { text: string; tone: 'rule' | 'check' | 'each'; hint: string }> = {
-    whitespace: { text: 'Rule', tone: 'rule', hint: 'Every change in this group follows the rule.' },
-    case: { text: 'Rule', tone: 'rule', hint: 'Every change in this group follows the rule.' },
-    format: { text: 'Rule', tone: 'rule', hint: 'Every change in this group follows the rule.' },
-    scale: { text: 'Rule', tone: 'rule', hint: 'Every change in this group follows the rule.' },
-    'same-mapping': { text: 'Check', tone: 'check', hint: 'Check the mapping before accepting.' },
-    'fill-empty': { text: 'Check', tone: 'check', hint: 'Check the sample: the least sure ones come first.' },
-    'constant-target': { text: 'Check', tone: 'check', hint: 'Many different values set to one: check what they were.' },
-    unpatterned: { text: 'Each', tone: 'each', hint: 'No shared pattern: look at each change.' },
+  const badgeOf = (kind: ProposalGroup['kind']): { text: string; tone: 'rule' | 'check' | 'each'; hint: string } => {
+    switch (kind) {
+      case 'whitespace': case 'case': case 'format': case 'scale':
+        return { text: m.badgeRule, tone: 'rule', hint: m.hintRule }
+      case 'same-mapping':
+        return { text: m.badgeCheck, tone: 'check', hint: m.hintMapping }
+      case 'fill-empty':
+        return { text: m.badgeCheck, tone: 'check', hint: m.hintFill }
+      case 'constant-target':
+        return { text: m.badgeCheck, tone: 'check', hint: m.hintConstant }
+      case 'unpatterned':
+        return { text: m.badgeEach, tone: 'each', hint: m.hintEach }
+    }
   }
 
   function say(out: ReviewOutcome) {
     const parts: string[] = []
-    if (out.accepted.length) parts.push(`${out.accepted.length} accepted`)
-    if (out.rejected.length) parts.push(`${out.rejected.length} rejected`)
-    if (out.stale.length) parts.push(`${out.stale.length} not written: the cell changed`)
-    if (out.committedStale.length) parts.push(`${out.committedStale.length} saved but not shown: the cell changed while saving`)
-    if (out.skipped.length) parts.push(`${out.skipped.length} left pending`)
-    if (out.error) parts.push(`not saved: ${out.error instanceof Error ? out.error.message : String(out.error)}`)
-    announce = parts.join(', ') || 'Nothing to decide'
+    const add = (template: string, count: number) => count && parts.push(fill(template, { count }))
+    add(m.announceAccepted, out.accepted.length)
+    add(m.announceRejected, out.rejected.length)
+    add(m.announceStale, out.stale.length)
+    add(m.announceCommittedStale, out.committedStale.length)
+    add(m.announceSkipped, out.skipped.length)
+    if (out.error) parts.push(fill(m.announceNotSaved, { error: out.error instanceof Error ? out.error.message : String(out.error) }))
+    announce = parts.join(', ') || m.announceNothing
     onDecide?.(out)
   }
 
@@ -112,25 +130,25 @@
   }
 
   const acceptGroup = (g: ProposalGroup) =>
-    guard(`Accept ${g.count} changes: ${g.label}?`, g.count, () => void acceptIds(g.ids))
+    guard(fill(m.confirmAcceptGroup, { count: g.count, label: g.label }), g.count, () => void acceptIds(g.ids))
   const rejectGroup = (g: ProposalGroup) =>
-    guard(`Reject ${g.count} changes: ${g.label}?`, g.count, () => say(review.reject(g.ids)))
+    guard(fill(m.confirmRejectGroup, { count: g.count, label: g.label }), g.count, () => say(review.reject(g.ids)))
 
   /** The groups whose every member is proven to follow its rule. */
   const ruleGroups = $derived(groups.filter((g) => g.rule))
   const ruleCount = $derived(ruleGroups.reduce((n, g) => n + g.count, 0))
   function acceptRules() {
     const ids = ruleGroups.flatMap((g) => g.ids)
-    guard(`Accept ${ruleGroups.length} rule groups (${ids.length} changes)?`, ids.length, () => void acceptIds(ids))
+    guard(fill(m.confirmAcceptRules, { groups: ruleGroups.length, count: ids.length }), ids.length, () => void acceptIds(ids))
   }
 
   function acceptAll() {
     const ids = groups.flatMap((g) => g.ids)
-    guard(`Accept all ${ids.length} changes?`, ids.length, () => void acceptIds(ids))
+    guard(fill(m.confirmAcceptAll, { count: ids.length }), ids.length, () => void acceptIds(ids))
   }
   function rejectAll() {
     const ids = groups.flatMap((g) => g.ids)
-    guard(`Reject all ${ids.length} changes?`, ids.length, () => say(review.reject(ids)))
+    guard(fill(m.confirmRejectAll, { count: ids.length }), ids.length, () => say(review.reject(ids)))
   }
 
   function showInGrid(g: ProposalGroup) {
@@ -146,7 +164,7 @@
   const pct = (n: number) => `${Math.round(n * 100)}%`
   function confidenceText(g: ProposalGroup): string {
     if (g.minConfidence === undefined) return ''
-    return g.minConfidence === g.avgConfidence ? `${pct(g.minConfidence)} sure` : `${pct(g.minConfidence)} to ${pct(g.avgConfidence!)} sure`
+    return g.minConfidence === g.avgConfidence ? fill(m.sure, { pct: pct(g.minConfidence) }) : fill(m.sureRange, { min: pct(g.minConfidence), avg: pct(g.avgConfidence!) })
   }
   const maxOf = (g: ProposalGroup) => Math.max(1, ...(g.beforeDistribution ?? []).map((d) => d.count))
 
@@ -172,17 +190,17 @@
   <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" /></svg>
 {/snippet}
 
-<section class="sv-review" aria-label={title}>
+<section class="sv-review" aria-label={heading}>
   <header class="sv-review-head">
     <div class="sv-review-titlerow">
-      <h2 class="sv-review-title">{title}</h2>
-      {#if tally.total}<span class="sv-review-decided">{decidedCount} of {tally.total} decided</span>{/if}
+      <h2 class="sv-review-title">{heading}</h2>
+      {#if tally.total}<span class="sv-review-decided">{fill(m.decided, { decided: decidedCount, total: tally.total })}</span>{/if}
     </div>
     {#if tally.total}
       <div
         class="sv-review-progress"
         role="progressbar"
-        aria-label="Decided"
+        aria-label={m.decidedLabel}
         aria-valuemin={0}
         aria-valuemax={tally.total}
         aria-valuenow={decidedCount}
@@ -192,17 +210,17 @@
       </div>
     {/if}
     <p class="sv-review-count">
-      {#if pendingCount}{pendingCount} pending in {groups.length} {groups.length === 1 ? 'group' : 'groups'}{:else}Nothing pending{/if}{#if conflicts.length}, {conflicts.length} in conflict{/if}
+      {pendingCount ? fill(groups.length === 1 ? m.pendingInOneGroup : m.pendingInGroups, { count: pendingCount, groups: groups.length }) : m.nothingPending}{conflicts.length ? fill(m.inConflict, { count: conflicts.length }) : ''}
     </p>
     {#if pendingCount}
       <div class="sv-review-all">
-        <SvButton size="sm" disabled={busy || conflicts.length > 0} onclick={acceptAll}>Accept all</SvButton>
+        <SvButton size="sm" disabled={busy || conflicts.length > 0} onclick={acceptAll}>{m.acceptAll}</SvButton>
         {#if ruleGroups.length && ruleGroups.length < groups.length}
-          <SvButton size="sm" variant="outline" disabled={busy} onclick={acceptRules}>Accept rule groups ({ruleCount})</SvButton>
+          <SvButton size="sm" variant="outline" disabled={busy} onclick={acceptRules}>{fill(m.acceptRuleGroups, { count: ruleCount })}</SvButton>
         {/if}
-        <SvButton size="sm" variant="outline" disabled={busy} onclick={rejectAll}>Reject all</SvButton>
+        <SvButton size="sm" variant="outline" disabled={busy} onclick={rejectAll}>{m.rejectAll}</SvButton>
       </div>
-      {#if conflicts.length}<p class="sv-review-hint">Resolve the conflicts before accepting everything.</p>{/if}
+      {#if conflicts.length}<p class="sv-review-hint">{m.resolveFirst}</p>{/if}
     {/if}
     {#if pendingCount || conflicts.length || review.pendingOnly}
       <button
@@ -212,7 +230,7 @@
         onclick={() => review.showPendingOnly(!review.pendingOnly)}
       >
         <span class="sv-review-switch" aria-hidden="true"></span>
-        Only rows with changes
+        {m.onlyRowsWithChanges}
       </button>
     {/if}
   </header>
@@ -221,22 +239,22 @@
     <div class="sv-review-confirm" role="alertdialog" aria-label={confirming.label}>
       <p>{confirming.label}</p>
       <div class="sv-review-all">
-        <SvButton size="sm" onclick={confirmYes}>Yes, {confirming.count}</SvButton>
-        <SvButton size="sm" variant="ghost" onclick={() => (confirming = null)}>Cancel</SvButton>
+        <SvButton size="sm" onclick={confirmYes}>{fill(m.confirmYes, { count: confirming.count })}</SvButton>
+        <SvButton size="sm" variant="ghost" onclick={() => (confirming = null)}>{m.cancel}</SvButton>
       </div>
     </div>
   {/if}
 
   {#if conflicts.length}
-    <section class="sv-review-conflicts" aria-label="Conflicts">
-      <h3 class="sv-review-subtitle">Two sources disagree</h3>
+    <section class="sv-review-conflicts" aria-label={m.conflictsTitle}>
+      <h3 class="sv-review-subtitle">{m.conflictsTitle}</h3>
       {#each conflictCells as cell (cell[0].id)}
         <div class="sv-review-conflict">
-          <span class="sv-review-cell">Row {cell[0].rowId}, {cell[0].field}: now {showValue(cell[0].before)}</span>
+          <span class="sv-review-cell">{fill(m.conflictCell, { row: cell[0].rowId, field: cell[0].field, value: show(cell[0].before) })}</span>
           <div class="sv-review-keeps">
             {#each cell as p (p.id)}
               <button type="button" class="sv-review-keep" onclick={() => review.resolveConflict(p.id)}>
-                Keep {showValue(p.after)} <span class="sv-review-src">({p.source.label})</span>
+                {fill(m.keep, { value: show(p.after) })} <span class="sv-review-src">({p.source.label})</span>
               </button>
             {/each}
           </div>
@@ -250,7 +268,8 @@
     <ul class="sv-review-groups" bind:this={listEl} onkeydown={onKeydown}>
       {#each groups as g, i (g.key)}
         {@const open = openKey === g.key}
-        {@const badge = BADGE[g.kind]}
+        {@const badge = badgeOf(g.kind)}
+        {@const [pre, post] = around(g.count === 1 ? m.oneChange : m.changes)}
         <li class="sv-review-group" class:is-rule={g.rule} class:is-open={open}>
           <div class="sv-review-row">
             <button
@@ -265,7 +284,7 @@
               <span class="sv-review-text">
                 <span class="sv-review-label">{g.label}</span>
                 <span class="sv-review-conf">
-                  <span class="sv-review-n">{g.count}</span> {g.count === 1 ? 'change' : 'changes'}
+                  {pre}<span class="sv-review-n">{g.count}</span>{post}
                   {#if g.minConfidence !== undefined}
                     <span class="sv-review-meter" class:is-low={g.minConfidence < 0.6} aria-hidden="true"><span style:width={pct(g.minConfidence)}></span></span>
                     {confidenceText(g)}
@@ -274,33 +293,33 @@
               </span>
             </button>
             <div class="sv-review-acts">
-              <button type="button" class="sv-review-act is-accept" disabled={busy} aria-label="Accept {g.count}: {g.label}" title="Accept {g.count}" onclick={() => acceptGroup(g)}>{@render check()}<span>Accept</span></button>
-              <button type="button" class="sv-review-act" disabled={busy} aria-label="Reject {g.count}: {g.label}" title="Reject {g.count}" onclick={() => rejectGroup(g)}>{@render cross()}<span>Reject</span></button>
+              <button type="button" class="sv-review-act is-accept" disabled={busy} aria-label={fill(m.acceptGroupLabel, { count: g.count, label: g.label })} title={fill(m.acceptGroupLabel, { count: g.count, label: g.label })} onclick={() => acceptGroup(g)}>{@render check()}<span>{m.accept}</span></button>
+              <button type="button" class="sv-review-act" disabled={busy} aria-label={fill(m.rejectGroupLabel, { count: g.count, label: g.label })} title={fill(m.rejectGroupLabel, { count: g.count, label: g.label })} onclick={() => rejectGroup(g)}>{@render cross()}<span>{m.reject}</span></button>
             </div>
           </div>
           {#if open}
             <div class="sv-review-body">
               {#if g.beforeDistribution}
-                <p class="sv-review-subtitle">From</p>
+                <p class="sv-review-subtitle">{m.from}</p>
                 <ul class="sv-review-dist">
                   {#each g.beforeDistribution as d, j (j)}
                     <li>
-                      <span class="sv-review-dist-label">{d.other ? 'other values' : showValue(d.value)}</span>
+                      <span class="sv-review-dist-label">{d.other ? m.otherValues : show(d.value)}</span>
                       <span class="sv-review-dist-bar" aria-hidden="true"><span style:width="{(d.count / maxOf(g)) * 100}%"></span></span>
                       <span class="sv-review-n">{d.count}</span>
                     </li>
                   {/each}
                 </ul>
               {/if}
-              <p class="sv-review-subtitle">{g.kind === 'unpatterned' ? (g.count > 200 ? 'First 200' : 'Every change') : `Sample of ${g.count}`}</p>
+              <p class="sv-review-subtitle">{g.kind === 'unpatterned' ? (g.count > 200 ? fill(m.firstN, { count: 200 }) : m.everyChange) : fill(m.sampleOf, { count: g.count })}</p>
               <ul class="sv-review-sample">
                 {#each listed(g) as p (p.id)}
                   <li>
-                    <button type="button" class="sv-review-sample-row" title="Show row {p.rowId} in the grid" onclick={() => review.reveal([p.id])}>
+                    <button type="button" class="sv-review-sample-row" title={fill(m.showRow, { row: p.rowId })} onclick={() => review.reveal([p.id])}>
                     <span class="sv-review-pair">
-                      <span class="sv-review-before">{showValue(p.before)}</span>
+                      <span class="sv-review-before">{show(p.before)}</span>
                       <span class="sv-review-arrow" aria-hidden="true">→</span>
-                      <span class="sv-review-after">{showValue(p.after)}</span>
+                      <span class="sv-review-after">{show(p.after)}</span>
                     </span>
                     {#if p.confidence !== undefined || p.reason}
                       <span class="sv-review-meta">
@@ -314,9 +333,9 @@
               </ul>
               <div class="sv-review-all">
                 <SvButton size="sm" variant="ghost" onclick={() => showInGrid(g)}>
-                  {revealed[g.key]?.id ? 'Next in grid' : 'Show in grid'}
+                  {revealed[g.key]?.id ? m.nextInGrid : m.showInGrid}
                 </SvButton>
-                {#if revealed[g.key]?.hidden}<span class="sv-review-hint">{revealed[g.key]!.hidden} hidden by filters or grouping</span>{/if}
+                {#if revealed[g.key]?.hidden}<span class="sv-review-hint">{fill(m.hiddenRows, { count: revealed[g.key]!.hidden })}</span>{/if}
               </div>
             </div>
           {/if}
@@ -326,30 +345,30 @@
   {:else if !conflicts.length}
     <div class="sv-review-empty">
       {#if tally.total}
-        <p class="sv-review-empty-title">All {tally.total} reviewed</p>
+        <p class="sv-review-empty-title">{fill(m.allReviewed, { count: tally.total })}</p>
         <p class="sv-review-hint">
-          {tally.accepted} accepted, {tally.rejected} rejected{#if tally.stale}, {tally.stale} not written because the cell changed{/if}.
+          {fill(m.reviewedSummary, { accepted: tally.accepted, rejected: tally.rejected })}{tally.stale ? fill(m.reviewedStale, { count: tally.stale }) : ''}.
         </p>
       {:else}
-        <p class="sv-review-empty-title">No proposals yet</p>
-        <p class="sv-review-hint">Edits an agent, an import or an AI helper proposes show up here, grouped by what they change.</p>
+        <p class="sv-review-empty-title">{m.noProposals}</p>
+        <p class="sv-review-hint">{m.noProposalsHint}</p>
       {/if}
     </div>
   {/if}
 
   {#if stale.length}
     <details class="sv-review-stale">
-      <summary>{stale.length} not written</summary>
+      <summary>{fill(m.notWritten, { count: stale.length })}</summary>
       <ul>
         {#each stale as p (p.id)}
-          <li><span class="sv-review-cell">Row {p.rowId}, {p.field}</span> {showValue(p.after)} <span class="sv-review-hint">{p.note}</span></li>
+          <li><span class="sv-review-cell">{fill(m.rowField, { row: p.rowId, field: p.field })}</span> {show(p.after)} <span class="sv-review-hint">{p.note}</span></li>
         {/each}
       </ul>
     </details>
   {/if}
 
   <p class="sv-review-live" role="status" aria-live="polite">{announce}</p>
-  {#if pendingCount || announce}<p class="sv-review-hint">Ctrl+Z in the grid undoes the last decision.</p>{/if}
+  {#if pendingCount || announce}<p class="sv-review-hint">{m.undoHint}</p>{/if}
 </section>
 
 <style>

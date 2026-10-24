@@ -143,7 +143,7 @@
 
 {#snippet proposedMark(mark: CardMark | null)}
   <!-- Proposals from a change review (@svgrid/enterprise/review) waiting on this row. -->
-  {#if mark}<span class="sv-card-proposed" title={mark.text}><span class="sv-card-proposed-dot" aria-hidden="true"></span>{mark.count} proposed</span>{/if}
+  {#if mark}<span class="sv-card-proposed" title={mark.text}><span class="sv-card-proposed-dot" aria-hidden="true"></span>{mark.label}</span>{/if}
 {/snippet}
 
 

@@ -6,13 +6,15 @@
 <script lang="ts">
   import type { Component, Snippet } from 'svelte'
 
-  let { own, before, beforeText, after, reason, source }: {
+  let { own, before, beforeText, after, empty, title }: {
     own: unknown
     before: unknown
     beforeText: string
     after: string
-    reason?: string
-    source: string
+    /** The text for a blank proposed value, in the review's wording. */
+    empty: string
+    /** "{source} proposes {value} - reason", built by the wrapper. */
+    title: string
   } = $props()
 
   // The grid's render configs (`renderComponent` / `renderSnippet`) are read by
@@ -23,11 +25,10 @@
   const ownComponent = $derived(isObj(own) && typeof own.component === 'function' ? (own as ComponentConfig) : null)
   const ownSnippet = $derived(isObj(own) && typeof own.snippet === 'function' ? (own as SnippetConfig) : null)
   const ownText = $derived(typeof own === 'string' || typeof own === 'number' ? String(own) : beforeText)
-  const title = $derived(`${source} proposes ${after || '(empty)'}${reason ? ` - ${reason}` : ''}`)
 </script>
 
 <span class="sv-review-ghost" {title}>
-  <span class="sv-review-ghost-after">{after || '(empty)'}</span>
+  <span class="sv-review-ghost-after">{after || empty}</span>
   {#if before != null && before !== ''}
     <s class="sv-review-ghost-before">
       {#if ownComponent}<ownComponent.component {...ownComponent.props ?? {}} />{:else if ownSnippet}{@render ownSnippet.snippet(ownSnippet.params)}{:else}{ownText}{/if}

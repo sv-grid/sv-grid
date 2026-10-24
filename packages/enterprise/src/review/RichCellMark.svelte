@@ -8,6 +8,7 @@
   import { formatValueForExport } from '@svgrid/grid'
   import { cellProposalFor } from './card-marks.svelte'
   import { showValue } from './cluster'
+  import { fill } from './messages'
 
   let { ctrl, row, column }: { ctrl: any; row: any; column: any } = $props()
 
@@ -16,7 +17,7 @@
     if (!proposal) return ''
     const def = column?.columnDef ?? {}
     const value = proposal.after
-    if (value == null || value === '') return '(empty)'
+    if (value == null || value === '') return proposal.empty
     if (typeof def.formatter === 'function') {
       try {
         return String(def.formatter({ value, row, column, table: ctrl?.grid }) ?? '')
@@ -31,7 +32,7 @@
 {#if proposal}
   <span
     class="sv-review-cellmark"
-    title="{proposal.source} proposes {text}{proposal.reason ? ` - ${proposal.reason}` : ''}"
+    title="{fill(proposal.proposes, { source: proposal.source, value: text })}{proposal.reason ? ` - ${proposal.reason}` : ''}"
   ><span aria-hidden="true">→</span> {text}</span>
 {/if}
 

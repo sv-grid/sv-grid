@@ -31,6 +31,7 @@ import { FLASH_BG, pendingFormats } from './formats'
 import { hasPending, stripPending, trackPendingSource, withPending } from './pending-filter'
 import { registerCardMarks, type CardMark } from './card-marks.svelte'
 import { registerRichCellMarks } from './rich-cells'
+import { fill, reviewMessages, type ReviewMessages } from './messages'
 import { showValue } from './cluster'
 import { wrapColumns } from './ghost'
 import type { ChangeSet, Proposal, ProposalGroup, ProposalInput, ProposalSource, ProposalStatus } from './types'
@@ -58,6 +59,8 @@ export type ReviewOptions<TData> = {
   /** Who decides, stamped on each decided proposal. */
   user?: string
   cluster?: ClusterOptions
+  /** Wording of everything the review shows (panel, group labels, marks); English by default. */
+  messages?: Partial<ReviewMessages>
   /**
    * Called after every decision, its undo and its redo, with copies of the
    * proposals it moved. Write these to an audit log of your own.
@@ -119,6 +122,7 @@ const cellKey = (rowId: string, field: string) => rowId + SEP + field
 export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
   if (!opts.setRows && !opts.server) throw new Error('[svgrid review] pass setRows (client data) or server (server row model)')
   if (opts.server && !opts.onCommit) throw new Error('[svgrid review] onCommit is required with a server row model')
+  const msg = reviewMessages(opts.messages)
   // Without a key: watermark and a one-time nudge. The review still runs.
   nudgeEnterprise('Change review')
   // Proposed values beside rich cells (selects, ratings): registered by the
@@ -240,7 +244,7 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
           }
         } else {
           other.status = 'conflict'
-          other.note = 'another source proposed a different value'
+          other.note = msg.noteConflict
           p.status = 'conflict'
           p.note = other.note
         }
@@ -286,7 +290,7 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
   function groups(): ProposalGroup[] {
     const v = version
     if (groupCache?.v === v) return groupCache.groups
-    const g = clusterProposals(list('pending'), { fieldLabel: fieldLabels(), ...opts.cluster })
+    const g = clusterProposals(list('pending'), { fieldLabel: fieldLabels(), ...opts.cluster, messages: { ...opts.messages, ...opts.cluster?.messages } })
     groupCache = { v, groups: g }
     return g
   }
@@ -314,12 +318,12 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
       if (i === undefined) {
         // A server row model only holds the loaded rows; the backend decides there.
         if (opts.server) return true
-        markStale(p, 'the row no longer exists', out)
+        markStale(p, msg.noteRowGone, out)
         return false
       }
       const current = (data[i] as Record<string, unknown>)[p.field]
       if (sameValue(current, p.before)) return true
-      markStale(p, 'the cell changed after this was proposed', out)
+      markStale(p, msg.noteCellChanged, out)
       return false
     })
   }
@@ -378,7 +382,7 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
       for (const id of ids) {
         const p = all.get(id)
         if (p?.status !== 'pending') continue
-        p.note = 'the grid is not ready'
+        p.note = msg.noteGridNotReady
         out.skipped.push(id)
       }
       bump()
@@ -390,7 +394,7 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
       const p = all.get(id)
       if (!p || p.status !== 'pending') continue
       if (inFlight.has(id) || (busyRow !== null && p.rowId === busyRow)) {
-        if (!inFlight.has(id)) p.note = 'the row is being edited'
+        if (!inFlight.has(id)) p.note = msg.noteRowEditing
         out.skipped.push(id)
         continue
       }
@@ -419,7 +423,7 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
       for (const id of late.stale) {
         const p = all.get(id)!
         if (opts.onCommit) {
-          p.note = 'saved, but the cell changed before it was written here'
+          p.note = msg.noteSavedStale
           out.committedStale.push(id)
         } else out.stale.push(id)
       }
@@ -686,7 +690,11 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
     for (const p of all.values()) if (p.rowId === rowId && (p.status === 'pending' || p.status === 'conflict')) ps.push(p)
     if (!ps.length) return null
     const labels = fieldLabels()
-    return { count: ps.length, text: ps.map((p) => `${labels(p.field)} → ${showValue(p.after)}`).join(', ') }
+    return {
+      count: ps.length,
+      label: fill(msg.cardProposed, { count: ps.length }),
+      text: ps.map((p) => `${labels(p.field)} → ${showValue(p.after, msg.empty)}`).join(', '),
+    }
   }
   /** Whether a row object is in the grid's data (cached per data array). */
   let owned: { data: ReadonlyArray<unknown>; rows: WeakSet<object> } | null = null
@@ -707,7 +715,7 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
         owns,
         cellProposal: (rowId, field) => {
           const p = pendingFor(rowId, field)
-          return p ? { after: p.after, source: p.source.label, reason: p.reason } : null
+          return p ? { after: p.after, source: p.source.label, reason: p.reason, proposes: msg.proposes, empty: msg.empty } : null
         },
       })
     }
@@ -821,6 +829,8 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
     get version() {
       return version
     },
+    /** The wording in effect: English with `messages` laid over it. */
+    messages: msg,
     add,
     get: (id: string) => {
       void version

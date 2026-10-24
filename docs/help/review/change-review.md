@@ -376,6 +376,29 @@ const review = createReview({
 })
 ```
 
+## Wording and languages
+
+Every string the review shows comes from one message map with English
+defaults: the panel, the group labels, the card and cell marks, and the notes
+on proposals that were not written. Pass any subset to `createReview`, and
+unset keys stay English. `{name}` placeholders are filled in; `REVIEW_MESSAGES`
+lists every key with its English text.
+
+```ts
+const review = createReview({
+  api: () => api,
+  setRows: (next) => (rows = next),
+  messages: {
+    acceptAll: 'Alle annehmen',
+    changes: '{count} Änderungen',
+    labelWhitespace: 'Leerzeichen in {field} kürzen',
+    cardProposed: '{count} vorgeschlagen',
+  },
+})
+```
+
+`<SvReviewPanel messages={...}>` overrides the review's wording for one panel.
+
 ## Licensing
 
 Change review is part of SvGrid Enterprise. Without a license key it runs with

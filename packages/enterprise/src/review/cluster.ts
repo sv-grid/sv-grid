@@ -25,9 +25,12 @@
  * share a group and neither do two fields.
  */
 import { isBlank } from './equal'
+import { fill, reviewMessages, type ReviewMessages } from './messages'
 import type { GroupKind, Proposal, ProposalGroup } from './types'
 
 export type ClusterOptions = {
+  /** Wording of the group labels (the `label*`, `case*`, `punct*` keys); English by default. */
+  messages?: Partial<ReviewMessages>
   /** The header to show for a field in group labels. Default: the field itself. */
   fieldLabel?: (field: string) => string
   /** Fewest members a `scale` group needs. Default 5. */
@@ -46,6 +49,7 @@ export function clusterProposals(
   opts: ClusterOptions = {},
 ): ProposalGroup[] {
   const fieldLabel = opts.fieldLabel ?? ((f: string) => f)
+  const msg = reviewMessages(opts.messages)
   const minScale = opts.minScale ?? 5
   const low = opts.lowConfidence ?? 0.6
   const order = new Map<string, number>()
@@ -101,7 +105,7 @@ export function clusterProposals(
       kind: b.kind,
       rule: RULE_KINDS.has(b.kind),
       param: b.param,
-      label: labelOf(b.kind, b.param, fieldLabel(b.field), members),
+      label: labelOf(b.kind, b.param, fieldLabel(b.field), members, msg),
       field: b.field,
       sourceId: b.sourceId,
       ids: members.map((m) => m.id),
@@ -326,52 +330,53 @@ export function visibleSpaces(s: string): string {
 }
 
 /** A value as a group label shows it: short, quoted, `(empty)` for blank, spaces visible. */
-export function showValue(v: unknown): string {
-  if (isBlank(v)) return '(empty)'
+export function showValue(v: unknown, empty = '(empty)'): string {
+  if (isBlank(v)) return empty
   if (v instanceof Date) return v.toISOString().slice(0, 10)
   const s = typeof v === 'string' ? v : typeof v === 'object' ? JSON.stringify(v) : String(v)
   const short = s.length > 40 ? s.slice(0, 39) + '...' : s
   return typeof v === 'string' ? `"${visibleSpaces(short)}"` : short
 }
 
-const CASE_LABEL: Record<string, string> = { upper: 'UPPER CASE', lower: 'lower case', title: 'Title Case', mixed: 'a different case' }
-
-function labelOf(kind: GroupKind, param: string, field: string, members: Proposal[]): string {
+function labelOf(kind: GroupKind, param: string, field: string, members: Proposal[], m: ReviewMessages): string {
   const first = members[0]!
+  const show = (v: unknown) => showValue(v, m.empty)
   switch (kind) {
     case 'whitespace':
-      return `Trim spaces in ${field}`
-    case 'case':
-      return `Change ${field} to ${CASE_LABEL[param]}`
+      return fill(m.labelWhitespace, { field })
+    case 'case': {
+      const name = { upper: m.caseUpper, lower: m.caseLower, title: m.caseTitle }[param] ?? m.caseMixed
+      return fill(m.labelCase, { field, case: name })
+    }
     case 'format': {
-      if (param === 'to-number') return `Convert ${field} text to numbers`
-      if (param.startsWith('date:')) return `Reformat ${field} dates as ${param === 'date:Date' ? 'dates' : param.slice(5)}`
-      if (param.startsWith('shape:')) return `Reformat ${field} as ${param.slice(6)}`
+      if (param === 'to-number') return fill(m.labelToNumber, { field })
+      if (param.startsWith('date:')) return fill(m.labelDates, { field, shape: param === 'date:Date' ? m.datesAsDates : param.slice(5) })
+      if (param.startsWith('shape:')) return fill(m.labelShape, { field, shape: param.slice(6) })
       const [removed, added] = JSON.parse(param.slice(6)) as [string, string]
+      const chars = (cs: string) => [...cs].map((c) => (c === ' ' ? m.punctSpaces : `"${c}"`)).join(' ')
       const parts: string[] = []
-      if (removed) parts.push(`remove ${quoteChars(removed)}`)
-      if (added) parts.push(`add ${quoteChars(added)}`)
-      const text = parts.join(', ')
-      return `${text.charAt(0).toUpperCase()}${text.slice(1)} in ${field}`
+      if (removed) parts.push(fill(m.punctRemove, { chars: chars(removed) }))
+      if (added) parts.push(fill(m.punctAdd, { chars: chars(added) }))
+      const change = parts.join(', ')
+      return fill(m.labelPunct, { field, change: change.charAt(0).toUpperCase() + change.slice(1) })
     }
     case 'scale': {
       const r = Number(param)
       const inv = 1 / r
-      if (Math.abs(r) < 1 && Math.abs(inv - Math.round(inv)) < 1e-9) return `Divide ${field} by ${Math.round(inv)}`
-      return `Multiply ${field} by ${param}`
+      if (Math.abs(r) < 1 && Math.abs(inv - Math.round(inv)) < 1e-9) return fill(m.labelDivide, { field, n: Math.round(inv) })
+      return fill(m.labelMultiply, { field, n: param })
     }
     case 'same-mapping': {
-      const froms = new Set(members.map((m) => keyOf(m.before))).size
-      const from = froms === 1 ? showValue(first.before) : `${froms} values`
-      return `${field}: ${from} → ${showValue(first.after)}`
+      const froms = new Set(members.map((p) => keyOf(p.before))).size
+      const from = froms === 1 ? show(first.before) : fill(m.mappingValues, { count: froms })
+      return fill(m.labelMapping, { field, from, to: show(first.after) })
     }
     case 'fill-empty':
-      return param === '*' ? `Fill empty ${field} (different values)` : `Fill empty ${field} with ${showValue(first.after)}`
+      return param === '*' ? fill(m.labelFillVarious, { field }) : fill(m.labelFill, { field, value: show(first.after) })
     case 'constant-target':
-      return `Set ${field} to ${showValue(first.after)}`
+      return fill(m.labelConstant, { field, value: show(first.after) })
     case 'unpatterned':
-      return `${field}: no shared pattern`
+      return fill(m.labelUnpatterned, { field })
   }
 }
 
-const quoteChars = (chars: string) => [...chars].map((c) => (c === ' ' ? 'spaces' : `"${c}"`)).join(' ')

@@ -3236,7 +3236,7 @@
 {#snippet proposed(row: TData)}
   <!-- Proposals from a change review (@svgrid/enterprise/review) waiting on this event's row. -->
   {@const mark = cardMarkFor(getRowId, row, indexOf.get(row) ?? 0)}
-  {#if mark}<span class="sv-sched-proposed" role="img" aria-label="{mark.count} proposed" title="{mark.count} proposed: {mark.text}"></span>{/if}
+  {#if mark}<span class="sv-sched-proposed" role="img" aria-label={mark.label} title="{mark.label}: {mark.text}"></span>{/if}
 {/snippet}
 
 <div class="sv-sched" role="group" aria-roledescription="calendar">

@@ -210,3 +210,31 @@ describe('panel polish', () => {
     destroy()
   })
 })
+
+it('takes its wording from the review, and a panel can override it', async () => {
+  const target = document.createElement('div')
+  document.body.appendChild(target)
+  let h!: { review: Review<any> }
+  const app = mount(Harness, {
+    target,
+    props: {
+      initial,
+      columns,
+      messages: { labelWhitespace: 'Leerzeichen in {field} kürzen', changes: '{count} Änderungen', acceptAll: 'Alle annehmen' },
+      panelMessages: { acceptAll: 'Alles übernehmen' },
+      onReady: (x: typeof h) => (h = x),
+    },
+  })
+  await vi.waitFor(() => expect(h).toBeDefined())
+  h.review.add({ source: AGENT, proposals: [
+    { rowId: 'a', field: 'name', before: '  Acme', after: 'Acme' },
+    { rowId: 'b', field: 'name', before: 'Globex ', after: 'Globex' },
+  ] })
+  flushSync()
+  expect(target.querySelector('.sv-review-label')!.textContent).toBe('Leerzeichen in Name kürzen')
+  expect(target.querySelector('.sv-review-conf')!.textContent!.replace(/\s+/g, ' ').trim()).toBe('2 Änderungen')
+  // The panel's own override wins over the review's.
+  expect([...target.querySelectorAll('button')].some((b) => b.textContent?.trim() === 'Alles übernehmen')).toBe(true)
+  unmount(app)
+  target.remove()
+})

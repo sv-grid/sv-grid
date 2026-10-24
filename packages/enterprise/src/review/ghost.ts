@@ -16,10 +16,11 @@
  */
 import { formatValueForExport, getGridExtension, renderComponent } from '@svgrid/grid'
 import { visibleSpaces } from './cluster'
+import { fill, type ReviewMessages } from './messages'
 import GhostCell from './GhostCell.svelte'
 import type { Proposal } from './types'
 
-type Ghostable = { pendingFor(rowId: string, field: string): Proposal | undefined }
+type Ghostable = { pendingFor(rowId: string, field: string): Proposal | undefined; messages?: ReviewMessages }
 
 /**
  * Whether wrapping this column's `cell` keeps the rest of its cells as they
@@ -78,15 +79,17 @@ export function wrapColumns<C extends ReadonlyArray<any>>(
         if (!p) return own
         // The column as the grid holds it: a field type's format is filled in after this wrap.
         const format = ctx.column?.columnDef?.format ?? def.format
+        const after = formatValueForExport(p.after, format)
+        const m = review.messages
         return renderComponent(GhostCell, {
           own,
           before: ctx.getValue(),
-          after: formatValueForExport(p.after, format),
+          after,
+          empty: m?.empty ?? '(empty)',
+          title: fill(m?.proposes ?? '{source} proposes {value}', { source: p.source.label, value: after || (m?.empty ?? '(empty)') }) + (p.reason ? ` - ${p.reason}` : ''),
           beforeText: typeof ctx.getValue() === 'string' && !format
             ? visibleSpaces(ctx.getValue())
             : formatValueForExport(ctx.getValue(), format),
-          reason: p.reason,
-          source: p.source.label,
         })
       },
     }

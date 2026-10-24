@@ -11,12 +11,21 @@
 
 export type CardMark = {
   count: number
+  /** "2 proposed", in the review's wording. */
+  label: string
   /** "Region -> EMEA, Phone -> 555-123-4567", for the card's title. */
   text: string
 }
 
 /** A pending proposal in one cell, as a cell mark shows it. */
-export type CellProposal = { after: unknown; source: string; reason?: string }
+export type CellProposal = {
+  after: unknown
+  source: string
+  reason?: string
+  /** The review's wording: "{source} proposes {value}" and the text for a blank value. */
+  proposes: string
+  empty: string
+}
 
 type Source = {
   cardMark(rowId: string): CardMark | null

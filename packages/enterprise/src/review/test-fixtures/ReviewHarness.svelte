@@ -4,19 +4,22 @@
   import { createReview, type Review } from '../model.svelte'
   import SvReviewPanel from '../SvReviewPanel.svelte'
 
-  let { initial, columns, onReady, confirmOver = 50, extra = {} }: {
+  let { initial, columns, onReady, confirmOver = 50, extra = {}, messages, panelMessages }: {
     initial: any[]
     columns: any[]
     onReady: (h: { review: Review<any>; api: any; rows: () => any[] }) => void
     confirmOver?: number
     /** More SvGrid props (a board, a gallery). */
     extra?: Record<string, unknown>
+    messages?: Record<string, string>
+    panelMessages?: Record<string, string>
   } = $props()
 
   // svelte-ignore state_referenced_locally
   let rows = $state(initial)
   let api = $state<any>(null)
-  const review = createReview<any>({ api: () => api, setRows: (next) => (rows = next) })
+  // svelte-ignore state_referenced_locally
+  const review = createReview<any>({ api: () => api, setRows: (next) => (rows = next), messages })
 </script>
 
 <SvGrid
@@ -33,4 +36,4 @@
     onReady({ review, api: a, rows: () => rows })
   }}
 />
-<SvReviewPanel {review} {confirmOver} />
+<SvReviewPanel {review} {confirmOver} messages={panelMessages} />

@@ -128,6 +128,17 @@ code pairs.
 - **Qualify addresses in `formats`** to reach another sheet
   (`'Orders!F2'`); `onAction` returning `true` takes an action over.
 
+### Change review (Enterprise) → [change-review.md](./rules/change-review.md)
+
+- **Writes nobody typed go through `createReview`** (`@svgrid/enterprise/review`):
+  AI helper output, agent edits and imports become proposals a person accepts
+  in `<SvReviewPanel>`. Never let an agent call `api.setCellValue` directly.
+- **The grid needs `getRowId`**, `columns={review.columns(columns)}` and
+  `conditionalFormats={review.formats}`; accepted values reach the app through
+  `setRows`.
+- **Agents get `createGridTools`**: tools that read rows and propose edits,
+  never write.
+
 ### Page blocks → [blocks.md](./rules/blocks.md)
 
 - **Blocks are the one copy-in layer.** For a login page, 2FA screen, app
@@ -211,4 +222,5 @@ Tailwind). Use the project's package runner (`npm create` / `pnpm create` /
 - [rules/columns.md](./rules/columns.md) - ColumnDef, custom cells, widths, types, formatting, editors
 - [rules/data-and-features.md](./rules/data-and-features.md) - feature toggles, the SvGridApi, selection, server-side data
 - [rules/theming.md](./rules/theming.md) - `--sg-*` tokens, dark mode, design-system presets, the shadcn bridge
+- [rules/change-review.md](./rules/change-review.md) - proposals from AI, agents and imports, reviewed before they are written
 - [rules/blocks.md](./rules/blocks.md) - page blocks (sign-in, app shell, pricing, ...) copied in with `npx @svgrid/ui add`
