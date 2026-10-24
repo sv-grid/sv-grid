@@ -28,7 +28,7 @@ export function registerRichCellMarks(): void {
       const p = cellProposalFor(ctrl?.props?.getRowId, row.original, String(row.id), def.field)
       if (!p) return null
       // The wrapper draws the proposal in cells it can wrap.
-      return canGhost(def) ? null : (RichCellMark as never)
+      return canGhost(def, (row.original as Record<string, unknown> | null)?.[def.field]) ? null : (RichCellMark as never)
     },
   })
 }

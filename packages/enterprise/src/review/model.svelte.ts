@@ -701,6 +701,7 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
       const live = set.proposals.filter((p) => p.status === 'pending' || p.status === 'conflict')
       const history = set.proposals.filter((p) => !live.includes(p) && !all.has(p.id))
       add({ id: set.id, title: set.title, source: set.source, proposals: live.filter((p) => !all.has(p.id)) })
+      sets.get(set.id)!.createdAt = set.createdAt
       for (const p of history) all.set(p.id, { ...p })
       sets.get(set.id)!.ids.push(...history.map((p) => p.id))
     }
@@ -863,7 +864,8 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
     if (!api) return { id: null, hidden: ids.length }
     const proposals = ids.map((i) => all.get(i)).filter((p): p is Proposal => !!p)
     const grouped = (api.getState().grouping?.length ?? 0) > 0
-    const paged = !!api.getOption('pageable') && !api.getOption('externalPagination')
+    // The grid pages with `pageable`, or the older `showPagination`.
+    const paged = !!(api.getOption('pageable') ?? api.getOption('showPagination')) && !api.getOption('externalPagination')
     let reachable: Array<{ p: Proposal; position: number }>
     if (grouped) {
       const idFn = rowIdFn(api)

@@ -35,3 +35,27 @@ test('the agent proposes, a person accepts, the log records it, a revert is prop
   await page.getByRole('tab', { name: 'Review', exact: true }).click()
   await expect(page.locator('.sv-review-label', { hasText: 'Company' }).first()).toBeVisible()
 })
+
+test('Accept rule groups leaves only the groups that need a person', async ({ page }) => {
+  test.setTimeout(90_000)
+  await page.goto(DEMO)
+  await page.locator('td[data-svgrid-row="0"]').first().waitFor({ timeout: 30_000 })
+  await expect(page.locator('.ard-status')).toHaveText(/Waiting for review/, { timeout: 30_000 })
+  await page.getByRole('button', { name: /^Accept rule groups/ }).click()
+  // The demo's rule groups hold more changes than confirmOver (50): it asks first.
+  await expect(page.locator('.sv-review-confirm')).toContainText('rule groups')
+  await page.locator('.sv-review-confirm').getByRole('button', { name: /^Yes/ }).click()
+  await expect(page.locator('.sv-review-badge.is-rule')).toHaveCount(0)
+  await expect(page.locator('.sv-review-badge.is-check').first()).toBeVisible()
+})
+
+test('a sample line takes the grid to its row and lights it', async ({ page }) => {
+  test.setTimeout(90_000)
+  await page.goto(DEMO)
+  await page.locator('td[data-svgrid-row="0"]').first().waitFor({ timeout: 30_000 })
+  await expect(page.locator('.ard-status')).toHaveText(/Waiting for review/, { timeout: 30_000 })
+  await page.locator('.sv-review-group-head').first().click()
+  await page.locator('.sv-review-sample-row').first().click()
+  await expect(page.locator('.sv-grid-cf-bg[style*="--sg-review-flash-bg"]').first()).toBeVisible()
+  await expect(page.locator('.sv-grid-cf-bg[style*="--sg-review-flash-bg"]')).toHaveCount(0, { timeout: 5000 })
+})

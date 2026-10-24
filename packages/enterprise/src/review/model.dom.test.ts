@@ -11,7 +11,7 @@ const IMPORT: ProposalSource = { kind: 'import', id: 'import', label: 'Import' }
  * returns, including its own writes such as a paste); `app` is the app's
  * array. They are the same until the grid writes on its own.
  */
-function setup(opts: { fullRowEditing?: boolean; visible?: (r: Row) => boolean; onCommit?: any; server?: any; pageSize?: number } = {}) {
+function setup(opts: { fullRowEditing?: boolean; visible?: (r: Row) => boolean; onCommit?: any; server?: any; pageSize?: number; legacyPaging?: boolean } = {}) {
   const rows: Row[] = [
     { id: 'a', name: 'Acme ', region: '', amount: 100 },
     { id: 'b', name: 'Globex', region: 'EMEA', amount: 200 },
@@ -22,7 +22,7 @@ function setup(opts: { fullRowEditing?: boolean; visible?: (r: Row) => boolean; 
   const displayed = () => state.grid.filter(opts.visible ?? (() => true))
   const api = {
     getData: () => state.grid,
-    getOption: (k: string) => (k === 'getRowId' ? (r: Row) => r.id : k === 'fullRowEditing' ? !!opts.fullRowEditing : k === 'pageable' ? !!opts.pageSize : undefined),
+    getOption: (k: string) => (k === 'getRowId' ? (r: Row) => r.id : k === 'fullRowEditing' ? !!opts.fullRowEditing : k === (opts.legacyPaging ? 'showPagination' : 'pageable') ? !!opts.pageSize : undefined),
     getActiveCell: () => state.active,
     getRowId: (i: number | Row) => (typeof i === 'number' ? displayed()[i]?.id ?? null : i.id),
     getColumns: () => [
@@ -505,4 +505,11 @@ describe('enterprise hardening', () => {
     expect((review.lastError!.error as Error).message).toBe('offline')
     expect(review.pending()).toHaveLength(0) // the decision stands
   })
+})
+
+it('reveal pages a grid paged with the older showPagination prop too', () => {
+  const { review, api } = setup({ pageSize: 1, legacyPaging: true })
+  review.add({ source: AGENT, proposals: props(['c', 'region', '', 'APAC']) })
+  review.reveal(review.pending().map((p) => p.id))
+  expect(api.setPage).toHaveBeenCalledWith(2)
 })

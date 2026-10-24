@@ -12,6 +12,17 @@
 
   let { ctrl, row, column }: { ctrl: any; row: any; column: any } = $props()
 
+  /** A value's label from a static options list ({ value, label } or plain values); null when there is none. */
+  function optionLabels(options: unknown): ((v: unknown) => string | null) | null {
+    if (!Array.isArray(options)) return null
+    const byValue = new Map<string, string>()
+    for (const o of options) {
+      if (o && typeof o === 'object' && 'value' in o) byValue.set(String((o as { value: unknown }).value), String((o as { label?: unknown }).label ?? (o as { value: unknown }).value))
+      else byValue.set(String(o), String(o))
+    }
+    return (v) => byValue.get(String(v)) ?? null
+  }
+
   const proposal = $derived(cellProposalFor(ctrl?.props?.getRowId, row?.original, String(row?.id), column?.columnDef?.field))
   const text = $derived.by(() => {
     if (!proposal) return ''
@@ -25,7 +36,10 @@
         // A formatter that needs more than a value: fall back to the value.
       }
     }
-    return Array.isArray(value) ? value.map((v) => showValue(v).replace(/^"|"$/g, '')).join(', ') : formatValueForExport(value, def.format)
+    // A list or chips column shows option labels, not stored values.
+    const labelOf = optionLabels(def.editorOptions)
+    const one = (v: unknown) => labelOf?.(v) ?? (Array.isArray(value) ? showValue(v).replace(/^"|"$/g, '') : formatValueForExport(v, def.format))
+    return Array.isArray(value) ? value.map(one).join(', ') : one(value)
   })
 </script>
 

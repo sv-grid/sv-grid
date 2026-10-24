@@ -111,9 +111,12 @@
   }
 
   // A failed undo / redo save is announced where the decisions are.
+  let announcedError = 0
   $effect(() => {
     const e = review.lastError
-    if (!e) return
+    // Once per failure: a change of wording must not repeat an old one.
+    if (!e || e.at === announcedError) return
+    announcedError = e.at
     const text = e.error instanceof Error ? e.error.message : String(e.error)
     announce = fill(e.during === 'undo' ? m.undoFailed : m.redoFailed, { error: text })
   })
@@ -144,10 +147,12 @@
    * When it was inside the panel, it moves to the group that took the decided
    * one's place, or to the heading when none are left.
    */
-  async function keepFocus(index: number) {
-    const panel = listEl?.closest('.sv-review')
+  /** Whether the focus is in the panel now, judged when a decision is made. */
+  const focusInPanel = () => {
     const active = document.activeElement
-    const wasHere = !active || active === document.body || (panel?.contains(active) ?? false)
+    return !!active && (listEl?.closest('.sv-review')?.contains(active) ?? false)
+  }
+  async function keepFocus(index: number, wasHere: boolean) {
     await tick()
     if (!wasHere) return
     const heads = listEl?.querySelectorAll<HTMLElement>('.sv-review-group-head') ?? []
@@ -159,13 +164,17 @@
 
   const acceptGroup = (g: ProposalGroup) => {
     const index = groups.indexOf(g)
-    guard(fill(m.confirmAcceptGroup, { count: g.count, label: g.label }), g.count, () => void acceptIds(g.ids).then(() => keepFocus(index)))
+    guard(fill(m.confirmAcceptGroup, { count: g.count, label: g.label }), g.count, () => {
+      const here = focusInPanel()
+      void acceptIds(g.ids).then(() => keepFocus(index, here))
+    })
   }
   const rejectGroup = (g: ProposalGroup) => {
     const index = groups.indexOf(g)
     guard(fill(m.confirmRejectGroup, { count: g.count, label: g.label }), g.count, () => {
+      const here = focusInPanel()
       say(review.reject(g.ids))
-      void keepFocus(index)
+      void keepFocus(index, here)
     })
   }
 

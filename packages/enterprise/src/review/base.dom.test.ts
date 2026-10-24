@@ -119,3 +119,34 @@ describe('rich cells', () => {
     destroy()
   })
 })
+
+describe('rich cells without field types', () => {
+  it('a boolean column with no type shows the mark; a list column shows the option label', async () => {
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    let h!: { review: Review<any> }
+    const { default: Harness } = await import('./test-fixtures/ReviewHarness.svelte')
+    const { mount: m2, unmount: u2 } = await import('svelte')
+    const app = m2(Harness, {
+      target,
+      props: {
+        initial: [{ id: 'a', done: false, stage: 1 }, { id: 'b', done: true, stage: 2 }],
+        columns: [
+          { field: 'done', header: 'Done' },
+          { field: 'stage', header: 'Stage', editorType: 'list', editorOptions: [{ value: 1, label: 'Open' }, { value: 3, label: 'Closed' }] },
+        ],
+        onReady: (x: typeof h) => (h = x),
+      },
+    })
+    await vi.waitFor(() => expect(h).toBeDefined())
+    h.review.add({ source: AGENT, proposals: [
+      { rowId: 'a', field: 'done', before: false, after: true },
+      { rowId: 'a', field: 'stage', before: 1, after: 3 },
+    ] })
+    flushSync()
+    await vi.waitFor(() => expect(target.querySelector('[data-col-id="done"] .sv-review-cellmark')?.textContent).toContain('true'))
+    expect(target.querySelector('[data-col-id="stage"] .sv-review-cellmark')!.textContent).toContain('Closed')
+    u2(app)
+    target.remove()
+  })
+})
