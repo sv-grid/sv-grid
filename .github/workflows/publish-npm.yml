@@ -47,6 +47,7 @@ on:
 permissions:
   contents: write
   id-token: write # npm provenance
+  actions: write # dispatch the website deploy after a release
 
 concurrency:
   group: publish-npm
@@ -170,6 +171,19 @@ jobs:
           # Regenerating here costs nothing when mcp was not in the release: the
           # generator is deterministic, so there is simply nothing to add.
           node tools/sync-plugin.mjs
+          # The doc indexes print the @svgrid/grid version (llms*.txt, docs.json),
+          # so a release left them naming the previous one until someone ran the
+          # generator by hand. No package watches docs/, so this triggers no
+          # release of its own. packages/mcp/src/data.ts also carries the grid and
+          # enterprise versions, but it is under mcp's watch paths: it is staged
+          # only when mcp itself was published, whose prepublishOnly build has
+          # just regenerated it at the bumped versions. Committing it after a
+          # grid-only release would release mcp again on the next run.
+          node tools/build-docs-index.mjs
+          git add -- docs/docs.json docs/llms.txt docs/llms-full.txt docs/llms-small.txt
+          if [ "${{ contains(fromJSON(steps.release.outputs.packages_json), 'mcp') }}" = "true" ]; then
+            git add -- packages/mcp/src/data.ts
+          fi
           git add -- ${{ steps.release.outputs.files }} plugins/svgrid
           git commit -m "release: ${{ steps.release.outputs.summary }} [skip ci]" || echo "nothing to commit"
           # main can gain commits while a release builds; rebase the bump on top
@@ -184,6 +198,15 @@ jobs:
             git tag "$tag"
             git push origin "$tag"
           done
+
+      # The release commit is [skip ci], so it deploys nothing, and the live
+      # llms.txt / docs.json kept naming the previous version until an unrelated
+      # push. A workflow_dispatch is one of the events GITHUB_TOKEN may trigger.
+      - name: Deploy the website with the released versions
+        if: steps.release.outputs.any == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy-website.yml --ref main
 
       # Packages with no release tag yet are already on npm at their current
       # version, so the first run starts their history instead of republishing.
