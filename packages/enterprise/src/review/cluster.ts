@@ -306,13 +306,21 @@ function rankOf(g: ProposalGroup, low: number): number {
 
 // ---- labels ---------------------------------------------------------------
 
-/** A value as a group label shows it: short, quoted, `(empty)` for blank. */
+/**
+ * Spaces a reader cannot see, drawn as `·`: leading and trailing ones and runs
+ * of two or more. A trim proposal otherwise reads "Acme -> Acme".
+ */
+export function visibleSpaces(s: string): string {
+  return s.replace(/^\s+|\s+$/g, (m) => '·'.repeat(m.length)).replace(/ {2,}/g, (m) => '·'.repeat(m.length))
+}
+
+/** A value as a group label shows it: short, quoted, `(empty)` for blank, spaces visible. */
 export function showValue(v: unknown): string {
   if (isBlank(v)) return '(empty)'
   if (v instanceof Date) return v.toISOString().slice(0, 10)
   const s = typeof v === 'string' ? v : typeof v === 'object' ? JSON.stringify(v) : String(v)
   const short = s.length > 40 ? s.slice(0, 39) + '...' : s
-  return typeof v === 'string' ? `"${short}"` : short
+  return typeof v === 'string' ? `"${visibleSpaces(short)}"` : short
 }
 
 const CASE_LABEL: Record<string, string> = { upper: 'UPPER CASE', lower: 'lower case', title: 'Title Case', mixed: 'a different case' }

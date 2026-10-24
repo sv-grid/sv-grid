@@ -50,7 +50,7 @@ describe('SvReviewPanel in a grid', () => {
     flushSync()
     await vi.waitFor(() => expect(target.querySelector('.sv-review-ghost')).not.toBeNull())
     const ghosts = [...target.querySelectorAll('.sv-review-ghost')].map((g) => g.textContent!.replace(/\s+/g, ' ').trim())
-    expect(ghosts).toContain('Acme Acme')
+    expect(ghosts).toContain('Acme ··Acme') // proposed first, then the old value struck, its spaces visible
     expect(ghosts).toContain('AMER')
     // The boolean column keeps its checkbox: it is tinted, never wrapped.
     expect(target.querySelectorAll('.sv-grid-checkbox').length).toBeGreaterThan(0)

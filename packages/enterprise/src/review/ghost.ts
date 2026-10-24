@@ -10,6 +10,7 @@
  * the tint and the glyph from `formats.ts`.
  */
 import { formatValueForExport, renderComponent } from '@svgrid/grid'
+import { visibleSpaces } from './cluster'
 import GhostCell from './GhostCell.svelte'
 import type { Proposal } from './types'
 
@@ -65,7 +66,9 @@ export function wrapColumns<C extends ReadonlyArray<any>>(
           own,
           before: ctx.getValue(),
           after: formatValueForExport(p.after, def.format),
-          beforeText: formatValueForExport(ctx.getValue(), def.format),
+          beforeText: typeof ctx.getValue() === 'string' && !def.format
+            ? visibleSpaces(ctx.getValue())
+            : formatValueForExport(ctx.getValue(), def.format),
           reason: p.reason,
           source: p.source.label,
         })

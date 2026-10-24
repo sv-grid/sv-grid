@@ -224,6 +224,12 @@ other pages.
 them writes the data: the agent's edits arrive in the review like any other
 proposals, and a person decides.
 
+<div data-docs-demo="704-agent-review-desk" data-height="700"></div>
+
+In the demo a scripted CRM agent calls these tools step by step; each step
+shows the tool call it made. The Log tab lists every decision as
+`onDecision` reports it.
+
 | Tool | What it does |
 |---|---|
 | `grid_describe` | The columns (field, header, type), the row count, and which fields the agent may edit. |

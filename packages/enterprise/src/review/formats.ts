@@ -7,8 +7,12 @@
 import type { ConditionalFormat } from '@svgrid/grid'
 import type { Proposal } from './types'
 
-/** Theme it with `--sg-review-pending-bg`; it defaults to a light accent wash. */
-export const PENDING_BG = 'var(--sg-review-pending-bg, color-mix(in srgb, var(--sg-accent, #2563eb) 14%, transparent))'
+/**
+ * Theme it with `--sg-review-pending-bg`. The default is a light amber wash
+ * from `--sg-warning`, kept apart from the accent, which themes use for
+ * selection and focus.
+ */
+export const PENDING_BG = 'var(--sg-review-pending-bg, color-mix(in srgb, var(--sg-warning, #d97706) 13%, transparent))'
 /** Drawn before the value, so a pending cell is never marked by colour alone. */
 export const PENDING_ICON = '•'
 

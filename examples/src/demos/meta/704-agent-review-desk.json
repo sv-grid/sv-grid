@@ -1,0 +1,27 @@
+{
+  "description": "An AI agent cleans a customer table in a Svelte 5 data grid through tool calls, and every edit waits for a person: proposals drawn in their cells, grouped by what they change, accepted or rejected a group at a time, logged, undoable and revertible.",
+  "keywords": [
+    "ai agent data grid review",
+    "human in the loop ai svelte",
+    "llm tool calls data grid",
+    "approve ai edits table"
+  ],
+  "faq": [
+    {
+      "question": "Which tools does the agent get?",
+      "answer": "createGridTools returns four: grid_describe (columns, row count, which fields it may edit), grid_query_rows (rows with their ids, filtered and paged), grid_propose_edits (edits as proposals with a reason and a confidence) and grid_review_status (what was accepted, rejected or went stale). Each is a name, a description, a JSON schema and an execute function, so any tool-use loop can call them."
+    },
+    {
+      "question": "Can the agent write to the data directly?",
+      "answer": "No. grid_propose_edits adds proposals to the review; only an accept writes, and it first checks that each cell still holds the value the agent saw."
+    },
+    {
+      "question": "Where does the audit trail come from?",
+      "answer": "createReview calls onDecision after every accept, reject, undo and redo with who decided and copies of the proposals. The demo's Log tab lists them; an app writes them to its own store."
+    },
+    {
+      "question": "Does it work in a browser agent?",
+      "answer": "registerWebMcpTools registers the same tools with the browser's WebMCP API (document.modelContext), a draft that browsers are still adding. Where it is missing, the call does nothing."
+    }
+  ]
+}

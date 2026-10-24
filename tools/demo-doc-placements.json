@@ -534,6 +534,7 @@
     "701-enterprise-grid-filters"
   ],
   "docs/help/review/change-review.md": [
-    "702-change-review"
+    "702-change-review",
+    "704-agent-review-desk"
   ]
 }
