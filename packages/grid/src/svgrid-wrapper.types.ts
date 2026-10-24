@@ -455,9 +455,11 @@ export type SvGridApi<
   getData(): ReadonlyArray<TData>
 
   /**
-   * Where a row sits in the filtered, sorted rows across every page (group
-   * banners included, as paging counts them), or null when filters hide it.
-   * With client paging, `Math.floor(position / pageSize)` is its page.
+   * Where a row sits in the filtered, sorted rows across every page, or null
+   * when a filter hides it or it is inside a collapsed group. Without
+   * grouping, `Math.floor(position / pageSize)` is its page under client
+   * paging. With grouping, pages are counted in groups and that formula does
+   * not hold.
    */
   getRowPosition(rowId: string): number | null
 

@@ -35,6 +35,11 @@ into covered cells on its own; a consumer that merges keeps them empty or
 marks them read-only through the column's `editable`, which is what the
 spreadsheet shell's Merge & Center does.
 
+The merge code loads with the first `mergedCells`, not with every grid, so
+grids that never merge do not carry it. Until it lands the cells draw
+unmerged: one frame in the browser, and server-rendered HTML shows them
+unmerged until the page hydrates.
+
 ## 1. Explicit merges (spreadsheet-style, DOM action)
 
 Declare exact merges as `MergeSpec[]` and apply them with the

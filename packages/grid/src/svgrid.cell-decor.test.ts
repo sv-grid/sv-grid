@@ -75,3 +75,21 @@ describe('api.getRowPosition', () => {
     }
   })
 })
+
+it('getRowPosition answers many lookups in one pass over the rows', async () => {
+  const many = Array.from({ length: 50_000 }, (_, i) => ({ id: i, name: `n${i}`, score: i % 97 }))
+  const g = mountGrid({ data: many, virtualization: true, containerHeight: 300 })
+  try {
+    await settle()
+    const api = g.api()
+    const start = performance.now()
+    let found = 0
+    for (let i = 0; i < 20_000; i++) if (api.getRowPosition(String(i * 2)) !== null) found++
+    const ms = performance.now() - start
+    expect(found).toBe(20_000)
+    // One map per row list: before, each call scanned all 50,000 rows.
+    expect(ms).toBeLessThan(500)
+  } finally {
+    g.destroy()
+  }
+})

@@ -97,6 +97,7 @@ export function createGridApi<
   TFeatures extends TableFeatures = TableFeatures,
   TData extends RowData = RowData,
 >(ctx: any) {
+  let positions: { rows: unknown; map: Map<string, number> } | null = null;
   function buildApi(): SvGridApi<TFeatures, TData> {
     const findColumn = (columnId: string) =>
       ctx.grid.getAllColumns().find((column: any) => column.id === columnId);
@@ -561,8 +562,16 @@ export function createGridApi<
         return ctx.internalData;
       },
       getRowPosition(id) {
-        const i = ctx.allRowsBeforePagination.findIndex((r: any) => r.id === id);
-        return i < 0 ? null : i;
+        // One map per filtered, sorted row list: a caller asking for many rows
+        // (a review stepping through a group) costs one pass, not one per row.
+        const rows = ctx.allRowsBeforePagination;
+        let cached = positions;
+        if (!cached || cached.rows !== rows) {
+          const map = new Map<string, number>();
+          rows.forEach((r: any, i: number) => map.set(r.id, i));
+          cached = positions = { rows, map };
+        }
+        return cached.map.get(id) ?? null;
       },
       getRowId(row) {
         // The stable id the grid keys a row by: what `getRowId` computed,
