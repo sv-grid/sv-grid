@@ -8,7 +8,10 @@ import {
 import "./sv-grid-scrollbar";
 
 import { getKeyboardIntent, getNextActiveCell, getEntryStep, pastCollapsed } from "./keyboard";
-import { stepPastMerge } from "./merges";
+// The merges module loads with the first `mergedCells` (ctx.merges); without
+// merges a move lands where it was going.
+const stepPast = (ctx: any, from: { rowIndex: number; colIndex: number }, next: { rowIndex: number; colIndex: number }, bounds: { maxRow: number; maxCol: number }) =>
+  ctx.mergeIndex ? ctx.merges.stepPastMerge(ctx.mergeIndex, from, next, bounds) : next;
 import { hasGridShortcuts, runGridShortcuts } from "./shortcut-registry";
 import { undoHistory, redoHistory } from "./history";
 import { buildCommandContext } from "./command-context";
@@ -264,7 +267,7 @@ export function createKeyboard<
         range: ctx.activeRangeRect(),
         collapsed,
       });
-      const landed = stepPastMerge(ctx.mergeIndex, current, step.cell, bounds);
+      const landed = stepPast(ctx, current, step.cell, bounds);
       ctx.setActiveCell(landed.rowIndex, landed.colIndex);
       ctx.tabRunOrigin = step.tabOrigin;
       ctx.scrollActiveCellIntoView(landed.rowIndex, landed.colIndex);
@@ -297,7 +300,7 @@ export function createKeyboard<
       const anchored = !!ctx.selectionRange?.anchor;
       if (!anchored) ctx.setSelection(current.rowIndex, current.colIndex);
       const from = anchored ? ctx.selectionRange.focus ?? current : current;
-      const next = stepPastMerge(ctx.mergeIndex, from, pastCollapsed(from, getNextActiveCell(from, intent, { ...bounds, pageSize: pageStep() }), bounds, collapsed), bounds);
+      const next = stepPast(ctx, from, pastCollapsed(from, getNextActiveCell(from, intent, { ...bounds, pageSize: pageStep() }), bounds, collapsed), bounds);
       ctx.extendSelection(next.rowIndex, next.colIndex);
       // Scroll along the axis of the key only, as Excel does: Shift+Right
       // brings the new column into view without moving the rows, so a
@@ -306,7 +309,7 @@ export function createKeyboard<
       ctx.scrollActiveCellIntoView(sideways ? current.rowIndex : next.rowIndex, sideways ? next.colIndex : current.colIndex);
       return;
     }
-    const next = stepPastMerge(ctx.mergeIndex, current, pastCollapsed(current, getNextActiveCell(current, intent, { ...bounds, pageSize: pageStep() }), bounds, collapsed), bounds);
+    const next = stepPast(ctx, current, pastCollapsed(current, getNextActiveCell(current, intent, { ...bounds, pageSize: pageStep() }), bounds, collapsed), bounds);
     ctx.setActiveCell(next.rowIndex, next.colIndex);
     ctx.scrollActiveCellIntoView(next.rowIndex, next.colIndex);
     ctx.setSelection(next.rowIndex, next.colIndex);

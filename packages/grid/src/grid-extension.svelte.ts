@@ -27,6 +27,12 @@ export type GridExtension = {
   cell?: Component<any>
   /** Whether `cell` draws this column (its type has a cell of its own); the grid draws it otherwise. */
   hasCell?: (def: any) => boolean
+  /**
+   * Drawn after a body cell's content, inside the cell, for this cell (null:
+   * nothing). For a mark that must not replace the cell: a proposed value
+   * beside a select or a rating. Props: `{ ctrl, row, column, value }`.
+   */
+  cellDecor?: (ctrl: any, row: any, column: any) => Component<any> | null | undefined
   /** Rendered as the last child of the header row; it draws its own `<th>`. Props: `{ ctrl }`. */
   headerEnd?: Component<any>
   /** An icon before a column's header label (24x24 SVG path data), e.g. a field's type; null for none. */

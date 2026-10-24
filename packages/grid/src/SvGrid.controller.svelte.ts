@@ -60,7 +60,6 @@ import {
   } from "./SvGrid.helpers";
 import { createFeatures } from "./features";
 import { pushHistory, type HistoryStep as SharedHistoryStep } from "./history";
-import { buildMergeIndex } from "./merges";
 import {
     createScrollSync,
   } from "./scroll-sync";
@@ -3344,7 +3343,13 @@ export function createSvGridController<
   );
   const frozenRowList = $derived(frozenRowCount ? allRows.slice(0, frozenRowCount) : []);
   /** The merged cells, indexed; null (the usual case) costs nothing. */
-  const mergeIndex = $derived(buildMergeIndex(props.mergedCells));
+  // Merged cells load with the first `mergedCells`, not with the grid, as the
+  // formatting engine does: until the chunk lands the cells draw unmerged.
+  let merges = $state.raw<typeof import("./merges") | null>(null);
+  $effect(() => {
+    if (props.mergedCells?.length && !merges) import("./merges").then((m) => (merges = m));
+  });
+  const mergeIndex = $derived(merges ? merges.buildMergeIndex(props.mergedCells) : null);
   /**
    * Rows laid out as flex lines rather than table rows (SvGrid.css,
    * `.sv-grid-table-flex`): a change to one row's cells no longer lays out
@@ -5034,6 +5039,7 @@ export function createSvGridController<
     get columnWidths() { return columnWidths; },
     get collapsedColumns() { return collapsedColumns; },
     get mergeIndex() { return mergeIndex; },
+    get merges() { return merges; },
     get flexRows() { return flexRows; },
     get flexLayoutActive() { return flexLayoutActive; },
     get setColumnCollapsed() { return setColumnCollapsed; },

@@ -455,6 +455,13 @@ export type SvGridApi<
   getData(): ReadonlyArray<TData>
 
   /**
+   * Where a row sits in the filtered, sorted rows across every page (group
+   * banners included, as paging counts them), or null when filters hide it.
+   * With client paging, `Math.floor(position / pageSize)` is its page.
+   */
+  getRowPosition(rowId: string): number | null
+
+  /**
    * The stable id the grid keys a row by: what the `getRowId` prop
    * computed, or the row's position when no `getRowId` is set. Pass a
    * display index (the space `getActiveCell`, `scrollToRow` and the cell

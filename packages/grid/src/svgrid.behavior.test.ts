@@ -1070,7 +1070,8 @@ describe('SvGrid - mergedCells', () => {
       ],
     })
     try {
-      await tick()
+      // The merges module loads with the first `mergedCells`: wait for it to draw.
+      await vi.waitFor(() => expect(td(target, 0, 1)?.getAttribute('colspan')).toBe('2'))
       const wide = td(target, 0, 1)
       expect(wide?.getAttribute('colspan')).toBe('2')
       expect(wide?.dataset.mergeOrigin).toBe('0:1')
@@ -1098,7 +1099,8 @@ describe('SvGrid - mergedCells', () => {
       mergedCells: [{ rowIndex: 0, colIndex: 1, rowSpan: 1, colSpan: 2 }],
     })
     try {
-      await tick()
+      // The merges module loads with the first `mergedCells`: wait for it to draw.
+      await vi.waitFor(() => expect(td(target, 0, 1)?.getAttribute('colspan')).toBe('2'))
       const ctx = api.getCommandContext()
       ctx.setActiveCell(0, 2)
       expect(ctx.activeCell).toMatchObject({ rowIndex: 0, colIndex: 1 })

@@ -20,7 +20,6 @@
     RenderSnippetConfig,
     RenderComponentConfig,
   } from "./render-component";
-  import { mergeDrawAt } from "./merges";
   import { localizeOperatorLabel, takesNoValue } from "./filter-operators";
   import { GRID_ICON_GLYPHS, type GridIconName } from "./grid-icons";
   // The whole editor UI - including the lazy SvGridDropdown / SvDateTimePicker
@@ -372,7 +371,8 @@
    * boolean read at each of the ~250 cells instead of two snippet frames.
    */
   const plainCellBody = $derived(
-    !groupColumnMode && !treeData && !hasConditionalFormats,
+    // A cell mark (gridExt.cellDecor) needs the formatted path it is drawn in.
+    !groupColumnMode && !treeData && !hasConditionalFormats && !gridExt?.cellDecor,
   );
   const autoGroupCell = $derived(ctrl.autoGroupCell);
   const isAutoGroupColumn = (id: string): boolean =>
@@ -713,7 +713,8 @@
    */
   function plainCellText(row: Row<TData>, column: Column<TData>, value: unknown): string | null {
     const def = column.columnDef;
-    if (def.cell != null || def.sparkline) return null;
+    // A cell mark (gridExt.cellDecor) is drawn by the full cell path, not this one.
+    if (def.cell != null || def.sparkline || gridExt?.cellDecor) return null;
     // A field type with a cell of its own (grid-extension) draws through cellBody.
     if (def.fieldType && gridExt?.cell && gridExt.hasCell?.(def) !== false) return null;
     const editor = def.editorType;
@@ -731,7 +732,7 @@
   function bodyCellInfo(row: Row<TData>, rowIndex: number, rendered: (typeof renderedColumns)[number]) {
     const colIndex = rendered.item.index;
     const draw = mergeIndex
-      ? mergeDrawAt(mergeIndex, rowIndex, colIndex, { ...(rowIndex < frozenRowCount ? mergeFrozenWindow : mergeBodyWindow), ...columnRunOf(colIndex) })
+      ? ctrl.merges!.mergeDrawAt(mergeIndex, rowIndex, colIndex, { ...(rowIndex < frozenRowCount ? mergeFrozenWindow : mergeBodyWindow), ...columnRunOf(colIndex) })
       : null;
     if (draw?.kind === "skip") return null;
     const cellRow = draw?.kind === "continuation" ? (allRows[draw.merge.rowIndex] ?? row) : row;
@@ -1668,6 +1669,7 @@
     {:else}
       {@render cellBody(row, column, cellValue)}
     {/if}
+    {#if gridExt?.cellDecor}{@const Decor = gridExt.cellDecor(ctrl, row, column)}{#if Decor}<Decor {ctrl} {row} {column} value={cellValue} />{/if}{/if}
   {/snippet}
 
 

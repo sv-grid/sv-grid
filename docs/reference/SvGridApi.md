@@ -184,6 +184,25 @@ Returns the rows that are currently **visible** in the grid - after
 filter, sort, and pagination. Use for `pro.exportData(...)` when you
 want to export the current view.
 
+### `getRowPosition(rowId)`
+
+```ts
+getRowPosition(rowId: string): number | null
+```
+
+Where a row sits in the filtered, sorted rows across every page (group
+banners included, as paging counts them), or `null` when a filter hides
+it. With client paging, `Math.floor(position / pageSize)` is its page:
+
+```ts
+const position = api.getRowPosition('ord-1042')
+if (position !== null) {
+  const { pageSize } = api.getPageInfo()
+  api.setPage(Math.floor(position / pageSize))
+  api.scrollToRow(position % pageSize)
+}
+```
+
 ## Enterprise extensions
 
 After `installEnterprise(api)`, the same object also exposes:

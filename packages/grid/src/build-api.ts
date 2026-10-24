@@ -560,6 +560,10 @@ export function createGridApi<
       getData() {
         return ctx.internalData;
       },
+      getRowPosition(id) {
+        const i = ctx.allRowsBeforePagination.findIndex((r: any) => r.id === id);
+        return i < 0 ? null : i;
+      },
       getRowId(row) {
         // The stable id the grid keys a row by: what `getRowId` computed,
         // or the row's position when no `getRowId` prop is set. A number is

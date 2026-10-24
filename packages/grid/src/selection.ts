@@ -14,7 +14,6 @@ import {
   getColumnBaseValue,
   isGroupRow,
 } from "./cell-values";
-import { expandRectToMerges, originOf, endOf } from "./merges";
 
 export function createSelection<
   TFeatures extends TableFeatures = TableFeatures,
@@ -85,7 +84,7 @@ export function createSelection<
   function setActiveCell(rowIndex: number, colIndex: number) {
     // The active cell inside a merge is its origin: the one that draws, the
     // one the formula bar shows, the one an edit writes.
-    ({ rowIndex, colIndex } = originOf(ctx.mergeIndex, rowIndex, colIndex));
+    if (ctx.mergeIndex) ({ rowIndex, colIndex } = ctx.merges.originOf(ctx.mergeIndex, rowIndex, colIndex));
     ctx.userHasActivatedCell = true;
     // A click, an arrow, a jump: the Tab run is over. The Tab and Enter
     // paths put the origin back after this call when it should live on.
@@ -252,12 +251,14 @@ export function createSelection<
     const a = range?.anchor;
     const f = range?.focus;
     if (!a || !f) return null;
-    return expandRectToMerges(ctx.mergeIndex, {
+    const rect = {
       minRow: Math.min(a.rowIndex, f.rowIndex),
       maxRow: Math.max(a.rowIndex, f.rowIndex),
       minCol: Math.min(a.colIndex, f.colIndex),
       maxCol: Math.max(a.colIndex, f.colIndex),
-    });
+    };
+    // A merge index exists only once the merges module (ctx.merges) loaded.
+    return ctx.mergeIndex ? ctx.merges.expandRectToMerges(ctx.mergeIndex, rect) : rect;
   }
 
   type SelectionRect = { minRow: number; maxRow: number; minCol: number; maxCol: number };
@@ -357,7 +358,7 @@ export function createSelection<
 
     // A td inside a merge draws to the merge's far corner, so its bottom and
     // right edges are the merge's, not the cell's.
-    const end = endOf(ctx.mergeIndex, rowIndex, colIndex);
+    const end = ctx.mergeIndex ? ctx.merges.endOf(ctx.mergeIndex, rowIndex, colIndex) : { rowIndex, colIndex };
     for (const rect of getSelectionRects()) {
       if (
         rowIndex < rect.minRow ||
@@ -397,7 +398,7 @@ export function createSelection<
     const fh = ctx.fillHandleCell;
     // The handle sits on the range's bottom-right cell; when that is inside
     // a merge, the td that draws the merge carries it.
-    const end = fh ? endOf(ctx.mergeIndex, rowIndex, colIndex) : null;
+    const end = fh ? (ctx.mergeIndex ? ctx.merges.endOf(ctx.mergeIndex, rowIndex, colIndex) : { rowIndex, colIndex }) : null;
     const fillHandle = !!fh && !!end && fh.rowIndex === end.rowIndex && fh.colIndex === end.colIndex;
     if (!active && !edges && !fillHandle) return null;
     return { active, edges, fillHandle };
