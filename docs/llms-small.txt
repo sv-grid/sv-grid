@@ -43,7 +43,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## Key facts
 
-- Package: `@svgrid/grid` 3.0.15, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
+- Package: `@svgrid/grid` 3.0.21, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
 - Peer dependency: `svelte` ^5. Works in SvelteKit, including server-side rendering.
 - Size (gzip, Svelte external, measured 2026-09-22 on 3.0.4): 97.6 KB for the full `<SvGrid>` entry plus 10.5 KB CSS; 2.7 KB for the headless entry. Features load on demand.
 - Styling: `--sg-*` CSS custom properties, and 20 theme stylesheets, each with a light and a dark palette. No CSS framework is required; Tailwind and shadcn-svelte setups are documented.
@@ -51,7 +51,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - AI helpers ship free in `@svgrid/grid` and work with any model: `setAIProvider`, `aiFilter`, `aiSmartFill`, `aiSummarize`, `aiClassify`, `aiFindAnomalies`.
 - For coding assistants: an MCP server (`npx -y @svgrid/mcp`, MIT) serves the version-pinned API and demo sources; an Agent Skill installs with `npx skills add sv-grid/sv-grid`.
 - Paid add-on, not needed for anything above: `@svgrid/enterprise` adds Excel / PDF export, import, print, pivot tables, the Server-Side Row Model, alert rules and the Kanban board, Scheduler and Spreadsheet views. Prices start at $299 per developer: https://svgrid.com/pricing/ . A 30-day trial (one download with both packages and the demos to run offline, plus email support for the 30 days) starts from that page; without it, the package runs in full with a watermark until a key is set.
-- 534 live demos, each with its source: https://svgrid.com/demos/ . Source code: https://github.com/sv-grid/sv-grid
+- 537 live demos, each with its source: https://svgrid.com/demos/ . Source code: https://github.com/sv-grid/sv-grid
 
 ---
 
@@ -2510,7 +2510,6 @@ deterministic `mockAIProvider`, so no keys required:
 
 > Live demo: AI assistant - https://svgrid.com/demos/51-ai-assistant/
 
-
 ## What it is
 
 Import the helpers from `@svgrid/grid` and call them with your grid `api`
@@ -3100,6 +3099,19 @@ Studio adds four more, and only when you ask for them - set
 licence to be useful, so they are not charged to everyone else's context
 window.
 
+`svgrid_scaffold` and the Studio tools run on `@svgrid/enterprise`, which the
+server loads only when it is installed beside it. `npx -y @svgrid/mcp` leaves
+it out so the server starts fast. To scaffold, install both in the project and
+run the local server:
+
+```bash
+npm i -D @svgrid/mcp @svgrid/enterprise
+claude mcp add svgrid -- npx svgrid-mcp
+```
+
+Without `-y`, `npx` runs the installed copy instead of downloading one, so
+there is no install on the first connect.
+
 The **hosted** server carries `search`, `fetch`, `list_examples`,
 `get_example_source`, `get_api_reference`, `check_svgrid_code` and
 `svgrid_preview`, plus the same resources and prompts. The first two are named
@@ -3264,7 +3276,10 @@ server rather than recall SvGrid from training data, and each ends at
 ### SvGrid Studio (commercial)
 
 Off unless enabled. Set `SVGRID_MCP_STUDIO=1`, or a valid
-`SVGRID_LICENSE_KEY`, in the server's env.
+`SVGRID_LICENSE_KEY`, in the server's env, and run the server from a project
+that has `@svgrid/enterprise` installed beside it
+(`npm i -D @svgrid/mcp @svgrid/enterprise`, then `npx svgrid-mcp`). Without it
+these tools answer with those steps instead of running.
 
 #### `svgrid_scaffold`
 
@@ -3599,7 +3614,7 @@ sparklines, collaboration). The genuine remaining gaps:
 | Gap | Note | Effort |
 | --- | ---- | ------ |
 | ~~**Multi Filter** (two conditions on one column)~~ | **shipped** - a column filter takes a second condition joined by AND / OR, in the menu and via `api.setFilter` | ✓ |
-| **Custom filter / floating-filter component** slot | first-class pluggable filter. Needs a MODEL seam as well as a render one: menu filters compile through `compileExcelFilter` from the closed `FilterOperator` union, so there is nowhere for a consumer predicate to enter today | L |
+| ~~**Custom filter / floating-filter component** slot~~ | **shipped** - a column's `customFilter` takes a `predicate(model)` plus `menu` / `floating` snippets; the model is in `api.setCustomFilter`, `getState().customFilters` and `onFiltersChange`'s `custom`. See [Custom column filters](https://svgrid.com/docs/help/filtering/custom-column-filters/) | ✓ |
 | **Custom tool panels** | panel is fixed Columns + Filters (`toolPanelDefaultTab` is a `"columns" \| "filters"` union, with no registry) | M |
 | ~~**UI-string localisation**~~ | **shipped** - the `localization` prop takes `{ locale, text }`, where `text` is a partial `GridMessages`; every menu/panel/chrome string is overridable. Note there is no `localeText` prop, and no translation catalogues ship in the box - you supply the strings. See [i18n and RTL](https://svgrid.com/docs/help/i18n-rtl/) | ✓ |
 | ~~**Row-grouping display modes** + group-level footers~~ | **shipped** - `groupDisplayMode: 'groupRows' \| 'singleColumn' \| 'multipleColumns'` plus `groupFooters` and `grandTotalRow`; demo `427-group-footers` | ✓ |

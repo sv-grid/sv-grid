@@ -43,7 +43,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## Key facts
 
-- Package: `@svgrid/grid` 3.0.15, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
+- Package: `@svgrid/grid` 3.0.21, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
 - Peer dependency: `svelte` ^5. Works in SvelteKit, including server-side rendering.
 - Size (gzip, Svelte external, measured 2026-09-22 on 3.0.4): 97.6 KB for the full `<SvGrid>` entry plus 10.5 KB CSS; 2.7 KB for the headless entry. Features load on demand.
 - Styling: `--sg-*` CSS custom properties, and 20 theme stylesheets, each with a light and a dark palette. No CSS framework is required; Tailwind and shadcn-svelte setups are documented.
@@ -51,7 +51,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - AI helpers ship free in `@svgrid/grid` and work with any model: `setAIProvider`, `aiFilter`, `aiSmartFill`, `aiSummarize`, `aiClassify`, `aiFindAnomalies`.
 - For coding assistants: an MCP server (`npx -y @svgrid/mcp`, MIT) serves the version-pinned API and demo sources; an Agent Skill installs with `npx skills add sv-grid/sv-grid`.
 - Paid add-on, not needed for anything above: `@svgrid/enterprise` adds Excel / PDF export, import, print, pivot tables, the Server-Side Row Model, alert rules and the Kanban board, Scheduler and Spreadsheet views. Prices start at $299 per developer: https://svgrid.com/pricing/ . A 30-day trial (one download with both packages and the demos to run offline, plus email support for the 30 days) starts from that page; without it, the package runs in full with a watermark until a key is set.
-- 534 live demos, each with its source: https://svgrid.com/demos/ . Source code: https://github.com/sv-grid/sv-grid
+- 537 live demos, each with its source: https://svgrid.com/demos/ . Source code: https://github.com/sv-grid/sv-grid
 
 ## Start here
 
@@ -231,8 +231,8 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 - [Advanced filter](https://svgrid.com/docs/help/filtering/advanced-filter/): The column filters cover one column at a time, joined with AND. The advanced filter is for the questions that shape does not reach: OR across different columns, negation, nested groups, and...
 - [Applying filters](https://svgrid.com/docs/help/filtering/applying-filters/): "Applying" a filter means running it against the data. SvGrid applies filters eagerly by default: every keystroke updates the row model and the visible rows (with a 150ms debounce inside the...
-- [Custom column filters](https://svgrid.com/docs/help/filtering/custom-column-filters/): When the built-in operators and the set-filter pattern are not enough, take over the filter pipeline.
-- [Date filter](https://svgrid.com/docs/help/filtering/date-filter/): A column with editorType: 'date' (or 'datetime') gets the date filter operator set: equals, lessThan, greaterThan, between, isBlank.
+- [Custom column filters](https://svgrid.com/docs/help/filtering/custom-column-filters/): When the built-in operators and the set-filter pattern are not enough, give the column its own filter, or take over the filter pipeline.
+- [Date filter](https://svgrid.com/docs/help/filtering/date-filter/): A column with editorType: 'date' (or 'datetime') gets the date filter operator set: equals, lessThan, greaterThan, between, isBlank. @svgrid/enterprise adds days-from-today operators (below).
 - [Filter API](https://svgrid.com/docs/help/filtering/filter-api/): Two surfaces - pick based on whether the caller is inside or outside the component that owns the grid state.
 - [Filter conditions](https://svgrid.com/docs/help/filtering/filter-conditions/): A "filter condition" is a (column, operator, value) triple. The grid stores filter conditions in state.columnFilters.
 - [Floating filters](https://svgrid.com/docs/help/filtering/floating-filters/): "Floating filters" are the always-visible filter inputs that sit between the header row and the body.
@@ -526,6 +526,10 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - [Alerts: rules over live data](https://svgrid.com/docs/help/alerts/start/): Alert rules on a Svelte data grid: a rule on a crossed line, one that watches a move, a KPI, a guardrail that vetoes an edit, the log, a feed, a schedule.
 - [Alerts - Enterprise](https://svgrid.com/docs/help/alerts/): Alert rules let your users say "tell me when the data does X" - and then act on it automatically: raise a toast, tint the row, flash the cell, block the edit, or just log it.
 - [Scheduling: automate exports and reminders](https://svgrid.com/docs/help/scheduling/): Two jobs turn up in almost every data app the moment it goes into daily use: *"email me this report every weekday at 17:30"* and *"remind the desk at 09:00 to reconcile."* The reflex is to stand...
+
+### Change review
+
+- [Change review - Enterprise](https://svgrid.com/docs/help/review/change-review/): An AI helper fills 900 empty cells, an agent cleans up a CRM export, an import updates 2,000 rows.
 
 ### Enterprise tier
 

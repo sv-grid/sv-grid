@@ -43,7 +43,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## Key facts
 
-- Package: `@svgrid/grid` 3.0.15, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
+- Package: `@svgrid/grid` 3.0.21, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
 - Peer dependency: `svelte` ^5. Works in SvelteKit, including server-side rendering.
 - Size (gzip, Svelte external, measured 2026-09-22 on 3.0.4): 97.6 KB for the full `<SvGrid>` entry plus 10.5 KB CSS; 2.7 KB for the headless entry. Features load on demand.
 - Styling: `--sg-*` CSS custom properties, and 20 theme stylesheets, each with a light and a dark palette. No CSS framework is required; Tailwind and shadcn-svelte setups are documented.
@@ -51,11 +51,11 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - AI helpers ship free in `@svgrid/grid` and work with any model: `setAIProvider`, `aiFilter`, `aiSmartFill`, `aiSummarize`, `aiClassify`, `aiFindAnomalies`.
 - For coding assistants: an MCP server (`npx -y @svgrid/mcp`, MIT) serves the version-pinned API and demo sources; an Agent Skill installs with `npx skills add sv-grid/sv-grid`.
 - Paid add-on, not needed for anything above: `@svgrid/enterprise` adds Excel / PDF export, import, print, pivot tables, the Server-Side Row Model, alert rules and the Kanban board, Scheduler and Spreadsheet views. Prices start at $299 per developer: https://svgrid.com/pricing/ . A 30-day trial (one download with both packages and the demos to run offline, plus email support for the 30 days) starts from that page; without it, the package runs in full with a watermark until a key is set.
-- 534 live demos, each with its source: https://svgrid.com/demos/ . Source code: https://github.com/sv-grid/sv-grid
+- 537 live demos, each with its source: https://svgrid.com/demos/ . Source code: https://github.com/sv-grid/sv-grid
 
 ## About this file
 
-The full SvGrid documentation, generated 2026-10-18 from 461 pages, 21 comparison pages, plus 72 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
+The full SvGrid documentation, generated 2026-10-24 from 462 pages, 21 comparison pages, plus 72 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
 
 <!-- =================================================================
      /docs/getting-started/  (community)
@@ -4696,7 +4696,7 @@ data within a boundary before it reaches a provider.
 | `api.ai.filter` / `smartFill` / `summarize` / `classify` / `export` / `findAnomalies` | `@svgrid/enterprise` | The in-grid helpers, added by `installEnterprise(api)`. |
 | `svgrid_search`, `svgrid_get` | `@svgrid/mcp` | Build-time MCP tools your coding agent calls: find anything across docs, demos and the API, then read it in full. |
 | `svgrid_check_code` | `@svgrid/mcp` | Verifies generated code against the real API surface before you see it. |
-| `svgrid_scaffold`, `studio_*` | `@svgrid/mcp` | Studio generation tools (schema -> CRUD screen, project model). Studio tools are opt-in: set `SVGRID_MCP_STUDIO=1` or a licence key. |
+| `svgrid_scaffold`, `studio_*` | `@svgrid/mcp` | Studio generation tools (schema -> CRUD screen, project model). Studio tools are opt-in: set `SVGRID_MCP_STUDIO=1` or a licence key. Both need `@svgrid/enterprise` beside the server: `npm i -D @svgrid/mcp @svgrid/enterprise`, then run `npx svgrid-mcp`. |
 
 Auto-generated per-symbol reference: [`@svgrid/grid` · `ai.ts`](../reference/auto/svgrid-grid-ai.md).
 
@@ -6829,8 +6829,9 @@ they were read and the method behind the sizes.
   pivot, transactions and select-all across unloaded rows, and its
   real-time page merges deltas into loaded rows, but it does not have the
   viewport model.
-- You need **pluggable custom filter components or custom tool panels**.
-  SvGrid's tool panel is a fixed Columns + Filters pair.
+- You need **custom tool panels**. SvGrid's tool panel is a fixed
+  Columns + Filters pair. Custom filter components are covered by a
+  column's `customFilter`.
 - You need **AG Charts** for maps, network graphs, 3D or a canvas renderer.
   SvGrid's chart is SVG with decimation, and it ships 29 types, a configurable
   axis model, synchronized charts, a financial toolkit with indicator panes
@@ -9739,6 +9740,19 @@ Studio adds four more, and only when you ask for them - set
 licence to be useful, so they are not charged to everyone else's context
 window.
 
+`svgrid_scaffold` and the Studio tools run on `@svgrid/enterprise`, which the
+server loads only when it is installed beside it. `npx -y @svgrid/mcp` leaves
+it out so the server starts fast. To scaffold, install both in the project and
+run the local server:
+
+```bash
+npm i -D @svgrid/mcp @svgrid/enterprise
+claude mcp add svgrid -- npx svgrid-mcp
+```
+
+Without `-y`, `npx` runs the installed copy instead of downloading one, so
+there is no install on the first connect.
+
 The **hosted** server carries `search`, `fetch`, `list_examples`,
 `get_example_source`, `get_api_reference`, `check_svgrid_code` and
 `svgrid_preview`, plus the same resources and prompts. The first two are named
@@ -9903,7 +9917,10 @@ server rather than recall SvGrid from training data, and each ends at
 ### SvGrid Studio (commercial)
 
 Off unless enabled. Set `SVGRID_MCP_STUDIO=1`, or a valid
-`SVGRID_LICENSE_KEY`, in the server's env.
+`SVGRID_LICENSE_KEY`, in the server's env, and run the server from a project
+that has `@svgrid/enterprise` installed beside it
+(`npm i -D @svgrid/mcp @svgrid/enterprise`, then `npx svgrid-mcp`). Without it
+these tools answer with those steps instead of running.
 
 #### `svgrid_scaffold`
 
@@ -10566,7 +10583,7 @@ Be honest. Stay on AG Grid if you:
 
 - **Use multiple frameworks** - AG Grid has React, Angular, Vue, Solid, Qwik, vanilla adapters. SvGrid is Svelte-only.
 - **Need a push-based viewport row model** - SvGrid's server-side row model covers grouping, tree, pivot, transactions and select-all across unloaded rows, and its real-time page merges deltas into loaded rows, but the server cannot push the visible window over a socket the way the viewport model does.
-- **Need pluggable custom filter components or custom tool panels** - SvGrid's tool panel is a fixed Columns + Filters pair.
+- **Need custom tool panels** - SvGrid's tool panel is a fixed Columns + Filters pair. (Custom filter components are covered: a column's `customFilter` renders your own control in the filter menu, the floating filter row and the Filters tab.)
 - **Are mid-project and shipping in <2 weeks** - the migration is a few hours per grid, but only do it when you have buffer.
 - **Have a Svelte 4 codebase you can't upgrade** - SvGrid requires Svelte 5 runes. (Consider [htmlelements.com](https://www.htmlelements.com) for vanilla / multi-framework.)
 
@@ -14854,7 +14871,7 @@ sparklines, collaboration). The genuine remaining gaps:
 | Gap | Note | Effort |
 | --- | ---- | ------ |
 | ~~**Multi Filter** (two conditions on one column)~~ | **shipped** - a column filter takes a second condition joined by AND / OR, in the menu and via `api.setFilter` | ✓ |
-| **Custom filter / floating-filter component** slot | first-class pluggable filter. Needs a MODEL seam as well as a render one: menu filters compile through `compileExcelFilter` from the closed `FilterOperator` union, so there is nowhere for a consumer predicate to enter today | L |
+| ~~**Custom filter / floating-filter component** slot~~ | **shipped** - a column's `customFilter` takes a `predicate(model)` plus `menu` / `floating` snippets; the model is in `api.setCustomFilter`, `getState().customFilters` and `onFiltersChange`'s `custom`. See [Custom column filters](./filtering/custom-column-filters.md) | ✓ |
 | **Custom tool panels** | panel is fixed Columns + Filters (`toolPanelDefaultTab` is a `"columns" \| "filters"` union, with no registry) | M |
 | ~~**UI-string localisation**~~ | **shipped** - the `localization` prop takes `{ locale, text }`, where `text` is a partial `GridMessages`; every menu/panel/chrome string is overridable. Note there is no `localeText` prop, and no translation catalogues ship in the box - you supply the strings. See [i18n and RTL](./i18n-rtl.md) | ✓ |
 | ~~**Row-grouping display modes** + group-level footers~~ | **shipped** - `groupDisplayMode: 'groupRows' \| 'singleColumn' \| 'multipleColumns'` plus `groupFooters` and `grandTotalRow`; demo `427-group-footers` | ✓ |
@@ -18202,6 +18219,27 @@ Pass an object to pick which:
 | `sum`          | Sum of the numeric cells.                            |
 | `avg`          | Mean of the numeric cells.                           |
 | `min` / `max`  | Smallest / largest numeric value.                    |
+
+## Row count (Enterprise)
+
+With `@svgrid/enterprise`, `rows: true` adds a count on the left of the bar
+that is always there, with or without a selection: "250 rows", or "12 of 250
+rows" while filters hide some. It needs no `enableCellSelection`. To show the
+count alone, pass no aggregates. It is drawn once `enableRowCount()` has run
+([setup](../enterprise/README.md#grid-filter-and-sort-additions)):
+
+```svelte
+<SvGrid {data} {columns} statusBar={{ rows: true, aggregates: [] }} />
+```
+
+The count leaves out group banners and ignores pagination. For a header or a
+count of your own, `getRowCounts(api)` from `@svgrid/enterprise` returns
+`{ total, filtered }`; with grouping on, its `filtered` counts the group rows
+too. Under `externalFilter` or `externalPagination` the grid holds one page,
+so the bar shows the `rowCount` you pass.
+
+The count is not announced to screen readers on each change; the grid already
+announces filter results. Without the module, `rows: true` shows nothing.
 
 ## Behavior
 
@@ -24698,6 +24736,11 @@ into covered cells on its own; a consumer that merges keeps them empty or
 marks them read-only through the column's `editable`, which is what the
 spreadsheet shell's Merge & Center does.
 
+The merge code loads with the first `mergedCells`, not with every grid, so
+grids that never merge do not carry it. Until it lands the cells draw
+unmerged: one frame in the browser, and server-rendered HTML shows them
+unmerged until the page hydrates.
+
 ## 1. Explicit merges (spreadsheet-style, DOM action)
 
 Declare exact merges as `MergeSpec[]` and apply them with the
@@ -27097,6 +27140,37 @@ const columns = [
 
 Blanks, and anything that is not a number, sort first ascending, as in a
 number column.
+
+### Your own comparator
+
+`sortComparator` compares two of a column's values in place of the built-in
+order. It also gets the direction being sorted, `desc`. The grid reverses your
+result for a descending sort, so return the ascending order; `desc` is there
+for a value you want held at one end both ways. `sortValue` wins when a column
+sets both.
+
+```ts
+const columns = [
+  { field: 'code', header: 'Code', sortComparator: (a, b) => String(a).length - String(b).length },
+]
+```
+
+### Keep blanks at one end (Enterprise)
+
+`@svgrid/enterprise` ships comparators that hold blank cells at the bottom or
+the top in both directions, so tasks with no due date stay below the dated
+ones whichever way Due runs. The other values sort as the grid sorts them
+([setup](../../enterprise/README.md#grid-filter-and-sort-additions)):
+
+```ts
+// blanksLast is exported by @svgrid/enterprise
+const columns = [
+  { field: 'due', header: 'Due', cellDataType: 'dateString', sortComparator: blanksLast('date') },
+]
+```
+
+`blanksFirst` holds them at the top. Pass `'number'`, `'date'` or `'auto'`
+(the default) for how the other values compare.
 
 ## Programmatic sort
 
@@ -30643,8 +30717,105 @@ A faceted filter/search bar from SvGrid UI: SvComboBox (search), SvButtonGroup (
 # Custom column filters
 
 When the built-in operators and the set-filter pattern are not enough,
-take over the filter pipeline.
+give the column its own filter, or take over the filter pipeline.
 <div data-docs-demo="03-excel-filters" data-height="540"></div>
+
+## Your own filter control: `customFilter`
+
+A column's `customFilter` replaces the operator condition with your own
+model and control: a range slider that holds `[min, max]`, a tag picker that
+holds `string[]`, a "last N days" widget that holds a number.
+
+- `predicate(model)` returns the row test. It runs once per filter change,
+  so parse dates or build a `Set` there, not inside the returned function.
+  The test gets the column's value and the row's data.
+- `menu` is a snippet for the filter menu and the tool panel's Filters tab.
+  `floating` is one for the floating filter row. Each falls back to the
+  other, so one snippet can serve all three.
+- The snippet receives `{ column, model, setModel, surface, values, close }`.
+  `setModel(null)` clears the filter. `values()` returns the column's
+  distinct values under the other columns' filters, the same list the Values
+  checklist shows.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type CustomFilterContext, type GridColumns } from '@svgrid/grid'
+
+  type Deal = { id: number; company: string; stage: string; amount: number }
+
+  const deals: Deal[] = [
+    { id: 1, company: 'Northwind',  stage: 'Proposal',    amount: 4200 },
+    { id: 2, company: 'Contoso',    stage: 'Negotiation', amount: 18500 },
+    { id: 3, company: 'Fabrikam',   stage: 'Closed won',  amount: 32000 },
+    { id: 4, company: 'Tailspin',   stage: 'Proposal',    amount: 950 },
+    { id: 5, company: 'Litware',    stage: 'Negotiation', amount: 27400 },
+    { id: 6, company: 'Adventure',  stage: 'Closed won',  amount: 12800 },
+  ]
+
+  type Range = [number, number]
+
+  const columns: GridColumns<Deal> = [
+    { field: 'company', header: 'Company', width: 160 },
+    { field: 'stage',   header: 'Stage',   width: 140 },
+    {
+      field: 'amount',
+      header: 'Amount',
+      width: 220,
+      format: { type: 'currency', currency: 'USD' },
+      customFilter: {
+        predicate: ([min, max]: Range) => (value) => {
+          const n = Number(value)
+          return n >= min && n <= max
+        },
+        menu: amountRange,
+        floating: amountRange,
+      },
+    },
+  ]
+</script>
+
+{#snippet amountRange(f: CustomFilterContext<Deal, Range>)}
+  {@const max = f.model?.[1] ?? 40000}
+  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px;">
+    <input
+      type="range"
+      min="0"
+      max="40000"
+      step="1000"
+      value={max}
+      oninput={(e) => {
+        const next = Number(e.currentTarget.value)
+        f.setModel(next >= 40000 ? null : [0, next])
+      }}
+    />
+    <span>{max >= 40000 ? 'Any' : `up to ${max.toLocaleString()}`}</span>
+  </label>
+{/snippet}
+
+<SvGrid data={deals} {columns} filterable filterMode="row" />
+```
+
+The model is ANDed with the column's operator condition and its Values
+checklist, and is part of the rest of the filter state:
+
+- `api.setCustomFilter(columnId, model)` sets it, `null` clears it, and
+  `api.getCustomFilter(columnId)` reads it. `api.clearFilter` and
+  `api.clearAllFilters` clear it with everything else.
+- `api.getState()` returns `customFilters` while any model is set, and
+  `api.setState({ customFilters })` restores them. Keep the model
+  JSON-serializable if you save views.
+- `onFiltersChange` reports active models under `custom`, keyed by column id.
+  With `externalFilter` the grid only records the model, so a server
+  translates it into its query; `createServerDataSource` forwards it as
+  `filterModel.custom`.
+- An inactive model filters nothing and does not light the funnel. By
+  default `null`, `undefined`, `''` and `[]` are inactive; pass
+  `isActive(model)` for anything else.
+- `showValues: false` drops the Values checklist from the menu when it adds
+  nothing, as for a slider over thousands of distinct prices.
+
+A `customFilter` with only `predicate` keeps the built-in UI; the model is
+then set only through the API.
 
 ## Option A - supply a `filterFn`
 
@@ -30712,11 +30883,12 @@ Render a custom header (via `header: () => renderSnippet(...)`) that
 includes your own filter widget. Update controlled state from the widget;
 the grid will react. See [Custom header components](../columns/custom-header-components.md).
 
-## A predicate the operators cannot express
+## A control that lives outside the grid
 
-There is no per-column `filterFn`, so a custom rule lives outside the grid:
-narrow the array, hand the result to `data`. Everything downstream - sort,
-selection, the row count - follows the filtered set.
+When the filter control sits outside the grid, narrowing the array is the
+shortest path: filter it, hand the result to `data`. Everything downstream -
+sort, selection, the row count - follows the filtered set. For a control in
+the grid's own filter surfaces, use `customFilter` above.
 
 ```svelte {runnable}
 <script lang="ts">
@@ -30818,7 +30990,8 @@ matter because both are pure.
 
 A column with `editorType: 'date'` (or `'datetime'`) gets the **date**
 filter operator set: `equals`, `lessThan`, `greaterThan`,
-**`between`**, `isBlank`.
+**`between`**, `isBlank`. `@svgrid/enterprise` adds days-from-today
+operators (below).
 <div data-docs-demo="64-filter-between-operator" data-height="540"></div>
 
 ```ts
@@ -30873,18 +31046,43 @@ applyExcelFilter('2026-05-27', {
 
 The filter is inactive until both endpoints are non-empty.
 
-## Today / yesterday / last 7 days
+## Today, overdue, next 7 days (Enterprise)
 
-Not built in. Apply via the imperative API:
+`@svgrid/enterprise` adds five operators to every date column's filter menu
+once `enableRelativeDateFilters()` has run (`installEnterprise` runs it too;
+[setup](../../enterprise/README.md#grid-filter-and-sort-additions)). They count whole days from today, in the user's
+local time, and take no value, so picking one in the menu filters at once:
+
+| Operator      | Menu label   | Keeps                                        |
+| ------------- | ------------ | -------------------------------------------- |
+| `today`       | Today        | today                                        |
+| `beforeToday` | Before today | every earlier day: overdue items             |
+| `afterToday`  | After today  | every later day                              |
+| `next7Days`   | Next 7 days  | today through the same weekday next week     |
+| `last7Days`   | Last 7 days  | the same weekday last week through today     |
+
+Blank cells never match. A bare `'2026-05-27'` counts as that day in local
+time, not UTC midnight. From code they are ordinary operators:
 
 ```ts
-function lastNDays(api: SvGridApi<{}, Person>, columnId: string, n: number) {
-  const cutoff = new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10)
-  api.setFilter(columnId, { operator: 'greaterThan', value: cutoff })
-}
-
-lastNDays(api, 'joinedAt', 7)
+api.setFilter('due', { operator: 'beforeToday' })
 ```
+
+"Today" is read when the filter is applied, so a page left open past midnight
+keeps the old day until the filter changes.
+
+**Server-side data.** A server data source never receives these operators.
+The grid sends the absolute filter they mean at request time: `beforeToday` as
+`lessThan` today's date, `next7Days` as `between` today and a week out, dates as
+local `YYYY-MM-DD`. Under `externalFilter`, `onFiltersChange` passes the
+relative operator through, so a saved view still means "overdue" tomorrow;
+`resolveRelativeDateFilter(filter)` from `@svgrid/enterprise` turns it into
+dates when you build the query. Demo 701 shows the operators on a review
+queue.
+
+The grid side is the extension's `filterOperators` seam: a module can add an
+operator for any column type, with its own test and the filter a server gets in
+its place.
 
 ## Timezones
 
@@ -30980,6 +31178,14 @@ and the menu end up in one state rather than fighting.
 <SvGrid data={people} {columns} filterable filterMode="menu" onApiReady={(next) => (api = next)} />
 ```
 
+## More examples
+
+### Overdue filters, cell labels and a row count
+
+Enterprise filter and sort additions on a review queue. Due's filter menu offers Today, Before today, Next 7 days and the rest, with nothing to type; Status is stored as codes and its checklist reads Approved and Failed, as the cells do; the status bar counts rows, "6 of 24 rows" under a filter; and reviews with no due date stay last whichever way Due sorts.
+
+<div data-docs-demo="701-enterprise-grid-filters" data-height="460"></div>
+
 ## See also
 
 - [Filter conditions](./filter-conditions.md)
@@ -31023,6 +31229,15 @@ api.clearFilter('age')                   // same effect, sugared
 
 The wrapper internally writes into the `columnFilters` state slice and
 re-runs the filtered row model.
+
+A column with a [`customFilter`](./custom-column-filters.md) holds its own
+model rather than an operator and a value:
+
+```ts
+api.setCustomFilter('amount', [1000, 5000])  // whatever its predicate takes
+api.getCustomFilter('amount')                // [1000, 5000]
+api.setCustomFilter('amount', null)          // clear
+```
 
 ## Observe filter state
 
@@ -31443,6 +31658,12 @@ still carries the full operator list for the times that is not enough.
 <SvGrid data={people} {columns} filterable filterMode="menu" showFilterRow />
 ```
 
+## Your own control in the row
+
+A column's `customFilter.floating` snippet takes the place of the operator
+button and input in that column's cell; the other columns keep theirs. See
+[Custom column filters](./custom-column-filters.md).
+
 ## See also
 
 - [Overview](./overview.md)
@@ -31830,10 +32051,42 @@ The column menu's Values tab is the default set filter. Click the funnel icon on
 
 What you get without writing any code:
 
-- Distinct values from the current dataset.
+- Distinct values from the current dataset, labelled the way the cells show
+  them.
 - Type-ahead search.
 - Select-all / clear toggle.
 - Mixed-state preserved as the user scrolls.
+
+### Labels from the cells (Enterprise)
+
+The free grid lists the stored values. With `@svgrid/enterprise`,
+`enableFilterLabels()` ([setup](../../enterprise/README.md#grid-filter-and-sort-additions)) lists each value under the text its cell shows, and the
+filter still matches the stored value. The label comes from the first of these
+the column has:
+
+1. a `cell` renderer that returns a string,
+2. static `editorOptions` (`{ value, label }`),
+3. `formatter` or `format`.
+
+So a status stored as `MARKED_AS_FAILED` and drawn as "Failed" is offered as
+"Failed", and the column's accessor can stay the raw value that sorting needs:
+
+```ts
+// after enableFilterLabels() from @svgrid/enterprise has run once
+const STATUS_TEXT: Record<string, string> = { APPROVED: 'Approved', MARKED_AS_FAILED: 'Failed' }
+const columns = [
+  { field: 'status', header: 'Status', cell: ({ getValue }) => STATUS_TEXT[String(getValue())] },
+  { field: 'reviews', header: 'Reviews', cellDataType: 'number' },
+]
+```
+
+Text values are ordered by label. Number and date values stay in value order,
+since "$1,000" would collate before "$200". A `cell` that renders markup has
+no text to borrow, so its column falls through to the next source. The search
+box above the list matches the stored values. Demo 701 shows it.
+
+The grid side is the extension's `facetOptions` hook, which runs in the menu
+chunk, so a grid without the module carries none of it.
 
 Programmatic equivalent for "remember and restore":
 
@@ -79983,6 +80236,487 @@ A whole clinic on the Scheduler: a NavPane switches modules; Schedule is a docka
 <div data-docs-demo="399-scheduler-clinic-console" data-height="560"></div>
 
 <!-- =================================================================
+     /docs/help/review/change-review/  (enterprise)
+     ================================================================== -->
+
+# Change review - Enterprise
+
+An AI helper fills 900 empty cells, an agent cleans up a CRM export, an import
+updates 2,000 rows. None of those writes was typed by the person who owns the
+data, and none of them should land before someone has looked. Change review
+holds such writes as **proposals**, apart from the data, groups them by what
+they do, and lets a person accept or reject a group at a time. Only accepted
+values are written, and each decision is one Ctrl+Z.
+
+```ts
+import { createReview, reviewSmartFill, SvReviewPanel } from '@svgrid/enterprise/review'
+```
+
+<div data-docs-demo="702-change-review" data-height="620"></div>
+
+In the demo, **Run cleanup agent** proposes fixes to a customer table. Nothing
+is written until you accept a group in the panel. Edit a cell that has a
+proposal before accepting it and the proposal is marked stale. **Import
+crm-update.csv** proposes a different region for two customers the agent also
+filled, and the panel asks which one to keep.
+
+## A grid with a review
+
+```svelte
+<script lang="ts">
+  import { SvGrid, type SvGridApi } from '@svgrid/grid'
+  import { createReview, SvReviewPanel } from '@svgrid/enterprise/review'
+
+  let rows = $state(customers)
+  let api = $state<SvGridApi<any, Customer> | null>(null)
+
+  const review = createReview<Customer>({
+    api: () => api,
+    setRows: (next) => (rows = next),
+    onCommit: async (accepted) => {
+      await fetch('/api/customers/bulk', { method: 'PATCH', body: JSON.stringify(accepted) })
+    },
+  })
+</script>
+
+<div class="layout">
+  <SvGrid
+    data={rows}
+    columns={review.columns(columns)}
+    getRowId={(r) => r.id}
+    conditionalFormats={review.formats}
+    onApiReady={(a) => (api = a)}
+  />
+  <SvReviewPanel {review} />
+</div>
+```
+
+Three things are required:
+
+- **`getRowId` on the grid.** Proposals are keyed by row id, because row
+  positions move on sort, filter and insert. `createReview` reads the function
+  from the grid and throws a clear error when it is missing.
+- **The app owns the rows.** `setRows` replaces the array the grid is given,
+  and it must apply synchronously. Reads go through `api.getData()`, which
+  includes the grid's own writes (a paste, a fill, `addRows`), so building the
+  next array from it carries those forward.
+- **The grid api**, passed as a getter, because `onApiReady` fires after mount.
+
+## Adding proposals
+
+Anything can add a set of proposals. Each one names the row, the field, the
+value it saw (`before`) and the value it proposes (`after`):
+
+```ts
+review.add({
+  source: { kind: 'agent', id: 'crm-cleanup', label: 'Cleanup agent' },
+  proposals: [
+    { rowId: 'c-104', field: 'company', before: 'Acme Inc.', after: 'Acme Inc' },
+    { rowId: 'c-221', field: 'phone', before: '(555) 123-4567', after: '555-123-4567', reason: 'one phone format' },
+  ],
+})
+```
+
+`confidence` (0 to 1) and `reason` are optional and show in the panel.
+Proposals whose `after` equals `before` are skipped. A newer proposal from the
+same source for the same cell replaces the older one. Two sources proposing
+different values for one cell is a **conflict**: neither can be accepted by a
+group action until a person keeps one.
+
+### From the AI helpers
+
+The AI helpers in `@svgrid/grid` return predictions keyed by data index.
+`reviewSmartFill` and `reviewClassify` snapshot the data before the call,
+resolve each index to its row id, drop indices the helper was not asked about,
+and add the result:
+
+```ts
+const result = await reviewSmartFill(review, api, {
+  field: 'region',
+  examples: [{ input: { country: 'Germany' }, output: 'EMEA' }],
+})
+result.dropped   // predictions that pointed at rows outside the request
+```
+
+`fromSmartFill(result, snapshot, { api })` and `fromClassify` do the same for a
+result you already have; pass the snapshot you took before calling the helper.
+
+### From an import or a sync
+
+`fromRows` diffs incoming rows against the grid's data by a key field and
+proposes one change per field that differs:
+
+```ts
+const set = fromRows(imported.rows, {
+  api,
+  key: 'id',
+  source: { kind: 'import', id: file.name, label: file.name },
+})
+review.add(set)
+set.unmatched   // incoming rows with no match; adding rows is not proposed yet
+```
+
+## How proposals are grouped
+
+The panel never shows 2,000 cells in a list. `review.groups()` puts every
+pending proposal in one group by the change it makes. The first four kinds are
+**rule groups**: every member is proven to follow the rule. The rest are
+**judgment groups**, where a person has to look.
+
+| Kind | Rule | Label in the panel |
+|---|---|---|
+| `whitespace` | `after` is `before` trimmed or with spaces collapsed | Trim spaces in Company |
+| `case` | same letters, different case | Change Email to lower case |
+| `format` | same characters apart from punctuation, the same unambiguous date, or text that parses to the number | Reformat Phone as 999-999-9999 |
+| `scale` | `after / before` is one number, 5 or more members | Divide Revenue by 100 |
+| `same-mapping` | several `before` values each mapped to one `after` at least twice | Country: 6 values → United States |
+| `fill-empty` | blank `before`, one group per proposed value | Fill empty Region with EMEA |
+| `constant-target` | many different `before` values, one `after` | Set Status to Closed |
+| `unpatterned` | everything else, per field | Notes: no shared pattern |
+
+A few cases are kept out of the rule groups on purpose. `"3.5"` to `"35"` keeps
+every digit but changes the number, so it is not a format change. `03/05/2024`
+could be March or May, so a reformat of it is never proven. A rule group proves
+that every member follows its rule, not that the rule is right: an agent that
+divides by 10 where it should divide by 100 shows up as its own "Divide Revenue
+by 10" group, labelled for what it does.
+
+The panel lists the risky groups first: unpatterned, then one target from many
+values, then groups with low confidence, then the rest by size. Each group
+carries a sample to check: every member below 60% confidence (up to ten), then
+members spread across the group. An unpatterned group lists every member.
+`same-mapping` and `constant-target` groups show which `before` values they
+map, so "everything became Canada" is visible at a glance.
+
+## What the grid shows
+
+`review.formats` tints every cell with a pending proposal and draws a dot before
+its value, so the mark is never colour alone. Pass it as `conditionalFormats`,
+concatenated with your own formats if you have them. Theme the tint with
+`--sg-review-pending-bg`. A cell two sources disagree on gets a red wash and a
+"!" instead (`--sg-review-conflict-bg`), so the grid shows where the panel's
+conflicts are.
+
+`review.columns(columns)` draws the proposal inside the cell: the proposed
+value, then the current value struck through. It does this by wrapping the
+column's `cell`, and only for columns where that leaves the rest of the column
+as it was: columns with a `cell` of their own, and plain text columns.
+Checkbox, list, chips and boolean columns, and field types with a cell of their
+own, keep their cell as it is and show the proposed value after it ("→ Closed").
+
+## Deciding
+
+```ts
+const outcome = await review.acceptGroup(group.key, group.ids)
+// { accepted: [...], rejected: [], stale: [...], skipped: [...], error? }
+```
+
+On accept, for each proposal:
+
+1. An open cell editor is committed first, so a value someone just typed wins.
+   Under `fullRowEditing`, the row being edited is left pending instead.
+2. If the cell no longer holds `before`, the proposal becomes **stale** and is
+   not written.
+3. `onCommit` receives the remaining proposals. Throw or reject to keep them
+   pending; nothing is written.
+4. The cells are checked again, because a person could edit one while
+   `onCommit` was saving.
+5. One `setRows` call writes every accepted value.
+6. One undo step is recorded. Ctrl+Z in the grid writes the old values back,
+   by row id, so it works with paging and filters on, and returns the proposals
+   to pending. A cell edited after the accept is left as it is.
+
+`acceptGroup` and `rejectGroup` take the ids that were shown, so a proposal
+that arrived after the panel rendered is never decided unseen.
+
+### Server row model
+
+With the server row model there is no app array to replace. Pass the
+controller instead of `setRows`; `onCommit` is then required:
+
+```ts
+const review = createReview({
+  api: () => api,
+  server: controller,
+  onCommit: (accepted) => saveToServer(accepted),
+})
+```
+
+Accept saves through `onCommit` and refreshes the controller. Undo saves the
+inverse (`before` and `after` swapped) and refreshes again. The backend decides
+staleness there.
+
+## SvReviewPanel
+
+| Prop | Type | Default | |
+|---|---|---|---|
+| `review` | `Review` | required | What `createReview` returned. |
+| `title` | `string` | `'Review changes'` | The panel heading. |
+| `confirmOver` | `number` | `50` | Ask before deciding more than this many at once. |
+| `onDecide` | `(outcome) => void` | | Called after each decision. |
+
+**Accept rule groups** accepts every rule group at once (trims, case changes,
+reformats, one numeric factor), the changes that are proven by their rule, and
+leaves the groups that need a person. It is the panel's primary button, and
+rule groups are the only ones marked, with a "Rule" badge. **Accept all** is
+the primary button only when every group left is a rule group: deciding
+everything unseen is what a review is there to prevent.
+
+A line in an open group names its row, then the change, then the reason and
+confidence the source gave. The name is the row's first visible text column
+(the company, say), and a line leaves it out when that column is the one being
+changed, since the old value already names the row. Set `rowLabel` on
+`createReview` to choose it yourself:
+
+```ts
+const review = createReview<Customer>({
+  api: () => api,
+  setRows: (next) => (rows = next),
+  rowLabel: (row) => `${row.company} (${row.city})`,
+})
+```
+
+A click on a line shows that row in the grid, and the row lights up for a
+moment so the eye finds it. A value is quoted only where the quotes say
+something: around spaces at its ends (shown as dots), or when text reads as a
+number or a boolean.
+
+Each line of an open group has its own accept and reject, for a group that is
+mostly right: reject the two wrong guesses, then accept the group. A judgment
+group lists its sample first; **Show all** lists every change in it, up to
+200. A decision can move what is left of a group under another heading (two
+"EMEA" fills less one is a single fill, pooled with the others), and the open
+group follows its remaining changes rather than closing.
+
+It is a plain panel, not a drawer, so the grid stays usable beside it. Inside
+the group list, **J** and **K** move between groups, **Enter** opens one, **A**
+accepts it and **R** rejects it. "Show in grid" goes to the group's next row
+without moving the active cell: with client paging it turns to the row's page
+first (`api.getRowPosition`), then scrolls to it. Rows a filter hides are
+counted, not shown. With grouping, where pages count groups, it stays on the
+current page.
+
+**Only rows with changes** narrows the grid to the rows with a pending or
+conflicting proposal, on top of whatever the user filtered: it adds one
+condition to the advanced filter with AND, and switching it off takes that
+condition back out and leaves the rest. Rows leave the view as their
+proposals are decided, like an inbox. From code:
+`review.showPendingOnly(true)`, and `review.pendingOnly` tells whether it is
+on. It needs the advanced filter engine, which it turns on itself.
+
+## Agents
+
+`createGridTools` gives an AI agent four tools over the grid's data. None of
+them writes the data: the agent's edits arrive in the review like any other
+proposals, and a person decides.
+
+<div data-docs-demo="704-agent-review-desk" data-height="700"></div>
+
+In the demo a scripted CRM agent calls these tools step by step; each step
+shows the tool call it made. The Log tab lists every decision as
+`onDecision` reports it.
+
+| Tool | What it does |
+|---|---|
+| `grid_describe` | The columns (field, header, type), the row count, and which fields the agent may edit. |
+| `grid_query_rows` | Rows matching `where` conditions (`equals`, `contains`, `blank`, `gt`, ...), with their `rowId`, paged and capped at `maxRows`. |
+| `grid_propose_edits` | Adds edits as proposals, with a reason and a confidence. Unknown rows, fields the agent may not edit, and edits that change nothing are skipped and reported. |
+| `grid_review_status` | How many of the agent's proposals are pending, accepted, rejected or stale, so it can learn from the review. |
+
+```ts
+import { createGridTools, registerWebMcpTools } from '@svgrid/enterprise/review'
+
+const tools = createGridTools({
+  review,
+  api: () => api,
+  fields: ['region', 'phone'],   // what the agent may propose edits to
+  source: { kind: 'agent', id: 'crm-agent', label: 'CRM agent' },
+})
+```
+
+Each tool is `{ name, description, inputSchema, execute }`: hand them to the
+tool loop of your LLM SDK, or to an MCP server of your own.
+`registerWebMcpTools(tools)` registers them with the browser's WebMCP API
+(`document.modelContext`), so an agent driving the page can call them. WebMCP
+is a draft; where a browser does not have it, the call returns
+`{ supported: false }` and does nothing.
+
+A model's input is not trusted. One `grid_propose_edits` call carries at most
+`maxEdits` edits (500 by default) and a larger one is refused. A value that
+does not fit its column (text for a number, an object for a text cell, a list
+for a single value) is skipped and reported back, not proposed.
+
+## Audit log and revert
+
+`onDecision` is called after every accept and reject, and after their undo and
+redo, with copies of the proposals it moved and who decided. Write these to
+your own audit log:
+
+```ts
+createReview({
+  api: () => api,
+  setRows: (next) => (rows = next),
+  user: currentUser.email,
+  onDecision: (d) => audit.write({ action: d.action, by: d.by, at: d.at, changes: d.proposals }),
+})
+```
+
+`review.log()` lists the decided proposals in this session, in the order they
+were decided.
+
+If an undo or redo has to save through `onCommit` and the save fails, nothing
+is written and the decision stands. `onError(error, 'undo' | 'redo')` is
+called, `review.lastError` holds it, and the panel says "Undo not saved".
+
+Ctrl+Z covers the last decisions. To take back a whole set later,
+`review.revertSet(setId)` adds a new set that proposes each accepted value's
+reverse. It is reviewed and accepted like any other, so a cell edited after the
+original accept is not overwritten.
+
+## Routing to an approver
+
+`review.toJSON({ setIds })` exports sets with their proposals as plain JSON.
+On the approver's page, `review.merge(json)` adds them beside what that review
+already holds. A cell that also has a pending proposal there from another
+source becomes a conflict. `review.load(json)` replaces everything instead.
+
+An export can come from another person, another session or an agent, so both
+check it first. Something that is not an export (`{ v: 1, sets: [...] }`)
+throws and leaves the review as it was; a proposal with no id, row, field or a
+known status is dropped. Both return `{ dropped }`.
+
+A person's own staged edits can take the same route. `fromStaged` turns a
+`createStagedEditing` buffer into proposals. Staged edits have already been
+written into the grid, so revert the stage first:
+
+```ts
+const changes = stage.changes()
+stage.revert((rowIndex, columnId, value) => api.setCellValue(rowIndex, columnId, value))
+review.add(fromStaged(changes, { api, source: { kind: 'user', id: me.id, label: `${me.name} (staged)` } }))
+const forApprover = JSON.stringify(review.toJSON({ setIds: [review.sets().at(-1)!.id] }))
+```
+
+## At scale
+
+A test in the package runs 100,000 rows and 20,000 proposals through every
+step and fails if one becomes slow. Measured in jsdom on a development
+machine (2026-10-24):
+
+| Step | Time |
+| --- | --- |
+| Add 20,000 proposals | 88 ms |
+| Group them | 55 ms |
+| Build the tint rules | 8 ms |
+| Mark 1,000 cards | 24 ms |
+| Accept all 20,000 (one `setRows`) | 140 ms |
+| Undo, then redo | 71 ms, 96 ms |
+
+Clustering, the stale checks and the writes are each a single pass over the
+proposals and the rows; nothing compares every proposal with every row.
+
+## With SvGrid Base
+
+`SvBase` hands any prop it does not use to its grid, so a review attaches the
+same way. Add `onApply: baseReviewApplied(...)` so an accept does what an edit
+does in a base: "Last modified time" and "Last modified by" fields are stamped
+in the same write, and the record's activity credits the change to what
+proposed it and to the person who accepted it ("CRM agent (accepted by Dana)").
+
+```svelte
+<script lang="ts">
+  import { SvBase, enableBase, baseReviewApplied } from '@svgrid/enterprise/base'
+  import { createReview, SvReviewPanel } from '@svgrid/enterprise/review'
+
+  enableBase()
+  let records = $state(initialRecords)
+  let api = $state(null)
+  const review = createReview({
+    api: () => api,
+    setRows: (next) => (records = next),
+    onApply: baseReviewApplied(() => api),
+  })
+</script>
+
+<SvBase
+  data={records}
+  columns={review.columns(columns)}
+  conditionalFormats={review.formats}
+  primaryField="name"
+  onApiReady={(a) => (api = a)}
+/>
+<SvReviewPanel {review} />
+```
+
+What a base shows:
+
+- **The proposed value in the cell** for field types that draw no cell of
+  their own: single line text, long text, date, number, currency, percent,
+  duration, formula, autonumber, lookup, rollup, count, created time and last
+  modified time.
+- **The proposed value beside the cell** for types with a cell of their own:
+  attachment, checkbox, single and multiple select, user, phone, email, URL,
+  barcode, button, rating, link, created by and last modified by, and long
+  text set to rich text or a percent drawn as a bar. The cell draws as it
+  always does and "→ Closed" follows it, read through the field's own
+  formatter, so a person shows by name.
+- **Cards and events too.** Kanban and gallery cards with pending proposals
+  show "2 proposed", and calendar events a dot, with the fields and values on
+  hover. A form adds new records, so it has nothing to mark.
+- **Sync.** With `createBaseSync`, an accepted value is a change like any
+  other and is saved with the rest. Changes made elsewhere are still marked as
+  before; a review is the step before that, where an agent proposes and a
+  person decides.
+
+With several tables (`tables`), keep one review per table: proposals are keyed
+by record id, and ids can repeat across tables. Give the active table's review
+to the grid and write into that table's rows:
+
+```ts
+const review = createReview({
+  api: () => api,
+  setRows: (next) => (tables = tables.map((t) => (t.id === 'tasks' ? { ...t, data: next } : t))),
+  onApply: baseReviewApplied(() => api),
+})
+```
+
+## Wording and languages
+
+Every string the review shows comes from one message map with English
+defaults: the panel, the group labels, the card and cell marks, and the notes
+on proposals that were not written. Pass any subset to `createReview`, and
+unset keys stay English. `{name}` placeholders are filled in; `REVIEW_MESSAGES`
+lists every key with its English text.
+
+```ts
+const review = createReview({
+  api: () => api,
+  setRows: (next) => (rows = next),
+  messages: {
+    acceptAll: 'Alle annehmen',
+    changes: '{count} Änderungen',
+    labelWhitespace: 'Leerzeichen in {field} kürzen',
+    cardProposed: '{count} vorgeschlagen',
+  },
+})
+```
+
+`<SvReviewPanel messages={...}>` overrides the review's wording for one panel.
+
+## Licensing
+
+Change review is part of SvGrid Enterprise. Without a license key it runs with
+a watermark and a one-time notice. It adds nothing to `@svgrid/grid`: the tint
+is `conditionalFormats`, the proposed value is a wrapped `cell`, and the undo
+step goes through the grid's public command context.
+
+## See also
+
+- [AI helpers](../ai.md)
+- [Undo and redo](../editing/undo-redo.md)
+- [Conditional formatting](../cells/conditional-formatting.md)
+- [Server-side row model](../server/server-row-model.md)
+
+<!-- =================================================================
      /docs/enterprise/evaluation/  (enterprise)
      ================================================================== -->
 
@@ -92936,6 +93670,13 @@ database or schema into a **production-ready CRUD screen** - grid, edit form,
 and SvelteKit API route - in seconds. One `EntitySchema` drives the grid
 columns, the edit form, validation, and the generated code.
 
+<!-- tutorial:mk-studio-tour -->
+<figure class="docs-tutorial docs-tutorial-player" id="tutorial-mk-studio-tour" data-docs-tutorial="mk-studio-tour">
+<video class="docs-tutorial-video" src="/tutorials/mk-studio-tour.mp4" poster="/tutorials/mk-studio-tour.poster.webp" width="960" height="540" controls playsinline preload="none" aria-label="SvGrid Studio: from your database to a SvelteKit app, 190 second tutorial"><track kind="captions" srclang="en" label="English" src="/tutorials/mk-studio-tour.vtt">Your browser does not play embedded video. <a href="/tutorials/mk-studio-tour.mp4">Download the MP4</a>.</video>
+<figcaption><strong>SvGrid Studio: from your database to a SvelteKit app</strong> (3:10, with narration). <a href="https://www.youtube.com/watch?v=1ryvuMVcItU" rel="noopener">Watch on YouTube</a></figcaption>
+</figure>
+<!-- /tutorial:mk-studio-tour -->
+
 ![A CRUD screen generated by SvGrid Studio: sortable, filterable grid with a native pager, over a live data source.](/docs-media/studio-crud.png)
 
 It is part of the **Enterprise** license, and you can evaluate it
@@ -93210,6 +93951,10 @@ Every Studio page, in reading order. The sidebar follows the same order.
 
 - [Licensing](./licensing.md) · [MCP server](../help/mcp-server.md) · [Evaluation](./evaluation.md)
 
+## Transcript: SvGrid Studio: from your database to a SvelteKit app (video, 190 s)
+
+Every internal tool starts the same way. Tables in a database, and the screens your team needs to work with them. SvGrid Studio designs those screens with you, and writes them as a real SvelteKit app. Start from the data you already have. Postgres, MySQL, SQL Server, SQLite, Supabase, a REST API, an OpenAPI spec, or a CSV file. It comes from the team behind jQWidgets, used by more than five thousand customers. Here is how you get from tables to a running app. One. The data model. Bring in a database, a CSV file, or an API spec. Studio reads your tables, their fields, and how they relate. Two. Screens. A screen is a set of blocks on a canvas. KPI tiles, gauges and charts, each one bound to your data. Boards with filters, trend charts and pivot tables, and a record page for every table. Three. Themes. Twenty themes restyle the whole app in one click. And every one of them has a dark mode. Four. Logic. When you need behavior, write it in TypeScript, with typed access to every grid, chart and tile on the page. Five. Preview. Run the app the way your users will. On a desktop, a tablet, or a phone. Six. Generate and deploy. Studio writes a SvelteKit project. Routes, typed schemas with tests, sign-in, and a CI workflow. Then deploy it to Vercel, Netlify or Cloudflare. Or start from a sample app. A CRM, an online store, invoicing, inventory, a help desk, and more. You get SvelteKit routes, typed schemas with tests, a CI workflow, and code you can read and edit. Switch on sign-in with roles, or a Drizzle data layer, when you need them. And an MCP server lets AI agents build with you. Generate the boring parts. Keep the code. Every screen is built from SvGrid components, which we build, maintain and support. Try SvGrid Studio in your browser, at svgrid dot com slash studio. Or start a thirty day free trial, and build your first app this afternoon.
+
 <!-- =================================================================
      /docs/enterprise/studio/getting-started/  (enterprise)
      ================================================================== -->
@@ -93313,9 +94058,9 @@ npm run dev
 Open `http://localhost:5173`. You get:
 
 - A **nav shell** and a home page (`src/routes/+layout.svelte`).
-- Two linked entities - **Customers** and **Orders** - each a full grid +
-  modal create/edit/delete screen. Orders has a searchable lookup back to
-  Customers, so you can see how relations work.
+- Three linked entities - **Customers**, **Orders** and **Products** - each a
+  full grid + modal create/edit/delete screen. Orders has a searchable lookup
+  back to Customers, so you can see how relations work.
 - **Seeded in-memory data** - nothing to install or configure, no database.
 - The **theme and mode you picked**, applied to the whole app - not just the grid.
 
@@ -128656,6 +129401,25 @@ getDisplayedRows(): ReadonlyArray<TData>
 Returns the rows that are currently **visible** in the grid - after
 filter, sort, and pagination. Use for `pro.exportData(...)` when you
 want to export the current view.
+
+### `getRowPosition(rowId)`
+
+```ts
+getRowPosition(rowId: string): number | null
+```
+
+Where a row sits in the filtered, sorted rows across every page (group
+banners included, as paging counts them), or `null` when a filter hides
+it. With client paging, `Math.floor(position / pageSize)` is its page:
+
+```ts
+const position = api.getRowPosition('ord-1042')
+if (position !== null) {
+  const { pageSize } = api.getPageInfo()
+  api.setPage(Math.floor(position / pageSize))
+  api.scrollToRow(position % pageSize)
+}
+```
 
 ## Enterprise extensions
 
