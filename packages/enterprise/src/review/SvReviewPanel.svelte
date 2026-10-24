@@ -116,6 +116,14 @@
   const rejectGroup = (g: ProposalGroup) =>
     guard(`Reject ${g.count} changes: ${g.label}?`, g.count, () => say(review.reject(g.ids)))
 
+  /** The groups whose every member is proven to follow its rule. */
+  const ruleGroups = $derived(groups.filter((g) => g.rule))
+  const ruleCount = $derived(ruleGroups.reduce((n, g) => n + g.count, 0))
+  function acceptRules() {
+    const ids = ruleGroups.flatMap((g) => g.ids)
+    guard(`Accept ${ruleGroups.length} rule groups (${ids.length} changes)?`, ids.length, () => void acceptIds(ids))
+  }
+
   function acceptAll() {
     const ids = groups.flatMap((g) => g.ids)
     guard(`Accept all ${ids.length} changes?`, ids.length, () => void acceptIds(ids))
@@ -189,6 +197,9 @@
     {#if pendingCount}
       <div class="sv-review-all">
         <SvButton size="sm" disabled={busy || conflicts.length > 0} onclick={acceptAll}>Accept all</SvButton>
+        {#if ruleGroups.length && ruleGroups.length < groups.length}
+          <SvButton size="sm" variant="outline" disabled={busy} onclick={acceptRules}>Accept rule groups ({ruleCount})</SvButton>
+        {/if}
         <SvButton size="sm" variant="outline" disabled={busy} onclick={rejectAll}>Reject all</SvButton>
       </div>
       {#if conflicts.length}<p class="sv-review-hint">Resolve the conflicts before accepting everything.</p>{/if}
@@ -285,6 +296,7 @@
               <ul class="sv-review-sample">
                 {#each listed(g) as p (p.id)}
                   <li>
+                    <button type="button" class="sv-review-sample-row" title="Show row {p.rowId} in the grid" onclick={() => review.reveal([p.id])}>
                     <span class="sv-review-pair">
                       <span class="sv-review-before">{showValue(p.before)}</span>
                       <span class="sv-review-arrow" aria-hidden="true">→</span>
@@ -296,6 +308,7 @@
                         {#if p.reason}<span>{p.reason}</span>{/if}
                       </span>
                     {/if}
+                    </button>
                   </li>
                 {/each}
               </ul>
@@ -374,7 +387,7 @@
     height: 4px;
     border-radius: 999px;
     overflow: hidden;
-    background: var(--sg-muted-bg, var(--sg-header-bg, #f3f4f6));
+    background: color-mix(in srgb, var(--sg-fg, #111827) 12%, transparent);
   }
   .sv-review-progress span { transition: width 0.3s ease; }
   .sv-review-progress .is-accepted { background: var(--sg-success, #16a34a); }
@@ -403,7 +416,7 @@
     height: 15px;
     flex: none;
     border-radius: 999px;
-    background: var(--sg-muted-bg, #e5e7eb);
+    background: color-mix(in srgb, var(--sg-fg, #111827) 12%, transparent);
     box-shadow: inset 0 0 0 1px var(--sg-border, #d1d5db);
     transition: background 0.15s ease;
   }
@@ -482,13 +495,15 @@
     outline: 2px solid var(--sg-focus-ring, var(--sg-accent, #2563eb));
     outline-offset: -2px;
   }
+  /* Tracks and quiet fills mix the text colour, so they read in any theme,
+     light or dark, without relying on a token the theme may not define. */
   /* The label wraps, at word breaks: it is what a reviewer decides on, so it
      is never cut. Count and confidence go on the line under it. */
   .sv-review-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
   .sv-review-label { overflow-wrap: break-word; font-weight: 550; }
   .sv-review-conf { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; color: var(--sg-muted, #6b7280); font-size: 12px; }
   .sv-review-n { font-variant-numeric: tabular-nums; font-weight: 650; color: var(--sg-fg, #111827); }
-  .sv-review-meter { display: inline-block; width: 36px; height: 4px; border-radius: 999px; background: var(--sg-muted-bg, #f3f4f6); overflow: hidden; }
+  .sv-review-meter { display: inline-block; width: 36px; height: 4px; border-radius: 999px; background: color-mix(in srgb, var(--sg-fg, #111827) 12%, transparent); overflow: hidden; }
   .sv-review-meter span { display: block; height: 100%; background: var(--sg-success, #16a34a); }
   .sv-review-meter.is-low span { background: var(--sg-warning, #d97706); }
   .sv-review-badge {
@@ -500,7 +515,7 @@
     padding: 1px 7px;
     border-radius: 999px;
   }
-  .sv-review-badge.is-rule { color: var(--sg-muted, #6b7280); background: var(--sg-muted-bg, #f3f4f6); }
+  .sv-review-badge.is-rule { color: var(--sg-muted, #6b7280); background: color-mix(in srgb, var(--sg-fg, #111827) 8%, transparent); }
   .sv-review-badge.is-check { color: color-mix(in srgb, var(--sg-warning, #d97706) 70%, var(--sg-fg, #111827)); background: color-mix(in srgb, var(--sg-warning, #d97706) 15%, transparent); }
   .sv-review-badge.is-each { color: color-mix(in srgb, var(--sg-danger, #dc2626) 75%, var(--sg-fg, #111827)); background: color-mix(in srgb, var(--sg-danger, #dc2626) 12%, transparent); }
 
@@ -531,9 +546,27 @@
   .sv-review-dist, .sv-review-sample { list-style: none; margin: 0; padding: 0; }
   .sv-review-dist li { display: grid; grid-template-columns: minmax(0, 1fr) 60px auto; align-items: center; gap: 8px; padding: 2px 0; }
   .sv-review-dist-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .sv-review-dist-bar { height: 6px; border-radius: 999px; background: var(--sg-muted-bg, #f3f4f6); overflow: hidden; }
+  .sv-review-dist-bar { height: 6px; border-radius: 999px; background: color-mix(in srgb, var(--sg-fg, #111827) 12%, transparent); overflow: hidden; }
   .sv-review-dist-bar span { display: block; height: 100%; background: color-mix(in srgb, var(--sg-fg, #111827) 35%, transparent); }
-  .sv-review-sample li { display: flex; flex-direction: column; gap: 1px; padding: 5px 0; border-top: 1px dashed var(--sg-border, #e5e7eb); }
+  .sv-review-sample li { border-top: 1px dashed var(--sg-border, #e5e7eb); }
+  /* A sample line is a button: a click shows that row in the grid. */
+  .sv-review-sample-row {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: 100%;
+    padding: 5px 4px;
+    margin: 0 -4px;
+    font: inherit;
+    text-align: left;
+    color: inherit;
+    background: none;
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .sv-review-sample-row:hover { background: var(--sg-row-hover-bg, #f9fafb); }
+  .sv-review-sample-row:focus-visible { outline: 2px solid var(--sg-focus-ring, var(--sg-accent, #2563eb)); outline-offset: -2px; }
   .sv-review-sample li:first-child { border-top: 0; }
   .sv-review-pair { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
   .sv-review-before { color: var(--sg-muted, #6b7280); text-decoration: line-through; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

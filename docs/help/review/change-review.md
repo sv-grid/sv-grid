@@ -212,6 +212,11 @@ staleness there.
 | `confirmOver` | `number` | `50` | Ask before deciding more than this many at once. |
 | `onDecide` | `(outcome) => void` | | Called after each decision. |
 
+**Accept rule groups** accepts every rule group at once (trims, case changes,
+reformats, one numeric factor), the changes that are proven by their rule, and
+leaves the groups that need a person. A click on a sample line shows that row
+in the grid, and the row lights up for a moment so the eye finds it.
+
 It is a plain panel, not a drawer, so the grid stays usable beside it. Inside
 the group list, **J** and **K** move between groups, **Enter** opens one, **A**
 accepts it and **R** rejects it. "Show in grid" goes to the group's next row

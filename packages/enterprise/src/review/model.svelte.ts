@@ -27,7 +27,7 @@ import type { ConditionalFormat, SvGridApi } from '@svgrid/grid'
 import { nudgeEnterprise } from '../license'
 import { clusterProposals, type ClusterOptions } from './cluster'
 import { sameValue } from './equal'
-import { pendingFormats } from './formats'
+import { FLASH_BG, pendingFormats } from './formats'
 import { hasPending, stripPending, trackPendingSource, withPending } from './pending-filter'
 import { registerCardMarks, type CardMark } from './card-marks.svelte'
 import { registerRichCellMarks } from './rich-cells'
@@ -713,12 +713,26 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
     }
   }
 
+  /** The row "Show in grid" just landed on; it flashes for a moment so the eye finds it. */
+  let flashRow = $state<string | null>(null)
+  let flashTimer: ReturnType<typeof setTimeout> | undefined
+  function flash(rowId: string) {
+    flashRow = rowId
+    clearTimeout(flashTimer)
+    flashTimer = setTimeout(() => (flashRow = null), 1600)
+  }
+
   const formats = $derived.by((): ConditionalFormat<any>[] => {
     void version
     const api = getApi()
     if (!api || !api.getOption('getRowId')) return []
     linkCards(api)
-    return pendingFormats(list('pending'), rowIdFn(api), api.getColumns())
+    const idOf = rowIdFn(api)
+    const out = pendingFormats(list('pending'), idOf, api.getColumns())
+    const lit = flashRow
+    // Last, so it wins over the pending tint; every column of the row.
+    if (lit !== null) out.push({ type: 'rule', when: ({ row }: { row: TData }) => String(idOf(row, 0)) === lit, background: FLASH_BG })
+    return out
   })
 
   /** Pending-field set as a string, so `columns()` rebuilds only when it changes. */
@@ -787,6 +801,7 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
         index -= page * pageSize
       }
       api.scrollToRow(index)
+      flash(target.p.rowId)
       return { id: target.p.id, hidden }
     }
     // The display index counts group banners, which getDisplayedRows skips:
@@ -795,6 +810,7 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
     for (let i = 0; i < limit; i++) {
       if (api.getRowId(i) === target.p.rowId) {
         api.scrollToRow(i)
+        flash(target.p.rowId)
         break
       }
     }

@@ -13,6 +13,8 @@ import type { Proposal } from './types'
  * selection and focus.
  */
 export const PENDING_BG = 'var(--sg-review-pending-bg, color-mix(in srgb, var(--sg-warning, #d97706) 13%, transparent))'
+/** The row "Show in grid" lands on, for a moment: a stronger wash of the same amber. */
+export const FLASH_BG = 'var(--sg-review-flash-bg, color-mix(in srgb, var(--sg-warning, #d97706) 32%, transparent))'
 /** Drawn before the value, so a pending cell is never marked by colour alone. */
 export const PENDING_ICON = '•'
 

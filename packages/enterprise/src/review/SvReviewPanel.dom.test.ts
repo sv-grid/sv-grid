@@ -174,3 +174,39 @@ it('the toggle reads off once the grid clears the advanced filter itself', async
   expect(review.pendingOnly).toBe(false)
   destroy()
 })
+
+describe('panel polish', () => {
+  it('Accept rule groups takes only the provable groups and leaves judgment ones pending', async () => {
+    const { review, target, rows, destroy } = await setup()
+    review.add({
+      source: AGENT,
+      proposals: [
+        { rowId: 'a', field: 'name', before: '  Acme', after: 'Acme' },
+        { rowId: 'b', field: 'name', before: 'Globex ', after: 'Globex' },
+        { rowId: 'c', field: 'region', before: '', after: 'APAC' },
+      ],
+    })
+    flushSync()
+    const btn = [...target.querySelectorAll('button')].find((b) => b.textContent?.includes('Accept rule groups'))!
+    expect(btn.textContent).toContain('(2)')
+    btn.click()
+    await vi.waitFor(() => expect(rows()[0].name).toBe('Acme'))
+    expect(review.pending().map((p) => p.field)).toEqual(['region'])
+    destroy()
+  })
+
+  it('a click on a sample line shows that row in the grid and lights it for a moment', async () => {
+    const { review, target, destroy } = await setup()
+    review.add({ source: AGENT, proposals: [{ rowId: 'c', field: 'region', before: '', after: 'APAC' }] })
+    flushSync()
+    ;(target.querySelector('.sv-review-group-head') as HTMLButtonElement).click()
+    flushSync()
+    ;(target.querySelector('.sv-review-sample-row') as HTMLButtonElement).click()
+    flushSync()
+    const lit = (review.formats as any[]).filter((f) => !f.columns)
+    expect(lit).toHaveLength(1)
+    expect(lit[0].when({ row: { id: 'c' } })).toBe(true)
+    await vi.waitFor(() => expect((review.formats as any[]).filter((f) => !f.columns)).toHaveLength(0), { timeout: 3000 })
+    destroy()
+  })
+})
