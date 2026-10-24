@@ -284,6 +284,22 @@ describe('core - column visibility + leaf columns', () => {
     expect(next[0]!.getCanSort()).toBe(false)
   })
 
+  it('a group of one child recreated inline keeps its leaf on the leaf definition', () => {
+    const make = () => [{ id: 'g', header: 'Group', columns: [{ field: 'name' }] }, { field: 'role' }]
+    let current: Array<Record<string, unknown>> = make()
+    const grid = createSvGrid({
+      data,
+      get columns() {
+        return current
+      },
+      _features: features,
+      _rowModels: { coreRowModel: createCoreRowModel() },
+    } as any)
+    grid.getAllColumns()
+    current = make()
+    expect(grid.getAllColumns().map((c) => c.columnDef.field)).toEqual(['name', 'role'])
+  })
+
   it('getVisibleLeafColumns reflects columnVisibility state', () => {
     const grid = makeGrid({ columnVisibility: { name: false } })
     const visible = (grid as any).getVisibleLeafColumns?.() ?? grid.getAllColumns()

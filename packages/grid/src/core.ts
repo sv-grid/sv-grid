@@ -2434,8 +2434,7 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
       // `id` / `header` (the visibility-affecting structure of a
       // column), keep the previous build but point each column at its new
       // definition, so a changed `cell`, `sortable` or `editorOptions`
-      // takes effect. A soft hit only happens with no column groups, where
-      // built columns and definitions line up one to one.
+      // takes effect.
       if (
         cachedColumnsInput &&
         options.columns.length === cachedColumnsInput.length &&
@@ -2457,7 +2456,9 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
         // Update the stored input reference so the strict check hits
         // next time, but reuse the built column model.
         cachedColumnsInput = options.columns
-        cachedColumns.forEach((c, i) => (c.columnDef = options.columns[i]!))
+        // Only without groups: a group of one child also passes the length
+        // check, and its leaf must not take the group's definition.
+        if (!options.columns.some((c) => c.columns?.length)) cachedColumns.forEach((c, i) => (c.columnDef = options.columns[i]!))
         return cachedColumns
       }
 
