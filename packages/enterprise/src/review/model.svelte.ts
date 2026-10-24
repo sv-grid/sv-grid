@@ -30,6 +30,7 @@ import { sameValue } from './equal'
 import { pendingFormats } from './formats'
 import { hasPending, stripPending, trackPendingSource, withPending } from './pending-filter'
 import { registerCardMarks, type CardMark } from './card-marks.svelte'
+import { registerRichCellMarks } from './rich-cells'
 import { showValue } from './cluster'
 import { wrapColumns } from './ghost'
 import type { ChangeSet, Proposal, ProposalGroup, ProposalInput, ProposalSource, ProposalStatus } from './types'
@@ -39,6 +40,7 @@ export type ReviewGridApi = Pick<
   SvGridApi<any, any>,
   | 'getData' | 'getOption' | 'getActiveCell' | 'getRowId' | 'getColumns' | 'getCommandContext' | 'stopEditing' | 'scrollToRow' | 'getDisplayedRows'
   | 'getAdvancedFilter' | 'setAdvancedFilter'
+  | 'getRowPosition' | 'getPageInfo' | 'setPage' | 'getState'
 >
 
 export type ReviewOptions<TData> = {
@@ -119,6 +121,9 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
   if (opts.server && !opts.onCommit) throw new Error('[svgrid review] onCommit is required with a server row model')
   // Without a key: watermark and a one-time nudge. The review still runs.
   nudgeEnterprise('Change review')
+  // Proposed values beside rich cells (selects, ratings): registered by the
+  // first review, so grids in apps without one keep the plain fast path.
+  registerRichCellMarks()
 
   const all = new Map<string, Proposal>()
   const sets = new Map<string, Omit<ChangeSet, 'proposals'> & { ids: string[] }>()
@@ -697,7 +702,14 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
     const fn = api.getOption('getRowId') as object | undefined
     if (fn && fn !== marksFor) {
       marksFor = fn
-      registerCardMarks(fn, { cardMark, owns })
+      registerCardMarks(fn, {
+        cardMark,
+        owns,
+        cellProposal: (rowId, field) => {
+          const p = pendingFor(rowId, field)
+          return p ? { after: p.after, source: p.source.label, reason: p.reason } : null
+        },
+      })
     }
   }
 
@@ -739,31 +751,54 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
   // ---- navigation ---------------------------------------------------------
 
   /**
-   * Scroll to the next proposal of `ids` on the current page, after `fromId`.
-   * Does not move the active cell. Returns the id scrolled to and how many of
-   * `ids` are not on this page.
+   * Show the next proposal of `ids` after `fromId`, on whatever page it is:
+   * with client paging the grid moves to its page (`api.getRowPosition`),
+   * then scrolls to it. Does not move the active cell. With grouping, where
+   * pages are counted in groups, it stays on the current page. Returns the id
+   * shown and how many of `ids` cannot be shown (filtered out, or on another
+   * page of a grouped grid).
    */
-  function reveal(ids: ReadonlyArray<string>, fromId?: string): { id: string | null; offPage: number } {
+  function reveal(ids: ReadonlyArray<string>, fromId?: string): { id: string | null; hidden: number } {
     const api = getApi()
-    if (!api) return { id: null, offPage: ids.length }
-    const idFn = rowIdFn(api)
-    const shown = api.getDisplayedRows()
-    const onPage = new Set(shown.map((r, i) => idFn(r as TData, i)))
-    const targets = ids.map((i) => all.get(i)).filter((p): p is Proposal => !!p && onPage.has(p.rowId))
-    const offPage = ids.length - targets.length
-    if (!targets.length) return { id: null, offPage }
-    const start = fromId ? targets.findIndex((p) => p.id === fromId) + 1 : 0
-    const target = targets[start % targets.length]!
+    if (!api) return { id: null, hidden: ids.length }
+    const proposals = ids.map((i) => all.get(i)).filter((p): p is Proposal => !!p)
+    const grouped = (api.getState().grouping?.length ?? 0) > 0
+    const paged = !!api.getOption('pageable') && !api.getOption('externalPagination')
+    let reachable: Array<{ p: Proposal; position: number }>
+    if (grouped) {
+      const idFn = rowIdFn(api)
+      const onPage = new Set(api.getDisplayedRows().map((r, i) => String(idFn(r as TData, i))))
+      reachable = proposals.filter((p) => onPage.has(p.rowId)).map((p) => ({ p, position: -1 }))
+    } else {
+      reachable = proposals
+        .map((p) => ({ p, position: api.getRowPosition(p.rowId) }))
+        .filter((x): x is { p: Proposal; position: number } => x.position !== null)
+    }
+    const hidden = proposals.length - reachable.length
+    if (!reachable.length) return { id: null, hidden }
+    const start = fromId ? reachable.findIndex((x) => x.p.id === fromId) + 1 : 0
+    const target = reachable[start % reachable.length]!
+    if (!grouped) {
+      let index = target.position
+      if (paged) {
+        const { pageIndex, pageSize } = api.getPageInfo()
+        const page = Math.floor(index / pageSize)
+        if (page !== pageIndex) api.setPage(page)
+        index -= page * pageSize
+      }
+      api.scrollToRow(index)
+      return { id: target.p.id, hidden }
+    }
     // The display index counts group banners, which getDisplayedRows skips:
     // walk the display rows until the id matches.
-    const limit = shown.length * 2 + 64
+    const limit = api.getDisplayedRows().length * 2 + 64
     for (let i = 0; i < limit; i++) {
-      if (api.getRowId(i) === target.rowId) {
+      if (api.getRowId(i) === target.p.rowId) {
         api.scrollToRow(i)
         break
       }
     }
-    return { id: target.id, offPage }
+    return { id: target.p.id, hidden }
   }
 
   const review = {

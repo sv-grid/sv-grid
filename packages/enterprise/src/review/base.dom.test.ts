@@ -88,3 +88,34 @@ describe('in a grid with field types', () => {
     destroy()
   })
 })
+
+describe('rich cells', () => {
+  it('a select keeps its own cell and shows the proposed value after it', async () => {
+    const { review, target, destroy } = await mountBase()
+    review.add({ source: AGENT, proposals: [{ rowId: 'r2', field: 'status', before: 'Open', after: 'Closed', reason: 'stale lead' }] })
+    flushSync()
+    const mark = await vi.waitFor(() => {
+      const m = target.querySelector('[data-col-id="status"] .sv-review-cellmark')
+      expect(m).not.toBeNull()
+      return m!
+    })
+    expect(mark.textContent!.replace(/\s+/g, ' ').trim()).toBe('→ Closed')
+    expect(mark.getAttribute('title')).toBe('CRM agent proposes Closed - stale lead')
+    // The select still draws its own value next to the mark.
+    expect(target.querySelector('[data-col-id="status"]')!.textContent).toContain('Open')
+    review.reject(review.pending().map((p) => p.id))
+    flushSync()
+    await vi.waitFor(() => expect(target.querySelector('.sv-review-cellmark')).toBeNull())
+    destroy()
+  })
+
+  it('a person field shows the proposed person by name, through the field formatter', async () => {
+    const { review, target, destroy } = await mountBase()
+    // mountBase sets the users; add the one the proposal names.
+    setFieldUsers([{ id: 'u-dana', name: 'Dana' }, { id: 'u-lee', name: 'Lee Park' }])
+    review.add({ source: AGENT, proposals: [{ rowId: 'r1', field: 'updatedBy', before: undefined, after: 'u-lee' }] })
+    flushSync()
+    await vi.waitFor(() => expect(target.querySelector('[data-col-id="updatedBy"] .sv-review-cellmark')?.textContent).toContain('Lee Park'))
+    destroy()
+  })
+})

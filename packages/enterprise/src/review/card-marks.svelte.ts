@@ -15,8 +15,12 @@ export type CardMark = {
   text: string
 }
 
+/** A pending proposal in one cell, as a cell mark shows it. */
+export type CellProposal = { after: unknown; source: string; reason?: string }
+
 type Source = {
   cardMark(rowId: string): CardMark | null
+  cellProposal(rowId: string, field: string): CellProposal | null
   /** Whether a row object is one of this review's grid rows. */
   owns(row: unknown): boolean
 }
@@ -35,6 +39,18 @@ export function registerCardMarks(getRowId: object, source: Source): void {
   // Registration runs while the grid reads its columns or formats, where state
   // must not change; the cards hear about it a microtask later.
   queueMicrotask(() => (generation += 1))
+}
+
+/**
+ * The pending proposal in a grid cell, or null. `row` is the row object,
+ * `rowId` the grid's id for it; used by the cell mark of rich cells.
+ */
+export function cellProposalFor(getRowId: object | undefined, row: unknown, rowId: string, field: string): CellProposal | null {
+  void generation
+  const list = getRowId ? sources.get(getRowId) : undefined
+  if (!list) return null
+  for (const source of list) if (source.owns(row)) return source.cellProposal(rowId, field)
+  return null
 }
 
 /** The mark for a card's row, or null (no review on this grid, or nothing pending). */

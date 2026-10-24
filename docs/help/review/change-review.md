@@ -158,8 +158,8 @@ concatenated with your own formats if you have them. Theme the tint with
 value, then the current value struck through. It does this by wrapping the
 column's `cell`, and only for columns where that leaves the rest of the column
 as it was: columns with a `cell` of their own, and plain text columns.
-Checkbox, list, chips, sparkline, boolean and field-type columns keep the tint
-and the dot, and the panel shows their values.
+Checkbox, list, chips and boolean columns, and field types with a cell of their
+own, keep their cell as it is and show the proposed value after it ("→ Closed").
 
 ## Deciding
 
@@ -214,9 +214,11 @@ staleness there.
 
 It is a plain panel, not a drawer, so the grid stays usable beside it. Inside
 the group list, **J** and **K** move between groups, **Enter** opens one, **A**
-accepts it and **R** rejects it. "Show in grid" scrolls to the group's rows on
-the current page without moving the active cell, and says how many are on
-other pages.
+accepts it and **R** rejects it. "Show in grid" goes to the group's next row
+without moving the active cell: with client paging it turns to the row's page
+first (`api.getRowPosition`), then scrolls to it. Rows a filter hides are
+counted, not shown. With grouping, where pages count groups, it stays on the
+current page.
 
 **Only rows with changes** narrows the grid to the rows with a pending or
 conflicting proposal, on top of whatever the user filtered: it adds one
@@ -342,11 +344,13 @@ What a base shows:
 - **The proposed value in the cell** for field types that draw no cell of
   their own: single line text, long text, date, number, currency, percent,
   duration, formula, autonumber, lookup, rollup, count, created time and last
-  modified time. Types with a cell of their own keep it and show the tint and
-  the dot, and the panel shows their values: attachment, checkbox, single and
-  multiple select, user, phone, email, URL, barcode, button, rating, link,
-  created by and last modified by. So do long text set to rich text and a
-  percent drawn as a bar.
+  modified time.
+- **The proposed value beside the cell** for types with a cell of their own:
+  attachment, checkbox, single and multiple select, user, phone, email, URL,
+  barcode, button, rating, link, created by and last modified by, and long
+  text set to rich text or a percent drawn as a bar. The cell draws as it
+  always does and "→ Closed" follows it, read through the field's own
+  formatter, so a person shows by name.
 - **Cards and events too.** Kanban and gallery cards with pending proposals
   show "2 proposed", and calendar events a dot, with the fields and values on
   hover. A form adds new records, so it has nothing to mark.

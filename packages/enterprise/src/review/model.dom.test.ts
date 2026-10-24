@@ -11,18 +11,18 @@ const IMPORT: ProposalSource = { kind: 'import', id: 'import', label: 'Import' }
  * returns, including its own writes such as a paste); `app` is the app's
  * array. They are the same until the grid writes on its own.
  */
-function setup(opts: { fullRowEditing?: boolean; visible?: (r: Row) => boolean; onCommit?: any; server?: any } = {}) {
+function setup(opts: { fullRowEditing?: boolean; visible?: (r: Row) => boolean; onCommit?: any; server?: any; pageSize?: number } = {}) {
   const rows: Row[] = [
     { id: 'a', name: 'Acme ', region: '', amount: 100 },
     { id: 'b', name: 'Globex', region: 'EMEA', amount: 200 },
     { id: 'c', name: 'Initech', region: '', amount: 300 },
   ]
-  const state = { app: rows, grid: rows, active: null as null | { rowIndex: number; colIndex: number; columnId: string } }
+  const state = { app: rows, grid: rows, page: 0, active: null as null | { rowIndex: number; colIndex: number; columnId: string } }
   const undo: Array<{ u: () => void; r: () => void }> = []
   const displayed = () => state.grid.filter(opts.visible ?? (() => true))
   const api = {
     getData: () => state.grid,
-    getOption: (k: string) => (k === 'getRowId' ? (r: Row) => r.id : k === 'fullRowEditing' ? !!opts.fullRowEditing : undefined),
+    getOption: (k: string) => (k === 'getRowId' ? (r: Row) => r.id : k === 'fullRowEditing' ? !!opts.fullRowEditing : k === 'pageable' ? !!opts.pageSize : undefined),
     getActiveCell: () => state.active,
     getRowId: (i: number | Row) => (typeof i === 'number' ? displayed()[i]?.id ?? null : i.id),
     getColumns: () => [
@@ -34,6 +34,13 @@ function setup(opts: { fullRowEditing?: boolean; visible?: (r: Row) => boolean; 
     stopEditing: vi.fn(() => false),
     scrollToRow: vi.fn(),
     getDisplayedRows: () => displayed(),
+    getState: () => ({ grouping: [] }),
+    getRowPosition: (id: string) => {
+      const i = displayed().findIndex((r) => r.id === id)
+      return i < 0 ? null : i
+    },
+    getPageInfo: () => ({ pageIndex: state.page, pageSize: opts.pageSize ?? 100, pageCount: 1, total: 3 }),
+    setPage: vi.fn((p: number) => (state.page = p)),
   } as unknown as ReviewGridApi
   const setRows = vi.fn((next: Row[]) => {
     state.app = next
@@ -268,13 +275,22 @@ describe('display and navigation', () => {
     expect(out[0].cell({ row: { id: 'b' }, getValue: () => 'Globex' })).toBeUndefined()
   })
 
-  it('reveal scrolls to the display index without moving the active cell, and counts what is off this page', () => {
+  it('reveal scrolls to the row without moving the active cell, and counts what filters hide', () => {
     const { review, api } = setup({ visible: (r) => r.id !== 'a' })
     review.add({ source: AGENT, proposals: props(['a', 'region', '', 'EMEA'], ['c', 'region', '', 'APAC']) })
     const ids = review.pending().map((p) => p.id)
     const r = review.reveal(ids)
-    expect(r.offPage).toBe(1)
+    expect(r.hidden).toBe(1)
     expect(api.scrollToRow).toHaveBeenCalledWith(1) // c is second on the page
+  })
+
+  it('reveal moves to the page a row is on, then scrolls within the page', () => {
+    const { review, api } = setup({ pageSize: 1 })
+    review.add({ source: AGENT, proposals: props(['c', 'region', '', 'APAC']) })
+    const r = review.reveal(review.pending().map((p) => p.id))
+    expect(r.hidden).toBe(0)
+    expect(api.setPage).toHaveBeenCalledWith(2) // c is the third row, one row per page
+    expect(api.scrollToRow).toHaveBeenLastCalledWith(0)
   })
 })
 

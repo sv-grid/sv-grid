@@ -65,7 +65,7 @@
   let busy = $state(false)
   let announce = $state('')
   let confirming = $state<{ label: string; count: number; run: () => void } | null>(null)
-  let revealed = $state<Record<string, { id: string | null; offPage: number }>>({})
+  let revealed = $state<Record<string, { id: string | null; hidden: number }>>({})
   let listEl = $state<HTMLElement | null>(null)
 
   const BADGE: Record<ProposalGroup['kind'], { text: string; tone: 'rule' | 'check' | 'each'; hint: string }> = {
@@ -303,7 +303,7 @@
                 <SvButton size="sm" variant="ghost" onclick={() => showInGrid(g)}>
                   {revealed[g.key]?.id ? 'Next in grid' : 'Show in grid'}
                 </SvButton>
-                {#if revealed[g.key]?.offPage}<span class="sv-review-hint">{revealed[g.key]!.offPage} not on this page</span>{/if}
+                {#if revealed[g.key]?.hidden}<span class="sv-review-hint">{revealed[g.key]!.hidden} hidden by filters or grouping</span>{/if}
               </div>
             </div>
           {/if}
