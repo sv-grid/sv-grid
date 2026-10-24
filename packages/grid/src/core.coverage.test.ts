@@ -265,6 +265,25 @@ describe('core - column visibility + leaf columns', () => {
     expect(grid.getAllColumns()[0]!.columnDef.fieldProps).toBe(fieldProps)
   })
 
+  it('a reused column reads the new definition: a changed cell or sortable takes effect', () => {
+    let current: Array<Record<string, unknown>> = columns.map((c) => ({ ...c }))
+    const grid = createSvGrid({
+      data,
+      get columns() {
+        return current
+      },
+      _features: features,
+      _rowModels: { coreRowModel: createCoreRowModel() },
+    } as any)
+    const first = grid.getAllColumns()
+    const cell = () => 'new renderer'
+    current = columns.map((c, i) => (i === 0 ? { ...c, cell, sortable: false } : { ...c }))
+    const next = grid.getAllColumns()
+    expect(next).toBe(first) // still reused: same structure
+    expect(next[0]!.columnDef.cell).toBe(cell)
+    expect(next[0]!.getCanSort()).toBe(false)
+  })
+
   it('getVisibleLeafColumns reflects columnVisibility state', () => {
     const grid = makeGrid({ columnVisibility: { name: false } })
     const visible = (grid as any).getVisibleLeafColumns?.() ?? grid.getAllColumns()

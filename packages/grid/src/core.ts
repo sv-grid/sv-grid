@@ -2432,10 +2432,10 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
       // inline on every render (e.g. `columns={[...]}`). If the new
       // array has the same length AND each entry has the same `field` /
       // `id` / `header` (the visibility-affecting structure of a
-      // column), trust the previous build. Mutable inner fields like
-      // `cell` and `editorOptions` are still picked up on the next real
-      // render that bumps an actual data dep - they're read at cell-
-      // render time, not at this top-level cache.
+      // column), keep the previous build but point each column at its new
+      // definition, so a changed `cell`, `sortable` or `editorOptions`
+      // takes effect. A soft hit only happens with no column groups, where
+      // built columns and definitions line up one to one.
       if (
         cachedColumnsInput &&
         options.columns.length === cachedColumnsInput.length &&
@@ -2457,6 +2457,7 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
         // Update the stored input reference so the strict check hits
         // next time, but reuse the built column model.
         cachedColumnsInput = options.columns
+        cachedColumns.forEach((c, i) => (c.columnDef = options.columns[i]!))
         return cachedColumns
       }
 
@@ -2474,17 +2475,19 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
             leaves.push(...build(columnDef.columns, depth + 1, id))
             return
           }
-          leaves.push({
+          // The closures read `col.columnDef`, not the `columnDef` above: a
+          // soft cache hit repoints the column at a newer definition.
+          const col: Column<TData> = {
             id,
             depth,
             parentId,
             columnDef,
             getCanSort: () =>
               Boolean((options._features as any).rowSortingFeature) &&
-              columnDef.sortable !== false,
+              col.columnDef.sortable !== false,
             getCanFilter: () =>
               Boolean((options._features as any).columnFilteringFeature) &&
-              columnDef.filterable !== false,
+              col.columnDef.filterable !== false,
             getIsSorted: () => {
               const entry = store.state.sorting?.find((s: any) => s.id === id)
               if (!entry) return false
@@ -2501,7 +2504,8 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
               store.setState((prev) => ({ ...prev, sorting: nextClause }))
               options.onSortingChange?.(nextClause)
             },
-          })
+          }
+          leaves.push(col)
         })
         return leaves
       }
