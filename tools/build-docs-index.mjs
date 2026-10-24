@@ -23,6 +23,7 @@
  */
 import { readdir, readFile, writeFile, stat, mkdir } from 'node:fs/promises'
 import { readFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import { join, relative, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { isHiddenDoc, isLlmOnlyDoc, parseDocFrontmatter, sectionOf } from './lib/doc-meta.mjs'
@@ -168,6 +169,42 @@ const PAGE_PILLAR = {
   'help/cells/tables':              'sheet',
   'help/web-components/sv-sheet':   'sheet',
 }
+/**
+ * When each page last changed, for docs.json `lastUpdated`. A file's mtime is
+ * when the checkout wrote it, so in CI and in any fresh clone every page read
+ * as changed that day, and each release commit rewrote all of the dates. The
+ * last commit that touched the page is the answer; a page edited and not yet
+ * committed is today's (its mtime). A shallow clone (the site deploy) has no
+ * history, so it keeps the date the committed docs.json already holds, and
+ * mtime is the last resort for a page in neither.
+ */
+function lastUpdatedDates() {
+  const fromGit = new Map()
+  const dirty = new Set()
+  const git = (args) => execFileSync('git', ['-c', 'core.quotePath=false', ...args], { cwd: ROOT, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 })
+  try {
+    if (git(['rev-parse', '--is-shallow-repository']).trim() !== 'true') {
+      let date = ''
+      for (const line of git(['log', '--format=%x00%cs', '--name-only', '--', 'docs']).split('\n')) {
+        if (line.startsWith('\0')) date = line.slice(1)
+        else if (line.startsWith('docs/') && !fromGit.has(line.slice(5))) fromGit.set(line.slice(5), date)
+      }
+      for (const line of git(['status', '--porcelain', '--', 'docs']).split('\n')) {
+        const path = line.slice(3).split(' -> ').pop()
+        if (path?.startsWith('docs/')) dirty.add(path.slice(5))
+      }
+    }
+  } catch { /* not a git checkout: the committed dates, then mtime */ }
+  const committed = new Map()
+  try {
+    for (const p of JSON.parse(readFileSync(join(DOCS_DIR, 'docs.json'), 'utf-8')).pages ?? []) {
+      if (p.path && p.lastUpdated) committed.set(p.path, p.lastUpdated)
+    }
+  } catch { /* no manifest yet */ }
+  const day = (d) => d.toISOString().slice(0, 10)
+  return (rel, mtime) => (dirty.has(rel) ? day(mtime) : fromGit.get(rel) ?? committed.get(rel) ?? day(mtime))
+}
+
 const pillarOf = (slug, section) => PAGE_PILLAR[slug] ?? SECTION_PILLAR[section] ?? 'grid'
 
 // Curated sidebar order within a pillar (index = position; unknown → end).
@@ -371,6 +408,7 @@ async function main() {
   // the whole picture over one that was built from all of it.
   guardGenerator({ root: ROOT, name: 'build-docs-index', needs: ['website'] })
 
+  const lastUpdated = lastUpdatedDates()
   const docs = []
   // Unrouted pages that still belong in the LLM bundle - the full API
   // reference. Kept in its own list so it can never leak into docs.json,
@@ -414,7 +452,7 @@ async function main() {
       tier:        ENTERPRISE_SECTIONS.has(section) || PAGE_PILLAR[slug] !== undefined || /\bEnterprise\b/.test(title) ? 'enterprise' : 'community',
       ...(pageGroupLabel.has(rel) ? { group: pageGroupLabel.get(rel) } : {}),
       words:       body.split(/\s+/).filter(Boolean).length,
-      lastUpdated: s.mtime.toISOString().slice(0, 10),
+      lastUpdated: lastUpdated(rel, s.mtime),
       // Demo associations come from two link styles: the `data-docs-demo`
       // embeds (help/ pages) and inline `#/demos/<id>` links (studio/ pages).
       demoIds:     [...new Set([
