@@ -27,7 +27,7 @@ import type { ConditionalFormat, SvGridApi } from '@svgrid/grid'
 import { nudgeEnterprise } from '../license'
 import { clusterProposals, type ClusterOptions } from './cluster'
 import { sameValue } from './equal'
-import { FLASH_BG, pendingFormats } from './formats'
+import { FLASH_BG, pendingFormats, CONFLICT_BG, CONFLICT_ICON } from './formats'
 import { hasPending, stripPending, trackPendingSource, withPending } from './pending-filter'
 import { registerCardMarks, type CardMark } from './card-marks.svelte'
 import { registerRichCellMarks } from './rich-cells'
@@ -821,7 +821,10 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
     if (!api || !api.getOption('getRowId')) return []
     linkCards(api)
     const idOf = rowIdFn(api)
-    const out = pendingFormats(list('pending'), idOf, api.getColumns())
+    const cols = api.getColumns()
+    const out = pendingFormats(list('pending'), idOf, cols)
+    // After the pending tint, so a disputed cell reads as disputed.
+    out.push(...pendingFormats(list('conflict'), idOf, cols, { background: CONFLICT_BG, icon: CONFLICT_ICON }))
     const lit = flashRow
     // Last, so it wins over the pending tint; every column of the row.
     if (lit !== null) out.push({ type: 'rule', when: ({ row }: { row: TData }) => String(idOf(row, 0)) === lit, background: FLASH_BG })
@@ -948,6 +951,8 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
     proposals: () => list(),
     /** What names the proposal's row (`rowLabel`), or null. */
     rowLabel,
+    /** A field's column header, as the group labels show it. */
+    fieldLabel: (field: string) => fieldLabels()(field),
     pending: () => list('pending'),
     conflicts: () => list('conflict'),
     groups,

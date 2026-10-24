@@ -376,3 +376,20 @@ describe('the panel reads like a review', () => {
     destroy()
   })
 })
+
+it('a conflict names its row and column the way the grid does', async () => {
+  const { review, target, destroy } = await setup()
+  const IMPORT: ProposalSource = { kind: 'import', id: 'csv', label: 'CSV import' }
+  review.add({ source: AGENT, proposals: [{ rowId: 'c', field: 'region', before: '', after: 'APAC' }] })
+  review.add({ source: IMPORT, proposals: [{ rowId: 'c', field: 'region', before: '', after: 'EMEA' }] })
+  flushSync()
+  expect(target.querySelector('.sv-review-conflict .sv-review-cell')!.textContent).toBe('Initech, Region: now (empty)')
+  // Two proposals, one disputed cell: the status counts cells.
+  expect(target.querySelector('.sv-review-count')!.textContent).toContain('1 in conflict')
+  // The grid marks the disputed cell, not only the panel.
+  const marks = (review.formats as any[]).filter((f) => f.icon === '!')
+  expect(marks).toHaveLength(1)
+  expect(marks[0].when({ row: initial[2] })).toBe(true)
+  expect(marks[0].when({ row: initial[0] })).toBe(false)
+  destroy()
+})

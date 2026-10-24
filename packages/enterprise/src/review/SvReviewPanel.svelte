@@ -48,6 +48,8 @@
     return at < 0 ? [template, ''] : [template.slice(0, at), template.slice(at + 7)]
   }
   const show = (v: unknown) => showValue(v, m.empty)
+  /** A proposal's row by name, or "Row 17" when nothing names it. */
+  const rowName = (p: Proposal) => review.rowLabel(p) ?? fill(m.rowId, { row: p.rowId })
   const groups = $derived(review.groups())
   const conflicts = $derived(review.conflicts())
   /** Conflicting proposals by cell, one entry per cell. */
@@ -260,7 +262,7 @@
     <div class="sv-review-titlerow">
       <h2 class="sv-review-title" tabindex="-1" bind:this={headingEl}>{heading}</h2>
       <span class="sv-review-count">
-        {pendingCount ? fill(groups.length === 1 ? m.pendingInOneGroup : m.pendingInGroups, { count: pendingCount, groups: groups.length }) : m.nothingPending}{conflicts.length ? fill(m.inConflict, { count: conflicts.length }) : ''}
+        {pendingCount ? fill(groups.length === 1 ? m.pendingInOneGroup : m.pendingInGroups, { count: pendingCount, groups: groups.length }) : m.nothingPending}{conflictCells.length ? fill(m.inConflict, { count: conflictCells.length }) : ''}
       </span>
     </div>
     {#if tally.total}
@@ -318,7 +320,7 @@
       <h3 class="sv-review-subtitle">{m.conflictsTitle}</h3>
       {#each conflictCells as cell (cell[0].id)}
         <div class="sv-review-conflict">
-          <span class="sv-review-cell">{fill(m.conflictCell, { row: cell[0].rowId, field: cell[0].field, value: show(cell[0].before) })}</span>
+          <span class="sv-review-cell">{fill(m.conflictCell, { row: rowName(cell[0]), field: review.fieldLabel(cell[0].field), value: show(cell[0].before) })}</span>
           <div class="sv-review-keeps">
             {#each cell as p (p.id)}
               <button type="button" class="sv-review-keep" onclick={() => review.resolveConflict(p.id)}>
@@ -383,7 +385,7 @@
                 {#each listed(g) as p (p.id)}
                   {@const who = review.rowLabel(p)}
                   <li class="sv-review-line">
-                    <button type="button" class="sv-review-sample-row" title={fill(m.showRow, { row: who ?? p.rowId })} onclick={() => review.reveal([p.id])}>
+                    <button type="button" class="sv-review-sample-row" title={fill(m.showRow, { row: who ?? fill(m.rowId, { row: p.rowId }) })} onclick={() => review.reveal([p.id])}>
                     {#if who}<span class="sv-review-who">{who}</span>{/if}
                     <span class="sv-review-pair">
                       <span class="sv-review-before">{show(p.before)}</span>
@@ -437,7 +439,7 @@
       <summary>{fill(m.notWritten, { count: stale.length })}</summary>
       <ul>
         {#each stale as p (p.id)}
-          <li><span class="sv-review-cell">{fill(m.rowField, { row: p.rowId, field: p.field })}</span> {show(p.after)} <span class="sv-review-hint">{p.note}</span></li>
+          <li><span class="sv-review-cell">{fill(m.rowField, { row: rowName(p), field: review.fieldLabel(p.field) })}</span> {show(p.after)} <span class="sv-review-hint">{p.note}</span></li>
         {/each}
       </ul>
     </details>
@@ -475,7 +477,8 @@
     background: var(--sg-bg, #fff);
     border-bottom: 1px solid var(--sg-border, #e5e7eb);
   }
-  .sv-review-titlerow { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  /* The status stays on one line; when the title leaves no room it moves under it. */
+  .sv-review-titlerow { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 10px; }
   .sv-review-title { margin: 0; font-size: 15px; font-weight: 650; letter-spacing: -0.01em; }
   .sv-review-progress {
     display: flex;
@@ -488,7 +491,7 @@
   /* Neutral: the bar shows how far along the review is, not good and bad. */
   .sv-review-progress .is-accepted { background: color-mix(in srgb, var(--sg-fg, #111827) 62%, transparent); }
   .sv-review-progress .is-rejected { background: color-mix(in srgb, var(--sg-fg, #111827) 28%, transparent); }
-  .sv-review-count { font-size: 12px; color: var(--sg-muted, #6b7280); font-variant-numeric: tabular-nums; text-align: right; }
+  .sv-review-count { margin-left: auto; font-size: 12px; color: var(--sg-muted, #6b7280); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .sv-review-hint { margin: 0; color: var(--sg-muted, #6b7280); }
   .sv-review-hint { font-size: 12px; }
   .sv-review-subtitle { margin: 10px 0 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--sg-muted, #6b7280); }

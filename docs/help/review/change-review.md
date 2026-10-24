@@ -152,7 +152,9 @@ map, so "everything became Canada" is visible at a glance.
 `review.formats` tints every cell with a pending proposal and draws a dot before
 its value, so the mark is never colour alone. Pass it as `conditionalFormats`,
 concatenated with your own formats if you have them. Theme the tint with
-`--sg-review-pending-bg`.
+`--sg-review-pending-bg`. A cell two sources disagree on gets a red wash and a
+"!" instead (`--sg-review-conflict-bg`), so the grid shows where the panel's
+conflicts are.
 
 `review.columns(columns)` draws the proposal inside the cell: the proposed
 value, then the current value struck through. It does this by wrapping the

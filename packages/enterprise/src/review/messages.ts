@@ -29,7 +29,7 @@ export const REVIEW_MESSAGES = {
   cancel: 'Cancel',
   // Conflicts
   conflictsTitle: 'Two sources disagree',
-  conflictCell: 'Row {row}, {field}: now {value}',
+  conflictCell: '{row}, {field}: now {value}',
   keep: 'Keep {value}',
   // Groups
   badgeRule: 'Rule',
@@ -51,7 +51,8 @@ export const REVIEW_MESSAGES = {
   sampleOf: 'Sample of {count}',
   everyChange: 'Every change',
   firstN: 'First {count}',
-  showRow: 'Show row {row} in the grid',
+  showRow: 'Show {row} in the grid',
+  rowId: 'Row {row}',
   acceptOne: 'Accept this change',
   rejectOne: 'Reject this change',
   showAll: 'Show all {count}',
@@ -66,7 +67,7 @@ export const REVIEW_MESSAGES = {
   noProposals: 'No proposals yet',
   noProposalsHint: 'Edits an agent, an import or an AI helper proposes show up here, grouped by what they change.',
   notWritten: '{count} not written',
-  rowField: 'Row {row}, {field}',
+  rowField: '{row}, {field}',
   decidedLabel: 'Decided',
   // Why a proposal was not written or is waiting (shown in the panel)
   noteCellChanged: 'the cell changed after this was proposed',
