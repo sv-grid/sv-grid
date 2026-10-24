@@ -33,7 +33,7 @@ export function pendingFormats<TData>(
     out.push({
       type: 'rule',
       columns: cols.length ? cols : [field],
-      when: ({ row }: { row: TData }) => ids.has(rowId(row, 0)),
+      when: ({ row }: { row: TData }) => ids.has(String(rowId(row, 0))),
       background: PENDING_BG,
       icon: PENDING_ICON,
     })

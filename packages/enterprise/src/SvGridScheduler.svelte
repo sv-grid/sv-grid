@@ -16,6 +16,7 @@
   // Themes entirely from the grid's `--sg-*` tokens; the model math lives in
   // ./scheduler-model (pure + unit-tested).
   import { untrack } from "svelte";
+  import { cardMarkFor } from "./review/card-marks.svelte";
   import type {
     ColumnDef,
     RowData,
@@ -3232,6 +3233,12 @@
   }
 </script>
 
+{#snippet proposed(row: TData)}
+  <!-- Proposals from a change review (@svgrid/enterprise/review) waiting on this event's row. -->
+  {@const mark = cardMarkFor(getRowId, row, indexOf.get(row) ?? 0)}
+  {#if mark}<span class="sv-sched-proposed" role="img" aria-label="{mark.count} proposed" title="{mark.count} proposed: {mark.text}"></span>{/if}
+{/snippet}
+
 <div class="sv-sched" role="group" aria-roledescription="calendar">
   <!-- toolbar -->
   <div class="sv-sched-toolbar">
@@ -3400,7 +3407,7 @@
                         onpointerdown={(e) => startMonthResize(e, s.event, "start")}
                       ></span>
                     {/if}
-                    {#if scheduler.event}{@render scheduler.event(s.event.row)}{:else}{#if !s.event.allDay && !s.continuesLeft}<span class="sv-sched-dot"></span><span class="sv-sched-bar-time">{fmtTime(s.event.start)}</span>{/if}<span class="sv-sched-bar-title">{s.event.title}</span>{/if}
+                    {@render proposed(s.event.row)}{#if scheduler.event}{@render scheduler.event(s.event.row)}{:else}{#if !s.event.allDay && !s.continuesLeft}<span class="sv-sched-dot"></span><span class="sv-sched-bar-time">{fmtTime(s.event.start)}</span>{/if}<span class="sv-sched-bar-title">{s.event.title}</span>{/if}
                     {#if canEditBar && resizable && !s.continuesRight}
                       <!-- svelte-ignore a11y_no_static_element_interactions -->
                       <span
@@ -3447,7 +3454,7 @@
                   <span class="sv-sched-agenda-time">
                     {ev.allDay ? "all day" : `${fmtTime(ev.start)} - ${fmtTime(ev.end)}`}
                   </span>
-                  <span class="sv-sched-agenda-title">{ev.title}</span>
+                  {@render proposed(ev.row)}<span class="sv-sched-agenda-title">{ev.title}</span>
                   {#if ev.resourceId}<span class="sv-sched-tag">{ev.resourceId}</span>{/if}
                 {/if}
               </button>
@@ -3602,7 +3609,7 @@
                       <span class="sv-sched-chip-resize sv-sched-chip-resize-start" aria-hidden="true" onpointerdown={(e) => startTlDrag(e, it.event, "resize-start")}></span>
                     {/if}
                     {#if wpx >= 22}
-                      {#if scheduler.event}{@render scheduler.event(it.event.row)}{:else}{#if view === "timelineDay" && !it.event.allDay && !g.continuesLeft}<span class="sv-sched-bar-time">{fmtTime(it.event.start)}</span>{/if}<span class="sv-sched-bar-title">{it.event.title}</span>{/if}
+                      {@render proposed(it.event.row)}{#if scheduler.event}{@render scheduler.event(it.event.row)}{:else}{#if view === "timelineDay" && !it.event.allDay && !g.continuesLeft}<span class="sv-sched-bar-time">{fmtTime(it.event.start)}</span>{/if}<span class="sv-sched-bar-title">{it.event.title}</span>{/if}
                     {/if}
                     {#if canEdit && resizable && !g.continuesRight}
                       <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -3745,7 +3752,7 @@
                       onpointerdown={(e) => startAllDayResize(e, s.event, "start")}
                     ></span>
                   {/if}
-                  {#if scheduler.event}{@render scheduler.event(s.event.row)}{:else}<span class="sv-sched-bar-title">{s.event.title}</span>{/if}
+                  {@render proposed(s.event.row)}{#if scheduler.event}{@render scheduler.event(s.event.row)}{:else}<span class="sv-sched-bar-title">{s.event.title}</span>{/if}
                   {#if canEditBar && resizable && !s.continuesRight}
                     <!-- svelte-ignore a11y_no_static_element_interactions -->
                     <span
@@ -3768,7 +3775,7 @@
               >
                 {#each colAllDay(col) as ev (ev.key)}
                   <button type="button" class="sv-sched-chip" style={eventStyle(ev)} onclick={() => openEvent(ev)} oncontextmenu={(e) => openMenu(e, ev)}>
-                    <span class="sv-sched-chip-title">{ev.title}</span>
+                    {@render proposed(ev.row)}<span class="sv-sched-chip-title">{ev.title}</span>
                   </button>
                 {/each}
               </div>
@@ -3861,7 +3868,7 @@
                       onpointerdown={(e) => startTimeDrag(e, p.event, col, "resize-start")}
                     ></span>
                   {/if}
-                  {#if scheduler.event}{@render scheduler.event(p.event.row)}{:else}<span class="sv-sched-event-time">{fmtTime(isResize ? drag!.previewStart : p.event.start)}{isResize ? ` - ${fmtTime(drag!.previewEnd)}` : ""}</span><span class="sv-sched-event-title">{p.event.title}</span>{/if}
+                  {@render proposed(p.event.row)}{#if scheduler.event}{@render scheduler.event(p.event.row)}{:else}<span class="sv-sched-event-time">{fmtTime(isResize ? drag!.previewStart : p.event.start)}{isResize ? ` - ${fmtTime(drag!.previewEnd)}` : ""}</span><span class="sv-sched-event-title">{p.event.title}</span>{/if}
                   {#if canEdit && resizable}
                     <!-- svelte-ignore a11y_no_static_element_interactions -->
                     <span
@@ -4012,7 +4019,7 @@
           <span class="sv-sched-listpop-time">
             {ev.allDay ? "all day" : `${fmtTime(ev.start)} - ${fmtTime(ev.end)}`}
           </span>
-          <span class="sv-sched-listpop-title">{ev.title}</span>
+          {@render proposed(ev.row)}<span class="sv-sched-listpop-title">{ev.title}</span>
         </button>
       {/each}
     </div>
@@ -4519,6 +4526,17 @@
   }
   .sv-sched-chip:hover { background: color-mix(in srgb, var(--sv-sched-accent) 26%, transparent); }
   .sv-sched-chip-title { overflow: hidden; text-overflow: ellipsis; }
+  .sv-sched-proposed {
+    display: inline-block;
+    flex: none;
+    width: 7px;
+    height: 7px;
+    margin-right: 4px;
+    border-radius: 50%;
+    vertical-align: middle;
+    background: var(--sg-warning, #d97706);
+    box-shadow: 0 0 0 1.5px var(--sg-bg, #fff);
+  }
 
   /* time-grid */
   .sv-sched-grid { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }

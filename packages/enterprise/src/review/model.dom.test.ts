@@ -110,7 +110,8 @@ describe('accept', () => {
     review.add({ source: AGENT, proposals: props(['a', 'region', '', 'EMEA']) })
     edit = () => gridWrite('a', 'region', 'typed')
     const out = await review.accept(review.pending().map((p) => p.id))
-    expect(out).toMatchObject({ accepted: [], stale: [expect.any(String)] })
+    // onCommit already saved it: told apart from a proposal stale before saving.
+    expect(out).toMatchObject({ accepted: [], stale: [], committedStale: [expect.any(String)] })
     expect(cell('a', 'region')).toBe('typed')
   })
 
@@ -356,5 +357,94 @@ describe('history and routing', () => {
     approver.merge(json) // a second merge of the same set is skipped
     expect(approver.sets().map((s) => s.count)).toEqual([1, 1])
     expect(approver.conflicts()).toHaveLength(2) // EMEA from the author vs AMER here
+  })
+})
+
+describe('found in review', () => {
+  it('a proposal that arrives while another is being accepted leaves it alone; the stale check settles it', async () => {
+    let release = () => {}
+    const { review, cell } = setup({ onCommit: () => new Promise<void>((r) => (release = r)) })
+    review.add({ source: AGENT, proposals: props(['a', 'region', '', 'EMEA']) })
+    const first = review.pending()[0]!
+    const accepting = review.accept([first.id])
+    review.add({ source: IMPORT, proposals: props(['a', 'region', '', 'AMER']) })
+    expect(review.get(first.id)!.status).toBe('pending') // not turned into a conflict mid-save
+    release()
+    expect((await accepting).accepted).toEqual([first.id])
+    expect(cell('a', 'region')).toBe('EMEA')
+    const late = review.pending()[0]!
+    expect((await review.accept([late.id])).stale).toEqual([late.id])
+  })
+
+  it('undoing a conflict choice puts both proposals back in conflict', () => {
+    const { review, undo } = setup()
+    review.add({ source: AGENT, proposals: props(['a', 'region', '', 'EMEA']) })
+    review.add({ source: IMPORT, proposals: props(['a', 'region', '', 'AMER']) })
+    const [one] = review.conflicts()
+    review.resolveConflict(one!.id)
+    expect(review.conflicts()).toHaveLength(0)
+    undo.at(-1)!.u()
+    expect(review.conflicts()).toHaveLength(2)
+    expect(review.pending()).toHaveLength(0)
+  })
+
+  it('undoing a reject of a conflict brings it back as a conflict, not as pending', () => {
+    const { review, undo } = setup()
+    review.add({ source: AGENT, proposals: props(['a', 'region', '', 'EMEA']) })
+    review.add({ source: IMPORT, proposals: props(['a', 'region', '', 'AMER']) })
+    review.reject(review.conflicts().map((p) => p.id))
+    undo.at(-1)!.u()
+    expect(review.conflicts()).toHaveLength(2)
+  })
+
+  it('with onCommit, undo saves the reverse first and writes once that resolves', async () => {
+    const commits: any[][] = []
+    const { review, undo, cell } = setup({ onCommit: async (ps: any[]) => void commits.push(ps) })
+    review.add({ source: AGENT, proposals: props(['a', 'region', '', 'EMEA']) })
+    await review.accept(review.pending().map((p) => p.id))
+    undo.at(-1)!.u()
+    expect(cell('a', 'region')).toBe('EMEA') // not yet: the save is in flight
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(commits[1]![0]).toMatchObject({ before: 'EMEA', after: '' })
+    expect(cell('a', 'region')).toBe('')
+    expect(review.pending()).toHaveLength(1)
+  })
+
+  it('an accept before the grid exists writes nothing and leaves the proposals pending', async () => {
+    let data: any[] = []
+    const review = createReview<any>({ api: () => null, setRows: (n) => (data = n) })
+    review.add({ source: AGENT, proposals: props(['a', 'region', '', 'EMEA']) })
+    const out = await review.accept(review.pending().map((p) => p.id))
+    expect(out.skipped).toHaveLength(1)
+    expect(review.pending()).toHaveLength(1)
+    expect(data).toEqual([])
+  })
+
+  it('numeric row ids match as strings, so they never read as stale', async () => {
+    let data = [{ id: 7, region: '' }]
+    const api = {
+      getData: () => data,
+      getOption: (k: string) => (k === 'getRowId' ? (r: any) => r.id : undefined),
+      getActiveCell: () => null,
+      getRowId: () => null,
+      getColumns: () => [],
+      getCommandContext: () => ({ recordUndo() {} }),
+      stopEditing: () => false,
+      scrollToRow() {},
+      getDisplayedRows: () => data,
+    } as unknown as ReviewGridApi
+    const review = createReview<any>({ api, setRows: (n) => (data = n) })
+    review.add({ source: AGENT, proposals: [{ rowId: 7 as unknown as string, field: 'region', before: '', after: 'EMEA' }] })
+    const out = await review.accept(review.pending().map((p) => p.id))
+    expect(out.accepted).toHaveLength(1)
+    expect(data[0]!.region).toBe('EMEA')
+  })
+
+  it('a replaced proposal leaves its set, so set counts stay true', () => {
+    const { review } = setup()
+    review.add({ source: AGENT, proposals: props(['a', 'region', '', 'EU']) })
+    review.add({ source: AGENT, proposals: props(['a', 'region', 'EU', 'EMEA']) })
+    expect(review.sets().map((s) => s.count)).toEqual([0, 1])
   })
 })

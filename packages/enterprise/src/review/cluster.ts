@@ -155,7 +155,8 @@ function ruleOf(before: unknown, after: unknown): { kind: GroupKind; param: stri
   }
   const dayB = dayOf(before)
   const dayA = dayOf(after)
-  if (dayB && dayA && dayB === dayA && !(before instanceof Date && after instanceof Date)) {
+  // The same day at a different time is a different value, not a new format.
+  if (dayB && dayA && dayB === dayA && timeOf(before) === timeOf(after) && !(before instanceof Date && after instanceof Date)) {
     return { kind: 'format', param: 'date:' + (after instanceof Date ? 'Date' : shapeOf(String(after))) }
   }
   if (typeof before !== 'string' || typeof after !== 'string' || before === after) return null
@@ -168,7 +169,9 @@ function ruleOf(before: unknown, after: unknown): { kind: GroupKind; param: stri
   const nA = parseLooseNumber(after)
   if ((nB !== null || nA !== null) && nB !== nA) return null
   const coreB = alnum(before)
-  if (coreB.length > 0 && coreB === alnum(after)) {
+  // Punctuation between digits can be part of a number ("$1,234.56" ->
+  // "$123,456", "12.5%" -> "1.25%"): every run of digits has to stay as it was.
+  if (coreB.length > 0 && coreB === alnum(after) && digitRuns(before) === digitRuns(after)) {
     const digits = coreB.replace(/\D/g, '').length
     return digits * 2 >= coreB.length
       ? { kind: 'format', param: 'shape:' + shapeOf(after) }
@@ -184,6 +187,14 @@ function ratioOf(before: unknown, after: unknown): string | null {
 }
 
 const alnum = (s: string) => s.replace(/[^\p{L}\p{N}]/gu, '')
+const digitRuns = (s: string) => (s.match(/\d+/g) ?? []).join(',')
+
+/** The time of day a date value carries, as HH:MM:SS; midnight when it carries none. */
+function timeOf(v: unknown): string {
+  if (v instanceof Date) return [v.getHours(), v.getMinutes(), v.getSeconds()].map((n) => String(n).padStart(2, '0')).join(':')
+  const m = typeof v === 'string' ? /[T ](\d{1,2}):(\d{2})(?::(\d{2}))?/.exec(v) : null
+  return m ? [m[1]!, m[2]!, m[3] ?? '00'].map((n) => n.padStart(2, '0')).join(':') : '00:00:00'
+}
 const shapeOf = (s: string) => s.replace(/\p{N}/gu, '9').replace(/\p{Lu}/gu, 'A').replace(/\p{Ll}/gu, 'a')
 
 function caseOf(s: string): string {

@@ -48,6 +48,19 @@ describe('rule detectors', () => {
     expect(clusterProposals([p('x', '1,5', 15)])[0]!.kind).toBe('unpatterned')
   })
 
+  it('format never passes a changed number inside text, or a changed time', () => {
+    const cases = [
+      ['$1,234.56', '$123,456'],
+      ['12.5%', '1.25%'],
+      ['Unit 3.5', 'Unit 35'],
+      ['2024-03-05T09:00', '2024-03-05T17:00'],
+    ]
+    for (const [b, a] of cases) expect(clusterProposals([p('f', b, a)])[0]!.rule, `${b} -> ${a}`).toBe(false)
+    // Same digits and the same time: still a reformat.
+    expect(only([p('t', '2024-03-05T09:00', '2024-03-05 09:00:00')]).kind).toBe('format')
+    expect(only([p('ph', '(555) 123-4567', '555.123.4567')]).kind).toBe('format')
+  })
+
   it('format: dates only when the day and month are unambiguous', () => {
     expect(only([p('d', '15/03/2024', '2024-03-15')]).kind).toBe('format')
     expect(only([p('d', '03/05/2024', '2024-03-05')]).kind).toBe('unpatterned')

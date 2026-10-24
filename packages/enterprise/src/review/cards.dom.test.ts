@@ -6,18 +6,20 @@ import { describe, expect, it, vi } from 'vitest'
 import { flushSync, mount, unmount } from 'svelte'
 import { enableBoardView } from '../board'
 import { enableGalleryView } from '../gallery'
+import { enableSchedulerView } from '../scheduler'
 import Harness from './test-fixtures/ReviewHarness.svelte'
 import type { Review } from './model.svelte'
 
 enableBoardView()
 enableGalleryView()
+enableSchedulerView()
 if (typeof globalThis.ResizeObserver === 'undefined') {
   ;(globalThis as any).ResizeObserver = class { observe() {} unobserve() {} disconnect() {} }
 }
 
 const initial = [
-  { id: 'a', name: 'Acme', region: 'AMER', stage: 'Lead' },
-  { id: 'b', name: 'Globex', region: 'EMEA', stage: 'Won' },
+  { id: 'a', name: 'Acme', region: 'AMER', stage: 'Lead', due: '2026-10-12' },
+  { id: 'b', name: 'Globex', region: 'EMEA', stage: 'Won', due: '2026-10-20' },
 ]
 const columns = [
   { field: 'name', header: 'Name' },
@@ -59,4 +61,26 @@ describe('card marks', () => {
     await vi.waitFor(() => expect(target.querySelector('.sv-card-proposed')?.textContent).toContain('1 proposed'))
     destroy()
   })
+
+  it('a calendar event shows a dot with the same count and values', async () => {
+    const { review, target, destroy } = await setup({
+      scheduler: { startField: 'due', titleField: 'name', initialView: 'month', initialDate: '2026-10-01' },
+    })
+    review.add({ source: { kind: 'agent', id: 'x', label: 'X' }, proposals: [{ rowId: 'a', field: 'region', before: 'AMER', after: 'EMEA' }] })
+    flushSync()
+    await vi.waitFor(() => expect(target.querySelector('.sv-sched-proposed')).not.toBeNull())
+    expect(target.querySelector('.sv-sched-proposed')!.getAttribute('title')).toBe('1 proposed: Region → "EMEA"')
+    destroy()
+  })
+})
+
+it('two grids sharing one getRowId function each show only their own marks', async () => {
+  const one = await setup({ board: { groupBy: 'stage', titleField: 'name' } })
+  const two = await setup({ board: { groupBy: 'stage', titleField: 'name' } })
+  one.review.add({ source: { kind: 'agent', id: 'x', label: 'X' }, proposals: [{ rowId: 'a', field: 'region', before: 'AMER', after: 'EMEA' }] })
+  flushSync()
+  await vi.waitFor(() => expect(one.target.querySelectorAll('.sv-card-proposed')).toHaveLength(1))
+  expect(two.target.querySelectorAll('.sv-card-proposed')).toHaveLength(0)
+  one.destroy()
+  two.destroy()
 })

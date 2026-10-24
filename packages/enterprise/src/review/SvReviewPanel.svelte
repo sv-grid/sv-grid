@@ -84,6 +84,7 @@
     if (out.accepted.length) parts.push(`${out.accepted.length} accepted`)
     if (out.rejected.length) parts.push(`${out.rejected.length} rejected`)
     if (out.stale.length) parts.push(`${out.stale.length} not written: the cell changed`)
+    if (out.committedStale.length) parts.push(`${out.committedStale.length} saved but not shown: the cell changed while saving`)
     if (out.skipped.length) parts.push(`${out.skipped.length} left pending`)
     if (out.error) parts.push(`not saved: ${out.error instanceof Error ? out.error.message : String(out.error)}`)
     announce = parts.join(', ') || 'Nothing to decide'

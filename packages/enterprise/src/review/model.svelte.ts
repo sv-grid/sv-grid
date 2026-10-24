@@ -32,7 +32,7 @@ import { hasPending, stripPending, trackPendingSource, withPending } from './pen
 import { registerCardMarks, type CardMark } from './card-marks.svelte'
 import { showValue } from './cluster'
 import { wrapColumns } from './ghost'
-import type { ChangeSet, Proposal, ProposalGroup, ProposalInput, ProposalSource } from './types'
+import type { ChangeSet, Proposal, ProposalGroup, ProposalInput, ProposalSource, ProposalStatus } from './types'
 
 /** The part of the grid api a review uses. Any `SvGridApi` satisfies it. */
 export type ReviewGridApi = Pick<
@@ -86,8 +86,14 @@ export type ReviewOutcome = {
   rejected: string[]
   /** The cell changed since the proposal was made, or its row is gone. Never written. */
   stale: string[]
-  /** Left pending: the row is being edited, or the proposal is already being accepted. */
+  /** Left pending: the row is being edited, the proposal is already being accepted, or the grid is not ready. */
   skipped: string[]
+  /**
+   * Saved by `onCommit`, then not written here because the cell changed while
+   * it was saving. The backend holds the proposed value; reload or save the
+   * cell's value back.
+   */
+  committedStale: string[]
   /** What `onCommit` threw; nothing was written and the proposals stay pending. */
   error?: unknown
 }
@@ -185,7 +191,7 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
   function indexRows(api: ReviewGridApi): Map<string, number> {
     const id = rowIdFn(api)
     const map = new Map<string, number>()
-    api.getData().forEach((row, i) => map.set(id(row as TData, i), i))
+    api.getData().forEach((row, i) => map.set(String(id(row as TData, i)), i))
     return map
   }
 
@@ -201,6 +207,7 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
       if (sameValue(raw.before, raw.after)) continue
       const p: Proposal = {
         ...raw,
+        rowId: String(raw.rowId),
         id: raw.id ?? nextId('pr-'),
         op: 'update',
         source: input.source,
@@ -211,12 +218,19 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
       const live = byCell.get(key) ?? new Set<string>()
       for (const otherId of [...live]) {
         const other = all.get(otherId)!
+        // Being accepted right now: leave it be. If it lands, the stale check
+        // catches this one.
+        if (inFlight.has(otherId)) continue
         if (other.source.id === p.source.id && other.status === 'pending') {
           // A newer proposal from the same producer replaces the older one
           // and keeps what the cell held when the first was made.
           p.before = other.before
           live.delete(otherId)
           all.delete(otherId)
+          for (const set of sets.values()) {
+            const at = set.ids.indexOf(otherId)
+            if (at >= 0) set.ids.splice(at, 1)
+          }
         } else {
           other.status = 'conflict'
           other.note = 'another source proposed a different value'
@@ -281,7 +295,7 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
 
   // ---- deciding -----------------------------------------------------------
 
-  const outcome = (): ReviewOutcome => ({ accepted: [], rejected: [], stale: [], skipped: [] })
+  const outcome = (): ReviewOutcome => ({ accepted: [], rejected: [], stale: [], skipped: [], committedStale: [] })
 
   /** Drop proposals whose cell no longer holds `before`. */
   function freshOnly(ps: Proposal[], out: ReviewOutcome, api: ReviewGridApi | null): Proposal[] {
@@ -353,6 +367,16 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
   async function accept(ids: ReadonlyArray<string>): Promise<ReviewOutcome> {
     const out = outcome()
     const api = getApi()
+    if (!api && !opts.server) {
+      for (const id of ids) {
+        const p = all.get(id)
+        if (p?.status !== 'pending') continue
+        p.note = 'the grid is not ready'
+        out.skipped.push(id)
+      }
+      bump()
+      return out
+    }
     const busyRow = editedRow(api)
     let take: Proposal[] = []
     for (const id of ids) {
@@ -379,8 +403,20 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
       return { ...out, error }
     }
     for (const p of take) inFlight.delete(p.id)
-    // The await let other writes in: check again before writing.
-    if (!opts.server) take = freshOnly(take.filter((p) => p.status === 'pending'), out, api)
+    // The await let other writes in: check again before writing. What
+    // onCommit already saved but cannot be written now is told apart.
+    if (!opts.server) {
+      const saved = take.filter((p) => p.status === 'pending')
+      const late = outcome()
+      take = freshOnly(saved, late, api)
+      for (const id of late.stale) {
+        const p = all.get(id)!
+        if (opts.onCommit) {
+          p.note = 'saved, but the cell changed before it was written here'
+          out.committedStale.push(id)
+        } else out.stale.push(id)
+      }
+    }
     if (!take.length) {
       bump()
       return out
@@ -414,9 +450,12 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
     const out = outcome()
     const at = Date.now()
     const taken: Proposal[] = []
+    // What each proposal was before, so an undo puts a conflict back as one.
+    const was = new Map<string, ProposalStatus>()
     for (const id of ids) {
       const p = all.get(id)
       if (!p || (p.status !== 'pending' && p.status !== 'conflict') || inFlight.has(id)) continue
+      was.set(p.id, p.status)
       p.status = 'rejected'
       p.decidedBy = opts.user
       p.decidedAt = at
@@ -425,7 +464,7 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
       taken.push(p)
       out.rejected.push(id)
     }
-    if (taken.length) recordUndo(getApi(), taken, 'rejected')
+    if (taken.length) recordUndo(getApi(), taken, 'rejected', was)
     decided('reject', taken)
     bump()
     return out
@@ -434,46 +473,63 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
   /**
    * One Ctrl+Z for the whole decision, by row id, so it works with paging and
    * filters on. Undoing an accept writes `before` back only where the cell
-   * still holds `after`; anything edited since is left as it is.
+   * still holds `after`; anything edited since is left as it is. With
+   * `onCommit`, the reversed values are saved first and written once that
+   * resolves, the way an accept is.
    */
-  function recordUndo(api: ReviewGridApi | null, ps: Proposal[], kind: 'accepted' | 'rejected') {
+  function recordUndo(api: ReviewGridApi | null, ps: Proposal[], kind: 'accepted' | 'rejected', was?: Map<string, ProposalStatus>) {
     if (!api) return
     const prior = new Map(ps.map((p) => [p.id, { decidedBy: p.decidedBy, decidedAt: p.decidedAt }]))
-    const flip = (to: 'pending' | typeof kind, which: Proposal[]) => {
+    const undecided = (p: Proposal): ProposalStatus => was?.get(p.id) ?? 'pending'
+    const flip = (undo: boolean, which: Proposal[]) => {
       for (const p of which) {
-        p.status = to
-        if (to === 'pending') {
+        if (undo) {
+          p.status = undecided(p)
           p.decidedBy = undefined
           p.decidedAt = undefined
-          enterCell(p)
+          // A proposal dropped since (clear, load) stays out of the cell index.
+          if (all.get(p.id) === p) enterCell(p)
         } else {
+          p.status = kind
           Object.assign(p, prior.get(p.id))
           leaveCell(p)
         }
       }
-      decided(to === 'pending' ? 'undo' : 'redo', which, kind === 'accepted' ? 'accept' : 'reject')
+      decided(undo ? 'undo' : 'redo', which, kind === 'accepted' ? 'accept' : 'reject')
       bump()
     }
-    const move = (from: 'before' | 'after', to: 'before' | 'after', status: 'pending' | typeof kind) => {
-      const live = ps.filter((p) => p.status === (status === 'pending' ? kind : 'pending'))
-      if (kind === 'rejected') return flip(status, live)
+    const move = (undo: boolean) => {
+      const live = ps.filter((p) => (undo ? p.status === kind : p.status === undecided(p)))
+      if (kind === 'rejected') return flip(undo, live)
+      const from = undo ? 'after' : 'before'
+      const to = undo ? 'before' : 'after'
+      const how = undo ? 'undo' : 'redo'
       if (opts.server) {
         const inverse = live.map((p) => ({ ...p, before: p[from], after: p[to] }))
         Promise.resolve(opts.onCommit!(inverse)).then(() => {
           opts.server!.refresh()
-          flip(status, live)
-          opts.onApply?.(live, status === 'pending' ? 'undo' : 'redo')
+          flip(undo, live)
+          opts.onApply?.(live, how)
         }, () => {})
         return
       }
-      const index = indexRows(api)
-      const ok = live.filter((p) => sameValue(currentValue(api, index, p), p[from]))
-      writeValues(api, ok.map((p) => [p.rowId, p.field, p[to]] as const), (next) => opts.onApply?.(ok, status === 'pending' ? 'undo' : 'redo', next))
-      flip(status, ok)
+      const holds = (p: Proposal) => sameValue(currentValue(api, indexRows(api), p), p[from])
+      const write = (ok: Proposal[]) => {
+        if (!ok.length) return
+        writeValues(api, ok.map((p) => [p.rowId, p.field, p[to]] as const), (next) => opts.onApply?.(ok, how, next))
+        flip(undo, ok)
+      }
+      const ok = live.filter(holds)
+      if (!opts.onCommit) return write(ok)
+      // The backend holds the accepted values: save the reverse there first.
+      Promise.resolve(opts.onCommit(ok.map((p) => ({ ...p, before: p[from], after: p[to] })))).then(
+        () => write(ok.filter(holds)),
+        () => {},
+      )
     }
     api.getCommandContext().recordUndo(
-      () => move('after', 'before', 'pending'),
-      () => move('before', 'after', kind),
+      () => move(true),
+      () => move(false),
     )
   }
 
@@ -484,15 +540,44 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
     return shownIds.filter((id) => members.has(id))
   }
 
-  /** Keep one of a cell's conflicting proposals (it becomes pending) and reject the rest. */
+  /**
+   * Keep one of a cell's conflicting proposals (it becomes pending) and reject
+   * the rest, as one undo step that puts all of them back in conflict.
+   */
   function resolveConflict(keepId: string): void {
     const keep = all.get(keepId)
     if (!keep || keep.status !== 'conflict') return
-    const rivals = [...(byCell.get(cellKey(keep.rowId, keep.field)) ?? [])].filter((id) => id !== keepId)
-    reject(rivals)
-    keep.status = 'pending'
-    keep.note = undefined
-    bump()
+    const rivals = [...(byCell.get(cellKey(keep.rowId, keep.field)) ?? [])]
+      .filter((id) => id !== keepId && !inFlight.has(id))
+      .map((id) => all.get(id))
+      .filter((p): p is Proposal => p?.status === 'conflict')
+    const note = keep.note
+    const apply = (resolved: boolean) => {
+      const at = Date.now()
+      for (const r of rivals) {
+        if (resolved) {
+          r.status = 'rejected'
+          r.decidedBy = opts.user
+          r.decidedAt = at
+          stamp(r)
+          leaveCell(r)
+        } else {
+          r.status = 'conflict'
+          r.decidedBy = undefined
+          r.decidedAt = undefined
+          if (all.get(r.id) === r) enterCell(r)
+        }
+      }
+      keep.status = resolved ? 'pending' : 'conflict'
+      keep.note = resolved ? undefined : note
+      bump()
+    }
+    apply(true)
+    decided('reject', rivals)
+    getApi()?.getCommandContext().recordUndo(
+      () => apply(false),
+      () => apply(true),
+    )
   }
 
   // ---- serialising --------------------------------------------------------
@@ -550,7 +635,7 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
     void version
     return [...all.values()]
       .filter((p) => p.status === 'accepted' || p.status === 'rejected' || p.status === 'stale')
-      .sort((a, b) => (decidedOrder.get(a.id) ?? 0) - (decidedOrder.get(b.id) ?? 0))
+      .sort((a, b) => (a.decidedAt ?? 0) - (b.decidedAt ?? 0) || (decidedOrder.get(a.id) ?? 0) - (decidedOrder.get(b.id) ?? 0))
       .map((p) => ({ ...p }))
   }
 
@@ -596,13 +681,21 @@ export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
     const labels = fieldLabels()
     return { count: ps.length, text: ps.map((p) => `${labels(p.field)} → ${showValue(p.after)}`).join(', ') }
   }
+  /** Whether a row object is in the grid's data (cached per data array). */
+  let owned: { data: ReadonlyArray<unknown>; rows: WeakSet<object> } | null = null
+  function owns(row: unknown): boolean {
+    const data = getApi()?.getData()
+    if (!data || !row || typeof row !== 'object') return false
+    if (owned?.data !== data) owned = { data, rows: new WeakSet(data.filter((r): r is object => !!r && typeof r === 'object')) }
+    return owned.rows.has(row)
+  }
   let marksFor: unknown = null
   /** Register for the board and gallery cards of the grid, once its getRowId is known. */
   function linkCards(api: ReviewGridApi) {
     const fn = api.getOption('getRowId') as object | undefined
     if (fn && fn !== marksFor) {
       marksFor = fn
-      registerCardMarks(fn, { cardMark })
+      registerCardMarks(fn, { cardMark, owns })
     }
   }
 

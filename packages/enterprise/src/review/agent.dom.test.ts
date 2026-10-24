@@ -106,3 +106,10 @@ describe('registerWebMcpTools', () => {
     expect(registered.every((r) => r.signal.aborted)).toBe(true)
   })
 })
+
+it('query_rows clamps a negative or string offset instead of slicing from the end', async () => {
+  const { tool } = setup()
+  const out = (await tool('grid_query_rows').execute({ offset: -2, limit: '1' as unknown as number })) as any
+  expect(out.offset).toBe(0)
+  expect(out.rows.map((r: any) => r.rowId)).toEqual(['a'])
+})

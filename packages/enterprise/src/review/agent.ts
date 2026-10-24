@@ -129,13 +129,14 @@ export function createGridTools(opts: GridToolsOptions): GridTool[] {
       const hits = a.getData().flatMap((row, i) =>
         (input.where ?? []).every((w) => matches((row as Record<string, unknown>)[w.field], w)) ? [{ row, i }] : [],
       )
-      const offset = input.offset ?? 0
-      const limit = Math.min(input.limit ?? maxRows, maxRows)
+      // The schema says integers; a model can still send "10" or -5.
+      const offset = Math.max(0, Math.trunc(Number(input.offset) || 0))
+      const limit = Math.min(Math.max(1, Math.trunc(Number(input.limit) || maxRows)), maxRows)
       return {
         total: hits.length,
         offset,
         rows: hits.slice(offset, offset + limit).map(({ row, i }) => ({
-          rowId: id(row, i),
+          rowId: String(id(row, i)),
           ...Object.fromEntries(fields.map((f) => [f, (row as Record<string, unknown>)[f]])),
         })),
       }
@@ -175,7 +176,7 @@ export function createGridTools(opts: GridToolsOptions): GridTool[] {
       const a = api()
       const id = rowIdOf(a)
       const canWrite = writable(a)
-      const rows = new Map(a.getData().map((row, i) => [id(row, i), row as Record<string, unknown>]))
+      const rows = new Map(a.getData().map((row, i) => [String(id(row, i)), row as Record<string, unknown>]))
       const skipped: Array<{ index: number; why: string }> = []
       const proposals: ProposalInput[] = []
       ;(input.edits ?? []).forEach((e, index) => {

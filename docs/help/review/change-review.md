@@ -347,9 +347,9 @@ What a base shows:
   multiple select, user, phone, email, URL, barcode, button, rating, link,
   created by and last modified by. So do long text set to rich text and a
   percent drawn as a bar.
-- **Cards too.** Kanban and gallery cards with pending proposals show
-  "2 proposed", with the fields and values on hover. Calendar and form views
-  do not mark them.
+- **Cards and events too.** Kanban and gallery cards with pending proposals
+  show "2 proposed", and calendar events a dot, with the fields and values on
+  hover. A form adds new records, so it has nothing to mark.
 - **Sync.** With `createBaseSync`, an accepted value is a change like any
   other and is saved with the rest. Changes made elsewhere are still marked as
   before; a review is the step before that, where an agent proposes and a
