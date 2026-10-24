@@ -326,6 +326,26 @@ describe('one change at a time', () => {
     destroy()
   })
 
+  it('after a line decision the focus goes to the same button on the next line, then on', async () => {
+    const { review, target, destroy } = await setupMany()
+    const accepts = () => [...target.querySelectorAll<HTMLButtonElement>('.sv-review-group.is-open .sv-review-line-act.is-accept')]
+    accepts()[0]!.focus()
+    accepts()[0]!.click()
+    await vi.waitFor(() => expect(review.pending()).toHaveLength(7))
+    await vi.waitFor(() => expect(document.activeElement).toBe(accepts()[0]))
+    // Reject every line left: the last one sends the focus to a group heading.
+    for (let n = 7; n > 0; n--) {
+      const reject = target.querySelector<HTMLButtonElement>('.sv-review-group.is-open .sv-review-line-act:not(.is-accept)')
+      if (!reject) break
+      reject.focus()
+      reject.click()
+      flushSync()
+    }
+    await vi.waitFor(() => expect(review.pending()).toHaveLength(0))
+    await vi.waitFor(() => expect(document.activeElement?.classList.contains('sv-review-title')).toBe(true))
+    destroy()
+  })
+
   it('says which keys drive the list', async () => {
     const { target, destroy } = await setupMany()
     expect(target.querySelector('.sv-review-keys')!.textContent).toContain('J / K')
@@ -391,5 +411,14 @@ it('a conflict names its row and column the way the grid does', async () => {
   expect(marks).toHaveLength(1)
   expect(marks[0].when({ row: initial[2] })).toBe(true)
   expect(marks[0].when({ row: initial[0] })).toBe(false)
+  destroy()
+})
+
+it('the cell names the current value in its title, for a cell too narrow to show it struck', async () => {
+  const { review, target, destroy } = await setup()
+  review.add({ source: AGENT, proposals: [{ rowId: 'b', field: 'name', before: 'Globex ', after: 'Globex' }] })
+  flushSync()
+  await vi.waitFor(() => expect(target.querySelector('.sv-review-ghost')).not.toBeNull())
+  expect(target.querySelector('.sv-review-ghost')!.getAttribute('title')).toBe('Cleanup agent proposes Globex\nNow: Globex ')
   destroy()
 })

@@ -175,13 +175,36 @@
     } else headingEl?.focus()
   }
 
-  async function acceptOne(p: Proposal) {
+  async function acceptOne(p: Proposal, index: number) {
+    const here = focusInPanel()
     busy = true
     try {
       say(await review.accept([p.id]))
     } finally {
       busy = false
     }
+    void keepLineFocus(index, 'accept', here)
+  }
+  function rejectOne(p: Proposal, index: number) {
+    const here = focusInPanel()
+    say(review.reject([p.id]))
+    void keepLineFocus(index, 'reject', here)
+  }
+  /**
+   * A decided line leaves the open group. The focus goes to the same button
+   * on the line that took its place (so ✓ ✓ ✓ walks down a group), then to
+   * the group's heading, then on as for a decided group.
+   */
+  async function keepLineFocus(index: number, which: 'accept' | 'reject', wasHere: boolean) {
+    const groupIndex = groups.findIndex((g) => g.key === openedKey)
+    await tick()
+    if (!wasHere) return
+    const open = listEl?.querySelector('.sv-review-group.is-open')
+    const acts = open?.querySelectorAll<HTMLElement>(which === 'accept' ? '.sv-review-line-act.is-accept' : '.sv-review-line-act:not(.is-accept)') ?? []
+    if (acts.length) return acts[Math.min(index, acts.length - 1)]!.focus()
+    const head = open?.querySelector<HTMLElement>('.sv-review-group-head')
+    if (head) return head.focus()
+    void keepFocus(Math.max(0, groupIndex), true)
   }
 
   const acceptGroup = (g: ProposalGroup) => {
@@ -382,7 +405,7 @@
               {/if}
               <p class="sv-review-subtitle">{g.kind === 'unpatterned' || showAll || g.sample.length >= g.count ? (g.count > 200 ? fill(m.firstN, { count: 200 }) : m.everyChange) : fill(m.sampleOf, { count: g.count })}</p>
               <ul class="sv-review-sample">
-                {#each listed(g) as p (p.id)}
+                {#each listed(g) as p, li (p.id)}
                   {@const who = review.rowLabel(p)}
                   <li class="sv-review-line">
                     <button type="button" class="sv-review-sample-row" title={fill(m.showRow, { row: who ?? fill(m.rowId, { row: p.rowId }) })} onclick={() => review.reveal([p.id])}>
@@ -400,8 +423,8 @@
                     {/if}
                     </button>
                     <span class="sv-review-line-acts">
-                      <button type="button" class="sv-review-line-act is-accept" disabled={busy} aria-label={m.acceptOne} title={m.acceptOne} onclick={() => void acceptOne(p)}>{@render check()}</button>
-                      <button type="button" class="sv-review-line-act" disabled={busy} aria-label={m.rejectOne} title={m.rejectOne} onclick={() => say(review.reject([p.id]))}>{@render cross()}</button>
+                      <button type="button" class="sv-review-line-act is-accept" disabled={busy} aria-label={m.acceptOne} title={m.acceptOne} onclick={() => void acceptOne(p, li)}>{@render check()}</button>
+                      <button type="button" class="sv-review-line-act" disabled={busy} aria-label={m.rejectOne} title={m.rejectOne} onclick={() => rejectOne(p, li)}>{@render cross()}</button>
                     </span>
                   </li>
                 {/each}
@@ -725,6 +748,11 @@
   .sv-review-stale summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--sg-muted, #6b7280); }
   .sv-review-stale ul { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
   .sv-review-live { margin: 0; min-height: 1em; font-size: 12px; font-weight: 550; }
+  /* A finger needs more than a pointer does. */
+  @media (pointer: coarse) {
+    .sv-review-act, .sv-review-line-act { width: 40px; height: 40px; }
+    .sv-review-line-acts { gap: 4px; padding-top: 0; }
+  }
   @media (prefers-reduced-motion: reduce) {
     .sv-review-progress span, .sv-review-group, .sv-review-switch, .sv-review-switch::after { transition: none; }
   }

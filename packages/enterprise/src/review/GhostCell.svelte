@@ -37,11 +37,19 @@
 </span>
 
 <style>
-  /* Plain inline text, so a narrow cell's own ellipsis cuts the end of it.
-     An inline-flex box overflowing a cell is replaced by the ellipsis whole.
-     The proposed value comes first: it is the one a narrow cell must show. */
+  /* Inline text beside the grid's own icon: a block or flex box here would drop
+     to a line of its own. The proposed value comes first and is plain text, so
+     the cell's ellipsis cuts its end. The struck value is one box, at most half
+     the cell: when it does not fit, the ellipsis takes it whole instead of
+     leaving a cut-off fragment, and the cell's title still names it. */
   .sv-review-ghost-before {
+    display: inline-block;
+    max-width: 50%;
     margin-left: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
     color: var(--sg-muted, #6b7280);
     text-decoration-thickness: 1px;
   }

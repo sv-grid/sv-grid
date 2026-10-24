@@ -77,5 +77,11 @@ browser has it. None of them writes the data.
 - In SvGrid Base add `onApply: baseReviewApplied(() => api)` (from
   `@svgrid/enterprise/base`) so accepts stamp "last modified" and the record
   activity.
+- The panel names each change's row by its first visible text column; pass
+  `createReview({ rowLabel: (row) => row.company })` when that is not the
+  right name.
+- `review.formats` marks pending cells (amber, a dot) and cells two sources
+  disagree on (red, "!"). Concatenate it with the app's own
+  `conditionalFormats` rather than replacing them.
 - Wording: `createReview({ messages })`, keys and English text in
   `REVIEW_MESSAGES`.

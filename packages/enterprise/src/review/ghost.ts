@@ -16,6 +16,7 @@
  */
 import { formatValueForExport, getGridExtension, renderComponent } from '@svgrid/grid'
 import { visibleSpaces } from './cluster'
+import { isBlank } from './equal'
 import { fill, type ReviewMessages } from './messages'
 import GhostCell from './GhostCell.svelte'
 import type { Proposal } from './types'
@@ -86,7 +87,9 @@ export function wrapColumns<C extends ReadonlyArray<any>>(
           before: ctx.getValue(),
           after,
           empty: m?.empty ?? '(empty)',
-          title: fill(m?.proposes ?? '{source} proposes {value}', { source: p.source.label, value: after || (m?.empty ?? '(empty)') }) + (p.reason ? ` - ${p.reason}` : ''),
+          // The current value too: a narrow cell may have no room to show it struck.
+          title: fill(m?.proposes ?? '{source} proposes {value}', { source: p.source.label, value: after || (m?.empty ?? '(empty)') }) + (p.reason ? ` - ${p.reason}` : '')
+            + (isBlank(ctx.getValue()) ? '' : '\n' + fill(m?.nowValue ?? 'Now: {value}', { value: formatValueForExport(ctx.getValue(), format) })),
           beforeText: typeof ctx.getValue() === 'string' && !format
             ? visibleSpaces(ctx.getValue())
             : formatValueForExport(ctx.getValue(), format),

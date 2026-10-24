@@ -90,6 +90,7 @@ export const REVIEW_MESSAGES = {
   // Marks
   cardProposed: '{count} proposed',
   proposes: '{source} proposes {value}',
+  nowValue: 'Now: {value}',
   empty: '(empty)',
   // Group labels ({field} is the column header)
   labelWhitespace: 'Trim spaces in {field}',
