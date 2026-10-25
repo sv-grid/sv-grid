@@ -223,7 +223,7 @@
 <section class="pm flex flex-col flex-1 min-h-0 gap-3">
   <div class="shrink-0 rounded-lg border px-4 py-3" style="border-color: var(--sg-border); background: var(--sg-header-bg);">
     <p class="text-sm font-semibold" style="color: var(--sg-fg);">
-      &lt;SvPivotDesigner panelPosition="right"&gt; — enterprise pivot panel
+      &lt;SvPivotDesigner panelPosition="right"&gt; - enterprise pivot panel
     </p>
     <p class="mt-0.5 text-xs" style="color: var(--sg-muted);">
       Flip <strong>Pivot Mode</strong> in the right panel: OFF shows the flat participant grid

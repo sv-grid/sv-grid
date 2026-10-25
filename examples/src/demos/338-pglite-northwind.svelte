@@ -128,7 +128,7 @@
           Delete{selected.length ? ` (${selected.length})` : ''}
         </button>
       {:else}
-        <span class="nw__readonly">Read-only view — switch to Products or Customers to edit.</span>
+        <span class="nw__readonly">Read-only view - switch to Products or Customers to edit.</span>
       {/if}
     </div>
 

@@ -142,7 +142,7 @@
           {#each anomalies as a, i (i)}
             <li>
               <span class="sev sev-{a.severity}">{a.severity}</span>
-              <code>{a.field}</code>{#if a.value != null} = {a.value}{/if} — {a.reason}
+              <code>{a.field}</code>{#if a.value != null} = {a.value}{/if} - {a.reason}
             </li>
           {/each}
         </ul>

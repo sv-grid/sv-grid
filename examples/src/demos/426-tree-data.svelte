@@ -65,17 +65,17 @@
 
   const fileTree: Node[] = [
     {
-      id: 100, name: 'src', title: 'folder', location: '—', reports: 5, budget: 0,
+      id: 100, name: 'src', title: 'folder', location: '-', reports: 5, budget: 0,
       children: [
         {
-          id: 101, name: 'components', title: 'folder', location: '—', reports: 2, budget: 0,
+          id: 101, name: 'components', title: 'folder', location: '-', reports: 2, budget: 0,
           children: [
             { id: 102, name: 'Grid.svelte',    title: 'component', location: '18.4 KB', reports: 0, budget: 0 },
             { id: 103, name: 'Toolbar.svelte', title: 'component', location: '6.1 KB',  reports: 0, budget: 0 },
           ],
         },
         {
-          id: 104, name: 'lib', title: 'folder', location: '—', reports: 2, budget: 0,
+          id: 104, name: 'lib', title: 'folder', location: '-', reports: 2, budget: 0,
           children: [
             { id: 105, name: 'utils.ts',   title: 'module', location: '3.2 KB', reports: 0, budget: 0 },
             { id: 106, name: 'format.ts',  title: 'module', location: '1.8 KB', reports: 0, budget: 0 },
@@ -85,7 +85,7 @@
       ],
     },
     {
-      id: 200, name: 'docs', title: 'folder', location: '—', reports: 2, budget: 0,
+      id: 200, name: 'docs', title: 'folder', location: '-', reports: 2, budget: 0,
       children: [
         { id: 201, name: 'readme.md',  title: 'markdown', location: '2.4 KB', reports: 0, budget: 0 },
         { id: 202, name: 'changelog.md', title: 'markdown', location: '5.7 KB', reports: 0, budget: 0 },
