@@ -116,6 +116,18 @@ function injectPosterPreload(html, poster) {
   const snippet = `    <link rel="preload" as="image" href="${escapeAttr(poster)}" fetchpriority="high">\n  </head>`
   return html.replace('</head>', () => snippet)
 }
+/**
+ * Puts a route's video block first INSIDE the body's `<main data-prerender>`.
+ * Prepended in front of it instead, the figure escaped the
+ * `[data-prerender] { display: none }` rule in index.html, so every reader saw
+ * a bare, unstyled video in the top-left corner until the SPA mounted and
+ * cleared #root.
+ */
+function prependToMain(body, block) {
+  const open = /^<main\b[^>]*\bdata-prerender\b[^>]*>/.exec(body)
+  if (!open) throw new Error('prerender: a route video needs a body that starts with <main data-prerender>')
+  return open[0] + block + body.slice(open[0].length)
+}
 function injectBody(html, bodyHtml) {
   if (!html.includes('<div id="root"></div>')) {
     throw new Error('prerender: SPA shell has no empty <div id="root"></div> to inject into')
@@ -1461,7 +1473,7 @@ async function main() {
     if (routeVideo) {
       html = injectJsonLd(html, videoObjectLd(routeVideo, { origin: CANON, pageUrl: url }))
       if (routeVideo.files.poster) html = injectPosterPreload(html, routeVideo.files.poster)
-      body = tutorialBlock(routeVideo) + body
+      body = prependToMain(body, tutorialBlock(routeVideo))
     }
     html = injectBody(html, body)
     await writePage(join(DIST, route), html, url, body)
@@ -1920,7 +1932,7 @@ async function main() {
   if (homeVideo) {
     homeHtml = injectJsonLd(homeHtml, videoObjectLd(homeVideo, { origin: CANON, pageUrl: `${CANON}/` }))
     if (homeVideo.files.poster) homeHtml = injectPosterPreload(homeHtml, homeVideo.files.poster)
-    homeBody = tutorialBlock(homeVideo) + homeBody
+    homeBody = prependToMain(homeBody, tutorialBlock(homeVideo))
   }
   homeHtml = injectBody(homeHtml, homeBody)
   if (homeFaqs.length) {
