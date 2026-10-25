@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:d54bd6e3-5b26-4fb6-ab8e-324c2de7c63a",
+  "serialNumber": "urn:uuid:1800fa26-5f73-4fac-a4ef-3da0f6d52b5f",
   "version": 1,
   "metadata": {
     "tools": {
@@ -16,10 +16,10 @@
     },
     "component": {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/mcp@3.0.31",
+      "bom-ref": "pkg:npm/%40svgrid/mcp@3.0.32",
       "name": "@svgrid/mcp",
-      "version": "3.0.31",
-      "purl": "pkg:npm/%40svgrid/mcp@3.0.31",
+      "version": "3.0.32",
+      "purl": "pkg:npm/%40svgrid/mcp@3.0.32",
       "scope": "required",
       "licenses": [
         {
@@ -61,22 +61,22 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/enterprise@3.1.25",
+      "bom-ref": "pkg:npm/%40svgrid/enterprise@3.1.26",
       "name": "@svgrid/enterprise",
-      "version": "3.1.25",
-      "purl": "pkg:npm/%40svgrid/enterprise@3.1.25",
+      "version": "3.1.26",
+      "purl": "pkg:npm/%40svgrid/enterprise@3.1.26",
       "scope": "optional",
       "description": "Peer dependency (declared range: workspace:^)"
     }
   ],
   "dependencies": [
     {
-      "ref": "pkg:npm/%40svgrid/mcp@3.0.31",
+      "ref": "pkg:npm/%40svgrid/mcp@3.0.32",
       "dependsOn": [
         "pkg:npm/%40modelcontextprotocol/sdk@1.29.0",
         "pkg:npm/svelte@5.55.9",
         "pkg:npm/zod@3.25.76",
-        "pkg:npm/%40svgrid/enterprise@3.1.25"
+        "pkg:npm/%40svgrid/enterprise@3.1.26"
       ]
     },
     {
@@ -92,7 +92,7 @@
       "dependsOn": []
     },
     {
-      "ref": "pkg:npm/%40svgrid/enterprise@3.1.25",
+      "ref": "pkg:npm/%40svgrid/enterprise@3.1.26",
       "dependsOn": []
     }
   ]

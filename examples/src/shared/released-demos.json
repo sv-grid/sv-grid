@@ -1,6 +1,6 @@
 {
-  "release": "grid-v3.0.22",
-  "date": "2026-10-24",
+  "release": "grid-v3.0.23",
+  "date": "2026-10-25",
   "ids": [
     "00-trading-desk",
     "01-quick-start",
@@ -510,6 +510,7 @@
     "700-base-ai-triage",
     "701-enterprise-grid-filters",
     "702-change-review",
+    "703-test-run-tree",
     "704-agent-review-desk",
     "71-submit-validation",
     "72-graphql-adapter",
