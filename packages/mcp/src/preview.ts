@@ -29,7 +29,7 @@ export const UI_MIME_TYPE = 'text/html;profile=mcp-app'
  * start failing in a way nobody is watching for. `tools/mcp-tools.test.ts` checks these
  * against the workspace so they cannot quietly rot either.
  */
-export const PREVIEW_GRID_WC_VERSION = '3.0.30'
+export const PREVIEW_GRID_WC_VERSION = '3.0.31'
 const EXT_APPS_VERSION = '1.7.5'
 const CDN = 'https://cdn.jsdelivr.net/npm'
 
