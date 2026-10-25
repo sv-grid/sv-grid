@@ -235,7 +235,7 @@
           <span class="sv-ms__label">{opt.label}</span>
         </li>
       {:else}
-        <li class="sv-ms__empty" aria-disabled="true">{loading ? loadingText : emptyText}</li>
+        <li class="sv-ms__empty" role="option" aria-selected="false" aria-disabled="true">{loading ? loadingText : emptyText}</li>
       {/each}
       {#if loading && filtered.length}
         <li class="sv-ms__loading" aria-live="polite">{loadingText}</li>

@@ -189,6 +189,7 @@
       value={display}
       {disabled}
       {...editorAria({ id: uid, invalid, required, error, hint, ariaLabel })}
+      role="combobox"
       aria-haspopup="dialog"
       aria-expanded={open}
       onkeydown={onFieldKeydown}

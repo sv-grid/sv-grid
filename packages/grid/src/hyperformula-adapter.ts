@@ -1,5 +1,5 @@
 /**
- * HyperFormula adapter — Excel-class formula evaluation for SvGrid.
+ * HyperFormula adapter - Excel-class formula evaluation for SvGrid.
  *
  * `hyperformula` is an OPTIONAL peer dependency. Consumers who want
  * full Excel-compatible formulas install it themselves:

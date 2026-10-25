@@ -1,8 +1,8 @@
 /**
- * Spreadsheet-style layout helpers — cell merging + per-cell borders.
+ * Spreadsheet-style layout helpers - cell merging + per-cell borders.
  *
  * These are *layout-only* augmentations on top of `<SvGrid>`. They don't
- * change the grid's data model, sorting, or filtering — they just decorate
+ * change the grid's data model, sorting, or filtering - they just decorate
  * the rendered body cells. Bind the action to the wrapper around your
  * SvGrid and pass merge / border specs; the helper observes DOM mutations
  * and re-applies the layout whenever the grid re-renders.
@@ -34,7 +34,7 @@ export type BorderSpec = {
  *  it spans `colspan` columns to the right + `rowspan` rows downward.
  *  Covered cells are hidden so the origin visually fills the region. */
 export type MergeSpec = {
-  /** Display-row index — the same value the grid puts on
+  /** Display-row index - the same value the grid puts on
    *  `data-svgrid-row`. After sorting/filtering, recompute the spec
    *  against the new display order. */
   rowIndex: number

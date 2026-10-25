@@ -102,7 +102,8 @@
             {#if c.shortcut}<span class="sv-cmd__kbd">{c.shortcut}</span>{/if}
           </li>
         {:else}
-          <li class="sv-cmd__empty" aria-disabled="true">{emptyText}</li>
+          <!-- A listbox holds options only: the empty state is one that cannot be picked. -->
+          <li class="sv-cmd__empty" role="option" aria-selected="false" aria-disabled="true">{emptyText}</li>
         {/each}
       </ul>
     </div>

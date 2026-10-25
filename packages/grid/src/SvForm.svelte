@@ -232,8 +232,9 @@
 
 {#snippet renderArray(field: FormField)}
   {@const count = form.arrayItems(field.name).length}
-  <div class="sv-form__field is-full sv-form__array" class:has-error={form.error(field.name)}>
-    <label class="sv-form__label">{field.label}{#if field.required}<span class="sv-form__req" aria-hidden="true"> *</span>{/if}</label>
+  <!-- The heading names the whole set of rows, not one control, so it labels a group. -->
+  <div class="sv-form__field is-full sv-form__array" class:has-error={form.error(field.name)} role="group" aria-labelledby={`f-${field.name}__label`}>
+    <span class="sv-form__label" id={`f-${field.name}__label`}>{field.label}{#if field.required}<span class="sv-form__req" aria-hidden="true"> *</span>{/if}</span>
     {#each form.arrayItems(field.name) as _item, i (i)}
       <div class="sv-form__arow">
         <div class="sv-form__grid" style:--cols={field.itemFields?.length ?? 1}>
