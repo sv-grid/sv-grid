@@ -6,8 +6,13 @@
  * '' does not make a proposal made against `null` look stale.
  */
 
+/** Whether a cell value is blank: null, undefined or the empty string. */
 export const isBlank = (v: unknown): boolean => v == null || v === ''
 
+/**
+ * Whether two cell values are the same for a review: `Object.is`, Dates by
+ * time, arrays and plain objects by structure, and any two blanks.
+ */
 export function sameValue(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) return true
   if (isBlank(a) && isBlank(b)) return true

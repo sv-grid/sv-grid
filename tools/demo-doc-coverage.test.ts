@@ -123,7 +123,13 @@ describe('demo <-> docs coverage', () => {
     const perDoc = new Map<string, number>()
     for (const s of manifest.snippets) perDoc.set(s.doc, (perDoc.get(s.doc) ?? 0) + 1)
 
+    // The generated API reference (docs/reference/auto) is left out: those
+    // pages are type listings written by tools/build-reference.mjs and never
+    // carry an example, so each module added to it pulled the median of the
+    // pages people read down (at 553 pages the median sat on 3 with 276 at
+    // two or fewer, and nine new reference pages tipped it to 2).
     const counts = docs
+      .filter(([path]) => !path.startsWith('docs/reference/auto/'))
       .map(([path, text]) => {
         const doc = path.replace(/^docs\//, '').replace(/\.md$/, '')
         // Four kinds of example count, because all four are one: an embedded

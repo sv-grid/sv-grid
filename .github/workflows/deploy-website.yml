@@ -17,6 +17,8 @@ on:
       # to be able to trigger its own deploy (listing the scripts rather than
       # tools/** keeps unrelated tooling from redeploying the site).
       - 'tools/build-docs-index.mjs'
+      # The deploy runs the agent-path check; a change to it has to run it.
+      - 'tools/web-eval/**'
       - 'tools/build-schemas.mjs'
       - 'tools/fetch-discussions.mjs'
       - 'tools/prerender-site.mjs'
@@ -146,6 +148,14 @@ jobs:
 
       - name: Add .nojekyll
         run: touch website/dist/.nojekyll
+
+      # An agent with only a fetch tool, starting at /llms.txt and reading each
+      # response cut at 100 KB, must still reach the docs, demo sources, API
+      # entries and MCP endpoint it reached before (tools/web-eval). It reads
+      # the built files, so it takes seconds; a task failing that passed in
+      # tools/web-eval/baseline.json stops the deploy.
+      - name: Agent paths still work
+        run: node tools/web-eval/run.mjs --dist website/dist --check
 
       # IndexNow, step 1 of 2 (tools/indexnow.mjs). Runs here, before the
       # deploy, because it compares this build's page hashes with the copy on

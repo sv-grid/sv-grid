@@ -204,3 +204,53 @@ export function renderDemoAboutHtml(model, { href, escape = escapeHtml, sourceLi
   }
   return html
 }
+
+/**
+ * The same sections as markdown, for /demos/<id>.md: an assistant fetching a
+ * demo gets its description and full source without the app shell. Links are
+ * absolute, to the markdown copies where there are some.
+ *
+ * @param {DemoAboutModel} model
+ * @param {{ href: (kind: 'docs' | 'blog', slug: string) => string, sourceLink?: string }} opts
+ */
+export function renderDemoAboutMarkdown(model, { href, sourceLink }) {
+  if (typeof href !== 'function') throw new Error('renderDemoAboutMarkdown: href(kind, slug) is required')
+  const h = DEMO_ABOUT_HEADINGS
+  /** @param {string[]} list */
+  const codes = (list) => list.map((x) => `\`${x}\``).join(', ')
+  /** @param {PitchRun[]} rs */
+  const runs = (rs) => rs.map((r) => (r.code ? `\`${r.text}\`` : r.text)).join('')
+  // A fence longer than any backtick run in the source, so the block cannot end early.
+  const fence = '`'.repeat(Math.max(3, ...[...model.source.matchAll(/`+/g)].map((m) => m[0].length + 1)))
+  const out = []
+  for (const key of demoAboutSections(model)) {
+    if (key === 'about') {
+      out.push(`## ${h.about}`, '')
+      if (model.description) out.push(model.description, '')
+      for (const b of model.pitch) {
+        if (b.kind === 'list') out.push(...b.items.map((it) => `- ${runs(it)}`), '')
+        else out.push(runs(b.runs), '')
+      }
+    } else if (key === 'facts') {
+      const f = model.facts
+      if (!f) continue
+      out.push(`## ${h.facts}`, '')
+      if (f.imports.length) out.push(`- Imports: ${codes(f.imports)}`)
+      if (f.features.length) out.push(`- Table features registered: ${codes(f.features)}`)
+      if (f.columns.length) out.push(`- Columns: ${f.columns.map((c) => `\`${c.field}\`${c.header ? ` (${c.header})` : ''}`).join(', ')}`)
+      if (f.api.length) out.push(`- SvGridApi methods called: ${f.api.map((a) => `\`api.${a}()\``).join(', ')}`)
+      out.push('')
+    } else if (key === 'faq') {
+      out.push(`## ${h.faq}`, '')
+      for (const q of model.faq) out.push(`### ${q.question}`, '', q.answer, '')
+    } else if (key === 'docs') {
+      out.push(`## ${h.docs}`, '', ...model.docs.map((d) => `- [${d.title}](${href('docs', d.slug)})`), '')
+    } else if (key === 'posts') {
+      out.push(`## ${h.posts}`, '', ...model.posts.map((p) => `- [${p.title}](${href('blog', p.slug)})${p.description ? ` - ${p.description}` : ''}`), '')
+    } else if (key === 'source') {
+      out.push(`## ${h.source(model.id)}`, '', `${fence}svelte`, model.source, fence, '')
+      if (sourceLink) out.push(`[View this example on GitHub](${sourceLink})`, '')
+    }
+  }
+  return out.join('\n')
+}

@@ -1246,6 +1246,13 @@ async function exportXlsxNative<
   return deliver(blob, ensureExt(filename, 'xlsx'), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', src.length, opts.download)
 }
 
+/**
+ * Export a grid's rows to a file: xlsx, xls, pdf, csv, tsv, html, json, xml
+ * or md, picked by `opts.format`. It reads the columns and rows through the
+ * grid api, so sorting, filtering and grouping carry over, and downloads the
+ * file unless `opts.download` is false. Resolves with the file (`ExportResult`)
+ * on the paths that build it in memory, undefined on the others.
+ */
 export async function exportGrid<
   TFeatures extends TableFeatures,
   TData extends RowData,

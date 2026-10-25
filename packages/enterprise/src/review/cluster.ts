@@ -28,6 +28,11 @@ import { isBlank } from './equal'
 import { fill, reviewMessages, type ReviewMessages } from './messages'
 import type { GroupKind, Proposal, ProposalGroup } from './types'
 
+/**
+ * How `clusterProposals` labels and splits groups: field labels, the size a
+ * scale group needs, the confidence below which a proposal counts as unsure,
+ * and the wording.
+ */
 export type ClusterOptions = {
   /** Wording of the group labels (the `label*`, `case*`, `punct*` keys); English by default. */
   messages?: Partial<ReviewMessages>
@@ -44,6 +49,11 @@ const SEP = '\u0001'
 
 type Bucket = { kind: GroupKind; param: string; field: string; sourceId: string; members: Proposal[] }
 
+/**
+ * Group proposals by the change they make (trim, case, reformat, scale, one
+ * mapping, fill empty, one target, no pattern), the groups that need a person
+ * first. What the panel lists.
+ */
 export function clusterProposals(
   proposals: ReadonlyArray<Proposal>,
   opts: ClusterOptions = {},
@@ -266,7 +276,10 @@ const ymd = (y: number, m: number, d: number) => `${y}-${String(m).padStart(2, '
 
 // ---- grouping helpers -----------------------------------------------------
 
-/** A key that tells values apart by type as well as content. */
+/**
+ * A key that tells values apart by type as well as content.
+ * @internal
+ */
 export function keyOf(v: unknown): string {
   if (v instanceof Date) return 'd:' + v.getTime()
   if (isBlank(v)) return 'blank'
@@ -324,6 +337,7 @@ function rankOf(g: ProposalGroup, low: number): number {
 /**
  * Spaces a reader cannot see, drawn as `·`: leading and trailing ones and runs
  * of two or more. A trim proposal otherwise reads "Acme -> Acme".
+ * @internal
  */
 export function visibleSpaces(s: string): string {
   return s.replace(/^\s+|\s+$/g, (m) => '·'.repeat(m.length)).replace(/ {2,}/g, (m) => '·'.repeat(m.length))

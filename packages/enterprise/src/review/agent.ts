@@ -15,6 +15,10 @@ import { isBlank, sameValue } from './equal'
 import type { ReviewGridApi } from './model.svelte'
 import type { Proposal, ProposalGroup, ProposalInput, ProposalSource } from './types'
 
+/**
+ * One agent tool in the shape tool-use loops take: a name, a description, a
+ * JSON Schema for its input, and `execute`.
+ */
 export type GridTool = {
   name: string
   description: string
@@ -32,6 +36,10 @@ type ToolReview = {
 
 type ToolApi = Pick<ReviewGridApi, 'getData' | 'getColumns' | 'getOption'>
 
+/**
+ * Options for `createGridTools`: the review edits are proposed into, the grid
+ * api, and the fields the agent may edit.
+ */
 export type GridToolsOptions = {
   review: ToolReview
   /** The grid api, or a getter for it. */
@@ -78,6 +86,11 @@ function wrongType(type: string | undefined, current: unknown, value: unknown): 
   return null
 }
 
+/**
+ * The tools an agent edits a grid through: `grid_describe`, `grid_query_rows`,
+ * `grid_propose_edits` and `grid_review_status`. None of them writes the data:
+ * edits arrive in the review as proposals for a person to accept.
+ */
 export function createGridTools(opts: GridToolsOptions): GridTool[] {
   const prefix = opts.prefix ?? 'grid_'
   const source = opts.source ?? { kind: 'agent', id: 'agent', label: 'Agent' }

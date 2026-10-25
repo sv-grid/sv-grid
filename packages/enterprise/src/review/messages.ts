@@ -5,7 +5,6 @@
  * idiom of the grid's own `localization.text`: a flat map, `{name}`
  * placeholders. Kept free of imports: the clustering uses it in plain Node.
  */
-
 export const REVIEW_MESSAGES = {
   // Panel header
   title: 'Review changes',
@@ -117,9 +116,15 @@ export const REVIEW_MESSAGES = {
   labelUnpatterned: '{field}: no shared pattern',
 }
 
+/**
+ * Every string the review shows, with the keys of `REVIEW_MESSAGES`.
+ */
 export type ReviewMessages = typeof REVIEW_MESSAGES
 
-/** English, with `overrides` laid over it (blank values ignored). */
+/**
+ * English, with `overrides` laid over it (blank values ignored).
+ * @internal
+ */
 export function reviewMessages(...overrides: Array<Partial<ReviewMessages> | null | undefined>): ReviewMessages {
   const out = { ...REVIEW_MESSAGES }
   for (const o of overrides) {
@@ -132,7 +137,10 @@ export function reviewMessages(...overrides: Array<Partial<ReviewMessages> | nul
   return out
 }
 
-/** A template with its `{name}` placeholders filled. */
+/**
+ * A template with its `{name}` placeholders filled.
+ * @internal
+ */
 export function fill(template: string, vars: Record<string, string | number>): string {
   return template.replace(/\{(\w+)\}/g, (whole, key: string) => (key in vars ? String(vars[key]) : whole))
 }

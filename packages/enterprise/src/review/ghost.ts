@@ -45,6 +45,7 @@ export function canGhost(raw: any, sample?: unknown, columns: ReadonlyArray<any>
 /**
  * Wrap the `cell` of every ghostable column whose field has a pending
  * proposal. Returns the same array when nothing needs wrapping.
+ * @internal
  */
 export function wrapColumns<C extends ReadonlyArray<any>>(
   cols: C,

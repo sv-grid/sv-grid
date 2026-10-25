@@ -1,0 +1,34 @@
+{
+  "$comment": "Scored tasks for svgrid.com as an agent with only a fetch tool sees it (tools/web-eval/run.mjs). docs = reach the docs page for an ask and read what it needs. demo = reach a demo and read its source. api = find an exact API member. endpoint = a machine endpoint an agent asks for by name. Targets count as HTML or as the markdown twin.",
+  "tasks": [
+    { "id": "quick-start", "band": "docs", "query": "getting started install svgrid", "targets": ["/docs/getting-started/"], "mustContain": ["npm"] },
+    { "id": "pin-column", "band": "docs", "query": "how do I pin a column", "targets": ["/docs/help/columns/column-pinning/"], "mustContain": ["pinned"] },
+    { "id": "kanban", "band": "docs", "query": "kanban board", "targets": ["/docs/help/rows/kanban-board/"], "mustContain": ["board"] },
+    { "id": "inline-editing", "band": "docs", "query": "inline editing cells", "targets": ["/docs/help/editing/overview/"], "mustContain": ["editable"] },
+    { "id": "pivot", "band": "docs", "query": "pivot table", "targets": ["/docs/help/pivot/"], "mustContain": ["pivot"] },
+    { "id": "column-filtering", "band": "docs", "query": "column filtering", "targets": ["/docs/help/filtering/overview/"], "mustContain": ["filter"] },
+    { "id": "export-excel", "band": "docs", "query": "export to excel", "targets": ["/docs/help/export/"], "mustContain": ["xlsx"] },
+    { "id": "server-side", "band": "docs", "query": "server side data pagination", "targets": ["/docs/help/server-side-data/"], "mustContain": ["server"] },
+    { "id": "accessibility", "band": "docs", "query": "accessibility keyboard navigation", "targets": ["/docs/help/accessibility/"], "mustContain": ["keyboard"] },
+    { "id": "theming", "band": "docs", "query": "theme css variables density", "targets": ["/docs/getting-started/5-theme-and-density/"], "mustContain": ["--sg-"] },
+    { "id": "tree-data", "band": "docs", "query": "tree data hierarchy", "targets": ["/docs/help/rows/tree-data/"], "mustContain": ["tree"] },
+    { "id": "change-review", "band": "docs", "query": "review AI agent changes before they are written", "targets": ["/docs/help/review/change-review/"], "mustContain": ["createReview"] },
+    { "id": "studio-ai-generation", "band": "docs", "query": "Studio generate an app with AI", "targets": ["/docs/enterprise/studio/ai-generation/"], "mustContain": ["Studio"] },
+    { "id": "compare-hub", "band": "docs", "query": "which svelte table library should I use", "targets": ["/compare/"], "mustContain": ["Svelte"] },
+    { "id": "mcp-server-doc", "band": "docs", "query": "MCP server for coding assistants", "targets": ["/docs/help/mcp-server/"], "mustContain": ["https://mcp.svgrid.com/mcp"] },
+
+    { "id": "demo-change-review", "band": "demo", "query": "change review demo AI agent edits review", "targets": ["/demos/702-change-review/"], "mustContain": ["createReview<Customer>"] },
+    { "id": "demo-agent-desk", "band": "demo", "query": "agent review desk demo", "targets": ["/demos/704-agent-review-desk/"], "mustContain": ["createGridTools"] },
+    { "id": "demo-kanban", "band": "demo", "query": "kanban board demo", "targets": ["/demos/343-kanban-board/"], "mustContain": ["board="] },
+    { "id": "demo-pinning", "band": "demo", "query": "column pinning demo", "targets": ["/demos/25-column-pinning/"], "mustContain": ["<SvGrid"] },
+    { "id": "demo-tree", "band": "demo", "query": "tree data demo", "targets": ["/demos/426-tree-data/"], "mustContain": ["<SvGrid"] },
+
+    { "id": "api-getRowPosition", "band": "api", "query": "getRowPosition api reference", "targets": ["/api.json", "/docs/reference/SvGridApi/"], "mustContain": ["getRowPosition"] },
+    { "id": "api-createReview-options", "band": "api", "query": "createReview options rowLabel", "targets": ["/api.json", "/docs/help/review/change-review/"], "mustContain": ["rowLabel"] },
+
+    { "id": "llms-names-mcp-endpoint", "band": "endpoint", "path": "/llms.txt", "mustContain": ["https://mcp.svgrid.com/mcp"] },
+    { "id": "well-known-mcp", "band": "endpoint", "path": "/.well-known/mcp.json", "mustContain": ["https://mcp.svgrid.com/mcp"] },
+    { "id": "demo-markdown", "band": "endpoint", "path": "/demos/702-change-review.md", "mustContain": ["createReview<Customer>"] },
+    { "id": "api-json", "band": "endpoint", "path": "/api.json", "mustContain": ["getRowPosition", "createReview"] }
+  ]
+}

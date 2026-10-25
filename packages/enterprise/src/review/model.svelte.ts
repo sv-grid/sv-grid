@@ -44,6 +44,11 @@ export type ReviewGridApi = Pick<
   | 'getRowPosition' | 'getPageInfo' | 'setPage' | 'getState'
 >
 
+/**
+ * Options for `createReview`: the grid it reviews, how accepted values are
+ * written (`setRows`, or `server` with `onCommit`), and what to call as
+ * decisions are made.
+ */
 export type ReviewOptions<TData> = {
   /** The grid api, or a getter for it (it is bound after mount). */
   api: ReviewGridApi | (() => ReviewGridApi | undefined | null)
@@ -88,6 +93,10 @@ export type ReviewOptions<TData> = {
   rowLabel?: (row: TData) => string | null | undefined
 }
 
+/**
+ * One decision, its undo or its redo, as `onDecision` receives it, with copies
+ * of the proposals it moved. Write these to an audit log.
+ */
 export type ReviewDecision = {
   action: 'accept' | 'reject' | 'undo' | 'redo'
   /** For undo / redo: which decision was undone or redone. */
@@ -97,6 +106,11 @@ export type ReviewDecision = {
   at: number
 }
 
+/**
+ * What an accept or a reject did, by proposal id: accepted, rejected, stale
+ * (the cell changed before the write), committed and then found stale, or
+ * skipped; and what `onCommit` threw, if it did.
+ */
 export type ReviewOutcome = {
   accepted: string[]
   rejected: string[]
@@ -114,6 +128,10 @@ export type ReviewOutcome = {
   error?: unknown
 }
 
+/**
+ * A change set for `review.add`: where it came from, an optional title and
+ * id, and its proposals.
+ */
 export type AddInput = {
   source: ProposalSource
   title?: string
@@ -121,8 +139,15 @@ export type AddInput = {
   proposals: ReadonlyArray<ProposalInput>
 }
 
+/**
+ * A review's change sets as `review.toJSON()` writes them and `review.load` /
+ * `review.merge` read them, to route a review to an approver.
+ */
 export type ReviewJSON = { v: 1; sets: ChangeSet[] }
 
+/**
+ * What `createReview` returns.
+ */
 export type Review<TData = unknown> = ReturnType<typeof createReview<TData>>
 
 const STATUSES = new Set(['pending', 'accepted', 'rejected', 'stale', 'conflict'])
@@ -176,6 +201,13 @@ const nextId = (prefix: string) => `${prefix}${Date.now().toString(36)}-${(uid++
 const SEP = '\u0000'
 const cellKey = (rowId: string, field: string) => rowId + SEP + field
 
+/**
+ * Hold writes nobody typed (an agent's edits, an import, an AI helper's
+ * output) as proposals, grouped by the change they make, and write them only
+ * when a person accepts them. Give the grid `review.columns(columns)` and
+ * `review.formats`, and render `<SvReviewPanel {review} />` beside it. Each
+ * decision is one Ctrl+Z in the grid.
+ */
 export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
   if (!opts.setRows && !opts.server) throw new Error('[svgrid review] pass setRows (client data) or server (server row model)')
   if (opts.server && !opts.onCommit) throw new Error('[svgrid review] onCommit is required with a server row model')

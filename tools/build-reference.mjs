@@ -65,9 +65,17 @@ const SOURCES = [
       'export.ts', 'pivot.ts', 'pivot-chart.ts', 'import.ts', 'install.ts',
       // The Server-Side Row Model and what runs beside it.
       'server/server-row-model.ts', 'server/server-selection.ts', 'server/server-pivot.ts', 'server/svgrid-adapter.ts',
+      // Change review (@svgrid/enterprise/review): its pages are named
+      // review-<file>, since types.ts or messages.ts alone say nothing.
+      'review/model.svelte.ts', 'review/types.ts', 'review/agent.ts', 'review/adapters.ts',
+      'review/cluster.ts', 'review/equal.ts', 'review/messages.ts', 'review/formats.ts', 'review/ghost.ts',
     ] },
 ]
 const OUT_DIR = 'docs/reference/auto'
+/** Directories whose files are named with the directory in front: review/types.ts is review-types. */
+const PREFIXED_DIRS = new Set(['review'])
+/** The import path a source file's exports are reached by, when it is not the package root. */
+const SUBPATH = { review: '/review' }
 
 /**
  * Very small JSDoc-aware extractor. Walks the file line by line,
@@ -104,7 +112,8 @@ function extract(src) {
       i += 1
       continue
     }
-    const declMatch = /^export\s+(type|interface|function|class|const)\s+([A-Za-z_]\w*)/.exec(lines[i] ?? '')
+    // `export async function` is a function too; missing it dropped every async export.
+    const declMatch = /^export\s+(?:async\s+)?(type|interface|function|class|const)\s+([A-Za-z_]\w*)/.exec(lines[i] ?? '')
     if (declMatch) {
       const kind = declMatch[1]
       const name = declMatch[2]
@@ -165,6 +174,36 @@ function md(name, sym) {
   ].join('\n')
 }
 
+/** The first sentence of a doc comment, as one line. */
+function summaryOf(doc) {
+  const text = doc.replace(/\s+/g, ' ').trim()
+  const end = text.search(/[.!?](\s|$)/)
+  return end < 0 ? text : text.slice(0, end + 1)
+}
+
+/**
+ * The member names of an object type or interface: properties and methods at
+ * the first level of its braces. Nested object types and parameter lists are
+ * skipped, so `onDecision?: (d: { at: number }) => void` yields onDecision.
+ */
+function membersOf(signature) {
+  const names = []
+  let depth = 0
+  for (const line of signature.split('\n')) {
+    if (depth === 1) {
+      const m = /^\s*(?:readonly\s+)?([A-Za-z_$][\w$]*)\??\s*[:(<]/.exec(line)
+      if (m && !names.includes(m[1])) names.push(m[1])
+    }
+    for (const ch of line) {
+      if (ch === '{') depth += 1
+      else if (ch === '}') depth -= 1
+    }
+  }
+  return names
+}
+
+const api = []
+
 async function main() {
   await mkdir(OUT_DIR, { recursive: true })
   const indexLines = [
@@ -197,7 +236,20 @@ async function main() {
         continue
       }
       const symbols = extract(body)
-      const slug = basename(f, '.ts')
+      const dir = f.includes('/') ? f.slice(0, f.indexOf('/')) : ''
+      const slug = PREFIXED_DIRS.has(dir) ? `${dir}-${basename(f, '.ts')}` : basename(f, '.ts')
+      for (const s of symbols) {
+        api.push({
+          name: s.name,
+          kind: s.kind,
+          import: src.pkg + (SUBPATH[dir] ?? ''),
+          module: `${pkgSlug}-${slug}`,
+          summary: summaryOf(s.doc),
+          members: membersOf(s.signature),
+          doc: s.doc,
+          signature: s.signature,
+        })
+      }
       if (symbols.length === 0) {
         // A file whose exports are all @internal has no page; a page a
         // previous run wrote for it (when one export was still documented,
@@ -222,7 +274,12 @@ async function main() {
     indexLines.push('')
   }
   await writeFile(join(OUT_DIR, 'index.md'), indexLines.join('\n'), 'utf-8')
-  process.stdout.write(`build-reference: regenerated docs/reference/auto/\n`)
+  // The same symbols as data, for agents that look a name up instead of
+  // reading pages. tools/build-docs-index.mjs serves it on the site as a
+  // compact /api.json index plus /api/<module>.json with the docs.
+  api.sort((a, b) => a.name.localeCompare(b.name) || a.module.localeCompare(b.module))
+  await writeFile(join(OUT_DIR, 'api.json'), JSON.stringify({ symbols: api }, null, 1) + '\n', 'utf-8')
+  process.stdout.write(`build-reference: regenerated docs/reference/auto/ (${api.length} symbols in api.json)\n`)
 }
 
 main().catch((err) => { console.error(err); process.exit(1) })

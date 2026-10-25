@@ -25,7 +25,7 @@ import { createRequire } from 'node:module'
 import { createHash } from 'node:crypto'
 import { blogCardSvg, rasterizePng } from './blog-card.mjs'
 import { clampDescription, firstSentence } from './lib/seo-text.mjs'
-import { demoAboutModel, renderDemoAboutHtml } from './lib/demo-page.mjs'
+import { demoAboutModel, renderDemoAboutHtml, renderDemoAboutMarkdown } from './lib/demo-page.mjs'
 import { parseDemoRegistry, parseRenamedDemos, readDemoSource, readDemoMeta, EDITOR_CATEGORIES } from './lib/demo-registry.mjs'
 import { isHiddenDoc, parseDocFrontmatter, docSeoTitle, sectionOf, SECTION_TITLES } from './lib/doc-meta.mjs'
 import { isReleased, resolveSolution } from './lib/releases.mjs'
@@ -1545,6 +1545,26 @@ async function main() {
       escape: escapeAttr,
       sourceLink: ghUrl,
     })
+    // The demo as markdown at /demos/<id>.md, as the docs pages have: the
+    // same model, so an assistant gets the description and full source
+    // without the app shell. The alternate link points crawlers at it.
+    const mdUrl = `${CANON}/demos/${d.id}.md`
+    html = html.replace('</head>', () => `    <link rel="alternate" type="text/markdown" title="This demo as markdown" href="${escapeAttr(mdUrl)}" />\n  </head>`)
+    const pkgLine = d.pro ? 'Requires `@svgrid/enterprise` (and `@svgrid/grid`).' : 'Uses `@svgrid/grid` (MIT).'
+    const demoMd = [
+      `# ${d.title}`,
+      '',
+      `${d.blurb}`,
+      '',
+      `${pkgLine} Category: ${d.category}. Live demo: ${url}`,
+      '',
+      renderDemoAboutMarkdown(model, {
+        href: (kind, slug) => (kind === 'docs' ? `${CANON}/docs/${slug}.md` : `${CANON}/${kind}/${slug}/`),
+        sourceLink: ghUrl,
+      }),
+    ].join('\n')
+    await mkdir(join(DIST, 'demos'), { recursive: true })
+    await writeFile(join(DIST, 'demos', `${d.id}.md`), demoMd, 'utf-8')
 
     const siblings = demos.filter((s) => s.category === d.category && s.id !== d.id).slice(0, 5)
     if (siblings.length) {
@@ -1559,6 +1579,23 @@ async function main() {
     await writePage(join(DIST, 'demos', d.id), html, url, body, await fileDate(join(ROOT, 'examples', 'src', 'demos', `${d.id}.svelte`)))
     written += 1
   }
+
+  /** A blurb's first sentence, cut at a word near 80 characters. */
+  const shortBlurb = (blurb) => {
+    const s = firstSentence(blurb).replace(/\s+/g, ' ').trim()
+    return s.length <= 80 ? s : s.slice(0, s.lastIndexOf(' ', 77)) + '...'
+  }
+  // Every demo in one markdown list, each linked to its markdown copy.
+  const demosMd = ['# SvGrid demos', '', `Every live demo, with a link to its markdown copy (description and full source). ${demos.length} demos; the gallery is ${CANON}/demos/.`, '']
+  const demosByCategory = new Map()
+  for (const d of demos) demosByCategory.set(d.category, [...(demosByCategory.get(d.category) ?? []), d])
+  for (const [cat, list] of demosByCategory) {
+    demosMd.push(`## ${cat}`, '')
+    // A short blurb: the list has to fit one fetch (about 100 KB) at 500+ demos.
+    for (const d of list) demosMd.push(`- [${d.title}](${CANON}/demos/${d.id}.md)${d.pro ? ' (Enterprise)' : ''}: ${shortBlurb(d.blurb)}`)
+    demosMd.push('')
+  }
+  await writeFile(join(DIST, 'demos.md'), demosMd.join('\n'), 'utf-8')
 
   const demoRelatedJson = JSON.stringify(demoRelated)
   await writeFile(join(DIST, 'demo-related.json'), demoRelatedJson, 'utf-8')

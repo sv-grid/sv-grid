@@ -18,6 +18,10 @@ import type { ProposalInput, ProposalSource } from './types'
 
 type RowIdApi = Pick<ReviewGridApi, 'getOption'>
 
+/**
+ * A change set built from another tool's output, ready for `review.add`, with
+ * a count of the predictions that could not become proposals.
+ */
 export type AdapterResult = {
   source: ProposalSource
   title: string
@@ -64,6 +68,10 @@ function fromPredictions<TData>(
 export const blankTargets = (snapshot: ReadonlyArray<unknown>, field: string): number[] =>
   snapshot.flatMap((row, i) => (isBlank((row as Record<string, unknown>)[field]) ? [i] : []))
 
+/**
+ * Proposals from an `aiSmartFill` result, its row indices resolved to row ids
+ * through the snapshot the call ran on.
+ */
 export function fromSmartFill<TData>(
   result: AISmartFillResult,
   snapshot: ReadonlyArray<TData>,
@@ -75,6 +83,10 @@ export function fromSmartFill<TData>(
   return { source, title: `Smart fill: ${result.field}`, proposals, dropped }
 }
 
+/**
+ * Proposals from an `aiClassify` result, its row indices resolved to row ids
+ * through the snapshot the call ran on.
+ */
 export function fromClassify<TData>(
   result: AIClassifyResult,
   snapshot: ReadonlyArray<TData>,

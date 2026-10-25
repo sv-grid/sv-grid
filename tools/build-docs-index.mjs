@@ -21,7 +21,7 @@
  * The generator is deliberately dependency-free so it runs on a fresh
  * clone without `pnpm install`.
  */
-import { readdir, readFile, writeFile, stat, mkdir } from 'node:fs/promises'
+import { readdir, readFile, writeFile, stat, mkdir, rm } from 'node:fs/promises'
 import { readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { join, relative, dirname } from 'node:path'
@@ -45,6 +45,7 @@ const ROOT      = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DOCS_DIR  = join(ROOT, 'docs')
 const PUBLIC_DIR = join(ROOT, 'website', 'public') // served copies for crawlers
 const SITE      = process.env.SVGRID_SITE_ORIGIN ?? 'https://svgrid.com'   // canonical doc origin
+const MCP_REMOTE = 'https://mcp.svgrid.com/mcp'
 
 // The tutorials a page embeds, as manifest entries. Used to append a narrated
 // cut's words to llms-full.txt: that block is only rendered visibly for silent
@@ -603,6 +604,10 @@ async function main() {
   llmsLines.push(`- [llms-small.txt](${SITE}/llms-small.txt): the brief above plus the full text of the getting-started path and the pages asked about most before choosing a grid.`)
   llmsLines.push(`- [llms-full.txt](${SITE}/llms-full.txt): the full text of every docs page, the comparison pages and the API reference, in reading order.`)
   llmsLines.push(`- [docs.json](${SITE}/docs.json): the route manifest with section, tier and demo links per page.`)
+  llmsLines.push(`- This index by product, each part on its own (use one if this file was cut short): ${[...manifest.pillars.map((p) => `[${p.title}](${SITE}/llms/${p.id}.txt)`), `[Comparisons: which Svelte table library to use](${SITE}/llms/compare.txt)`].join(', ')}`)
+  llmsLines.push(`- [demos.md](${SITE}/demos.md): every live demo by category. Each has a markdown copy with its full source at /demos/<id>.md, e.g. ${SITE}/demos/01-quick-start.md`)
+  llmsLines.push(`- [API reference as JSON](${SITE}/api.json): look up any function, type, option or api method of @svgrid/grid and @svgrid/enterprise by name. Every export by module, with the member names of each type (options objects, props, SvGridApi). ${SITE}/api/<name>.json has a symbol's doc and signature, e.g. ${SITE}/api/svgridapi.json`)
+  llmsLines.push(`- MCP server: the remote endpoint ${MCP_REMOTE} (streamable HTTP, no install), or \`npx -y @svgrid/mcp\` locally. Described at ${SITE}/.well-known/mcp.json.`)
   llmsLines.push('')
   // Pages in reading order: pillar, then section, then the curated page
   // order. llms-full.txt is written in the same order.
@@ -610,11 +615,14 @@ async function main() {
   // Each page is listed once, under its own pillar; a section whose pages
   // straddle two pillars (help/rows, help/server) appears under both with
   // only that pillar's pages.
+  // Each pillar's part of this file, kept for its own /llms/<pillar>.txt.
+  const sliceStarts = []
   for (const pillar of manifest.pillars) {
     const pillarSections = manifest.sections
       .map((s) => ({ ...s, pages: s.pages.filter((p) => docByPath.get(p)?.pillar === pillar.id && !isOptional(docByPath.get(p))) }))
       .filter((s) => s.pages.length > 0)
     if (pillarSections.length === 0) continue
+    sliceStarts.push({ id: pillar.id, title: pillar.title, at: llmsLines.length })
     llmsLines.push(`## ${pillar.title}`)
     llmsLines.push('')
     // The component list opens on the grid: <SvGrid> is the suite's hero
@@ -642,7 +650,10 @@ async function main() {
   const listed = new Set([...ordered, ...optional])
   ordered.push(...docs.filter((d) => !listed.has(d)))
   if (comparePages.length) {
+    sliceStarts.push({ id: 'compare', title: 'Comparisons', at: llmsLines.length })
     llmsLines.push('## Comparisons')
+    llmsLines.push('')
+    llmsLines.push(`- [Which Svelte table library should I use?](${SITE}/compare/): every comparison on one page, with when to choose each library.`)
     llmsLines.push('')
     llmsLines.push('### SvGrid vs other data grids')
     llmsLines.push('')
@@ -654,6 +665,7 @@ async function main() {
     // "when to choose" list (the same section the /compare/ hub opens with).
     llmsLines.push(renderCompareChoosingMarkdown(compareChoosingModel(comparisons), { site: SITE }))
   }
+  const slicesEnd = llmsLines.length
   if (optional.length) {
     llmsLines.push('## Optional')
     llmsLines.push('')
@@ -661,6 +673,21 @@ async function main() {
     llmsLines.push('')
   }
   await writeFile(join(DOCS_DIR, 'llms.txt'), llmsLines.join('\n'), 'utf-8')
+  // This file is past 100 KB, about where an agent's fetch tool cuts a
+  // response, and the last pillars (Studio) and the comparisons sat beyond the
+  // cut. Each part also stands alone, linked from the top of this file.
+  const llmsSlices = sliceStarts.map((s, i) => ({
+    id: s.id,
+    text: [
+      `# ${s.title}: SvGrid docs index`,
+      '',
+      `> Part of ${SITE}/llms.txt. Each docs page has a markdown copy at its URL with the trailing slash replaced by \`.md\`.`,
+      '',
+      ...llmsLines.slice(s.at + 1, sliceStarts[i + 1]?.at ?? slicesEnd),
+    ].join('\n'),
+  }))
+  await mkdir(join(DOCS_DIR, 'llms'), { recursive: true })
+  for (const s of llmsSlices) await writeFile(join(DOCS_DIR, 'llms', `${s.id}.txt`), s.text, 'utf-8')
 
   // ---- llms-full.txt ---------------------------------------------------
   // The brief first, then the pages in reading order, the comparison pages,
@@ -765,10 +792,84 @@ async function main() {
   await writeFile(join(PUBLIC_DIR, 'llms.txt'), llmsLines.join('\n'), 'utf-8')
   await writeFile(join(PUBLIC_DIR, 'llms-full.txt'), llmsFullLines.join('\n'), 'utf-8')
   await writeFile(join(PUBLIC_DIR, 'llms-small.txt'), llmsSmall, 'utf-8')
+  await mkdir(join(PUBLIC_DIR, 'llms'), { recursive: true })
+  for (const s of llmsSlices) await writeFile(join(PUBLIC_DIR, 'llms', `${s.id}.txt`), s.text, 'utf-8')
+  const apiCount = await writeApiJson()
+  await writeMcpDiscovery()
 
   // ---- Console summary --------------------------------------------------
-  process.stdout.write(`build-docs-index: ${docs.length} pages → docs.json, llms.txt, llms-full.txt, llms-small.txt (${Math.round(llmsSmall.length / 1024)} KB) (docs/ + website/public/)\n`)
+  process.stdout.write(`build-docs-index: ${docs.length} pages → docs.json, llms.txt, llms-full.txt, llms-small.txt (${Math.round(llmsSmall.length / 1024)} KB) (docs/ + website/public/), api.json (${apiCount} symbols)\n`)
   process.stdout.write(`  enterprise: ${manifest.counts.enterprise} · with demo: ${manifest.counts.withDemo} · comparisons: ${comparePages.length}\n`)
+}
+
+/**
+ * The API reference for agents that look a name up: /api.json, every symbol
+ * by module and kind with the member names of each type, small enough for one
+ * fetch (a fetch tool cuts near 100 KB), and /api/<name>.json with the doc
+ * and signature. Files are named by the lowercased name and hold every symbol
+ * of that name, so `tableFeatures` and `TableFeatures` share one file instead
+ * of overwriting each other on a case-insensitive disk.
+ * Source: docs/reference/auto/api.json, written by tools/build-reference.mjs.
+ */
+async function writeApiJson() {
+  const { symbols } = JSON.parse(await readFile(join(DOCS_DIR, 'reference', 'auto', 'api.json'), 'utf-8'))
+  const version = (pkg) => JSON.parse(readFileSync(join(ROOT, 'packages', pkg, 'package.json'), 'utf-8')).version
+  const modules = new Map()
+  const byName = new Map()
+  for (const s of symbols) {
+    if (!modules.has(s.module)) modules.set(s.module, { module: s.module, import: s.import, functions: [], values: [], types: {} })
+    const m = modules.get(s.module)
+    if (s.kind === 'function' || s.kind === 'class') m.functions.push(s.name)
+    else if (s.kind === 'const') m.values.push(s.name)
+    else m.types[s.name] = s.members
+    const key = s.name.toLowerCase()
+    if (!byName.has(key)) byName.set(key, [])
+    byName.get(key).push({ name: s.name, kind: s.kind, import: s.import, summary: s.summary, members: s.members, doc: s.doc, signature: s.signature })
+  }
+  const index = {
+    name: 'SvGrid API reference',
+    versions: { '@svgrid/grid': version('grid'), '@svgrid/enterprise': version('enterprise') },
+    symbol: `${SITE}/api/<name lowercased>.json has a symbol's doc and signature, e.g. ${SITE}/api/svgridapi.json`,
+    docs: `${SITE}/llms.txt`,
+    modules: [...modules.values()],
+  }
+  // One module per line: readable, and still small.
+  const lines = JSON.stringify({ ...index, modules: [] }).replace('"modules":[]}', '"modules":[\n')
+  await writeFile(join(PUBLIC_DIR, 'api.json'), lines + index.modules.map((m) => JSON.stringify(m)).join(',\n') + '\n]}\n', 'utf-8')
+  const dir = join(PUBLIC_DIR, 'api')
+  await mkdir(dir, { recursive: true })
+  // Clear the old files first: a removed export must not keep its page.
+  for (const f of await readdir(dir)) if (f.endsWith('.json')) await rm(join(dir, f))
+  for (const [key, list] of byName) {
+    await writeFile(join(dir, `${key}.json`), JSON.stringify({ symbols: list }, null, 1) + '\n', 'utf-8')
+  }
+  return symbols.length
+}
+
+/**
+ * Where the MCP server is, for clients that look before they are told:
+ * /.well-known/mcp/server.json is the registry manifest the release keeps
+ * current (packages/mcp/server.json), and /.well-known/mcp.json says the same
+ * in a few lines with the setup commands and the docs page.
+ */
+async function writeMcpDiscovery() {
+  const server = JSON.parse(await readFile(join(ROOT, 'packages', 'mcp', 'server.json'), 'utf-8'))
+  const dir = join(PUBLIC_DIR, '.well-known', 'mcp')
+  await mkdir(dir, { recursive: true })
+  await writeFile(join(dir, 'server.json'), JSON.stringify(server, null, 2) + '\n', 'utf-8')
+  const summary = {
+    name: server.title,
+    description: server.description,
+    remote: { url: MCP_REMOTE, transport: 'streamable-http' },
+    local: { command: 'npx -y @svgrid/mcp', package: '@svgrid/mcp', version: server.version, transport: 'stdio' },
+    setup: {
+      'claude-code': `claude mcp add --transport http svgrid ${MCP_REMOTE}`,
+      json: { mcpServers: { svgrid: { type: 'http', url: MCP_REMOTE } } },
+    },
+    manifest: `${SITE}/.well-known/mcp/server.json`,
+    docs: server.websiteUrl,
+  }
+  await writeFile(join(PUBLIC_DIR, '.well-known', 'mcp.json'), JSON.stringify(summary, null, 2) + '\n', 'utf-8')
 }
 
 main().catch((err) => { console.error(err); process.exit(1) })

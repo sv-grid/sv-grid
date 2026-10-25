@@ -13,7 +13,10 @@ import type { Proposal } from './types'
  * selection and focus.
  */
 export const PENDING_BG = 'var(--sg-review-pending-bg, color-mix(in srgb, var(--sg-warning, #d97706) 13%, transparent))'
-/** The row "Show in grid" lands on, for a moment: a stronger wash of the same amber. */
+/**
+ * The row "Show in grid" lands on, for a moment: a stronger wash of the same amber.
+ * @internal
+ */
 export const FLASH_BG = 'var(--sg-review-flash-bg, color-mix(in srgb, var(--sg-warning, #d97706) 32%, transparent))'
 /** Drawn before the value, so a pending cell is never marked by colour alone. */
 export const PENDING_ICON = '•'
@@ -22,8 +25,16 @@ export const PENDING_ICON = '•'
  * a "!" before the value, so the grid shows where the panel's conflicts are.
  */
 export const CONFLICT_BG = 'var(--sg-review-conflict-bg, color-mix(in srgb, var(--sg-danger, #dc2626) 12%, transparent))'
+/**
+ * Drawn before the value of a cell two sources disagree on.
+ */
 export const CONFLICT_ICON = '!'
 
+/**
+ * `conditionalFormats` rules that tint the cells of the given proposals, one
+ * rule per field, scoped to that field's columns. `review.formats` is built
+ * from it.
+ */
 export function pendingFormats<TData>(
   pending: ReadonlyArray<Proposal>,
   rowId: (row: TData, index: number) => string,

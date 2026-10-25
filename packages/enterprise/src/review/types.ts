@@ -12,8 +12,17 @@ export type ProposalSource = {
   label: string
 }
 
+/**
+ * Where a proposal stands: waiting, accepted, rejected, stale (its cell
+ * changed first), or in conflict with another source's proposal for the same
+ * cell.
+ */
 export type ProposalStatus = 'pending' | 'accepted' | 'rejected' | 'stale' | 'conflict'
 
+/**
+ * One proposed change to one cell, with where it came from and where it
+ * stands.
+ */
 export type Proposal = {
   id: string
   /** Only `update` in this release; inserts and deletes come later. */
@@ -68,6 +77,10 @@ export type GroupKind =
   | 'constant-target'
   | 'unpatterned'
 
+/**
+ * Proposals that make the same change, as the panel lists them: a label, a
+ * kind, whether a rule proves every member, and a sample to check.
+ */
 export type ProposalGroup = {
   /** Stable while the group's members do not change: source, field, kind and param. */
   key: string
