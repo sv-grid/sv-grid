@@ -22,7 +22,7 @@ export type AdapterResult = {
 Blank cells of `field`: what `aiSmartFill` targets when given no indices.
 
 ```ts
-export const blankTargets = (snapshot: ReadonlyArray<unknown>, field: string): number[] =>
+export const blankTargets = (snapshot: ReadonlyArray<unknown>, field: string): number[] => ...
 ```
 
 ### `function fromSmartFill`
@@ -35,12 +35,7 @@ export function fromSmartFill<TData>(
   result: AISmartFillResult,
   snapshot: ReadonlyArray<TData>,
   opts: { api: RowIdApi; targets?: ReadonlyArray<number>; source?: ProposalSource },
-): AdapterResult {
-  const targets = opts.targets ?? blankTargets(snapshot, result.field)
-  const { proposals, dropped } = fromPredictions(result.predictions, result.field, snapshot, targets, opts.api, result.rationale || undefined)
-  const source = opts.source ?? { kind: 'ai', id: `smart-fill:${result.field}`, label: 'Smart fill' }
-  return { source, title: `Smart fill: ${result.field}`, proposals, dropped }
-}
+): AdapterResult
 ```
 
 ### `function fromClassify`
@@ -53,12 +48,7 @@ export function fromClassify<TData>(
   result: AIClassifyResult,
   snapshot: ReadonlyArray<TData>,
   opts: { api: RowIdApi; targets?: ReadonlyArray<number>; source?: ProposalSource },
-): AdapterResult {
-  const targets = opts.targets ?? snapshot.map((_, i) => i)
-  const { proposals, dropped } = fromPredictions(result.predictions, result.outputField, snapshot, targets, opts.api, `classified from ${result.inputField}`)
-  const source = opts.source ?? { kind: 'ai', id: `classify:${result.outputField}`, label: 'Classify' }
-  return { source, title: `Classify: ${result.outputField}`, proposals, dropped }
-}
+): AdapterResult
 ```
 
 ### `function fromRows`
@@ -78,30 +68,7 @@ export function fromRows<TData>(
     title?: string
     fields?: ReadonlyArray<keyof TData & string>
   },
-): AdapterResult & { unmatched: Array<Partial<TData>> } {
-  const id = rowIdOf<TData>(opts.api)
-  const data = opts.api.getData() as ReadonlyArray<TData>
-  const byKey = new Map<unknown, { row: TData; index: number }>()
-  data.forEach((row, index) => byKey.set((row as Record<string, unknown>)[opts.key], { row, index }))
-  const proposals: ProposalInput[] = []
-  const unmatched: Array<Partial<TData>> = []
-  for (const next of incoming) {
-    const hit = byKey.get((next as Record<string, unknown>)[opts.key])
-    if (!hit) {
-      unmatched.push(next)
-      continue
-    }
-    const rowId = id(hit.row, hit.index)
-    const fields = opts.fields ?? (Object.keys(next) as Array<keyof TData & string>)
-    for (const field of fields) {
-      if (field === opts.key || !(field in (next as object))) continue
-      const before = (hit.row as Record<string, unknown>)[field]
-      const after = (next as Record<string, unknown>)[field]
-      if (!sameValue(before, after)) proposals.push({ rowId, field, before, after })
-    }
-  }
-  return { source: opts.source, title: opts.title ?? opts.source.label, proposals, dropped: 0, unmatched }
-}
+): AdapterResult & { unmatched: Array<Partial<TData>> }
 ```
 
 ### `function reviewSmartFill`
@@ -113,14 +80,7 @@ export async function reviewSmartFill(
   review: Addable,
   api: ReviewGridApi,
   opts: AISmartFillOptions,
-): Promise<AdapterResult> {
-  const snapshot = api.getData().slice()
-  const targets = opts.targetRowIndices ?? blankTargets(snapshot, opts.field)
-  const result = await aiSmartFill(api as never, { ...opts, targetRowIndices: [...targets] })
-  const set = fromSmartFill(result, snapshot, { api, targets })
-  review.add(set)
-  return set
-}
+): Promise<AdapterResult>
 ```
 
 ### `function reviewClassify`
@@ -132,14 +92,7 @@ export async function reviewClassify(
   review: Addable,
   api: ReviewGridApi,
   opts: AIClassifyOptions,
-): Promise<AdapterResult> {
-  const snapshot = api.getData().slice()
-  const targets = opts.targetRowIndices ?? snapshot.map((_, i) => i)
-  const result = await aiClassify(api as never, { ...opts, targetRowIndices: [...targets] })
-  const set = fromClassify(result, snapshot, { api, targets })
-  review.add(set)
-  return set
-}
+): Promise<AdapterResult>
 ```
 
 ### `function fromStaged`
@@ -156,11 +109,5 @@ original values again and the proposals carry the staged ones.
 export function fromStaged(
   changes: ReadonlyArray<{ rowId: string; columnId: string; original: unknown; staged: unknown }>,
   opts: { api: Pick<ReviewGridApi, 'getColumns'>; source: ProposalSource; title?: string },
-): AdapterResult {
-  const fieldOf = new Map(opts.api.getColumns().map((c) => [c.id, c.field ?? c.id]))
-  const proposals: ProposalInput[] = changes
-    .filter((c) => !sameValue(c.original, c.staged))
-    .map((c) => ({ rowId: c.rowId, field: fieldOf.get(c.columnId) ?? c.columnId, before: c.original, after: c.staged }))
-  return { source: opts.source, title: opts.title ?? opts.source.label, proposals, dropped: 0 }
-}
+): AdapterResult
 ```

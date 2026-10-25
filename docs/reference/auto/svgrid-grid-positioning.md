@@ -104,10 +104,7 @@ export type ComputePositionResult = {
 Split a placement into its side + alignment (`center` when no suffix).
 
 ```ts
-export function parsePlacement(p: Placement): { side: Side; align: Align } {
-  const [side, align] = p.split('-') as [Side, 'start' | 'end' | undefined]
-  return { side, align: align ?? 'center' }
-}
+export function parsePlacement(p: Placement): { side: Side; align: Align }
 ```
 
 ### `function computePosition`
@@ -122,81 +119,7 @@ export function computePosition(
   reference: Rect,
   floating: Viewport,
   options: ComputePositionOptions = {},
-): ComputePositionResult {
-  const offset = options.offset ?? 6
-  const pad = options.padding ?? 8
-  const doFlip = options.flip !== false
-  const doShift = options.shift !== false
-  const v = resolveViewport(options.viewport)
-  const preferred = options.placement ?? 'bottom-start'
-
-  // ---- flip: pick the placement whose main-axis overflow is smallest ----
-  const candidates: Placement[] = [preferred]
-  if (doFlip) {
-    candidates.push(opposite(preferred))
-    for (const fb of options.fallbackPlacements ?? []) candidates.push(fb)
-  }
-  let chosen = preferred
-  let best = Infinity
-  for (const cand of candidates) {
-    const { side, align } = parsePlacement(cand)
-    const { x, y } = coordsFor(side, align, reference, floating, offset)
-    const overflow = mainAxisOverflow(side, x, y, floating, v, pad)
-    if (overflow <= 0) {
-      chosen = cand
-      best = overflow
-      break
-    }
-    if (overflow < best) {
-      best = overflow
-      chosen = cand
-    }
-  }
-
-  const { side, align } = parsePlacement(chosen)
-  let { x, y } = coordsFor(side, align, reference, floating, offset)
-
-  // ---- shift: clamp along the CROSS axis so the floating stays in view ----
-  if (doShift) {
-    if (side === 'top' || side === 'bottom') {
-      x = clamp(x, pad, v.width - pad - floating.width)
-    } else {
-      y = clamp(y, pad, v.height - pad - floating.height)
-    }
-  }
-
-  // ---- size: available room on the chosen side ----
-  const minMain = options.minMainAxis ?? 0
-  let maxWidth: number
-  let maxHeight: number
-  if (side === 'top' || side === 'bottom') {
-    const avail = side === 'top' ? reference.y - offset - pad : v.height - pad - (reference.y + reference.height + offset)
-    maxHeight = Math.max(minMain, Math.floor(avail))
-    maxWidth = Math.max(0, v.width - 2 * pad)
-  } else {
-    const avail = side === 'left' ? reference.x - offset - pad : v.width - pad - (reference.x + reference.width + offset)
-    maxWidth = Math.max(minMain, Math.floor(avail))
-    maxHeight = Math.max(0, v.height - 2 * pad)
-  }
-
-  const result: ComputePositionResult = { x, y, placement: chosen, side, align, maxWidth, maxHeight }
-
-  // ---- arrow: point at the reference center, clamped inside the floating ----
-  if (options.arrow) {
-    const a = options.arrow.size
-    if (side === 'top' || side === 'bottom') {
-      const center = reference.x + reference.width / 2
-      const ax = clamp(center - x - a / 2, pad, floating.width - a - pad)
-      result.arrow = { x: ax }
-    } else {
-      const center = reference.y + reference.height / 2
-      const ay = clamp(center - y - a / 2, pad, floating.height - a - pad)
-      result.arrow = { y: ay }
-    }
-  }
-
-  return result
-}
+): ComputePositionResult
 ```
 
 ### `function autoUpdate`
@@ -212,27 +135,5 @@ stop()
 ```
 
 ```ts
-export function autoUpdate(reference: Element, floating: HTMLElement, update: () => void): () => void {
-  if (typeof window === 'undefined') return () => {}
-  const ancestors = scrollParents(reference)
-  for (const a of ancestors) a.addEventListener('scroll', update, { passive: true })
-  window.addEventListener('scroll', update, { passive: true })
-  window.addEventListener('resize', update)
-
-  let ro: ResizeObserver | undefined
-  if (typeof ResizeObserver === 'function') {
-    ro = new ResizeObserver(update)
-    ro.observe(reference)
-    ro.observe(floating)
-  }
-
-  update()
-
-  return () => {
-    for (const a of ancestors) a.removeEventListener('scroll', update)
-    window.removeEventListener('scroll', update)
-    window.removeEventListener('resize', update)
-    ro?.disconnect()
-  }
-}
+export function autoUpdate(reference: Element, floating: HTMLElement, update: () => void): () => void
 ```

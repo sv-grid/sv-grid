@@ -51,12 +51,7 @@ Re-registering the same type replaces it.
 export function registerCellEditor(
   type: string,
   registration: CellEditorRegistration | Component<any>,
-): void {
-  registry.set(
-    type,
-    typeof registration === 'function' ? { component: registration } : registration,
-  )
-}
+): void
 ```
 
 ### `function getCellEditor`
@@ -64,9 +59,7 @@ export function registerCellEditor(
 Look up a registered cell editor by type.
 
 ```ts
-export function getCellEditor(type: string): CellEditorRegistration | undefined {
-  return registry.get(type)
-}
+export function getCellEditor(type: string): CellEditorRegistration | undefined
 ```
 
 ### `function hasCellEditor`
@@ -74,9 +67,7 @@ export function getCellEditor(type: string): CellEditorRegistration | undefined 
 Whether a custom editor is registered for `type`.
 
 ```ts
-export function hasCellEditor(type: string): boolean {
-  return registry.has(type)
-}
+export function hasCellEditor(type: string): boolean
 ```
 
 ### `function unregisterCellEditor`
@@ -84,9 +75,7 @@ export function hasCellEditor(type: string): boolean {
 Remove a registered cell editor.
 
 ```ts
-export function unregisterCellEditor(type: string): void {
-  registry.delete(type)
-}
+export function unregisterCellEditor(type: string): void
 ```
 
 ### `function registeredCellEditorTypes`
@@ -94,9 +83,7 @@ export function unregisterCellEditor(type: string): void {
 All registered custom editor type names.
 
 ```ts
-export function registeredCellEditorTypes(): string[] {
-  return [...registry.keys()]
-}
+export function registeredCellEditorTypes(): string[]
 ```
 
 ### `function defaultEditorProps`
@@ -108,17 +95,7 @@ Svelte ignores props a component doesn't declare, so the extra keys are inert
 for a simple editor that only wants `value` + `onCommit`.
 
 ```ts
-export function defaultEditorProps(ctx: CellEditorContext): Record<string, unknown> {
-  return {
-    value: ctx.value,
-    onChange: ctx.onChange,
-    onCommit: ctx.onCommit,
-    onCancel: ctx.onCancel,
-    onCommitAndMove: ctx.onCommitAndMove,
-    onRequestClose: ctx.onRequestClose,
-    inCell: ctx.inCell,
-  }
-}
+export function defaultEditorProps(ctx: CellEditorContext): Record<string, unknown>
 ```
 
 ### `function resolveEditorProps`
@@ -129,7 +106,5 @@ Resolve the props to spread onto a registered editor for a given context.
 export function resolveEditorProps(
   registration: CellEditorRegistration,
   ctx: CellEditorContext,
-): Record<string, unknown> {
-  return registration.props ? registration.props(ctx) : defaultEditorProps(ctx)
-}
+): Record<string, unknown>
 ```

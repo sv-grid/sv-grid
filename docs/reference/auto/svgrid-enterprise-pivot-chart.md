@@ -47,7 +47,5 @@ grid's own Chart panel runs the same mapping (`pivotResultToChartSpec` in
 export function pivotToChartSpec<TFeatures extends TableFeatures>(
   result: PivotResult<TFeatures>,
   opts: PivotChartOptions = {},
-): ChartSpec {
-  return pivotResultToChartSpec(result as unknown as PivotResultLike, opts)
-}
+): ChartSpec
 ```

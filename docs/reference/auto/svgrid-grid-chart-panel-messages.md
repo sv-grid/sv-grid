@@ -536,9 +536,7 @@ Merge a consumer's `localization.text` over the English defaults. The map
 usually carries the chrome keys too; only the chart panel keys are read.
 
 ```ts
-export function resolveChartPanelMessages(overrides?: Partial<GridChartPanelMessages> | null): GridChartPanelMessages {
-  return resolveMessages(defaultChartPanelMessages, overrides)
-}
+export function resolveChartPanelMessages(overrides?: Partial<GridChartPanelMessages> | null): GridChartPanelMessages
 ```
 
 ### `function chartPanelMessage`
@@ -546,7 +544,5 @@ export function resolveChartPanelMessages(overrides?: Partial<GridChartPanelMess
 Fill `{name}` placeholders in a message.
 
 ```ts
-export function chartPanelMessage(template: string, values: Record<string, string | number>): string {
-  return template.replace(/\{(\w+)\}/g, (_, k: string) => (k in values ? String(values[k]) : `{${k}}`))
-}
+export function chartPanelMessage(template: string, values: Record<string, string | number>): string
 ```

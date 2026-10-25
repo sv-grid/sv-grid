@@ -49,24 +49,5 @@ export function pendingFormats<TData>(
   rowId: (row: TData, index: number) => string,
   columns: ReadonlyArray<{ id: string; field?: string }>,
   look: { background: string; icon: string } = { background: PENDING_BG, icon: PENDING_ICON },
-): ConditionalFormat<any>[] {
-  const rowsByField = new Map<string, Set<string>>()
-  for (const p of pending) {
-    let ids = rowsByField.get(p.field)
-    if (!ids) rowsByField.set(p.field, (ids = new Set()))
-    ids.add(p.rowId)
-  }
-  const out: ConditionalFormat<any>[] = []
-  for (const [field, ids] of rowsByField) {
-    const cols = columns.filter((c) => (c.field ?? c.id) === field).map((c) => c.id)
-    out.push({
-      type: 'rule',
-      columns: cols.length ? cols : [field],
-      when: ({ row }: { row: TData }) => ids.has(String(rowId(row, 0))),
-      background: look.background,
-      icon: look.icon,
-    })
-  }
-  return out
-}
+): ConditionalFormat<any>[]
 ```

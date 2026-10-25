@@ -173,9 +173,7 @@ empty values fall back to the default, so a partial map only replaces the
 keys it sets.
 
 ```ts
-export function resolveChartMessages(overrides?: Partial<ChartMessages> | null): ChartMessages {
-  return resolveMessages(defaultChartMessages, overrides)
-}
+export function resolveChartMessages(overrides?: Partial<ChartMessages> | null): ChartMessages
 ```
 
 ### `function chartMessage`
@@ -184,7 +182,5 @@ Fill a message's `{name}` placeholders. Unknown placeholders are left as
 they are, so a translation that drops one loses nothing.
 
 ```ts
-export function chartMessage(template: string, vars: Record<string, string | number>): string {
-  return template.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m))
-}
+export function chartMessage(template: string, vars: Record<string, string | number>): string
 ```

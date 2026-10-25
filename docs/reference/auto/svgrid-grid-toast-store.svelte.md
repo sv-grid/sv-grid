@@ -130,7 +130,7 @@ export const toast: ToastFn = store.toast
 Dismiss a toast by id.
 
 ```ts
-export const dismissToast = (id: number): void => store.dismiss(id)
+export const dismissToast = (id: number): void => ...
 ```
 
 ### `const updateToast`
@@ -138,7 +138,7 @@ export const dismissToast = (id: number): void => store.dismiss(id)
 Patch an existing toast in place (message/variant/title/action/duration/render).
 
 ```ts
-export const updateToast = (id: number, patch: UpdateToast): void => store.update(id, patch)
+export const updateToast = (id: number, patch: UpdateToast): void => ...
 ```
 
 ### `const clearToasts`
@@ -146,7 +146,7 @@ export const updateToast = (id: number, patch: UpdateToast): void => store.updat
 Remove every toast (and cancel their timers).
 
 ```ts
-export const clearToasts = (): void => store.clear()
+export const clearToasts = (): void => ...
 ```
 
 ### `const pauseToast`
@@ -154,7 +154,7 @@ export const clearToasts = (): void => store.clear()
 Pause a toast's auto-dismiss countdown (e.g. while hovered).
 
 ```ts
-export const pauseToast = (id: number): void => store.pause(id)
+export const pauseToast = (id: number): void => ...
 ```
 
 ### `const resumeToast`
@@ -162,5 +162,5 @@ export const pauseToast = (id: number): void => store.pause(id)
 Resume a paused toast's countdown with the time it had left.
 
 ```ts
-export const resumeToast = (id: number): void => store.resume(id)
+export const resumeToast = (id: number): void => ...
 ```

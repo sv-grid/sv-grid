@@ -116,7 +116,7 @@ export type EditorInteraction<V = unknown> = {
 Stable DOM id for an editor's error text, for `aria-describedby` wiring.
 
 ```ts
-export const editorErrorId = (id?: string): string | undefined => (id ? `${id}__error` : undefined)
+export const editorErrorId = (id?: string): string | undefined => ...
 ```
 
 ### `const editorHintId`
@@ -124,7 +124,7 @@ export const editorErrorId = (id?: string): string | undefined => (id ? `${id}__
 Stable DOM id for an editor's hint text, for `aria-describedby` wiring.
 
 ```ts
-export const editorHintId = (id?: string): string | undefined => (id ? `${id}__hint` : undefined)
+export const editorHintId = (id?: string): string | undefined => ...
 ```
 
 ### `const nextEditorId`
@@ -134,7 +134,7 @@ Generate a stable-per-instance element id. Call ONCE per component instance
 always has an anchor even when the consumer passes no `id`.
 
 ```ts
-export const nextEditorId = (prefix = 'sv-ed'): string => `${prefix}-${_autoId++}`
+export const nextEditorId = (prefix = 'sv-ed'): string => ...
 ```
 
 ### `type EditorAriaState`
@@ -163,17 +163,6 @@ export function editorAria(state: EditorAriaState): {
   'aria-required': 'true' | undefined
   'aria-describedby': string | undefined
   'aria-label': string | undefined
-} {
-  const described = [
-    state.error ? editorErrorId(state.id) : undefined,
-    state.hint ? editorHintId(state.id) : undefined,
-  ].filter(Boolean)
-  return {
-    'aria-invalid': state.invalid ? 'true' : undefined,
-    'aria-required': state.required ? 'true' : undefined,
-    'aria-describedby': described.length ? described.join(' ') : undefined,
-    'aria-label': state.ariaLabel,
-  }
 }
 ```
 
@@ -194,13 +183,5 @@ object only replaces the keys it sets.
 export function resolveMessages<T extends Record<string, string>>(
   defaults: T,
   overrides?: Partial<T> | null,
-): T {
-  if (!overrides) return defaults
-  const out = { ...defaults }
-  for (const k in overrides) {
-    const v = overrides[k]
-    if (v != null && v !== '') out[k] = v as T[Extract<keyof T, string>]
-  }
-  return out
-}
+): T
 ```

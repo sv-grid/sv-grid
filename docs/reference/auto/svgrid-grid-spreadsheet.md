@@ -68,39 +68,7 @@ export function spansToMerges<TData = Record<string, unknown>>(
   rows: ReadonlyArray<TData>,
   columns: ReadonlyArray<SpanColumn<TData>>,
   getValue?: (row: TData, columnId: string) => unknown,
-): MergeSpec[] {
-  const merges: MergeSpec[] = []
-  const covered = new Set<string>()
-  for (let r = 0; r < rows.length; r += 1) {
-    const row = rows[r]!
-    for (let ci = 0; ci < columns.length; ci += 1) {
-      const col = columns[ci]!
-      if (!col.colSpan && !col.rowSpan) continue
-      const key = `${r}:${ci}`
-      if (covered.has(key)) continue
-      const value = getValue
-        ? getValue(row, col.id)
-        : (row as Record<string, unknown>)[col.field ?? col.id]
-      const params = { data: row, rowIndex: r, columnId: col.id, value }
-      const cs = Math.max(1, Math.floor(col.colSpan?.(params) ?? 1))
-      const rs = Math.max(1, Math.floor(col.rowSpan?.(params) ?? 1))
-      if (cs <= 1 && rs <= 1) continue
-      merges.push({
-        rowIndex: r,
-        columnId: col.id,
-        colspan: cs > 1 ? cs : undefined,
-        rowspan: rs > 1 ? rs : undefined,
-      })
-      for (let dr = 0; dr < rs; dr += 1) {
-        for (let dc = 0; dc < cs; dc += 1) {
-          if (dr === 0 && dc === 0) continue
-          covered.add(`${r + dr}:${ci + dc}`)
-        }
-      }
-    }
-  }
-  return merges
-}
+): MergeSpec[]
 ```
 
 ### `type CellBorderSpec`
@@ -151,52 +119,5 @@ The action re-applies the layout whenever the grid's body mutates
 options change.
 
 ```ts
-export function spreadsheetLayout(node: HTMLElement, opts: SpreadsheetActionOptions) {
-  let current = opts
-  let frame = 0
-  const OBSERVE_OPTIONS: MutationObserverInit = {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: [
-      'data-svgrid-row', 'data-col-id', 'style',
-      // Watch selection-range attrs so we can transfer them from
-      // hidden covered cells to merge origins.
-      'data-range-top', 'data-range-bottom', 'data-range-left',
-      'data-range-right', 'data-selected-range',
-    ],
-  }
-  // The MutationObserver fires for EVERY DOM change inside the grid -
-  // batch them into one rAF so a big virtualization scroll doesn't run
-  // apply() dozens of times in a tick.
-  function schedule() {
-    if (frame) return
-    frame = requestAnimationFrame(() => {
-      frame = 0
-      // Stop observing while apply() mutates the DOM itself (it writes cell
-      // `style.display`/`position` and appends overlay children). Otherwise
-      // those writes re-trigger this observer and loop at 60fps on merged
-      // cells (#50). A full apply() recomputes from the live DOM, so discarding
-      // the queued records here loses nothing.
-      observer.disconnect()
-      apply(node, current)
-      observer.observe(node, OBSERVE_OPTIONS)
-    })
-  }
-  const observer = new MutationObserver(schedule)
-  observer.observe(node, OBSERVE_OPTIONS)
-  // First-paint pass: schedule the same way so we don't run before the
-  // grid's initial render landed.
-  schedule()
-  return {
-    update(next: SpreadsheetActionOptions) {
-      current = next
-      schedule()
-    },
-    destroy() {
-      observer.disconnect()
-      if (frame) cancelAnimationFrame(frame)
-    },
-  }
-}
+export function spreadsheetLayout(node: HTMLElement, opts: SpreadsheetActionOptions)
 ```

@@ -20,13 +20,7 @@ export type RestrictOptions = {
 True when `d` is outside the inclusive [min, max] day range.
 
 ```ts
-export function isOutOfRange(d: Date, min?: DateLike | null, max?: DateLike | null): boolean {
-  const lo = toDate(min ?? null)
-  const hi = toDate(max ?? null)
-  if (lo && compareDay(d, lo) < 0) return true
-  if (hi && compareDay(d, hi) > 0) return true
-  return false
-}
+export function isOutOfRange(d: Date, min?: DateLike | null, max?: DateLike | null): boolean
 ```
 
 ### `function isRestricted`
@@ -37,11 +31,7 @@ True when `d` is explicitly restricted (by list membership or predicate).
 export function isRestricted(
   d: Date,
   restrictedDates?: ReadonlyArray<DateLike> | ((day: Date) => boolean) | null,
-): boolean {
-  if (!restrictedDates) return false
-  if (typeof restrictedDates === 'function') return restrictedDates(d)
-  return normalizeList(restrictedDates).some((r) => isSameDay(r, d))
-}
+): boolean
 ```
 
 ### `function isDisabledDay`
@@ -50,9 +40,7 @@ True when `d` cannot be selected: out of [min, max] OR restricted. This is
 the single predicate the calendar/pickers use to disable a day.
 
 ```ts
-export function isDisabledDay(d: Date, opts: RestrictOptions): boolean {
-  return isOutOfRange(d, opts.min, opts.max) || isRestricted(d, opts.restrictedDates)
-}
+export function isDisabledDay(d: Date, opts: RestrictOptions): boolean
 ```
 
 ### `function isImportant`
@@ -63,9 +51,5 @@ True when `d` is flagged important (highlighted). Never affects selectability.
 export function isImportant(
   d: Date,
   importantDates?: ReadonlyArray<DateLike> | ((day: Date) => boolean) | null,
-): boolean {
-  if (!importantDates) return false
-  if (typeof importantDates === 'function') return importantDates(d)
-  return normalizeList(importantDates).some((r) => isSameDay(r, d))
-}
+): boolean
 ```

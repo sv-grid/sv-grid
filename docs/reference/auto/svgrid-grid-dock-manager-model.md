@@ -75,16 +75,7 @@ export type PaneLocation =
 Find a pane in the layout tree by id, returning it with its parent for mutation.
 
 ```ts
-export function locatePane(state: DockManagerState, paneId: string): PaneLocation | null {
-  if (state.main && findTabsWithPane(state.main, paneId)) return { kind: 'main' }
-  for (const w of state.floating) {
-    if (w.leaf.panes.some((p) => p.id === paneId)) return { kind: 'floating', windowId: w.id }
-  }
-  for (const e of state.autoHide) {
-    if (e.leaf.panes.some((p) => p.id === paneId)) return { kind: 'autoHide', entryId: e.id }
-  }
-  return null
-}
+export function locatePane(state: DockManagerState, paneId: string): PaneLocation | null
 ```
 
 ### `function surfaceOfTabs`
@@ -92,11 +83,7 @@ export function locatePane(state: DockManagerState, paneId: string): PaneLocatio
 Which surface holds a tabs leaf: 'main', a window id, or null.
 
 ```ts
-export function surfaceOfTabs(state: DockManagerState, tabsId: string): 'main' | string | null {
-  if (state.main && containsTabs(state.main, tabsId)) return 'main'
-  const w = state.floating.find((f) => f.leaf.id === tabsId)
-  return w ? w.id : null
-}
+export function surfaceOfTabs(state: DockManagerState, tabsId: string): 'main' | string | null
 ```
 
 ### `function reorderTab`
@@ -104,19 +91,7 @@ export function surfaceOfTabs(state: DockManagerState, tabsId: string): 'main' |
 Reorder a tab within its leaf, wherever that leaf lives (main or a float).
 
 ```ts
-export function reorderTab(state: DockManagerState, tabsId: string, from: number, to: number): DockManagerState {
-  if (state.main && containsTabs(state.main, tabsId)) {
-    return { ...state, main: reorderPane(state.main, tabsId, from, to) }
-  }
-  return {
-    ...state,
-    floating: state.floating.map((w) => {
-      if (w.leaf.id !== tabsId) return w
-      const reordered = reorderPane(w.leaf, tabsId, from, to)
-      return reordered.type === 'tabs' ? { ...w, leaf: reordered } : w
-    }),
-  }
-}
+export function reorderTab(state: DockManagerState, tabsId: string, from: number, to: number): DockManagerState
 ```
 
 ### `function resizeGroup`
@@ -125,10 +100,7 @@ Resize a group's children (splitter drag). Groups only exist in `main`
  (floating windows are single leaves), so this targets the main tree.
 
 ```ts
-export function resizeGroup(state: DockManagerState, groupId: string, sizes: number[]): DockManagerState {
-  if (!state.main) return state
-  return { ...state, main: setSizesInTree(state.main, groupId, sizes) }
-}
+export function resizeGroup(state: DockManagerState, groupId: string, sizes: number[]): DockManagerState
 ```
 
 ### `function setManagerActive`
@@ -136,28 +108,7 @@ export function resizeGroup(state: DockManagerState, groupId: string, sizes: num
 Set the active tab of a leaf in main or a floating window.
 
 ```ts
-export function setManagerActive(state: DockManagerState, tabsId: string, active: number): DockManagerState {
-  const w = state.floating.find((f) => f.leaf.id === tabsId)
-  if (w) {
-    return {
-      ...state,
-      floating: state.floating.map((f) =>
-        f.id === w.id ? { ...f, leaf: { ...f.leaf, active: clamp(active, f.leaf.panes.length) } } : f,
-      ),
-    }
-  }
-  // Auto-hidden leaf: activate a pane so its edge tab / flyout opens on it.
-  const ah = state.autoHide.find((e) => e.leaf.id === tabsId)
-  if (ah) {
-    return {
-      ...state,
-      autoHide: state.autoHide.map((e) =>
-        e.id === ah.id ? { ...e, leaf: { ...e.leaf, active: clamp(active, e.leaf.panes.length) } } : e,
-      ),
-    }
-  }
-  return { ...state, main: state.main ? setActiveInTree(state.main, tabsId, active) : state.main }
-}
+export function setManagerActive(state: DockManagerState, tabsId: string, active: number): DockManagerState
 ```
 
 ### `function dockPaneOnto`
@@ -173,31 +124,7 @@ export function dockPaneOnto(
   targetTabsId: string,
   zone: DockZone,
   genId: IdGen,
-): DockManagerState {
-  const moving = findPaneObject(state, paneId)
-  if (!moving) return state
-  const targetSurface = surfaceOfTabs(state, targetTabsId)
-  if (!targetSurface) return state
-
-  const stripped = stripPane(state, paneId)
-  // The target leaf might have dissolved (it was the pane's own single leaf).
-  if (surfaceOfTabs(stripped, targetTabsId) === null) return state
-
-  if (targetSurface === 'main') {
-    const base = stripped.main
-    if (!base) return state
-    return { ...stripped, main: dockInto(base, targetTabsId, moving, zone, genId) }
-  }
-  // Docking into a floating window: centre only (add as a tab).
-  return {
-    ...stripped,
-    floating: stripped.floating.map((w) => {
-      if (w.id !== targetSurface) return w
-      const panes = [...w.leaf.panes, moving]
-      return { ...w, leaf: { ...w.leaf, panes, active: panes.length - 1 } }
-    }),
-  }
-}
+): DockManagerState
 ```
 
 ### `function addPaneToMain`
@@ -206,20 +133,7 @@ Insert a NEW pane into the main area - the first leaf (as a tab), or as the
  whole main when empty. Used to pop a window/pop-out back into the layout.
 
 ```ts
-export function addPaneToMain(state: DockManagerState, p: DockPane, genId: IdGen): DockManagerState {
-  if (!state.main) return { ...state, main: tabs(genId, [p], 0) }
-  let added = false
-  const walk = (n: DockNode): DockNode => {
-    if (added) return n
-    if (n.type === 'tabs') {
-      added = true
-      const panes = [...n.panes, p]
-      return { ...n, panes, active: panes.length - 1 }
-    }
-    return { ...n, children: n.children.map(walk) }
-  }
-  return { ...state, main: walk(state.main) }
-}
+export function addPaneToMain(state: DockManagerState, p: DockPane, genId: IdGen): DockManagerState
 ```
 
 ### `function dockPaneToEmptyMain`
@@ -227,13 +141,7 @@ export function addPaneToMain(state: DockManagerState, p: DockPane, genId: IdGen
 Dock a pane into an empty main area (main becomes a single leaf holding it).
 
 ```ts
-export function dockPaneToEmptyMain(state: DockManagerState, paneId: string, genId: IdGen): DockManagerState {
-  const moving = findPaneObject(state, paneId)
-  if (!moving) return state
-  const stripped = stripPane(state, paneId)
-  if (stripped.main) return { ...stripped, main: stripped.main } // main not empty; caller should dock onto a leaf
-  return { ...stripped, main: tabs(genId, [moving], 0) }
-}
+export function dockPaneToEmptyMain(state: DockManagerState, paneId: string, genId: IdGen): DockManagerState
 ```
 
 ### `function floatPane`
@@ -246,27 +154,7 @@ export function floatPane(
   paneId: string,
   rect: { x: number; y: number; width: number; height: number },
   genId: IdGen,
-): DockManagerState {
-  const moving = findPaneObject(state, paneId)
-  if (!moving) return state
-  const loc = locatePane(state, paneId)
-  // Already the sole pane of its own float - nothing to pop out.
-  if (loc?.kind === 'floating') {
-    const w = state.floating.find((f) => f.id === loc.windowId)
-    if (w && w.leaf.panes.length === 1) return state
-  }
-  const stripped = stripPane(state, paneId)
-  const win: FloatWindow = {
-    id: genId(),
-    leaf: tabs(genId, [moving], 0),
-    x: rect.x,
-    y: rect.y,
-    width: rect.width,
-    height: rect.height,
-    z: maxZ(state) + 1,
-  }
-  return { ...stripped, floating: [...stripped.floating, win] }
-}
+): DockManagerState
 ```
 
 ### `function dockWindowOnto`
@@ -280,30 +168,7 @@ export function dockWindowOnto(
   targetTabsId: string,
   zone: DockZone,
   genId: IdGen,
-): DockManagerState {
-  const win = state.floating.find((w) => w.id === windowId)
-  if (!win) return state
-  if (surfaceOfTabs(state, targetTabsId) !== 'main' || !state.main) return state
-  const rest = state.floating.filter((w) => w.id !== windowId)
-  if (zone === 'center') {
-    return {
-      ...state,
-      floating: rest,
-      main: state.main
-        ? mergePanesInto(state.main, targetTabsId, win.leaf.panes)
-        : state.main,
-    }
-  }
-  // Edge: drop the window's whole leaf beside the target.
-  const leaf = tabs(genId, win.leaf.panes, win.leaf.active)
-  const dir = zone === 'left' || zone === 'right' ? 'row' : 'column'
-  const before = zone === 'left' || zone === 'top'
-  return {
-    ...state,
-    floating: rest,
-    main: insertLeafBeside(state.main, targetTabsId, leaf, dir, before, genId),
-  }
-}
+): DockManagerState
 ```
 
 ### `function moveWindow`
@@ -311,9 +176,7 @@ export function dockWindowOnto(
 Move a floating window (top-left).
 
 ```ts
-export function moveWindow(state: DockManagerState, windowId: string, x: number, y: number): DockManagerState {
-  return { ...state, floating: state.floating.map((w) => (w.id === windowId ? { ...w, x, y } : w)) }
-}
+export function moveWindow(state: DockManagerState, windowId: string, x: number, y: number): DockManagerState
 ```
 
 ### `function resizeWindow`
@@ -326,14 +189,7 @@ export function resizeWindow(
   windowId: string,
   width: number,
   height: number,
-): DockManagerState {
-  return {
-    ...state,
-    floating: state.floating.map((w) =>
-      w.id === windowId ? { ...w, width: Math.max(140, width), height: Math.max(80, height) } : w,
-    ),
-  }
-}
+): DockManagerState
 ```
 
 ### `function bringToFront`
@@ -341,10 +197,7 @@ export function resizeWindow(
 Raise a floating window to the top of the stack.
 
 ```ts
-export function bringToFront(state: DockManagerState, windowId: string): DockManagerState {
-  const top = maxZ(state)
-  return { ...state, floating: state.floating.map((w) => (w.id === windowId ? { ...w, z: top + 1 } : w)) }
-}
+export function bringToFront(state: DockManagerState, windowId: string): DockManagerState
 ```
 
 ### `function setWindowMinimized`
@@ -352,14 +205,7 @@ export function bringToFront(state: DockManagerState, windowId: string): DockMan
 Collapse a floating window to just its title bar (or restore it).
 
 ```ts
-export function setWindowMinimized(state: DockManagerState, windowId: string, minimized: boolean): DockManagerState {
-  return {
-    ...state,
-    floating: state.floating.map((w) =>
-      w.id === windowId ? { ...w, minimized, maximized: minimized ? false : w.maximized } : w,
-    ),
-  }
-}
+export function setWindowMinimized(state: DockManagerState, windowId: string, minimized: boolean): DockManagerState
 ```
 
 ### `function toggleWindowMaximized`
@@ -367,14 +213,7 @@ export function setWindowMinimized(state: DockManagerState, windowId: string, mi
 Toggle a floating window between filling the manager and its own rect.
 
 ```ts
-export function toggleWindowMaximized(state: DockManagerState, windowId: string): DockManagerState {
-  return {
-    ...state,
-    floating: state.floating.map((w) =>
-      w.id === windowId ? { ...w, maximized: !w.maximized, minimized: false } : w,
-    ),
-  }
-}
+export function toggleWindowMaximized(state: DockManagerState, windowId: string): DockManagerState
 ```
 
 ### `function closeWindow`
@@ -382,9 +221,7 @@ export function toggleWindowMaximized(state: DockManagerState, windowId: string)
 Close a floating window and all its panes.
 
 ```ts
-export function closeWindow(state: DockManagerState, windowId: string): DockManagerState {
-  return { ...state, floating: state.floating.filter((w) => w.id !== windowId) }
-}
+export function closeWindow(state: DockManagerState, windowId: string): DockManagerState
 ```
 
 ### `function findLeafById`
@@ -392,18 +229,7 @@ export function closeWindow(state: DockManagerState, windowId: string): DockMana
 Find a tabs leaf anywhere (main or a floating window) by id.
 
 ```ts
-export function findLeafById(state: DockManagerState, tabsId: string): DockTabs | null {
-  const scan = (n: DockNode): DockTabs | null => {
-    if (n.type === 'tabs') return n.id === tabsId ? n : null
-    for (const c of n.children) { const hit = scan(c); if (hit) return hit }
-    return null
-  }
-  if (state.main) { const m = scan(state.main); if (m) return m }
-  const w = state.floating.find((f) => f.leaf.id === tabsId)
-  if (w) return w.leaf
-  const e = state.autoHide.find((x) => x.leaf.id === tabsId)
-  return e ? e.leaf : null
-}
+export function findLeafById(state: DockManagerState, tabsId: string): DockTabs | null
 ```
 
 ### `function toggleMaximizeLeaf`
@@ -411,10 +237,7 @@ export function findLeafById(state: DockManagerState, tabsId: string): DockTabs 
 Toggle a tiled leaf maximized (filling the docked area). Clears if it is gone.
 
 ```ts
-export function toggleMaximizeLeaf(state: DockManagerState, tabsId: string): DockManagerState {
-  const on = state.maximizedLeaf === tabsId
-  return { ...state, maximizedLeaf: on ? null : tabsId }
-}
+export function toggleMaximizeLeaf(state: DockManagerState, tabsId: string): DockManagerState
 ```
 
 ### `function autoHideWindow`
@@ -428,12 +251,7 @@ export function autoHideWindow(
   side: DockSide,
   genId: IdGen,
   size = 260,
-): DockManagerState {
-  const w = state.floating.find((f) => f.id === windowId)
-  if (!w) return state
-  const entry: AutoHideEntry = { id: genId(), side, leaf: tabs(genId, w.leaf.panes, w.leaf.active), size }
-  return { ...state, floating: state.floating.filter((f) => f.id !== windowId), autoHide: [...state.autoHide, entry] }
-}
+): DockManagerState
 ```
 
 ### `function autoHideLeaf`
@@ -446,13 +264,7 @@ export function autoHideLeaf(
   tabsId: string,
   side: DockSide,
   size = 260,
-): DockManagerState {
-  if (!state.main) return state
-  const { root, leaf } = removeLeaf(state.main, tabsId)
-  if (!leaf) return state
-  const entry: AutoHideEntry = { id: `ah-${tabsId}`, side, leaf, size }
-  return { ...state, main: root, autoHide: [...state.autoHide, entry] }
-}
+): DockManagerState
 ```
 
 ### `function autoHidePaneToSide`
@@ -467,13 +279,7 @@ export function autoHidePaneToSide(
   side: DockSide,
   genId: IdGen,
   size = 260,
-): DockManagerState {
-  const moving = findPaneObject(state, paneId)
-  if (!moving) return state
-  const stripped = stripPane(state, paneId)
-  const entry: AutoHideEntry = { id: genId(), side, leaf: tabs(genId, [moving], 0), size }
-  return { ...stripped, autoHide: [...stripped.autoHide, entry] }
-}
+): DockManagerState
 ```
 
 ### `function pinAutoHidden`
@@ -487,16 +293,7 @@ export function pinAutoHidden(
   entryId: string,
   genId: IdGen,
   fraction = 0.25,
-): DockManagerState {
-  const entry = state.autoHide.find((e) => e.id === entryId)
-  if (!entry) return state
-  const leaf = tabs(genId, entry.leaf.panes, entry.leaf.active)
-  return {
-    ...state,
-    autoHide: state.autoHide.filter((e) => e.id !== entryId),
-    main: dockLeafToEdge(state.main, leaf, entry.side, genId, fraction),
-  }
-}
+): DockManagerState
 ```
 
 ### `function setAutoHideSize`
@@ -504,12 +301,7 @@ export function pinAutoHidden(
 Resize an auto-hide fly-out.
 
 ```ts
-export function setAutoHideSize(state: DockManagerState, entryId: string, size: number): DockManagerState {
-  return {
-    ...state,
-    autoHide: state.autoHide.map((e) => (e.id === entryId ? { ...e, size: Math.max(120, size) } : e)),
-  }
-}
+export function setAutoHideSize(state: DockManagerState, entryId: string, size: number): DockManagerState
 ```
 
 ### `function closePane`
@@ -517,9 +309,7 @@ export function setAutoHideSize(state: DockManagerState, entryId: string, size: 
 Close a pane wherever it lives.
 
 ```ts
-export function closePane(state: DockManagerState, paneId: string): DockManagerState {
-  return stripPane(state, paneId)
-}
+export function closePane(state: DockManagerState, paneId: string): DockManagerState
 ```
 
 ### `function allManagerPaneIds`
@@ -527,13 +317,7 @@ export function closePane(state: DockManagerState, paneId: string): DockManagerS
 Every pane id across all surfaces.
 
 ```ts
-export function allManagerPaneIds(state: DockManagerState): string[] {
-  const ids: string[] = []
-  if (state.main) ids.push(...allPaneIds(state.main))
-  for (const w of state.floating) ids.push(...w.leaf.panes.map((p) => p.id))
-  for (const e of state.autoHide) ids.push(...e.leaf.panes.map((p) => p.id))
-  return ids
-}
+export function allManagerPaneIds(state: DockManagerState): string[]
 ```
 
 ### `function allManagerIds`
@@ -546,18 +330,7 @@ Every id used anywhere in the workspace: node ids (groups + tabs leaves),
  `each_key_duplicate`).
 
 ```ts
-export function allManagerIds(state: DockManagerState): string[] {
-  const ids: string[] = []
-  const walk = (n: DockNode) => {
-    ids.push(n.id)
-    if (n.type === 'tabs') for (const p of n.panes) ids.push(p.id)
-    else for (const c of n.children) walk(c)
-  }
-  if (state.main) walk(state.main)
-  for (const w of state.floating) { ids.push(w.id); walk(w.leaf) }
-  for (const e of state.autoHide) { ids.push(e.id); walk(e.leaf) }
-  return ids
-}
+export function allManagerIds(state: DockManagerState): string[]
 ```
 
 ### `function dedupeManagerNodeIds`
@@ -569,42 +342,5 @@ Reassign any duplicate group / tabs NODE id (and floating-window / auto-hide
  Idempotent: a clean workspace is returned value-equal.
 
 ```ts
-export function dedupeManagerNodeIds(state: DockManagerState): DockManagerState {
-  const seen = new Set<string>()
-  let n = 1
-  const fresh = (): string => { let id = `dm-d${n++}`; while (seen.has(id)) id = `dm-d${n++}`; return id }
-  const uniq = (id: string): string => {
-    const next = seen.has(id) ? fresh() : id
-    seen.add(next)
-    return next
-  }
-  const walk = (node: DockNode): DockNode => {
-    const id = uniq(node.id)
-    if (node.type === 'tabs') return id === node.id ? node : { ...node, id }
-    const children = node.children.map(walk)
-    const same = id === node.id && children.every((c, i) => c === node.children[i])
-    return same ? node : { ...node, id, children }
-  }
-  const main = state.main ? walk(state.main) : state.main
-  let floatChanged = false
-  const floating = state.floating.map((w) => {
-    const id = uniq(w.id)
-    const leaf = walk(w.leaf) as DockTabs
-    if (id === w.id && leaf === w.leaf) return w
-    floatChanged = true
-    return { ...w, id, leaf }
-  })
-  let hideChanged = false
-  const autoHide = state.autoHide.map((e) => {
-    const id = uniq(e.id)
-    const leaf = walk(e.leaf) as DockTabs
-    if (id === e.id && leaf === e.leaf) return e
-    hideChanged = true
-    return { ...e, id, leaf }
-  })
-  // Preserve identity when nothing was duplicated - keeps the effect that seeds
-  // the manager from re-running and avoids needless re-renders.
-  if (main === state.main && !floatChanged && !hideChanged) return state
-  return { ...state, main, floating: floatChanged ? floating : state.floating, autoHide: hideChanged ? autoHide : state.autoHide }
-}
+export function dedupeManagerNodeIds(state: DockManagerState): DockManagerState
 ```

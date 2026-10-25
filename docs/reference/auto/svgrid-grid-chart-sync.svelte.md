@@ -19,13 +19,7 @@ export type ChartSyncState = {
 The live entry for a group, created on first use.
 
 ```ts
-export function syncGroupState(name: string): ChartSyncState {
-  const existing = groups.get(name)
-  if (existing) return existing
-  const fresh = $state<ChartSyncState>({ hover: null, zoom: null })
-  groups.set(name, fresh)
-  return fresh
-}
+export function syncGroupState(name: string): ChartSyncState
 ```
 
 ### `function publishSyncHover`
@@ -33,9 +27,7 @@ export function syncGroupState(name: string): ChartSyncState {
 Publish a hover (or clear it with null).
 
 ```ts
-export function publishSyncHover(name: string, hover: ChartSyncState['hover']): void {
-  syncGroupState(name).hover = hover
-}
+export function publishSyncHover(name: string, hover: ChartSyncState['hover']): void
 ```
 
 ### `function publishSyncZoom`
@@ -45,7 +37,5 @@ Publish a zoom window (null = the whole axis) with the axis length it
  a different axis can map it by date.
 
 ```ts
-export function publishSyncZoom(name: string, window: ChartZoomWindow | null, count: number, from: symbol, labels: [string, string] | null = null): void {
-  syncGroupState(name).zoom = { window, count, from, labels }
-}
+export function publishSyncZoom(name: string, window: ChartZoomWindow | null, count: number, from: symbol, labels: [string, string] | null = null): void
 ```

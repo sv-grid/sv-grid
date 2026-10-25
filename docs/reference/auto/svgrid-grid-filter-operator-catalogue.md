@@ -67,9 +67,7 @@ export const RANGE_OPERATOR_IDS: ReadonlyArray<ExcelFilterOperator> = ['between'
 Whether an operator takes a multi-value token list.
 
 ```ts
-export function isSetOperator(op: ExcelFilterOperator): boolean {
-  return SET_OPERATOR_IDS.includes(op)
-}
+export function isSetOperator(op: ExcelFilterOperator): boolean
 ```
 
 ### `function isValuelessOperator`
@@ -77,9 +75,7 @@ export function isSetOperator(op: ExcelFilterOperator): boolean {
 Whether an operator needs no value input.
 
 ```ts
-export function isValuelessOperator(op: ExcelFilterOperator): boolean {
-  return VALUELESS_OPERATOR_IDS.includes(op)
-}
+export function isValuelessOperator(op: ExcelFilterOperator): boolean
 ```
 
 ### `function isRangeOperator`
@@ -87,7 +83,5 @@ export function isValuelessOperator(op: ExcelFilterOperator): boolean {
 Whether an operator needs a second (`valueTo`) value.
 
 ```ts
-export function isRangeOperator(op: ExcelFilterOperator): boolean {
-  return RANGE_OPERATOR_IDS.includes(op)
-}
+export function isRangeOperator(op: ExcelFilterOperator): boolean
 ```

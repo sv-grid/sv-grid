@@ -220,37 +220,7 @@ export async function readImportMatrix(
   file: File | Blob | string,
   format: ImportFormat = 'auto',
   opts: { maxBytes?: number; encoding?: string; signal?: AbortSignal } = {},
-): Promise<{ format: Exclude<ImportFormat, 'auto'>; matrix: string[][] }> {
-  if (opts.signal?.aborted) throw abortError()
-  // Guard the byte size BEFORE reading, so an oversized upload never lands
-  // in memory.
-  if (opts.maxBytes != null && file instanceof Blob && file.size > opts.maxBytes) {
-    throw new Error(
-      `@svgrid/enterprise: file is ${file.size.toLocaleString()} bytes, ` +
-        `over the ${opts.maxBytes.toLocaleString()}-byte import limit.`,
-    )
-  }
-  const fmt = sniffFormat(file, format)
-  let matrix: string[][]
-  if (fmt === 'xlsx') {
-    if (typeof file === 'string') {
-      throw new Error(
-        '@svgrid/enterprise: xlsx import expects a File or Blob, not a string. ' +
-          'Use format: "csv" or "tsv" for inline text.',
-      )
-    }
-    matrix = await parseXlsx(file)
-  } else if (fmt === 'json') {
-    const text = typeof file === 'string' ? file : await readText(file, opts.encoding)
-    matrix = jsonToMatrix(text)
-  } else {
-    const sep = fmt === 'tsv' ? '\t' : ','
-    const text = typeof file === 'string' ? file : await readText(file, opts.encoding)
-    matrix = parseDelimited(text, sep)
-  }
-  if (opts.signal?.aborted) throw abortError()
-  return { format: fmt, matrix }
-}
+): Promise<{ format: Exclude<ImportFormat, 'auto'>; matrix: string[][] }>
 ```
 
 ### `function mapImportMatrix`
@@ -264,30 +234,7 @@ files prefer `mapImportMatrixAsync`, which yields to keep the UI live.
 export function mapImportMatrix<TData extends RowData>(
   matrix: string[][],
   opts: MapMatrixOptions<TData> = {},
-): MapMatrixResult<TData> {
-  const built = buildRecords<TData>(matrix, opts.columnMap, opts.columnTypes, opts.maxErrors)
-  const errors = built.errors
-  // Type-coercion errors come first; the validator runs on the rows we
-  // managed to build, so its errors share the same `rowIndex` basis.
-  let errorsTruncated = built.errorsTruncated
-  if (applyValidator(built.rows, errors, opts.validator, opts.maxErrors)) errorsTruncated = true
-  let rows = built.rows
-  let deduped = 0
-  if (opts.dedupeBy) {
-    const r = dedupeRows(rows, opts.dedupeBy as string)
-    rows = r.rows
-    deduped = r.deduped
-  }
-  return {
-    headers: built.headers,
-    rows,
-    errors,
-    skipped: built.skipped,
-    total: matrix.length > 0 ? matrix.length - 1 : 0,
-    errorsTruncated,
-    deduped,
-  }
-}
+): MapMatrixResult<TData>
 ```
 
 ### `function mapImportMatrixAsync`
@@ -306,53 +253,7 @@ export async function mapImportMatrixAsync<TData extends RowData>(
     /** Rows per chunk before yielding. Default 5000. */
     chunkSize?: number
   } = {},
-): Promise<MapMatrixResult<TData>> {
-  const headers = (matrix[0] ?? []).map((h) => h.trim())
-  const fields = computeFields(headers, opts.columnMap)
-  const dataRows = matrix.slice(1)
-  const total = dataRows.length
-  const chunk = Math.max(1, opts.chunkSize ?? 5000)
-  const rows: TData[] = []
-  const errors: ImportRowError[] = []
-  let skipped = 0
-  let outRowIndex = 0
-  let errorsTruncated = false
-
-  for (let i = 0; i < total; i += 1) {
-    if (opts.signal?.aborted) throw abortError()
-    const cells = dataRows[i]!
-    if (isBlankRow(cells)) { skipped += 1 } else {
-      const { rec, errors: rowErrs } = buildRecord(cells, headers.length, fields, opts.columnTypes, outRowIndex)
-      if (rowErrs.length && collectErrors(errors, rowErrs, opts.maxErrors)) errorsTruncated = true
-      rows.push(rec as unknown as TData)
-      outRowIndex += 1
-    }
-    if ((i + 1) % chunk === 0) {
-      opts.onProgress?.({ phase: 'map', ratio: total ? (i + 1) / total : 1, done: i + 1, total })
-      await nextTick()
-    }
-  }
-
-  if (applyValidator(rows, errors, opts.validator, opts.maxErrors)) errorsTruncated = true
-
-  let finalRows = rows
-  let deduped = 0
-  if (opts.dedupeBy) {
-    const r = dedupeRows(rows, opts.dedupeBy as string)
-    finalRows = r.rows
-    deduped = r.deduped
-  }
-  opts.onProgress?.({ phase: 'map', ratio: 1, done: total, total })
-  return {
-    headers,
-    rows: finalRows,
-    errors,
-    skipped,
-    total: matrix.length > 0 ? matrix.length - 1 : 0,
-    errorsTruncated,
-    deduped,
-  }
-}
+): Promise<MapMatrixResult<TData>>
 ```
 
 ### `function autoMapColumns`
@@ -366,23 +267,7 @@ field` map. Headers with no confident match are left OUT of the map, so
 export function autoMapColumns(
   headers: string[],
   columns: ReadonlyArray<ImportGridColumn>,
-): ImportColumnMap {
-  const byKey = new Map<string, string>()
-  for (const c of columns) {
-    const field = c.field ?? c.header
-    if (!field) continue
-    // Field name is the strongest signal, so register header first then let
-    // the field key overwrite on a collision.
-    if (c.header) byKey.set(normalizeHeader(c.header), field)
-    if (c.field) byKey.set(normalizeHeader(c.field), c.field)
-  }
-  const map: ImportColumnMap = {}
-  for (const h of headers) {
-    const hit = byKey.get(normalizeHeader(h))
-    if (hit) map[h] = hit
-  }
-  return map
-}
+): ImportColumnMap
 ```
 
 ### `function inferImportColumnTypes`
@@ -395,17 +280,7 @@ out (best-effort coercion applies).
 ```ts
 export function inferImportColumnTypes(
   columns: ReadonlyArray<ImportGridColumn>,
-): ImportColumnTypes {
-  const types: ImportColumnTypes = {}
-  for (const c of columns) {
-    if (!c.field) continue
-    const t = c.format?.type
-    if (t === 'number' || t === 'currency' || t === 'percent') types[c.field] = 'number'
-    else if (t === 'date') types[c.field] = 'date'
-    else if (t === 'datetime') types[c.field] = 'datetime'
-  }
-  return types
-}
+): ImportColumnTypes
 ```
 
 ### `function importData`
@@ -420,59 +295,5 @@ export async function importData<
 >(
   api: SvGridApi<TFeatures, TData>,
   opts: ImportOptions<TData>,
-): Promise<ImportResult<TData>> {
-  assertEnterpriseLicensed('Import')
-  const { format, matrix } = await readImportMatrix(opts.file, opts.format ?? 'auto', {
-    maxBytes: opts.maxBytes,
-    encoding: opts.encoding,
-    signal: opts.signal,
-  })
-
-  // Enforce the row cap before we do the O(rows) mapping work: either reject
-  // outright, or truncate to the first maxRows and flag it.
-  const dataCount = matrix.length > 0 ? matrix.length - 1 : 0
-  let workMatrix = matrix
-  let truncated = false
-  if (opts.maxRows != null && dataCount > opts.maxRows) {
-    if (opts.overLimit === 'truncate') {
-      workMatrix = matrix.slice(0, opts.maxRows + 1) // header + first maxRows
-      truncated = true
-    } else {
-      throw new Error(
-        `@svgrid/enterprise: import has ${dataCount.toLocaleString()} rows, ` +
-          `over the maxRows limit of ${opts.maxRows.toLocaleString()}.`,
-      )
-    }
-  }
-
-  // Grid-aware auto-mapping: derive the columnMap + columnTypes from the
-  // grid's own columns, but let anything the caller passed win.
-  let columnMap = opts.columnMap
-  let columnTypes = opts.columnTypes
-  if (opts.autoMap) {
-    const gridCols = api.getColumns() as ReadonlyArray<ImportGridColumn>
-    const headers = (workMatrix[0] ?? []).map((h) => h.trim())
-    columnMap = { ...autoMapColumns(headers, gridCols), ...(opts.columnMap ?? {}) }
-    columnTypes = { ...inferImportColumnTypes(gridCols), ...(opts.columnTypes ?? {}) }
-  }
-
-  const { headers, rows, errors, skipped, errorsTruncated, deduped } =
-    await mapImportMatrixAsync<TData>(workMatrix, {
-      columnMap,
-      columnTypes,
-      validator: opts.validator,
-      maxErrors: opts.maxErrors,
-      dedupeBy: opts.dedupeBy,
-      signal: opts.signal,
-      onProgress: opts.onProgress,
-    })
-
-  if (opts.commit && errors.length === 0 && rows.length > 0) {
-    api.addRows(rows, opts.commitAt ?? 'bottom')
-  }
-
-  // `total` reports the ORIGINAL source row count even when truncated, so the
-  // caller can say "imported X of Y".
-  return { headers, rows, errors, skipped, total: dataCount, format, errorsTruncated, deduped, truncated }
-}
+): Promise<ImportResult<TData>>
 ```

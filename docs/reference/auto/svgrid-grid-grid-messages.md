@@ -245,7 +245,5 @@ values fall back to the default (via `resolveMessages`), so a partial map only
 replaces the keys it sets.
 
 ```ts
-export function resolveGridMessages(overrides?: Partial<GridMessages> | null): GridChromeMessages {
-  return resolveMessages(defaultGridMessages, overrides)
-}
+export function resolveGridMessages(overrides?: Partial<GridMessages> | null): GridChromeMessages
 ```

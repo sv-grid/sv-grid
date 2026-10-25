@@ -50,53 +50,5 @@ input is never mutated: only the arrays that grow are copied, which keeps
 Svelte's state diffing cheap at 4 Hz.
 
 ```ts
-export function appendPoints(spec: ChartSpec, points: ChartPoint | ReadonlyArray<ChartPoint>, opts: AppendPointsOptions = {}): ChartSpec {
-  const list = Array.isArray(points) ? (points as ReadonlyArray<ChartPoint>) : [points as ChartPoint]
-  if (!list.length) return opts.window ? trim(spec, opts.window) : spec
-  const categories = [...spec.categories, ...list.map((p) => p.category)]
-  const ohlcOwner = spec.series.findIndex((s) => s.ohlc)
-  const series = spec.series.map((s, si) => {
-    const next: ChartSeries = { ...s, values: [...s.values] }
-    for (const p of list) {
-      const v = Array.isArray(p.values) ? (p.values as ReadonlyArray<number>)[si] : (p.values as Record<string, number>)[s.label]
-      next.values.push(typeof v === 'number' ? v : Number.NaN)
-    }
-    for (const key of PER_CATEGORY_SERIES_KEYS) {
-      if (key === 'values') continue
-      const has = s[key] !== undefined
-      // A key the series does not carry is only created when a point brings
-      // it (a candle, a volume), so a plain line stays a plain line.
-      const brings = list.some((p) =>
-        (key === 'ohlc' && p.ohlc !== undefined && si === (ohlcOwner < 0 ? 0 : ohlcOwner)) ||
-        (key === 'volumes' && p.volume !== undefined && si === (ohlcOwner < 0 ? 0 : ohlcOwner)) ||
-        (key === 'rowIds' && p.rowIds?.[si] !== undefined) ||
-        (key === 'upperValues' && p.upper?.[si] !== undefined) ||
-        (key === 'lowerValues' && p.lower?.[si] !== undefined) ||
-        (key === 'lowValues' && p.low?.[si] !== undefined) ||
-        (key === 'targets' && p.target?.[si] !== undefined))
-      if (!has && !brings) continue
-      const base: unknown[] = has ? [...(s[key] as unknown[])] : new Array(s.values.length).fill(gapFor(key))
-      for (const p of list) {
-        let v: unknown = undefined
-        if (key === 'ohlc' && si === (ohlcOwner < 0 ? 0 : ohlcOwner)) v = p.ohlc
-        else if (key === 'volumes' && si === (ohlcOwner < 0 ? 0 : ohlcOwner)) v = p.volume
-        else if (key === 'rowIds') v = p.rowIds?.[si]
-        else if (key === 'upperValues') v = p.upper?.[si]
-        else if (key === 'lowerValues') v = p.lower?.[si]
-        else if (key === 'lowValues') v = p.low?.[si]
-        else if (key === 'targets') v = p.target?.[si]
-        base.push(v === undefined ? gapFor(key) : v)
-      }
-      ;(next as unknown as Record<string, unknown>)[key] = base
-    }
-    return next
-  })
-  let out: ChartSpec = { ...spec, categories, series }
-  for (const key of PER_CATEGORY_SPEC_KEYS) {
-    const arr = spec[key] as unknown[] | undefined
-    if (arr) (out as unknown as Record<string, unknown>)[key] = [...arr, ...list.map(() => false)]
-  }
-  if (opts.window) out = trim(out, opts.window)
-  return out
-}
+export function appendPoints(spec: ChartSpec, points: ChartPoint | ReadonlyArray<ChartPoint>, opts: AppendPointsOptions = {}): ChartSpec
 ```

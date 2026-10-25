@@ -54,9 +54,7 @@ export type AdvancedFilterEngine = <TRow>(
 Register the engine. Enterprise calls this from `enableAdvancedFilter()`.
 
 ```ts
-export function registerAdvancedFilterEngine(fn: AdvancedFilterEngine | null): void {
-  engine = fn
-}
+export function registerAdvancedFilterEngine(fn: AdvancedFilterEngine | null): void
 ```
 
 ### `function getAdvancedFilterEngine`
@@ -64,9 +62,7 @@ export function registerAdvancedFilterEngine(fn: AdvancedFilterEngine | null): v
 The registered engine, or null when enterprise is not installed.
 
 ```ts
-export function getAdvancedFilterEngine(): AdvancedFilterEngine | null {
-  return engine
-}
+export function getAdvancedFilterEngine(): AdvancedFilterEngine | null
 ```
 
 ### `function hasAdvancedFilterEngine`
@@ -74,7 +70,5 @@ export function getAdvancedFilterEngine(): AdvancedFilterEngine | null {
 Whether an advanced-filter engine has been registered.
 
 ```ts
-export function hasAdvancedFilterEngine(): boolean {
-  return engine != null
-}
+export function hasAdvancedFilterEngine(): boolean
 ```
