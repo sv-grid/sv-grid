@@ -1,0 +1,31 @@
+{
+  "$comment": "Asks for tools/web-eval/model-check.mjs. A fresh Claude session answers each with only WebFetch on svgrid.com. need = regular expressions the component must match (the API the ask cannot be done without); forbid = ones it must not (a write that skips the feature).",
+  "tasks": [
+    {
+      "id": "change-review",
+      "ask": "Add change review to a customer grid (id, company, region): edits from an AI agent must be held as proposals, shown in a review panel next to the grid, and written to the rows only when a person accepts them.",
+      "need": ["createReview", "SvReviewPanel", "@svgrid/enterprise/review", "getRowId"],
+      "forbid": ["setCellValue"]
+    },
+    {
+      "id": "pin-column",
+      "ask": "A product grid with name, price, stock and ten more columns, where the name column stays pinned to the left while the rest scrolls horizontally.",
+      "need": ["[Pp]inn"]
+    },
+    {
+      "id": "export-xlsx",
+      "ask": "A grid of orders with a button that downloads the current rows as an Excel .xlsx file.",
+      "need": ["xlsx", "exportGrid|exportData"]
+    },
+    {
+      "id": "row-position",
+      "ask": "In a paginated grid, given a row id, find which page the row is on and go to that page.",
+      "need": ["getRowPosition"]
+    },
+    {
+      "id": "smart-fill-review",
+      "ask": "Use the AI helpers to fill the empty Region cells from the Country column, but let a person review the guesses before they are written.",
+      "need": ["reviewSmartFill|(?=[\\s\\S]*aiSmartFill)(?=[\\s\\S]*createReview)"]
+    }
+  ]
+}

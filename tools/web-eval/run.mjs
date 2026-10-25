@@ -14,8 +14,9 @@
  *
  * What it can catch: a page past the cut of an oversized index, a demo whose
  * source an agent cannot read, an endpoint that is not linked from anywhere an
- * agent starts. What it cannot: whether a model would pick these links. A
- * model-in-the-loop run measures that and is a separate decision.
+ * agent starts. What it cannot: whether a model would pick these links.
+ * model-check.mjs measures that by hand (a real model, WebFetch only, its code
+ * checked by svgrid_check_code); it costs tokens and stays out of CI.
  *
  *   node tools/web-eval/run.mjs                      the live site
  *   node tools/web-eval/run.mjs --dist website/dist  a local build

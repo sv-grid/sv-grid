@@ -57,6 +57,8 @@
     "smoke:published": "node tools/post-publish/run.mjs",
     "node:check": "node packages/grid/scripts/check-node-entry.mjs",
     "mcp:eval": "node tools/mcp-eval/run.mjs",
+    "web:eval": "node tools/web-eval/run.mjs",
+    "web:eval:model": "node tools/web-eval/model-check.mjs",
     "demos:audit": "node tools/audit-demos.mjs"
   },
   "devDependencies": {

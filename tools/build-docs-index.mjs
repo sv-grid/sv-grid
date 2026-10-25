@@ -833,6 +833,8 @@ async function writeApiJson() {
     name: 'SvGrid API reference',
     versions: { '@svgrid/grid': version('grid'), '@svgrid/enterprise': version('enterprise') },
     symbol: `${SITE}/api/<name lowercased>.json has a symbol's doc and signature, e.g. ${SITE}/api/svgridapi.json`,
+    // Agents asked for /api/getRowPosition.json first: a member has no file of its own.
+    member: `A member (a method or option such as getRowPosition) has no file: find it in the members of a type below and fetch that type's file, e.g. getRowPosition -> ${SITE}/api/svgridapi.json`,
     docs: `${SITE}/llms.txt`,
     modules: [...modules.values()],
   }
