@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:61fb56f6-01e5-42d0-a6cd-bb0383ef0db0",
+  "serialNumber": "urn:uuid:4aeac982-7db2-422b-adfe-c9b04563080e",
   "version": 1,
   "metadata": {
     "tools": {
@@ -16,10 +16,10 @@
     },
     "component": {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/grid-wc@2.6.1",
+      "bom-ref": "pkg:npm/%40svgrid/grid-wc@3.0.31",
       "name": "@svgrid/grid-wc",
-      "version": "2.6.1",
-      "purl": "pkg:npm/%40svgrid/grid-wc@2.6.1",
+      "version": "3.0.31",
+      "purl": "pkg:npm/%40svgrid/grid-wc@3.0.31",
       "scope": "required",
       "licenses": [
         {
@@ -28,13 +28,85 @@
           }
         }
       ],
-      "description": "SvGrid as a framework-agnostic web component (<sv-grid> custom element). Drop into React, Vue, Angular, or plain HTML - no build step required."
+      "description": "SvGrid as a framework-agnostic web component (<sv-grid> custom element, plus <sv-grid-shadow> for an open shadow root and <sv-chart> for the standalone chart). Drop into React, Vue, Angular, or plain HTML - no build step required."
     }
   },
-  "components": [],
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40angular/common@22.1.5",
+      "name": "@angular/common",
+      "version": "22.1.5",
+      "purl": "pkg:npm/%40angular/common@22.1.5",
+      "scope": "optional",
+      "description": "Peer dependency (declared range: >=18)"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40angular/core@22.1.5",
+      "name": "@angular/core",
+      "version": "22.1.5",
+      "purl": "pkg:npm/%40angular/core@22.1.5",
+      "scope": "optional",
+      "description": "Peer dependency (declared range: >=18)"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/react@19.2.8",
+      "name": "react",
+      "version": "19.2.8",
+      "purl": "pkg:npm/react@19.2.8",
+      "scope": "optional",
+      "description": "Peer dependency (declared range: >=17)"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/react-dom@19.2.8",
+      "name": "react-dom",
+      "version": "19.2.8",
+      "purl": "pkg:npm/react-dom@19.2.8",
+      "scope": "optional",
+      "description": "Peer dependency (declared range: >=17)"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/vue@3.5.42",
+      "name": "vue",
+      "version": "3.5.42",
+      "purl": "pkg:npm/vue@3.5.42",
+      "scope": "optional",
+      "description": "Peer dependency (declared range: >=3.3)"
+    }
+  ],
   "dependencies": [
     {
-      "ref": "pkg:npm/%40svgrid/grid-wc@2.6.1",
+      "ref": "pkg:npm/%40svgrid/grid-wc@3.0.31",
+      "dependsOn": [
+        "pkg:npm/%40angular/common@22.1.5",
+        "pkg:npm/%40angular/core@22.1.5",
+        "pkg:npm/react@19.2.8",
+        "pkg:npm/react-dom@19.2.8",
+        "pkg:npm/vue@3.5.42"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40angular/common@22.1.5",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40angular/core@22.1.5",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/react@19.2.8",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/react-dom@19.2.8",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/vue@3.5.42",
       "dependsOn": []
     }
   ]

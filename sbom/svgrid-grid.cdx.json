@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:3af606be-3963-4d14-a739-955600af3810",
+  "serialNumber": "urn:uuid:0b86fa86-b81f-491f-af82-767701c14942",
   "version": 1,
   "metadata": {
     "tools": {
@@ -16,10 +16,10 @@
     },
     "component": {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/grid@2.6.1",
+      "bom-ref": "pkg:npm/%40svgrid/grid@3.0.22",
       "name": "@svgrid/grid",
-      "version": "2.6.1",
-      "purl": "pkg:npm/%40svgrid/grid@2.6.1",
+      "version": "3.0.22",
+      "purl": "pkg:npm/%40svgrid/grid@3.0.22",
       "scope": "required",
       "licenses": [
         {
@@ -28,10 +28,19 @@
           }
         }
       ],
-      "description": "Svelte 5-native data grid and data table. Headless-first engine with virtual scrolling for 100k+ rows, Excel-style filtering, inline editing, grouping, tree data, pivot, and server-side data. Drop-in <SvGrid> component. TypeScript, SSR-ready."
+      "description": "Svelte 5 data grid and data table, MIT. Drop-in <SvGrid> component or the same engine headless: virtual scrolling for 100k+ rows, Excel-style filtering, inline editing, grouping, tree data and server-side data. TypeScript, SvelteKit SSR."
     }
   },
   "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/esm-env@1.2.2",
+      "name": "esm-env",
+      "version": "1.2.2",
+      "purl": "pkg:npm/esm-env@1.2.2",
+      "scope": "required",
+      "description": "Runtime dependency (declared range: ^1.2.2)"
+    },
     {
       "type": "library",
       "bom-ref": "pkg:npm/svelte@5.55.9",
@@ -44,10 +53,15 @@
   ],
   "dependencies": [
     {
-      "ref": "pkg:npm/%40svgrid/grid@2.6.1",
+      "ref": "pkg:npm/%40svgrid/grid@3.0.22",
       "dependsOn": [
+        "pkg:npm/esm-env@1.2.2",
         "pkg:npm/svelte@5.55.9"
       ]
+    },
+    {
+      "ref": "pkg:npm/esm-env@1.2.2",
+      "dependsOn": []
     },
     {
       "ref": "pkg:npm/svelte@5.55.9",

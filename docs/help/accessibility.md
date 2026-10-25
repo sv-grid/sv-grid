@@ -5,7 +5,7 @@ navigation and a screen-reader announcement layer. This page documents
 exactly what the grid does, where the responsibility line sits between
 the library and your code, and how to verify conformance.
 
-![An ARIA grid whose rows carry aria-rowindex and cells carry aria-colindex, a roving tabindex marking the active cell that arrow keys move, and an aria-live region announcing the new cell to a screen reader.](/docs-media/grid-a11y.svg)
+![An ARIA grid whose rows carry aria-rowindex and cells carry aria-colindex, with the active cell that arrow keys move named by aria-activedescendant, and an aria-live region for status messages.](/docs-media/grid-a11y.svg)
 
 Live demo - high-contrast toggle, `aria-live` log, and a focus-trap
 walk-through:
@@ -17,25 +17,29 @@ walk-through:
 | Standard                | Status                                                                 |
 | ----------------------- | ---------------------------------------------------------------------- |
 | WAI-ARIA 1.2 grid pattern | Implemented (see [Roles & properties](#roles--properties)).         |
-| WCAG 2.1 AA             | Structure is audited by `axe-core` in CI. Contrast is enforced in CI for **all 20 built-in presets, light and dark**; a custom theme is yours to verify. |
-| Keyboard navigation     | Full coverage; see [Keyboard map](#keyboard-map).                      |
+| WCAG 2.2 AA             | Self-assessed, criterion by criterion, in the [Accessibility Conformance Report](../compliance/vpat.md), gaps included. Structure is audited by `axe-core` in CI, in jsdom and in a real browser. Contrast is enforced in CI for **all 20 built-in presets, light and dark**; a custom theme is yours to verify. |
+| Keyboard navigation     | Navigation, selection, sorting, filtering and editing; see [Keyboard map](#keyboard-map). Row dragging and moving columns by drag have no keyboard path yet; the ACR lists them. |
 | Screen-reader announcements | Filter results and bulk selection changes, via a single `aria-live=polite` region. See [What the grid announces](#what-the-grid-announces). |
-| Reduced motion          | Honored: scroll animations + chevron transitions disable when `prefers-reduced-motion: reduce`. |
-| Forced colors / high contrast | Supported: borders + focus rings use `currentColor`; no hardcoded `border-color`. |
+| Reduced motion          | The cell flash and the loading shimmer stop under `prefers-reduced-motion: reduce`. |
+| Forced colors / high contrast | The active cell switches to a system `Highlight` outline (a box-shadow ring would vanish). Tested in a browser with forced colors emulated. |
 
 ## Roles & properties
 
 | Element                        | Role           | Notable attributes                                                                                  |
 | ------------------------------ | -------------- | --------------------------------------------------------------------------------------------------- |
-| `<table>` root                 | `grid`         | `aria-rowcount`, `aria-colcount`                                                                    |
-| `<thead>`, `<tbody>`           | `rowgroup`     |                                                                                                     |
-| Every `<tr>` (header + body)   | `row`          | `aria-rowindex` (1-based); selected rows get `aria-selected="true"`                                  |
-| Header `<th>`                  | `columnheader` | `aria-sort` (`"ascending"` / `"descending"` / `"none"`)                                              |
-| Body `<td>`                    | `gridcell`     | `aria-colindex`, `aria-selected`, `aria-readonly` (when the column is non-editable)                  |
-| Active cell                    | `gridcell`     | `tabindex="0"`; every other cell `tabindex="-1"` (roving tabindex pattern)                          |
-| Filter popover                 | `dialog`       | `aria-label` derived from the column header                                                         |
-| Cell editor input              | `textbox` / `combobox` / `checkbox` (depending on `editorType`) | `aria-label` mirrors the column header           |
-| Live announcement region       | none (uses `aria-live="polite"` on a visually-hidden `<div>`) |                                                                       |
+| `<table>` root                 | `grid` (`treegrid` with `treeData` or server grouping) | `tabindex="0"`, `aria-activedescendant` pointing at the active cell, `aria-rowcount`, `aria-colcount` |
+| `<thead>`, `<tbody>`, `<tfoot>` | `rowgroup`    |                                                                                                     |
+| Body `<tr>`                    | `row`          | `aria-rowindex` (1-based, absolute, so it holds under virtualization); `aria-level` / `aria-expanded` on tree and group rows |
+| Header `<th>`                  | `columnheader` | `aria-sort` (`"ascending"` / `"descending"` / `"none"`) on sortable columns                         |
+| Body `<td>`                    | `gridcell`     | `id`, `aria-colindex`, `aria-rowindex`, `aria-selected` (row selection); `aria-invalid` plus the message when `validate` rejects the value |
+| Selection checkboxes           | `checkbox`     | `aria-checked`, `"mixed"` on the header when some rows are selected                                 |
+| Filter popover                 | `menu`         |                                                                                                     |
+| Cell editor input              | `textbox` (text, number and multi-line editors) | `aria-label` is the column header                                |
+| Live announcement region       | `status` (`aria-live="polite"` on a visually-hidden `<div>`) |                                                                       |
+
+Header rows carry no `aria-rowindex` yet, and a cell range selection (as
+opposed to row selection) is not exposed through `aria-selected`. Both are
+listed in the [ACR](../compliance/vpat.md).
 
 The grid never sets `role="presentation"` on table elements - screen
 readers receive a fully-structured grid.
@@ -49,8 +53,7 @@ shortcuts:
 
 | Key                 | Action                                                                |
 | ------------------- | --------------------------------------------------------------------- |
-| Tab                 | Move focus *out* of the grid to the next focusable element.           |
-| Shift+Tab           | Move focus *into* the grid from the previous focusable element.       |
+| Tab / Shift+Tab     | Move the active cell right / left, wrapping at row ends. On the last cell (first, for Shift+Tab) focus leaves the grid for the next (previous) element on the page. Ctrl+End then Tab, or Ctrl+Home then Shift+Tab, leaves from anywhere. |
 | Arrow Up/Down       | Move active cell one row.                                             |
 | Arrow Left/Right    | Move active cell one column.                                          |
 | Home                | Active cell → first column in the row.                                |
@@ -66,23 +69,25 @@ shortcuts:
 | ------------------------- | --------------------------------------------------------------- |
 | Space                     | Toggle the active row's selection.                              |
 | Ctrl/Cmd + A              | Not bound by the grid; the browser's select-all applies. The header checkbox selects every row, and `api.selectCells` selects ranges. |
-| Shift + Arrow Up/Down     | Extend the row selection.                                       |
-| Ctrl/Cmd + Click on a row | Toggle that row's selection without affecting others.           |
+| Shift + Arrow keys        | Extend the cell range from the active cell.                     |
+| Ctrl/Cmd + Click on a cell | Add a cell range to the selection.                             |
 
 ### Sort + filter
 
 | Key                              | Action                                                   |
 | -------------------------------- | -------------------------------------------------------- |
-| Enter (on a header)              | Toggle sort: `none → asc → desc → none`.                 |
-| Shift + Enter (on a header)      | Add to multi-sort.                                       |
-| Alt + Down (on a header)         | Open the filter menu (when `filterMode='menu'`).         |
+| Enter / Space (on a header's sort button) | Toggle sort: `none → asc → desc → none`.        |
+| Enter / Space (on a header's filter button) | Open the filter menu.                         |
 | Escape (in a filter menu)        | Close the menu.                                          |
+
+Header buttons are reached with the mouse or, from outside the grid, with
+Tab; they are not part of the cell navigation.
 
 ### Editing
 
 | Key                         | Action                                                |
 | --------------------------- | ----------------------------------------------------- |
-| Enter / F2 / double-click   | Enter edit mode on the active cell.                   |
+| F2 / double-click           | Enter edit mode on the active cell. (Enter moves down, as in a spreadsheet.) |
 | Type any character          | Start editing with that character as the first input. |
 | Enter / Tab (while editing) | Commit and move to the next cell / row.               |
 | Escape (while editing)      | Cancel; revert the cell.                              |
@@ -128,8 +133,9 @@ This is the more important half. A live region is not the only way a screen
 reader learns something, and announcing what the accessibility tree already
 carries makes the grid talk over itself:
 
-- **The cell you moved to.** Focus moves there (roving tabindex), so the reader
-  announces the cell, its column header and its row position natively.
+- **The cell you moved to.** `aria-activedescendant` on the grid points at it,
+  so the reader announces the cell, its column header and its row position
+  natively.
 - **Sort state.** Carried by `aria-sort` on the column header, read when focus
   lands on it.
 - **Whether the row you are on is selected.** Carried by `aria-selected`.
@@ -195,22 +201,26 @@ an override is visible instead of silently eating the number.
 
 ## Focus management
 
-- The grid uses a **roving tabindex**: at most one cell at a time has
-  `tabindex="0"`, every other has `tabindex="-1"`. This puts the grid
-  in the tab order exactly once.
-- The "active cell" is the focused cell. It's tracked through every
-  navigation, editing, and selection action.
-- Editing transfers focus to the editor `<input>`; committing returns
-  focus to the cell.
-- Modals (filter menu, save dialog) use a focus trap that returns
-  focus to the originating header/cell on close.
+- The `<table>` is the grid's single tab stop. Focus stays on it, and
+  `aria-activedescendant` names the active cell; cells themselves carry no
+  `tabindex`.
+- The active cell is drawn with an accent ring. It is hidden while the grid
+  sits untouched at its seeded first cell, and shown as soon as a click, a
+  key or the api activates a cell, or the keyboard brings focus to the grid.
+- Tab moves between cells and leaves the grid at either end (see the
+  [keyboard map](#navigation)).
+- Editing transfers focus to the editor `<input>`, which is named after the
+  column; committing returns focus to the grid.
+- The filter popover moves focus to its first control when it opens. Grid
+  menus do not yet return focus to the button that opened them on close;
+  the [ACR](../compliance/vpat.md) lists it under 2.4.3.
 
 ## High-contrast / forced-colors mode
 
-Windows High Contrast mode (`forced-colors: active`) is respected. The
-grid uses `currentColor` for every border and focus ring, so the
-system's color tokens take over without overrides leaking. We test
-against the [W3C forced-colors test page](https://web.dev/articles/forced-colors).
+Under Windows High Contrast (`forced-colors: active`) the active cell gets a
+2 px outline in the system `Highlight` colour, because forced colors removes
+the box-shadow ring the grid draws otherwise. `tests/e2e/grid-a11y.spec.ts`
+checks it with forced colors emulated in Chromium.
 
 ## Right to left
 
@@ -224,13 +234,12 @@ physical `left`. Nothing to opt into and no second stylesheet.
 
 When `prefers-reduced-motion: reduce` matches:
 
-- Smooth-scroll calls become `behavior: 'instant'`.
-- Chevron rotations (used in tree demos) are instant rather than 160 ms
-  ease.
-- Sparkline + KPI bar transitions are disabled.
+- The cell flash (`cellFlash`) does not animate.
+- The loading-row shimmer stops.
 
-You don't need to opt in - the grid checks the media query on every
-animation entry point.
+Keyboard scrolling is always instant, so there is no smooth scroll to turn
+off. Chevron rotations still use a short transition. You don't need to opt
+in; both rules are plain CSS media queries.
 
 ## What you're responsible for
 
@@ -277,9 +286,12 @@ The grid can't know:
    > **custom** theme.
 4. **axe-core in your e2e suite.**
    ```ts
-   import { injectAxe, checkA11y } from 'axe-playwright'
-   await injectAxe(page)
-   await checkA11y(page, '.sv-grid-shell', { detailedReport: false })
+   import AxeBuilder from '@axe-core/playwright'
+   const results = await new AxeBuilder({ page })
+     .include('.sv-grid-container')
+     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+     .analyze()
+   expect(results.violations).toEqual([])
    ```
 
 ## Frequently asked questions
@@ -294,9 +306,11 @@ documents exactly where that line sits.
 
 ### Does SvGrid work with screen readers?
 
-Yes. The grid exposes proper roles and emits `aria-live` announcements for
-sorting, filtering, and selection changes, so NVDA, JAWS, and VoiceOver can
-read the grid state. Because it renders real DOM (not canvas), the content is
+The grid exposes the ARIA grid roles and states, and emits `aria-live`
+announcements for filtering and bulk selection changes. Sort state is read
+from `aria-sort` on the header rather than announced. No scripted NVDA, JAWS
+or VoiceOver pass has been recorded yet; the
+[ACR](../compliance/vpat.md) says so where it matters. Because it renders real DOM (not canvas), the content is
 also selectable and machine-readable.
 
 ### How do I verify accessibility in my app?
@@ -309,7 +323,7 @@ keyboard-only navigation. Pair it with the high-contrast focus toggle and the
 
 ### Keyboard shortcuts + a11y
 
-Ctrl+K command palette, Ctrl+/ cheat sheet, vim-style gg / G chord nav. Layers on top of the grid's WAI-ARIA grid pattern + roving tabindex.
+Ctrl+K command palette, Ctrl+/ cheat sheet, vim-style gg / G chord nav. Layers on top of the grid's WAI-ARIA grid pattern.
 
 <div data-docs-demo="65-keyboard-shortcuts" data-height="460"></div>
 

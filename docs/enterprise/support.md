@@ -51,10 +51,13 @@ sev-1.
 
 ## Security disclosures
 
-For security issues, **do not file a public issue**. Email
-`support@jqwidgets.com` (PGP fingerprint at
-[svgrid.com/.well-known/security.txt](https://svgrid.com/.well-known/security.txt)).
-Response within 24h; patch within 7 days for high-severity.
+For security issues, **do not file a public issue**. Report privately, through
+GitHub's private vulnerability reporting or by email, as
+[SECURITY.md](https://github.com/sv-grid/sv-grid/blob/main/SECURITY.md)
+describes; [svgrid.com/.well-known/security.txt](https://svgrid.com/.well-known/security.txt)
+points to the same place. Enterprise customers get an acknowledgement within one
+business day, and an advisory and patch within five business days for High and
+Critical issues.
 
 See [security & supply chain](../help/security.md) for the full
 disclosure policy.

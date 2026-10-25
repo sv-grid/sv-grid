@@ -22,9 +22,12 @@ name: Publish npm packages
 #   NPM_TOKEN     - an npm automation token with publish rights to the @svgrid scope.
 #   WEBSITE_TOKEN - read access to the private website submodule (a workspace member).
 #
-# The 06:37 UTC schedule is a safety net, not the main path: Test uses
-# cancel-in-progress, so a commit superseded within minutes never emits a
-# `workflow_run: success` of its own. The cron sweeps up whatever that dropped.
+# Publishing follows a push and its tests, nothing else: there is no schedule.
+# The daily cron that used to sweep up after cancelled runs published main HEAD
+# whatever Test said (on 2026-10-20 it shipped a red commit). It is not needed:
+# Test cancels a run when a newer push lands, and that push's own green run
+# publishes everything changed since each package's last release tag, the
+# superseded commit included. A manual dispatch is the override.
 
 on:
   workflow_run:
@@ -40,13 +43,12 @@ on:
         description: 'Restrict to these package directories (comma separated, e.g. grid,mcp)'
         type: string
         default: ''
-  schedule:
-    - cron: '37 6 * * *'
 
 # Push the version-bump commit + release tags back to main.
 permissions:
   contents: write
-  id-token: write # npm provenance
+  id-token: write # npm provenance, and the Sigstore signature on the SBOMs
+  attestations: write # store the SBOM attestations on the repo
   actions: write # dispatch the website deploy after a release
 
 concurrency:
@@ -153,6 +155,26 @@ jobs:
         # half-failed run can be re-run safely.
         run: node tools/release-packages.mjs --publish "${{ steps.release.outputs.packages }}"
 
+      # The SBOMs name each package's version, so they are rewritten after the
+      # bump and committed with it; Test's `pnpm sbom:check` keeps them honest
+      # between releases.
+      - name: Regenerate the SBOMs at the released versions
+        if: steps.release.outputs.any == 'true'
+        continue-on-error: true # Test's sbom:check flags a miss on the next push
+        run: node tools/build-sbom.mjs
+
+      # A keyless Sigstore signature over each SBOM, tied to this workflow run.
+      # Verify a copy with:
+      #   gh attestation verify sbom/svgrid-grid.cdx.json --repo sv-grid/sv-grid
+      # Runs after npm publish, so a failure here must not stop the bump commit
+      # and the tags below: the packages are already out by now.
+      - name: Sign the SBOMs
+        if: steps.release.outputs.any == 'true'
+        continue-on-error: true
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: 'sbom/*.cdx.json'
+
       - name: Commit the version bumps and tag the releases
         if: steps.release.outputs.any == 'true'
         run: |
@@ -184,7 +206,7 @@ jobs:
           if [ "${{ contains(fromJSON(steps.release.outputs.packages_json), 'mcp') }}" = "true" ]; then
             git add -- packages/mcp/src/data.ts
           fi
-          git add -- ${{ steps.release.outputs.files }} plugins/svgrid
+          git add -- ${{ steps.release.outputs.files }} plugins/svgrid sbom
           git commit -m "release: ${{ steps.release.outputs.summary }} [skip ci]" || echo "nothing to commit"
           # main can gain commits while a release builds; rebase the bump on top
           # rather than failing the run after the packages are already on npm.

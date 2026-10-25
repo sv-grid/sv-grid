@@ -173,6 +173,14 @@ jobs:
         # are gated.
         run: node tools/build-changelog-json.mjs --check
 
+      - name: SBOMs match the package manifests
+        # sbom/*.cdx.json is what a buyer's security review reads. Nothing
+        # regenerated it, so by 2026-10 every document named a version two
+        # majors old (enterprise 2.6.1 against 3.1.23). The release job now
+        # rewrites it with the version bump; this fails if a manifest or a
+        # vendored file changed without `pnpm sbom`.
+        run: pnpm sbom:check
+
       - name: Documented commands exist
         # docs/help/benchmarks.md told readers to run `pnpm bench --json` and
         # `--baseline=`, and claimed regressions over 10% failed CI on main.

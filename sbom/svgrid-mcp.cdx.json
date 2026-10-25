@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:229734cf-31b5-4e33-a742-1c61c663655c",
+  "serialNumber": "urn:uuid:8318c2f2-c182-4410-a250-2ce928e60237",
   "version": 1,
   "metadata": {
     "tools": {
@@ -16,19 +16,19 @@
     },
     "component": {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/mcp@2.6.1",
+      "bom-ref": "pkg:npm/%40svgrid/mcp@3.0.30",
       "name": "@svgrid/mcp",
-      "version": "2.6.1",
-      "purl": "pkg:npm/%40svgrid/mcp@2.6.1",
+      "version": "3.0.30",
+      "purl": "pkg:npm/%40svgrid/mcp@3.0.30",
       "scope": "required",
       "licenses": [
         {
           "license": {
-            "name": "SEE LICENSE IN LICENSE"
+            "id": "MIT"
           }
         }
       ],
-      "description": "Model Context Protocol (MCP) server for SvGrid. Exposes example sources, docs, and API reference to AI assistants."
+      "description": "Model Context Protocol server for SvGrid, the Svelte 5 data grid: checks the code your AI writes against the real API surface, plus version-pinned docs, API reference and 373 demo sources."
     }
   },
   "components": [
@@ -43,12 +43,12 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/enterprise@2.6.1",
-      "name": "@svgrid/enterprise",
-      "version": "2.6.1",
-      "purl": "pkg:npm/%40svgrid/enterprise@2.6.1",
+      "bom-ref": "pkg:npm/svelte@5.55.9",
+      "name": "svelte",
+      "version": "5.55.9",
+      "purl": "pkg:npm/svelte@5.55.9",
       "scope": "required",
-      "description": "Runtime dependency (declared range: workspace:^)"
+      "description": "Runtime dependency (declared range: ^5.55.5)"
     },
     {
       "type": "library",
@@ -58,15 +58,25 @@
       "purl": "pkg:npm/zod@3.25.76",
       "scope": "required",
       "description": "Runtime dependency (declared range: ^3.23.8)"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40svgrid/enterprise@3.1.24",
+      "name": "@svgrid/enterprise",
+      "version": "3.1.24",
+      "purl": "pkg:npm/%40svgrid/enterprise@3.1.24",
+      "scope": "optional",
+      "description": "Peer dependency (declared range: workspace:^)"
     }
   ],
   "dependencies": [
     {
-      "ref": "pkg:npm/%40svgrid/mcp@2.6.1",
+      "ref": "pkg:npm/%40svgrid/mcp@3.0.30",
       "dependsOn": [
         "pkg:npm/%40modelcontextprotocol/sdk@1.29.0",
-        "pkg:npm/%40svgrid/enterprise@2.6.1",
-        "pkg:npm/zod@3.25.76"
+        "pkg:npm/svelte@5.55.9",
+        "pkg:npm/zod@3.25.76",
+        "pkg:npm/%40svgrid/enterprise@3.1.24"
       ]
     },
     {
@@ -74,11 +84,15 @@
       "dependsOn": []
     },
     {
-      "ref": "pkg:npm/%40svgrid/enterprise@2.6.1",
+      "ref": "pkg:npm/svelte@5.55.9",
       "dependsOn": []
     },
     {
       "ref": "pkg:npm/zod@3.25.76",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40svgrid/enterprise@3.1.24",
       "dependsOn": []
     }
   ]

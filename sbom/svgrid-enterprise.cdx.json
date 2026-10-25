@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:88017aea-9dde-4aae-ac3b-27d9469b1c79",
+  "serialNumber": "urn:uuid:b49d954f-636d-4c0d-a557-3b9604fe790f",
   "version": 1,
   "metadata": {
     "tools": {
@@ -16,10 +16,10 @@
     },
     "component": {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/enterprise@2.6.1",
+      "bom-ref": "pkg:npm/%40svgrid/enterprise@3.1.24",
       "name": "@svgrid/enterprise",
-      "version": "2.6.1",
-      "purl": "pkg:npm/%40svgrid/enterprise@2.6.1",
+      "version": "3.1.24",
+      "purl": "pkg:npm/%40svgrid/enterprise@3.1.24",
       "scope": "required",
       "licenses": [
         {
@@ -28,16 +28,16 @@
           }
         }
       ],
-      "description": "Enterprise feature pack for SvGrid: Excel (xlsx), PDF, CSV, TSV and HTML export, Excel/CSV/JSON import, pivot tables with a drag-and-drop designer, paginated print, Kanban board and scheduler views. Requires a paid license key."
+      "description": "Enterprise feature pack for SvGrid: the server-side row model (lazy grouping, tree, pivot, transactions, selection across unloaded rows), Excel (xlsx) and PDF export, Excel/CSV/JSON import, pivot tables with a drag-and-drop designer, paginated print, Kanban board and scheduler renderers, no-code alerts and batch editing. CSV, TSV and JSON export are already free in @svgrid/grid. Requires a paid license key."
     }
   },
   "components": [
     {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/grid@2.6.1",
+      "bom-ref": "pkg:npm/%40svgrid/grid@3.0.22",
       "name": "@svgrid/grid",
-      "version": "2.6.1",
-      "purl": "pkg:npm/%40svgrid/grid@2.6.1",
+      "version": "3.0.22",
+      "purl": "pkg:npm/%40svgrid/grid@3.0.22",
       "scope": "required",
       "description": "Peer dependency (declared range: workspace:^)"
     },
@@ -57,7 +57,25 @@
       "version": "0.2.23",
       "purl": "pkg:npm/pdfmake@0.2.23",
       "scope": "optional",
-      "description": "Peer dependency (declared range: ^0.2.0)"
+      "description": "Peer dependency (declared range: ^0.2.0 || ^0.3.0)"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/react@19.2.8",
+      "name": "react",
+      "version": "19.2.8",
+      "purl": "pkg:npm/react@19.2.8",
+      "scope": "optional",
+      "description": "Peer dependency (declared range: >=17)"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/react-dom@19.2.8",
+      "name": "react-dom",
+      "version": "19.2.8",
+      "purl": "pkg:npm/react-dom@19.2.8",
+      "scope": "optional",
+      "description": "Peer dependency (declared range: >=17)"
     },
     {
       "type": "library",
@@ -67,20 +85,57 @@
       "purl": "pkg:npm/svelte@5.55.9",
       "scope": "required",
       "description": "Peer dependency (declared range: ^5.0.0)"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/vue@3.5.42",
+      "name": "vue",
+      "version": "3.5.42",
+      "purl": "pkg:npm/vue@3.5.42",
+      "scope": "optional",
+      "description": "Peer dependency (declared range: >=3.3)"
+    },
+    {
+      "type": "library",
+      "bom-ref": "vendored:smart-ui-export@26.0.8",
+      "supplier": {
+        "name": "jQWidgets"
+      },
+      "name": "smart-ui-export",
+      "version": "26.0.8",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "name": "SEE LICENSE IN https://htmlelements.com/license/"
+          }
+        }
+      ],
+      "description": "Smart UI export module (XLSX/PDF/CSV writers), vendored unmodified; shipped as dist/smart.export.js",
+      "properties": [
+        {
+          "name": "svgrid:vendored",
+          "value": "true"
+        }
+      ]
     }
   ],
   "dependencies": [
     {
-      "ref": "pkg:npm/%40svgrid/enterprise@2.6.1",
+      "ref": "pkg:npm/%40svgrid/enterprise@3.1.24",
       "dependsOn": [
-        "pkg:npm/%40svgrid/grid@2.6.1",
+        "pkg:npm/%40svgrid/grid@3.0.22",
         "pkg:npm/jszip@3.10.1",
         "pkg:npm/pdfmake@0.2.23",
-        "pkg:npm/svelte@5.55.9"
+        "pkg:npm/react@19.2.8",
+        "pkg:npm/react-dom@19.2.8",
+        "pkg:npm/svelte@5.55.9",
+        "pkg:npm/vue@3.5.42",
+        "vendored:smart-ui-export@26.0.8"
       ]
     },
     {
-      "ref": "pkg:npm/%40svgrid/grid@2.6.1",
+      "ref": "pkg:npm/%40svgrid/grid@3.0.22",
       "dependsOn": []
     },
     {
@@ -92,7 +147,23 @@
       "dependsOn": []
     },
     {
+      "ref": "pkg:npm/react@19.2.8",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/react-dom@19.2.8",
+      "dependsOn": []
+    },
+    {
       "ref": "pkg:npm/svelte@5.55.9",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/vue@3.5.42",
+      "dependsOn": []
+    },
+    {
+      "ref": "vendored:smart-ui-export@26.0.8",
       "dependsOn": []
     }
   ]

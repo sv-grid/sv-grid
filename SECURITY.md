@@ -34,8 +34,8 @@ not patched.
 
 | Package | Supported |
 |---|---|
-| `@svgrid/grid` | latest 2.x |
-| `@svgrid/enterprise` | latest 2.x |
+| `@svgrid/grid` | latest 3.x |
+| `@svgrid/enterprise` | latest 3.x |
 | `@svgrid/mcp`, `@svgrid/studio` | latest release |
 
 ## Scope

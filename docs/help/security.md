@@ -44,6 +44,10 @@ the consumer hasn't installed the peer, the call throws a typed error
 naming the missing module and the install command - the rest of the
 library keeps working.
 
+One piece of third-party code *is* bundled: `@svgrid/enterprise` ships the
+Smart UI export module (jQWidgets) as `dist/smart.export.js`, vendored
+unmodified. The SBOM lists it as a component with its version.
+
 CSV, TSV, HTML, JSON import/export, print, the AI assistant, and the
 pivot helpers have **no extra peer dependencies** at all.
 
@@ -55,8 +59,8 @@ Every observable side effect, mapped:
 | ------------------------------------ | -------------------------------------------------------------------------- |
 | `<SvGrid>` mount                     | Sets up `requestAnimationFrame`, `ResizeObserver`, and DOM event listeners on the grid container. |
 | Inline editing                       | Reads + writes `document` selection; commits via your `onCellValueChange`. |
-| Export to xlsx / pdf / csv / tsv / html | Creates a `Blob` and triggers a download via a synthetic `<a download>`. No network. |
-| Import from xlsx / csv / tsv / json  | Reads the user-provided `File` via `arrayBuffer()` / `text()`. No network. |
+| Export to xlsx / pdf / csv / tsv / html | Creates a `Blob` and triggers a download via a synthetic `<a download>`. No network. CSV and TSV prefix formula-like text with `'` so a spreadsheet does not run it ([export](./export.md)). |
+| Import from xlsx / csv / tsv / json  | Reads the user-provided `File` via `arrayBuffer()` / `text()`. No network. An .xlsx cell addressed outside the sheet (past column XFD) is rejected, and so is a sheet that would need more than ten million blank cells to lay out, so a crafted file cannot exhaust memory. |
 | Print                                | Opens a sandbox popup window with an isolated HTML document and calls its `print()`. |
 | AI helpers                           | Build a prompt locally and call the consumer-registered `AIProvider`. The grid itself never opens a connection. |
 | License key check                    | A 4-line string-prefix check against an in-memory revoked-key set. No network. |
@@ -100,7 +104,10 @@ Notes:
 ## Vulnerability handling
 
 - Reports: open a draft security advisory on the GitHub repository, or
-  email `support@jqwidgets.com`. PGP key on the repository's SECURITY.md.
+  email the address in
+  [SECURITY.md](https://github.com/sv-grid/sv-grid/blob/main/SECURITY.md).
+  [`/.well-known/security.txt`](https://svgrid.com/.well-known/security.txt)
+  points to the same place.
 - Response SLA (paid customers): acknowledgement within one business
   day, advisory + patch within five business days for severity High +
   Critical.
@@ -112,13 +119,25 @@ Notes:
 
 We publish a **CycloneDX 1.6** document per package in
 [`sbom/`](https://github.com/sv-grid/sv-grid/tree/main/sbom), covering runtime
-and peer dependencies to full declared depth. Fetch the one you need straight
-from the repo, or regenerate from a clone:
+and peer dependencies to full declared depth, plus vendored code. Fetch the
+one you need straight from the repo, or regenerate from a clone:
 
 ```bash
 pnpm sbom          # write sbom/*.cdx.json
 pnpm sbom:check    # non-zero exit if they have drifted from the manifests
 ```
+
+The release workflow regenerates the SBOMs at the released versions and signs
+them with a Sigstore build attestation, and the Test workflow runs
+`pnpm sbom:check` on every commit. To check that a copy is the one the
+release produced:
+
+```bash
+gh attestation verify sbom/svgrid-grid.cdx.json --repo sv-grid/sv-grid
+```
+
+`@svgrid/mcp` is the one package with a deeper graph (the MCP SDK, `zod`,
+`svelte`); its SBOM lists those top-level dependencies, not their own.
 
 If your process prefers a scanner-produced document, or you want SPDX instead,
 generate one against your own installed tree:

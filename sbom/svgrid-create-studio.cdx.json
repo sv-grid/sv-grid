@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:17b57c1c-a05f-4f94-acae-c54d3201ef36",
+  "serialNumber": "urn:uuid:a8e4d3e4-efa4-42cf-abbf-c484cc5d2da7",
   "version": 1,
   "metadata": {
     "tools": {
@@ -16,10 +16,10 @@
     },
     "component": {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/create-studio@0.5.0",
+      "bom-ref": "pkg:npm/%40svgrid/create-studio@0.8.2",
       "name": "@svgrid/create-studio",
-      "version": "0.5.0",
-      "purl": "pkg:npm/%40svgrid/create-studio@0.5.0",
+      "version": "0.8.2",
+      "purl": "pkg:npm/%40svgrid/create-studio@0.8.2",
       "scope": "required",
       "licenses": [
         {
@@ -34,23 +34,23 @@
   "components": [
     {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/enterprise@2.6.1",
+      "bom-ref": "pkg:npm/%40svgrid/enterprise@3.1.24",
       "name": "@svgrid/enterprise",
-      "version": "2.6.1",
-      "purl": "pkg:npm/%40svgrid/enterprise@2.6.1",
+      "version": "3.1.24",
+      "purl": "pkg:npm/%40svgrid/enterprise@3.1.24",
       "scope": "required",
       "description": "Runtime dependency (declared range: workspace:^)"
     }
   ],
   "dependencies": [
     {
-      "ref": "pkg:npm/%40svgrid/create-studio@0.5.0",
+      "ref": "pkg:npm/%40svgrid/create-studio@0.8.2",
       "dependsOn": [
-        "pkg:npm/%40svgrid/enterprise@2.6.1"
+        "pkg:npm/%40svgrid/enterprise@3.1.24"
       ]
     },
     {
-      "ref": "pkg:npm/%40svgrid/enterprise@2.6.1",
+      "ref": "pkg:npm/%40svgrid/enterprise@3.1.24",
       "dependsOn": []
     }
   ]

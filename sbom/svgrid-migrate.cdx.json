@@ -1,0 +1,41 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:c6dc593c-ff6e-44b0-a85b-1e41ae5d080a",
+  "version": 1,
+  "metadata": {
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "build-sbom.mjs",
+          "version": "1.0.0",
+          "description": "SvGrid workspace SBOM generator"
+        }
+      ]
+    },
+    "component": {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40svgrid/migrate@3.0.3",
+      "name": "@svgrid/migrate",
+      "version": "3.0.3",
+      "purl": "pkg:npm/%40svgrid/migrate@3.0.3",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "description": "Codemod that ports a svelte-headless-table or TanStack Table v9 component (including the shadcn-svelte data table) to SvGrid: translates column definitions and feature config, and removes the scaffolding SvGrid renders for you."
+    }
+  },
+  "components": [],
+  "dependencies": [
+    {
+      "ref": "pkg:npm/%40svgrid/migrate@3.0.3",
+      "dependsOn": []
+    }
+  ]
+}

@@ -61,6 +61,45 @@ function componentFor(name, version, opts = {}) {
   return c
 }
 
+/**
+ * Third-party code copied into a package rather than depended on. It ships
+ * inside the tarball, so it belongs in the SBOM even though no manifest names
+ * it. The version is read from the file's own banner, so a re-vendor that
+ * forgets this list fails the run instead of leaving a stale version here.
+ */
+const VENDORED = {
+  enterprise: [
+    {
+      file: 'src/smart.export.js',
+      shippedAs: 'dist/smart.export.js',
+      name: 'smart-ui-export',
+      banner: /Smart UI v(\d+\.\d+\.\d+)/,
+      supplier: 'jQWidgets',
+      license: 'SEE LICENSE IN https://htmlelements.com/license/',
+      description: 'Smart UI export module (XLSX/PDF/CSV writers), vendored unmodified',
+    },
+  ],
+}
+
+function vendoredFor(dir) {
+  return (VENDORED[dir] ?? []).map((v) => {
+    const head = readFileSync(join(PKG_DIR, dir, v.file), 'utf8').slice(0, 400)
+    const version = v.banner.exec(head)?.[1]
+    if (!version) throw new Error(`build-sbom: no version banner in packages/${dir}/${v.file}`)
+    return {
+      type: 'library',
+      'bom-ref': `vendored:${v.name}@${version}`,
+      supplier: { name: v.supplier },
+      name: v.name,
+      version,
+      scope: 'required',
+      licenses: licenseEntry(v.license),
+      description: `${v.description}; shipped as ${v.shippedAs}`,
+      properties: [{ name: 'svgrid:vendored', value: 'true' }],
+    }
+  })
+}
+
 function readPkg(dir) {
   return JSON.parse(readFileSync(join(PKG_DIR, dir, 'package.json'), 'utf8'))
 }
@@ -117,6 +156,10 @@ function buildSbom(pkg, dir) {
   for (const [name, range] of runtime) add(name, range, 'Runtime dependency', false)
   for (const [name, range] of peers) {
     add(name, range, 'Peer dependency', peerMeta[name]?.optional === true)
+  }
+  for (const v of vendoredFor(dir)) {
+    components.push(v)
+    dependsOn.push(v['bom-ref'])
   }
 
   const self = componentFor(pkg.name, pkg.version, { license: pkg.license, description: pkg.description })

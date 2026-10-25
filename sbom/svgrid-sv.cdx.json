@@ -1,0 +1,57 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:f999bccd-7a66-40c2-a933-7f0b98649320",
+  "version": 1,
+  "metadata": {
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "build-sbom.mjs",
+          "version": "1.0.0",
+          "description": "SvGrid workspace SBOM generator"
+        }
+      ]
+    },
+    "component": {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40svgrid/sv@3.0.4",
+      "name": "@svgrid/sv",
+      "version": "3.0.4",
+      "purl": "pkg:npm/%40svgrid/sv@3.0.4",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "description": "Svelte CLI add-on for SvGrid: npx sv add @svgrid"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/sv@1.1.1",
+      "name": "sv",
+      "version": "1.1.1",
+      "purl": "pkg:npm/sv@1.1.1",
+      "scope": "required",
+      "description": "Peer dependency (declared range: ^1.0.0)"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:npm/%40svgrid/sv@3.0.4",
+      "dependsOn": [
+        "pkg:npm/sv@1.1.1"
+      ]
+    },
+    {
+      "ref": "pkg:npm/sv@1.1.1",
+      "dependsOn": []
+    }
+  ]
+}

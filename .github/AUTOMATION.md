@@ -5,7 +5,7 @@ Three GitHub Actions keep the packages and the blog moving without manual work.
 | Workflow | File | Schedule (UTC) | What it does |
 | --- | --- | --- | --- |
 | Blog post (twice weekly) | [daily-blog.yml](workflows/daily-blog.yml) | Tue + Fri 05:23 | Generates one new blog post and commits it, queued behind the existing posts. |
-| Publish npm packages | [publish-npm.yml](workflows/publish-npm.yml) | after every green Test run on `main`, plus 06:37 | Publishes each public `@svgrid/*` package whose shipped files changed. |
+| Publish npm packages | [publish-npm.yml](workflows/publish-npm.yml) | after every green Test run on a push to `main` | Publishes each public `@svgrid/*` package whose shipped files changed. |
 | Deploy website | [deploy-website.yml](workflows/deploy-website.yml) | 07:12 | Regenerates the blog's SEO structure (tips pages, pillar hubs, "Related reading" blocks), then rebuilds the site so posts whose date has arrived go live. |
 | Community demo guard | [community-demo-guard.yml](workflows/community-demo-guard.yml) | every pull request | Lets a PR from outside the team through only if it adds or updates community demos: path check, header, imports, Svelte compile. Team PRs pass untouched. |
 | Tutorials (record) | [tutorials.yml](workflows/tutorials.yml) | manual | Re-records the 30-second tutorials (`tools/tutorials/`): drives each demo in the gallery with Playwright, narrates it with ElevenLabs, muxes with ffmpeg, embeds the clip + transcript on its docs page, commits the media to the website and the manifest + docs here; keeps the YouTube masters as an artifact. |
@@ -27,8 +27,10 @@ The packages are consumed by paying customers, so we never push an empty version
 never publish a commit that has not gone green. The publish workflow is triggered by
 the **Test** workflow completing successfully on `main` (`workflow_run`), so lint,
 type-check, unit tests and the Playwright suite all pass before anything reaches npm.
-The 06:37 schedule stays on as a safety net: Test runs with `cancel-in-progress`, so a
-commit that is superseded within minutes never emits a success event of its own.
+There is no scheduled publish. Test runs with `cancel-in-progress`, so a commit
+superseded within minutes never emits a success event of its own; the newer push's
+green run publishes it, since a release takes every change since the last tag. (A
+06:37 schedule used to cover that case, and it published main whatever Test said.)
 
 [tools/release-packages.mjs](../tools/release-packages.mjs) decides what ships. Each
 release is marked with a `<dir>-v<version>` git tag, and on the next run a package

@@ -576,6 +576,28 @@ For machine-readable releases, fetch
 - **Dock manager auto-hide now shows every tab of a multi-tab leaf.** Sending a
   leaf with two or more tabs to auto-hide created a single edge tab; it now
   creates one edge tab per pane.
+- **Ticking one row in a large grid took over a second.** Once any row was
+  selected, every change walked all rows through the lazy row list to work out
+  the header checkbox. At 1,000,000 rows (jsdom) one tick went from 1.3-1.8 s
+  to 4-36 ms, and select-all from 4.2 s to 0.4 s.
+- **Tab never left the grid.** Every Tab was consumed and the cursor clamped
+  at the last cell, so no key moved focus out (WCAG 2.1.2). Tab on the last
+  cell and Shift+Tab on the first now leave the grid.
+- **No focus indicator when the grid is reached by Tab, or under forced
+  colors.** The active-cell ring stayed hidden until a click, and Windows High
+  Contrast removed it (it is a box-shadow). It now shows on keyboard focus, and
+  forced colors get a `Highlight` outline.
+- **The cell editor had no accessible name.** The text, number and multi-line
+  editors are now labelled with their column's header.
+
+#### Security
+
+- **CSV / formula injection in exports.** `exportCsv`, `exportTsv` and the
+  chart's CSV download wrote text such as `=HYPERLINK(...)` as is, which a
+  spreadsheet runs as a formula. Text starting with `=`, `+`, `-`, `@`, a tab
+  or a carriage return is now written with a leading `'`; numbers and signed
+  numbers in text form (`-12.50`) are unchanged. `escapeFormulas: false` turns
+  it off; `copyToClipboard` takes `escapeFormulas: true` to turn it on.
 
 ### @svgrid/enterprise
 
@@ -705,6 +727,17 @@ For machine-readable releases, fetch
   generated `.d.ts` augments `HTMLElementTagNameMap` and
   `HTMLElementEventMap`, so the element and its events are typed without
   hand-written declarations.
+#### Security
+
+- **A crafted .xlsx could crash the tab.** `importData` and the spreadsheet's
+  File > Open filled every gap before a cell with blanks, sized by the cell
+  reference in the file: `<c r="ZZZZZZZ1">` asked for about eight billion.
+  `importData` now rejects a cell past column XFD; the spreadsheet skips a cell
+  outside the sheet, as it does other malformed parts. Both refuse a sheet that
+  would need more than ten million blank cells to lay out.
+- **CSV and TSV from `exportData` neutralise formula-like text**, through the
+  same `@svgrid/grid` serializer (see the grid's Security entry).
+
 - **`<sv-grid-shadow>` - the grid in an open shadow root**, so a host page's
   CSS cannot reach it. Same properties, attributes and events as `<sv-grid>`;
   a separate element rather than an attribute because Svelte resolves

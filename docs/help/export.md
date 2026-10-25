@@ -95,6 +95,16 @@ Every method:
 - returns the serialized text; pass `download: false` to skip the download
   and just get the string.
 
+**Formula injection.** A text cell that starts with `=`, `+`, `-`, `@`, a tab
+or a carriage return would run as a formula in the spreadsheet that opens the
+file, so `exportCsv` and `exportTsv` (and Enterprise's `exportData` for csv and
+tsv) write it with a leading `'`: `=HYPERLINK(...)` comes out as
+`'=HYPERLINK(...)`. Numbers are never touched, and neither is a signed number
+in text form such as `-12.50`. Pass `escapeFormulas: false` when the file feeds
+another program rather than a spreadsheet. `copyToClipboard` leaves text as
+typed unless you pass `escapeFormulas: true`, because a copy is pasted by the
+person who made it.
+
 ```svelte {runnable}
 <script lang="ts">
   import { SvGrid, tableFeatures, type SvGridApi } from '@svgrid/grid'
@@ -245,7 +255,7 @@ working.
 | `rows`            | `ReadonlyArray<TData> \| 'displayed' \| 'selected' \| 'all'` | `'displayed'`  | `'displayed'` = current filtered/sorted/paged view, `'selected'` = checked rows, `'all'` = full dataset, or pass an explicit array. |
 | `rawValues`       | `boolean`                                             | `false`              | By default the exporter writes the **formatted display value** (what you see). Set `true` to write raw underlying values (numbers stay numeric in xlsx). |
 | `autoGroup`       | `boolean`                                             | `true`               | Carry the grid's active row grouping into xlsx outline rows. Pass your own `groupBy` to override, or `false` to ignore. |
-| `csv`             | `{ delimiter?; eol?; bom? }`                          | `{ ',', '\r\n', BOM }` | CSV / TSV tuning. UTF-8 BOM is on by default so Excel opens it without mojibake. |
+| `csv`             | `{ delimiter?; eol?; bom?; escapeFormulas? }`         | `{ ',', '\r\n', BOM, escapeFormulas: true }` | CSV / TSV tuning. UTF-8 BOM is on by default so Excel opens it without mojibake. `escapeFormulas` prefixes formula-like text with `'` (see above). |
 | `onProgress`      | `(p) => void`                                         | -                    | Progress for large exports: `{ phase, ratio, row?, total? }`, `phase` = `'project' \| 'serialize' \| 'write'`. |
 | `signal`          | `AbortSignal`                                         | -                    | Cancel an in-flight export (checked between chunks). Rejects with `AbortError`. |
 | `pageOrientation` | `'portrait' \| 'landscape'`                           | `"portrait"`         | PDF only. |
