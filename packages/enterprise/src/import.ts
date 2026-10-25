@@ -26,6 +26,7 @@
 
 import type { RowData, SvGridApi, TableFeatures } from '@svgrid/grid'
 import { assertEnterpriseLicensed } from './license'
+import { XLSX_MAX_COLS, XLSX_MAX_FILL, xlsxFillError, xlsxRangeError } from './xlsx-limits'
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -395,6 +396,7 @@ function parseSheetXml(xml: string, sharedStrings: string[]): string[][] {
   const tRe = /<t\b[^>]*>([\s\S]*?)<\/t>/g
   const vRe = /<v>([\s\S]*?)<\/v>/
   let rowMatch: RegExpExecArray | null
+  let filled = 0
   while ((rowMatch = rowRe.exec(xml)) !== null) {
     const rowBody = rowMatch[1] ?? ''
     const cells: string[] = []
@@ -406,7 +408,13 @@ function parseSheetXml(xml: string, sharedStrings: string[]): string[][] {
       const ref = /r="([A-Z]+)\d+"/.exec(attrs)?.[1] ?? ''
       const colIndex = colRefToIndex(ref)
       const type = /t="([^"]+)"/.exec(attrs)?.[1] ?? 'n'
-      // Pad holes with empty strings so column alignment survives.
+      // Pad holes with empty strings so column alignment survives, within
+      // the sheet's real width and the blank budget (see xlsx-limits.ts).
+      if (colIndex >= XLSX_MAX_COLS) throw xlsxRangeError(/r="([^"]*)"/.exec(attrs)?.[1] ?? ref)
+      if (colIndex > cells.length) {
+        filled += colIndex - cells.length
+        if (filled > XLSX_MAX_FILL) throw xlsxFillError()
+      }
       while (cells.length < colIndex) cells.push('')
       let value = ''
       if (type === 's') {

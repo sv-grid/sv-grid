@@ -41,6 +41,7 @@ import { drawingPartsFor, objectsFromDrawing, rectOfRef, REL_DRAWING } from './x
 import { objectId } from './objects'
 import { sparklineLines, sparklineId, type SparklineGroup } from './sparklines'
 import { autoFilterXlsx, filteredRows, filtersFromXlsx } from './filter-files'
+import { XLSX_MAX_COLS, XLSX_MAX_FILL, XLSX_MAX_ROWS, xlsxFillError } from '../xlsx-limits'
 
 // ---------------------------------------------------------------------------
 // Shared pieces
@@ -1246,9 +1247,20 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
     const outlineCols = emptyOutline()
     if (xml) {
       const root = parseXml(xml, path).documentElement
+      // Rows and lines are filled up to the cell, so a reference from the
+      // file decides how much is allocated: a cell outside the sheet is
+      // skipped, as other malformed parts are, and the blanks are budgeted
+      // (xlsx-limits.ts).
+      let filled = 0
       const put = (r: number, c: number, text: string) => {
+        if (r >= XLSX_MAX_ROWS || c >= XLSX_MAX_COLS) return
+        if (r > cells.length) filled += r - cells.length
         while (cells.length <= r) cells.push([])
         const line = cells[r]!
+        if (c >= line.length) {
+          filled += c - line.length
+          if (filled > XLSX_MAX_FILL) throw xlsxFillError()
+        }
         while (line.length <= c) line.push('')
         line[c] = text
       }
