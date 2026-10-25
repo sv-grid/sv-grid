@@ -262,7 +262,9 @@ function main() {
     const json = JSON.stringify(doc, null, 2) + '\n'
 
     if (CHECK_ONLY) {
-      const current = existsSync(outFile) ? readFileSync(outFile, 'utf8') : null
+      // Line endings aside: a Windows checkout with core.autocrlf holds CRLF
+      // copies of what was committed as LF, and that is not drift.
+      const current = existsSync(outFile) ? readFileSync(outFile, 'utf8').replace(/\r\n/g, '\n') : null
       if (current !== json) {
         drifted += 1
         console.error(`DRIFT ${pkg.name}: ${existsSync(outFile) ? 'out of date' : 'missing'} - run \`pnpm sbom\``)
