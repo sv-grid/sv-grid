@@ -34,30 +34,12 @@
   "components": [
     {
       "type": "library",
-      "bom-ref": "pkg:npm/%40modelcontextprotocol/sdk@1.29.0",
-      "name": "@modelcontextprotocol/sdk",
-      "version": "1.29.0",
-      "purl": "pkg:npm/%40modelcontextprotocol/sdk@1.29.0",
-      "scope": "required",
-      "description": "Runtime dependency (declared range: ^1.0.4)"
-    },
-    {
-      "type": "library",
       "bom-ref": "pkg:npm/svelte@5.55.9",
       "name": "svelte",
       "version": "5.55.9",
       "purl": "pkg:npm/svelte@5.55.9",
       "scope": "required",
       "description": "Runtime dependency (declared range: ^5.55.5)"
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/zod@3.25.76",
-      "name": "zod",
-      "version": "3.25.76",
-      "purl": "pkg:npm/zod@3.25.76",
-      "scope": "required",
-      "description": "Runtime dependency (declared range: ^3.23.8)"
     },
     {
       "type": "library",
@@ -73,22 +55,12 @@
     {
       "ref": "pkg:npm/%40svgrid/mcp@3.0.32",
       "dependsOn": [
-        "pkg:npm/%40modelcontextprotocol/sdk@1.29.0",
         "pkg:npm/svelte@5.55.9",
-        "pkg:npm/zod@3.25.76",
         "pkg:npm/%40svgrid/enterprise@3.1.26"
       ]
     },
     {
-      "ref": "pkg:npm/%40modelcontextprotocol/sdk@1.29.0",
-      "dependsOn": []
-    },
-    {
       "ref": "pkg:npm/svelte@5.55.9",
-      "dependsOn": []
-    },
-    {
-      "ref": "pkg:npm/zod@3.25.76",
       "dependsOn": []
     },
     {
