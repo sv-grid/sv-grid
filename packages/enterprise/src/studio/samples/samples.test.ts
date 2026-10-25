@@ -45,6 +45,18 @@ describe('sample apps', () => {
     expect(layout).toContain('sv-app__avatar')
   })
 
+  it('Cmd/Ctrl+K opens a command palette over the same screens', () => {
+    const layout = emitStudioProject(getSampleApp('crm')!.build()).find((f) => f.path.endsWith('+layout.svelte'))!.contents
+    expect(layout).toContain(`import { SvCommand, type CommandItem } from '@svgrid/grid'`)
+    expect(layout).toContain('<SvCommand bind:open={paletteOpen} {commands}')
+    expect(layout).toContain(`visibleNav.map((n) => ({ id: 'go:' + n.href`)
+    expect(layout).toContain('onRun: () => goto(n.href)')
+    // The chip opens it; the key belongs to SvCommand, not a second listener.
+    expect(layout).toContain('onclick={() => (paletteOpen = true)}>⌘K</button>')
+    expect(layout).not.toContain('searchEl')
+    expect(compile(layout, { filename: '+layout.svelte', generate: 'client' }).js.code).toBeTruthy()
+  })
+
   for (const sample of sampleApps) {
     describe(sample.id, () => {
       const project = sample.build()

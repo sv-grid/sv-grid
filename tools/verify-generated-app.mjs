@@ -420,6 +420,53 @@ async function runAndLoadEveryScreen(appDir, project, files) {
       console.log(`verify-generated-app:   ${current} - ${note}`)
     }
 
+    // The toolbar's command palette: Ctrl+K opens it over the app's screens, and
+    // picking one navigates. Only when the shell has the toolbar.
+    const routed = project.screens.filter((s) => s.route)
+    // The menu's screens, as emit-project builds the nav the palette reads.
+    const inNav = routed.filter((s) => s.nav?.show !== false)
+    if (inNav.length > 1 && project.theme?.shell?.toolbar !== false) {
+      const [from, to] = inNav
+      const label = to.nav?.label ?? to.title
+      current = `/${from.route} (Ctrl+K)`
+      await page.goto(origin + '/' + from.route, { waitUntil: 'networkidle', timeout: 45_000 })
+      await page.keyboard.press('Control+K')
+      const palette = page.locator('.sv-cmd')
+      if (!(await palette.isVisible().catch(() => false))) problems.push(`${current}: the command palette did not open`)
+      else {
+        const options = await page.locator('.sv-cmd__opt').count()
+        if (options < inNav.length) problems.push(`${current}: the palette lists ${options} commands for ${inNav.length} menu screens`)
+        await page.keyboard.type(label)
+        await page.keyboard.press('Enter')
+        await page.waitForURL((u) => u.pathname === '/' + to.route, { timeout: 15_000 }).catch(() => {})
+        if (new URL(page.url()).pathname !== '/' + to.route) problems.push(`${current}: choosing "${label}" went to ${page.url().slice(origin.length)}, not /${to.route}`)
+        else console.log(`verify-generated-app:   Ctrl+K - ${options} commands, "${label}" navigates`)
+      }
+    }
+
+    // A phone: every screen at 390 px wide, with nothing wider than the window
+    // (a page you scroll sideways), and the palette reachable by tap.
+    await page.setViewportSize({ width: 390, height: 844 })
+    for (const screen of routed) {
+      current = `/${screen.route} (390 px)`
+      await page.goto(origin + '/' + screen.route, { waitUntil: 'networkidle', timeout: 45_000 })
+      const over = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+      if (over > 1) problems.push(`${current}: the page is ${over}px wider than the window`)
+    }
+    if (routed.length && project.theme?.shell?.toolbar !== false) {
+      current = `/${routed[0].route} (390 px, tap)`
+      await page.goto(origin + '/' + routed[0].route, { waitUntil: 'networkidle', timeout: 45_000 })
+      const chip = page.locator('.sv-app__kbd')
+      if (await chip.isVisible().catch(() => false)) {
+        await chip.click()
+        if (!(await page.locator('.sv-cmd').isVisible().catch(() => false))) problems.push(`${current}: tapping the palette button did not open it`)
+        else console.log('verify-generated-app:   390 px - tapping the palette button opens it')
+        await page.keyboard.press('Escape')
+      } else console.log('verify-generated-app:   390 px - the palette button is hidden at this width')
+    }
+    await page.setViewportSize({ width: 1280, height: 800 })
+    console.log(`verify-generated-app:   ${routed.length} screen(s) at 390 px`)
+
     // Every in-memory entity's route: the server owns the ids. ($lib on SvelteKit 2,
     // #lib/...js on 3.)
     const memoryRoutes = files

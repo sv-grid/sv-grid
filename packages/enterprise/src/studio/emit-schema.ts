@@ -896,8 +896,8 @@ export function layoutFile(nav: NavItem[], opts: { shell?: ShellConfig; title?: 
     ? `<div class="sv-app__toolbar">
       <div class="sv-app__search">
         <svg class="sv-app__search-ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
-        <input class="sv-app__search-in" type="search" placeholder="Search {brand}…" bind:value={q} bind:this={searchEl} aria-label="Search screens" />
-        <kbd class="sv-app__kbd" aria-hidden="true">⌘K</kbd>
+        <input class="sv-app__search-in" type="search" placeholder="Search {brand}…" bind:value={q} aria-label="Search screens" />
+        <button type="button" class="sv-app__kbd" title="Command palette (⌘K / Ctrl+K)" aria-label="Open the command palette" onclick={() => (paletteOpen = true)}>⌘K</button>
         {#if results.length}
           <div class="sv-app__results">
             {#each results as r (r.href)}
@@ -943,6 +943,7 @@ export function layoutFile(nav: NavItem[], opts: { shell?: ShellConfig; title?: 
         </div>
       </div>
       {#if bellOpen || menuOpen}<button type="button" class="sv-app__scrim" tabindex="-1" aria-label="Close menus" onclick={() => { bellOpen = false; menuOpen = false }}></button>{/if}
+      <SvCommand bind:open={paletteOpen} {commands} placeholder="Go to a screen or run an action…" emptyText="No matching screen" />
     </div>\n    `
     : ''
   // Supabase Auth: gate the whole app behind a client-side sign-in. SvAuthGate shows
@@ -1052,7 +1053,7 @@ export function layoutFile(nav: NavItem[], opts: { shell?: ShellConfig; title?: 
   import '../app.css'
   import '../custom.css'
   import { page } from '$app/state'
-  import { setLicenseKey } from '@svgrid/enterprise'${opts.access ? `\n  import { currentRole, canScreen } from '$lib/access'` : ''}${opts.i18n ? `\n  import { t, currentLocale, locales } from '$lib/i18n'` : ''}${opts.auth ? `\n  import type { LayoutData } from './$types'` : ''}${opts.supabaseAuth ? `\n  import { SvAuthGate, type SupabaseAuthClientLike } from '@svgrid/enterprise'\n  import { supabaseClient } from '$lib/connections'` : ''}
+  import { setLicenseKey } from '@svgrid/enterprise'${toolbarOn ? `\n  import { goto } from '$app/navigation'\n  import { SvCommand, type CommandItem } from '@svgrid/grid'` : ''}${opts.access ? `\n  import { currentRole, canScreen } from '$lib/access'` : ''}${opts.i18n ? `\n  import { t, currentLocale, locales } from '$lib/i18n'` : ''}${opts.auth ? `\n  import type { LayoutData } from './$types'` : ''}${opts.supabaseAuth ? `\n  import { SvAuthGate, type SupabaseAuthClientLike } from '@svgrid/enterprise'\n  import { supabaseClient } from '$lib/connections'` : ''}
 
   // VITE_SVPRO_KEY in .env is your SvGrid license key; it removes the unlicensed watermark.
   if (import.meta.env.VITE_SVPRO_KEY) setLicenseKey(import.meta.env.VITE_SVPRO_KEY)
@@ -1078,24 +1079,30 @@ export function layoutFile(nav: NavItem[], opts: { shell?: ShellConfig; title?: 
     try { const s = localStorage.getItem('svapp:theme'); if (s === 'light' || s === 'dark') t = s } catch (_) { /* storage blocked */ }
     applyTheme(t)
   })` : ''}${sideState}${toolbarOn ? `
-  // App-chrome quick-search: filter the screens by label as you type.
+  // App-chrome quick-search: filter the screens by label as you type. Only the
+  // screens the sidebar would show${opts.access ? ' to this role' : ''}.
   const initials = ${JSON.stringify(initials)}
   const acctEmail = ${JSON.stringify(`admin@${brandSlug}.com`)}
+  const visibleNav = ${opts.access ? '$derived(nav.filter((n) => !n.id || canScreen($currentRole, n.id)))' : 'nav'}
   let q = $state('')
-  const results = $derived(q.trim() ? nav.filter((n) => n.label.toLowerCase().includes(q.trim().toLowerCase())).slice(0, 6) : [])
+  const results = $derived(q.trim() ? visibleNav.filter((n) => n.label.toLowerCase().includes(q.trim().toLowerCase())).slice(0, 6) : [])
+  // Cmd/Ctrl+K: a palette over the same screens. SvCommand binds the key itself.
+  let paletteOpen = $state(false)
+  const commands: CommandItem[] = $derived([
+    ...visibleNav.map((n) => ({ id: 'go:' + n.href, label: ${opts.i18n ? "n.id ? $t('nav.' + n.id, n.label) : n.label" : 'n.label'}, group: 'Go to', onRun: () => goto(n.href) })),${hasSwitch ? `
+    { id: 'theme', label: theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode', group: 'Actions', onRun: toggleTheme },` : ''}
+  ])
   let bellOpen = $state(false)
   let menuOpen = $state(false)
-  let searchEl: HTMLInputElement | null = $state(null)
   const notifications = [
     { title: 'Welcome to ' + brand, time: 'just now', color: 'var(--sg-accent, #6366f1)' },
     { title: 'Your workspace is ready', time: '2m ago', color: '#10b981' },
     { title: 'Sample data loaded', time: '5m ago', color: '#f59e0b' },
   ]
-  // Cmd/Ctrl+K focuses search; Escape closes the menus.
+  // Escape closes the menus.
   $effect(() => {
     function onKey(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); searchEl?.focus() }
-      else if (e.key === 'Escape') { bellOpen = false; menuOpen = false }
+      if (e.key === 'Escape') { bellOpen = false; menuOpen = false }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -1134,7 +1141,8 @@ ${styles}
   .sv-app__tool:hover { color: var(--sg-fg, #0f172a); border-color: color-mix(in srgb, var(--sg-fg, #0f172a) 20%, var(--sg-border, #e6e8ec)); }
   .sv-app__dot { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--sg-accent, #6366f1); box-shadow: 0 0 0 2px var(--sg-bg, #fff); }
   .sv-app__avatar { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border: none; border-radius: 50%; font: inherit; font-size: 12px; font-weight: 700; color: #fff; background: var(--sg-accent, #6366f1); letter-spacing: 0.02em; cursor: pointer; }
-  .sv-app__kbd { position: absolute; right: 8px; font-size: 10.5px; font-weight: 600; color: var(--sg-muted, #94a3b8); background: color-mix(in srgb, var(--sg-fg, #0f172a) 6%, transparent); border: 1px solid var(--sg-border, #e6e8ec); border-radius: 5px; padding: 1px 5px; pointer-events: none; }
+  .sv-app__kbd { position: absolute; right: 8px; font-size: 10.5px; font-weight: 600; color: var(--sg-muted, #94a3b8); background: color-mix(in srgb, var(--sg-fg, #0f172a) 6%, transparent); border: 1px solid var(--sg-border, #e6e8ec); border-radius: 5px; padding: 1px 5px; font-family: inherit; line-height: inherit; cursor: pointer; }
+  .sv-app__kbd:hover { color: var(--sg-fg, #0f172a); }
   .sv-app__pop { position: relative; }
   .sv-app__scrim { position: fixed; inset: 0; z-index: 44; border: 0; padding: 0; background: transparent; cursor: default; }
   .sv-app__menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 46; min-width: 232px; padding: 6px; background: var(--sg-bg, #fff); border: 1px solid var(--sg-border, #e6e8ec); border-radius: 11px; box-shadow: 0 16px 40px -10px rgba(15, 23, 42, 0.3); }
