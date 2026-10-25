@@ -571,6 +571,32 @@ const llms    = await fetch('https://svgrid.com/llms-full.txt').then((r) => r.te
 If you do not want to run the MCP server, building these into your
 agent's system prompt gives most of the same grounding.
 
+## Without the MCP server
+
+An agent that can only fetch pages gets the same material over plain HTTP,
+in pieces small enough for one fetch (fetch tools cut a response near
+100 KB):
+
+| URL | What it holds |
+|---|---|
+| `/llms.txt` | The docs index, with links to everything below. `/llms/<product>.txt` (grid, ui, enterprise, sheet, base, studio, compare) is one product's part of it |
+| `/docs/<slug>.md` | One docs page as markdown |
+| `/demos.md`, `/demos/<id>.md` | Every live demo, and one demo with what it shows and its full source |
+| `/api.json` | Every export of `@svgrid/grid` and `@svgrid/enterprise` by module, with the member names of each type |
+| `/api/<name>.json` | One symbol's doc comment and signature, by its lowercased name: `/api/svgridapi.json`, `/api/createreview.json` |
+| `/.well-known/mcp.json` | Where this server is: the remote endpoint, the npm package, the setup commands |
+
+```ts
+const index = await fetch('https://svgrid.com/api.json').then((r) => r.json())
+const api   = await fetch('https://svgrid.com/api/svgridapi.json').then((r) => r.json())
+const demo  = await fetch('https://svgrid.com/demos/702-change-review.md').then((r) => r.text())
+```
+
+In a browser with WebMCP (`document.modelContext`), svgrid.com registers
+four tools for an agent driving the page: `svgrid_search`, `svgrid_get_doc`,
+`svgrid_get_demo` and `svgrid_lookup_api`. They answer from the files
+above.
+
 ## Frequently asked questions
 
 ### What is the SvGrid MCP server?
