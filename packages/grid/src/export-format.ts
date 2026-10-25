@@ -23,6 +23,10 @@ import {
   parseDateValue,
   resolveDatePattern,
 } from './cell-formatting'
+import { escapeFormulaCell } from './csv-injection'
+
+// The guard serializeDelimited applies, for callers writing their own CSV.
+export { escapeFormulaCell }
 
 // Re-export the pure conditional-formatting engine here too, so the
 // Svelte-free `@svgrid/grid/format` subpath carries it for @svgrid/enterprise's
@@ -279,6 +283,9 @@ export type GridExportOptions = {
   onProgress?: (progress: SerializeProgress) => void
   /** When false, skip the browser download and just return the text. Default true. */
   download?: boolean
+  /** CSV / TSV: neutralise cells a spreadsheet would run as formulas. Default
+   *  true; see {@link CsvOptions.escapeFormulas}. */
+  escapeFormulas?: boolean
 }
 
 export type GridClipboardFormat = 'csv' | 'tsv' | 'markdown'
@@ -289,6 +296,10 @@ export type GridClipboardOptions = {
   rows?: GridExportScope
   columns?: string[]
   rawValues?: boolean
+  /** Prefix formula-like text with `'`, as the file exports do. Default false:
+   *  a copy is pasted by the person who made it, and should keep `=A1` as
+   *  typed. Turn it on when the copied data comes from untrusted users. */
+  escapeFormulas?: boolean
 }
 
 // ----- Serializers ---------------------------------------------------------
@@ -308,6 +319,13 @@ export type CsvOptions = {
   eol?: string
   /** Prepend a UTF-8 BOM so Excel detects UTF-8. Default true for csv/tsv. */
   bom?: boolean
+  /**
+   * Prefix a text cell that starts with `=`, `+`, `-`, `@`, a tab or a carriage
+   * return with `'`, so a spreadsheet opening the file shows it as text instead
+   * of running it as a formula (CSV / formula injection). Plain signed numbers
+   * such as `-12.50` are left alone. Default true.
+   */
+  escapeFormulas?: boolean
 }
 
 export type SerializeOptions = {
@@ -332,14 +350,15 @@ const yieldToLoop = (): Promise<void> =>
 
 /** RFC-4180 quoting: wrap in double quotes and double any embedded quote
  *  when the value contains the delimiter, a quote, or a newline. */
-function csvCell(value: unknown, delimiter: string): string {
-  const s =
+function csvCell(value: unknown, delimiter: string, escapeFormulas: boolean): string {
+  let s =
     value == null
       ? ''
       : value instanceof Date
         ? toLocalIsoString(value)
         : String(value)
   if (s === '') return s
+  if (escapeFormulas && typeof value === 'string') s = escapeFormulaCell(s)
   if (s.includes(delimiter) || s.includes('"') || s.includes('\n') || s.includes('\r')) {
     return `"${s.replace(/"/g, '""')}"`
   }
@@ -358,6 +377,7 @@ export async function serializeDelimited(
   const delimiter = opts.csv?.delimiter ?? ','
   const eol = opts.csv?.eol ?? '\r\n'
   const useBom = opts.csv?.bom ?? true
+  const escapeFormulas = opts.csv?.escapeFormulas ?? true
   const chunk = Math.max(1, opts.chunkRows ?? 5000)
   const total = rows.length
 
@@ -365,7 +385,7 @@ export async function serializeDelimited(
   for (let i = 0; i < rows.length; i++) {
     throwIfAborted(opts.signal)
     const row = rows[i]!
-    parts.push(fields.map((f) => csvCell(row[f], delimiter)).join(delimiter))
+    parts.push(fields.map((f) => csvCell(row[f], delimiter, escapeFormulas)).join(delimiter))
     if (i > 0 && i % chunk === 0) {
       opts.onProgress?.({ phase: 'serialize', ratio: i / total, row: i, total })
       await yieldToLoop()

@@ -81,6 +81,7 @@ import {
   } from "./editing";
 import {
     createSelection,
+    headerSelectionStateOf,
   } from "./selection";
 import {
     createColumns,
@@ -4407,21 +4408,17 @@ export function createSvGridController<
     // onto a server.
     if (props.rowSelectionModel) return props.rowSelectionModel.headerState();
     // Nothing checked is the common case and needs no walk: this derived
-    // re-runs on every data change, and on a 100k-row live feed the filter
+    // re-runs on every data change, and on a 100k-row live feed the walk
     // below was 30 ms per tick spent to conclude "none".
     let anyChecked = false;
     for (const id in rowSelectionState) {
       if (rowSelectionState[id]) { anyChecked = true; break; }
     }
     if (!anyChecked) return "none";
-    const selectable = allRows.filter(
-      (row) => !isGroupRow(row) && !placeholderStateOf(row),
-    );
-    if (!selectable.length) return "none";
-    let selected = 0;
-    for (const row of selectable) if (rowSelectionState[row.id]) selected += 1;
-    if (selected === 0) return "none";
-    return selected === selectable.length ? "all" : "some";
+    // `denseRows`: with no sort or filter, `allRows` is the lazy row list,
+    // and reading it through its Proxy cost ~0.7 us per row, up to 0.9 s per
+    // tick at 1M rows. The backing array is the same rows, without the trap.
+    return headerSelectionStateOf(denseRows(allRows), rowSelectionState, props.rowPlaceholder);
   });
 
 

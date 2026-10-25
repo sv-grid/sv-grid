@@ -77,6 +77,9 @@
   const onEditorKeyDown = $derived(ctrl.onEditorKeyDown);
   const focusOnMount = $derived(ctrl.focusOnMount);
   const toggleCheckboxWithKeyboard = $derived(ctrl.toggleCheckboxWithKeyboard);
+  // The editor stands in for the cell, so it takes the column's name: without
+  // one a screen reader announced an unlabelled edit field.
+  const editorLabel = $derived(ctrl.toolPanelHeaderLabel(column));
 
   /**
    * Focus a button-based editor on mount. `focusOnMount` is for text controls -
@@ -578,6 +581,7 @@
            Esc cancels. -->
       <textarea
         use:focusOnMount
+        aria-label={editorLabel}
         class="sv-grid-cell-editor sv-grid-cell-editor-textarea"
         rows="4"
         value={String(ctrl.editingCell?.value ?? "")}
@@ -745,6 +749,7 @@
            the height follows the lines. -->
       <textarea
         use:focusOnMount
+        aria-label={editorLabel}
         class="sv-grid-cell-editor sv-grid-cell-editor-text sv-grid-cell-editor-multiline"
         rows={Math.max(1, String(ctrl.editingCell?.value ?? "").split("\n").length)}
         value={String(ctrl.editingCell?.value ?? "")}
@@ -762,6 +767,7 @@
         getEditorInputType(editorType) === "number"}
       <input
         use:focusOnMount
+        aria-label={editorLabel}
         class={getEditorClass(editorType)}
         type={getCellEditorInputType(editorType)}
         inputmode={isNumberEditor ? "decimal" : undefined}

@@ -501,6 +501,31 @@ describe('onGridKeyDown / navigation', () => {
     expect(ctx.setActiveCell).toHaveBeenCalledWith(2, 0)
   })
 
+  it('Tab inside the grid is kept; past the last cell it leaves the grid (no keyboard trap)', () => {
+    const ctx = navCtx({ state: { activeCell: { rowIndex: 4, colIndex: 2, cellId: null } } })
+    const { onGridKeyDown } = createKeyboard(ctx)
+    const inside = rootKeyEvent({ key: 'Tab' })
+    onGridKeyDown(inside)
+    expect(inside.preventDefault).toHaveBeenCalled()
+    expect(ctx.setActiveCell).toHaveBeenCalledWith(4, 3)
+
+    ctx.setActiveCell.mockClear()
+    ctx._state.activeCell = { rowIndex: 4, colIndex: 3, cellId: null }
+    const out = rootKeyEvent({ key: 'Tab' })
+    onGridKeyDown(out)
+    expect(out.preventDefault).not.toHaveBeenCalled()
+    expect(ctx.setActiveCell).not.toHaveBeenCalled()
+  })
+
+  it('Shift+Tab before the first cell leaves the grid', () => {
+    const ctx = navCtx({ state: { activeCell: { rowIndex: 0, colIndex: 0, cellId: null } } })
+    const { onGridKeyDown } = createKeyboard(ctx)
+    const out = rootKeyEvent({ key: 'Tab', shiftKey: true })
+    onGridKeyDown(out)
+    expect(out.preventDefault).not.toHaveBeenCalled()
+    expect(ctx.setActiveCell).not.toHaveBeenCalled()
+  })
+
   it('defaults the active cell to (0,0) when state has none', () => {
     const ctx = navCtx({ state: { activeCell: undefined } })
     const { onGridKeyDown } = createKeyboard(ctx)

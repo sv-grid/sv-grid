@@ -17,7 +17,7 @@
  * against your own theme lives in docs/help/accessibility.md. What this file
  * does cover is the structural half: roles, names, relationships, and ids.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount, unmount } from 'svelte'
 import axe from 'axe-core'
 import SvGrid from './SvGrid.svelte'
@@ -190,5 +190,30 @@ describe('validation is exposed to assistive technology', () => {
 
   it('passes axe with an invalid cell rendered', async () => {
     expect(await auditGrid({ columns: validatedCols })).toEqual([])
+  })
+})
+
+describe('the cell editor', () => {
+  it('is named after its column and passes axe while open', async () => {
+    let api: { startEditing(rowIndex: number, columnId: string): unknown } | undefined
+    const { target, destroy } = mountGrid({
+      editable: true,
+      columns: cols.map((c) => ({ ...c, editorType: 'text' })),
+      onApiReady: (a: typeof api) => (api = a),
+    })
+    try {
+      await new Promise((r) => setTimeout(r, 0))
+      api!.startEditing(0, 'name')
+      // The editor arrives in a lazy chunk.
+      await vi.waitFor(() => expect(target.querySelector('.sv-grid-cell-editing input')).not.toBeNull())
+      const input = target.querySelector('.sv-grid-cell-editing input')
+      expect(input!.getAttribute('aria-label')).toBe('Name')
+      const results = await axe.run(target, {
+        rules: Object.fromEntries(LAYOUT_DEPENDENT_RULES.map((id) => [id, { enabled: false }])),
+      })
+      expect(results.violations.map((v) => v.id)).toEqual([])
+    } finally {
+      destroy()
+    }
   })
 })

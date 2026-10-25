@@ -138,7 +138,10 @@ export function createKeyboard<
       }
       return;
     }
-    event.preventDefault();
+    // Tab is held back until the entry step below knows whether it moves:
+    // a Tab with nowhere to go leaves the grid instead of being swallowed.
+    const isTab = intent === "tabNext" || intent === "tabPrev";
+    if (!isTab) event.preventDefault();
 
     // Server-side group / tree navigation, built into the grid: ArrowRight
     // expands a collapsed group row, ArrowLeft collapses an expanded one,
@@ -268,6 +271,19 @@ export function createKeyboard<
         collapsed,
       });
       const landed = stepPast(ctx, current, step.cell, bounds);
+      // Tab past the last cell, or Shift+Tab before the first, moves focus
+      // out of the grid as it would anywhere else on the page. The step
+      // clamps instead (Tab on the last cell went back to the start of the
+      // last row), so every Tab was swallowed and no key left the grid: a
+      // keyboard trap (WCAG 2.1.2). A step that does not go forward in
+      // reading order (back, for Shift+Tab) has run out of cells. Inside a
+      // selected block Tab cycles on purpose, as in Excel; arrows leave it.
+      if (isTab && !step.withinRange) {
+        const order = (c: { rowIndex: number; colIndex: number }) => c.rowIndex * (bounds.maxCol + 1) + c.colIndex;
+        const ahead = order(landed) - order(current);
+        if (intent === "tabNext" ? ahead <= 0 : ahead >= 0) return;
+      }
+      if (isTab) event.preventDefault();
       ctx.setActiveCell(landed.rowIndex, landed.colIndex);
       ctx.tabRunOrigin = step.tabOrigin;
       ctx.scrollActiveCellIntoView(landed.rowIndex, landed.colIndex);

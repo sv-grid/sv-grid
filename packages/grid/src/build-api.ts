@@ -621,6 +621,7 @@ export function createGridApi<
           // ranges vs text matching) whatever edits the cell.
           cellDataType: columnDataType(c.columnDef),
           editorType: (c.columnDef as { editorType?: string }).editorType,
+          aggregate: c.columnDef.aggregate,
         });
         // Visible columns first, in their current visual order...
         const out = ctx.allColumns.map((c: any) => describe(c, true));
@@ -642,7 +643,7 @@ export function createGridApi<
           options.rawValues,
         );
         const text = await serializeDelimited(records, fields, {
-          csv: { delimiter: ",", bom: options.bom ?? true },
+          csv: { delimiter: ",", bom: options.bom ?? true, escapeFormulas: options.escapeFormulas ?? true },
           signal: options.signal,
           onProgress: options.onProgress,
         });
@@ -658,7 +659,7 @@ export function createGridApi<
           options.rawValues,
         );
         const text = await serializeDelimited(records, fields, {
-          csv: { delimiter: "\t", bom: options.bom ?? true },
+          csv: { delimiter: "\t", bom: options.bom ?? true, escapeFormulas: options.escapeFormulas ?? true },
           signal: options.signal,
           onProgress: options.onProgress,
         });
@@ -693,7 +694,7 @@ export function createGridApi<
           format === "markdown"
             ? await serializeMarkdown(records, fields, { align })
             : await serializeDelimited(records, fields, {
-                csv: { delimiter: format === "csv" ? "," : "\t", bom: false },
+                csv: { delimiter: format === "csv" ? "," : "\t", bom: false, escapeFormulas: options.escapeFormulas ?? false },
               });
         await copyTextToClipboard(text);
         return text;

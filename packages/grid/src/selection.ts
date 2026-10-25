@@ -14,6 +14,37 @@ import {
   getColumnBaseValue,
   isGroupRow,
 } from "./cell-values";
+import { denseRows } from "./core";
+
+/**
+ * What the header checkbox shows: whether all, some or none of the selectable
+ * rows are ticked. Group rows and rows still waiting for data are not
+ * selectable.
+ *
+ * Runs on every data change once anything is ticked, so it walks the rows
+ * once, allocates nothing, and stops as soon as it has seen one ticked and
+ * one unticked row. `placeholder` is the `rowPlaceholder` prop, read once by
+ * the caller: read through the props proxy per row, it was most of the cost
+ * of ticking one row in a million.
+ */
+export function headerSelectionStateOf(
+  rows: ReadonlyArray<any>,
+  ticked: Readonly<Record<string, unknown>>,
+  placeholder: ((original: any, index: number) => unknown) | undefined,
+): "all" | "some" | "none" {
+  let on = 0;
+  let off = 0;
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    if (isGroupRow(row)) continue;
+    if (placeholder && placeholder(row.original, row.index)) continue;
+    if (ticked[row.id]) on += 1;
+    else off += 1;
+    if (on && off) return "some";
+  }
+  if (!on) return "none";
+  return off ? "some" : "all";
+}
 
 export function createSelection<
   TFeatures extends TableFeatures = TableFeatures,
@@ -67,13 +98,18 @@ export function createSelection<
       return;
     }
     // Placeholder rows are excluded: there is no row there to select yet,
-    // and ticking one would leave a selected id that never resolves.
-    const selectable = ctx.allRows.filter(
-      (row: any) => !isGroupRow(row) && !ctx.placeholderStateOf(row),
-    );
+    // and ticking one would leave a selected id that never resolves. The rows
+    // are read dense and the prop once, as in headerSelectionStateOf.
+    const rows = denseRows(ctx.allRows as any[]);
+    const placeholder = ctx.props.rowPlaceholder as
+      | ((original: unknown, index: number) => unknown)
+      | undefined;
     ctx.grid.setRowSelection((prev: any) => {
       const next = { ...prev };
-      for (const row of selectable) {
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        if (isGroupRow(row)) continue;
+        if (placeholder && placeholder(row.original, row.index)) continue;
         if (select) next[row.id] = true;
         else delete next[row.id];
       }

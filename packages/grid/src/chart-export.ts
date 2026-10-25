@@ -10,6 +10,7 @@
  * that contains it).
  */
 import type { ChartSpec } from './chart'
+import { escapeFormulaCell } from './csv-injection'
 
 function resolveSvg(el: SVGSVGElement | HTMLElement): SVGSVGElement | null {
   if (el instanceof SVGSVGElement) return el
@@ -172,8 +173,11 @@ export async function downloadChartPng(
 const csvCell = (v: unknown): string => {
   // A gap is an empty cell: `null` already was, and a NaN gap (the way a
   // forecast series marks the months before it starts) wrote the word "NaN".
-  const s = v == null || (typeof v === 'number' && !Number.isFinite(v)) ? '' : String(v)
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+  let s = v == null || (typeof v === 'number' && !Number.isFinite(v)) ? '' : String(v)
+  // Category and series labels come from the data: one that starts with `=`
+  // would run as a formula in the spreadsheet that opens the file.
+  if (typeof v === 'string' && s !== '') s = escapeFormulaCell(s)
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
 
 /**

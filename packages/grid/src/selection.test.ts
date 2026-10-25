@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createSelection } from './selection'
+import { createSelection, headerSelectionStateOf } from './selection'
 
 // ---------------------------------------------------------------------------
 // Fake controller (`ctx`) helpers. The selection factory reads/writes plain
@@ -136,6 +136,19 @@ describe('createSelection - row selection', () => {
     expect(ctx.rowSelectionState.g1).toBeUndefined()
   })
 
+  it('toggleSelectAllRows skips placeholder rows and reads rowPlaceholder from props', () => {
+    const rowPlaceholder = vi.fn((original: any) => (original.loading ? 'loading' : null))
+    const ctx = makeCtx({
+      headerSelectionState: 'none',
+      allRows: [makeDataRow('r1', {}), makeDataRow('r2', { loading: true }), makeGroupRow('g1')],
+      props: { rowPlaceholder },
+    })
+    createSelection(ctx).toggleSelectAllRows()
+    expect(ctx.rowSelectionState).toEqual({ r1: true })
+    // Asked about data rows only: a group row's `original` is not app data.
+    expect(rowPlaceholder).toHaveBeenCalledTimes(2)
+  })
+
   it('toggleSelectAllRows deselects all when header state is "all"', () => {
     const ctx = makeCtx({
       headerSelectionState: 'all',
@@ -146,6 +159,38 @@ describe('createSelection - row selection', () => {
     sel.toggleSelectAllRows()
     expect(ctx.rowSelectionState.r1).toBeUndefined()
     expect(ctx.rowSelectionState.r2).toBeUndefined()
+  })
+})
+
+describe('headerSelectionStateOf', () => {
+  const rows = [makeDataRow('r1'), makeGroupRow('g1'), makeDataRow('r2'), makeDataRow('r3')]
+
+  it('is none, some or all of the data rows', () => {
+    expect(headerSelectionStateOf(rows, {}, undefined)).toBe('none')
+    expect(headerSelectionStateOf(rows, { r2: true }, undefined)).toBe('some')
+    expect(headerSelectionStateOf(rows, { r1: true, r2: true, r3: true }, undefined)).toBe('all')
+  })
+
+  it('ignores group rows, false entries and ids that are not shown', () => {
+    expect(headerSelectionStateOf(rows, { g1: true }, undefined)).toBe('none')
+    expect(headerSelectionStateOf(rows, { r1: true, r2: false }, undefined)).toBe('some')
+    expect(headerSelectionStateOf(rows, { gone: true }, undefined)).toBe('none')
+    expect(headerSelectionStateOf(rows, { r1: true, r2: true, r3: true, gone: true }, undefined)).toBe('all')
+  })
+
+  it('does not count placeholder rows', () => {
+    const placeholder = (original: any) => original.loading
+    const withLoading = [makeDataRow('r1', {}), makeDataRow('r2', { loading: true })]
+    expect(headerSelectionStateOf(withLoading, { r1: true }, placeholder)).toBe('all')
+    expect(headerSelectionStateOf([withLoading[1]], { r2: true }, placeholder)).toBe('none')
+    expect(headerSelectionStateOf([], { r1: true }, placeholder)).toBe('none')
+  })
+
+  it('stops at the first ticked and unticked pair', () => {
+    const many = Array.from({ length: 10_000 }, (_, i) => makeDataRow('r' + i, {}))
+    const placeholder = vi.fn(() => null)
+    expect(headerSelectionStateOf(many, { r0: true }, placeholder)).toBe('some')
+    expect(placeholder).toHaveBeenCalledTimes(2)
   })
 })
 
