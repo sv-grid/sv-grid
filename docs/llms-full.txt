@@ -55,7 +55,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## About this file
 
-The full SvGrid documentation, generated 2026-10-25 from 462 pages, 21 comparison pages, plus 81 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
+The full SvGrid documentation, generated 2026-10-25 from 463 pages, 21 comparison pages, plus 81 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
 
 <!-- =================================================================
      /docs/getting-started/  (community)
@@ -3516,7 +3516,7 @@ navigation and a screen-reader announcement layer. This page documents
 exactly what the grid does, where the responsibility line sits between
 the library and your code, and how to verify conformance.
 
-![An ARIA grid whose rows carry aria-rowindex and cells carry aria-colindex, a roving tabindex marking the active cell that arrow keys move, and an aria-live region announcing the new cell to a screen reader.](/docs-media/grid-a11y.svg)
+![An ARIA grid whose rows carry aria-rowindex and cells carry aria-colindex, with the active cell that arrow keys move named by aria-activedescendant, and an aria-live region for status messages.](/docs-media/grid-a11y.svg)
 
 Live demo - high-contrast toggle, `aria-live` log, and a focus-trap
 walk-through:
@@ -3528,25 +3528,29 @@ walk-through:
 | Standard                | Status                                                                 |
 | ----------------------- | ---------------------------------------------------------------------- |
 | WAI-ARIA 1.2 grid pattern | Implemented (see [Roles & properties](#roles--properties)).         |
-| WCAG 2.1 AA             | Structure is audited by `axe-core` in CI. Contrast is enforced in CI for **all 20 built-in presets, light and dark**; a custom theme is yours to verify. |
-| Keyboard navigation     | Full coverage; see [Keyboard map](#keyboard-map).                      |
+| WCAG 2.2 AA             | Self-assessed, criterion by criterion, in the [Accessibility Conformance Report](../compliance/vpat.md), gaps included. Structure is audited by `axe-core` in CI, in jsdom and in a real browser. Contrast is enforced in CI for **all 20 built-in presets, light and dark**; a custom theme is yours to verify. |
+| Keyboard navigation     | Navigation, selection, sorting, filtering and editing; see [Keyboard map](#keyboard-map). Row dragging and moving columns by drag have no keyboard path yet; the ACR lists them. |
 | Screen-reader announcements | Filter results and bulk selection changes, via a single `aria-live=polite` region. See [What the grid announces](#what-the-grid-announces). |
-| Reduced motion          | Honored: scroll animations + chevron transitions disable when `prefers-reduced-motion: reduce`. |
-| Forced colors / high contrast | Supported: borders + focus rings use `currentColor`; no hardcoded `border-color`. |
+| Reduced motion          | The cell flash and the loading shimmer stop under `prefers-reduced-motion: reduce`. |
+| Forced colors / high contrast | The active cell switches to a system `Highlight` outline (a box-shadow ring would vanish). Tested in a browser with forced colors emulated. |
 
 ## Roles & properties
 
 | Element                        | Role           | Notable attributes                                                                                  |
 | ------------------------------ | -------------- | --------------------------------------------------------------------------------------------------- |
-| `<table>` root                 | `grid`         | `aria-rowcount`, `aria-colcount`                                                                    |
-| `<thead>`, `<tbody>`           | `rowgroup`     |                                                                                                     |
-| Every `<tr>` (header + body)   | `row`          | `aria-rowindex` (1-based); selected rows get `aria-selected="true"`                                  |
-| Header `<th>`                  | `columnheader` | `aria-sort` (`"ascending"` / `"descending"` / `"none"`)                                              |
-| Body `<td>`                    | `gridcell`     | `aria-colindex`, `aria-selected`, `aria-readonly` (when the column is non-editable)                  |
-| Active cell                    | `gridcell`     | `tabindex="0"`; every other cell `tabindex="-1"` (roving tabindex pattern)                          |
-| Filter popover                 | `dialog`       | `aria-label` derived from the column header                                                         |
-| Cell editor input              | `textbox` / `combobox` / `checkbox` (depending on `editorType`) | `aria-label` mirrors the column header           |
-| Live announcement region       | none (uses `aria-live="polite"` on a visually-hidden `<div>`) |                                                                       |
+| `<table>` root                 | `grid` (`treegrid` with `treeData` or server grouping) | `tabindex="0"`, `aria-activedescendant` pointing at the active cell, `aria-rowcount`, `aria-colcount` |
+| `<thead>`, `<tbody>`, `<tfoot>` | `rowgroup`    |                                                                                                     |
+| Body `<tr>`                    | `row`          | `aria-rowindex` (1-based, absolute, so it holds under virtualization); `aria-level` / `aria-expanded` on tree and group rows |
+| Header `<th>`                  | `columnheader` | `aria-sort` (`"ascending"` / `"descending"` / `"none"`) on sortable columns                         |
+| Body `<td>`                    | `gridcell`     | `id`, `aria-colindex`, `aria-rowindex`, `aria-selected` (row selection); `aria-invalid` plus the message when `validate` rejects the value |
+| Selection checkboxes           | `checkbox`     | `aria-checked`, `"mixed"` on the header when some rows are selected                                 |
+| Filter popover                 | `menu`         |                                                                                                     |
+| Cell editor input              | `textbox` (text, number and multi-line editors) | `aria-label` is the column header                                |
+| Live announcement region       | `status` (`aria-live="polite"` on a visually-hidden `<div>`) |                                                                       |
+
+Header rows carry no `aria-rowindex` yet, and a cell range selection (as
+opposed to row selection) is not exposed through `aria-selected`. Both are
+listed in the [ACR](../compliance/vpat.md).
 
 The grid never sets `role="presentation"` on table elements - screen
 readers receive a fully-structured grid.
@@ -3560,8 +3564,7 @@ shortcuts:
 
 | Key                 | Action                                                                |
 | ------------------- | --------------------------------------------------------------------- |
-| Tab                 | Move focus *out* of the grid to the next focusable element.           |
-| Shift+Tab           | Move focus *into* the grid from the previous focusable element.       |
+| Tab / Shift+Tab     | Move the active cell right / left, wrapping at row ends. On the last cell (first, for Shift+Tab) focus leaves the grid for the next (previous) element on the page. Ctrl+End then Tab, or Ctrl+Home then Shift+Tab, leaves from anywhere. |
 | Arrow Up/Down       | Move active cell one row.                                             |
 | Arrow Left/Right    | Move active cell one column.                                          |
 | Home                | Active cell → first column in the row.                                |
@@ -3577,23 +3580,25 @@ shortcuts:
 | ------------------------- | --------------------------------------------------------------- |
 | Space                     | Toggle the active row's selection.                              |
 | Ctrl/Cmd + A              | Not bound by the grid; the browser's select-all applies. The header checkbox selects every row, and `api.selectCells` selects ranges. |
-| Shift + Arrow Up/Down     | Extend the row selection.                                       |
-| Ctrl/Cmd + Click on a row | Toggle that row's selection without affecting others.           |
+| Shift + Arrow keys        | Extend the cell range from the active cell.                     |
+| Ctrl/Cmd + Click on a cell | Add a cell range to the selection.                             |
 
 ### Sort + filter
 
 | Key                              | Action                                                   |
 | -------------------------------- | -------------------------------------------------------- |
-| Enter (on a header)              | Toggle sort: `none → asc → desc → none`.                 |
-| Shift + Enter (on a header)      | Add to multi-sort.                                       |
-| Alt + Down (on a header)         | Open the filter menu (when `filterMode='menu'`).         |
+| Enter / Space (on a header's sort button) | Toggle sort: `none → asc → desc → none`.        |
+| Enter / Space (on a header's filter button) | Open the filter menu.                         |
 | Escape (in a filter menu)        | Close the menu.                                          |
+
+Header buttons are reached with the mouse or, from outside the grid, with
+Tab; they are not part of the cell navigation.
 
 ### Editing
 
 | Key                         | Action                                                |
 | --------------------------- | ----------------------------------------------------- |
-| Enter / F2 / double-click   | Enter edit mode on the active cell.                   |
+| F2 / double-click           | Enter edit mode on the active cell. (Enter moves down, as in a spreadsheet.) |
 | Type any character          | Start editing with that character as the first input. |
 | Enter / Tab (while editing) | Commit and move to the next cell / row.               |
 | Escape (while editing)      | Cancel; revert the cell.                              |
@@ -3639,8 +3644,9 @@ This is the more important half. A live region is not the only way a screen
 reader learns something, and announcing what the accessibility tree already
 carries makes the grid talk over itself:
 
-- **The cell you moved to.** Focus moves there (roving tabindex), so the reader
-  announces the cell, its column header and its row position natively.
+- **The cell you moved to.** `aria-activedescendant` on the grid points at it,
+  so the reader announces the cell, its column header and its row position
+  natively.
 - **Sort state.** Carried by `aria-sort` on the column header, read when focus
   lands on it.
 - **Whether the row you are on is selected.** Carried by `aria-selected`.
@@ -3706,22 +3712,26 @@ an override is visible instead of silently eating the number.
 
 ## Focus management
 
-- The grid uses a **roving tabindex**: at most one cell at a time has
-  `tabindex="0"`, every other has `tabindex="-1"`. This puts the grid
-  in the tab order exactly once.
-- The "active cell" is the focused cell. It's tracked through every
-  navigation, editing, and selection action.
-- Editing transfers focus to the editor `<input>`; committing returns
-  focus to the cell.
-- Modals (filter menu, save dialog) use a focus trap that returns
-  focus to the originating header/cell on close.
+- The `<table>` is the grid's single tab stop. Focus stays on it, and
+  `aria-activedescendant` names the active cell; cells themselves carry no
+  `tabindex`.
+- The active cell is drawn with an accent ring. It is hidden while the grid
+  sits untouched at its seeded first cell, and shown as soon as a click, a
+  key or the api activates a cell, or the keyboard brings focus to the grid.
+- Tab moves between cells and leaves the grid at either end (see the
+  [keyboard map](#navigation)).
+- Editing transfers focus to the editor `<input>`, which is named after the
+  column; committing returns focus to the grid.
+- The filter popover moves focus to its first control when it opens. Grid
+  menus do not yet return focus to the button that opened them on close;
+  the [ACR](../compliance/vpat.md) lists it under 2.4.3.
 
 ## High-contrast / forced-colors mode
 
-Windows High Contrast mode (`forced-colors: active`) is respected. The
-grid uses `currentColor` for every border and focus ring, so the
-system's color tokens take over without overrides leaking. We test
-against the [W3C forced-colors test page](https://web.dev/articles/forced-colors).
+Under Windows High Contrast (`forced-colors: active`) the active cell gets a
+2 px outline in the system `Highlight` colour, because forced colors removes
+the box-shadow ring the grid draws otherwise. `tests/e2e/grid-a11y.spec.ts`
+checks it with forced colors emulated in Chromium.
 
 ## Right to left
 
@@ -3735,13 +3745,12 @@ physical `left`. Nothing to opt into and no second stylesheet.
 
 When `prefers-reduced-motion: reduce` matches:
 
-- Smooth-scroll calls become `behavior: 'instant'`.
-- Chevron rotations (used in tree demos) are instant rather than 160 ms
-  ease.
-- Sparkline + KPI bar transitions are disabled.
+- The cell flash (`cellFlash`) does not animate.
+- The loading-row shimmer stops.
 
-You don't need to opt in - the grid checks the media query on every
-animation entry point.
+Keyboard scrolling is always instant, so there is no smooth scroll to turn
+off. Chevron rotations still use a short transition. You don't need to opt
+in; both rules are plain CSS media queries.
 
 ## What you're responsible for
 
@@ -3788,9 +3797,12 @@ The grid can't know:
    > **custom** theme.
 4. **axe-core in your e2e suite.**
    ```ts
-   import { injectAxe, checkA11y } from 'axe-playwright'
-   await injectAxe(page)
-   await checkA11y(page, '.sv-grid-shell', { detailedReport: false })
+   import AxeBuilder from '@axe-core/playwright'
+   const results = await new AxeBuilder({ page })
+     .include('.sv-grid-container')
+     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+     .analyze()
+   expect(results.violations).toEqual([])
    ```
 
 ## Frequently asked questions
@@ -3805,9 +3817,11 @@ documents exactly where that line sits.
 
 ### Does SvGrid work with screen readers?
 
-Yes. The grid exposes proper roles and emits `aria-live` announcements for
-sorting, filtering, and selection changes, so NVDA, JAWS, and VoiceOver can
-read the grid state. Because it renders real DOM (not canvas), the content is
+The grid exposes the ARIA grid roles and states, and emits `aria-live`
+announcements for filtering and bulk selection changes. Sort state is read
+from `aria-sort` on the header rather than announced. No scripted NVDA, JAWS
+or VoiceOver pass has been recorded yet; the
+[ACR](../compliance/vpat.md) says so where it matters. Because it renders real DOM (not canvas), the content is
 also selectable and machine-readable.
 
 ### How do I verify accessibility in my app?
@@ -3820,7 +3834,7 @@ keyboard-only navigation. Pair it with the high-contrast focus toggle and the
 
 ### Keyboard shortcuts + a11y
 
-Ctrl+K command palette, Ctrl+/ cheat sheet, vim-style gg / G chord nav. Layers on top of the grid's WAI-ARIA grid pattern + roving tabindex.
+Ctrl+K command palette, Ctrl+/ cheat sheet, vim-style gg / G chord nav. Layers on top of the grid's WAI-ARIA grid pattern.
 
 <div data-docs-demo="65-keyboard-shortcuts" data-height="460"></div>
 
@@ -16921,6 +16935,10 @@ the consumer hasn't installed the peer, the call throws a typed error
 naming the missing module and the install command - the rest of the
 library keeps working.
 
+One piece of third-party code *is* bundled: `@svgrid/enterprise` ships the
+Smart UI export module (jQWidgets) as `dist/smart.export.js`, vendored
+unmodified. The SBOM lists it as a component with its version.
+
 CSV, TSV, HTML, JSON import/export, print, the AI assistant, and the
 pivot helpers have **no extra peer dependencies** at all.
 
@@ -16932,8 +16950,8 @@ Every observable side effect, mapped:
 | ------------------------------------ | -------------------------------------------------------------------------- |
 | `<SvGrid>` mount                     | Sets up `requestAnimationFrame`, `ResizeObserver`, and DOM event listeners on the grid container. |
 | Inline editing                       | Reads + writes `document` selection; commits via your `onCellValueChange`. |
-| Export to xlsx / pdf / csv / tsv / html | Creates a `Blob` and triggers a download via a synthetic `<a download>`. No network. |
-| Import from xlsx / csv / tsv / json  | Reads the user-provided `File` via `arrayBuffer()` / `text()`. No network. |
+| Export to xlsx / pdf / csv / tsv / html | Creates a `Blob` and triggers a download via a synthetic `<a download>`. No network. CSV and TSV prefix formula-like text with `'` so a spreadsheet does not run it ([export](./export.md)). |
+| Import from xlsx / csv / tsv / json  | Reads the user-provided `File` via `arrayBuffer()` / `text()`. No network. An .xlsx cell addressed outside the sheet (past column XFD) is rejected, and so is a sheet that would need more than ten million blank cells to lay out, so a crafted file cannot exhaust memory. |
 | Print                                | Opens a sandbox popup window with an isolated HTML document and calls its `print()`. |
 | AI helpers                           | Build a prompt locally and call the consumer-registered `AIProvider`. The grid itself never opens a connection. |
 | License key check                    | A 4-line string-prefix check against an in-memory revoked-key set. No network. |
@@ -16977,7 +16995,10 @@ Notes:
 ## Vulnerability handling
 
 - Reports: open a draft security advisory on the GitHub repository, or
-  email `support@jqwidgets.com`. PGP key on the repository's SECURITY.md.
+  email the address in
+  [SECURITY.md](https://github.com/sv-grid/sv-grid/blob/main/SECURITY.md).
+  [`/.well-known/security.txt`](https://svgrid.com/.well-known/security.txt)
+  points to the same place.
 - Response SLA (paid customers): acknowledgement within one business
   day, advisory + patch within five business days for severity High +
   Critical.
@@ -16989,13 +17010,25 @@ Notes:
 
 We publish a **CycloneDX 1.6** document per package in
 [`sbom/`](https://github.com/sv-grid/sv-grid/tree/main/sbom), covering runtime
-and peer dependencies to full declared depth. Fetch the one you need straight
-from the repo, or regenerate from a clone:
+and peer dependencies to full declared depth, plus vendored code. Fetch the
+one you need straight from the repo, or regenerate from a clone:
 
 ```bash
 pnpm sbom          # write sbom/*.cdx.json
 pnpm sbom:check    # non-zero exit if they have drifted from the manifests
 ```
+
+The release workflow regenerates the SBOMs at the released versions and signs
+them with a Sigstore build attestation, and the Test workflow runs
+`pnpm sbom:check` on every commit. To check that a copy is the one the
+release produced:
+
+```bash
+gh attestation verify sbom/svgrid-grid.cdx.json --repo sv-grid/sv-grid
+```
+
+`@svgrid/mcp` is the one package with a deeper graph (the MCP SDK, `zod`,
+`svelte`); its SBOM lists those top-level dependencies, not their own.
 
 If your process prefers a scanner-produced document, or you want SPDX instead,
 generate one against your own installed tree:
@@ -75046,6 +75079,16 @@ Every method:
 - returns the serialized text; pass `download: false` to skip the download
   and just get the string.
 
+**Formula injection.** A text cell that starts with `=`, `+`, `-`, `@`, a tab
+or a carriage return would run as a formula in the spreadsheet that opens the
+file, so `exportCsv` and `exportTsv` (and Enterprise's `exportData` for csv and
+tsv) write it with a leading `'`: `=HYPERLINK(...)` comes out as
+`'=HYPERLINK(...)`. Numbers are never touched, and neither is a signed number
+in text form such as `-12.50`. Pass `escapeFormulas: false` when the file feeds
+another program rather than a spreadsheet. `copyToClipboard` leaves text as
+typed unless you pass `escapeFormulas: true`, because a copy is pasted by the
+person who made it.
+
 ```svelte {runnable}
 <script lang="ts">
   import { SvGrid, tableFeatures, type SvGridApi } from '@svgrid/grid'
@@ -75196,7 +75239,7 @@ working.
 | `rows`            | `ReadonlyArray<TData> \| 'displayed' \| 'selected' \| 'all'` | `'displayed'`  | `'displayed'` = current filtered/sorted/paged view, `'selected'` = checked rows, `'all'` = full dataset, or pass an explicit array. |
 | `rawValues`       | `boolean`                                             | `false`              | By default the exporter writes the **formatted display value** (what you see). Set `true` to write raw underlying values (numbers stay numeric in xlsx). |
 | `autoGroup`       | `boolean`                                             | `true`               | Carry the grid's active row grouping into xlsx outline rows. Pass your own `groupBy` to override, or `false` to ignore. |
-| `csv`             | `{ delimiter?; eol?; bom? }`                          | `{ ',', '\r\n', BOM }` | CSV / TSV tuning. UTF-8 BOM is on by default so Excel opens it without mojibake. |
+| `csv`             | `{ delimiter?; eol?; bom?; escapeFormulas? }`         | `{ ',', '\r\n', BOM, escapeFormulas: true }` | CSV / TSV tuning. UTF-8 BOM is on by default so Excel opens it without mojibake. `escapeFormulas` prefixes formula-like text with `'` (see above). |
 | `onProgress`      | `(p) => void`                                         | -                    | Progress for large exports: `{ phase, ratio, row?, total? }`, `phase` = `'project' \| 'serialize' \| 'write'`. |
 | `signal`          | `AbortSignal`                                         | -                    | Cancel an in-flight export (checked between chunks). Rejects with `AbortError`. |
 | `pageOrientation` | `'portrait' \| 'landscape'`                           | `"portrait"`         | PDF only. |
@@ -77191,7 +77234,7 @@ lanes** instead of a table. It is the same `<SvGrid>`, the same `data` and
 dragging a card to another lane tells you to reassign that field on your own
 data.
 
-For a board built up option by option, see [Build a sprint board](../kanban/sprint-board.md); this page is the reference for everything the `board` prop can say.
+For a board built up option by option, see [Build a sprint board](../kanban/sprint-board.md); for the overview, see [Svelte Kanban board](https://svgrid.com/svelte/kanban-board/). This page is the reference for everything the `board` prop can say.
 
 ![The same grid rows bucketed into lanes by a groupBy field, each row a card, with a drag reassigning the field.](/docs-media/grid-kanban.svg)
 
@@ -81422,10 +81465,13 @@ sev-1.
 
 ## Security disclosures
 
-For security issues, **do not file a public issue**. Email
-`support@jqwidgets.com` (PGP fingerprint at
-[svgrid.com/.well-known/security.txt](https://svgrid.com/.well-known/security.txt)).
-Response within 24h; patch within 7 days for high-severity.
+For security issues, **do not file a public issue**. Report privately, through
+GitHub's private vulnerability reporting or by email, as
+[SECURITY.md](https://github.com/sv-grid/sv-grid/blob/main/SECURITY.md)
+describes; [svgrid.com/.well-known/security.txt](https://svgrid.com/.well-known/security.txt)
+points to the same place. Enterprise customers get an acknowledgement within one
+business day, and an advisory and patch within five business days for High and
+Critical issues.
 
 See [security & supply chain](../help/security.md) for the full
 disclosure policy.
@@ -121637,6 +121683,28 @@ For machine-readable releases, fetch
 - **Dock manager auto-hide now shows every tab of a multi-tab leaf.** Sending a
   leaf with two or more tabs to auto-hide created a single edge tab; it now
   creates one edge tab per pane.
+- **Ticking one row in a large grid took over a second.** Once any row was
+  selected, every change walked all rows through the lazy row list to work out
+  the header checkbox. At 1,000,000 rows (jsdom) one tick went from 1.3-1.8 s
+  to 4-36 ms, and select-all from 4.2 s to 0.4 s.
+- **Tab never left the grid.** Every Tab was consumed and the cursor clamped
+  at the last cell, so no key moved focus out (WCAG 2.1.2). Tab on the last
+  cell and Shift+Tab on the first now leave the grid.
+- **No focus indicator when the grid is reached by Tab, or under forced
+  colors.** The active-cell ring stayed hidden until a click, and Windows High
+  Contrast removed it (it is a box-shadow). It now shows on keyboard focus, and
+  forced colors get a `Highlight` outline.
+- **The cell editor had no accessible name.** The text, number and multi-line
+  editors are now labelled with their column's header.
+
+#### Security
+
+- **CSV / formula injection in exports.** `exportCsv`, `exportTsv` and the
+  chart's CSV download wrote text such as `=HYPERLINK(...)` as is, which a
+  spreadsheet runs as a formula. Text starting with `=`, `+`, `-`, `@`, a tab
+  or a carriage return is now written with a leading `'`; numbers and signed
+  numbers in text form (`-12.50`) are unchanged. `escapeFormulas: false` turns
+  it off; `copyToClipboard` takes `escapeFormulas: true` to turn it on.
 
 ### @svgrid/enterprise
 
@@ -121766,6 +121834,17 @@ For machine-readable releases, fetch
   generated `.d.ts` augments `HTMLElementTagNameMap` and
   `HTMLElementEventMap`, so the element and its events are typed without
   hand-written declarations.
+#### Security
+
+- **A crafted .xlsx could crash the tab.** `importData` and the spreadsheet's
+  File > Open filled every gap before a cell with blanks, sized by the cell
+  reference in the file: `<c r="ZZZZZZZ1">` asked for about eight billion.
+  `importData` now rejects a cell past column XFD; the spreadsheet skips a cell
+  outside the sheet, as it does other malformed parts. Both refuse a sheet that
+  would need more than ten million blank cells to lay out.
+- **CSV and TSV from `exportData` neutralise formula-like text**, through the
+  same `@svgrid/grid` serializer (see the grid's Security entry).
+
 - **`<sv-grid-shadow>` - the grid in an open shadow root**, so a host page's
   CSS cannot reach it. Same properties, attributes and events as `<sv-grid>`;
   a separate element rather than an attribute because Svelte resolves
@@ -122538,6 +122617,80 @@ make them worse, but you should be aware:
 - [Demo 41 - Healthcare EMR](https://svgrid.com/demos/41-healthcare-emr/) - role-based cell editing in practice
 
 <!-- =================================================================
+     /docs/compliance/security-questionnaire/  (community)
+     ================================================================== -->
+
+# Security questionnaire answers
+
+Answers to the questions a vendor security review asks about a front-end
+component library, grouped the way most questionnaires (SIG Lite, CAIQ, a
+buyer's own) group them. Each answer points at the code, file or workflow that
+backs it, so a reviewer can check it rather than take it on trust.
+
+Questions about the company rather than the product (insurance, headcount,
+financial statements) go to sales@jqwidgets.com.
+
+## Scope: what is being assessed
+
+| Question | Answer |
+| --- | --- |
+| What is the product? | JavaScript packages installed from npm: `@svgrid/grid` (MIT) and `@svgrid/enterprise` (commercial). They run inside your application, in the browser or under Node for SSR. |
+| Is it a hosted service? | **No.** We operate no service your application depends on. Your data never reaches a system of ours. |
+| Do you host anything at all? | The website (svgrid.com), the trial and licensing forms, and an optional remote MCP server (mcp.svgrid.com) for AI coding assistants. None of them is in your application's runtime path. What the MCP server records is listed on the [privacy page](https://svgrid.com/privacy/). |
+| Does a SOC 2 report apply? | SOC 2 examines service organizations, and we run no service in your data path. See [SOC 2 posture](./soc2.md) for how the library fits your own report. |
+
+## Data handling
+
+| Question | Answer |
+| --- | --- |
+| Does the library send data anywhere? | **No.** No telemetry, analytics or update checks. The only network calls are ones you configure: a server data source calls the `fetch` you pass it, and the AI helpers call the `AIProvider` you register. |
+| Does the license check phone home? | **No.** The Enterprise key is validated offline, in the browser. Without a valid key the features still run and show a watermark. |
+| Does it write to storage? | Not unless you opt in (saved views, for example). See [GDPR + data residency](./gdpr.md). |
+| Does it evaluate code? | No `eval` or `new Function` in `@svgrid/grid`; it runs under a strict CSP. See [security](../help/security.md#csp-guidance). |
+| Personal data, PHI | The library processes only what your app renders. See [GDPR](./gdpr.md) and [HIPAA](./hipaa.md). |
+
+## Supply chain
+
+| Question | Answer |
+| --- | --- |
+| Runtime dependencies | `@svgrid/grid`: one, `esm-env` (MIT, no dependencies of its own). `@svgrid/enterprise`: none required; `jszip` and `pdfmake` are optional peers loaded on first XLSX or PDF use. Enterprise also ships one vendored module, the Smart UI exporter (jQWidgets). |
+| SBOM | CycloneDX 1.6, one per package, in [`sbom/`](https://github.com/sv-grid/sv-grid/tree/main/sbom). Regenerated with every release, and CI fails if one drifts from its manifest (`pnpm sbom:check`). Vendored code is listed as a component. |
+| Are releases signed? | npm packages are published from GitHub Actions with `--provenance`, so npm shows the workflow and commit that built them. From the next release on, each SBOM also carries a Sigstore attestation: `gh attestation verify sbom/svgrid-grid.cdx.json --repo sv-grid/sv-grid`. |
+| Can you build from source? | Yes. The npm packages are built from this public repository; there are no private patches. |
+| Licenses of what you ship | MIT for the grid and its dependency; the vendored exporter is jQWidgets' own code under its license. The SBOM records each license. |
+
+## Secure development
+
+| Question | Answer |
+| --- | --- |
+| How is code tested before release? | Every push to `main` runs the Test workflow (`.github/workflows/test.yml`): type checks of every package, lint, the grid and Enterprise unit suites, browser specs in Chromium, bundle-size budgets and SBOM drift. The release workflow (`.github/workflows/publish-npm.yml`) runs when a push to `main` finishes its Test run green, and publishes that commit; there is no scheduled publish. A manual run is the maintainer's override. |
+| Security-relevant tests | HTML sanitization of cell content (`sanitize-html.test.ts`); formula injection in CSV, TSV and chart CSV exports (`csv-injection.test.ts`); crafted .xlsx files that address cells far outside the sheet (`import-xlsx-limits.dom.test.ts`); LIMIT and OFFSET rejected unless they are non-negative integers in the SvelteKit SQL data source (`sql-source.test.ts`); and the accessibility suites. |
+| CSV / formula injection | File exports prefix text that a spreadsheet would run as a formula (`=`, `+`, `-`, `@`, tab, carriage return) with `'`, by default. See [export](../help/export.md). |
+| Can a version change after release? | No. npm does not allow a published version to be overwritten. |
+
+## Vulnerability management
+
+| Question | Answer |
+| --- | --- |
+| How do we report a vulnerability? | Privately, through GitHub's vulnerability reporting or by email, as [SECURITY.md](https://github.com/sv-grid/sv-grid/blob/main/SECURITY.md) describes. |
+| Response times | Acknowledgement within 3 working days and an assessment within 10 (SECURITY.md). Enterprise customers: acknowledgement within one business day, and a fix for High and Critical issues within five business days ([security](../help/security.md#vulnerability-handling)). |
+| How are customers told? | A GitHub security advisory and the release notes. Enterprise customers hear before the advisory is public. |
+| Known vulnerabilities | None published. Check the repository's advisories page for the current list. |
+| EU Cyber Resilience Act | The pieces the CRA asks a manufacturer for are in place: a coordinated disclosure policy (SECURITY.md), a machine-readable SBOM per release, and a published support policy ([API stability](../help/api-stability.md#long-term-support)). |
+
+## Accessibility
+
+| Question | Answer |
+| --- | --- |
+| Do you publish an ACR / VPAT? | Yes: [VPAT 2.5Rev INT against WCAG 2.2 AA](./vpat.md), self-assessed, with every gap listed. |
+
+## See also
+
+- [Compliance overview](./index.md)
+- [Security & supply chain](../help/security.md)
+- [Audit log integration](./audit-log.md)
+
+<!-- =================================================================
      /docs/compliance/soc2/  (community)
      ================================================================== -->
 
@@ -122628,154 +122781,173 @@ for the support window.
 # Accessibility Conformance Report (VPAT 2.5Rev, INT)
 
 **Product:** SvGrid (`@svgrid/grid`, `@svgrid/enterprise`)
-**Report version:** 1.0
-**Report date:** 2026-08-24
+**Report version:** 2.0
+**Report date:** 2026-10-25
+**Standards:** WCAG 2.2 Level A and AA, Revised Section 508, EN 301 549 v3.2.1
 **Contact:** support@jqwidgets.com
 
-This report follows the **VPAT 2.5Rev International edition**, which covers the
-Revised Section 508 standards, EN 301 549, and WCAG 2.1 in one document.
+This report follows the **VPAT 2.5Rev International edition**. Version 1.0
+(2026-08-24) covered WCAG 2.1. This version moves to WCAG 2.2, re-checks every
+row against the code, and corrects four rows that version 1.0 overstated
+(2.1.1, 2.1.2, 2.4.3, 2.4.7). The defects behind 2.1.2 and 2.4.7 were fixed
+while this report was written; the rest are listed as gaps below.
 
-> **This is a self-assessment, not a third-party certification.** It records what
-> we test, how we test it, and what we have not tested. Nothing here is a legal
-> certification of conformance. Where a criterion depends on your content or your
-> theme, this report says so rather than claiming credit for it.
+> **This is a self-assessment, not a third-party audit.** Every "Supports"
+> names the test or the code behind it. Where a criterion depends on your
+> content or your theme, the row says so.
 
 ## What SvGrid is, for the purposes of this report
 
-SvGrid is a **software component**, not a web page or an application. It renders
-a data grid inside a page you control. Several WCAG criteria are therefore
-scoped to the page rather than the component (page title, language of page,
-bypass blocks, consistent navigation) and are marked **Not Applicable** with a
-note; you remain responsible for them in the page that hosts the grid.
+SvGrid is a **software component** that renders a data grid inside a page you
+control. Page-level criteria (page title, language of page, bypass blocks,
+consistent navigation, consistent help) are **Not Applicable** to the
+component; you remain responsible for them in the host page.
 
-Several others are **shared**: the grid supplies correct roles, names and
-keyboard behaviour, but you supply cell content. A custom cell renderer that
-emits an image without alt text will fail 1.1.1 no matter what the grid does.
-Those are marked *Supports, with author responsibility* and the boundary is
-stated in the remarks.
+Several criteria are **shared**: the grid supplies roles, names and keyboard
+behaviour, and you supply cell content. A custom cell renderer that emits an
+image without alt text fails 1.1.1 whatever the grid does. Those rows read
+*Supports, with author responsibility*.
 
 ## Evaluation methods
 
 | Method | What it covers | Where it runs |
 | --- | --- | --- |
-| `axe-core` against a rendered grid | Roles, names, relationships, duplicate ids, nested-interactive violations. Four configurations: plain, filter row + global filter, row selection, pagination | `packages/grid/src/a11y.axe.test.ts`, on every commit in CI |
-| WCAG contrast computation | Text, secondary text, header text, text on zebra / hovered / selected rows, text on accent controls, and the accent as a focus indicator, for **all 20 built-in themes in both light and dark** | `packages/grid/src/themes/contrast.test.ts`, on every commit in CI |
-| ARIA contract unit tests | The role / `aria-*` property builders and the roving-tabindex pattern | `a11y.test.ts`, `a11y.contract.test.ts` |
-| Focus and live-region unit tests | Focus trap, dismissable layers, scroll lock, the `aria-live` announcer | `packages/grid/src/a11y/*.test.ts` |
-| Manual keyboard review | The documented keyboard map | Manual, not automated |
+| `axe-core` in jsdom | Roles, names, relationships, duplicate ids, nested interactive controls. Plain grid, filter row + global filter, row selection, pagination, an invalid cell, an open cell editor | `packages/grid/src/a11y.axe.test.ts`, every commit |
+| `axe-core` in Chromium | The same plus the layout rules jsdom cannot run (`color-contrast`, `target-size`), tags `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa`, on the quick-start demo in the default theme | `tests/e2e/grid-a11y.spec.ts`, every commit |
+| Keyboard and focus in Chromium | Tab leaves the grid at both ends; focus is visible when the keyboard brings it in; the forced-colors indicator | `tests/e2e/grid-a11y.spec.ts` |
+| WCAG contrast computation | Body, secondary, header, zebra, hover, selection and on-accent text at 4.5:1, and the accent at 3:1, for **all 20 built-in themes in light and dark** | `packages/grid/src/themes/contrast.test.ts` |
+| ARIA contract and announcement tests | Role and `aria-*` builders; the live-region messages on a mounted grid | `a11y.test.ts`, `a11y.contract.test.ts`, `a11y.announce.test.ts`, `a11y/*.test.ts` |
+| Code review | Each row below, re-read against the source on 2026-10-25 | This report |
 
 ### Known limits of this evidence
 
-Stated plainly, because a conformance report that hides its gaps is worse than
-no report:
+- **No scripted screen-reader pass (NVDA, JAWS, VoiceOver) has been
+  recorded.** Rows that depend on assistive-technology behaviour rest on the
+  ARIA implementation and the axe runs.
+- The browser axe run covers one configuration (the quick-start demo, default
+  theme). The jsdom runs cover the others with virtualization off.
+- Only the built-in themes are contrast-tested. A custom theme is yours to
+  verify; the method is in [accessibility](../help/accessibility.md).
 
-- **The axe suite runs in jsdom**, which performs no layout or painting. Its own
-  `color-contrast` rule is therefore disabled there, and geometry-dependent
-  rules (`target-size`, `scrollable-region-focusable`) are not exercised.
-  Contrast is covered separately and more thoroughly by computation over the
-  theme tokens, but **target size has not been machine-verified**.
-- **No formal screen-reader test pass has been recorded.** The grid implements
-  the WAI-ARIA 1.2 grid pattern and is audited structurally, but we do not
-  currently publish results from a scripted NVDA / JAWS / VoiceOver run.
-  Criteria that depend on assistive-technology behaviour are marked
-  *Supports* on the strength of the ARIA implementation and automated audit,
-  and that basis is noted per row.
-- **Only the built-in themes are contrast-tested.** A custom theme is yours to
-  verify; the method is documented in [accessibility](../help/accessibility.md).
-
-Writing this report was itself an audit, and it found two real defects rather
-than only describing existing behaviour. Both are fixed and covered by tests:
-the grid never called its own `announce()`, so the documented status messages
-were not being made at all; and a cell failing `validate` was marked with a red
-class and a mouse-only tooltip, giving a screen-reader user no way to know the
-value had been rejected.
-
-## WCAG 2.1 Level A
+## WCAG 2.2 Level A
 
 | Criterion | Conformance | Remarks |
 | --- | --- | --- |
-| 1.1.1 Non-text Content | Supports, with author responsibility | Grid chrome (sort, filter, menu, pagination controls) carries text or `aria-label`. Content inside cells is yours; a custom renderer must supply its own text alternatives. |
-| 1.2.x Time-based Media | Not Applicable | The grid renders no audio or video. |
-| 1.3.1 Info and Relationships | Supports | Native `<table>` semantics plus the ARIA grid pattern: `grid`, `rowgroup`, `row`, `columnheader`, `gridcell`, with `aria-rowindex` / `aria-colindex` / `aria-rowcount` / `aria-colcount`. Verified by the axe suite and the ARIA contract tests. |
-| 1.3.2 Meaningful Sequence | Supports | DOM order follows visual order, including with pinned columns. |
-| 1.3.3 Sensory Characteristics | Supports | Sort state is exposed via `aria-sort`, not by icon alone. |
-| 1.4.1 Use of Color | Supports, with author responsibility | Grid state is conveyed by ARIA as well as colour: sort by `aria-sort`, selection by `aria-selected`, focus by the roving tabindex, and a failed `validate` by `aria-invalid` plus its message rather than the red highlight alone. Conditional formatting you configure is yours to make non-colour-dependent. |
+| 1.1.1 Non-text Content | Supports, with author responsibility | Grid controls carry text or `aria-label`. Content you render in cells is yours. |
+| 1.2.1-1.2.3 Time-based Media | Not Applicable | No audio or video. |
+| 1.3.1 Info and Relationships | Partially Supports | Native `<table>` semantics plus `grid` / `treegrid`, `rowgroup`, `row`, `columnheader`, `gridcell`, `aria-rowcount`, `aria-colcount`, and absolute `aria-rowindex` / `aria-colindex` on body cells. Gaps: header rows carry no `aria-rowindex` and header cells no `aria-colindex` (matters under column virtualization); a cell range selection is shown visually but not exposed through `aria-selected`; grouped rows on a plain `grid` carry `aria-level`, which ARIA defines only for `treegrid`. |
+| 1.3.2 Meaningful Sequence | Supports | DOM order follows visual order, pinned columns included. |
+| 1.3.3 Sensory Characteristics | Supports | Sort state is exposed through `aria-sort`, not only by the icon. |
+| 1.4.1 Use of Color | Supports, with author responsibility | Sort, row selection and validation errors are carried by `aria-sort`, `aria-selected` and `aria-invalid` with the message, not by colour alone. Conditional formatting you configure is yours. |
 | 1.4.2 Audio Control | Not Applicable | No audio. |
-| 2.1.1 Keyboard | Supports | Full keyboard operation: navigation, selection, sorting, filtering, editing, undo. Column resize handles are keyboard-operable with arrow keys. See the keyboard map in [accessibility](../help/accessibility.md). |
-| 2.1.2 No Keyboard Trap | Supports | Roving tabindex: one cell is tabbable and Tab exits the grid. Popovers (filter menus, editors) use a dismissable-layer stack that restores focus on close. Covered by the focus-trap unit tests. |
-| 2.1.4 Character Key Shortcuts | Supports | Single-character shortcuts act only while focus is inside the grid, and are suppressed while a cell editor is open. |
+| 2.1.1 Keyboard | Partially Supports | Navigation, row selection, sorting, filtering, editing, undo, column and row resize (arrow keys on the focused handle) and tree / group expand all work from the keyboard. Gaps: managed row dragging (`rowDragManaged`) has no keyboard path; moving a column has one only through the tool panel's Move up / Move down; the column menu opens without taking focus and has no arrow-key navigation; a custom header renderer gets `role="button"` with `tabindex="-1"`. |
+| 2.1.2 No Keyboard Trap | Supports | Tab on the last cell and Shift+Tab on the first move focus off the grid (`tests/e2e/grid-a11y.spec.ts`). Before 2026-10-25 every Tab was consumed and no key left the grid. |
+| 2.1.4 Character Key Shortcuts | Supports | Typing a character starts editing only while focus is on the grid (the "active only on focus" exception). |
 | 2.2.1 Timing Adjustable | Not Applicable | No time limits. |
-| 2.2.2 Pause, Stop, Hide | Supports | No auto-updating content originates in the grid. Scroll animation and chevron transitions honour `prefers-reduced-motion: reduce`. |
-| 2.3.1 Three Flashes | Supports | Cell-flash highlighting on value change is a single fade well under three flashes per second. |
-| 2.4.1 Bypass Blocks | Not Applicable | Page-level concern. |
-| 2.4.2 Page Titled | Not Applicable | Page-level concern. |
-| 2.4.3 Focus Order | Supports | Roving tabindex keeps a single predictable stop; popovers return focus to their trigger. |
-| 2.4.4 Link Purpose | Supports, with author responsibility | Links rendered inside cells are yours. |
-| 2.5.1 Pointer Gestures | Supports | No multipoint or path-based gesture is required; drag operations (column reorder, resize, row drag) all have keyboard equivalents. |
-| 2.5.2 Pointer Cancellation | Supports | Actions fire on pointer-up. |
-| 2.5.3 Label in Name | Supports | Accessible names for grid controls begin with their visible text. |
-| 2.5.4 Motion Actuation | Not Applicable | No motion actuation. |
-| 3.1.1 Language of Page | Not Applicable | Page-level concern. |
+| 2.2.2 Pause, Stop, Hide | Supports, with author responsibility | The grid starts no auto-updating content. A live feed you push into it is yours to make pausable. The cell flash stops under `prefers-reduced-motion`. |
+| 2.3.1 Three Flashes or Below Threshold | Supports | The cell flash is one fade per value change. |
+| 2.4.1 Bypass Blocks | Not Applicable | Page-level. |
+| 2.4.2 Page Titled | Not Applicable | Page-level. |
+| 2.4.3 Focus Order | Partially Supports | The grid is one tab stop, and Tab leaves it at either end. Gap: grid menus (column menu, context menu) do not return focus to the button that opened them when they close. |
+| 2.4.4 Link Purpose (In Context) | Supports, with author responsibility | Links in cells are yours. |
+| 2.5.1 Pointer Gestures | Supports | No multipoint or path-based gesture is required. |
+| 2.5.2 Pointer Cancellation | Supports | A pointer-down on a cell only moves the active cell and starts a selection; buttons, menus, sorting and editing act on click (the up event). |
+| 2.5.3 Label in Name | Supports | Accessible names of grid controls contain their visible text. |
+| 2.5.4 Motion Actuation | Not Applicable | No motion input. |
+| 3.1.1 Language of Page | Not Applicable | Page-level. |
 | 3.2.1 On Focus | Supports | Focus alone never changes context. |
-| 3.2.2 On Input | Supports | Filtering and editing update the grid in place; no unexpected context change. |
-| 3.3.1 Error Identification | Supports, with author responsibility | A cell failing a column's `validate` hook carries `aria-invalid="true"`, and the message it returns reaches assistive technology as the cell's accessible description or as visually-hidden text read with the cell - not only as the hover tooltip. Deciding *what* is invalid is yours. |
-| 3.3.2 Labels or Instructions | Supports | Editors and filter inputs derive an accessible name from the column header. |
-| 4.1.2 Name, Role, Value | Supports | The core of the grid pattern, and the criterion the axe suite exercises most directly. Interactive chrome exposes role, name and state. |
-| 4.1.3 Status Messages | Supports | The status changes that move no focus are announced through a visually-hidden `aria-live="polite"` region: filter match counts, filter clearing, and bulk selection changes. Changes the accessibility tree already carries (the focused cell, `aria-sort`, a single row's `aria-selected`) are deliberately not repeated there. Covered by `a11y.announce.test.ts` against a rendered grid. |
+| 3.2.2 On Input | Supports | Filtering and editing update the grid in place. |
+| 3.2.6 Consistent Help | Not Applicable | Page-level. |
+| 3.3.1 Error Identification | Supports, with author responsibility | A cell failing its column's `validate` gets `aria-invalid="true"`, and the message reaches assistive technology as text read with the cell. What counts as invalid is yours. |
+| 3.3.2 Labels or Instructions | Partially Supports | Cell editors are named after their column (`a11y.axe.test.ts`). Gap: the inline filter-row input has a placeholder and no label. |
+| 3.3.7 Redundant Entry | Not Applicable | The grid runs no multi-step process. |
+| 4.1.2 Name, Role, Value | Partially Supports | Grid structure, selection checkboxes (`aria-checked`, including `mixed`), sort buttons, expanders (`aria-expanded`) and editors expose name, role and state, and both axe runs pass. Gaps: range selection state (see 1.3.1) and custom header renderers (see 2.1.1). |
+| 4.1.3 Status Messages | Supports | Filter match counts, cleared filters and bulk selection changes go to a visually hidden `role="status"` region (`a11y.announce.test.ts`). What the tree already carries (the active cell, `aria-sort`, one row's `aria-selected`) is not repeated there. |
 
-## WCAG 2.1 Level AA
+WCAG 2.2 removed 4.1.1 Parsing; it is not listed.
+
+## WCAG 2.2 Level AA
 
 | Criterion | Conformance | Remarks |
 | --- | --- | --- |
-| 1.4.3 Contrast (Minimum) | Supports for built-in themes; author responsibility for custom themes | Every one of the 20 built-in presets is CI-tested in both light and dark against 4.5:1 for body, secondary, header, zebra, hover, selection and accent-control text. A custom theme is not covered by that test. |
-| 1.4.4 Resize Text | Supports | Layout is token-driven and reflows at 200% zoom. |
-| 1.4.5 Images of Text | Supports | No images of text. |
-| 1.4.10 Reflow | Partially Supports | The grid reflows and its own regions scroll rather than the page. A data table with many columns still requires horizontal scrolling at 320 CSS pixels, which is inherent to tabular data; the `responsive` prop and per-column `hideBelow` let you reduce the column set at narrow widths. |
-| 1.4.11 Non-text Contrast | Supports | The accent used for focus and selection indication is CI-tested at 3:1 against the background for every theme. Note that decorative table gridlines are intentionally not held to 3:1: the grid's structure is conveyed by the accessibility tree, so the rule does not apply to them. |
-| 1.4.12 Text Spacing | Supports | Row height and cell padding are token-driven; no clipping under the required spacing overrides. |
-| 1.4.13 Content on Hover or Focus | Supports | Tooltips and popovers are dismissable with Escape, hoverable, and persist until dismissed. |
-| 2.4.5 Multiple Ways | Not Applicable | Page-level concern. |
-| 2.4.6 Headings and Labels | Supports | Column headers are descriptive `columnheader` elements. |
-| 2.4.7 Focus Visible | Supports | The active cell carries a visible focus ring that uses `currentColor`, so it survives forced-colors mode. |
-| 3.1.2 Language of Parts | Not Applicable | Page-level concern. |
-| 3.2.3 Consistent Navigation | Not Applicable | Page-level concern. |
-| 3.2.4 Consistent Identification | Supports | Grid controls are identified consistently across instances. |
-| 3.3.3 Error Suggestion | Supports, with author responsibility | The string your `validate` hook returns is carried through verbatim, so a correction hint ("Score must be at least 90") reaches the user. Writing a useful hint is yours. |
-| 3.3.4 Error Prevention | Not Applicable | No legal, financial or data-deletion transaction originates in the grid. |
-| 4.1.1 Parsing | Supports | Obsolete in WCAG 2.2; no duplicate ids or malformed markup, checked by the axe suite. |
+| 1.2.4, 1.2.5 Captions, Audio Description | Not Applicable | No media. |
+| 1.3.4 Orientation | Supports | No orientation lock. |
+| 1.3.5 Identify Input Purpose | Not Applicable | The grid collects no personal data about the user. |
+| 1.4.3 Contrast (Minimum) | Supports for built-in themes; author responsibility for custom themes | All 20 presets pass 4.5:1 in light and dark (`contrast.test.ts`), and axe's `color-contrast` rule passes in Chromium on the default theme. |
+| 1.4.4 Resize Text | Supports | Sizes are CSS pixel tokens that scale with browser zoom. No automated 200% test yet. |
+| 1.4.5 Images of Text | Supports | None. |
+| 1.4.10 Reflow | Partially Supports | A table with many columns scrolls horizontally at 320 CSS px, which tabular data needs. The `responsive` prop and per-column `hideBelow` reduce the column set at narrow widths. |
+| 1.4.11 Non-text Contrast | Supports | The accent used for the focus ring and selection is tested at 3:1 against the background in every theme. Gridlines are decorative and not held to 3:1. |
+| 1.4.12 Text Spacing | Supports | Row height and padding are tokens; no automated text-spacing test yet. |
+| 1.4.13 Content on Hover or Focus | Supports | Tooltips and popovers close with Escape and stay while hovered. |
+| 2.4.5 Multiple Ways | Not Applicable | Page-level. |
+| 2.4.6 Headings and Labels | Supports | Column headers name their columns. |
+| 2.4.7 Focus Visible | Supports | The active cell has an accent ring, shown when the keyboard brings focus to the grid, and a system `Highlight` outline under forced colors (`grid-a11y.spec.ts`). Before 2026-10-25 a grid reached by Tab showed no indicator, and forced colors removed the ring. |
+| 2.4.11 Focus Not Obscured (Minimum) | Partially Supports | Moving the active cell scrolls it into view below the sticky header. Gap: horizontal scrolling does not allow for left-pinned columns, so a cell can end up under one. |
+| 2.5.7 Dragging Movements | Partially Supports | Range selection has Shift+click, the fill handle has double-click, column order has the tool panel buttons. Gaps: managed row dragging and column resize by pointer have no single-pointer alternative. |
+| 2.5.8 Target Size (Minimum) | Supports | axe's `target-size` rule passes in Chromium on the quick-start demo. Several controls are under 24 px (selection checkbox 16 px, tree toggle 14 px, header filter and menu buttons 22 px, resize handle 5 px) and pass on the spacing exception; a body-row checkbox's whole cell is also clickable. |
+| 3.1.2 Language of Parts | Not Applicable | Page-level. |
+| 3.2.3 Consistent Navigation | Not Applicable | Page-level. |
+| 3.2.4 Consistent Identification | Supports | Controls are named the same way across instances. |
+| 3.3.3 Error Suggestion | Supports, with author responsibility | The string `validate` returns reaches the user verbatim. |
+| 3.3.4 Error Prevention (Legal, Financial, Data) | Not Applicable | No such transaction originates in the grid. |
+| 3.3.8 Accessible Authentication (Minimum) | Not Applicable | No authentication. |
+
+## Enterprise components
+
+Rows above describe `<SvGrid>`. The Enterprise components add their own
+surfaces:
+
+| Component | Status |
+| --- | --- |
+| `<SvSheet>` spreadsheet shell | axe in Chromium over 11 demos, light and dark; ribbon and sheet tabs use roving tabindex; dialogs take focus and return it (`tests/e2e/sheet-a11y.spec.ts`). |
+| Export menu, import dialog | `role="menu"` with arrow keys and Escape; `role="dialog"` with focus moved in and restored. |
+| Change review panel | Keyboard decisions (J / K, Enter, A, R), focus kept after a decision, axe-tested (`review/SvReviewPanel.dom.test.ts`). |
+| Grid board (`SvGridBoard`) | Cards and lanes move by keyboard (Space to grab, arrows, Escape) with a polite live region. Announcements are English only. |
+| Scheduler (`SvGridScheduler`) | Arrow keys move the focused event and select ranges; status messages use `role="status"`. Gap: no keyboard resize of an event. |
+| Kanban (`SvBoard`), pivot designer | Gap: cards between lanes, and pivot fields between wells, move by drag only. The pivot designer adds fields by keyboard. |
+
+## Other gaps on record
+
+Not tied to a single criterion, and on the list for remediation:
+
+- Several accessible names are hard-coded English ("Select row", "Select all
+  rows", "Fill handle", "Resize row", the find bar's buttons) instead of going
+  through `localization.text`.
+- No browser test yet for RTL on the plain grid (the sheet has one).
+- No screen-reader pass recorded (see *Known limits*).
 
 ## Revised Section 508
 
 Section 508 incorporates **WCAG 2.0 Level A and AA** by reference. Every WCAG
-2.0 criterion is a subset of the 2.1 tables above, so the conformance claims
-carry over unchanged.
+2.0 criterion appears in the tables above with the same verdict.
 
 | Chapter | Conformance | Remarks |
 | --- | --- | --- |
-| 302 Functional Performance Criteria | Supports, with the limits noted above | Operation without vision relies on the ARIA grid pattern; see the screen-reader caveat in *Known limits*. |
-| 501-504 Software | Supports | The grid is authored content within a host application; it exposes platform accessibility services via ARIA in the browser. |
-| 602 Support Documentation | Supports | Accessibility documentation is published at [accessibility](../help/accessibility.md), including the keyboard map and verification guidance. |
+| 302 Functional Performance Criteria | Partially Supports | Operation without vision relies on the ARIA grid pattern (no recorded screen-reader pass); operation without fine motor control is limited by the drag-only actions under 2.1.1 and 2.5.7. |
+| 501-504 Software | See WCAG tables | The grid is web content inside a host application and exposes the platform accessibility API through ARIA. |
+| 602 Support Documentation | Supports | [Accessibility](../help/accessibility.md) documents roles, the keyboard map and how to verify a custom theme. |
 
 ## EN 301 549
 
-EN 301 549 v3.2.1, the harmonised European standard, incorporates **WCAG 2.1
-Level A and AA** for web content. Clauses 9.1 through 9.4 map directly onto the
-WCAG 2.1 tables above; clause 11 (software) is addressed by the same ARIA
-implementation. No separate claims are made here.
+EN 301 549 v3.2.1 incorporates **WCAG 2.1 Level A and AA** for web content
+(clause 9) and software (clause 11). Its criteria are a subset of the WCAG 2.2
+tables above and carry the same verdicts.
 
 ## Reproducing these results
 
 ```bash
-pnpm --filter @svgrid/grid test:lib   # includes the axe and contrast suites
+pnpm --filter @svgrid/grid test:lib     # jsdom axe, contrast, ARIA contract, announcements
+npx playwright test tests/e2e/grid-a11y.spec.ts --project=chromium
 ```
 
-Both suites fail the build on a regression, so this report is checked by CI
-rather than being a point-in-time snapshot.
+Both run in CI on every commit, so a regression in a "Supports" row fails the
+build.
 
 ## See also
 
-- [Accessibility](../help/accessibility.md) - roles, keyboard map, and how to verify a custom theme
-- [Compliance overview](./index.md) - the wider procurement questions
+- [Accessibility](../help/accessibility.md) - roles, keyboard map, how to verify a custom theme
+- [Compliance overview](./index.md) - the other procurement questions
 
 <!-- =================================================================
      /docs/legal/EULA/  (enterprise)
