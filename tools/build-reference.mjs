@@ -153,7 +153,7 @@ function extract(src) {
         depth += depthOf(next)
         i += 1
       }
-      out.push({ kind, name, doc, signature: sigLines.join('\n').trim() })
+      out.push({ kind, name, doc, signature: declarationOf(kind, sigLines.join('\n').trim()) })
       continue
     }
     i += 1
@@ -172,6 +172,37 @@ function md(name, sym) {
     '```',
     '',
   ].join('\n')
+}
+
+/**
+ * A declaration without its implementation. The capture in extract() follows
+ * a statement to its last brace, which for a function is the end of its body:
+ * the reference carried whole implementations (179 functions, 490 KB, 69 KB
+ * for one). A function stops at the `{` that opens its body; a `{` right after
+ * `:`, `|`, `&`, `,`, `(`, `<` or `=` opens a type literal in a parameter or
+ * the return type instead. An arrow function in a `const` stops after `=>`.
+ */
+function declarationOf(kind, sig) {
+  const isArrow = kind === 'const' && /=\s*(async\s*)?(\(|<[A-Za-z])/.test(sig.split('\n')[0])
+  if (kind !== 'function' && !isArrow) return sig
+  let paren = 0
+  let brace = 0
+  let sawParams = false
+  let prev = ''
+  for (let i = 0; i < sig.length; i++) {
+    const ch = sig[i]
+    if (ch === '(') {
+      paren += 1
+      sawParams = true
+    } else if (ch === ')') paren -= 1
+    else if (ch === '{') {
+      if (kind === 'function' && sawParams && paren === 0 && brace === 0 && !/[:|&,(<=]/.test(prev)) return sig.slice(0, i).trimEnd()
+      brace += 1
+    } else if (ch === '}') brace -= 1
+    else if (isArrow && ch === '=' && sig[i + 1] === '>' && paren === 0 && brace === 0 && sawParams) return `${sig.slice(0, i + 2)} ...`
+    if (!/\s/.test(ch)) prev = ch
+  }
+  return sig
 }
 
 /** The first sentence of a doc comment, as one line. */
@@ -245,7 +276,8 @@ async function main() {
           import: src.pkg + (SUBPATH[dir] ?? ''),
           module: `${pkgSlug}-${slug}`,
           summary: summaryOf(s.doc),
-          members: membersOf(s.signature),
+          // Members of an object type or interface; a function's braces are its parameters.
+          members: s.kind === 'type' || s.kind === 'interface' ? membersOf(s.signature) : [],
           doc: s.doc,
           signature: s.signature,
         })

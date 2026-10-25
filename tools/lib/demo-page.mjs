@@ -35,7 +35,7 @@ export const DEMO_ABOUT_ORDER = Object.freeze(['about', 'facts', 'faq', 'docs', 
  * @typedef {{ description: string, faq: Array<{ question: string, answer: string }> }} DemoMetaLike
  * @typedef {{ docs: Array<{ slug: string, title: string }>, posts: Array<{ slug: string, title: string, description?: string }> }} DemoRelated
  * @typedef {{ code: boolean, text: string }} PitchRun
- * @typedef {{ kind: 'p', runs: PitchRun[] } | { kind: 'list', items: PitchRun[][] }} PitchBlock
+ * @typedef {{ kind: 'p', runs: PitchRun[] } | { kind: 'list', items: PitchRun[][] } | { kind: 'pre', text: string }} PitchBlock
  * @typedef {{
  *   id: string,
  *   description: string,
@@ -88,6 +88,16 @@ export function pitchBlocks(pitch) {
   /** @type {PitchBlock[]} */
   const out = []
   for (const para of String(pitch ?? '').split(/\n{2,}/)) {
+    // A block indented under the prose (a column-aligned table in the demo's
+    // comment) keeps its lines and spacing; joined into a paragraph it read as
+    // one run-on sentence.
+    const raw = para.split('\n').filter((l) => l.trim())
+    // A list stays a list, however far it is indented.
+    if (raw.length && raw.every((l) => /^ {2,}/.test(l)) && !raw.some((l) => /^\s*([-*]|\d+\.)\s/.test(l))) {
+      const indent = Math.min(...raw.map((l) => l.match(/^ */)[0].length))
+      out.push({ kind: 'pre', text: raw.map((l) => l.slice(indent).trimEnd()).join('\n') })
+      continue
+    }
     const lines = para.split('\n').map((l) => l.trim()).filter(Boolean)
     if (!lines.length) continue
     if (!lines.some((l) => /^- /.test(l))) {
@@ -169,7 +179,7 @@ export function renderDemoAboutHtml(model, { href, escape = escapeHtml, sourceLi
       if (model.description) html += `<p>${escape(model.description)}</p>`
       const runs = (/** @type {PitchRun[]} */ rs) => rs.map((r) => (r.code ? `<code>${escape(r.text)}</code>` : escape(r.text))).join('')
       for (const b of model.pitch) {
-        html += b.kind === 'list' ? `<ul>${b.items.map((it) => `<li>${runs(it)}</li>`).join('')}</ul>` : `<p>${runs(b.runs)}</p>`
+        html += b.kind === 'list' ? `<ul>${b.items.map((it) => `<li>${runs(it)}</li>`).join('')}</ul>` : b.kind === 'pre' ? `<pre>${escape(b.text)}</pre>` : `<p>${runs(b.runs)}</p>`
       }
       html += `</section>`
     } else if (key === 'facts') {
@@ -229,6 +239,7 @@ export function renderDemoAboutMarkdown(model, { href, sourceLink }) {
       if (model.description) out.push(model.description, '')
       for (const b of model.pitch) {
         if (b.kind === 'list') out.push(...b.items.map((it) => `- ${runs(it)}`), '')
+        else if (b.kind === 'pre') out.push('```text', b.text, '```', '')
         else out.push(runs(b.runs), '')
       }
     } else if (key === 'facts') {

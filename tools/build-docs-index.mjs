@@ -816,15 +816,18 @@ async function writeApiJson() {
   const version = (pkg) => JSON.parse(readFileSync(join(ROOT, 'packages', pkg, 'package.json'), 'utf-8')).version
   const modules = new Map()
   const byName = new Map()
+  // A function's one-line summary, cut at a word: with them the index still fits one fetch.
+  const short = (s) => (s.length <= 70 ? s : `${s.slice(0, s.lastIndexOf(' ', 67))}...`)
   for (const s of symbols) {
-    if (!modules.has(s.module)) modules.set(s.module, { module: s.module, import: s.import, functions: [], values: [], types: {} })
+    if (!modules.has(s.module)) modules.set(s.module, { module: s.module, import: s.import, functions: {}, values: [], types: {} })
     const m = modules.get(s.module)
-    if (s.kind === 'function' || s.kind === 'class') m.functions.push(s.name)
+    if (s.kind === 'function' || s.kind === 'class') m.functions[s.name] = short(s.summary)
     else if (s.kind === 'const') m.values.push(s.name)
     else m.types[s.name] = s.members
     const key = s.name.toLowerCase()
     if (!byName.has(key)) byName.set(key, [])
-    byName.get(key).push({ name: s.name, kind: s.kind, import: s.import, summary: s.summary, members: s.members, doc: s.doc, signature: s.signature })
+    const usage = `import ${s.kind === 'type' || s.kind === 'interface' ? 'type ' : ''}{ ${s.name} } from '${s.import}'`
+    byName.get(key).push({ name: s.name, kind: s.kind, usage, summary: s.summary, ...(s.members.length ? { members: s.members } : {}), doc: s.doc, signature: s.signature })
   }
   const index = {
     name: 'SvGrid API reference',

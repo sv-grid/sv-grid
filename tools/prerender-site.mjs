@@ -1558,6 +1558,8 @@ async function main() {
       '',
       `${pkgLine} Category: ${d.category}. Live demo: ${url}`,
       '',
+      `Install: \`npm i ${d.pro ? '@svgrid/grid @svgrid/enterprise' : '@svgrid/grid'}\` (Svelte 5).`,
+      '',
       renderDemoAboutMarkdown(model, {
         href: (kind, slug) => (kind === 'docs' ? `${CANON}/docs/${slug}.md` : `${CANON}/${kind}/${slug}/`),
         sourceLink: ghUrl,

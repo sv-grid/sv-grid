@@ -1,5 +1,5 @@
 export type PitchRun = { code: boolean; text: string }
-export type PitchBlock = { kind: 'p'; runs: PitchRun[] } | { kind: 'list'; items: PitchRun[][] }
+export type PitchBlock = { kind: 'p'; runs: PitchRun[] } | { kind: 'list'; items: PitchRun[][] } | { kind: 'pre'; text: string }
 export type DemoAboutModel = {
   id: string
   description: string
@@ -36,4 +36,8 @@ export function demoAboutSections(model: DemoAboutModel): string[]
 export function renderDemoAboutHtml(
   model: DemoAboutModel,
   opts: { href: (kind: 'docs' | 'blog', slug: string) => string; escape?: (s: string) => string; sourceLink?: string },
+): string
+export function renderDemoAboutMarkdown(
+  model: DemoAboutModel,
+  opts: { href: (kind: 'docs' | 'blog', slug: string) => string; sourceLink?: string },
 ): string

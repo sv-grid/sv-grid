@@ -7,7 +7,7 @@
  * parity test in website/ checks they agree on it.
  */
 import { describe, expect, it } from 'vitest'
-import { pitchBlocks, pitchRuns, renderDemoAboutHtml, demoAboutModel } from './lib/demo-page.mjs'
+import { pitchBlocks, pitchRuns, renderDemoAboutHtml, renderDemoAboutMarkdown, demoAboutModel } from './lib/demo-page.mjs'
 
 describe('demo page pitch', () => {
   it('splits backticks into code runs', () => {
@@ -33,5 +33,20 @@ describe('demo page pitch', () => {
     const model = demoAboutModel({ id: '01-x', source, meta: { description: 'Desc.', faq: [] } })
     const html = renderDemoAboutHtml(model, { href: (k, s) => `/${k}/${s}/` })
     expect(html).toContain('<p>Desc.</p><p>Intro.</p><ul><li><code>a</code> first</li><li><code>b</code> second</li></ul>')
+  })
+
+  it('keeps an indented block (a table, a code sample) as written, and an indented list as a list', () => {
+    const blocks = pitchBlocks('Groups:\n\n  Trim spaces       rule group\n  Fill empty Region split by value\n\n  - a list item\n  - another')
+    expect(blocks.map((b) => b.kind)).toEqual(['p', 'pre', 'list'])
+    expect((blocks[1] as { text: string }).text).toBe('Trim spaces       rule group\nFill empty Region split by value')
+  })
+
+  it('renders the sections as markdown, the source in a fence it cannot close early', () => {
+    const fence3 = '`'.repeat(3)
+    const source = `<script lang="ts">\n  /**\n   * 1. Demo\n   * -------\n   * Intro.\n   *\n   *   api.exportData({ format })\n   */\n  const md = '${fence3}'\n</script>`
+    const md = renderDemoAboutMarkdown(demoAboutModel({ id: '01-x', source, meta: { description: 'Desc.', faq: [] } }), { href: (k, s) => `/${k}/${s}.md` })
+    expect(md).toContain(`## About this example\n\nDesc.\n\nIntro.\n\n${fence3}text\napi.exportData({ format })\n${fence3}`)
+    // The source holds a run of three backticks, so its fence is four.
+    expect(md).toContain(`${'`'.repeat(4)}svelte\n`)
   })
 })
