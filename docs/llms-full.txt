@@ -16951,7 +16951,7 @@ Every observable side effect, mapped:
 | `<SvGrid>` mount                     | Sets up `requestAnimationFrame`, `ResizeObserver`, and DOM event listeners on the grid container. |
 | Inline editing                       | Reads + writes `document` selection; commits via your `onCellValueChange`. |
 | Export to xlsx / pdf / csv / tsv / html | Creates a `Blob` and triggers a download via a synthetic `<a download>`. No network. CSV and TSV prefix formula-like text with `'` so a spreadsheet does not run it ([export](./export.md)). |
-| Import from xlsx / csv / tsv / json  | Reads the user-provided `File` via `arrayBuffer()` / `text()`. No network. An .xlsx cell addressed outside the sheet (past column XFD) is rejected, and so is a sheet that would need more than ten million blank cells to lay out, so a crafted file cannot exhaust memory. |
+| Import from xlsx / csv / tsv / json  | Reads the user-provided `File` via `arrayBuffer()` / `text()`. No network. An .xlsx cell addressed outside the sheet (past column XFD) is rejected, and so is a sheet that would need more than ten million blank cells to lay out. An .xlsx or .ods is unzipped as a stream and refused once its parts pass 256 MB together, so a zip bomb never lands in memory. A crafted file cannot exhaust memory either way. |
 | Print                                | Opens a sandbox popup window with an isolated HTML document and calls its `print()`. |
 | AI helpers                           | Build a prompt locally and call the consumer-registered `AIProvider`. The grid itself never opens a connection. |
 | License key check                    | A 4-line string-prefix check against an in-memory revoked-key set. No network. |
@@ -75447,6 +75447,8 @@ await api.exportData({
     headerColor: '#334155',   // header row fill
     zebra: true,              // striped rows
     columnWidths: '*',        // '*' fill, 'auto', or a per-column pt array
+    fit: 'auto',              // wide grids: 'auto' | 'shrink' | 'split' | 'none'
+    repeatColumns: 1,         // columns repeated on every page when split
     // repeatHeader (default true), showPageNumbers (default true) also available
   },
 })
@@ -75455,6 +75457,67 @@ await api.exportData({
 The header row repeats on every page, each page gets a `Page X of Y` +
 date footer, per-column alignment is honored, and wide grids auto-switch to
 landscape (override with `pdf.pageOrientation`).
+
+**Every column and every row prints.** Column widths follow the text: each
+column gets at least its longest word, and the rest of the page goes to the
+columns with the most to say, so a notes column is wide and an id column is
+narrow. When the columns still do not fit across the page, `fit: 'auto'`
+shrinks the table text down to three quarters of `fontSize`, and past that
+splits the columns over pages, repeating the first `repeatColumns` columns
+on each, so a 22-column report prints as two runs of pages instead of losing
+its right-hand side. `fit: 'shrink'` and `fit: 'split'` pick one of the two;
+`fit: 'none'` leaves the layout to pdfmake. Explicit numeric `columnWidths`
+are kept, and scaled down only if together they are wider than the page.
+Rows stay whole on a page, except that a row taller than a page breaks
+across pages rather than being dropped.
+
+**Conditional-format icons** (arrows, triangles, traffic lights) are drawn as
+shapes in red, amber and green, since their characters are not in the PDF
+font.
+
+**Other scripts need a font.** The default font, Roboto, covers Latin,
+Greek and Cyrillic. Chinese, Japanese, Korean, Arabic, Hebrew, Thai, the
+Indic scripts and emoji print as empty boxes, and the export logs a warning
+when it sees them. Supply a font that covers them (and Latin, since the
+whole document uses it) as base64 or a URL:
+
+```ts
+pdf: {
+  font: { name: 'NotoSansKR', normal: notoRegularBase64, bold: notoBoldBase64 },
+}
+```
+
+**Large PDFs: render in a worker.** pdfmake lays out and writes the whole
+document in one go, about a second per thousand rows of eight columns on a
+desktop machine, and on the page that time is a frozen tab (the export logs a
+warning past 2,000 rows). Give it a worker instead and the page keeps
+responding while `onProgress` reports the render:
+
+```ts
+// pdf.worker.ts, a file in your app
+import { servePdfWorker } from '@svgrid/enterprise/pdf-worker'
+servePdfWorker()
+```
+
+```ts
+await api.exportData({
+  format: 'pdf',
+  pdf: { worker: () => new Worker(new URL('./pdf.worker.ts', import.meta.url), { type: 'module' }) },
+  onProgress: ({ ratio }) => (progress = ratio),
+  signal: controller.signal, // aborting terminates the worker
+})
+```
+
+The worker loads `pdfmake` itself, so the page never does. Everything else
+works the same, with one difference: a `labels.page` function cannot be sent
+to a worker, so it is called once with stand-in numbers and used as a
+template. It must print the numbers as given; one that formats them (a
+thousands separator) falls back to `Page X of Y`.
+
+Right-to-left text is not fully supported by pdfmake. In a test with
+Tahoma, Hebrew and Arabic letters drew correctly but the space between words
+was lost ("שלום עולם" printed as one word), so check right-to-left documents
+before relying on them.
 
 The PDF looks like the grid it came from. With `pdf.matchTheme` (default
 true) the exporter reads the mounted grid's computed colours - header fill
@@ -75471,10 +75534,34 @@ html, `header` / `footer` lines print above and below the table, and
 `merges` span data cells.
 
 When the grid is grouped, the PDF carries the grouping: a bold **group header**
-per cluster (nested for multi-level grouping) and a **subtotal row** summing the
-number / currency columns - matching the xlsx outline export. It's on by
+per cluster (nested for multi-level grouping), named the way the grid shows the
+value, a **subtotal row** per cluster and a **total row** at the end. Each
+column totals with its own `aggregate` (`avg`, `min`, `max`, `count`,
+`countDistinct`, a function, ...), as the group rows on screen do; a column
+without one sums if it is a number or currency column. Conditional formatting
+and links carry into grouped exports as they do into flat ones. It's on by
 default (`autoGroup`); pass `groupBy` to override or `autoGroup: false` to get a
-flat table.
+flat table, and `pdf.grandTotal: false` to leave out the total row.
+
+A boolean column prints a tick for `true` and nothing for `false`, as its
+checkbox does on screen. An icon set with `iconOnly` prints the icon without
+the value.
+
+The words the PDF writes itself can be replaced, and the document can carry a
+watermark and an author:
+
+```ts
+pdf: {
+  labels: {
+    page: (page, pages) => `Seite ${page} von ${pages}`,
+    date: (now) => now.toLocaleDateString('de-DE'),
+    subtotal: (group) => `Zwischensumme ${group}`,
+    total: 'Gesamt',
+  },
+  watermark: 'ENTWURF',   // or { text, color, opacity }
+  author: 'Finance',      // with title / subtitle, in the document properties
+}
+```
 
 #### Charts and a KPI strip
 
@@ -121710,6 +121797,36 @@ For machine-readable releases, fetch
 
 #### Added
 
+- **PDF: `pdf.fit`, `pdf.repeatColumns` and `pdf.font`.** `fit` chooses what
+  happens when the columns do not fit across the page (shrink the text, split
+  the columns over pages, or both, the default); `repeatColumns` says how many
+  leading columns repeat on each page of a split. `font` prints with a font
+  you supply, base64 or a URL, for scripts Roboto lacks (Chinese, Japanese,
+  Korean, Arabic, Hebrew, Thai, Indic, emoji); without one the export now
+  warns when it sees them.
+- **PDF export in a worker: `pdf.worker` and `@svgrid/enterprise/pdf-worker`.**
+  pdfmake renders in one synchronous run, about a second per thousand rows on
+  a desktop machine, and on the page that froze the tab. With
+  `pdf.worker: () => new Worker(...)` and a worker script that calls
+  `servePdfWorker()`, the document goes to the worker as data and the page
+  stays responsive: a 5,000-row export took about two seconds while the page
+  kept drawing at 60 fps, with progress through `onProgress` and an abort that
+  terminates the worker. A PDF of more than 2,000 rows rendered on the page now
+  logs a warning that points here. `buildPdfDocData` and `hydratePdfDoc` split
+  the document builder for this; `buildPdfDocDefinition` works as before.
+- **Grouped PDFs total like the grid.** Subtotals use each column's
+  `aggregate` (avg, min, max, count, countDistinct, a function) instead of
+  always summing, a total row closes the table (`pdf.grandTotal: false` to
+  leave it out), and group names are formatted as on screen. `getColumns()` in
+  `@svgrid/grid` now reports each column's `aggregate` for this.
+- **PDF: `pdf.labels`, `pdf.watermark`, `pdf.author`.** Replace the footer's
+  page and date text and the subtotal and total labels; print a faint
+  watermark across every page; and fill the document properties, so a viewer
+  shows the report's title rather than the file name.
+- **PDF column widths follow the text.** Each column gets at least its
+  longest word and the rest of the page goes to the columns with the most to
+  say, instead of equal widths: a 60-row, 8-column order list went from three
+  pages to two.
 - **The pivot designer's Chart view grew up.** It offers every shape a pivot
   can take (bar, line, area, lollipop, pareto, the three radial forms, pie,
   funnel, waterfall, radar, heat map, stream) in the panel's groups, with
@@ -121747,6 +121864,26 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **A wide grid lost columns in the PDF.** pdfmake sizes a column no narrower
+  than its longest word, so a 22-column report ran off the right edge and only
+  15 columns printed, without a warning. The columns are now fitted to the
+  page (see `pdf.fit` above).
+- **A row taller than a page was missing from the PDF.** Rows are kept whole
+  on a page, and pdfmake drops a row that cannot fit on any page. Such a row
+  now breaks across pages.
+- **Conditional-format icons printed as empty boxes in the PDF.** The arrow,
+  triangle and traffic-light glyphs are not in Roboto; they are drawn as
+  shapes now.
+- **The PDF footer could show yesterday's date.** It printed the UTC date, so
+  an export after midnight east of Greenwich was dated the day before. It
+  prints the local date, and the footer follows custom page margins.
+- **Grouped PDFs dropped conditional formatting and links.** They now carry
+  both, as flat exports do.
+- **Booleans printed as "true" and "false" in the PDF.** They print a tick or
+  nothing, like the grid's checkbox. An icon set's `iconOnly` is honoured too:
+  it printed the value next to the icon.
+- **A number or date column passed in `columns` without `align` printed
+  left-aligned in the PDF.** It right-aligns from its `format`, as on screen.
 - **A pivot chart drew an empty cell as a zero bar.** An average over no rows
   is `null` in the pivot and the bridge read it as 0; it is a gap on the
   chart now. A sum over no rows stays the 0 the engine wrote.
@@ -121783,6 +121920,23 @@ For machine-readable releases, fetch
   `#000000` defaults the grid renders with. Because `@svgrid/enterprise` ships its
   `src`, this had surfaced as a stray `svelte-check` error in consuming apps - a
   clean app now type-checks with zero errors.
+
+#### Security
+
+- **A crafted .xlsx could crash the tab.** `importData` and the spreadsheet's
+  File > Open filled every gap before a cell with blanks, sized by the cell
+  reference in the file: `<c r="ZZZZZZZ1">` asked for about eight billion.
+  `importData` now rejects a cell past column XFD; the spreadsheet skips a cell
+  outside the sheet, as it does other malformed parts. Both refuse a sheet that
+  would need more than ten million blank cells to lay out.
+- **A zip bomb could exhaust the tab's memory.** Every .xlsx and .ods reader
+  (`importData`, File > Open, `documentFromXlsx`, `documentFromOds`) unzipped
+  each part whole before looking at it, so a small file whose parts inflate to
+  gigabytes was read into memory first. Parts are now unzipped as a stream and
+  counted as they inflate; a file whose parts pass 256 MB together is refused
+  at that point.
+- **CSV and TSV from `exportData` neutralise formula-like text**, through the
+  same `@svgrid/grid` serializer (see the grid's Security entry).
 
 ### @svgrid/grid-wc
 
@@ -121834,17 +121988,6 @@ For machine-readable releases, fetch
   generated `.d.ts` augments `HTMLElementTagNameMap` and
   `HTMLElementEventMap`, so the element and its events are typed without
   hand-written declarations.
-#### Security
-
-- **A crafted .xlsx could crash the tab.** `importData` and the spreadsheet's
-  File > Open filled every gap before a cell with blanks, sized by the cell
-  reference in the file: `<c r="ZZZZZZZ1">` asked for about eight billion.
-  `importData` now rejects a cell past column XFD; the spreadsheet skips a cell
-  outside the sheet, as it does other malformed parts. Both refuse a sheet that
-  would need more than ten million blank cells to lay out.
-- **CSV and TSV from `exportData` neutralise formula-like text**, through the
-  same `@svgrid/grid` serializer (see the grid's Security entry).
-
 - **`<sv-grid-shadow>` - the grid in an open shadow root**, so a host page's
   CSS cannot reach it. Same properties, attributes and events as `<sv-grid>`;
   a separate element rather than an attribute because Svelte resolves
@@ -122664,7 +122807,7 @@ financial statements) go to sales@jqwidgets.com.
 | Question | Answer |
 | --- | --- |
 | How is code tested before release? | Every push to `main` runs the Test workflow (`.github/workflows/test.yml`): type checks of every package, lint, the grid and Enterprise unit suites, browser specs in Chromium, bundle-size budgets and SBOM drift. The release workflow (`.github/workflows/publish-npm.yml`) runs when a push to `main` finishes its Test run green, and publishes that commit; there is no scheduled publish. A manual run is the maintainer's override. |
-| Security-relevant tests | HTML sanitization of cell content (`sanitize-html.test.ts`); formula injection in CSV, TSV and chart CSV exports (`csv-injection.test.ts`); crafted .xlsx files that address cells far outside the sheet (`import-xlsx-limits.dom.test.ts`); LIMIT and OFFSET rejected unless they are non-negative integers in the SvelteKit SQL data source (`sql-source.test.ts`); and the accessibility suites. |
+| Security-relevant tests | HTML sanitization of cell content (`sanitize-html.test.ts`); formula injection in CSV, TSV and chart CSV exports (`csv-injection.test.ts`); crafted .xlsx files that address cells far outside the sheet (`import-xlsx-limits.dom.test.ts`) or unzip to far more than they weigh (`xlsx-zip-bomb.dom.test.ts`); LIMIT and OFFSET rejected unless they are non-negative integers in the SvelteKit SQL data source (`sql-source.test.ts`); and the accessibility suites. |
 | CSV / formula injection | File exports prefix text that a spreadsheet would run as a formula (`=`, `+`, `-`, `@`, tab, carriage return) with `'`, by default. See [export](../help/export.md). |
 | Can a version change after release? | No. npm does not allow a published version to be overwritten. |
 
@@ -122916,6 +123059,10 @@ Not tied to a single criterion, and on the list for remediation:
   through `localization.text`.
 - No browser test yet for RTL on the plain grid (the sheet has one).
 - No screen-reader pass recorded (see *Known limits*).
+- PDF exports are not tagged PDF (PDF/UA): the renderer, pdfmake, writes no
+  structure tree, so a screen reader reads a PDF table as loose text. Exports
+  to XLSX and HTML keep the table structure; offer one of those where an
+  accessible document is required.
 
 ## Revised Section 508
 
