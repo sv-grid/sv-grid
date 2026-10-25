@@ -141,8 +141,13 @@ const sameTarget = (path, target) => {
 // ---- the agent ---------------------------------------------------------------
 
 const STOP = new Set('a an and are can do does for how i in is it of on or the to with my me add use using what show'.split(' '))
-// Plural and singular match: an ask for "cells" finds the "cell" page.
-const words = (s) => s.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 1 && !STOP.has(w)).map((w) => (w.length > 3 ? w.replace(/s$/, '') : w))
+// A light stemmer, as a reader matches words: "cells" finds "cell", "validate"
+// finds "Validation", "edits" finds "editing".
+const stem = (w) => {
+  const s = w.length > 5 ? w.replace(/(ations?|ions?|ing|ates?|ated|ed)$/, '') : w
+  return s.length > 3 ? s.replace(/s$/, '') : s
+}
+const words = (s) => s.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 1 && !STOP.has(w)).map(stem)
 
 function rank(links, query, visited) {
   const want = words(query)

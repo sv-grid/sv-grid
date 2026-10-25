@@ -180,7 +180,7 @@ jobs:
           # just regenerated it at the bumped versions. Committing it after a
           # grid-only release would release mcp again on the next run.
           node tools/build-docs-index.mjs
-          git add -- docs/docs.json docs/llms.txt docs/llms-full.txt docs/llms-small.txt
+          git add -- docs/docs.json docs/llms.txt docs/llms-full.txt docs/llms-small.txt docs/llms
           if [ "${{ contains(fromJSON(steps.release.outputs.packages_json), 'mcp') }}" = "true" ]; then
             git add -- packages/mcp/src/data.ts
           fi

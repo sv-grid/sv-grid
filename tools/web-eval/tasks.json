@@ -16,19 +16,27 @@
     { "id": "studio-ai-generation", "band": "docs", "query": "Studio generate an app with AI", "targets": ["/docs/enterprise/studio/ai-generation/"], "mustContain": ["Studio"] },
     { "id": "compare-hub", "band": "docs", "query": "which svelte table library should I use", "targets": ["/compare/"], "mustContain": ["Svelte"] },
     { "id": "mcp-server-doc", "band": "docs", "query": "MCP server for coding assistants", "targets": ["/docs/help/mcp-server/"], "mustContain": ["https://mcp.svgrid.com/mcp"] },
-
+    { "id": "ui-datetime", "band": "docs", "query": "date time picker component", "targets": ["/docs/help/ui-components/sv-date-time-picker/"], "mustContain": ["SvDateTimePicker"] },
+    { "id": "validation", "band": "docs", "query": "validate cell edits", "targets": ["/docs/help/editing/validation/"], "mustContain": ["validate"] },
+    { "id": "spreadsheet", "band": "docs", "query": "spreadsheet with formulas", "targets": ["/docs/help/cells/spreadsheet-shell/"], "mustContain": ["formula"] },
+    { "id": "server-row-model", "band": "docs", "query": "server side row model", "targets": ["/docs/help/server/server-row-model/"], "mustContain": ["createServerRowModel"] },
+    { "id": "base-quick-start", "band": "docs", "query": "SvGrid Base quick start", "targets": ["/docs/help/base/quick-start/"], "mustContain": ["Base"] },
+    { "id": "ai-smart-fill", "band": "docs", "query": "AI smart fill empty cells", "targets": ["/docs/help/ai-toolkit/"], "mustContain": ["smartFill"] },
     { "id": "demo-change-review", "band": "demo", "query": "change review demo AI agent edits review", "targets": ["/demos/702-change-review/"], "mustContain": ["createReview<Customer>"] },
     { "id": "demo-agent-desk", "band": "demo", "query": "agent review desk demo", "targets": ["/demos/704-agent-review-desk/"], "mustContain": ["createGridTools"] },
     { "id": "demo-kanban", "band": "demo", "query": "kanban board demo", "targets": ["/demos/343-kanban-board/"], "mustContain": ["board="] },
     { "id": "demo-pinning", "band": "demo", "query": "column pinning demo", "targets": ["/demos/25-column-pinning/"], "mustContain": ["<SvGrid"] },
     { "id": "demo-tree", "band": "demo", "query": "tree data demo", "targets": ["/demos/426-tree-data/"], "mustContain": ["<SvGrid"] },
-
     { "id": "api-getRowPosition", "band": "api", "query": "getRowPosition api reference", "targets": ["/api.json", "/docs/reference/SvGridApi/"], "mustContain": ["getRowPosition"] },
     { "id": "api-createReview-options", "band": "api", "query": "createReview options rowLabel", "targets": ["/api.json", "/docs/help/review/change-review/"], "mustContain": ["rowLabel"] },
-
+    { "id": "api-exportGrid", "band": "api", "query": "exportGrid api reference", "targets": ["/api.json"], "mustContain": ["exportGrid"] },
+    { "id": "api-column-editable", "band": "api", "query": "ColumnDef editable option api", "targets": ["/api.json"], "mustContain": ["\"editable\""] },
     { "id": "llms-names-mcp-endpoint", "band": "endpoint", "path": "/llms.txt", "mustContain": ["https://mcp.svgrid.com/mcp"] },
     { "id": "well-known-mcp", "band": "endpoint", "path": "/.well-known/mcp.json", "mustContain": ["https://mcp.svgrid.com/mcp"] },
     { "id": "demo-markdown", "band": "endpoint", "path": "/demos/702-change-review.md", "mustContain": ["createReview<Customer>"] },
-    { "id": "api-json", "band": "endpoint", "path": "/api.json", "mustContain": ["getRowPosition", "createReview"] }
+    { "id": "api-json", "band": "endpoint", "path": "/api.json", "mustContain": ["getRowPosition", "createReview"] },
+    { "id": "api-symbol-file", "band": "endpoint", "path": "/api/exportgrid.json", "mustContain": ["ExportOptions"] },
+    { "id": "demos-index", "band": "endpoint", "path": "/demos.md", "mustContain": ["702-change-review.md"] },
+    { "id": "llms-studio-slice", "band": "endpoint", "path": "/llms/studio.txt", "mustContain": ["ai-generation"] }
   ]
 }

@@ -1,25 +1,25 @@
 {
-  "passed": 26,
-  "total": 26,
+  "passed": 37,
+  "total": 37,
   "byBand": {
     "docs": {
-      "pass": 15,
-      "total": 15
+      "pass": 21,
+      "total": 21
     },
     "demo": {
       "pass": 5,
       "total": 5
     },
     "api": {
-      "pass": 2,
-      "total": 2
-    },
-    "endpoint": {
       "pass": 4,
       "total": 4
+    },
+    "endpoint": {
+      "pass": 7,
+      "total": 7
     }
   },
-  "fetches": 107,
-  "bytes": 3668355,
+  "fetches": 165,
+  "bytes": 5234823,
   "failing": []
 }
