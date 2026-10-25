@@ -71,7 +71,7 @@ this table with `support_until` on or after today is a trial user in their
 https://svgrid.com/founding/ (claim a place) and
 https://svgrid.com/founding/testimonial/ (send a testimonial after shipping).
 Both pages are noindex and out of the sitemap; people reach them from the
-email. The offer closes at `FOUNDING_ENDS` (2026-10-31 23:59:59 UTC) or when
+email. The offer closes at `FOUNDING_ENDS` (2026-11-30 23:59:59 UTC; extended from 2026-10-31) or when
 the 15 places are taken, whichever comes first. The worker enforces both; the
 page only shows them. Override either with `[vars]` `FOUNDING_ENDS` and
 `FOUNDING_PLACES` in `wrangler.toml` (keep `website/src/lib/founding.ts` in

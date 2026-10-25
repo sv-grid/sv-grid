@@ -15,7 +15,7 @@
 import { EMAIL, json, clip, httpUrl, readJson, rateLimit, notify, exportCsv } from './shared.js'
 
 export const FOUNDING_PLACES = 15
-export const FOUNDING_ENDS = '2026-10-31T23:59:59Z'
+export const FOUNDING_ENDS = '2026-11-30T23:59:59Z'
 
 const settings = (env) => ({
   places: Number(env.FOUNDING_PLACES) > 0 ? Number(env.FOUNDING_PLACES) : FOUNDING_PLACES,
