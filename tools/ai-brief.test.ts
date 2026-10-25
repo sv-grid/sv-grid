@@ -75,6 +75,27 @@ describe('plainDocBody', () => {
     expect(out).not.toContain('<video')
     expect(out).not.toContain('{runnable}')
   })
+
+  it('writes the widget placeholders out as their commands and links', () => {
+    const body = [
+      '<div data-docs-install="@svgrid/grid" data-extra="jszip"></div>',
+      '<div data-docs-create="@svgrid"></div>',
+      '<div data-docs-add="add blocks/login"></div>',
+      '<div data-docs-sandbox="react:editing" data-title="Editing"></div>',
+      '<div data-docs-mirror="editing" data-height="460"></div>',
+      '<div data-docs-trial="docs-evaluation"></div>',
+      '```html\n<div data-docs-install="@svgrid/grid"></div>\n```',
+    ].join('\n\n')
+    const out = plainDocBody(body, { site: SITE, slug: 'help/web-components/react', knownSlugs: new Set() })
+    expect(out).toContain('```bash\nnpm i @svgrid/grid jszip\n```')
+    expect(out).toContain('```bash\nnpm create @svgrid@latest\n```')
+    expect(out).toContain('```bash\nnpx @svgrid/ui add blocks/login\n```')
+    expect(out).toContain('> Runnable react project, Editing: https://github.com/sv-grid/sv-grid/tree/main/packages/grid-wc/examples/react/editing')
+    expect(out).toContain(`> Start a 30-day Enterprise trial: ${SITE}/pricing/?trial=docs-md`)
+    expect(out).not.toContain('data-docs-mirror')
+    // A placeholder quoted in a code fence is documentation, not a widget.
+    expect(out).toContain('```html\n<div data-docs-install="@svgrid/grid"></div>\n```')
+  })
 })
 
 describe('aiBriefLines', () => {

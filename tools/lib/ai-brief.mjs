@@ -173,10 +173,38 @@ export function absoluteDocHref(href, { site, slug, knownSlugs }) {
   return REPO_BLOB + rel + tail
 }
 
+const REPO_TREE = 'https://github.com/sv-grid/sv-grid/tree/main/'
+
+/**
+ * The widgets routes/Docs.svelte mounts into `<div data-docs-*>` placeholders,
+ * as the text each one stands for: the npm form of an install, create or
+ * `@svgrid/ui add` command, the repo folder a StackBlitz button boots, and the
+ * trial link. A framework mirror is the running output of the listing that
+ * follows it, so it goes.
+ *
+ * @param {string} text  markdown outside code fences
+ * @param {string} site
+ */
+function plainEmbeds(text, site) {
+  return text.replace(/<div\s+(data-docs-(?:install|create|add|sandbox|mirror|trial)="[^"]*"[^>]*)>\s*<\/div>/g, (_, attrText) => {
+    const a = Object.fromEntries([...attrText.matchAll(/data-([a-z-]+)="([^"]*)"/g)].map((m) => [m[1], m[2]]))
+    if ('docs-install' in a) return '```bash\nnpm i ' + [a['docs-install'], a.extra].filter(Boolean).join(' ') + '\n```'
+    if ('docs-create' in a) return '```bash\nnpm create ' + a['docs-create'] + '@latest\n```'
+    if ('docs-add' in a) return '```bash\nnpx @svgrid/ui ' + a['docs-add'] + '\n```'
+    if ('docs-sandbox' in a) {
+      const [framework, recipe] = a['docs-sandbox'].split(':')
+      return `> Runnable ${framework} project${a.title ? `, ${a.title}` : ''}: ${REPO_TREE}packages/grid-wc/examples/${framework}/${recipe}`
+    }
+    if ('docs-trial' in a) return `> Start a 30-day Enterprise trial: ${site}/pricing/?trial=docs-md`
+    return ''
+  })
+}
+
 /**
  * A doc body with the site-only markup removed, for the markdown mirrors and
  * llms-small.txt: tutorial video embeds become a one-line pointer, demo
- * placeholders become a link, the `{runnable}` / `{preamble}` / `{nocheck}`
+ * placeholders become a link, the other widget placeholders become their
+ * command or link (plainEmbeds), the `{runnable}` / `{preamble}` / `{nocheck}`
  * fence flags (the docs snippet checker's) go, and relative links become
  * absolute (absoluteDocHref). Code fences are left as written.
  *
@@ -186,7 +214,7 @@ export function absoluteDocHref(href, { site, slug, knownSlugs }) {
 export function plainDocBody(body, { site, slug, knownSlugs, demoTitle = () => null, tutorial = () => null }) {
   const linked = body
     .split(/(^```[\s\S]*?^```[^\n]*$)/m)
-    .map((part, i) => (i % 2 === 1 ? part : part.replace(/(!?\[[^\]]{0,300}\]\()([^)\s]+)((?:\s+"[^"]*")?\))/g, (_, open, href, close) => open + absoluteDocHref(href, { site, slug, knownSlugs }) + close)))
+    .map((part, i) => (i % 2 === 1 ? part : plainEmbeds(part, site).replace(/(!?\[[^\]]{0,300}\]\()([^)\s]+)((?:\s+"[^"]*")?\))/g, (_, open, href, close) => open + absoluteDocHref(href, { site, slug, knownSlugs }) + close)))
     .join('')
   return linked
     .replace(/<!-- tutorial:([a-z0-9-]+) -->[\s\S]*?<!-- \/tutorial:\1 -->/g, (_, id) => {
