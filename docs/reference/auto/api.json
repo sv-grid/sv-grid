@@ -3421,7 +3421,7 @@
    "summary": "Hold writes nobody typed (an agent's edits, an import, an AI helper's output) as proposals, grouped by the change they make, and write them only when a person accepts them.",
    "members": [],
    "doc": "Hold writes nobody typed (an agent's edits, an import, an AI helper's\noutput) as proposals, grouped by the change they make, and write them only\nwhen a person accepts them. Give the grid `review.columns(columns)` and\n`review.formats`, and render `<SvReviewPanel {review} />` beside it. Each\ndecision is one Ctrl+Z in the grid.",
-   "signature": "export function createReview<TData = unknown>(opts: ReviewOptions<TData>)"
+   "signature": "export function createReview<TData = unknown>(opts: ReviewOptions<TData>): Review<TData>"
   },
   {
    "name": "createRowPlaceholder",
@@ -7327,13 +7327,43 @@
   },
   {
    "name": "Review",
-   "kind": "type",
+   "kind": "interface",
    "import": "@svgrid/enterprise/review",
    "module": "svgrid-enterprise-review-model.svelte",
-   "summary": "What `createReview` returns.",
-   "members": [],
-   "doc": "What `createReview` returns.",
-   "signature": "export type Review<TData = unknown> = ReturnType<typeof createReview<TData>>"
+   "summary": "What `createReview` returns: the proposals, their groups, the decisions, and what the grid takes (`columns`, `formats`).",
+   "members": [
+    "version",
+    "messages",
+    "lastError",
+    "add",
+    "get",
+    "proposals",
+    "rowLabel",
+    "fieldLabel",
+    "pending",
+    "conflicts",
+    "groups",
+    "pendingFor",
+    "accept",
+    "reject",
+    "acceptGroup",
+    "rejectGroup",
+    "resolveConflict",
+    "formats",
+    "columns",
+    "reveal",
+    "showPendingOnly",
+    "pendingOnly",
+    "toJSON",
+    "load",
+    "merge",
+    "log",
+    "revertSet",
+    "sets",
+    "clear"
+   ],
+   "doc": "What `createReview` returns: the proposals, their groups, the decisions,\nand what the grid takes (`columns`, `formats`). Every read is reactive.",
+   "signature": "export interface Review<TData = unknown> {\n  /** Bumped on every change, for code that caches what it reads. */\n  readonly version: number\n  /** The wording in effect: English with `messages` laid over it. */\n  readonly messages: ReviewMessages\n  /** The last undo or redo whose save failed, or null. */\n  readonly lastError: { error: unknown; during: 'undo' | 'redo'; at: number } | null\n  /** Add a change set; a cell that already has a live proposal from another source becomes a conflict. */\n  add(input: AddInput): ChangeSet\n  /** One proposal by id. */\n  get(id: string): Proposal | undefined\n  /** Every proposal of the session, whatever its status. */\n  proposals(): Proposal[]\n  /** What names a proposal's row (`rowLabel`), or null. */\n  rowLabel(p: Proposal): string | null\n  /** A field's column header, as the group labels show it. */\n  fieldLabel(field: string): string\n  /** The proposals waiting for a decision. */\n  pending(): Proposal[]\n  /** The proposals two sources disagree on, to settle with `resolveConflict`. */\n  conflicts(): Proposal[]\n  /** The pending proposals grouped by the change they make, the groups that need a person first. */\n  groups(): ProposalGroup[]\n  /** The pending proposal for one cell, if there is one. */\n  pendingFor(rowId: string, field: string): Proposal | undefined\n  /** Write these proposals: checks each cell still holds `before`, before and after `onCommit`. One undo step. */\n  accept(ids: ReadonlyArray<string>): Promise<ReviewOutcome>\n  /** Decide against these proposals; nothing is written. One undo step. */\n  reject(ids: ReadonlyArray<string>): ReviewOutcome\n  /** Accept a group, limited to the ids the person was shown, so a proposal added since is not decided unseen. */\n  acceptGroup(key: string, shownIds: ReadonlyArray<string>): Promise<ReviewOutcome>\n  /** Reject a group, limited to the ids the person was shown. */\n  rejectGroup(key: string, shownIds: ReadonlyArray<string>): ReviewOutcome\n  /** Keep one of a cell's conflicting proposals (it becomes pending) and reject the rest, as one undo step. */\n  resolveConflict(keepId: string): void\n  /** `conditionalFormats` for the grid: pending cells tinted, conflicting cells marked, the row \"Show in grid\" lands on lit. */\n  readonly formats: ConditionalFormat<any>[]\n  /** The grid's columns with the proposed value drawn in each pending cell. */\n  columns<C extends ReadonlyArray<any>>(cols: C): C\n  /** Show the next proposal of `ids` after `fromId` in the grid, on whatever page it is. */\n  reveal(ids: ReadonlyArray<string>, fromId?: string): { id: string | null; hidden: number }\n  /** Show only rows with a pending or conflicting proposal, on top of the user's own filters. */\n  showPendingOnly(on: boolean): void\n  /** Whether `showPendingOnly` is on (the grid's own Clear turns it off too). */\n  readonly pendingOnly: boolean\n  /** Every set with its proposals and their status, as plain JSON; `setIds` exports only some. */\n  toJSON(opts?: { setIds?: ReadonlyArray<string> }): ReviewJSON\n  /** Replace everything with an export; returns how many malformed proposals were dropped. */\n  load(json: ReviewJSON): { dropped: number }\n  /** Add the sets of an export, keeping what is here; returns how many were dropped. */\n  merge(json: ReviewJSON): { dropped: number }\n  /** Every decided proposal (accepted, rejected or stale), oldest decision first. */\n  log(): Proposal[]\n  /** Propose undoing what a set wrote, as a new set to review; null when nothing of it was accepted. */\n  revertSet(setId: string): ChangeSet | null\n  /** The sets in this review, newest last, without their proposals. */\n  sets(): Array<Omit<ChangeSet, 'proposals'> & { count: number }>\n  /** Forget every proposal and set. */\n  clear(): void\n}"
   },
   {
    "name": "REVIEW_MESSAGES",
