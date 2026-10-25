@@ -1,0 +1,147 @@
+# SvGrid UI: SvGrid docs index
+
+> Part of https://svgrid.com/llms.txt. Each docs page has a markdown copy at its URL with the trailing slash replaced by `.md`.
+
+
+### The hero component
+
+- [<SvGrid>](https://svgrid.com/docs/getting-started/): the Svelte 5 data grid, and the component the rest of SvGrid UI is built around. Every editor below doubles as a cell editor inside it. `import { SvGrid } from '@svgrid/grid'`. Live demos with source: https://svgrid.com/demos/
+
+### UI components
+
+- [SvGrid UI](https://svgrid.com/docs/help/ui-components/index/): SvGrid UI is the Svelte 5 component suite that ships in the free @svgrid/grid package - 70+ buttons, inputs, pickers, overlays, and layout primitives, each with its own tutorial page.
+- [Add components with the CLI](https://svgrid.com/docs/help/ui-components/cli/): @svgrid/ui gets a SvGrid UI component into your app - and lets you *see* it - in one command.
+- [Headless editors](https://svgrid.com/docs/help/ui-components/headless-editors/): Every editor is headless-first, exactly like the grid (createSvGrid / <SvGrid>). Each Sv* component is a thin styled renderer over a framework-free runes core named create<Editor>.
+- [Internationalization & RTL](https://svgrid.com/docs/help/ui-components/i18n-rtl/): Every editor in the kit shares one localization + direction contract, so you wire it the same way everywhere.
+- [Buttons & toggles](https://svgrid.com/docs/help/ui-components/buttons/): Press and toggle primitives. All take a size (sm | md | lg) and theme from --sg-*.
+- [SvButton](https://svgrid.com/docs/help/ui-components/sv-button/): The press primitive for the whole UI kit - a themeable button with variants, sizes, a built-in loading state, an icon slot, and automatic anchor rendering when you pass an href.
+- [SvButtonGroup](https://svgrid.com/docs/help/ui-components/sv-button-group/): A segmented button bar - a single-select view switcher, a multi-select toggle set, or a plain row of action buttons.
+- [SvRepeatButton](https://svgrid.com/docs/help/ui-components/sv-repeat-button/): A button that keeps firing while you hold it down - after an initial delay, then at a steady interval.
+- [SvToggleButton](https://svgrid.com/docs/help/ui-components/sv-toggle-button/): A button with a sticky pressed on/off state, exposed to assistive tech via aria-pressed.
+- [SvSwitchButton](https://svgrid.com/docs/help/ui-components/sv-switch-button/): An on/off sliding switch with the ARIA switch role - the control for settings that take effect immediately.
+- [SvCheckBox](https://svgrid.com/docs/help/ui-components/sv-check-box/): A themed checkbox with a true indeterminate state and an optional inline label.
+- [SvRadioGroup](https://svgrid.com/docs/help/ui-components/sv-radio-group/): An accessible single-select radio group following the WAI-ARIA radiogroup pattern, with roving tabindex and arrow-key navigation.
+- [SvSegmented](https://svgrid.com/docs/help/ui-components/sv-segmented/): A segmented control: a compact row of mutually-exclusive options in a shared track - the modern alternative to a small radio group or a tab strip for a setting.
+- [SvRating](https://svgrid.com/docs/help/ui-components/sv-rating/): A star rating control built on the WAI-ARIA slider pattern - with hover preview, keyboard support, optional half steps, and a read-only mode.
+- [Inputs](https://svgrid.com/docs/help/ui-components/inputs/): Typed text controls. Each emits a clean value and themes from --sg-*.
+- [SvTextInput](https://svgrid.com/docs/help/ui-components/sv-text-input/): The base single-line text editor for the whole kit - one control for text, email, url, tel, and search.
+- [SvTextArea](https://svgrid.com/docs/help/ui-components/sv-text-area/): The multi-line text editor - with optional auto-grow and a character counter.
+- [SvNumberInput](https://svgrid.com/docs/help/ui-components/sv-number-input/): A numeric input with min/max/step, spinner buttons, thousands grouping, precision, and prefix/suffix.
+- [SvPasswordInput](https://svgrid.com/docs/help/ui-components/sv-password-input/): A password field with a reveal toggle and an optional 4-level strength meter.
+- [SvMaskedInput](https://svgrid.com/docs/help/ui-components/sv-masked-input/): A pattern-masked text input that formats as you type and reports both the masked and the raw value.
+- [SvPhoneInput](https://svgrid.com/docs/help/ui-components/sv-phone-input/): A country dial-code selector plus a national number field that emits an E.164-style string.
+- [SvColorInput](https://svgrid.com/docs/help/ui-components/sv-color-input/): A color swatch that opens a portalled popover with a hex field, the native picker, and a preset palette.
+- [SvOtpInput](https://svgrid.com/docs/help/ui-components/sv-otp-input/): Segmented one-time-code / PIN entry - N single-character cells that advance themselves and accept a pasted code.
+- [SvDurationInput](https://svgrid.com/docs/help/ui-components/sv-duration-input/): A duration editor whose value is a number of minutes but which accepts the human forms people actually type.
+- [SvTagsInput](https://svgrid.com/docs/help/ui-components/sv-tags-input/): An editable token / chips input - type to add, click x or Backspace to remove.
+- [Selection](https://svgrid.com/docs/help/ui-components/selection/): List and overlay pickers. The overlay controls portal their panel to <body> (carrying theme tokens) so they never clip, and share a common option shape:
+- [SvListBox](https://svgrid.com/docs/help/ui-components/sv-list-box/): An inline single or multi-select list - a WAI-ARIA listbox with a roving highlight, full keyboard, type-ahead and optional windowing for huge option sets.
+- [SvDropDownList](https://svgrid.com/docs/help/ui-components/sv-drop-down-list/): A single-select dropdown: a trigger button plus a portalled option list, with no typing. Pick with the mouse or the keyboard (type-ahead included); the panel escapes any scroll container so it is...
+- [SvComboBox](https://svgrid.com/docs/help/ui-components/sv-combo-box/): An editable combobox: type to filter a portalled option list and pick a value. Unlike an autocomplete, the value must come from the list - unmatched text reverts on blur.
+- [SvAutoComplete](https://svgrid.com/docs/help/ui-components/sv-auto-complete/): A free-text input with a live-filtered suggestion list. Unlike SvComboBox, it accepts any value - the suggestions are just shortcuts - and it emits the raw text string.
+- [SvMultiSelect](https://svgrid.com/docs/help/ui-components/sv-multi-select/): A multi-select dropdown: the trigger shows the picked items as chips (collapsing to "+N"), and a portalled panel holds an optional search box over a checkbox list.
+- [SvTreeSelect](https://svgrid.com/docs/help/ui-components/sv-tree-select/): A single-select dropdown that shows an indented, collapsible tree in its panel - the cascader / tree-select pattern. Pick a node from a hierarchy, optionally showing its full path in the trigger.
+- [SvGridSelect](https://svgrid.com/docs/help/ui-components/sv-grid-select/): A "grid in a dropdown" single-select: the panel shows the options as a compact multi-column table with a header row and search, so you can pick by more than a single label.
+- [SvGridDropdown](https://svgrid.com/docs/help/ui-components/sv-grid-dropdown/): The themeable dropdown / listbox that powers the grid's list and chips cell editors. It is a deliberate replacement for the native <select>, whose option list cannot be styled to match the grid...
+- [SvCountryInput](https://svgrid.com/docs/help/ui-components/sv-country-input/): A searchable country picker showing a flag, name, and dial code. It emits the ISO 3166-1 alpha-2 code, so your model stores a stable 'US' / 'GB' rather than a display string.
+- [Date & time](https://svgrid.com/docs/help/ui-components/date-time/): Four date/time controls built on a shared, framework-free date engine (date-core, date-format, date-selection, date-restrict).
+- [SvCalendar](https://svgrid.com/docs/help/ui-components/sv-calendar/): A themeable, accessible month / year / decade calendar with every selection mode - the date surface the whole date/time family is built on.
+- [SvTimePicker](https://svgrid.com/docs/help/ui-components/sv-time-picker/): An analog clock-dial time picker - 12- or 24-hour, minute snapping, and an hour-to-minute auto-switch. Drag the hand or click a number.
+- [SvDateTimePicker](https://svgrid.com/docs/help/ui-components/sv-date-time-picker/): A formatted text input plus a portalled dropdown with DATE / TIME tabs - type a masked value or pick it from a calendar and clock.
+- [SvDateRangeInput](https://svgrid.com/docs/help/ui-components/sv-date-range-input/): A compact start/end field that opens a two-month range calendar with one-click presets (Today, Last 7 days, This month, ...). Emits an inclusive [start, end] tuple or null.
+- [Range & feedback](https://svgrid.com/docs/help/ui-components/range/): Add any component with the CLI (drops a ready-to-edit starter into your app) - or add the whole family at once:
+- [SvSlider](https://svgrid.com/docs/help/ui-components/sv-slider/): A single or dual-thumb range slider with steps, ticks, scale labels, and full keyboard plus pointer control.
+- [SvGauge](https://svgrid.com/docs/help/ui-components/sv-gauge/): A radial arc gauge that renders a value within a range, with optional colored threshold bands, a needle, and a center label.
+- [SvProgress](https://svgrid.com/docs/help/ui-components/sv-progress/): A linear progress bar - determinate or indeterminate - with color intents, sizes, an optional percentage label, a striped fill, and a secondary buffer track.
+- [SvCircularProgress](https://svgrid.com/docs/help/ui-components/sv-circular-progress/): A circular ring progress indicator - determinate or spinning - with color intents, sizing and thickness, and an optional center label or custom center content.
+- [SvSparkline](https://svgrid.com/docs/help/ui-components/sv-sparkline/): A tiny inline chart - line, area, bar, or win/loss - drawn from a plain number array, with no chart library.
+- [SvStat](https://svgrid.com/docs/help/ui-components/sv-stat/): A KPI / metric card: a label, a big value, and an optional delta with an auto-colored up/down trend, plus slots for an icon and an inline chart.
+- [Overlays](https://svgrid.com/docs/help/ui-components/overlays/): App-chrome overlays built on the kit's shared accessibility primitives - createFocusTrap, lockScroll and createDismissableLayer - so focus, scroll locking and Escape / outside-click dismissal...
+- [SvPopover](https://svgrid.com/docs/help/ui-components/sv-popover/): A floating panel anchored to a trigger, portalled to <body> so it escapes any overflow:hidden ancestor.
+- [SvHoverCard](https://svgrid.com/docs/help/ui-components/sv-hover-card/): A rich preview card that opens when the pointer rests on its anchor and closes shortly after it leaves.
+- [SvTooltip](https://svgrid.com/docs/help/ui-components/sv-tooltip/): A small hover and focus tooltip anchored to its child, portalled to <body> so it is never clipped by a scroll container.
+- [SvPopconfirm](https://svgrid.com/docs/help/ui-components/sv-popconfirm/): A quick confirm step in a popover anchored to its trigger, for a low-stakes destructive action where a full modal dialog would be too heavy.
+- [SvModal](https://svgrid.com/docs/help/ui-components/sv-modal/): An accessible modal dialog: a backdrop, a focus trap, Escape and backdrop close, and a scale-in animation.
+- [SvDrawer](https://svgrid.com/docs/help/ui-components/sv-drawer/): An edge-anchored side sheet - right, left, top, or bottom - with a backdrop and the full dialog accessibility contract.
+- [SvToaster](https://svgrid.com/docs/help/ui-components/sv-toaster/): The host that renders the shared toast queue. Mount it once near your app root; call toast() from anywhere to push a notification.
+- [SvContextMenu](https://svgrid.com/docs/help/ui-components/sv-context-menu/): Wraps a region and opens a menu at the pointer on right-click or long-press.
+- [SvMenu](https://svgrid.com/docs/help/ui-components/sv-menu/): A dropdown / actions menu: a trigger opens a portalled, animated menu surface with submenus, separators, icons, shortcuts, and full keyboard support.
+- [SvMenuList](https://svgrid.com/docs/help/ui-components/sv-menu-list/): The recursive menu surface behind SvMenu and SvContextMenu: a WAI-ARIA menu with roving focus, submenus, separators, icons, and shortcuts.
+- [SvMenubar](https://svgrid.com/docs/help/ui-components/sv-menubar/): An application menu bar: a horizontal row of menu buttons (File / Edit / View ...) that each open a dropdown.
+- [Layout & composite](https://svgrid.com/docs/help/ui-components/layout/): Add any component with the CLI (drops a ready-to-edit starter into your app) - or add the whole family at once:
+- [Layout primitives - SvStack, SvGroup, SvSimpleGrid](https://svgrid.com/docs/help/ui-components/sv-layout-primitives/): Three tiny flex/grid wrappers that cover the layouts you reach for constantly, so you stop hand-writing display: flex; gap: … on every wrapper div.
+- [SvTabs](https://svgrid.com/docs/help/ui-components/sv-tabs/): A WAI-ARIA tabs widget with roving-tabindex arrow-key navigation, four tab positions, and optional closable tabs.
+- [SvAccordion](https://svgrid.com/docs/help/ui-components/sv-accordion/): A WAI-ARIA accordion of collapsible sections, with single- or multiple-expand and roving header focus.
+- [SvCollapsible](https://svgrid.com/docs/help/ui-components/sv-collapsible/): A single show/hide section: a header that toggles one region of content open and closed, with a smooth height animation. The standalone building block behind an accordion.
+- [SvSplitter](https://svgrid.com/docs/help/ui-components/sv-splitter/): Two resizable panes divided by a draggable WAI-ARIA separator, with pointer drag and arrow-key resize.
+- [SvDockLayout](https://svgrid.com/docs/help/ui-components/sv-dock-layout/): A basic docking layout: nested resizable split groups and tabbed leaves, with drag-to-dock.
+- [SvDockManager](https://svgrid.com/docs/help/ui-components/sv-dock-manager/): A full docking manager built on top of SvDockLayout. It keeps everything the tiled layout does - nested resizable splits, tabbed leaves, drag-to-dock - and adds the three features a real IDE...
+- [SvCard](https://svgrid.com/docs/help/ui-components/sv-card/): A themed surface container with an optional header, body, and footer - the building block for dashboards and Studio-generated app screens.
+- [SvDivider](https://svgrid.com/docs/help/ui-components/sv-divider/): A theme-driven separator line - horizontal or vertical, solid or dashed, with an optional centered, start, or end label.
+- [SvScrollArea](https://svgrid.com/docs/help/ui-components/sv-scroll-area/): A scroll container with the kit's themed custom scrollbars, so any panel matches the grid and demos without hand-rolling scrollbar CSS.
+- [SvGridChart](https://svgrid.com/docs/help/ui-components/sv-grid-chart/): An inline-SVG chart that renders a ChartSpec with no external charting dependency, built to bind to your grid's data.
+- [SvChartPanes](https://svgrid.com/docs/help/ui-components/sv-chart-panes/): A price chart with indicator panes stacked under it, the way a trading terminal lays them out: one shared x axis labelled on the last pane only, one value-axis gutter width so the plots line up,...
+- [SvForm](https://svgrid.com/docs/help/ui-components/sv-form/): A schema-driven form that renders the SvGrid UI-kit controls from a FormField[], with labels, required and custom validation, and a submit handler.
+- [SvField](https://svgrid.com/docs/help/ui-components/sv-field/): The shared field chrome for every value-bearing editor in the kit - the label, hint, and error line that make any control behave consistently.
+- [SvFileUpload](https://svgrid.com/docs/help/ui-components/sv-file-upload/): A drag-and-drop file field with click-to-browse fallback, accept / size / count validation, and a selected-files list.
+- [Feedback & display](https://svgrid.com/docs/help/ui-components/feedback/): Status, identity, loading and surface primitives for dashboards and detail panels. All are theme-token driven (light / dark + presets) and reduced-motion aware.
+- [SvBadge](https://svgrid.com/docs/help/ui-components/sv-badge/): A small status pill or count label - the quiet workhorse for statuses, counts, and tags across tables and cards.
+- [SvSkeleton](https://svgrid.com/docs/help/ui-components/sv-skeleton/): A shimmering loading placeholder that stands in for content while data is in flight - text lines, rectangles, and circles that echo the shape of what is coming.
+- [SvSpinner](https://svgrid.com/docs/help/ui-components/sv-spinner/): An indeterminate spinner: a small spinning ring for "something is happening" when you cannot show real progress.
+- [SvLoadingOverlay](https://svgrid.com/docs/help/ui-components/sv-loading-overlay/): A cover-a-container loading scrim: a translucent overlay with a centred spinner that sits on top of any positioned parent while its content loads or saves.
+- [SvAlert](https://svgrid.com/docs/help/ui-components/sv-alert/): An inline, persistent contextual message - info, success, warning, danger, or neutral - with an icon, optional title, dismiss button, and trailing actions.
+- [SvEmptyState](https://svgrid.com/docs/help/ui-components/sv-empty-state/): A centered placeholder for empty lists, no-results screens, and blank panels: an icon or illustration, a title, a description, and an action slot.
+- [SvResult](https://svgrid.com/docs/help/ui-components/sv-result/): A full result page: a centred icon, title, description, and actions for the outcome of a flow - success, error, warning, info, or not-found. The whole-screen counterpart to a toast.
+- [SvChip](https://svgrid.com/docs/help/ui-components/sv-chip/): A compact, interactive pill for a selected value, filter token, or entity: an optional leading avatar or icon, a label, and an optional remove button.
+- [SvTimeline](https://svgrid.com/docs/help/ui-components/sv-timeline/): A vertical activity or history feed: a connecting rail with a colored marker per entry, plus a title, timestamp, and description.
+- [SvAvatar](https://svgrid.com/docs/help/ui-components/sv-avatar/): A user or entity avatar: an image with an automatic initials-and-color fallback, plus an optional presence status dot.
+- [SvAvatarGroup](https://svgrid.com/docs/help/ui-components/sv-avatar-group/): Overlapping, stacked avatars with a "+N" overflow pill - the "assigned to" and "members" row for cards, tables, and detail panels.
+- [SvCarousel](https://svgrid.com/docs/help/ui-components/sv-carousel/): A slideshow: a sliding track with prev/next arrows, dot indicators, optional autoplay that pauses on hover, and touch swipe.
+- [Typography - SvTitle, SvText, SvAnchor, SvBlockquote, SvMark, SvList](https://svgrid.com/docs/help/ui-components/sv-typography/): A small set of prose primitives so headings, body copy, links, quotes, highlights, and lists all pull from one type scale and the shared --sg-* tokens - instead of scattering ad-hoc font sizes and...
+- [Display primitives - SvKbd, SvCode, SvAspectRatio, SvVisuallyHidden](https://svgrid.com/docs/help/ui-components/sv-display-primitives/): The small display helpers you reach for constantly in docs, command palettes, and media layouts - each themed from the shared --sg-* tokens and dependency-free.
+- [Navigation](https://svgrid.com/docs/help/ui-components/navigation/): Wayfinding components for admin apps and Studio-generated screens. Pure, keyboard-accessible, theme-token driven.
+- [SvBreadcrumb](https://svgrid.com/docs/help/ui-components/sv-breadcrumb/): A navigation trail that shows where the current page sits in your app's hierarchy.
+- [SvPagination](https://svgrid.com/docs/help/ui-components/sv-pagination/): A standalone pager: page numbers with an ellipsis, plus prev/next and optional first/last controls.
+- [SvStepper](https://svgrid.com/docs/help/ui-components/sv-stepper/): A progress stepper for wizards and multi-step forms. It lays out completed, active, and upcoming steps so the user always knows where they are.
+- [SvNavPane](https://svgrid.com/docs/help/ui-components/sv-nav-pane/): An Outlook-style navigation pane: collapsible sections, items with icons and badge counts, one level of nested sub-items, and an optional bottom module strip.
+- [SvTree](https://svgrid.com/docs/help/ui-components/sv-tree/): A WAI-ARIA tree view: expand/collapse, single-select highlight, cascading tri-state checkboxes, keyboard navigation, and - for large or remote data - fixed-row virtualization and lazy loading.
+- [SvCommand](https://svgrid.com/docs/help/ui-components/sv-command/): A Cmd+K command palette: a fuzzy-searchable list of actions in a centered, focus-trapped dialog, with an optional global hotkey.
+- [SvTour](https://svgrid.com/docs/help/ui-components/sv-tour/): A guided product tour: it spotlights each target element in turn, anchors a popover with the step's copy, and walks the user through Back / Next / Done.
+- [SvRichText](https://svgrid.com/docs/help/ui-components/sv-rich-text/): A lightweight WYSIWYG editor: a formatting toolbar over a contentEditable region that emits HTML through a bindable value.
+
+### UI blocks
+
+- [UI blocks](https://svgrid.com/docs/help/ui-blocks/index/): A block is a whole page section built from the SvGrid UI components: a sign-in screen, a 404 page, a pricing table, an empty state.
+- [Sign-in & registration blocks](https://svgrid.com/docs/help/ui-blocks/auth/): Screens for getting a user into your app: sign in with a password, a provider or a magic link, create an account, prove it is them with a one-time code, and reset a forgotten password.
+- [Error page blocks](https://svgrid.com/docs/help/ui-blocks/error-pages/): Screens for when a request does not end on the page the user wanted: not found, server error, planned maintenance and access denied.
+- [Empty state blocks](https://svgrid.com/docs/help/ui-blocks/empty-states/): What a screen shows before it has data: an empty list, an empty files area, a search that matched nothing, a dashboard card with no source.
+- [Form layouts](https://svgrid.com/docs/help/ui-blocks/form-layouts/): Forms and settings pages: a stacked create form, settings split into sections, a notification matrix, a settings page with a side menu, and a danger zone.
+- [Page heading blocks](https://svgrid.com/docs/help/ui-blocks/page-headings/): The strip at the top of an app page: the title, where you are, and what you can do here. Each block is one .svelte file built from SvButton, SvMenu, SvBreadcrumb, SvTabs, SvBadge, SvSegmented and...
+- [Onboarding blocks](https://svgrid.com/docs/help/ui-blocks/onboarding/): Screens for a user's first minutes in your app: a setup wizard, a getting-started checklist.
+- [App shell & dashboard blocks](https://svgrid.com/docs/help/ui-blocks/app-shells/): Full-screen layouts for the inside of an app: the frame around every page, and the overview page users land on.
+- [KPI card blocks](https://svgrid.com/docs/help/ui-blocks/kpi-cards/): The metric tiles at the top of an app dashboard: a few numbers someone checks every morning, with enough context to tell whether they moved.
+- [Stats blocks](https://svgrid.com/docs/help/ui-blocks/stats/): Number sections for reports and status boards: large figures with labels, framed as a page section rather than a dashboard tile. There are two blocks, a weekly report and a status board.
+- [Filter panel blocks](https://svgrid.com/docs/help/ui-blocks/filter-panels/): Filters with the results they filter: a sidebar of facets beside a product list, a toolbar over a report list, removable chips over a support queue, and collapsible sections beside an SvGrid.
+- [Activity feed blocks](https://svgrid.com/docs/help/ui-blocks/activity-feeds/): Screens that show what happened and who did it: a project timeline, a notification panel, a comment thread and an audit log.
+- [AI assistant blocks](https://svgrid.com/docs/help/ui-blocks/ai/): Screens for putting a language model in front of your users: a chat with starter prompts, an ask bar over a table, and the assistant's settings page.
+- [Order blocks](https://svgrid.com/docs/help/ui-blocks/orders/): The screens around a customer's past orders: the list of them, and where a parcel is right now. Each block is one .svelte file.
+- [Banner blocks](https://svgrid.com/docs/help/ui-blocks/banners/): Messages that sit on top of or inside a page: an announcement bar, inline status banners, cookie consent and a failed-payment warning.
+- [Navbar blocks](https://svgrid.com/docs/help/ui-blocks/navbars/): Top bars for a site or an app: plain links with a call to action, a storefront bar with search and a cart, and a bar with dropdown and mega menus.
+- [Footer blocks](https://svgrid.com/docs/help/ui-blocks/footers/): Site footers for the bottom of every page: a sitemap with four link columns for a marketing site, and a one-row footer for an app.
+- [Checkout blocks](https://svgrid.com/docs/help/ui-blocks/checkout/): The pages between the cart and the receipt: a one-page checkout, a stepped checkout, a payment method picker and the order confirmation.
+- [Shopping cart blocks](https://svgrid.com/docs/help/ui-blocks/shopping-carts/): Two places a cart shows up in a store: the cart page, and a drawer that opens when you add something.
+- [Review blocks](https://svgrid.com/docs/help/ui-blocks/reviews/): The review section of a product page: a rating summary with a star distribution, the review feed, and the form to write one.
+- [Contact blocks](https://svgrid.com/docs/help/ui-blocks/contact/): Contact sections for a marketing site or an app's help page: a plain contact form, cards per team, and a support form with opening hours.
+- [Hero blocks](https://svgrid.com/docs/help/ui-blocks/hero/): The first screen of a landing page: a specific headline, one line of explanation and the action you want the visitor to take.
+- [Feature section blocks](https://svgrid.com/docs/help/ui-blocks/features/): The part of a landing page that lists what the product does, under the hero. There are two blocks: a grid of features with icons, and a feature list that switches a product screenshot.
+- [Call to action blocks](https://svgrid.com/docs/help/ui-blocks/cta/): Closing sections that ask the reader to sign up, start a trial or talk to sales. Each block is one .svelte file built from SvButton and SvToaster, themed from the --sg-* tokens.
+- [Pricing blocks](https://svgrid.com/docs/help/ui-blocks/pricing/): Plan tables for a pricing page or an upgrade screen, built from SvCard, SvButton, SvBadge, SvSegmented and SvNumberInput.
+- [FAQ blocks](https://svgrid.com/docs/help/ui-blocks/faq/): Question-and-answer sections for a pricing, help or product page. Each block is one .svelte file built from SvAccordion, SvTextInput, SvMark, SvSegmented and SvButton, themed from the --sg-* tokens.
+- [Bento grid blocks](https://svgrid.com/docs/help/ui-blocks/bento/): Feature sections laid out as a bento grid: a CSS grid where some tiles span two columns or two rows. The tile art is inline SVG or CSS drawn from the --sg-* tokens, so it follows the theme.
+- [Testimonial blocks](https://svgrid.com/docs/help/ui-blocks/testimonials/): Customer quotes for a landing, pricing or product page: a wall of quote cards and a one-at-a-time carousel.
+- [Logo cloud blocks](https://svgrid.com/docs/help/ui-blocks/logo-clouds/): A row of customer logos with one line of social proof, for a landing or pricing page. The block is one .svelte file built from SvButton, themed from the --sg-* tokens.
+- [Team blocks](https://svgrid.com/docs/help/ui-blocks/team/): The people section of an about or careers page. The block is one .svelte file built from SvAvatar, SvSegmented, SvBadge and SvButton, themed from the --sg-* tokens.
+- [Product card blocks](https://svgrid.com/docs/help/ui-blocks/product-cards/): Two ways to show products in a store: cards in a grid, and wide cards in a list. Each block is one .svelte file built from SvRating, SvBadge, SvNumberInput and SvButton, with a toast from...
+- [Product list blocks](https://svgrid.com/docs/help/ui-blocks/product-lists/): Two ways to lay out products in a store: a full category page with a sort and view toolbar, and a featured product beside a small grid.
+- [Product overview block](https://svgrid.com/docs/help/ui-blocks/product-overview/): The top of a product page: the gallery on one side and everything needed to buy on the other.
+- [Blog blocks](https://svgrid.com/docs/help/ui-blocks/blog/): The index pages of a blog: a filterable grid of post cards, and a lead article next to the latest posts.

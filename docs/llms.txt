@@ -70,6 +70,10 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - [llms-small.txt](https://svgrid.com/llms-small.txt): the brief above plus the full text of the getting-started path and the pages asked about most before choosing a grid.
 - [llms-full.txt](https://svgrid.com/llms-full.txt): the full text of every docs page, the comparison pages and the API reference, in reading order.
 - [docs.json](https://svgrid.com/docs.json): the route manifest with section, tier and demo links per page.
+- This index by product, each part on its own (use one if this file was cut short): [SvGrid](https://svgrid.com/llms/grid.txt), [SvGrid UI](https://svgrid.com/llms/ui.txt), [SvGrid Enterprise](https://svgrid.com/llms/enterprise.txt), [SvGrid Spreadsheet](https://svgrid.com/llms/sheet.txt), [SvGrid Base](https://svgrid.com/llms/base.txt), [SvGrid Studio](https://svgrid.com/llms/studio.txt), [Comparisons: which Svelte table library to use](https://svgrid.com/llms/compare.txt)
+- [demos.md](https://svgrid.com/demos.md): every live demo by category. Each has a markdown copy with its full source at /demos/<id>.md, e.g. https://svgrid.com/demos/01-quick-start.md
+- [API reference as JSON](https://svgrid.com/api.json): look up any function, type, option or api method of @svgrid/grid and @svgrid/enterprise by name. Every export by module, with the member names of each type (options objects, props, SvGridApi). https://svgrid.com/api/<name>.json has a symbol's doc and signature, e.g. https://svgrid.com/api/svgridapi.json
+- MCP server: the remote endpoint https://mcp.svgrid.com/mcp (streamable HTTP, no install), or `npx -y @svgrid/mcp` locally. Described at https://svgrid.com/.well-known/mcp.json.
 
 ## SvGrid
 
@@ -630,6 +634,8 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - [Troubleshooting & FAQ](https://svgrid.com/docs/enterprise/studio/troubleshooting/): Common issues and answers when building with SvGrid Studio.
 
 ## Comparisons
+
+- [Which Svelte table library should I use?](https://svgrid.com/compare/): every comparison on one page, with when to choose each library.
 
 ### SvGrid vs other data grids
 

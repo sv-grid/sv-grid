@@ -149,6 +149,23 @@ export function chartToPngBlob(
 }
 ```
 
+### `function downloadChartPng`
+
+Download the chart as a `.png` file.
+
+```ts
+export async function downloadChartPng(
+  source: SVGSVGElement | HTMLElement,
+  filename = 'chart.png',
+  options: ChartExportOptions = {},
+): Promise<void> {
+  const blob = await chartToPngBlob(source, options)
+  const url = URL.createObjectURL(blob)
+  triggerDownload(url, filename)
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+```
+
 ### `function chartSpecToCsv`
 
 Serialize a chart's data to CSV: one row per category, one column per series

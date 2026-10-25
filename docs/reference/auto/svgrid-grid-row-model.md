@@ -16,6 +16,8 @@ export type GridFilterState = {
     valueTo?: string
     selectedValues?: Array<string>
   }>
+  /** Active `customFilter` models keyed by column id, when any is active. */
+  custom?: Record<string, unknown>
 }
 ```
 
@@ -113,6 +115,10 @@ export type GridRowModel<TData> = {
 Turn the grid's filter payload into the column-keyed map a `ServerRequest`
 carries. Exported because a hand-written `GridRowModel` needs exactly this
 conversion, and copying it is how the two shapes drift apart.
+
+A registered operator with a `toServer` (the Enterprise relative date
+operators) goes out as the built-in filter it means now, so a backend never
+meets an operator it cannot know.
 
 ```ts
 export function toServerFilterColumns(

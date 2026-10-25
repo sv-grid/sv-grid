@@ -106,6 +106,39 @@ export function buildChartPdf(
 }
 ```
 
+### `function chartToPdfBlob`
+
+The chart as a one-page PDF `Blob`.
+
+```ts
+export async function chartToPdfBlob(source: SVGSVGElement | HTMLElement, options: ChartPdfOptions = {}): Promise<Blob> {
+  const svg = source instanceof SVGSVGElement ? source : (source.querySelector('svg.sv-grid-chart-svg') ?? source.querySelector('svg'))
+  const background = options.background ?? (svg ? getComputedStyle(svg).getPropertyValue('--sg-bg').trim() || '#ffffff' : '#ffffff')
+  const png = await chartToPngBlob(source, { ...options, background, scale: options.scale ?? 2 })
+  const jpeg = await pngToJpeg(png, background, options.quality ?? 0.92)
+  const bytes = buildChartPdf(jpeg, options)
+  return new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' })
+}
+```
+
+### `function downloadChartPdf`
+
+Download the chart as a `.pdf` file.
+
+```ts
+export async function downloadChartPdf(source: SVGSVGElement | HTMLElement, filename = 'chart.pdf', options: ChartPdfOptions = {}): Promise<void> {
+  const blob = await chartToPdfBlob(source, options)
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+```
+
 ### `function printChart`
 
 Print the chart: a new window with the standalone SVG (and the title

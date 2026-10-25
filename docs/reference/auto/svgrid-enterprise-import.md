@@ -208,6 +208,51 @@ export type ImportResult<TData> = {
 }
 ```
 
+### `function readImportMatrix`
+
+Read a file (or inline text) into a raw `string[][]` matrix - header row
+first - without any mapping, coercion, or validation. The cheap half of
+`importData`: parse the bytes once, then feed the matrix to
+`mapImportMatrix` as many times as the mapping UI needs.
+
+```ts
+export async function readImportMatrix(
+  file: File | Blob | string,
+  format: ImportFormat = 'auto',
+  opts: { maxBytes?: number; encoding?: string; signal?: AbortSignal } = {},
+): Promise<{ format: Exclude<ImportFormat, 'auto'>; matrix: string[][] }> {
+  if (opts.signal?.aborted) throw abortError()
+  // Guard the byte size BEFORE reading, so an oversized upload never lands
+  // in memory.
+  if (opts.maxBytes != null && file instanceof Blob && file.size > opts.maxBytes) {
+    throw new Error(
+      `@svgrid/enterprise: file is ${file.size.toLocaleString()} bytes, ` +
+        `over the ${opts.maxBytes.toLocaleString()}-byte import limit.`,
+    )
+  }
+  const fmt = sniffFormat(file, format)
+  let matrix: string[][]
+  if (fmt === 'xlsx') {
+    if (typeof file === 'string') {
+      throw new Error(
+        '@svgrid/enterprise: xlsx import expects a File or Blob, not a string. ' +
+          'Use format: "csv" or "tsv" for inline text.',
+      )
+    }
+    matrix = await parseXlsx(file)
+  } else if (fmt === 'json') {
+    const text = typeof file === 'string' ? file : await readText(file, opts.encoding)
+    matrix = jsonToMatrix(text)
+  } else {
+    const sep = fmt === 'tsv' ? '\t' : ','
+    const text = typeof file === 'string' ? file : await readText(file, opts.encoding)
+    matrix = parseDelimited(text, sep)
+  }
+  if (opts.signal?.aborted) throw abortError()
+  return { format: fmt, matrix }
+}
+```
+
 ### `function mapImportMatrix`
 
 Apply a column map + declared types + validator to an already-parsed
@@ -238,6 +283,71 @@ export function mapImportMatrix<TData extends RowData>(
     rows,
     errors,
     skipped: built.skipped,
+    total: matrix.length > 0 ? matrix.length - 1 : 0,
+    errorsTruncated,
+    deduped,
+  }
+}
+```
+
+### `function mapImportMatrixAsync`
+
+Non-blocking sibling of `mapImportMatrix`: yields to the event loop every
+few thousand rows and reports progress, so mapping a 100k-row file never
+freezes the tab. Honors an AbortSignal. Used by `importData` and the
+SvImportDialog preview.
+
+```ts
+export async function mapImportMatrixAsync<TData extends RowData>(
+  matrix: string[][],
+  opts: MapMatrixOptions<TData> & {
+    signal?: AbortSignal
+    onProgress?: (progress: ImportProgress) => void
+    /** Rows per chunk before yielding. Default 5000. */
+    chunkSize?: number
+  } = {},
+): Promise<MapMatrixResult<TData>> {
+  const headers = (matrix[0] ?? []).map((h) => h.trim())
+  const fields = computeFields(headers, opts.columnMap)
+  const dataRows = matrix.slice(1)
+  const total = dataRows.length
+  const chunk = Math.max(1, opts.chunkSize ?? 5000)
+  const rows: TData[] = []
+  const errors: ImportRowError[] = []
+  let skipped = 0
+  let outRowIndex = 0
+  let errorsTruncated = false
+
+  for (let i = 0; i < total; i += 1) {
+    if (opts.signal?.aborted) throw abortError()
+    const cells = dataRows[i]!
+    if (isBlankRow(cells)) { skipped += 1 } else {
+      const { rec, errors: rowErrs } = buildRecord(cells, headers.length, fields, opts.columnTypes, outRowIndex)
+      if (rowErrs.length && collectErrors(errors, rowErrs, opts.maxErrors)) errorsTruncated = true
+      rows.push(rec as unknown as TData)
+      outRowIndex += 1
+    }
+    if ((i + 1) % chunk === 0) {
+      opts.onProgress?.({ phase: 'map', ratio: total ? (i + 1) / total : 1, done: i + 1, total })
+      await nextTick()
+    }
+  }
+
+  if (applyValidator(rows, errors, opts.validator, opts.maxErrors)) errorsTruncated = true
+
+  let finalRows = rows
+  let deduped = 0
+  if (opts.dedupeBy) {
+    const r = dedupeRows(rows, opts.dedupeBy as string)
+    finalRows = r.rows
+    deduped = r.deduped
+  }
+  opts.onProgress?.({ phase: 'map', ratio: 1, done: total, total })
+  return {
+    headers,
+    rows: finalRows,
+    errors,
+    skipped,
     total: matrix.length > 0 ? matrix.length - 1 : 0,
     errorsTruncated,
     deduped,
@@ -295,5 +405,74 @@ export function inferImportColumnTypes(
     else if (t === 'datetime') types[c.field] = 'datetime'
   }
   return types
+}
+```
+
+### `function importData`
+
+Read a file (or inline text), parse, optionally validate + commit. The
+sister function of `exportGrid`.
+
+```ts
+export async function importData<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(
+  api: SvGridApi<TFeatures, TData>,
+  opts: ImportOptions<TData>,
+): Promise<ImportResult<TData>> {
+  assertEnterpriseLicensed('Import')
+  const { format, matrix } = await readImportMatrix(opts.file, opts.format ?? 'auto', {
+    maxBytes: opts.maxBytes,
+    encoding: opts.encoding,
+    signal: opts.signal,
+  })
+
+  // Enforce the row cap before we do the O(rows) mapping work: either reject
+  // outright, or truncate to the first maxRows and flag it.
+  const dataCount = matrix.length > 0 ? matrix.length - 1 : 0
+  let workMatrix = matrix
+  let truncated = false
+  if (opts.maxRows != null && dataCount > opts.maxRows) {
+    if (opts.overLimit === 'truncate') {
+      workMatrix = matrix.slice(0, opts.maxRows + 1) // header + first maxRows
+      truncated = true
+    } else {
+      throw new Error(
+        `@svgrid/enterprise: import has ${dataCount.toLocaleString()} rows, ` +
+          `over the maxRows limit of ${opts.maxRows.toLocaleString()}.`,
+      )
+    }
+  }
+
+  // Grid-aware auto-mapping: derive the columnMap + columnTypes from the
+  // grid's own columns, but let anything the caller passed win.
+  let columnMap = opts.columnMap
+  let columnTypes = opts.columnTypes
+  if (opts.autoMap) {
+    const gridCols = api.getColumns() as ReadonlyArray<ImportGridColumn>
+    const headers = (workMatrix[0] ?? []).map((h) => h.trim())
+    columnMap = { ...autoMapColumns(headers, gridCols), ...(opts.columnMap ?? {}) }
+    columnTypes = { ...inferImportColumnTypes(gridCols), ...(opts.columnTypes ?? {}) }
+  }
+
+  const { headers, rows, errors, skipped, errorsTruncated, deduped } =
+    await mapImportMatrixAsync<TData>(workMatrix, {
+      columnMap,
+      columnTypes,
+      validator: opts.validator,
+      maxErrors: opts.maxErrors,
+      dedupeBy: opts.dedupeBy,
+      signal: opts.signal,
+      onProgress: opts.onProgress,
+    })
+
+  if (opts.commit && errors.length === 0 && rows.length > 0) {
+    api.addRows(rows, opts.commitAt ?? 'bottom')
+  }
+
+  // `total` reports the ORIGINAL source row count even when truncated, so the
+  // caller can say "imported X of Y".
+  return { headers, rows, errors, skipped, total: dataCount, format, errorsTruncated, deduped, truncated }
 }
 ```

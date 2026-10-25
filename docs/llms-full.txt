@@ -55,7 +55,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## About this file
 
-The full SvGrid documentation, generated 2026-10-24 from 462 pages, 21 comparison pages, plus 72 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
+The full SvGrid documentation, generated 2026-10-25 from 462 pages, 21 comparison pages, plus 81 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
 
 <!-- =================================================================
      /docs/getting-started/  (community)
@@ -105671,6 +105671,41 @@ export function resolveColumns<TFeatures extends TableFeatures, TData extends Ro
 }
 ```
 
+### `function projectRows`
+
+Project source rows into the `[header, ...records]` shape the writers
+consume, applying per-column formatting / `exportValue`. Async so it can
+yield to the event loop (and honour an abort) on large datasets.
+
+```ts
+export async function projectRows<TData extends RowData>(
+  sourceRows: ReadonlyArray<TData>,
+  cols: ReadonlyArray<ExportColumn<TData>>,
+  opts: Pick<ExportOptions<TData>, 'rawValues' | 'onProgress' | 'signal'>,
+): Promise<Array<Record<string, unknown>>> {
+  const rawValues = opts.rawValues === true
+  const headerRow: Record<string, unknown> = {}
+  for (const c of cols) headerRow[c.field] = c.header ?? c.field
+
+  const projected: Array<Record<string, unknown>> = [headerRow]
+  const total = sourceRows.length
+  const CHUNK = 5000
+  for (let i = 0; i < total; i++) {
+    if (opts.signal?.aborted) throw new DOMException('Export aborted', 'AbortError')
+    const r = sourceRows[i]!
+    const row: Record<string, unknown> = {}
+    for (const c of cols) row[c.field] = cellValueFor(c, r, rawValues)
+    projected.push(row)
+    if (i > 0 && i % CHUNK === 0) {
+      opts.onProgress?.({ phase: 'project', ratio: i / total, row: i, total })
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    }
+  }
+  opts.onProgress?.({ phase: 'project', ratio: 1, row: total, total })
+  return projected
+}
+```
+
 ### `function buildLinkResolver`
 
 A `(rowIdx, colIdx) => url` resolver from column `link` hooks, or undefined
@@ -105749,6 +105784,194 @@ export function buildGroupedPdfBody<TData extends RowData>(
 }
 ```
 
+### `function exportGrid`
+
+Export a grid's rows to a file: xlsx, xls, pdf, csv, tsv, html, json, xml
+or md, picked by `opts.format`. It reads the columns and rows through the
+grid api, so sorting, filtering and grouping carry over, and downloads the
+file unless `opts.download` is false. Resolves with the file (`ExportResult`)
+on the paths that build it in memory, undefined on the others.
+
+```ts
+export async function exportGrid<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(api: SvGridApi<TFeatures, TData>, opts: ExportOptions<TData>): Promise<ExportResult | undefined> {
+  assertEnterpriseLicensed('Export')
+
+  // Native text formats have their own dependency-free, streaming path.
+  if (NATIVE_TEXT_FORMATS.includes(opts.format)) {
+    return exportTextFormat(api, opts)
+  }
+  // Legacy xls (SpreadsheetML) is also dependency-free.
+  if (opts.format === 'xls') {
+    return exportXls(api, opts)
+  }
+  // PDF via our own pdfmake docDefinition.
+  if (opts.format === 'pdf') {
+    return exportPdf(api, opts)
+  }
+
+  // Native single-sheet xlsx (our OOXML writer): typed numbers + number
+  // formats, real per-cell conditional-format fills, freeze, widths, and
+  // hyperlinks. Grouping (Excel outline), multi-sheet, images, merges, and
+  // header/footer lines keep the vendored writer below.
+  if (opts.format === 'xlsx') {
+    const gridGrouping =
+      opts.autoGroup !== false ? (api.getState().grouping ?? []).filter((id) => !!id) : []
+    const grouped = (opts.groupBy?.length ?? 0) > 0 || gridGrouping.length > 0
+    // Blanket `styles` (header fill / zebra) are applied by the vendored
+    // writer, not our OOXML one - so a styled export (without conditional
+    // formatting, which the native writer does render) keeps the Smart path.
+    const wantsBlanketStyles = !!opts.styles && !opts.conditionalFormats?.length
+    if (
+      !opts.sheets?.length &&
+      !grouped &&
+      !opts.hierarchical &&
+      !opts.merges?.length &&
+      !opts.header?.length &&
+      !opts.footer?.length &&
+      !opts.imageFields?.length &&
+      !wantsBlanketStyles
+    ) {
+      return exportXlsxNative(api, opts)
+    }
+  }
+
+  await ensureGlobals(opts.format)
+  const Ctor = await getDataExporter()
+
+  // Multi-sheet path. Smart's `spreadsheets` option takes an array of
+  // `{ label, dataSource, columns, dataFields? }`. Each entry becomes one
+  // tab; the exporter prepends its own header row built from `columns`.
+  if (opts.sheets && opts.sheets.length > 0) {
+    if (opts.format !== 'xlsx') {
+      throw new Error(`@svgrid/enterprise: multi-sheet export requires format 'xlsx', got '${opts.format}'`)
+    }
+    const rawValues = opts.rawValues === true
+    const sheets = opts.sheets.map((sheet) => {
+      // Reuse the single-sheet column derivation (explicit → grid columns →
+      // row keys), so per-sheet columns pick up `format` for formatting too.
+      const cols = resolveColumns(
+        api,
+        { columns: sheet.columns ?? opts.columns },
+        sheet.rows,
+      )
+      // Project each row to only the included fields (in column order),
+      // applying per-column formatting / exportValue.
+      const dataSource = sheet.rows.map((r) => {
+        const out: Record<string, unknown> = {}
+        for (const c of cols) out[c.field] = cellValueFor(c, r, rawValues)
+        return out
+      })
+      const widths = opts.autoFitColumns !== false ? autoFitWidths(cols, sheet.rows, rawValues) : null
+      return {
+        label: sheet.label,
+        dataSource,
+        columns: cols.map((c, i) =>
+          widths
+            ? { dataField: c.field, label: c.header ?? c.field, width: widths[i] }
+            : { dataField: c.field, label: c.header ?? c.field },
+        ),
+        dataFields: cols.map((c) => c.field),
+        style: translateStyles(sheet.styles ?? opts.styles),
+      }
+    })
+    const filename = (opts.filename ?? 'grid').trim() || 'grid'
+    const ctorOpts = buildExporterOptions(opts)
+    // Smart needs at least one main sheet to operate. Use the first sheet
+    // as the "main" exportData payload AND keep the full set on the
+    // `spreadsheets` property so the workbook ends up with one tab per
+    // entry.
+    const firstSheet = sheets[0]!
+    const exporter = new Ctor(ctorOpts)
+    exporter.spreadsheets = sheets
+    applyInstanceOptions(exporter, opts, firstSheet.dataFields)
+    // First sheet's data goes through the standard exportData path with
+    // its own header row.
+    const headerRow: Record<string, unknown> = {}
+    for (const c of firstSheet.columns) headerRow[c.dataField] = c.label
+    const firstSheetRows = [headerRow, ...firstSheet.dataSource]
+    if (opts.download === false) {
+      throw new Error('@svgrid/enterprise: download:false is not supported for multi-sheet xlsx.')
+    }
+    exporter.exportData(firstSheetRows, opts.format, filename)
+    return undefined
+  }
+
+  // Single-sheet xlsx (grouped / merges / header / footer) path.
+  const sourceRows = resolveRowSource(api, opts.rows)
+  if (sourceRows.length === 0) {
+    throw new Error('@svgrid/enterprise: nothing to export - the grid has no rows')
+  }
+  const cols = resolveColumns(api, opts, sourceRows)
+  const rows = await projectRows(sourceRows, cols, opts)
+  const filename = (opts.filename ?? 'grid').trim() || 'grid'
+  const datafields = cols.map((c) => c.field)
+
+  // Auto-carry the grid's active row grouping (unless the caller opted out,
+  // passed their own groupBy, or is exporting a hierarchy). Grouping column
+  // ids line up with field names, which are the projected row keys.
+  const autoGrouping =
+    opts.autoGroup !== false && !opts.groupBy?.length && !opts.hierarchical
+      ? (api.getState().grouping ?? []).filter((id) => !!id).map((id) => String(id))
+      : []
+  const effectiveGroupBy = opts.groupBy?.length
+    ? opts.groupBy
+    : autoGrouping.length > 0
+      ? autoGrouping
+      : undefined
+  // The constructor's SECOND arg is `groupBy`: when non-empty AND
+  // `hierarchical` is NOT set, Smart wraps each group of rows in an
+  // Excel outline row with an expand/collapse button at the group key.
+  const groupBy = !opts.hierarchical && effectiveGroupBy?.length ? effectiveGroupBy : undefined
+
+  // Conditional formatting -> a per-cell style map (A1 refs) that Smart's xlsx
+  // writer applies, plus icon-set glyphs prepended to the cell text.
+  const ctorOpts = buildExporterOptions(opts)
+  if (opts.conditionalFormats?.length) {
+    const visual = buildConditionalResolver(cols, sourceRows, opts.conditionalFormats)
+    const cfCells: Record<string, ExportCellStyle> = {}
+    for (let r = 0; r < sourceRows.length; r++) {
+      for (let c = 0; c < cols.length; c++) {
+        const v = visual(r, c)
+        if (!v) continue
+        const st: ExportCellStyle = {}
+        if (v.fill) st.backgroundColor = v.fill
+        if (v.color) st.color = v.color
+        if (v.bold) st.fontWeight = 'bold'
+        if (Object.keys(st).length) cfCells[colLetter(c) + (r + 2)] = st // header is row 1
+        if (v.icon) {
+          const dataRow = rows[r + 1] // header at index 0
+          const field = cols[c]!.field
+          if (dataRow) dataRow[field] = `${v.icon} ${dataRow[field] ?? ''}`
+        }
+      }
+    }
+    if (Object.keys(cfCells).length) {
+      const style = (ctorOpts.style as Record<string, unknown> | undefined) ?? {}
+      ctorOpts.style = {
+        ...style,
+        cells: { ...((style.cells as Record<string, unknown> | undefined) ?? {}), ...cfCells },
+      }
+    }
+  }
+
+  if (opts.download === false) {
+    throw new Error(
+      '@svgrid/enterprise: download:false is not supported for this xlsx export (grouped / merges / header / footer / images). Use a plain xlsx, xls, pdf, or a text format.',
+    )
+  }
+  if (opts.signal?.aborted) throw new DOMException('Export aborted', 'AbortError')
+  opts.onProgress?.({ phase: 'write', ratio: 0, total: rows.length - 1 })
+  const exporter = new Ctor(ctorOpts, groupBy)
+  applyInstanceOptions(exporter, opts, datafields)
+  exporter.exportData(rows, opts.format, filename)
+  opts.onProgress?.({ phase: 'write', ratio: 1, total: rows.length - 1 })
+  return undefined
+}
+```
+
 ### `type ClipboardFormat`
 
 Native formats that can be placed on the clipboard.
@@ -105771,6 +105994,33 @@ export type ClipboardExportOptions<TData> = {
   csv?: CsvOptions
   onProgress?: (progress: ExportProgress) => void
   signal?: AbortSignal
+}
+```
+
+### `function copyExportToClipboard`
+
+Copy the grid (current view / selection / all) to the clipboard in a native
+text format instead of downloading a file. Defaults to `tsv`, which pastes
+straight into Excel / Google Sheets as real columns. `html` writes rich
+`text/html` so pasted cells keep their table structure.
+
+```ts
+export async function copyExportToClipboard<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(api: SvGridApi<TFeatures, TData>, opts: ClipboardExportOptions<TData> = {}): Promise<void> {
+  assertEnterpriseLicensed('Export')
+  const format: ClipboardFormat = opts.format ?? 'tsv'
+  const sourceRows = resolveRowSource(api, opts.rows)
+  if (sourceRows.length === 0) {
+    throw new Error('@svgrid/enterprise: nothing to copy - the grid has no rows')
+  }
+  const cols = resolveColumns(api, opts, sourceRows)
+  const projectOpts =
+    format === 'json' ? { ...opts, rawValues: opts.rawValues ?? true } : opts
+  const projected = await projectRows(sourceRows, cols, projectOpts)
+  const { text } = await serializeNative(format, projected, cols, opts)
+  await writeClipboard(text, format)
 }
 ```
 
@@ -105986,6 +106236,51 @@ export type ImportResult<TData> = {
 }
 ```
 
+### `function readImportMatrix`
+
+Read a file (or inline text) into a raw `string[][]` matrix - header row
+first - without any mapping, coercion, or validation. The cheap half of
+`importData`: parse the bytes once, then feed the matrix to
+`mapImportMatrix` as many times as the mapping UI needs.
+
+```ts
+export async function readImportMatrix(
+  file: File | Blob | string,
+  format: ImportFormat = 'auto',
+  opts: { maxBytes?: number; encoding?: string; signal?: AbortSignal } = {},
+): Promise<{ format: Exclude<ImportFormat, 'auto'>; matrix: string[][] }> {
+  if (opts.signal?.aborted) throw abortError()
+  // Guard the byte size BEFORE reading, so an oversized upload never lands
+  // in memory.
+  if (opts.maxBytes != null && file instanceof Blob && file.size > opts.maxBytes) {
+    throw new Error(
+      `@svgrid/enterprise: file is ${file.size.toLocaleString()} bytes, ` +
+        `over the ${opts.maxBytes.toLocaleString()}-byte import limit.`,
+    )
+  }
+  const fmt = sniffFormat(file, format)
+  let matrix: string[][]
+  if (fmt === 'xlsx') {
+    if (typeof file === 'string') {
+      throw new Error(
+        '@svgrid/enterprise: xlsx import expects a File or Blob, not a string. ' +
+          'Use format: "csv" or "tsv" for inline text.',
+      )
+    }
+    matrix = await parseXlsx(file)
+  } else if (fmt === 'json') {
+    const text = typeof file === 'string' ? file : await readText(file, opts.encoding)
+    matrix = jsonToMatrix(text)
+  } else {
+    const sep = fmt === 'tsv' ? '\t' : ','
+    const text = typeof file === 'string' ? file : await readText(file, opts.encoding)
+    matrix = parseDelimited(text, sep)
+  }
+  if (opts.signal?.aborted) throw abortError()
+  return { format: fmt, matrix }
+}
+```
+
 ### `function mapImportMatrix`
 
 Apply a column map + declared types + validator to an already-parsed
@@ -106016,6 +106311,71 @@ export function mapImportMatrix<TData extends RowData>(
     rows,
     errors,
     skipped: built.skipped,
+    total: matrix.length > 0 ? matrix.length - 1 : 0,
+    errorsTruncated,
+    deduped,
+  }
+}
+```
+
+### `function mapImportMatrixAsync`
+
+Non-blocking sibling of `mapImportMatrix`: yields to the event loop every
+few thousand rows and reports progress, so mapping a 100k-row file never
+freezes the tab. Honors an AbortSignal. Used by `importData` and the
+SvImportDialog preview.
+
+```ts
+export async function mapImportMatrixAsync<TData extends RowData>(
+  matrix: string[][],
+  opts: MapMatrixOptions<TData> & {
+    signal?: AbortSignal
+    onProgress?: (progress: ImportProgress) => void
+    /** Rows per chunk before yielding. Default 5000. */
+    chunkSize?: number
+  } = {},
+): Promise<MapMatrixResult<TData>> {
+  const headers = (matrix[0] ?? []).map((h) => h.trim())
+  const fields = computeFields(headers, opts.columnMap)
+  const dataRows = matrix.slice(1)
+  const total = dataRows.length
+  const chunk = Math.max(1, opts.chunkSize ?? 5000)
+  const rows: TData[] = []
+  const errors: ImportRowError[] = []
+  let skipped = 0
+  let outRowIndex = 0
+  let errorsTruncated = false
+
+  for (let i = 0; i < total; i += 1) {
+    if (opts.signal?.aborted) throw abortError()
+    const cells = dataRows[i]!
+    if (isBlankRow(cells)) { skipped += 1 } else {
+      const { rec, errors: rowErrs } = buildRecord(cells, headers.length, fields, opts.columnTypes, outRowIndex)
+      if (rowErrs.length && collectErrors(errors, rowErrs, opts.maxErrors)) errorsTruncated = true
+      rows.push(rec as unknown as TData)
+      outRowIndex += 1
+    }
+    if ((i + 1) % chunk === 0) {
+      opts.onProgress?.({ phase: 'map', ratio: total ? (i + 1) / total : 1, done: i + 1, total })
+      await nextTick()
+    }
+  }
+
+  if (applyValidator(rows, errors, opts.validator, opts.maxErrors)) errorsTruncated = true
+
+  let finalRows = rows
+  let deduped = 0
+  if (opts.dedupeBy) {
+    const r = dedupeRows(rows, opts.dedupeBy as string)
+    finalRows = r.rows
+    deduped = r.deduped
+  }
+  opts.onProgress?.({ phase: 'map', ratio: 1, done: total, total })
+  return {
+    headers,
+    rows: finalRows,
+    errors,
+    skipped,
     total: matrix.length > 0 ? matrix.length - 1 : 0,
     errorsTruncated,
     deduped,
@@ -106073,6 +106433,75 @@ export function inferImportColumnTypes(
     else if (t === 'datetime') types[c.field] = 'datetime'
   }
   return types
+}
+```
+
+### `function importData`
+
+Read a file (or inline text), parse, optionally validate + commit. The
+sister function of `exportGrid`.
+
+```ts
+export async function importData<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(
+  api: SvGridApi<TFeatures, TData>,
+  opts: ImportOptions<TData>,
+): Promise<ImportResult<TData>> {
+  assertEnterpriseLicensed('Import')
+  const { format, matrix } = await readImportMatrix(opts.file, opts.format ?? 'auto', {
+    maxBytes: opts.maxBytes,
+    encoding: opts.encoding,
+    signal: opts.signal,
+  })
+
+  // Enforce the row cap before we do the O(rows) mapping work: either reject
+  // outright, or truncate to the first maxRows and flag it.
+  const dataCount = matrix.length > 0 ? matrix.length - 1 : 0
+  let workMatrix = matrix
+  let truncated = false
+  if (opts.maxRows != null && dataCount > opts.maxRows) {
+    if (opts.overLimit === 'truncate') {
+      workMatrix = matrix.slice(0, opts.maxRows + 1) // header + first maxRows
+      truncated = true
+    } else {
+      throw new Error(
+        `@svgrid/enterprise: import has ${dataCount.toLocaleString()} rows, ` +
+          `over the maxRows limit of ${opts.maxRows.toLocaleString()}.`,
+      )
+    }
+  }
+
+  // Grid-aware auto-mapping: derive the columnMap + columnTypes from the
+  // grid's own columns, but let anything the caller passed win.
+  let columnMap = opts.columnMap
+  let columnTypes = opts.columnTypes
+  if (opts.autoMap) {
+    const gridCols = api.getColumns() as ReadonlyArray<ImportGridColumn>
+    const headers = (workMatrix[0] ?? []).map((h) => h.trim())
+    columnMap = { ...autoMapColumns(headers, gridCols), ...(opts.columnMap ?? {}) }
+    columnTypes = { ...inferImportColumnTypes(gridCols), ...(opts.columnTypes ?? {}) }
+  }
+
+  const { headers, rows, errors, skipped, errorsTruncated, deduped } =
+    await mapImportMatrixAsync<TData>(workMatrix, {
+      columnMap,
+      columnTypes,
+      validator: opts.validator,
+      maxErrors: opts.maxErrors,
+      dedupeBy: opts.dedupeBy,
+      signal: opts.signal,
+      onProgress: opts.onProgress,
+    })
+
+  if (opts.commit && errors.length === 0 && rows.length > 0) {
+    api.addRows(rows, opts.commitAt ?? 'bottom')
+  }
+
+  // `total` reports the ORIGINAL source row count even when truncated, so the
+  // caller can say "imported X of Y".
+  return { headers, rows, errors, skipped, total: dataCount, format, errorsTruncated, deduped, truncated }
 }
 ```
 
@@ -106209,6 +106638,11 @@ export function installEnterprise<
   // Register the Gantt view (no-op without the `gantt` prop).
   enableGanttView()
   enableSelectionBar()
+  // Relative date operators, cell-text checklist labels and the status-bar row
+  // count (each a no-op until a grid uses it).
+  enableRelativeDateFilters()
+  enableFilterLabels()
+  enableRowCount()
   // Register the export engine so built-in AI exports (aiExport) can write the
   // enterprise formats (xlsx / pdf / ...); free grids without it get the plan only.
   registerExportProvider(exportGrid as never)
@@ -106216,8 +106650,8 @@ export function installEnterprise<
   enableAdvancedFilter()
   // Register the Excel keymap (Ctrl+Arrow, Ctrl+D, Ctrl+A and the rest). The
   // grid interprets a key itself only when nothing claims it, so a free grid
-  // is unaffected.
-  enableSheet()
+  // is unaffected. No spreadsheet nudge: this app may only export or pivot.
+  registerSheetKeymap()
   // Raise the unlicensed nudge for the server-side row model. No registry to fill -
   // the model hands the grid ordinary rows - so this only nudges when unlicensed.
   enableServerRowModel()
@@ -106551,6 +106985,1924 @@ export function filterCollapsedPivotRows(
     if (visible) out.push(row)
   }
   return out
+}
+```
+
+<!-- docs/reference/auto/svgrid-enterprise-review-adapters.md  (unrouted) -->
+
+# `@svgrid/enterprise` · `review/adapters.ts`
+
+Auto-generated. Source: `packages\enterprise\src\review\adapters.ts`.
+
+### `type AdapterResult`
+
+A change set built from another tool's output, ready for `review.add`, with
+a count of the predictions that could not become proposals.
+
+```ts
+export type AdapterResult = {
+  source: ProposalSource
+  title: string
+  proposals: ProposalInput[]
+  /** Predictions dropped: an index outside the request or the snapshot. */
+  dropped: number
+}
+```
+
+### `const blankTargets`
+
+Blank cells of `field`: what `aiSmartFill` targets when given no indices.
+
+```ts
+export const blankTargets = (snapshot: ReadonlyArray<unknown>, field: string): number[] =>
+```
+
+### `function fromSmartFill`
+
+Proposals from an `aiSmartFill` result, its row indices resolved to row ids
+through the snapshot the call ran on.
+
+```ts
+export function fromSmartFill<TData>(
+  result: AISmartFillResult,
+  snapshot: ReadonlyArray<TData>,
+  opts: { api: RowIdApi; targets?: ReadonlyArray<number>; source?: ProposalSource },
+): AdapterResult {
+  const targets = opts.targets ?? blankTargets(snapshot, result.field)
+  const { proposals, dropped } = fromPredictions(result.predictions, result.field, snapshot, targets, opts.api, result.rationale || undefined)
+  const source = opts.source ?? { kind: 'ai', id: `smart-fill:${result.field}`, label: 'Smart fill' }
+  return { source, title: `Smart fill: ${result.field}`, proposals, dropped }
+}
+```
+
+### `function fromClassify`
+
+Proposals from an `aiClassify` result, its row indices resolved to row ids
+through the snapshot the call ran on.
+
+```ts
+export function fromClassify<TData>(
+  result: AIClassifyResult,
+  snapshot: ReadonlyArray<TData>,
+  opts: { api: RowIdApi; targets?: ReadonlyArray<number>; source?: ProposalSource },
+): AdapterResult {
+  const targets = opts.targets ?? snapshot.map((_, i) => i)
+  const { proposals, dropped } = fromPredictions(result.predictions, result.outputField, snapshot, targets, opts.api, `classified from ${result.inputField}`)
+  const source = opts.source ?? { kind: 'ai', id: `classify:${result.outputField}`, label: 'Classify' }
+  return { source, title: `Classify: ${result.outputField}`, proposals, dropped }
+}
+```
+
+### `function fromRows`
+
+Diff incoming rows (an import, a sync) against the grid's data by `key`:
+one proposal per field that differs. Incoming rows with no match, and
+fields not in `fields` when it is given, are not proposed; unmatched rows
+are returned so the app can show them (adding rows comes in a later release).
+
+```ts
+export function fromRows<TData>(
+  incoming: ReadonlyArray<Partial<TData>>,
+  opts: {
+    api: Pick<ReviewGridApi, 'getOption' | 'getData'>
+    key: keyof TData & string
+    source: ProposalSource
+    title?: string
+    fields?: ReadonlyArray<keyof TData & string>
+  },
+): AdapterResult & { unmatched: Array<Partial<TData>> } {
+  const id = rowIdOf<TData>(opts.api)
+  const data = opts.api.getData() as ReadonlyArray<TData>
+  const byKey = new Map<unknown, { row: TData; index: number }>()
+  data.forEach((row, index) => byKey.set((row as Record<string, unknown>)[opts.key], { row, index }))
+  const proposals: ProposalInput[] = []
+  const unmatched: Array<Partial<TData>> = []
+  for (const next of incoming) {
+    const hit = byKey.get((next as Record<string, unknown>)[opts.key])
+    if (!hit) {
+      unmatched.push(next)
+      continue
+    }
+    const rowId = id(hit.row, hit.index)
+    const fields = opts.fields ?? (Object.keys(next) as Array<keyof TData & string>)
+    for (const field of fields) {
+      if (field === opts.key || !(field in (next as object))) continue
+      const before = (hit.row as Record<string, unknown>)[field]
+      const after = (next as Record<string, unknown>)[field]
+      if (!sameValue(before, after)) proposals.push({ rowId, field, before, after })
+    }
+  }
+  return { source: opts.source, title: opts.title ?? opts.source.label, proposals, dropped: 0, unmatched }
+}
+```
+
+### `function reviewSmartFill`
+
+Snapshot, run `aiSmartFill`, and add the result to `review` as proposals.
+
+```ts
+export async function reviewSmartFill(
+  review: Addable,
+  api: ReviewGridApi,
+  opts: AISmartFillOptions,
+): Promise<AdapterResult> {
+  const snapshot = api.getData().slice()
+  const targets = opts.targetRowIndices ?? blankTargets(snapshot, opts.field)
+  const result = await aiSmartFill(api as never, { ...opts, targetRowIndices: [...targets] })
+  const set = fromSmartFill(result, snapshot, { api, targets })
+  review.add(set)
+  return set
+}
+```
+
+### `function reviewClassify`
+
+Snapshot, run `aiClassify`, and add the result to `review` as proposals.
+
+```ts
+export async function reviewClassify(
+  review: Addable,
+  api: ReviewGridApi,
+  opts: AIClassifyOptions,
+): Promise<AdapterResult> {
+  const snapshot = api.getData().slice()
+  const targets = opts.targetRowIndices ?? snapshot.map((_, i) => i)
+  const result = await aiClassify(api as never, { ...opts, targetRowIndices: [...targets] })
+  const set = fromClassify(result, snapshot, { api, targets })
+  review.add(set)
+  return set
+}
+```
+
+### `function fromStaged`
+
+Lift a `createStagedEditing` buffer into proposals, to route a person's
+staged edits to someone else for approval instead of committing them.
+
+Staged editing has already written its values into the grid, and a
+proposal is checked against the value it saw (`before`). So revert the
+stage first (`stage.revert(...)`), then add these: the cells hold the
+original values again and the proposals carry the staged ones.
+
+```ts
+export function fromStaged(
+  changes: ReadonlyArray<{ rowId: string; columnId: string; original: unknown; staged: unknown }>,
+  opts: { api: Pick<ReviewGridApi, 'getColumns'>; source: ProposalSource; title?: string },
+): AdapterResult {
+  const fieldOf = new Map(opts.api.getColumns().map((c) => [c.id, c.field ?? c.id]))
+  const proposals: ProposalInput[] = changes
+    .filter((c) => !sameValue(c.original, c.staged))
+    .map((c) => ({ rowId: c.rowId, field: fieldOf.get(c.columnId) ?? c.columnId, before: c.original, after: c.staged }))
+  return { source: opts.source, title: opts.title ?? opts.source.label, proposals, dropped: 0 }
+}
+```
+
+<!-- docs/reference/auto/svgrid-enterprise-review-agent.md  (unrouted) -->
+
+# `@svgrid/enterprise` · `review/agent.ts`
+
+Auto-generated. Source: `packages\enterprise\src\review\agent.ts`.
+
+### `type GridTool`
+
+One agent tool in the shape tool-use loops take: a name, a description, a
+JSON Schema for its input, and `execute`.
+
+```ts
+export type GridTool = {
+  name: string
+  description: string
+  /** JSON Schema of the input object. */
+  inputSchema: Record<string, unknown>
+  execute: (input: any) => Promise<unknown>
+}
+```
+
+### `type GridToolsOptions`
+
+Options for `createGridTools`: the review edits are proposed into, the grid
+api, and the fields the agent may edit.
+
+```ts
+export type GridToolsOptions = {
+  review: ToolReview
+  /** The grid api, or a getter for it. */
+  api: ToolApi | (() => ToolApi | null | undefined)
+  /** Who the proposals are from. Default: an agent named "Agent". */
+  source?: ProposalSource
+  /** Fields the agent may propose edits to. Default: every column with a field. */
+  fields?: ReadonlyArray<string>
+  /** Most rows one query returns. Default 200. */
+  maxRows?: number
+  /** Prefix for tool names. Default 'grid_'. */
+  prefix?: string
+  /** Most edits one grid_propose_edits call may carry. Default 500. */
+  maxEdits?: number
+}
+```
+
+### `function createGridTools`
+
+The tools an agent edits a grid through: `grid_describe`, `grid_query_rows`,
+`grid_propose_edits` and `grid_review_status`. None of them writes the data:
+edits arrive in the review as proposals for a person to accept.
+
+```ts
+export function createGridTools(opts: GridToolsOptions): GridTool[] {
+  const prefix = opts.prefix ?? 'grid_'
+  const source = opts.source ?? { kind: 'agent', id: 'agent', label: 'Agent' }
+  const maxRows = opts.maxRows ?? 200
+  const maxEdits = opts.maxEdits ?? 500
+  const api = (): ToolApi => {
+    const a = typeof opts.api === 'function' ? (opts.api as () => ToolApi | null | undefined)() : opts.api
+    if (!a) throw new Error('the grid is not ready yet')
+    return a
+  }
+  const rowIdOf = (a: ToolApi) => {
+    const fn = a.getOption('getRowId') as ((row: unknown, i: number) => string) | undefined
+    if (!fn) throw new Error('the grid needs a getRowId prop')
+    return fn
+  }
+  const columns = (a: ToolApi) => a.getColumns().filter((c) => c.field)
+  const writable = (a: ToolApi) => new Set(opts.fields ?? columns(a).map((c) => c.field!))
+
+  const describe: GridTool = {
+    name: `${prefix}describe`,
+    description:
+      'Describe the table: its columns (field, header, data type), how many rows it has, and which fields you may propose edits to. ' +
+      'Edits you propose are not applied: a person reviews them in groups and accepts or rejects them.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    async execute() {
+      const a = api()
+      const canWrite = writable(a)
+      return {
+        rowCount: a.getData().length,
+        columns: columns(a).map((c) => ({ field: c.field, header: c.header, type: c.cellDataType ?? 'text', writable: canWrite.has(c.field!) })),
+      }
+    },
+  }
+
+  const query: GridTool = {
+    name: `${prefix}query_rows`,
+    description:
+      `Read rows of the table. Filter with "where" (all conditions must hold), pick fields, page with offset/limit (at most ${maxRows}). ` +
+      'Every row comes with its rowId, which grid_propose_edits needs.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        where: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: { field: { type: 'string' }, op: { type: 'string', enum: OPS }, value: {} },
+            required: ['field', 'op'],
+          },
+        },
+        fields: { type: 'array', items: { type: 'string' } },
+        offset: { type: 'integer', minimum: 0 },
+        limit: { type: 'integer', minimum: 1, maximum: maxRows },
+      },
+      additionalProperties: false,
+    },
+    async execute(input: { where?: Where[]; fields?: string[]; offset?: number; limit?: number } = {}) {
+      const a = api()
+      const id = rowIdOf(a)
+      const known = new Set(columns(a).map((c) => c.field!))
+      for (const w of input.where ?? []) {
+        if (!known.has(w.field)) throw new Error(`unknown field "${w.field}"`)
+        if (!OPS.includes(w.op)) throw new Error(`unknown op "${w.op}"`)
+      }
+      const fields = (input.fields ?? [...known]).filter((f) => known.has(f))
+      const hits = a.getData().flatMap((row, i) =>
+        (input.where ?? []).every((w) => matches((row as Record<string, unknown>)[w.field], w)) ? [{ row, i }] : [],
+      )
+      // The schema says integers; a model can still send "10" or -5.
+      const offset = Math.max(0, Math.trunc(Number(input.offset) || 0))
+      const limit = Math.min(Math.max(1, Math.trunc(Number(input.limit) || maxRows)), maxRows)
+      return {
+        total: hits.length,
+        offset,
+        rows: hits.slice(offset, offset + limit).map(({ row, i }) => ({
+          rowId: String(id(row, i)),
+          ...Object.fromEntries(fields.map((f) => [f, (row as Record<string, unknown>)[f]])),
+        })),
+      }
+    },
+  }
+
+  const propose: GridTool = {
+    name: `${prefix}propose_edits`,
+    description:
+      'Propose new values for cells. Nothing is written: each edit becomes a proposal a person reviews. ' +
+      'Give a short reason per edit, and a confidence from 0 to 1 when you are unsure. ' +
+      'Edits to unknown rows, to fields you may not edit, or that change nothing are skipped and reported.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'What this batch does, in a few words.' },
+        edits: {
+          type: 'array',
+          minItems: 1,
+          maxItems: maxEdits,
+          items: {
+            type: 'object',
+            properties: {
+              rowId: { type: 'string' },
+              field: { type: 'string' },
+              value: {},
+              reason: { type: 'string' },
+              confidence: { type: 'number', minimum: 0, maximum: 1 },
+            },
+            required: ['rowId', 'field', 'value'],
+          },
+        },
+      },
+      required: ['edits'],
+      additionalProperties: false,
+    },
+    async execute(input: { title?: string; edits: Array<{ rowId: string; field: string; value: unknown; reason?: string; confidence?: number }> }) {
+      const a = api()
+      const edits = Array.isArray(input?.edits) ? input.edits : []
+      if (edits.length > maxEdits) throw new Error(`at most ${maxEdits} edits per call; send the rest in another call`)
+      const id = rowIdOf(a)
+      const canWrite = writable(a)
+      const typeOf = new Map(a.getColumns().filter((c) => c.field).map((c) => [c.field!, c.cellDataType ?? 'text']))
+      const rows = new Map(a.getData().map((row, i) => [String(id(row, i)), row as Record<string, unknown>]))
+      const skipped: Array<{ index: number; why: string }> = []
+      const proposals: ProposalInput[] = []
+      edits.forEach((e, index) => {
+        const row = rows.get(String(e?.rowId))
+        if (!row) return skipped.push({ index, why: `no row with rowId "${e?.rowId}"` })
+        if (!canWrite.has(e.field)) return skipped.push({ index, why: `field "${e.field}" is not writable` })
+        const why = wrongType(typeOf.get(e.field), row[e.field], e.value)
+        if (why) return skipped.push({ index, why: `${e.field} ${why}` })
+        if (sameValue(row[e.field], e.value)) return skipped.push({ index, why: 'the cell already holds this value' })
+        const confidence = typeof e.confidence === 'number' ? Math.min(1, Math.max(0, e.confidence)) : undefined
+        proposals.push({ rowId: String(e.rowId), field: e.field, before: row[e.field], after: e.value, reason: e.reason, confidence })
+      })
+      const set = proposals.length ? opts.review.add({ source, title: input.title, proposals }) : null
+      return {
+        proposed: set?.proposals.length ?? 0,
+        setId: set?.id ?? null,
+        skipped,
+        note: 'Proposed, not applied. A person will review these; call grid_review_status to see what was decided.',
+      }
+    },
+  }
+
+  const status: GridTool = {
+    name: `${prefix}review_status`,
+    description:
+      'What happened to your proposals: how many are still pending, accepted, rejected, or stale (the cell changed before review), ' +
+      'and the pending groups as the reviewer sees them.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    async execute() {
+      const mine = opts.review.proposals().filter((p) => p.source.id === source.id)
+      const count = (s: Proposal['status']) => mine.filter((p) => p.status === s).length
+      return {
+        pending: count('pending'),
+        accepted: count('accepted'),
+        rejected: count('rejected'),
+        stale: count('stale'),
+        conflicts: count('conflict'),
+        groups: opts.review.groups().filter((g) => g.sourceId === source.id).map((g) => ({ label: g.label, kind: g.kind, count: g.count })),
+      }
+    },
+  }
+
+  return [describe, query, propose, status]
+}
+```
+
+### `function registerWebMcpTools`
+
+Register tools with the browser's WebMCP API, so an agent driving the page
+can call them. Experimental: WebMCP is a draft (`document.modelContext`,
+earlier `navigator.modelContext`), and this does nothing where it is
+missing. Abort `signal`, or call `unregister`, to remove them.
+
+```ts
+export function registerWebMcpTools(
+  tools: ReadonlyArray<GridTool>,
+  opts: { signal?: AbortSignal } = {},
+): { supported: boolean; unregister: () => void } {
+  const g = globalThis as { document?: { modelContext?: unknown }; navigator?: { modelContext?: unknown } }
+  const mc = (g.document?.modelContext ?? g.navigator?.modelContext) as
+    | { registerTool?: (tool: unknown, options?: { signal?: AbortSignal }) => unknown }
+    | undefined
+  if (typeof mc?.registerTool !== 'function') return { supported: false, unregister() {} }
+  const controller = new AbortController()
+  opts.signal?.addEventListener('abort', () => controller.abort(), { once: true })
+  for (const t of tools) {
+    const registered = mc.registerTool(
+      {
+        name: t.name,
+        description: t.description,
+        inputSchema: t.inputSchema,
+        execute: async (input: unknown) => ({ content: [{ type: 'text', text: JSON.stringify(await t.execute(input ?? {})) }] }),
+      },
+      { signal: controller.signal },
+    )
+    // A rejected registration (a duplicate name, a permission) must not break the page.
+    Promise.resolve(registered).catch(() => {})
+  }
+  return { supported: true, unregister: () => controller.abort() }
+}
+```
+
+<!-- docs/reference/auto/svgrid-enterprise-review-cluster.md  (unrouted) -->
+
+# `@svgrid/enterprise` · `review/cluster.ts`
+
+Auto-generated. Source: `packages\enterprise\src\review\cluster.ts`.
+
+### `type ClusterOptions`
+
+How `clusterProposals` labels and splits groups: field labels, the size a
+scale group needs, the confidence below which a proposal counts as unsure,
+and the wording.
+
+```ts
+export type ClusterOptions = {
+  /** Wording of the group labels (the `label*`, `case*`, `punct*` keys); English by default. */
+  messages?: Partial<ReviewMessages>
+  /** The header to show for a field in group labels. Default: the field itself. */
+  fieldLabel?: (field: string) => string
+  /** Fewest members a `scale` group needs. Default 5. */
+  minScale?: number
+  /** Below this, a judgment group sorts with the risky ones. Default 0.6. */
+  lowConfidence?: number
+}
+```
+
+### `function clusterProposals`
+
+Group proposals by the change they make (trim, case, reformat, scale, one
+mapping, fill empty, one target, no pattern), the groups that need a person
+first. What the panel lists.
+
+```ts
+export function clusterProposals(
+  proposals: ReadonlyArray<Proposal>,
+  opts: ClusterOptions = {},
+): ProposalGroup[] {
+  const fieldLabel = opts.fieldLabel ?? ((f: string) => f)
+  const msg = reviewMessages(opts.messages)
+  const minScale = opts.minScale ?? 5
+  const low = opts.lowConfidence ?? 0.6
+  const order = new Map<string, number>()
+  proposals.forEach((p, i) => order.set(p.id, i))
+
+  const buckets = new Map<string, Bucket>()
+  const put = (p: Proposal, kind: GroupKind, param: string) => {
+    const key = [p.source.id, p.field, kind, param].join(SEP)
+    let b = buckets.get(key)
+    if (!b) buckets.set(key, (b = { kind, param, field: p.field, sourceId: p.source.id, members: [] }))
+    b.members.push(p)
+  }
+  const cell = (p: Proposal) => p.source.id + SEP + p.field
+
+  // 1-3: provable per proposal.
+  let rest: Proposal[] = []
+  for (const p of proposals) {
+    const r = ruleOf(p.before, p.after)
+    if (r) put(p, r.kind, r.param)
+    else rest.push(p)
+  }
+
+  // 4: scale, only once enough members share a ratio.
+  rest = bucketPass(rest, (p) => {
+    const r = ratioOf(p.before, p.after)
+    return r == null ? null : cell(p) + SEP + r
+  }, (members) => members.length >= minScale, (p, k) => put(p, 'scale', k.slice(k.lastIndexOf(SEP) + 1)))
+
+  // 5: non-blank pairs seen at least twice, one group per target value.
+  rest = bucketPass(rest, (p) => (isBlank(p.before) ? null : cell(p) + SEP + keyOf(p.before) + SEP + keyOf(p.after)),
+    (members) => members.length >= 2,
+    (p) => put(p, 'same-mapping', keyOf(p.after)))
+
+  // 6: blank before, split by the value proposed; singletons go to one pooled group.
+  rest = bucketPass(rest, (p) => (isBlank(p.before) ? cell(p) + SEP + keyOf(p.after) : null),
+    () => true,
+    (p, _k, members) => put(p, 'fill-empty', members.length >= 2 ? keyOf(p.after) : '*'))
+
+  // 7: one target from at least three proposals.
+  rest = bucketPass(rest, (p) => cell(p) + SEP + keyOf(p.after),
+    (members) => members.length >= 3,
+    (p) => put(p, 'constant-target', keyOf(p.after)))
+
+  // 8: everything else, per field.
+  for (const p of rest) put(p, 'unpatterned', '')
+
+  const groups: ProposalGroup[] = []
+  for (const [key, b] of buckets) {
+    const members = b.members.sort((x, y) => order.get(x.id)! - order.get(y.id)!)
+    const confs = members.map((m) => m.confidence).filter((c): c is number => typeof c === 'number')
+    groups.push({
+      key,
+      kind: b.kind,
+      rule: RULE_KINDS.has(b.kind),
+      param: b.param,
+      label: labelOf(b.kind, b.param, fieldLabel(b.field), members, msg),
+      field: b.field,
+      sourceId: b.sourceId,
+      ids: members.map((m) => m.id),
+      count: members.length,
+      minConfidence: confs.length ? Math.min(...confs) : undefined,
+      avgConfidence: confs.length ? confs.reduce((s, c) => s + c, 0) / confs.length : undefined,
+      sample: sampleOf(members, low),
+      beforeDistribution: b.kind === 'constant-target' || b.kind === 'same-mapping' ? distributionOf(members) : undefined,
+    })
+  }
+  return groups.sort((a, b) => rankOf(a, low) - rankOf(b, low) || b.count - a.count || (a.key < b.key ? -1 : 1))
+}
+```
+
+### `function showValue`
+
+A value as a group label shows it: short, `(empty)` for blank, spaces
+visible. A string is quoted only where the quotes tell something: around
+spaces at its ends, or when it reads as a number, a boolean or the blank mark.
+
+```ts
+export function showValue(v: unknown, empty = '(empty)'): string {
+  if (isBlank(v)) return empty
+  if (v instanceof Date) return v.toISOString().slice(0, 10)
+  const s = typeof v === 'string' ? v : typeof v === 'object' ? JSON.stringify(v) : String(v)
+  const short = s.length > 40 ? s.slice(0, 39) + '...' : s
+  if (typeof v !== 'string') return short
+  const quote = /^\s|\s$/.test(s) || /^-?[\d.,]+$|^(true|false)$/i.test(s) || s === empty
+  return quote ? `"${visibleSpaces(short)}"` : visibleSpaces(short)
+}
+```
+
+<!-- docs/reference/auto/svgrid-enterprise-review-equal.md  (unrouted) -->
+
+# `@svgrid/enterprise` · `review/equal.ts`
+
+Auto-generated. Source: `packages\enterprise\src\review\equal.ts`.
+
+### `const isBlank`
+
+Whether a cell value is blank: null, undefined or the empty string.
+
+```ts
+export const isBlank = (v: unknown): boolean => v == null || v === ''
+```
+
+### `function sameValue`
+
+Whether two cell values are the same for a review: `Object.is`, Dates by
+time, arrays and plain objects by structure, and any two blanks.
+
+```ts
+export function sameValue(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true
+  if (isBlank(a) && isBlank(b)) return true
+  if (a instanceof Date || b instanceof Date) {
+    return a instanceof Date && b instanceof Date && a.getTime() === b.getTime()
+  }
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false
+    return a.every((v, i) => sameValue(v, b[i]))
+  }
+  if (isPlainObject(a) && isPlainObject(b)) {
+    const ka = Object.keys(a)
+    if (ka.length !== Object.keys(b).length) return false
+    return ka.every((k) => Object.prototype.hasOwnProperty.call(b, k) && sameValue(a[k], b[k]))
+  }
+  return false
+}
+```
+
+<!-- docs/reference/auto/svgrid-enterprise-review-formats.md  (unrouted) -->
+
+# `@svgrid/enterprise` · `review/formats.ts`
+
+Auto-generated. Source: `packages\enterprise\src\review\formats.ts`.
+
+### `const PENDING_BG`
+
+Theme it with `--sg-review-pending-bg`. The default is a light amber wash
+from `--sg-warning`, kept apart from the accent, which themes use for
+selection and focus.
+
+```ts
+export const PENDING_BG = 'var(--sg-review-pending-bg, color-mix(in srgb, var(--sg-warning, #d97706) 13%, transparent))'
+```
+
+### `const PENDING_ICON`
+
+Drawn before the value, so a pending cell is never marked by colour alone.
+
+```ts
+export const PENDING_ICON = '•'
+```
+
+### `const CONFLICT_BG`
+
+A cell two sources disagree on: a red wash (`--sg-review-conflict-bg`) and
+a "!" before the value, so the grid shows where the panel's conflicts are.
+
+```ts
+export const CONFLICT_BG = 'var(--sg-review-conflict-bg, color-mix(in srgb, var(--sg-danger, #dc2626) 12%, transparent))'
+```
+
+### `const CONFLICT_ICON`
+
+Drawn before the value of a cell two sources disagree on.
+
+```ts
+export const CONFLICT_ICON = '!'
+```
+
+### `function pendingFormats`
+
+`conditionalFormats` rules that tint the cells of the given proposals, one
+rule per field, scoped to that field's columns. `review.formats` is built
+from it.
+
+```ts
+export function pendingFormats<TData>(
+  pending: ReadonlyArray<Proposal>,
+  rowId: (row: TData, index: number) => string,
+  columns: ReadonlyArray<{ id: string; field?: string }>,
+  look: { background: string; icon: string } = { background: PENDING_BG, icon: PENDING_ICON },
+): ConditionalFormat<any>[] {
+  const rowsByField = new Map<string, Set<string>>()
+  for (const p of pending) {
+    let ids = rowsByField.get(p.field)
+    if (!ids) rowsByField.set(p.field, (ids = new Set()))
+    ids.add(p.rowId)
+  }
+  const out: ConditionalFormat<any>[] = []
+  for (const [field, ids] of rowsByField) {
+    const cols = columns.filter((c) => (c.field ?? c.id) === field).map((c) => c.id)
+    out.push({
+      type: 'rule',
+      columns: cols.length ? cols : [field],
+      when: ({ row }: { row: TData }) => ids.has(String(rowId(row, 0))),
+      background: look.background,
+      icon: look.icon,
+    })
+  }
+  return out
+}
+```
+
+<!-- docs/reference/auto/svgrid-enterprise-review-ghost.md  (unrouted) -->
+
+# `@svgrid/enterprise` · `review/ghost.ts`
+
+Auto-generated. Source: `packages\enterprise\src\review\ghost.ts`.
+
+### `function canGhost`
+
+Whether wrapping this column's `cell` keeps the rest of its cells as they
+were. `columns` is every leaf column, which a field type's fill may read.
+
+```ts
+export function canGhost(raw: any, sample?: unknown, columns: ReadonlyArray<any> = []): boolean {
+  if (!raw || raw.columns?.length) return false
+  const ext = getGridExtension()
+  // The grid draws a field type's own cell when the module has one for it;
+  // otherwise the column draws as an ordinary one.
+  if (raw.fieldType && raw.cell == null && ext?.cell && ext.hasCell?.(raw) !== false) return false
+  const def = raw.fieldType && ext?.column ? ext.column(raw, columns) : raw
+  const field = def.field ?? def.id
+  if (!field || def.sparkline) return false
+  if (raw.cell != null) return true
+  if (def.editorType === 'checkbox' || def.editorType === 'list' || def.editorType === 'chips') return false
+  if (def.cellDataType === 'boolean' || typeof sample === 'boolean') return false
+  return true
+}
+```
+
+<!-- docs/reference/auto/svgrid-enterprise-review-messages.md  (unrouted) -->
+
+# `@svgrid/enterprise` · `review/messages.ts`
+
+Auto-generated. Source: `packages\enterprise\src\review\messages.ts`.
+
+### `const REVIEW_MESSAGES`
+
+Every string change review shows: the panel, the group labels, the card and
+cell marks. English defaults; pass any subset as `createReview({ messages })`
+(and `<SvReviewPanel messages>` for one panel), unset keys stay English. The
+idiom of the grid's own `localization.text`: a flat map, `{name}`
+placeholders. Kept free of imports: the clustering uses it in plain Node.
+
+```ts
+export const REVIEW_MESSAGES = {
+  // Panel header
+  title: 'Review changes',
+  decided: '{decided} of {total} decided',
+  pendingInGroups: '{count} pending in {groups} groups',
+  pendingInOneGroup: '{count} pending in 1 group',
+  nothingPending: 'Nothing pending',
+  inConflict: ', {count} in conflict',
+  acceptAll: 'Accept all',
+  rejectAll: 'Reject all',
+  acceptRuleGroups: 'Accept rule groups ({count})',
+  resolveFirst: 'Resolve the conflicts before accepting everything.',
+  onlyRowsWithChanges: 'Only rows with changes',
+  // Confirm
+  confirmAcceptGroup: 'Accept {count} changes: {label}?',
+  confirmRejectGroup: 'Reject {count} changes: {label}?',
+  confirmAcceptAll: 'Accept all {count} changes?',
+  confirmRejectAll: 'Reject all {count} changes?',
+  confirmAcceptRules: 'Accept {groups} rule groups ({count} changes)?',
+  confirmYes: 'Yes, {count}',
+  cancel: 'Cancel',
+  // Conflicts
+  conflictsTitle: 'Two sources disagree',
+  conflictCell: '{row}, {field}: now {value}',
+  keep: 'Keep {value}',
+  // Groups
+  badgeRule: 'Rule',
+  hintRule: 'Every change in this group follows the rule.',
+  hintMapping: 'Check the mapping before accepting.',
+  hintFill: 'Check the sample: the least sure ones come first.',
+  hintConstant: 'Many different values set to one: check what they were.',
+  hintEach: 'No shared pattern: look at each change.',
+  oneChange: '{count} change',
+  changes: '{count} changes',
+  sure: '{pct} sure',
+  sureRange: '{min} to {avg} sure',
+  accept: 'Accept',
+  reject: 'Reject',
+  acceptGroupLabel: 'Accept {count}: {label}',
+  rejectGroupLabel: 'Reject {count}: {label}',
+  from: 'From',
+  otherValues: 'other values',
+  sampleOf: 'Sample of {count}',
+  everyChange: 'Every change',
+  firstN: 'First {count}',
+  showRow: 'Show {row} in the grid',
+  rowId: 'Row {row}',
+  acceptOne: 'Accept this change',
+  rejectOne: 'Reject this change',
+  showAll: 'Show all {count}',
+  keysHint: 'J / K move between groups, Enter opens one, A accepts it, R rejects it.',
+  showInGrid: 'Show in grid',
+  nextInGrid: 'Next in grid',
+  hiddenRows: '{count} hidden by filters or grouping',
+  // Empty and done
+  allReviewed: 'All {count} reviewed',
+  reviewedSummary: '{accepted} accepted, {rejected} rejected',
+  reviewedStale: ', {count} not written because the cell changed',
+  noProposals: 'No proposals yet',
+  noProposalsHint: 'Edits an agent, an import or an AI helper proposes show up here, grouped by what they change.',
+  notWritten: '{count} not written',
+  rowField: '{row}, {field}',
+  decidedLabel: 'Decided',
+  // Why a proposal was not written or is waiting (shown in the panel)
+  noteCellChanged: 'the cell changed after this was proposed',
+  noteRowGone: 'the row no longer exists',
+  noteRowEditing: 'the row is being edited',
+  noteGridNotReady: 'the grid is not ready',
+  noteSavedStale: 'saved, but the cell changed before it was written here',
+  noteConflict: 'another source proposed a different value',
+  undoHint: 'Ctrl+Z in the grid undoes the last decision.',
+  // Announced after a decision
+  announceAccepted: '{count} accepted',
+  announceRejected: '{count} rejected',
+  announceStale: '{count} not written: the cell changed',
+  announceSkipped: '{count} left pending',
+  announceCommittedStale: '{count} saved but not shown: the cell changed while saving',
+  announceNotSaved: 'not saved: {error}',
+  announceNothing: 'Nothing to decide',
+  undoFailed: 'Undo not saved: {error}',
+  redoFailed: 'Redo not saved: {error}',
+  // Marks
+  cardProposed: '{count} proposed',
+  proposes: '{source} proposes {value}',
+  nowValue: 'Now: {value}',
+  empty: '(empty)',
+  // Group labels ({field} is the column header)
+  labelWhitespace: 'Trim spaces in {field}',
+  labelCase: 'Change {field} to {case}',
+  caseUpper: 'UPPER CASE',
+  caseLower: 'lower case',
+  caseTitle: 'Title Case',
+  caseMixed: 'a different case',
+  labelToNumber: 'Convert {field} text to numbers',
+  labelDates: 'Reformat {field} dates as {shape}',
+  datesAsDates: 'dates',
+  labelShape: 'Reformat {field} as {shape}',
+  labelPunct: '{change} in {field}',
+  punctRemove: 'remove {chars}',
+  punctAdd: 'add {chars}',
+  punctSpaces: 'spaces',
+  labelDivide: 'Divide {field} by {n}',
+  labelMultiply: 'Multiply {field} by {n}',
+  labelMapping: '{field}: {from} → {to}',
+  mappingValues: '{count} values',
+  labelFill: 'Fill empty {field} with {value}',
+  labelFillVarious: 'Fill empty {field} (different values)',
+  labelConstant: 'Set {field} to {value}',
+  labelUnpatterned: '{field}: no shared pattern',
+}
+```
+
+### `type ReviewMessages`
+
+Every string the review shows, with the keys of `REVIEW_MESSAGES`.
+
+```ts
+export type ReviewMessages = typeof REVIEW_MESSAGES
+```
+
+<!-- docs/reference/auto/svgrid-enterprise-review-model.svelte.md  (unrouted) -->
+
+# `@svgrid/enterprise` · `review/model.svelte.ts`
+
+Auto-generated. Source: `packages\enterprise\src\review\model.svelte.ts`.
+
+### `type ReviewGridApi`
+
+The part of the grid api a review uses. Any `SvGridApi` satisfies it.
+
+```ts
+export type ReviewGridApi = Pick<
+  SvGridApi<any, any>,
+  | 'getData' | 'getOption' | 'getActiveCell' | 'getRowId' | 'getColumns' | 'getCommandContext' | 'stopEditing' | 'scrollToRow' | 'getDisplayedRows'
+  | 'getAdvancedFilter' | 'setAdvancedFilter'
+  | 'getRowPosition' | 'getPageInfo' | 'setPage' | 'getState'
+```
+
+### `type ReviewOptions`
+
+Options for `createReview`: the grid it reviews, how accepted values are
+written (`setRows`, or `server` with `onCommit`), and what to call as
+decisions are made.
+
+```ts
+export type ReviewOptions<TData> = {
+  /** The grid api, or a getter for it (it is bound after mount). */
+  api: ReviewGridApi | (() => ReviewGridApi | undefined | null)
+  /** Replace the app's rows. Required unless `server` is set. Must apply synchronously. */
+  setRows?: (next: TData[]) => void
+  /**
+   * Server row model: the controller passed to the grid as `rowModel`.
+   * Accept and undo commit through `onCommit` and then refresh it.
+   */
+  server?: { refresh(): void }
+  /** Persist accepted values. Reject (throw) to keep them pending. Required with `server`. */
+  onCommit?: (accepted: Proposal[]) => void | Promise<void>
+  /** Who decides, stamped on each decided proposal. */
+  user?: string
+  cluster?: ClusterOptions
+  /** Wording of everything the review shows (panel, group labels, marks); English by default. */
+  messages?: Partial<ReviewMessages>
+  /**
+   * Called after every decision, its undo and its redo, with copies of the
+   * proposals it moved. Write these to an audit log of your own.
+   */
+  onDecision?: (decision: ReviewDecision) => void
+  /**
+   * Called as accepted values (or an undo / redo of them) are written, with
+   * the proposals and the new rows just before they go to `setRows`, so
+   * bookkeeping that edits a row lands in the same write. SvGrid Base stamps
+   * "last modified" and notes the record's activity with
+   * `baseReviewApplied(api)` from `@svgrid/enterprise/base`. With a server
+   * row model there are no rows to edit: `rows` is undefined.
+   */
+  onApply?: (applied: Proposal[], how: 'accept' | 'undo' | 'redo', rows?: TData[]) => void
+  /**
+   * An undo or redo whose `onCommit` failed: nothing was written and the
+   * decision stands. Also kept as `review.lastError`, which the panel announces.
+   */
+  onError?: (error: unknown, during: 'undo' | 'redo') => void
+  /**
+   * What names a row on the panel's lines, such as its company, so a reviewer
+   * knows whose record a change is in. Default: the row's first visible text
+   * column, left out when that column is the one the change is to.
+   */
+  rowLabel?: (row: TData) => string | null | undefined
+}
+```
+
+### `type ReviewDecision`
+
+One decision, its undo or its redo, as `onDecision` receives it, with copies
+of the proposals it moved. Write these to an audit log.
+
+```ts
+export type ReviewDecision = {
+  action: 'accept' | 'reject' | 'undo' | 'redo'
+  /** For undo / redo: which decision was undone or redone. */
+  of?: 'accept' | 'reject'
+  proposals: Proposal[]
+  by?: string
+  at: number
+}
+```
+
+### `type ReviewOutcome`
+
+What an accept or a reject did, by proposal id: accepted, rejected, stale
+(the cell changed before the write), committed and then found stale, or
+skipped; and what `onCommit` threw, if it did.
+
+```ts
+export type ReviewOutcome = {
+  accepted: string[]
+  rejected: string[]
+  /** The cell changed since the proposal was made, or its row is gone. Never written. */
+  stale: string[]
+  /** Left pending: the row is being edited, the proposal is already being accepted, or the grid is not ready. */
+  skipped: string[]
+  /**
+   * Saved by `onCommit`, then not written here because the cell changed while
+   * it was saving. The backend holds the proposed value; reload or save the
+   * cell's value back.
+   */
+  committedStale: string[]
+  /** What `onCommit` threw; nothing was written and the proposals stay pending. */
+  error?: unknown
+}
+```
+
+### `type AddInput`
+
+A change set for `review.add`: where it came from, an optional title and
+id, and its proposals.
+
+```ts
+export type AddInput = {
+  source: ProposalSource
+  title?: string
+  id?: string
+  proposals: ReadonlyArray<ProposalInput>
+}
+```
+
+### `type ReviewJSON`
+
+A review's change sets as `review.toJSON()` writes them and `review.load` /
+`review.merge` read them, to route a review to an approver.
+
+```ts
+export type ReviewJSON = { v: 1; sets: ChangeSet[] }
+```
+
+### `type Review`
+
+What `createReview` returns.
+
+```ts
+export type Review<TData = unknown> = ReturnType<typeof createReview<TData>>
+```
+
+### `function createReview`
+
+Hold writes nobody typed (an agent's edits, an import, an AI helper's
+output) as proposals, grouped by the change they make, and write them only
+when a person accepts them. Give the grid `review.columns(columns)` and
+`review.formats`, and render `<SvReviewPanel {review} />` beside it. Each
+decision is one Ctrl+Z in the grid.
+
+```ts
+export function createReview<TData = unknown>(opts: ReviewOptions<TData>) {
+  if (!opts.setRows && !opts.server) throw new Error('[svgrid review] pass setRows (client data) or server (server row model)')
+  if (opts.server && !opts.onCommit) throw new Error('[svgrid review] onCommit is required with a server row model')
+  const msg = reviewMessages(opts.messages)
+  // Without a key: watermark and a one-time nudge. The review still runs.
+  nudgeEnterprise('Change review')
+  // Proposed values beside rich cells (selects, ratings): registered by the
+  // first review, so grids in apps without one keep the plain fast path.
+  registerRichCellMarks()
+
+  const all = new Map<string, Proposal>()
+  const sets = new Map<string, Omit<ChangeSet, 'proposals'> & { ids: string[] }>()
+  /** Live proposals (pending or in conflict) per cell. */
+  const byCell = new Map<string, Set<string>>()
+  const inFlight = new Set<string>()
+  /** Decision order for the log: timestamps tie within one millisecond. */
+  const decidedOrder = new Map<string, number>()
+  let lastError = $state<{ error: unknown; during: 'undo' | 'redo'; at: number } | null>(null)
+  function failed(error: unknown, during: 'undo' | 'redo') {
+    lastError = { error, during, at: Date.now() }
+    opts.onError?.(error, during)
+  }
+  let decisionSeq = 0
+  const stamp = (p: Proposal) => decidedOrder.set(p.id, ++decisionSeq)
+  let version = $state(0)
+  // "Only rows with changes": our node ANDed onto the advanced filter. Put on
+  // again after every change so the grid filters with the new pending set.
+  const filterToken = nextId('rv-')
+  let pendingOnly = $state(false)
+  let filterNonce = 0
+  let pendingRows: { v: number; ids: Set<string> } | null = null
+  const pendingSource = { hasPendingRow: (rowId: string) => hasPendingRow(rowId) }
+  function hasPendingRow(rowId: string): boolean {
+    if (pendingRows?.v !== version) {
+      const ids = new Set<string>()
+      for (const p of all.values()) if (p.status === 'pending' || p.status === 'conflict') ids.add(p.rowId)
+      pendingRows = { v: version, ids }
+    }
+    return pendingRows.ids.has(rowId)
+  }
+  function applyPendingFilter() {
+    const api = getApi()
+    if (!api) return
+    const current = api.getAdvancedFilter()
+    // The user's own filter tools may have dropped the node: then the toggle is off.
+    if (filterNonce > 0 && !hasPending(current)) {
+      pendingOnly = false
+      return
+    }
+    api.setAdvancedFilter(withPending(current, filterToken, ++filterNonce))
+  }
+  const bump = () => {
+    version += 1
+    if (pendingOnly) applyPendingFilter()
+  }
+
+  /**
+   * Show only rows with a pending or conflicting proposal, on top of the
+   * user's own filters; off takes our condition back out and leaves theirs.
+   * Rows leave the view as their proposals are decided.
+   */
+  function showPendingOnly(on: boolean): void {
+    const api = getApi()
+    if (!api) return
+    if (on) {
+      trackPendingSource(filterToken, pendingSource)
+      filterNonce = 0
+      pendingOnly = true
+      api.setAdvancedFilter(withPending(api.getAdvancedFilter(), filterToken, ++filterNonce))
+    } else {
+      pendingOnly = false
+      api.setAdvancedFilter(stripPending(api.getAdvancedFilter()))
+    }
+  }
+
+  const getApi = (): ReviewGridApi | null =>
+    (typeof opts.api === 'function' ? (opts.api as () => ReviewGridApi | undefined | null)() : opts.api) ?? null
+
+  function rowIdFn(api: ReviewGridApi): (row: TData, index: number) => string {
+    const fn = api.getOption('getRowId') as ((row: TData, index: number) => string) | undefined
+    if (!fn) throw new Error('[svgrid review] the grid needs a getRowId prop: proposals are keyed by row id, and positions move on sort and filter')
+    return fn
+  }
+
+  function indexRows(api: ReviewGridApi): Map<string, number> {
+    const id = rowIdFn(api)
+    const map = new Map<string, number>()
+    api.getData().forEach((row, i) => map.set(String(id(row as TData, i)), i))
+    return map
+  }
+
+  // ---- adding -------------------------------------------------------------
+
+  function add(input: AddInput): ChangeSet {
+    const linked = getApi()
+    if (linked) linkCards(linked)
+    const setId = input.id ?? nextId('cs-')
+    const createdAt = Date.now()
+    const ids: string[] = []
+    for (const raw of input.proposals) {
+      if (sameValue(raw.before, raw.after)) continue
+      const p: Proposal = {
+        ...raw,
+        rowId: String(raw.rowId),
+        id: raw.id ?? nextId('pr-'),
+        op: 'update',
+        source: input.source,
+        // A merged proposal keeps when it was made.
+        createdAt: typeof (raw as { createdAt?: unknown }).createdAt === 'number' ? (raw as unknown as { createdAt: number }).createdAt : createdAt,
+        status: 'pending',
+      }
+      const key = cellKey(p.rowId, p.field)
+      const live = byCell.get(key) ?? new Set<string>()
+      for (const otherId of [...live]) {
+        const other = all.get(otherId)!
+        // Being accepted right now: leave it be. If it lands, the stale check
+        // catches this one.
+        if (inFlight.has(otherId)) continue
+        if (other.source.id === p.source.id && other.status === 'pending') {
+          // A newer proposal from the same producer replaces the older one
+          // and keeps what the cell held when the first was made.
+          p.before = other.before
+          live.delete(otherId)
+          all.delete(otherId)
+          for (const set of sets.values()) {
+            const at = set.ids.indexOf(otherId)
+            if (at >= 0) set.ids.splice(at, 1)
+          }
+        } else {
+          other.status = 'conflict'
+          other.note = msg.noteConflict
+          p.status = 'conflict'
+          p.note = other.note
+        }
+      }
+      if (p.status === 'pending' && sameValue(p.before, p.after)) continue
+      live.add(p.id)
+      byCell.set(key, live)
+      all.set(p.id, p)
+      ids.push(p.id)
+    }
+    sets.set(setId, { id: setId, title: input.title ?? input.source.label, source: input.source, createdAt, ids })
+    bump()
+    return { id: setId, title: input.title ?? input.source.label, source: input.source, createdAt, proposals: ids.map((i) => all.get(i)!) }
+  }
+
+  const leaveCell = (p: Proposal) => {
+    const live = byCell.get(cellKey(p.rowId, p.field))
+    live?.delete(p.id)
+    if (live && !live.size) byCell.delete(cellKey(p.rowId, p.field))
+  }
+  const enterCell = (p: Proposal) => {
+    const key = cellKey(p.rowId, p.field)
+    byCell.set(key, (byCell.get(key) ?? new Set()).add(p.id))
+  }
+
+  // ---- reading ------------------------------------------------------------
+
+  let groupCache: { v: number; groups: ProposalGroup[] } | null = null
+
+  function fieldLabels(): (field: string) => string {
+    const api = getApi()
+    const cols = api?.getColumns() ?? []
+    const map = new Map(cols.map((c) => [c.field ?? c.id, c.header || c.id]))
+    return (f) => map.get(f) ?? f
+  }
+
+  const list = (status?: Proposal['status']) => {
+    void version
+    const out = [...all.values()]
+    return status ? out.filter((p) => p.status === status) : out
+  }
+
+  function groups(): ProposalGroup[] {
+    const v = version
+    if (groupCache?.v === v) return groupCache.groups
+    const g = clusterProposals(list('pending'), { fieldLabel: fieldLabels(), ...opts.cluster, messages: { ...opts.messages, ...opts.cluster?.messages } })
+    groupCache = { v, groups: g }
+    return g
+  }
+
+  function pendingFor(rowId: string, field: string): Proposal | undefined {
+    void version
+    for (const id of byCell.get(cellKey(rowId, field)) ?? []) {
+      const p = all.get(id)
+      if (p?.status === 'pending') return p
+    }
+    return undefined
+  }
+
+  // ---- deciding -----------------------------------------------------------
+
+  const outcome = (): ReviewOutcome => ({ accepted: [], rejected: [], stale: [], skipped: [], committedStale: [] })
+
+  /** Drop proposals whose cell no longer holds `before`. */
+  function freshOnly(ps: Proposal[], out: ReviewOutcome, api: ReviewGridApi | null): Proposal[] {
+    if (!api) return ps
+    const data = api.getData()
+    const index = indexRows(api)
+    return ps.filter((p) => {
+      const i = index.get(p.rowId)
+      if (i === undefined) {
+        // A server row model only holds the loaded rows; the backend decides there.
+        if (opts.server) return true
+        markStale(p, msg.noteRowGone, out)
+        return false
+      }
+      const current = (data[i] as Record<string, unknown>)[p.field]
+      if (sameValue(current, p.before)) return true
+      markStale(p, msg.noteCellChanged, out)
+      return false
+    })
+  }
+
+  function markStale(p: Proposal, note: string, out: ReviewOutcome) {
+    p.status = 'stale'
+    p.note = note
+    p.decidedAt = Date.now()
+    stamp(p)
+    leaveCell(p)
+    out.stale.push(p.id)
+  }
+
+  /** Write `value` per (rowId, field) into a copy of the grid's current data. */
+  function writeValues(api: ReviewGridApi, writes: ReadonlyArray<readonly [string, string, unknown]>, beforeSet?: (next: TData[]) => void) {
+    const data = api.getData()
+    const index = indexRows(api)
+    const next = data.slice() as TData[]
+    const copied = new Set<number>()
+    for (const [rowId, field, value] of writes) {
+      const i = index.get(rowId)
+      if (i === undefined) continue
+      if (!copied.has(i)) {
+        next[i] = { ...(next[i] as object) } as TData
+        copied.add(i)
+      }
+      ;(next[i] as Record<string, unknown>)[field] = value
+    }
+    if (!copied.size) return
+    beforeSet?.(next)
+    opts.setRows!(next)
+  }
+
+  function currentValue(api: ReviewGridApi, index: Map<string, number>, p: Proposal): unknown {
+    const i = index.get(p.rowId)
+    return i === undefined ? undefined : (api.getData()[i] as Record<string, unknown>)[p.field]
+  }
+
+  /**
+   * What an open editor could write back over. A cell editor is committed
+   * first (`stopEditing`), so its value lands and the stale check sees it. A
+   * full-row draft has no public commit, so its row is left alone.
+   */
+  function editedRow(api: ReviewGridApi | null): string | null {
+    if (!api) return null
+    api.stopEditing(false)
+    if (!api.getOption('fullRowEditing')) return null
+    const active = api.getActiveCell()
+    return active ? api.getRowId(active.rowIndex) : null
+  }
+
+  async function accept(ids: ReadonlyArray<string>): Promise<ReviewOutcome> {
+    const out = outcome()
+    const api = getApi()
+    if (!api && !opts.server) {
+      for (const id of ids) {
+        const p = all.get(id)
+        if (p?.status !== 'pending') continue
+        p.note = msg.noteGridNotReady
+        out.skipped.push(id)
+      }
+      bump()
+      return out
+    }
+    const busyRow = editedRow(api)
+    let take: Proposal[] = []
+    for (const id of ids) {
+      const p = all.get(id)
+      if (!p || p.status !== 'pending') continue
+      if (inFlight.has(id) || (busyRow !== null && p.rowId === busyRow)) {
+        if (!inFlight.has(id)) p.note = msg.noteRowEditing
+        out.skipped.push(id)
+        continue
+      }
+      take.push(p)
+    }
+    take = freshOnly(take, out, api)
+    if (!take.length) {
+      bump()
+      return out
+    }
+    for (const p of take) inFlight.add(p.id)
+    try {
+      if (opts.onCommit) await opts.onCommit(take.map((p) => ({ ...p })))
+    } catch (error) {
+      for (const p of take) inFlight.delete(p.id)
+      bump()
+      return { ...out, error }
+    }
+    for (const p of take) inFlight.delete(p.id)
+    // The await let other writes in: check again before writing. What
+    // onCommit already saved but cannot be written now is told apart.
+    if (!opts.server) {
+      const saved = take.filter((p) => p.status === 'pending')
+      const late = outcome()
+      take = freshOnly(saved, late, api)
+      for (const id of late.stale) {
+        const p = all.get(id)!
+        if (opts.onCommit) {
+          p.note = msg.noteSavedStale
+          out.committedStale.push(id)
+        } else out.stale.push(id)
+      }
+    }
+    if (!take.length) {
+      bump()
+      return out
+    }
+    if (opts.setRows && api) writeValues(api, take.map((p) => [p.rowId, p.field, p.after] as const), (next) => opts.onApply?.(take, 'accept', next))
+    else {
+      opts.server?.refresh()
+      opts.onApply?.(take, 'accept')
+    }
+    const at = Date.now()
+    for (const p of take) {
+      p.status = 'accepted'
+      p.note = undefined
+      p.decidedBy = opts.user
+      p.decidedAt = at
+      stamp(p)
+      leaveCell(p)
+      out.accepted.push(p.id)
+    }
+    recordUndo(api, take, 'accepted')
+    decided('accept', take)
+    bump()
+    return out
+  }
+
+  function decided(action: ReviewDecision['action'], ps: Proposal[], of?: ReviewDecision['of']) {
+    if (ps.length) opts.onDecision?.({ action, of, proposals: ps.map((p) => ({ ...p })), by: opts.user, at: Date.now() })
+  }
+
+  function reject(ids: ReadonlyArray<string>): ReviewOutcome {
+    const out = outcome()
+    const at = Date.now()
+    const taken: Proposal[] = []
+    // What each proposal was before, so an undo puts a conflict back as one.
+    const was = new Map<string, ProposalStatus>()
+    for (const id of ids) {
+      const p = all.get(id)
+      if (!p || (p.status !== 'pending' && p.status !== 'conflict') || inFlight.has(id)) continue
+      was.set(p.id, p.status)
+      p.status = 'rejected'
+      p.decidedBy = opts.user
+      p.decidedAt = at
+      stamp(p)
+      leaveCell(p)
+      taken.push(p)
+      out.rejected.push(id)
+    }
+    if (taken.length) recordUndo(getApi(), taken, 'rejected', was)
+    decided('reject', taken)
+    bump()
+    return out
+  }
+
+  /**
+   * One Ctrl+Z for the whole decision, by row id, so it works with paging and
+   * filters on. Undoing an accept writes `before` back only where the cell
+   * still holds `after`; anything edited since is left as it is. With
+   * `onCommit`, the reversed values are saved first and written once that
+   * resolves, the way an accept is.
+   */
+  function recordUndo(api: ReviewGridApi | null, ps: Proposal[], kind: 'accepted' | 'rejected', was?: Map<string, ProposalStatus>) {
+    if (!api) return
+    const prior = new Map(ps.map((p) => [p.id, { decidedBy: p.decidedBy, decidedAt: p.decidedAt }]))
+    const undecided = (p: Proposal): ProposalStatus => was?.get(p.id) ?? 'pending'
+    const flip = (undo: boolean, which: Proposal[]) => {
+      for (const p of which) {
+        if (undo) {
+          p.status = undecided(p)
+          p.decidedBy = undefined
+          p.decidedAt = undefined
+          // A proposal dropped since (clear, load) stays out of the cell index.
+          if (all.get(p.id) === p) enterCell(p)
+        } else {
+          p.status = kind
+          Object.assign(p, prior.get(p.id))
+          leaveCell(p)
+        }
+      }
+      decided(undo ? 'undo' : 'redo', which, kind === 'accepted' ? 'accept' : 'reject')
+      bump()
+    }
+    const move = (undo: boolean) => {
+      const live = ps.filter((p) => (undo ? p.status === kind : p.status === undecided(p)))
+      if (kind === 'rejected') return flip(undo, live)
+      const from = undo ? 'after' : 'before'
+      const to = undo ? 'before' : 'after'
+      const how = undo ? 'undo' : 'redo'
+      if (opts.server) {
+        const inverse = live.map((p) => ({ ...p, before: p[from], after: p[to] }))
+        Promise.resolve(opts.onCommit!(inverse)).then(() => {
+          opts.server!.refresh()
+          flip(undo, live)
+          opts.onApply?.(live, how)
+        }, (error) => failed(error, how))
+        return
+      }
+      // One row index per pass (rebuilt after an async save), not one per proposal.
+      const holdsIn = () => {
+        const index = indexRows(api)
+        return (p: Proposal) => sameValue(currentValue(api, index, p), p[from])
+      }
+      const write = (ok: Proposal[]) => {
+        if (!ok.length) return
+        writeValues(api, ok.map((p) => [p.rowId, p.field, p[to]] as const), (next) => opts.onApply?.(ok, how, next))
+        flip(undo, ok)
+      }
+      const ok = live.filter(holdsIn())
+      if (!opts.onCommit) return write(ok)
+      // The backend holds the accepted values: save the reverse there first.
+      Promise.resolve(opts.onCommit(ok.map((p) => ({ ...p, before: p[from], after: p[to] })))).then(
+        () => write(ok.filter(holdsIn())),
+        (error) => failed(error, how),
+      )
+    }
+    api.getCommandContext().recordUndo(
+      () => move(true),
+      () => move(false),
+    )
+  }
+
+  function groupIds(key: string, shownIds: ReadonlyArray<string>): string[] {
+    const g = groups().find((x) => x.key === key)
+    if (!g) return []
+    const members = new Set(g.ids)
+    return shownIds.filter((id) => members.has(id))
+  }
+
+  /**
+   * Keep one of a cell's conflicting proposals (it becomes pending) and reject
+   * the rest, as one undo step that puts all of them back in conflict.
+   */
+  function resolveConflict(keepId: string): void {
+    const keep = all.get(keepId)
+    if (!keep || keep.status !== 'conflict') return
+    const rivals = [...(byCell.get(cellKey(keep.rowId, keep.field)) ?? [])]
+      .filter((id) => id !== keepId && !inFlight.has(id))
+      .map((id) => all.get(id))
+      .filter((p): p is Proposal => p?.status === 'conflict')
+    const note = keep.note
+    const apply = (resolved: boolean) => {
+      const at = Date.now()
+      for (const r of rivals) {
+        if (resolved) {
+          r.status = 'rejected'
+          r.decidedBy = opts.user
+          r.decidedAt = at
+          stamp(r)
+          leaveCell(r)
+        } else {
+          r.status = 'conflict'
+          r.decidedBy = undefined
+          r.decidedAt = undefined
+          if (all.get(r.id) === r) enterCell(r)
+        }
+      }
+      keep.status = resolved ? 'pending' : 'conflict'
+      keep.note = resolved ? undefined : note
+      bump()
+    }
+    apply(true)
+    decided('reject', rivals)
+    getApi()?.getCommandContext().recordUndo(
+      () => apply(false),
+      () => apply(true),
+    )
+  }
+
+  // ---- serialising --------------------------------------------------------
+
+  /**
+   * Every set with its proposals and their status, as plain JSON. Pass
+   * `setIds` to export only some, to hand them to someone else to decide.
+   */
+  function toJSON(opts: { setIds?: ReadonlyArray<string> } = {}): ReviewJSON {
+    const only = opts.setIds ? new Set(opts.setIds) : null
+    return {
+      v: 1,
+      sets: [...sets.values()].filter((set) => !only || only.has(set.id)).map(({ ids, ...meta }) => ({
+        ...meta,
+        proposals: ids.map((i) => all.get(i)).filter((p): p is Proposal => !!p).map((p) => ({ ...p })),
+      })),
+    }
+  }
+
+  /**
+   * Replace everything with an export. The export is checked first: a wrong
+   * shape throws and leaves the review as it was; a malformed proposal is
+   * dropped. Returns how many were dropped.
+   */
+  function load(json: ReviewJSON): { dropped: number } {
+    const { sets: valid, dropped } = checkExport(json)
+    clear()
+    for (const set of valid) {
+      sets.set(set.id, { id: set.id, title: set.title, source: set.source, createdAt: set.createdAt, ids: set.proposals.map((p) => p.id) })
+      for (const p of set.proposals) {
+        all.set(p.id, { ...p })
+        if (p.status === 'pending' || p.status === 'conflict') enterCell(p)
+      }
+    }
+    bump()
+    return { dropped }
+  }
+
+  /**
+   * Add the sets of an export to this review, keeping what is here: an
+   * approver's page merges what the author exported. A set already present is
+   * skipped. Pending proposals go through the same rules as `add` (a cell
+   * with a live proposal from another source becomes a conflict); decided ones
+   * are kept as history.
+   */
+  function merge(json: ReviewJSON): { dropped: number } {
+    const { sets: valid, dropped } = checkExport(json)
+    for (const set of valid) {
+      if (sets.has(set.id)) continue
+      const live = set.proposals.filter((p) => p.status === 'pending' || p.status === 'conflict')
+      const history = set.proposals.filter((p) => !live.includes(p) && !all.has(p.id))
+      add({ id: set.id, title: set.title, source: set.source, proposals: live.filter((p) => !all.has(p.id)) })
+      sets.get(set.id)!.createdAt = set.createdAt
+      for (const p of history) all.set(p.id, { ...p })
+      sets.get(set.id)!.ids.push(...history.map((p) => p.id))
+    }
+    bump()
+    return { dropped }
+  }
+
+  // ---- history ------------------------------------------------------------
+
+  /** Every decided proposal (accepted, rejected or stale), oldest decision first. */
+  function log(): Proposal[] {
+    void version
+    return [...all.values()]
+      .filter((p) => p.status === 'accepted' || p.status === 'rejected' || p.status === 'stale')
+      .sort((a, b) => (a.decidedAt ?? 0) - (b.decidedAt ?? 0) || (decidedOrder.get(a.id) ?? 0) - (decidedOrder.get(b.id) ?? 0))
+      .map((p) => ({ ...p }))
+  }
+
+  /**
+   * Propose undoing what a set wrote, after the fact: a new set with each
+   * accepted proposal reversed (`after` back to `before`). It is reviewed and
+   * accepted like any other set, so the stale check keeps a later edit.
+   * Returns null when nothing of the set was accepted.
+   */
+  function revertSet(setId: string): ChangeSet | null {
+    const set = sets.get(setId)
+    if (!set) return null
+    const accepted = set.ids.map((id) => all.get(id)).filter((p): p is Proposal => p?.status === 'accepted')
+    if (!accepted.length) return null
+    return add({
+      source: { kind: 'user', id: `revert:${setId}`, label: `Revert: ${set.title}` },
+      title: `Revert: ${set.title}`,
+      proposals: accepted.map((p) => ({ rowId: p.rowId, field: p.field, before: p.after, after: p.before, reason: `reverts ${p.source.label}` })),
+    })
+  }
+
+  /** The sets in this review, newest last, without their proposals. */
+  function sets_(): Array<Omit<ChangeSet, 'proposals'> & { count: number }> {
+    void version
+    return [...sets.values()].map(({ ids, ...meta }) => ({ ...meta, count: ids.length }))
+  }
+
+  function clear(): void {
+    all.clear()
+    sets.clear()
+    byCell.clear()
+    bump()
+  }
+
+  // ---- grid display -------------------------------------------------------
+
+  /** A card's mark (board, gallery): how many proposals its row has and what they set. */
+  let liveByRow: { v: number; rows: Map<string, Proposal[]> } | null = null
+  function cardMark(rowId: string): CardMark | null {
+    if (liveByRow?.v !== version) {
+      const rows = new Map<string, Proposal[]>()
+      for (const p of all.values()) {
+        if (p.status !== 'pending' && p.status !== 'conflict') continue
+        const list = rows.get(p.rowId)
+        if (list) list.push(p)
+        else rows.set(p.rowId, [p])
+      }
+      liveByRow = { v: version, rows }
+    }
+    const ps = liveByRow.rows.get(rowId)
+    if (!ps) return null
+    const labels = fieldLabels()
+    return {
+      count: ps.length,
+      label: fill(msg.cardProposed, { count: ps.length }),
+      text: ps.map((p) => `${labels(p.field)} → ${showValue(p.after, msg.empty)}`).join(', '),
+    }
+  }
+  /** Whether a row object is in the grid's data (cached per data array). */
+  let owned: { data: ReadonlyArray<unknown>; rows: WeakSet<object> } | null = null
+  function owns(row: unknown): boolean {
+    const data = getApi()?.getData()
+    if (!data || !row || typeof row !== 'object') return false
+    if (owned?.data !== data) owned = { data, rows: new WeakSet(data.filter((r): r is object => !!r && typeof r === 'object')) }
+    return owned.rows.has(row)
+  }
+  let marksFor: unknown = null
+  /** Register for the board and gallery cards of the grid, once its getRowId is known. */
+  function linkCards(api: ReviewGridApi) {
+    const fn = api.getOption('getRowId') as object | undefined
+    if (fn && fn !== marksFor) {
+      marksFor = fn
+      registerCardMarks(fn, {
+        cardMark,
+        owns,
+        cellProposal: (rowId, field) => {
+          const p = pendingFor(rowId, field)
+          return p ? { after: p.after, source: p.source.label, reason: p.reason, proposes: msg.proposes, empty: msg.empty } : null
+        },
+      })
+    }
+  }
+
+  /** The row "Show in grid" just landed on; it flashes for a moment so the eye finds it. */
+  let flashRow = $state<string | null>(null)
+  let flashTimer: ReturnType<typeof setTimeout> | undefined
+  function flash(rowId: string) {
+    flashRow = rowId
+    clearTimeout(flashTimer)
+    flashTimer = setTimeout(() => (flashRow = null), 1600)
+  }
+
+  const formats = $derived.by((): ConditionalFormat<any>[] => {
+    void version
+    const api = getApi()
+    if (!api || !api.getOption('getRowId')) return []
+    linkCards(api)
+    const idOf = rowIdFn(api)
+    const cols = api.getColumns()
+    const out = pendingFormats(list('pending'), idOf, cols)
+    // After the pending tint, so a disputed cell reads as disputed.
+    out.push(...pendingFormats(list('conflict'), idOf, cols, { background: CONFLICT_BG, icon: CONFLICT_ICON }))
+    const lit = flashRow
+    // Last, so it wins over the pending tint; every column of the row.
+    if (lit !== null) out.push({ type: 'rule', when: ({ row }: { row: TData }) => String(idOf(row, 0)) === lit, background: FLASH_BG })
+    return out
+  })
+
+  /** Pending-field set as a string, so `columns()` rebuilds only when it changes. */
+  const pendingFields = $derived.by(() => {
+    void version
+    return [...new Set(list('pending').map((p) => p.field))].sort().join(SEP)
+  })
+
+  /** The first non-blank value of `field`, so a boolean column is never wrapped. */
+  function sampleValue(field: string): unknown {
+    for (const row of getApi()?.getData() ?? []) {
+      const v = (row as Record<string, unknown>)[field]
+      if (v != null && v !== '') return v
+    }
+    return undefined
+  }
+
+  let columnsCache: { input: unknown; fields: string; output: unknown } | null = null
+  function columns<C extends ReadonlyArray<any>>(cols: C): C {
+    // The grid reads its columns in every view (table, board, gallery), so cards link here too.
+    const linked = getApi()
+    if (linked) linkCards(linked)
+    const fields = pendingFields
+    if (columnsCache && columnsCache.input === cols && columnsCache.fields === fields) return columnsCache.output as C
+    const output = wrapColumns(cols, new Set(fields ? fields.split(SEP) : []), review, sampleValue)
+    columnsCache = { input: cols, fields, output }
+    return output
+  }
+
+  // ---- navigation ---------------------------------------------------------
+
+  /**
+   * Show the next proposal of `ids` after `fromId`, on whatever page it is:
+   * with client paging the grid moves to its page (`api.getRowPosition`),
+   * then scrolls to it. Does not move the active cell. With grouping, where
+   * pages are counted in groups, it stays on the current page. Returns the id
+   * shown and how many of `ids` cannot be shown (filtered out, or on another
+   * page of a grouped grid).
+   */
+  function reveal(ids: ReadonlyArray<string>, fromId?: string): { id: string | null; hidden: number } {
+    const api = getApi()
+    if (!api) return { id: null, hidden: ids.length }
+    const proposals = ids.map((i) => all.get(i)).filter((p): p is Proposal => !!p)
+    const grouped = (api.getState().grouping?.length ?? 0) > 0
+    // The grid pages with `pageable`, or the older `showPagination`.
+    const paged = !!(api.getOption('pageable') ?? api.getOption('showPagination')) && !api.getOption('externalPagination')
+    let reachable: Array<{ p: Proposal; position: number }>
+    if (grouped) {
+      const idFn = rowIdFn(api)
+      const onPage = new Set(api.getDisplayedRows().map((r, i) => String(idFn(r as TData, i))))
+      reachable = proposals.filter((p) => onPage.has(p.rowId)).map((p) => ({ p, position: -1 }))
+    } else {
+      reachable = proposals
+        .map((p) => ({ p, position: api.getRowPosition(p.rowId) }))
+        .filter((x): x is { p: Proposal; position: number } => x.position !== null)
+    }
+    const hidden = proposals.length - reachable.length
+    if (!reachable.length) return { id: null, hidden }
+    const start = fromId ? reachable.findIndex((x) => x.p.id === fromId) + 1 : 0
+    const target = reachable[start % reachable.length]!
+    if (!grouped) {
+      let index = target.position
+      if (paged) {
+        const { pageIndex, pageSize } = api.getPageInfo()
+        const page = Math.floor(index / pageSize)
+        if (page !== pageIndex) api.setPage(page)
+        index -= page * pageSize
+      }
+      api.scrollToRow(index)
+      flash(target.p.rowId)
+      return { id: target.p.id, hidden }
+    }
+    // The display index counts group banners, which getDisplayedRows skips:
+    // walk the display rows until the id matches.
+    const limit = api.getDisplayedRows().length * 2 + 64
+    for (let i = 0; i < limit; i++) {
+      if (api.getRowId(i) === target.p.rowId) {
+        api.scrollToRow(i)
+        flash(target.p.rowId)
+        break
+      }
+    }
+    return { id: target.p.id, hidden }
+  }
+
+  // Row index for labels, rebuilt when the grid's data array changes.
+  let labelIndex: { data: unknown; map: Map<string, number> } | null = null
+  function rowLabel(p: Proposal): string | null {
+    const api = getApi()
+    if (!api || !api.getOption('getRowId')) return null
+    const data = api.getData()
+    if (labelIndex?.data !== data) labelIndex = { data, map: indexRows(api) }
+    const i = labelIndex.map.get(p.rowId)
+    if (i === undefined) return null
+    const row = data[i] as TData
+    if (opts.rowLabel) return opts.rowLabel(row) || null
+    for (const c of api.getColumns()) {
+      if (!c.visible || !c.field) continue
+      const v = (row as Record<string, unknown>)[c.field]
+      if (typeof v === 'string' && v.trim()) return c.field === p.field ? null : v.trim()
+    }
+    return null
+  }
+
+  const review = {
+    get version() {
+      return version
+    },
+    /** The wording in effect: English with `messages` laid over it. */
+    messages: msg,
+    /** The last undo or redo whose save failed, or null. */
+    get lastError() {
+      return lastError
+    },
+    add,
+    get: (id: string) => {
+      void version
+      return all.get(id)
+    },
+    proposals: () => list(),
+    /** What names the proposal's row (`rowLabel`), or null. */
+    rowLabel,
+    /** A field's column header, as the group labels show it. */
+    fieldLabel: (field: string) => fieldLabels()(field),
+    pending: () => list('pending'),
+    conflicts: () => list('conflict'),
+    groups,
+    pendingFor,
+    accept,
+    reject,
+    acceptGroup: (key: string, shownIds: ReadonlyArray<string>) => accept(groupIds(key, shownIds)),
+    rejectGroup: (key: string, shownIds: ReadonlyArray<string>) => reject(groupIds(key, shownIds)),
+    resolveConflict,
+    get formats() {
+      return formats
+    },
+    columns,
+    reveal,
+    showPendingOnly,
+    /** On while our condition is in the grid's advanced filter (the grid's own Clear takes it out too). */
+    get pendingOnly() {
+      return pendingOnly && hasPending(getApi()?.getAdvancedFilter() ?? null)
+    },
+    toJSON,
+    load,
+    merge,
+    log,
+    revertSet,
+    sets: sets_,
+    clear,
+  }
+  return review
+}
+```
+
+<!-- docs/reference/auto/svgrid-enterprise-review-types.md  (unrouted) -->
+
+# `@svgrid/enterprise` · `review/types.ts`
+
+Auto-generated. Source: `packages\enterprise\src\review\types.ts`.
+
+### `type ProposalSource`
+
+What produced a proposal. `id` keeps two runs of the same kind apart.
+
+```ts
+export type ProposalSource = {
+  kind: 'agent' | 'ai' | 'import' | 'bulk' | 'sync' | 'rule' | 'user'
+  id: string
+  label: string
+}
+```
+
+### `type ProposalStatus`
+
+Where a proposal stands: waiting, accepted, rejected, stale (its cell
+changed first), or in conflict with another source's proposal for the same
+cell.
+
+```ts
+export type ProposalStatus = 'pending' | 'accepted' | 'rejected' | 'stale' | 'conflict'
+```
+
+### `type Proposal`
+
+One proposed change to one cell, with where it came from and where it
+stands.
+
+```ts
+export type Proposal = {
+  id: string
+  /** Only `update` in this release; inserts and deletes come later. */
+  op: 'update'
+  /** The grid's row id (its `getRowId`), never a row index. */
+  rowId: string
+  /** The field on the row object the value is written to. */
+  field: string
+  /** The value when the proposal was made, which is what staleness compares with. */
+  before: unknown
+  after: unknown
+  source: ProposalSource
+  /** Why, in the producer's words (an AI rationale, an import file name). */
+  reason?: string
+  /** 0..1, when the producer has one. */
+  confidence?: number
+  createdAt: number
+  status: ProposalStatus
+  /** Why a proposal is stale, skipped or in conflict, for the panel. */
+  note?: string
+  decidedBy?: string
+  decidedAt?: number
+}
+```
+
+### `type ProposalInput`
+
+What a producer hands over: a proposal without the fields the review fills in.
+
+```ts
+export type ProposalInput = Omit<Proposal, 'id' | 'op' | 'source' | 'createdAt' | 'status' | 'note' | 'decidedBy' | 'decidedAt'> & {
+  id?: string
+  confidence?: number
+}
+```
+
+### `type ChangeSet`
+
+One batch from one producer.
+
+```ts
+export type ChangeSet = {
+  id: string
+  title: string
+  source: ProposalSource
+  createdAt: number
+  proposals: Proposal[]
+}
+```
+
+### `type GroupKind`
+
+How a group's members relate. The first four are rule groups: every member
+is proven to follow the rule. The rest are judgment groups, where a person
+has to look.
+
+```ts
+export type GroupKind =
+  | 'whitespace'
+  | 'case'
+  | 'format'
+  | 'scale'
+  | 'same-mapping'
+  | 'fill-empty'
+  | 'constant-target'
+  | 'unpatterned'
+```
+
+### `type ProposalGroup`
+
+Proposals that make the same change, as the panel lists them: a label, a
+kind, whether a rule proves every member, and a sample to check.
+
+```ts
+export type ProposalGroup = {
+  /** Stable while the group's members do not change: source, field, kind and param. */
+  key: string
+  kind: GroupKind
+  /** True for the four rule kinds. */
+  rule: boolean
+  /** What the members share, in the detector's terms ('upper', '100', a value...). */
+  param: string
+  label: string
+  field: string
+  sourceId: string
+  ids: string[]
+  count: number
+  /** Lowest and mean confidence over the members that have one; undefined when none do. */
+  minConfidence?: number
+  avgConfidence?: number
+  /** Up to five ids to look at first: the least confident, then spread across the group. */
+  sample: string[]
+  /**
+   * For `constant-target` and `same-mapping`: the five most common `before`
+   * values and how many of each, then one `other` entry for the rest.
+   */
+  beforeDistribution?: Array<{ value: unknown; count: number; other?: true }>
 }
 ```
 
@@ -108252,7 +110604,11 @@ export function createServerRowModel<TData>(
     const previous = filterModel
     holdRows()
     filterModel = Array.isArray(next.columns)
-      ? { global: next.global, columns: toServerFilterColumns(next as GridFilterState) }
+      ? {
+          global: next.global,
+          columns: toServerFilterColumns(next as GridFilterState),
+          ...(next.custom ? { custom: next.custom } : {}),
+        }
       : (next as ServerFilterModel)
     if (!options.onlyRefreshFilteredGroups) return rebuild()
 
@@ -109906,6 +112262,67 @@ export type AIFilterOptions = {
 }
 ```
 
+### `function aiFilter`
+
+Translate a natural-language query into a filter+sort plan against
+the current grid's columns. The grid passes the column schema (names,
+types, sample values) to the model so it can pick the right field
+names without hallucinating.
+
+```ts
+export async function aiFilter<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(
+  api: AIRowSource<TFeatures, TData>,
+  query: string,
+  opts: AIFilterOptions = {},
+): Promise<AIFilterResult> {
+  const schema = buildColumnSchema(api)
+  const prompt =
+    `You are a data-grid filter planner. Translate the user's natural-language ` +
+    `query into a strict-JSON plan that the grid can apply.\n\n` +
+    `Columns:\n${schemaToPromptBlock(schema)}\n\n` +
+    `Output JSON schema:\n` +
+    `{ "filters": [{"field": "<one of the columns above>", ` +
+    `"operator": "contains"|"equals"|"startsWith"|"greaterThan"|"lessThan"|"isBlank", ` +
+    `"value": "<string>"}], ` +
+    `"sort": [{"field": "<column>", "desc": true|false}], ` +
+    `"rationale": "<one-sentence explanation>" }\n\n` +
+    `User query: ${query}\n\n` +
+    `Return JSON only, no prose.`
+
+  const result = await callJSON<AIFilterResult>({
+    prompt,
+    task: 'filter',
+    signal: opts.signal,
+    maxOutputTokens: 400,
+  })
+
+  // Defensive: drop anything that doesn't match a real column. Models love
+  // to invent plausible-sounding field names; we'd rather skip a clause
+  // than throw at runtime.
+  const valid = new Set(schema.map((c) => c.field))
+  result.filters = (result.filters ?? []).filter((f) => valid.has(f.field))
+  result.sort = (result.sort ?? []).filter((s) => valid.has(s.field))
+
+  if (opts.apply) {
+    if (!isGridApi(api)) throw new Error('aiFilter: apply needs the grid api, not a { getData } row source')
+    api.clearAllFilters()
+    api.clearSort()
+    for (const f of result.filters) {
+      api.setFilter(f.field, { operator: f.operator, value: f.value ?? '' })
+    }
+    // Multiple sort clauses get applied last-wins because the public
+    // `setSort` is single-key. Multi-sort is on the roadmap.
+    const last = result.sort[result.sort.length - 1]
+    if (last) api.setSort(last.field, last.desc ? 'desc' : 'asc')
+  }
+
+  return result
+}
+```
+
 ### `type AISmartFillExample`
 
 One worked example teaching smart-fill what to produce for a row.
@@ -109949,6 +112366,75 @@ export type AISmartFillOptions = {
 }
 ```
 
+### `function aiSmartFill`
+
+Given a column and a few user-provided examples, propose values for the
+untouched rows. Returns predictions only - the caller chooses whether to
+commit them via `api.setCellValue`. This is the right shape for an
+accept-per-cell UX with confidence-coloured highlights.
+
+```ts
+export async function aiSmartFill<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+  TValue = unknown,
+>(
+  api: AIRowSource<TFeatures, TData>,
+  opts: AISmartFillOptions,
+): Promise<AISmartFillResult<TValue>> {
+  if (opts.examples.length === 0) {
+    throw new Error('@svgrid/grid ai: aiSmartFill requires at least one example.')
+  }
+  const data = api.getData()
+  const targets =
+    opts.targetRowIndices ??
+    data
+      .map((row, i) => {
+        const v = (row as Record<string, unknown>)[opts.field]
+        return v == null || v === '' ? i : -1
+      })
+      .filter((i) => i >= 0)
+
+  if (targets.length === 0) {
+    return { field: opts.field, predictions: [], rationale: 'No empty cells to fill.' }
+  }
+
+  const examplesBlock = opts.examples
+    .map((ex, i) => `Example ${i + 1}: input=${JSON.stringify(ex.input)} -> output=${JSON.stringify(ex.output)}`)
+    .join('\n')
+
+  const targetRowsBlock = targets
+    .map((i) => `Row ${i}: ${JSON.stringify(data[i])}`)
+    .join('\n')
+
+  const prompt =
+    `You are filling in a single column of a data grid based on user-provided ` +
+    `examples. Match the pattern in the examples exactly.\n\n` +
+    `Target column: ${opts.field}\n\n` +
+    `Examples:\n${examplesBlock}\n\n` +
+    `Rows to fill:\n${targetRowsBlock}\n\n` +
+    `Return strict JSON only:\n` +
+    `{ "predictions": [{"rowIndex": <number>, "value": <inferred value>, ` +
+    `"confidence": <0..1>}], "rationale": "<one-sentence pattern description>" }`
+
+  const result = await callJSON<{
+    predictions: Array<{ rowIndex: number; value: TValue; confidence: number }>
+    rationale: string
+  }>({
+    prompt,
+    task: 'smart-fill',
+    signal: opts.signal,
+    maxOutputTokens: 600,
+  })
+
+  return {
+    field: opts.field,
+    predictions: result.predictions ?? [],
+    rationale: result.rationale ?? '',
+  }
+}
+```
+
 ### `type AISummarizeTarget`
 
 What to summarise: one row, the selection, a group, or the whole set.
@@ -109989,6 +112475,72 @@ export type AISummarizeOptions = {
 }
 ```
 
+### `function aiSummarize`
+
+Ask the model to summarise a slice of the grid. Caps the row sample at
+a model-friendly size; for huge selections it samples uniformly so the
+summary stays representative without blowing the context window.
+
+```ts
+export async function aiSummarize<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(
+  api: AIRowSource<TFeatures, TData>,
+  opts: AISummarizeOptions,
+): Promise<AISummary> {
+  const all = api.getData()
+  const rows: TData[] = (() => {
+    const t = opts.target
+    if (t.kind === 'row') {
+      const r = all[t.rowIndex]
+      return r ? [r] : []
+    }
+    if (t.kind === 'selection') {
+      return t.rowIndices.map((i) => all[i]).filter((r): r is TData => r != null)
+    }
+    if (t.kind === 'group') {
+      return all.filter((r) => (r as Record<string, unknown>)[t.field] === t.value)
+    }
+    return all.slice()
+  })()
+
+  if (rows.length === 0) {
+    return { text: 'No rows in scope.', bullets: [], highlightedFields: [] }
+  }
+
+  // Uniform sample to stay inside a sensible context budget.
+  const MAX_SAMPLE = 25
+  const sample = rows.length <= MAX_SAMPLE
+    ? rows
+    : Array.from({ length: MAX_SAMPLE }, (_, i) => rows[Math.floor((i / MAX_SAMPLE) * rows.length)]!)
+
+  const schema = buildColumnSchema(api, 30)
+  const prompt =
+    `You are summarising a slice of a business data grid for a busy analyst.\n\n` +
+    `Columns:\n${schemaToPromptBlock(schema)}\n\n` +
+    `Slice size: ${rows.length} row(s). Sampled rows shown below.\n` +
+    `${sample.map((r) => JSON.stringify(r)).join('\n')}\n\n` +
+    (opts.question ? `User's question: ${opts.question}\n\n` : '') +
+    `Return strict JSON only:\n` +
+    `{ "text": "<one short paragraph>", ` +
+    `"bullets": ["<3-5 punchy bullets>"], ` +
+    `"highlightedFields": ["<column names the summary leans on>"] }`
+
+  const result = await callJSON<AISummary>({
+    prompt,
+    task: 'summarize',
+    signal: opts.signal,
+    maxOutputTokens: 600,
+  })
+  return {
+    text: result.text ?? '',
+    bullets: result.bullets ?? [],
+    highlightedFields: result.highlightedFields ?? [],
+  }
+}
+```
+
 ### `type AIClassifyOptions`
 
 Options for `aiClassify` - the column to label and the categories to choose from.
@@ -110018,6 +112570,60 @@ export type AIClassifyResult = {
   inputField: string
   outputField: string
   predictions: Array<{ rowIndex: number; value: string; confidence: number }>
+}
+```
+
+### `function aiClassify`
+
+Bucket free-text cells into one of a known set of classes. The model
+is constrained to pick from `opts.classes`; predictions outside the set
+are dropped so the caller can rely on the output being clean enum
+values it can write straight back into the grid.
+
+```ts
+export async function aiClassify<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(
+  api: AIRowSource<TFeatures, TData>,
+  opts: AIClassifyOptions,
+): Promise<AIClassifyResult> {
+  const data = api.getData()
+  const targets = opts.targetRowIndices ?? data.map((_, i) => i)
+  const rubric = opts.classDescriptions
+    ? Object.entries(opts.classDescriptions)
+        .map(([k, v]) => `- ${k}: ${v}`)
+        .join('\n')
+    : opts.classes.map((c) => `- ${c}`).join('\n')
+
+  const rowsBlock = targets
+    .map((i) => `Row ${i}: ${JSON.stringify((data[i] as Record<string, unknown>)?.[opts.inputField] ?? '')}`)
+    .join('\n')
+
+  const prompt =
+    `You are a strict text classifier. For each row, pick exactly one ` +
+    `label from the list. If unsure, pick the closest match and lower the ` +
+    `confidence.\n\n` +
+    `Allowed labels (with optional rubric):\n${rubric}\n\n` +
+    `Rows to classify (text from column "${opts.inputField}"):\n${rowsBlock}\n\n` +
+    `Return strict JSON only:\n` +
+    `{ "predictions": [{"rowIndex": <number>, "value": "<label>", "confidence": <0..1>}] }`
+
+  const result = await callJSON<{
+    predictions: Array<{ rowIndex: number; value: string; confidence: number }>
+  }>({
+    prompt,
+    task: 'classify',
+    signal: opts.signal,
+    maxOutputTokens: Math.min(2000, 30 + targets.length * 30),
+  })
+
+  const allowed = new Set(opts.classes)
+  return {
+    inputField: opts.inputField,
+    outputField: opts.outputField,
+    predictions: (result.predictions ?? []).filter((p) => allowed.has(p.value)),
+  }
 }
 ```
 
@@ -110053,6 +112659,93 @@ export type AIExportOptions = {
   /** Base filename (no extension). Default 'export'. */
   filename?: string
   signal?: AbortSignal
+}
+```
+
+### `function aiExport`
+
+Turn a natural-language request ("export EU orders from Q2 as a grouped PDF")
+into an export: the model returns a `{ format, filters, sort, groupBy }` plan
+against the grid's columns; we apply the filter/sort to the grid and hand the
+result to the registered export engine (@svgrid/enterprise). Returns the plan
+so the UI can show what it did (or preview it first with `run: false`).
+
+```ts
+export async function aiExport<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(
+  api: SvGridApi<TFeatures, TData>,
+  query: string,
+  opts: AIExportOptions = {},
+): Promise<AIExportPlan> {
+  const schema = buildColumnSchema(api)
+  const prompt =
+    `You are an export assistant for a data grid. Translate the user's request ` +
+    `into a strict-JSON export plan.\n\n` +
+    `Columns:\n${schemaToPromptBlock(schema)}\n\n` +
+    `Output JSON schema:\n` +
+    `{ "format": "xlsx"|"xls"|"pdf"|"csv"|"tsv"|"html"|"json"|"xml"|"md", ` +
+    `"filters": [{"field":"<column>","operator":"contains"|"equals"|"startsWith"|"greaterThan"|"lessThan"|"isBlank","value":"<string>"}], ` +
+    `"sort": [{"field":"<column>","desc":true|false}], ` +
+    `"groupBy": ["<column>"], ` +
+    `"rationale": "<one sentence>" }\n\n` +
+    `Rules: use the format the user names (default "xlsx"); only use column ` +
+    `names from the list above; "grouped" / "group by X" -> groupBy. ` +
+    `Return JSON only, no prose.\n\n` +
+    `User request: ${query}`
+
+  const plan = await callJSON<AIExportPlan>({
+    prompt,
+    task: 'export',
+    signal: opts.signal,
+    maxOutputTokens: 500,
+  })
+
+  // Defensive validation - drop invented fields, clamp the format.
+  const valid = new Set(schema.map((c) => c.field))
+  plan.format = EXPORT_FORMATS.includes(plan.format) ? plan.format : 'xlsx'
+  plan.filters = (plan.filters ?? []).filter((f) => valid.has(f.field))
+  plan.sort = (plan.sort ?? []).filter((s) => valid.has(s.field))
+  plan.groupBy = (plan.groupBy ?? []).filter((g) => valid.has(g))
+  plan.rationale = plan.rationale ?? ''
+
+  // Optionally mirror the plan onto the grid (opt-in). Off by default so the
+  // export never disturbs the user's current view.
+  if (opts.apply === true) {
+    api.clearAllFilters()
+    api.clearSort()
+    for (const f of plan.filters) {
+      api.setFilter(f.field, { operator: f.operator, value: f.value ?? '' })
+    }
+    const last = plan.sort[plan.sort.length - 1]
+    if (last) api.setSort(last.field, last.desc ? 'desc' : 'asc')
+    if (plan.groupBy.length > 0) {
+      try {
+        api.setGroupBy(plan.groupBy)
+      } catch {
+        // grouping feature not enabled - the export still groups on its own
+      }
+    }
+  }
+
+  // Planning is always free; WRITING the file uses the export engine registered
+  // by @svgrid/enterprise (export-provider seam). Without it, we return the plan
+  // so the UI can still show what the AI decided - the download just no-ops.
+  const runExport = getExportProvider()
+  if (opts.run !== false && runExport) {
+    // Compute the export rows from the plan directly (filter + sort + make
+    // contiguous by group) rather than reading the grid's reactive displayed
+    // rows - so the download always has exactly the intended data.
+    const exportRows = applyPlanToRows(api.getData(), plan)
+    await runExport(api, {
+      format: plan.format,
+      filename: opts.filename ?? 'export',
+      rows: exportRows,
+      ...(plan.groupBy.length > 0 ? { groupBy: plan.groupBy } : {}),
+    })
+  }
+  return plan
 }
 ```
 
@@ -110093,6 +112786,60 @@ export type AIAnomalyOptions = {
   /** Optional focus, e.g. "look at pricing and margins". */
   question?: string
   signal?: AbortSignal
+}
+```
+
+### `function aiFindAnomalies`
+
+Scan a slice of the grid (all / selection / group) for anomalies - outliers,
+suspicious values, inconsistencies - and return a structured list plus a
+one-line summary. Pairs naturally with an export: "find the odd ones, then
+export just those".
+
+```ts
+export async function aiFindAnomalies<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(
+  api: AIRowSource<TFeatures, TData>,
+  opts: AIAnomalyOptions = {},
+): Promise<AIAnomalyResult> {
+  const rows = sliceForTarget(api, opts.target ?? { kind: 'all' })
+  if (rows.length === 0) return { anomalies: [], summary: 'No rows in scope.' }
+
+  const MAX_SAMPLE = 40
+  const sample =
+    rows.length <= MAX_SAMPLE
+      ? rows
+      : Array.from(
+          { length: MAX_SAMPLE },
+          (_, i) => rows[Math.floor((i / MAX_SAMPLE) * rows.length)]!,
+        )
+
+  const schema = buildColumnSchema(api, 30)
+  const prompt =
+    `You are a data-quality analyst. Scan the rows below for anomalies: ` +
+    `numeric outliers, impossible / inconsistent values, unexpected blanks, ` +
+    `and values that break the pattern of the column.\n\n` +
+    `Columns:\n${schemaToPromptBlock(schema)}\n\n` +
+    `Rows (index is 0-based into this list):\n` +
+    `${sample.map((r, i) => `${i}: ${JSON.stringify(r)}`).join('\n')}\n\n` +
+    (opts.question ? `Focus: ${opts.question}\n\n` : '') +
+    `Return strict JSON only:\n` +
+    `{ "anomalies": [{"rowIndex": <number|null>, "field": "<column|null>", ` +
+    `"reason": "<why it's odd>", "severity": "low"|"medium"|"high"}], ` +
+    `"summary": "<one sentence>" }`
+
+  const result = await callJSON<AIAnomalyResult>({
+    prompt,
+    task: 'anomaly',
+    signal: opts.signal,
+    maxOutputTokens: 800,
+  })
+  return {
+    anomalies: result.anomalies ?? [],
+    summary: result.summary ?? '',
+  }
 }
 ```
 
@@ -110173,6 +112920,148 @@ export type AIChartOptions = {
 }
 ```
 
+### `function aiChart`
+
+Translate a natural-language request into a chart plan for the grid's built-in
+`charting` panel. Validates every field against the real schema, then (with
+`apply: true`) pushes it into the panel through `api.configureChart`.
+
+```ts
+export async function aiChart<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(
+  api: SvGridApi<TFeatures, TData>,
+  query: string,
+  opts: AIChartOptions = {},
+): Promise<AIChartPlan> {
+  const schema = buildColumnSchema(api)
+  const prompt =
+    `You are a charting assistant for a data grid. Translate the user's request ` +
+    `into a strict-JSON chart plan the grid can render.\n\n` +
+    `Columns:\n${schemaToPromptBlock(schema)}\n\n` +
+    `Output JSON schema:\n` +
+    `{ "type": "bar"|"line"|"area"|"pie"|"treemap"|"funnel"|"waterfall"|"radar"|"heatmap"|"boxplot"|"gauge"|"calendar"|"sankey"|"histogram"|"lollipop"|"pareto"|"sunburst"|"radial-bar"|"radial-column"|"nightingale"|"bullet"|"chord"|"stream"|"candlestick", ` +
+    `"dimension": "<a categorical column to group by>", ` +
+    `"series": "<a second categorical column to split into series, or null>", ` +
+    `"measure": "<a numeric column to aggregate>", ` +
+    `"reduce": "sum"|"avg"|"count"|"min"|"max"|"median"|"p90"|"first"|"last"|"countDistinct", ` +
+    `"bucket": "day"|"week"|"month"|"quarter"|"year"|null, ` +
+    `"stacked": true|false, ` +
+    `"logScale": true|false, ` +
+    `"timeAxis": true|false, ` +
+    `"valueFormat": "number"|"currency"|"percent", ` +
+    `"indicators": ["volume"|"rsi"|"macd"|"stochastic"|"atr"|"obv"|"sma"|"ema"|"bb"|"vwap", ...] (candlestick only, else omit), ` +
+    `"rationale": "<one-sentence explanation>" }\n\n` +
+    `Rules: pick "dimension" and "series" from text/date columns and "measure" ` +
+    `from a numeric column; use only column names from the list above; ` +
+    `default to "bar" unless the request clearly wants another type. ` +
+    `Type hints: share/proportion/breakdown -> pie; nested/hierarchy/"what makes ` +
+    `up" -> treemap; drop-off/conversion/stages/pipeline -> funnel; ` +
+    `running total/contribution/bridge -> waterfall; comparing several measures ` +
+    `per item -> radar; a grid of two dimensions -> heatmap (needs "series"); ` +
+    `spread/distribution/variance/outliers/percentiles -> boxplot; a single ` +
+    `number vs a target -> gauge (leave "dimension" null); a year of daily ` +
+    `activity -> calendar (dimension must be a date column); flow between two ` +
+    `things -> sankey (needs "series": dimension is the source, series the ` +
+    `target); flows between groups round a circle -> chord (needs "series"); ` +
+    `frequency/how many fall in each range -> histogram (leave "dimension" null); ` +
+    `vital few/80-20/biggest contributors -> pareto; drilldown/rings/nested share -> sunburst; ` +
+    `progress rings/circular -> radial-bar; polar/rose -> nightingale or radial-column; ` +
+    `actual vs target per item -> bullet; layered over time/stream -> stream (needs "series"); ` +
+    `price/candles/OHLC/stock/ticker -> candlestick (dimension is the date column; the open/high/low/close/volume columns are found by name), ` +
+    `with "volume"/"RSI"/"MACD"/"Bollinger"/"moving average" -> indicators. ` +
+    `"stacked"/"stack" -> stacked:true; "log"/"logarithmic" -> logScale:true; ` +
+    `"over time"/"by date"/a date dimension -> timeAxis:true; ` +
+    `"monthly"/"per month"/"by month" -> bucket:"month" (likewise daily/weekly/quarterly/yearly), else bucket:null; ` +
+    `"median"/"typical" -> reduce:"median"; "highest"/"peak" -> "max"; "lowest" -> "min"; "unique"/"distinct" -> "countDistinct"; ` +
+    `money/revenue/price/$ -> valueFormat:"currency"; rate/%/share -> valueFormat:"percent"; ` +
+    `else valueFormat:"number". default reduce is "sum". ` +
+    `Return JSON only, no prose.\n\n` +
+    `User request: ${query}`
+
+  const plan = await callJSON<AIChartPlan>({
+    prompt,
+    task: 'chart',
+    signal: opts.signal,
+    maxOutputTokens: 300,
+  })
+
+  const valid = new Set(schema.map((c) => c.field))
+  const numericFields = new Set(schema.filter((c) => c.type === 'number').map((c) => c.field))
+  const CHART_TYPES: AIChartType[] = [
+    'bar', 'line', 'area', 'pie',
+    'treemap', 'funnel', 'waterfall', 'radar',
+    'heatmap', 'boxplot', 'gauge', 'calendar', 'sankey',
+    'histogram', 'lollipop', 'pareto', 'sunburst', 'radial-bar', 'radial-column', 'nightingale', 'bullet', 'chord', 'stream',
+    'candlestick',
+  ]
+  plan.type = CHART_TYPES.includes(plan.type) ? plan.type : 'bar'
+  plan.dimension = plan.dimension && valid.has(plan.dimension) ? plan.dimension : null
+  plan.series = plan.series && valid.has(plan.series) && plan.series !== plan.dimension ? plan.series : null
+  plan.measure =
+    plan.measure && numericFields.has(plan.measure)
+      ? plan.measure
+      : (schema.find((c) => c.type === 'number')?.field ?? null)
+  // Shape check. Some types need more than a dimension and a measure, and a
+  // plan that does not satisfy one renders an empty frame - the model asked for
+  // a chart the data cannot make. Fall back to a bar, which any dimension and
+  // measure can draw, rather than showing nothing and blaming the request.
+  const dateFields = new Set(schema.filter((c) => c.type === 'date').map((c) => c.field))
+  const needsSplit = plan.type === 'heatmap' || plan.type === 'sankey' || plan.type === 'chord' || plan.type === 'stream'
+  if (needsSplit && !plan.series) plan.type = 'bar'
+  if (plan.type === 'calendar' && !(plan.dimension && dateFields.has(plan.dimension))) plan.type = 'bar'
+  // A candlestick needs a date to run along and four prices to draw; the
+  // panel finds the price columns by name, so the shape check is the count.
+  if (plan.type === 'candlestick' && !(plan.dimension && dateFields.has(plan.dimension) && numericFields.size >= 4)) plan.type = 'bar'
+  plan.indicators = plan.type === 'candlestick' && Array.isArray(plan.indicators)
+    ? plan.indicators.filter((k): k is AIChartIndicator => AI_INDICATORS.includes(k))
+    : undefined
+  if (plan.indicators === undefined) delete plan.indicators
+  // A gauge is one number: it has no category axis, so a dimension is noise.
+  // A histogram bins the measure itself, so a dimension is noise there too.
+  if (plan.type === 'gauge' || plan.type === 'histogram') plan.dimension = null
+  if (plan.type !== 'gauge' && plan.type !== 'histogram' && !plan.dimension) plan.type = 'bar'
+
+  plan.reduce = AI_REDUCERS.includes(plan.reduce) ? plan.reduce : 'sum'
+  // A bucket only means something on a date dimension.
+  const BUCKETS = ['day', 'week', 'month', 'quarter', 'year'] as const
+  plan.bucket =
+    plan.bucket && (BUCKETS as ReadonlyArray<string>).includes(plan.bucket) && plan.dimension && dateFields.has(plan.dimension)
+      ? plan.bucket
+      : null
+  plan.stacked = plan.stacked === true
+  plan.logScale = plan.logScale === true
+  plan.timeAxis = plan.timeAxis === true
+  plan.valueFormat = ['number', 'currency', 'percent'].includes(plan.valueFormat) ? plan.valueFormat : 'number'
+  plan.rationale = plan.rationale ?? ''
+
+  if (opts.apply === true) {
+    const cfg = api as unknown as { configureChart?: (c: Record<string, unknown>) => void }
+    cfg.configureChart?.({
+      open: true,
+      type: plan.type,
+      dimension: plan.dimension,
+      series: plan.series,
+      measure: plan.measure,
+      reduce: plan.reduce,
+      stacked: plan.stacked,
+      logScale: plan.logScale,
+      timeAxis: plan.timeAxis,
+      valueFormat: plan.valueFormat,
+      ...(plan.indicators ? { indicators: plan.indicators } : {}),
+      bucket: plan.bucket,
+    })
+    // The panel built a spec from the plan; if it cannot draw as intended,
+    // say so on the plan rather than showing an empty frame in silence.
+    const spec = (api as unknown as { getChartSpec?: () => unknown }).getChartSpec?.()
+    if (spec) plan.diagnostics = validateChartSpec(spec).filter((d) => d.severity === 'error')
+  }
+
+  return plan
+}
+```
+
 ### `type AIChartExplanation`
 
 What `aiExplainChart` returns: the grounded summary and the model's insights.
@@ -110195,6 +113084,37 @@ export type AIExplainChartOptions = {
   /** The spec to explain. Default: the grid panel's active chart. */
   spec?: ChartSpec
   signal?: AbortSignal
+}
+```
+
+### `function aiExplainChart`
+
+Explain a chart in plain words. The prompt is grounded on `chartSummary`
+(the same sentence a screen reader hears) plus a compact table of the
+first 50 categories, so the model comments on numbers it was given rather
+than on an image. Returns the summary and up to three insights.
+
+```ts
+export async function aiExplainChart<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(api: SvGridApi<TFeatures, TData>, opts: AIExplainChartOptions = {}): Promise<AIChartExplanation> {
+  const spec = opts.spec ?? (api as unknown as { getChartSpec?: () => ChartSpec | null }).getChartSpec?.() ?? null
+  if (!spec) return { summary: 'No chart to explain.', insights: [] }
+  const summary = chartSummary(spec)
+  const cats = spec.categories.slice(0, 50)
+  const table = cats.length
+    ? `${['category', ...spec.series.map((s) => s.label)].join('\t')}\n` +
+      cats.map((c, i) => [c, ...spec.series.map((s) => String(s.values[i] ?? ''))].join('\t')).join('\n')
+    : ''
+  const prompt =
+    `You are explaining a ${spec.type} chart to a busy reader.\n\n` +
+    `Reading of the chart: ${summary}\n\n` +
+    (table ? `Data (first ${cats.length} categories, tab separated):\n${table}\n\n` : '') +
+    `Return strict JSON only: { "insights": ["<2-3 short observations a reader would miss at a glance: comparisons, outliers, what to look at next>"] }`
+  const out = await callJSON<{ insights?: unknown }>({ prompt, task: 'explain-chart', signal: opts.signal, maxOutputTokens: 300 })
+  const insights = Array.isArray(out.insights) ? out.insights.filter((x): x is string => typeof x === 'string').slice(0, 3) : []
+  return { summary, insights }
 }
 ```
 
@@ -111238,6 +114158,39 @@ export function buildChartPdf(
 }
 ```
 
+### `function chartToPdfBlob`
+
+The chart as a one-page PDF `Blob`.
+
+```ts
+export async function chartToPdfBlob(source: SVGSVGElement | HTMLElement, options: ChartPdfOptions = {}): Promise<Blob> {
+  const svg = source instanceof SVGSVGElement ? source : (source.querySelector('svg.sv-grid-chart-svg') ?? source.querySelector('svg'))
+  const background = options.background ?? (svg ? getComputedStyle(svg).getPropertyValue('--sg-bg').trim() || '#ffffff' : '#ffffff')
+  const png = await chartToPngBlob(source, { ...options, background, scale: options.scale ?? 2 })
+  const jpeg = await pngToJpeg(png, background, options.quality ?? 0.92)
+  const bytes = buildChartPdf(jpeg, options)
+  return new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' })
+}
+```
+
+### `function downloadChartPdf`
+
+Download the chart as a `.pdf` file.
+
+```ts
+export async function downloadChartPdf(source: SVGSVGElement | HTMLElement, filename = 'chart.pdf', options: ChartPdfOptions = {}): Promise<void> {
+  const blob = await chartToPdfBlob(source, options)
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+```
+
 ### `function printChart`
 
 Print the chart: a new window with the standalone SVG (and the title
@@ -111415,6 +114368,23 @@ export function chartToPngBlob(
     }
     img.src = url
   })
+}
+```
+
+### `function downloadChartPng`
+
+Download the chart as a `.png` file.
+
+```ts
+export async function downloadChartPng(
+  source: SVGSVGElement | HTMLElement,
+  filename = 'chart.png',
+  options: ChartExportOptions = {},
+): Promise<void> {
+  const blob = await chartToPngBlob(source, options)
+  const url = URL.createObjectURL(blob)
+  triggerDownload(url, filename)
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 ```
 
@@ -117746,6 +120716,83 @@ export type EditorContext<TData extends RowData> = CellContext<TData> & {
 }
 ```
 
+### `type CustomFilterContext`
+
+What a custom filter control receives, in the filter menu and in the
+floating filter row. The grid owns the model; the control reads `model`
+and writes it back through `setModel`.
+
+```ts
+export type CustomFilterContext<TData extends RowData, TModel = any> = {
+  column: Column<TData>
+  /** The column's current model, or `undefined` when none is set. */
+  model: TModel | undefined
+  /** Replace the model. `null` or `undefined` clears the filter. */
+  setModel: (next: TModel | null | undefined) => void
+  /**
+   * Which surface is rendering the control: the filter menu, the floating
+   * filter row, or the tool panel's Filters tab.
+   */
+  surface: 'menu' | 'floating' | 'panel'
+  /**
+   * The column's distinct values under every OTHER column's filter, the
+   * same list the menu's Values checklist shows. Computed on call, so a
+   * control that never asks pays nothing.
+   */
+  values: () => Array<string>
+  /** Close the filter menu. Does nothing on the other surfaces. */
+  close: () => void
+}
+```
+
+### `type CustomColumnFilter`
+
+A column filter whose state is your own model rather than an operator and
+a value: a range slider's `[min, max]`, a tag picker's `string[]`, a
+"last N days" count.
+
+The model lives in the grid (`api.setCustomFilter`, `getState().customFilters`)
+and is ANDed with the column's operator condition and its Values checklist,
+the same as those two are with each other. Keep it JSON-serializable if you
+save views.
+
+  customFilter: {
+    predicate: ([min, max]: [number, number]) => (value) =>
+      Number(value) >= min && Number(value) <= max,
+    menu: priceRange,      // a Snippet<[CustomFilterContext]>
+    floating: priceRange,
+  }
+
+```ts
+export type CustomColumnFilter<TData extends RowData, TModel = any> = {
+  /**
+   * Build the row test for a model. Runs once per filter change, not once
+   * per row, so parse dates or build sets here. The returned function gets
+   * the column's value and the row's data.
+   */
+  predicate: (model: TModel) => (value: unknown, row: TData) => boolean
+  /**
+   * Whether a model narrows anything. An inactive model is kept (the control
+   * still shows it) but filters nothing and lights no funnel. Default: not
+   * `null` / `undefined` / `''` / an empty array.
+   */
+  isActive?: (model: TModel) => boolean
+  /**
+   * The control in the filter menu and the tool panel's Filters tab, in
+   * place of the operator condition. A Svelte snippet taking a
+   * {@link CustomFilterContext}. Falls back to `floating` when omitted.
+   */
+  menu?: (context: CustomFilterContext<TData, TModel>) => unknown
+  /**
+   * The control in the floating filter row, in place of the operator button
+   * and input. Falls back to `menu` when omitted.
+   */
+  floating?: (context: CustomFilterContext<TData, TModel>) => unknown
+  /** Keep the Values checklist under the custom control in the menu. Default `true`. */
+  showValues?: boolean
+}
+```
+
 ### `type CellFormatConfig`
 
 Declarative cell formatting, applied through `Intl` - number, currency,
@@ -118109,6 +121156,13 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    */
   filterable?: boolean
   /**
+   * Replace the built-in filter condition with your own control and model.
+   * See {@link CustomColumnFilter}. Without `menu` or `floating` the column
+   * keeps the built-in UI and the model is set only through
+   * `api.setCustomFilter`.
+   */
+  customFilter?: CustomColumnFilter<TData>
+  /**
    * Options for `editorType: 'list' | 'chips'`. Either bare values (the
    * string is both value and label) or `{ value, label }` objects.
    * For `chips` this is optional - when omitted, the chips editor becomes
@@ -118149,6 +121203,14 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    * Blanks and anything not a number sort first, as in a number column.
    */
   sortValue?: (value: unknown) => number | null | undefined
+  /**
+   * Compare two of this column's values yourself, in place of the built-in
+   * order. `desc` is the direction being sorted; the grid reverses your result
+   * for a descending sort, so return the ascending order unless you want a
+   * value held at one end in both directions (`@svgrid/enterprise`'s
+   * `blanksLast` does that). `sortValue` wins over it.
+   */
+  sortComparator?: (a: unknown, b: unknown, desc: boolean) => number
   /**
    * Aggregate this column's values into the group row when grouping is
    * active. `'sum' | 'avg' | 'min' | 'max' | 'count' | 'countDistinct' |
@@ -119159,8 +122221,11 @@ export function createSortedRowModel<TData extends RowData>(
       // By the column's data type, not by what edits it: a number column
       // edited in a text box still sorts as numbers.
       const dataType = columnDataType(column.columnDef)
-      const comparator =
-        dataType === 'number'
+      // A column's own comparator takes the plain raw-value path below.
+      const custom = column.columnDef.sortComparator
+      const comparator = custom
+        ? (a: unknown, b: unknown) => custom(a, b, clause.desc)
+        : dataType === 'number'
           ? localSortFns.number
           : isDateDataType(dataType)
             ? localSortFns.date
@@ -119778,10 +122843,9 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
       // inline on every render (e.g. `columns={[...]}`). If the new
       // array has the same length AND each entry has the same `field` /
       // `id` / `header` (the visibility-affecting structure of a
-      // column), trust the previous build. Mutable inner fields like
-      // `cell` and `editorOptions` are still picked up on the next real
-      // render that bumps an actual data dep - they're read at cell-
-      // render time, not at this top-level cache.
+      // column), keep the previous build but point each column at its new
+      // definition, so a changed `cell`, `sortable` or `editorOptions`
+      // takes effect.
       if (
         cachedColumnsInput &&
         options.columns.length === cachedColumnsInput.length &&
@@ -119803,6 +122867,9 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
         // Update the stored input reference so the strict check hits
         // next time, but reuse the built column model.
         cachedColumnsInput = options.columns
+        // Only without groups: a group of one child also passes the length
+        // check, and its leaf must not take the group's definition.
+        if (!options.columns.some((c) => c.columns?.length)) cachedColumns.forEach((c, i) => (c.columnDef = options.columns[i]!))
         return cachedColumns
       }
 
@@ -119820,17 +122887,19 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
             leaves.push(...build(columnDef.columns, depth + 1, id))
             return
           }
-          leaves.push({
+          // The closures read `col.columnDef`, not the `columnDef` above: a
+          // soft cache hit repoints the column at a newer definition.
+          const col: Column<TData> = {
             id,
             depth,
             parentId,
             columnDef,
             getCanSort: () =>
               Boolean((options._features as any).rowSortingFeature) &&
-              columnDef.sortable !== false,
+              col.columnDef.sortable !== false,
             getCanFilter: () =>
               Boolean((options._features as any).columnFilteringFeature) &&
-              columnDef.filterable !== false,
+              col.columnDef.filterable !== false,
             getIsSorted: () => {
               const entry = store.state.sorting?.find((s: any) => s.id === id)
               if (!entry) return false
@@ -119847,7 +122916,8 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
               store.setState((prev) => ({ ...prev, sorting: nextClause }))
               options.onSortingChange?.(nextClause)
             },
-          })
+          }
+          leaves.push(col)
         })
         return leaves
       }
@@ -123573,6 +126643,8 @@ export type GridFilterState = {
     valueTo?: string
     selectedValues?: Array<string>
   }>
+  /** Active `customFilter` models keyed by column id, when any is active. */
+  custom?: Record<string, unknown>
 }
 ```
 
@@ -123670,6 +126742,10 @@ export type GridRowModel<TData> = {
 Turn the grid's filter payload into the column-keyed map a `ServerRequest`
 carries. Exported because a hand-written `GridRowModel` needs exactly this
 conversion, and copying it is how the two shapes drift apart.
+
+A registered operator with a `toServer` (the Enterprise relative date
+operators) goes out as the built-in filter it means now, so a backend never
+meets an operator it cannot know.
 
 ```ts
 export function toServerFilterColumns(
@@ -125584,6 +128660,12 @@ export type ServerFilterModel = {
    * filtering the loaded page itself - see `ServerState.expressionUnapplied`.
    */
   expression?: GridPredicateExpr
+  /**
+   * Models of the columns' `customFilter`s, keyed by column id, as the
+   * grid's `onFiltersChange` reports them. The grid cannot turn a custom
+   * model into a query; the backend translates each one itself.
+   */
+  custom?: Record<string, unknown>
 }
 ```
 
@@ -126484,6 +129566,7 @@ export function createServerDataSource<TData>(
         ? {
             global: filterModel.global,
             columns: toServerFilterColumns(filterModel as GridFilterState),
+            ...(filterModel.custom ? { custom: filterModel.custom } : {}),
           }
         : (filterModel as ServerFilterModel)
       state.pageIndex = 0
@@ -126775,6 +129858,12 @@ export type SvGridViewState = {
    * `null` clears the filter on `setState`.
    */
   advancedFilter?: GridPredicateExpr | null
+  /**
+   * Models of columns with a `customFilter`, keyed by column id. Omitted when
+   * no column has one, so older views round-trip unchanged. On `setState`,
+   * present replaces every model and `null` clears them.
+   */
+  customFilters?: Record<string, unknown> | null
   /** Built-in chart panel state (present only when `charting` is on): the
    *  ACTIVE chart, for back-compat + spread-and-tweak. */
   chart?: {
@@ -127139,6 +130228,16 @@ export type SvGridApi<
    * snapshots captured via `onFiltersChange`'s `selectedValues`.
    */
   setFacetFilter(columnId: string, values: ReadonlyArray<string> | null): void
+  /**
+   * Set the model of a column's `customFilter` (whatever its `predicate`
+   * takes: `[min, max]`, a tag list, ...). `null` clears it. ANDed with the
+   * column's operator filter and Values checklist. Ignored for a column with
+   * `filterable: false`.
+   */
+  setCustomFilter(columnId: string, model: unknown): void
+  /** A column's custom-filter model, or `undefined` when none is set. */
+  getCustomFilter(columnId: string): unknown
+  /** Clear every filter on the column: condition, Values checklist and custom model. */
   clearFilter(columnId: string): void
   /**
    * Drop cached async `editorOptions` so the next render refetches them.
@@ -127198,6 +130297,15 @@ export type SvGridApi<
 
   /** Snapshot of the current data array (pre-pipeline). */
   getData(): ReadonlyArray<TData>
+
+  /**
+   * Where a row sits in the filtered, sorted rows across every page, or null
+   * when a filter hides it or it is inside a collapsed group. Without
+   * grouping, `Math.floor(position / pageSize)` is its page under client
+   * paging. With grouping, pages are counted in groups and that formula does
+   * not hold.
+   */
+  getRowPosition(rowId: string): number | null
 
   /**
    * The stable id the grid keys a row by: what the `getRowId` prop

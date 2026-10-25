@@ -1,0 +1,24 @@
+# SvGrid Base: SvGrid docs index
+
+> Part of https://svgrid.com/llms.txt. Each docs page has a markdown copy at its URL with the trailing slash replaced by `.md`.
+
+
+### SvGrid Base
+
+- [From a database to an app](https://svgrid.com/docs/help/base/quick-start/): You have a database. One call reads its tables and <SvBase> turns them into an app your team can use: a tab per table, fields typed from the columns, links from the foreign keys, colored selects,...
+- [Build a project tracker](https://svgrid.com/docs/help/base/start/): SvGrid Base is a table database you put inside your own Svelte app: typed fields, saved views (a grid, a Kanban board, a calendar, a gallery, a form), filters, groups, row colors, linked records,...
+- [Ready-to-use bases](https://svgrid.com/docs/help/base/templates/): Each base below is one <SvBase> with sample data: the fields, the saved views and the forms a team would set up on day one.
+- [Link tables: lookups, rollups and counts](https://svgrid.com/docs/help/base/linked-records/): A base holds several tables, and a link field relates their records: a deal names its account, the account lists its deals.
+- [Computed fields with formulas](https://svgrid.com/docs/help/base/formulas/): A formula field works out its value from the other fields of the same record: a stock value from quantity and unit cost, a status from a reorder level, a date 90 days after the last count.
+- [Views for every team](https://svgrid.com/docs/help/base/views/): One table of records, many ways to look at it. Product reads the roadmap grouped by quarter, engineering works off a status board, the leads check a timeline, and anyone in the company files a...
+- [Collect records with forms](https://svgrid.com/docs/help/base/forms/): A form view asks for some of a table's fields and adds a record when it is sent. Use it for records other people start: a bug report, an expense, a job application.
+- [People, comments and files](https://svgrid.com/docs/help/base/collaboration/): A tracker one person fills in needs a status column and little else. Once a team uses it, people want to see who a task is assigned to, who changed the status and when, a thread of comments on the...
+- [Build your own field type](https://svgrid.com/docs/help/base/custom-field-type/): A field type decides what a column holds and how it behaves: what the cell shows, which editor opens, how pasted text is read, what the footer can sum.
+- [Automations](https://svgrid.com/docs/help/base/automations/): An automation does something on its own when something happens to a record: a task set to Done ticks its Done box, a new request goes to Todo, a blocked task tells its owner, a button starts the...
+- [Keep a base in a database](https://svgrid.com/docs/help/base/data/): A base can keep its records in your database instead of the page. Give a table a source and <SvBase> loads the records from it when it opens, then writes every change back: a cell edit, a pasted...
+- [Build a base on Supabase](https://svgrid.com/docs/help/base/supabase/): This tutorial puts a project tracker in a Svelte app with its records in Supabase: two tables, Projects and Tasks, a link between them stored as a foreign key, and edits from other people arriving...
+- [Build a base on Postgres](https://svgrid.com/docs/help/base/postgres/): This tutorial keeps a base in your own Postgres database, behind your own SvelteKit server.
+- [Build a base on your API](https://svgrid.com/docs/help/base/rest-api/): When your data sits behind an API you already have, a base can use it as it is: it reads a table with one GET, and writes each change with POST, PATCH or DELETE.
+- [Let an AI agent work in your base](https://svgrid.com/docs/help/base/ai-agents/): An agent can do the first pass on a table your team works in: categorize the new records, set a priority, draft a reply. The hard part is not the edit.
+- [Review what an agent changed](https://svgrid.com/docs/help/base/review-queue/): An agent can be Claude Code with an MCP server, a worker that calls a model, or a script on a schedule.
+- [Field types](https://svgrid.com/docs/help/fields/): A column can say what it is - a rating, a URL, a single select with colored options, a list of files - with fieldType, and set that type's properties with fieldProps.

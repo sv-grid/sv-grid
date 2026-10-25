@@ -1,0 +1,20 @@
+# SvGrid Spreadsheet: SvGrid docs index
+
+> Part of https://svgrid.com/llms.txt. Each docs page has a markdown copy at its URL with the trailing slash replaced by `.md`.
+
+
+### Spreadsheet
+
+- [Spreadsheet: getting started](https://svgrid.com/docs/help/sheet/start/): Put an Excel-like spreadsheet in a Svelte 5 app with SvSheet: a blank sheet, seed data, a formula across sheets, a shipped look, the document underneath.
+- [Formulas: from =SUM to LAMBDA](https://svgrid.com/docs/help/sheet/formulas/): Formulas in the SvSheet spreadsheet: references, spilled arrays, defined names, LET and LAMBDA, custom functions, iterative calculation, auditing.
+- [Formatting: numbers, styles, merged headers and rules](https://svgrid.com/docs/help/sheet/formatting/): Formatting an SvSheet spreadsheet: per-cell number formats, styles and borders, widths and heights, merged headers, and conditional formatting rules.
+- [Data validation: lists, bounds and messages](https://svgrid.com/docs/help/sheet/validation/): Data validation on the SvSheet spreadsheet: dropdown lists, number and date bounds, a formula rule, Stop or Warning, input messages, Circle Invalid Data.
+- [Files: save, restore, autosave and Excel](https://svgrid.com/docs/help/sheet/files/): Saving an SvSheet document: getState and setState, an autosave on onChange, the File tab, .xlsx, .ods, .xls and .csv in and out, and paste from Excel.
+- [Data tools: filter, sort, clean up, solve, pivot](https://svgrid.com/docs/help/sheet/data-tools/): The Data and Insert tabs of the SvSheet spreadsheet: AutoFilter, sort, Text to Columns, Remove Duplicates, Goal Seek, a PivotTable written from a range.
+- [<sv-sheet>: the spreadsheet as a custom element](https://svgrid.com/docs/help/web-components/sv-sheet/): The spreadsheet shell of @svgrid/enterprise, ribbon and formula engine included, as one custom element for a page or a host with no Svelte in its build: React, Vue, Angular, or a plain <script>...
+- [Charts, sparklines and pictures](https://svgrid.com/docs/help/sheet/charts-and-objects/): Charts over a range of the SvSheet spreadsheet, sparklines inside cells, pictures over the sheet and the IMAGE function, in the document and the .xlsx.
+- [Review and share: comments, protection, two people](https://svgrid.com/docs/help/sheet/review/): Reviewing an SvSheet spreadsheet: notes and threaded comments, a protected sheet with unlocked cells, and two people on one document over a delta stream.
+- [The spreadsheet shell](https://svgrid.com/docs/help/cells/spreadsheet-shell/): Everything between the ribbon and the sheet tabs, as one component.
+- [Spreadsheet formulas](https://svgrid.com/docs/help/spreadsheet-formulas/): An Excel-style formula engine that runs in the browser with no dependencies. Cells hold either a literal value or a formula starting with =.
+- [Workbooks: several sheets that read each other](https://svgrid.com/docs/help/cells/workbooks/): The formula engine parsed Orders!A1 and 'Price list'!A1:C9 from the day it was promoted. This is the model those references point at.
+- [Tables and structured references](https://svgrid.com/docs/help/cells/tables/): A table is a named region with a header row, so a formula can say Orders[Amount] instead of D2:D57.

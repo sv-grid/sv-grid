@@ -142,6 +142,67 @@ export type AIFilterOptions = {
 }
 ```
 
+### `function aiFilter`
+
+Translate a natural-language query into a filter+sort plan against
+the current grid's columns. The grid passes the column schema (names,
+types, sample values) to the model so it can pick the right field
+names without hallucinating.
+
+```ts
+export async function aiFilter<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(
+  api: AIRowSource<TFeatures, TData>,
+  query: string,
+  opts: AIFilterOptions = {},
+): Promise<AIFilterResult> {
+  const schema = buildColumnSchema(api)
+  const prompt =
+    `You are a data-grid filter planner. Translate the user's natural-language ` +
+    `query into a strict-JSON plan that the grid can apply.\n\n` +
+    `Columns:\n${schemaToPromptBlock(schema)}\n\n` +
+    `Output JSON schema:\n` +
+    `{ "filters": [{"field": "<one of the columns above>", ` +
+    `"operator": "contains"|"equals"|"startsWith"|"greaterThan"|"lessThan"|"isBlank", ` +
+    `"value": "<string>"}], ` +
+    `"sort": [{"field": "<column>", "desc": true|false}], ` +
+    `"rationale": "<one-sentence explanation>" }\n\n` +
+    `User query: ${query}\n\n` +
+    `Return JSON only, no prose.`
+
+  const result = await callJSON<AIFilterResult>({
+    prompt,
+    task: 'filter',
+    signal: opts.signal,
+    maxOutputTokens: 400,
+  })
+
+  // Defensive: drop anything that doesn't match a real column. Models love
+  // to invent plausible-sounding field names; we'd rather skip a clause
+  // than throw at runtime.
+  const valid = new Set(schema.map((c) => c.field))
+  result.filters = (result.filters ?? []).filter((f) => valid.has(f.field))
+  result.sort = (result.sort ?? []).filter((s) => valid.has(s.field))
+
+  if (opts.apply) {
+    if (!isGridApi(api)) throw new Error('aiFilter: apply needs the grid api, not a { getData } row source')
+    api.clearAllFilters()
+    api.clearSort()
+    for (const f of result.filters) {
+      api.setFilter(f.field, { operator: f.operator, value: f.value ?? '' })
+    }
+    // Multiple sort clauses get applied last-wins because the public
+    // `setSort` is single-key. Multi-sort is on the roadmap.
+    const last = result.sort[result.sort.length - 1]
+    if (last) api.setSort(last.field, last.desc ? 'desc' : 'asc')
+  }
+
+  return result
+}
+```
+
 ### `type AISmartFillExample`
 
 One worked example teaching smart-fill what to produce for a row.
@@ -185,6 +246,75 @@ export type AISmartFillOptions = {
 }
 ```
 
+### `function aiSmartFill`
+
+Given a column and a few user-provided examples, propose values for the
+untouched rows. Returns predictions only - the caller chooses whether to
+commit them via `api.setCellValue`. This is the right shape for an
+accept-per-cell UX with confidence-coloured highlights.
+
+```ts
+export async function aiSmartFill<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+  TValue = unknown,
+>(
+  api: AIRowSource<TFeatures, TData>,
+  opts: AISmartFillOptions,
+): Promise<AISmartFillResult<TValue>> {
+  if (opts.examples.length === 0) {
+    throw new Error('@svgrid/grid ai: aiSmartFill requires at least one example.')
+  }
+  const data = api.getData()
+  const targets =
+    opts.targetRowIndices ??
+    data
+      .map((row, i) => {
+        const v = (row as Record<string, unknown>)[opts.field]
+        return v == null || v === '' ? i : -1
+      })
+      .filter((i) => i >= 0)
+
+  if (targets.length === 0) {
+    return { field: opts.field, predictions: [], rationale: 'No empty cells to fill.' }
+  }
+
+  const examplesBlock = opts.examples
+    .map((ex, i) => `Example ${i + 1}: input=${JSON.stringify(ex.input)} -> output=${JSON.stringify(ex.output)}`)
+    .join('\n')
+
+  const targetRowsBlock = targets
+    .map((i) => `Row ${i}: ${JSON.stringify(data[i])}`)
+    .join('\n')
+
+  const prompt =
+    `You are filling in a single column of a data grid based on user-provided ` +
+    `examples. Match the pattern in the examples exactly.\n\n` +
+    `Target column: ${opts.field}\n\n` +
+    `Examples:\n${examplesBlock}\n\n` +
+    `Rows to fill:\n${targetRowsBlock}\n\n` +
+    `Return strict JSON only:\n` +
+    `{ "predictions": [{"rowIndex": <number>, "value": <inferred value>, ` +
+    `"confidence": <0..1>}], "rationale": "<one-sentence pattern description>" }`
+
+  const result = await callJSON<{
+    predictions: Array<{ rowIndex: number; value: TValue; confidence: number }>
+    rationale: string
+  }>({
+    prompt,
+    task: 'smart-fill',
+    signal: opts.signal,
+    maxOutputTokens: 600,
+  })
+
+  return {
+    field: opts.field,
+    predictions: result.predictions ?? [],
+    rationale: result.rationale ?? '',
+  }
+}
+```
+
 ### `type AISummarizeTarget`
 
 What to summarise: one row, the selection, a group, or the whole set.
@@ -225,6 +355,72 @@ export type AISummarizeOptions = {
 }
 ```
 
+### `function aiSummarize`
+
+Ask the model to summarise a slice of the grid. Caps the row sample at
+a model-friendly size; for huge selections it samples uniformly so the
+summary stays representative without blowing the context window.
+
+```ts
+export async function aiSummarize<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(
+  api: AIRowSource<TFeatures, TData>,
+  opts: AISummarizeOptions,
+): Promise<AISummary> {
+  const all = api.getData()
+  const rows: TData[] = (() => {
+    const t = opts.target
+    if (t.kind === 'row') {
+      const r = all[t.rowIndex]
+      return r ? [r] : []
+    }
+    if (t.kind === 'selection') {
+      return t.rowIndices.map((i) => all[i]).filter((r): r is TData => r != null)
+    }
+    if (t.kind === 'group') {
+      return all.filter((r) => (r as Record<string, unknown>)[t.field] === t.value)
+    }
+    return all.slice()
+  })()
+
+  if (rows.length === 0) {
+    return { text: 'No rows in scope.', bullets: [], highlightedFields: [] }
+  }
+
+  // Uniform sample to stay inside a sensible context budget.
+  const MAX_SAMPLE = 25
+  const sample = rows.length <= MAX_SAMPLE
+    ? rows
+    : Array.from({ length: MAX_SAMPLE }, (_, i) => rows[Math.floor((i / MAX_SAMPLE) * rows.length)]!)
+
+  const schema = buildColumnSchema(api, 30)
+  const prompt =
+    `You are summarising a slice of a business data grid for a busy analyst.\n\n` +
+    `Columns:\n${schemaToPromptBlock(schema)}\n\n` +
+    `Slice size: ${rows.length} row(s). Sampled rows shown below.\n` +
+    `${sample.map((r) => JSON.stringify(r)).join('\n')}\n\n` +
+    (opts.question ? `User's question: ${opts.question}\n\n` : '') +
+    `Return strict JSON only:\n` +
+    `{ "text": "<one short paragraph>", ` +
+    `"bullets": ["<3-5 punchy bullets>"], ` +
+    `"highlightedFields": ["<column names the summary leans on>"] }`
+
+  const result = await callJSON<AISummary>({
+    prompt,
+    task: 'summarize',
+    signal: opts.signal,
+    maxOutputTokens: 600,
+  })
+  return {
+    text: result.text ?? '',
+    bullets: result.bullets ?? [],
+    highlightedFields: result.highlightedFields ?? [],
+  }
+}
+```
+
 ### `type AIClassifyOptions`
 
 Options for `aiClassify` - the column to label and the categories to choose from.
@@ -254,6 +450,60 @@ export type AIClassifyResult = {
   inputField: string
   outputField: string
   predictions: Array<{ rowIndex: number; value: string; confidence: number }>
+}
+```
+
+### `function aiClassify`
+
+Bucket free-text cells into one of a known set of classes. The model
+is constrained to pick from `opts.classes`; predictions outside the set
+are dropped so the caller can rely on the output being clean enum
+values it can write straight back into the grid.
+
+```ts
+export async function aiClassify<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(
+  api: AIRowSource<TFeatures, TData>,
+  opts: AIClassifyOptions,
+): Promise<AIClassifyResult> {
+  const data = api.getData()
+  const targets = opts.targetRowIndices ?? data.map((_, i) => i)
+  const rubric = opts.classDescriptions
+    ? Object.entries(opts.classDescriptions)
+        .map(([k, v]) => `- ${k}: ${v}`)
+        .join('\n')
+    : opts.classes.map((c) => `- ${c}`).join('\n')
+
+  const rowsBlock = targets
+    .map((i) => `Row ${i}: ${JSON.stringify((data[i] as Record<string, unknown>)?.[opts.inputField] ?? '')}`)
+    .join('\n')
+
+  const prompt =
+    `You are a strict text classifier. For each row, pick exactly one ` +
+    `label from the list. If unsure, pick the closest match and lower the ` +
+    `confidence.\n\n` +
+    `Allowed labels (with optional rubric):\n${rubric}\n\n` +
+    `Rows to classify (text from column "${opts.inputField}"):\n${rowsBlock}\n\n` +
+    `Return strict JSON only:\n` +
+    `{ "predictions": [{"rowIndex": <number>, "value": "<label>", "confidence": <0..1>}] }`
+
+  const result = await callJSON<{
+    predictions: Array<{ rowIndex: number; value: string; confidence: number }>
+  }>({
+    prompt,
+    task: 'classify',
+    signal: opts.signal,
+    maxOutputTokens: Math.min(2000, 30 + targets.length * 30),
+  })
+
+  const allowed = new Set(opts.classes)
+  return {
+    inputField: opts.inputField,
+    outputField: opts.outputField,
+    predictions: (result.predictions ?? []).filter((p) => allowed.has(p.value)),
+  }
 }
 ```
 
@@ -289,6 +539,93 @@ export type AIExportOptions = {
   /** Base filename (no extension). Default 'export'. */
   filename?: string
   signal?: AbortSignal
+}
+```
+
+### `function aiExport`
+
+Turn a natural-language request ("export EU orders from Q2 as a grouped PDF")
+into an export: the model returns a `{ format, filters, sort, groupBy }` plan
+against the grid's columns; we apply the filter/sort to the grid and hand the
+result to the registered export engine (@svgrid/enterprise). Returns the plan
+so the UI can show what it did (or preview it first with `run: false`).
+
+```ts
+export async function aiExport<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(
+  api: SvGridApi<TFeatures, TData>,
+  query: string,
+  opts: AIExportOptions = {},
+): Promise<AIExportPlan> {
+  const schema = buildColumnSchema(api)
+  const prompt =
+    `You are an export assistant for a data grid. Translate the user's request ` +
+    `into a strict-JSON export plan.\n\n` +
+    `Columns:\n${schemaToPromptBlock(schema)}\n\n` +
+    `Output JSON schema:\n` +
+    `{ "format": "xlsx"|"xls"|"pdf"|"csv"|"tsv"|"html"|"json"|"xml"|"md", ` +
+    `"filters": [{"field":"<column>","operator":"contains"|"equals"|"startsWith"|"greaterThan"|"lessThan"|"isBlank","value":"<string>"}], ` +
+    `"sort": [{"field":"<column>","desc":true|false}], ` +
+    `"groupBy": ["<column>"], ` +
+    `"rationale": "<one sentence>" }\n\n` +
+    `Rules: use the format the user names (default "xlsx"); only use column ` +
+    `names from the list above; "grouped" / "group by X" -> groupBy. ` +
+    `Return JSON only, no prose.\n\n` +
+    `User request: ${query}`
+
+  const plan = await callJSON<AIExportPlan>({
+    prompt,
+    task: 'export',
+    signal: opts.signal,
+    maxOutputTokens: 500,
+  })
+
+  // Defensive validation - drop invented fields, clamp the format.
+  const valid = new Set(schema.map((c) => c.field))
+  plan.format = EXPORT_FORMATS.includes(plan.format) ? plan.format : 'xlsx'
+  plan.filters = (plan.filters ?? []).filter((f) => valid.has(f.field))
+  plan.sort = (plan.sort ?? []).filter((s) => valid.has(s.field))
+  plan.groupBy = (plan.groupBy ?? []).filter((g) => valid.has(g))
+  plan.rationale = plan.rationale ?? ''
+
+  // Optionally mirror the plan onto the grid (opt-in). Off by default so the
+  // export never disturbs the user's current view.
+  if (opts.apply === true) {
+    api.clearAllFilters()
+    api.clearSort()
+    for (const f of plan.filters) {
+      api.setFilter(f.field, { operator: f.operator, value: f.value ?? '' })
+    }
+    const last = plan.sort[plan.sort.length - 1]
+    if (last) api.setSort(last.field, last.desc ? 'desc' : 'asc')
+    if (plan.groupBy.length > 0) {
+      try {
+        api.setGroupBy(plan.groupBy)
+      } catch {
+        // grouping feature not enabled - the export still groups on its own
+      }
+    }
+  }
+
+  // Planning is always free; WRITING the file uses the export engine registered
+  // by @svgrid/enterprise (export-provider seam). Without it, we return the plan
+  // so the UI can still show what the AI decided - the download just no-ops.
+  const runExport = getExportProvider()
+  if (opts.run !== false && runExport) {
+    // Compute the export rows from the plan directly (filter + sort + make
+    // contiguous by group) rather than reading the grid's reactive displayed
+    // rows - so the download always has exactly the intended data.
+    const exportRows = applyPlanToRows(api.getData(), plan)
+    await runExport(api, {
+      format: plan.format,
+      filename: opts.filename ?? 'export',
+      rows: exportRows,
+      ...(plan.groupBy.length > 0 ? { groupBy: plan.groupBy } : {}),
+    })
+  }
+  return plan
 }
 ```
 
@@ -329,6 +666,60 @@ export type AIAnomalyOptions = {
   /** Optional focus, e.g. "look at pricing and margins". */
   question?: string
   signal?: AbortSignal
+}
+```
+
+### `function aiFindAnomalies`
+
+Scan a slice of the grid (all / selection / group) for anomalies - outliers,
+suspicious values, inconsistencies - and return a structured list plus a
+one-line summary. Pairs naturally with an export: "find the odd ones, then
+export just those".
+
+```ts
+export async function aiFindAnomalies<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(
+  api: AIRowSource<TFeatures, TData>,
+  opts: AIAnomalyOptions = {},
+): Promise<AIAnomalyResult> {
+  const rows = sliceForTarget(api, opts.target ?? { kind: 'all' })
+  if (rows.length === 0) return { anomalies: [], summary: 'No rows in scope.' }
+
+  const MAX_SAMPLE = 40
+  const sample =
+    rows.length <= MAX_SAMPLE
+      ? rows
+      : Array.from(
+          { length: MAX_SAMPLE },
+          (_, i) => rows[Math.floor((i / MAX_SAMPLE) * rows.length)]!,
+        )
+
+  const schema = buildColumnSchema(api, 30)
+  const prompt =
+    `You are a data-quality analyst. Scan the rows below for anomalies: ` +
+    `numeric outliers, impossible / inconsistent values, unexpected blanks, ` +
+    `and values that break the pattern of the column.\n\n` +
+    `Columns:\n${schemaToPromptBlock(schema)}\n\n` +
+    `Rows (index is 0-based into this list):\n` +
+    `${sample.map((r, i) => `${i}: ${JSON.stringify(r)}`).join('\n')}\n\n` +
+    (opts.question ? `Focus: ${opts.question}\n\n` : '') +
+    `Return strict JSON only:\n` +
+    `{ "anomalies": [{"rowIndex": <number|null>, "field": "<column|null>", ` +
+    `"reason": "<why it's odd>", "severity": "low"|"medium"|"high"}], ` +
+    `"summary": "<one sentence>" }`
+
+  const result = await callJSON<AIAnomalyResult>({
+    prompt,
+    task: 'anomaly',
+    signal: opts.signal,
+    maxOutputTokens: 800,
+  })
+  return {
+    anomalies: result.anomalies ?? [],
+    summary: result.summary ?? '',
+  }
 }
 ```
 
@@ -409,6 +800,148 @@ export type AIChartOptions = {
 }
 ```
 
+### `function aiChart`
+
+Translate a natural-language request into a chart plan for the grid's built-in
+`charting` panel. Validates every field against the real schema, then (with
+`apply: true`) pushes it into the panel through `api.configureChart`.
+
+```ts
+export async function aiChart<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(
+  api: SvGridApi<TFeatures, TData>,
+  query: string,
+  opts: AIChartOptions = {},
+): Promise<AIChartPlan> {
+  const schema = buildColumnSchema(api)
+  const prompt =
+    `You are a charting assistant for a data grid. Translate the user's request ` +
+    `into a strict-JSON chart plan the grid can render.\n\n` +
+    `Columns:\n${schemaToPromptBlock(schema)}\n\n` +
+    `Output JSON schema:\n` +
+    `{ "type": "bar"|"line"|"area"|"pie"|"treemap"|"funnel"|"waterfall"|"radar"|"heatmap"|"boxplot"|"gauge"|"calendar"|"sankey"|"histogram"|"lollipop"|"pareto"|"sunburst"|"radial-bar"|"radial-column"|"nightingale"|"bullet"|"chord"|"stream"|"candlestick", ` +
+    `"dimension": "<a categorical column to group by>", ` +
+    `"series": "<a second categorical column to split into series, or null>", ` +
+    `"measure": "<a numeric column to aggregate>", ` +
+    `"reduce": "sum"|"avg"|"count"|"min"|"max"|"median"|"p90"|"first"|"last"|"countDistinct", ` +
+    `"bucket": "day"|"week"|"month"|"quarter"|"year"|null, ` +
+    `"stacked": true|false, ` +
+    `"logScale": true|false, ` +
+    `"timeAxis": true|false, ` +
+    `"valueFormat": "number"|"currency"|"percent", ` +
+    `"indicators": ["volume"|"rsi"|"macd"|"stochastic"|"atr"|"obv"|"sma"|"ema"|"bb"|"vwap", ...] (candlestick only, else omit), ` +
+    `"rationale": "<one-sentence explanation>" }\n\n` +
+    `Rules: pick "dimension" and "series" from text/date columns and "measure" ` +
+    `from a numeric column; use only column names from the list above; ` +
+    `default to "bar" unless the request clearly wants another type. ` +
+    `Type hints: share/proportion/breakdown -> pie; nested/hierarchy/"what makes ` +
+    `up" -> treemap; drop-off/conversion/stages/pipeline -> funnel; ` +
+    `running total/contribution/bridge -> waterfall; comparing several measures ` +
+    `per item -> radar; a grid of two dimensions -> heatmap (needs "series"); ` +
+    `spread/distribution/variance/outliers/percentiles -> boxplot; a single ` +
+    `number vs a target -> gauge (leave "dimension" null); a year of daily ` +
+    `activity -> calendar (dimension must be a date column); flow between two ` +
+    `things -> sankey (needs "series": dimension is the source, series the ` +
+    `target); flows between groups round a circle -> chord (needs "series"); ` +
+    `frequency/how many fall in each range -> histogram (leave "dimension" null); ` +
+    `vital few/80-20/biggest contributors -> pareto; drilldown/rings/nested share -> sunburst; ` +
+    `progress rings/circular -> radial-bar; polar/rose -> nightingale or radial-column; ` +
+    `actual vs target per item -> bullet; layered over time/stream -> stream (needs "series"); ` +
+    `price/candles/OHLC/stock/ticker -> candlestick (dimension is the date column; the open/high/low/close/volume columns are found by name), ` +
+    `with "volume"/"RSI"/"MACD"/"Bollinger"/"moving average" -> indicators. ` +
+    `"stacked"/"stack" -> stacked:true; "log"/"logarithmic" -> logScale:true; ` +
+    `"over time"/"by date"/a date dimension -> timeAxis:true; ` +
+    `"monthly"/"per month"/"by month" -> bucket:"month" (likewise daily/weekly/quarterly/yearly), else bucket:null; ` +
+    `"median"/"typical" -> reduce:"median"; "highest"/"peak" -> "max"; "lowest" -> "min"; "unique"/"distinct" -> "countDistinct"; ` +
+    `money/revenue/price/$ -> valueFormat:"currency"; rate/%/share -> valueFormat:"percent"; ` +
+    `else valueFormat:"number". default reduce is "sum". ` +
+    `Return JSON only, no prose.\n\n` +
+    `User request: ${query}`
+
+  const plan = await callJSON<AIChartPlan>({
+    prompt,
+    task: 'chart',
+    signal: opts.signal,
+    maxOutputTokens: 300,
+  })
+
+  const valid = new Set(schema.map((c) => c.field))
+  const numericFields = new Set(schema.filter((c) => c.type === 'number').map((c) => c.field))
+  const CHART_TYPES: AIChartType[] = [
+    'bar', 'line', 'area', 'pie',
+    'treemap', 'funnel', 'waterfall', 'radar',
+    'heatmap', 'boxplot', 'gauge', 'calendar', 'sankey',
+    'histogram', 'lollipop', 'pareto', 'sunburst', 'radial-bar', 'radial-column', 'nightingale', 'bullet', 'chord', 'stream',
+    'candlestick',
+  ]
+  plan.type = CHART_TYPES.includes(plan.type) ? plan.type : 'bar'
+  plan.dimension = plan.dimension && valid.has(plan.dimension) ? plan.dimension : null
+  plan.series = plan.series && valid.has(plan.series) && plan.series !== plan.dimension ? plan.series : null
+  plan.measure =
+    plan.measure && numericFields.has(plan.measure)
+      ? plan.measure
+      : (schema.find((c) => c.type === 'number')?.field ?? null)
+  // Shape check. Some types need more than a dimension and a measure, and a
+  // plan that does not satisfy one renders an empty frame - the model asked for
+  // a chart the data cannot make. Fall back to a bar, which any dimension and
+  // measure can draw, rather than showing nothing and blaming the request.
+  const dateFields = new Set(schema.filter((c) => c.type === 'date').map((c) => c.field))
+  const needsSplit = plan.type === 'heatmap' || plan.type === 'sankey' || plan.type === 'chord' || plan.type === 'stream'
+  if (needsSplit && !plan.series) plan.type = 'bar'
+  if (plan.type === 'calendar' && !(plan.dimension && dateFields.has(plan.dimension))) plan.type = 'bar'
+  // A candlestick needs a date to run along and four prices to draw; the
+  // panel finds the price columns by name, so the shape check is the count.
+  if (plan.type === 'candlestick' && !(plan.dimension && dateFields.has(plan.dimension) && numericFields.size >= 4)) plan.type = 'bar'
+  plan.indicators = plan.type === 'candlestick' && Array.isArray(plan.indicators)
+    ? plan.indicators.filter((k): k is AIChartIndicator => AI_INDICATORS.includes(k))
+    : undefined
+  if (plan.indicators === undefined) delete plan.indicators
+  // A gauge is one number: it has no category axis, so a dimension is noise.
+  // A histogram bins the measure itself, so a dimension is noise there too.
+  if (plan.type === 'gauge' || plan.type === 'histogram') plan.dimension = null
+  if (plan.type !== 'gauge' && plan.type !== 'histogram' && !plan.dimension) plan.type = 'bar'
+
+  plan.reduce = AI_REDUCERS.includes(plan.reduce) ? plan.reduce : 'sum'
+  // A bucket only means something on a date dimension.
+  const BUCKETS = ['day', 'week', 'month', 'quarter', 'year'] as const
+  plan.bucket =
+    plan.bucket && (BUCKETS as ReadonlyArray<string>).includes(plan.bucket) && plan.dimension && dateFields.has(plan.dimension)
+      ? plan.bucket
+      : null
+  plan.stacked = plan.stacked === true
+  plan.logScale = plan.logScale === true
+  plan.timeAxis = plan.timeAxis === true
+  plan.valueFormat = ['number', 'currency', 'percent'].includes(plan.valueFormat) ? plan.valueFormat : 'number'
+  plan.rationale = plan.rationale ?? ''
+
+  if (opts.apply === true) {
+    const cfg = api as unknown as { configureChart?: (c: Record<string, unknown>) => void }
+    cfg.configureChart?.({
+      open: true,
+      type: plan.type,
+      dimension: plan.dimension,
+      series: plan.series,
+      measure: plan.measure,
+      reduce: plan.reduce,
+      stacked: plan.stacked,
+      logScale: plan.logScale,
+      timeAxis: plan.timeAxis,
+      valueFormat: plan.valueFormat,
+      ...(plan.indicators ? { indicators: plan.indicators } : {}),
+      bucket: plan.bucket,
+    })
+    // The panel built a spec from the plan; if it cannot draw as intended,
+    // say so on the plan rather than showing an empty frame in silence.
+    const spec = (api as unknown as { getChartSpec?: () => unknown }).getChartSpec?.()
+    if (spec) plan.diagnostics = validateChartSpec(spec).filter((d) => d.severity === 'error')
+  }
+
+  return plan
+}
+```
+
 ### `type AIChartExplanation`
 
 What `aiExplainChart` returns: the grounded summary and the model's insights.
@@ -431,6 +964,37 @@ export type AIExplainChartOptions = {
   /** The spec to explain. Default: the grid panel's active chart. */
   spec?: ChartSpec
   signal?: AbortSignal
+}
+```
+
+### `function aiExplainChart`
+
+Explain a chart in plain words. The prompt is grounded on `chartSummary`
+(the same sentence a screen reader hears) plus a compact table of the
+first 50 categories, so the model comments on numbers it was given rather
+than on an image. Returns the summary and up to three insights.
+
+```ts
+export async function aiExplainChart<
+  TFeatures extends TableFeatures,
+  TData extends RowData,
+>(api: SvGridApi<TFeatures, TData>, opts: AIExplainChartOptions = {}): Promise<AIChartExplanation> {
+  const spec = opts.spec ?? (api as unknown as { getChartSpec?: () => ChartSpec | null }).getChartSpec?.() ?? null
+  if (!spec) return { summary: 'No chart to explain.', insights: [] }
+  const summary = chartSummary(spec)
+  const cats = spec.categories.slice(0, 50)
+  const table = cats.length
+    ? `${['category', ...spec.series.map((s) => s.label)].join('\t')}\n` +
+      cats.map((c, i) => [c, ...spec.series.map((s) => String(s.values[i] ?? ''))].join('\t')).join('\n')
+    : ''
+  const prompt =
+    `You are explaining a ${spec.type} chart to a busy reader.\n\n` +
+    `Reading of the chart: ${summary}\n\n` +
+    (table ? `Data (first ${cats.length} categories, tab separated):\n${table}\n\n` : '') +
+    `Return strict JSON only: { "insights": ["<2-3 short observations a reader would miss at a glance: comparisons, outliers, what to look at next>"] }`
+  const out = await callJSON<{ insights?: unknown }>({ prompt, task: 'explain-chart', signal: opts.signal, maxOutputTokens: 300 })
+  const insights = Array.isArray(out.insights) ? out.insights.filter((x): x is string => typeof x === 'string').slice(0, 3) : []
+  return { summary, insights }
 }
 ```
 

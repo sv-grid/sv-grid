@@ -1,0 +1,59 @@
+# SvGrid Enterprise: SvGrid docs index
+
+> Part of https://svgrid.com/llms.txt. Each docs page has a markdown copy at its URL with the trailing slash replaced by `.md`.
+
+
+### Rows
+
+- [Gallery mode](https://svgrid.com/docs/help/rows/gallery/): Set the gallery prop and the grid renders its rows as cards instead of a table: a cover image, a title and a few fields per row, in a wall that fills the width.
+- [Gantt chart mode](https://svgrid.com/docs/help/rows/gantt/): The Gantt view of the Svelte data grid is in progress and due on 1 November 2026. What it will do, and what to use for a project timeline until then.
+
+### Server data
+
+- [Server-Side Row Model: a walkthrough](https://svgrid.com/docs/help/server/row-model-walkthrough/): One grid, one getRows, a server on the page: a page at a time, infinite scroll, grouping with totals, a group panel, an edit as a transaction, a rule.
+- [Server-Side Row Model (SSRM)](https://svgrid.com/docs/help/server/server-row-model/): When the data lives on the server - millions of rows in a database - the grid should hold only the page on screen and push sorting, filtering, and paging to the backend.
+- [Server grouping - Enterprise](https://svgrid.com/docs/help/server/server-grouping/): Grouping a hundred thousand rows in the browser means shipping all hundred thousand rows first.
+- [Server tree data (load on demand) - Enterprise](https://svgrid.com/docs/help/server/server-tree-data/): When a hierarchy is too large to ship up front - a file system, an org chart with tens of thousands of people, a geographic drill-down - you do not want to fetch every node before the grid...
+- [Server pivot - Enterprise](https://svgrid.com/docs/help/server/server-pivot/): A pivot over a million rows cannot happen in the browser. The server-side row model sends the pivot to the backend and builds its columns from the answer: with pivotMode on, each request carries...
+- [Server transactions - Enterprise](https://svgrid.com/docs/help/server/server-transactions/): A row was added on the server and the grid should show it now, not after a refetch. A socket said a price moved. A row was deleted and its group should lose it.
+- [Server selection - Enterprise](https://svgrid.com/docs/help/server/server-selection/): A grid that keeps a list of selected ids is right until the rows it has seen are a window onto a million on a server.
+- [Worker data source - Enterprise](https://svgrid.com/docs/help/server/worker-data-source/): When every row is already in the browser, a sort or a grouping still has to walk all of them, and on the main thread nothing else happens until it is done: the page does not paint, scroll or take...
+
+### Import & export
+
+- [Export: a report to Excel and PDF](https://svgrid.com/docs/help/export/report/): One report from a Svelte data grid: typed Excel cells, a header and footer, conditional formats, an Excel Table, several sheets, a PDF with KPIs, print.
+- [Import: a spreadsheet into the grid](https://svgrid.com/docs/help/export/import-spreadsheet/): A CSV or .xlsx into a Svelte data grid: the import call, mapping the headers, type coercion, a validator, preview then commit, the dialog, guard-rails.
+- [Data export and printing](https://svgrid.com/docs/help/export/): CSV / TSV / JSON export and copy-to-clipboard are free in the community @svgrid/grid - the commodity "data out" every grid needs.
+- [Data import - Enterprise](https://svgrid.com/docs/help/import/): The sister to data export and printing. Read an Excel file, CSV/TSV blob, or JSON array in the browser and produce a typed preview of every parsed row - including per-cell validation errors -...
+
+### Pivot grid
+
+- [Pivot: from rows to a pivot table](https://svgrid.com/docs/help/pivot/start/): Flat rows to a pivot on a Svelte data grid: the pivot prop, measures and totals, the rows behind the view, a drag-and-drop designer, a chart, the server.
+- [Pivot tables - Enterprise](https://svgrid.com/docs/help/pivot/): A built-in pivot model that turns a flat data set into a row-axis tree, a nested column-axis header, and one aggregated cell per (row-path × col-path × measure) triple. Ships in @svgrid/enterprise.
+
+### Kanban
+
+- [Build a sprint board](https://svgrid.com/docs/help/kanban/sprint-board/): A sprint board on a Svelte data grid: lanes and a WIP limit, points per lane, swimlanes, a card editor, a composer and a menu, blocked cards, saved layout.
+- [Kanban board mode](https://svgrid.com/docs/help/rows/kanban-board/): Set one board prop and the grid renders its rows as cards in horizontal lanes instead of a table. It is the same <SvGrid>, the same data and columns - only the presentation changes.
+
+### Scheduler
+
+- [Build a booking calendar](https://svgrid.com/docs/help/scheduler/booking-calendar/): A clinic calendar on a Svelte data grid: a column per provider, working hours and no double-booking, a drawer to add and edit, a weekly slot, a timeline.
+- [Scheduler / calendar mode](https://svgrid.com/docs/help/rows/scheduler/): Set one scheduler prop and the grid renders its rows as events on a calendar instead of a table. It is the same <SvGrid>, the same data and columns - only the presentation changes.
+
+### Alerts & scheduling
+
+- [Alerts: rules over live data](https://svgrid.com/docs/help/alerts/start/): Alert rules on a Svelte data grid: a rule on a crossed line, one that watches a move, a KPI, a guardrail that vetoes an edit, the log, a feed, a schedule.
+- [Alerts - Enterprise](https://svgrid.com/docs/help/alerts/): Alert rules let your users say "tell me when the data does X" - and then act on it automatically: raise a toast, tint the row, flash the cell, block the edit, or just log it.
+- [Scheduling: automate exports and reminders](https://svgrid.com/docs/help/scheduling/): Two jobs turn up in almost every data app the moment it goes into daily use: *"email me this report every weekday at 17:30"* and *"remind the desk at 09:00 to reconcile."* The reflex is to stand...
+
+### Change review
+
+- [Change review - Enterprise](https://svgrid.com/docs/help/review/change-review/): An AI helper fills 900 empty cells, an agent cleans up a CRM export, an import updates 2,000 rows.
+
+### Enterprise tier
+
+- [Enterprise evaluation](https://svgrid.com/docs/enterprise/evaluation/): You can try every @svgrid/enterprise feature without a key. Install it and use it. Nothing is locked; the page shows a small watermark and logs a console message, and that is the only difference.
+- [Enterprise getting started: a complete example](https://svgrid.com/docs/enterprise/getting-started/): One page, one file, from an empty folder to a working grid with Excel, PDF and CSV export. Nothing is elided - every command and every line below was run end to end against the published packages.
+- [Enterprise licensing](https://svgrid.com/docs/enterprise/licensing/): You can evaluate @svgrid/enterprise without asking for a key. Loaded without a license key, the Enterprise module displays a watermark in the bottom-right corner of the grid and a console message...
+- [Enterprise support](https://svgrid.com/docs/enterprise/support/): What you get on each tier, what response time to expect, how to escalate.

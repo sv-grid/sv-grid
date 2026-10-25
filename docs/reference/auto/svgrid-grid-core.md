@@ -209,6 +209,83 @@ export type EditorContext<TData extends RowData> = CellContext<TData> & {
 }
 ```
 
+### `type CustomFilterContext`
+
+What a custom filter control receives, in the filter menu and in the
+floating filter row. The grid owns the model; the control reads `model`
+and writes it back through `setModel`.
+
+```ts
+export type CustomFilterContext<TData extends RowData, TModel = any> = {
+  column: Column<TData>
+  /** The column's current model, or `undefined` when none is set. */
+  model: TModel | undefined
+  /** Replace the model. `null` or `undefined` clears the filter. */
+  setModel: (next: TModel | null | undefined) => void
+  /**
+   * Which surface is rendering the control: the filter menu, the floating
+   * filter row, or the tool panel's Filters tab.
+   */
+  surface: 'menu' | 'floating' | 'panel'
+  /**
+   * The column's distinct values under every OTHER column's filter, the
+   * same list the menu's Values checklist shows. Computed on call, so a
+   * control that never asks pays nothing.
+   */
+  values: () => Array<string>
+  /** Close the filter menu. Does nothing on the other surfaces. */
+  close: () => void
+}
+```
+
+### `type CustomColumnFilter`
+
+A column filter whose state is your own model rather than an operator and
+a value: a range slider's `[min, max]`, a tag picker's `string[]`, a
+"last N days" count.
+
+The model lives in the grid (`api.setCustomFilter`, `getState().customFilters`)
+and is ANDed with the column's operator condition and its Values checklist,
+the same as those two are with each other. Keep it JSON-serializable if you
+save views.
+
+  customFilter: {
+    predicate: ([min, max]: [number, number]) => (value) =>
+      Number(value) >= min && Number(value) <= max,
+    menu: priceRange,      // a Snippet<[CustomFilterContext]>
+    floating: priceRange,
+  }
+
+```ts
+export type CustomColumnFilter<TData extends RowData, TModel = any> = {
+  /**
+   * Build the row test for a model. Runs once per filter change, not once
+   * per row, so parse dates or build sets here. The returned function gets
+   * the column's value and the row's data.
+   */
+  predicate: (model: TModel) => (value: unknown, row: TData) => boolean
+  /**
+   * Whether a model narrows anything. An inactive model is kept (the control
+   * still shows it) but filters nothing and lights no funnel. Default: not
+   * `null` / `undefined` / `''` / an empty array.
+   */
+  isActive?: (model: TModel) => boolean
+  /**
+   * The control in the filter menu and the tool panel's Filters tab, in
+   * place of the operator condition. A Svelte snippet taking a
+   * {@link CustomFilterContext}. Falls back to `floating` when omitted.
+   */
+  menu?: (context: CustomFilterContext<TData, TModel>) => unknown
+  /**
+   * The control in the floating filter row, in place of the operator button
+   * and input. Falls back to `menu` when omitted.
+   */
+  floating?: (context: CustomFilterContext<TData, TModel>) => unknown
+  /** Keep the Values checklist under the custom control in the menu. Default `true`. */
+  showValues?: boolean
+}
+```
+
 ### `type CellFormatConfig`
 
 Declarative cell formatting, applied through `Intl` - number, currency,
@@ -572,6 +649,13 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    */
   filterable?: boolean
   /**
+   * Replace the built-in filter condition with your own control and model.
+   * See {@link CustomColumnFilter}. Without `menu` or `floating` the column
+   * keeps the built-in UI and the model is set only through
+   * `api.setCustomFilter`.
+   */
+  customFilter?: CustomColumnFilter<TData>
+  /**
    * Options for `editorType: 'list' | 'chips'`. Either bare values (the
    * string is both value and label) or `{ value, label }` objects.
    * For `chips` this is optional - when omitted, the chips editor becomes
@@ -612,6 +696,14 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    * Blanks and anything not a number sort first, as in a number column.
    */
   sortValue?: (value: unknown) => number | null | undefined
+  /**
+   * Compare two of this column's values yourself, in place of the built-in
+   * order. `desc` is the direction being sorted; the grid reverses your result
+   * for a descending sort, so return the ascending order unless you want a
+   * value held at one end in both directions (`@svgrid/enterprise`'s
+   * `blanksLast` does that). `sortValue` wins over it.
+   */
+  sortComparator?: (a: unknown, b: unknown, desc: boolean) => number
   /**
    * Aggregate this column's values into the group row when grouping is
    * active. `'sum' | 'avg' | 'min' | 'max' | 'count' | 'countDistinct' |
@@ -1622,8 +1714,11 @@ export function createSortedRowModel<TData extends RowData>(
       // By the column's data type, not by what edits it: a number column
       // edited in a text box still sorts as numbers.
       const dataType = columnDataType(column.columnDef)
-      const comparator =
-        dataType === 'number'
+      // A column's own comparator takes the plain raw-value path below.
+      const custom = column.columnDef.sortComparator
+      const comparator = custom
+        ? (a: unknown, b: unknown) => custom(a, b, clause.desc)
+        : dataType === 'number'
           ? localSortFns.number
           : isDateDataType(dataType)
             ? localSortFns.date
@@ -2241,10 +2336,9 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
       // inline on every render (e.g. `columns={[...]}`). If the new
       // array has the same length AND each entry has the same `field` /
       // `id` / `header` (the visibility-affecting structure of a
-      // column), trust the previous build. Mutable inner fields like
-      // `cell` and `editorOptions` are still picked up on the next real
-      // render that bumps an actual data dep - they're read at cell-
-      // render time, not at this top-level cache.
+      // column), keep the previous build but point each column at its new
+      // definition, so a changed `cell`, `sortable` or `editorOptions`
+      // takes effect.
       if (
         cachedColumnsInput &&
         options.columns.length === cachedColumnsInput.length &&
@@ -2266,6 +2360,9 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
         // Update the stored input reference so the strict check hits
         // next time, but reuse the built column model.
         cachedColumnsInput = options.columns
+        // Only without groups: a group of one child also passes the length
+        // check, and its leaf must not take the group's definition.
+        if (!options.columns.some((c) => c.columns?.length)) cachedColumns.forEach((c, i) => (c.columnDef = options.columns[i]!))
         return cachedColumns
       }
 
@@ -2283,17 +2380,19 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
             leaves.push(...build(columnDef.columns, depth + 1, id))
             return
           }
-          leaves.push({
+          // The closures read `col.columnDef`, not the `columnDef` above: a
+          // soft cache hit repoints the column at a newer definition.
+          const col: Column<TData> = {
             id,
             depth,
             parentId,
             columnDef,
             getCanSort: () =>
               Boolean((options._features as any).rowSortingFeature) &&
-              columnDef.sortable !== false,
+              col.columnDef.sortable !== false,
             getCanFilter: () =>
               Boolean((options._features as any).columnFilteringFeature) &&
-              columnDef.filterable !== false,
+              col.columnDef.filterable !== false,
             getIsSorted: () => {
               const entry = store.state.sorting?.find((s: any) => s.id === id)
               if (!entry) return false
@@ -2310,7 +2409,8 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
               store.setState((prev) => ({ ...prev, sorting: nextClause }))
               options.onSortingChange?.(nextClause)
             },
-          })
+          }
+          leaves.push(col)
         })
         return leaves
       }

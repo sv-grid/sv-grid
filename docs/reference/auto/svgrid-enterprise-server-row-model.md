@@ -1592,7 +1592,11 @@ export function createServerRowModel<TData>(
     const previous = filterModel
     holdRows()
     filterModel = Array.isArray(next.columns)
-      ? { global: next.global, columns: toServerFilterColumns(next as GridFilterState) }
+      ? {
+          global: next.global,
+          columns: toServerFilterColumns(next as GridFilterState),
+          ...(next.custom ? { custom: next.custom } : {}),
+        }
       : (next as ServerFilterModel)
     if (!options.onlyRefreshFilteredGroups) return rebuild()
 

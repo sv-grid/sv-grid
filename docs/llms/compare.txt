@@ -1,0 +1,72 @@
+# Comparisons: SvGrid docs index
+
+> Part of https://svgrid.com/llms.txt. Each docs page has a markdown copy at its URL with the trailing slash replaced by `.md`.
+
+
+- [Which Svelte table library should I use?](https://svgrid.com/compare/): every comparison on one page, with when to choose each library.
+
+### SvGrid vs other data grids
+
+- [SvGrid vs AG Grid (community + enterprise)](https://svgrid.com/compare/ag-grid/): SvGrid vs AG Grid for Svelte 5: features AG Grid sells as Enterprise that SvGrid ships MIT, measured bundle sizes, benchmark timings and a migration guide.
+- [SvGrid vs Airtable](https://svgrid.com/compare/airtable/): Host an Airtable-style table database inside your own Svelte app: SvGrid Base vs Airtable on embedding, your own database, views, automations and pricing.
+- [SvGrid vs Baserow](https://svgrid.com/compare/baserow/): A table database inside your own Svelte app instead of a read-only Baserow iframe: SvGrid Base vs Baserow on embedding, views, your database and pricing.
+- [SvGrid vs DevExtreme DataGrid (DevExpress)](https://svgrid.com/compare/devextreme-datagrid/): DevExtreme is a deep, commercial multi-framework grid with strong vendor support. SvGrid is Svelte-5-native with an MIT core and a far lower-cost paid...
+- [SvGrid vs Glide Data Grid](https://svgrid.com/compare/glide-data-grid/): Glide wins on raw canvas FPS for hundreds of thousands of visible cells. SvGrid renders accessible, selectable DOM with virtualization and is...
+- [SvGrid vs Grid.js](https://svgrid.com/compare/gridjs/): Grid.js is a lovely lightweight pick for search / sort / paginate. SvGrid is the fuller, Svelte-native grid when you need virtualization, editing,...
+- [SvGrid vs Handsontable](https://svgrid.com/compare/handsontable/): A spreadsheet-style grid for Svelte 5 under MIT: cell ranges, fill handle, clipboard, formulas and freeze panes in SvGrid, compared with Handsontable.
+- [SvGrid vs jqxGrid (jQWidgets)](https://svgrid.com/compare/jqxgrid/): Same team, same engineering DNA. Choose jqxGrid for jQuery / Angular / React / Vue or a multi-framework codebase; choose SvGrid for a Svelte-5-native...
+- [SvGrid vs Kendo UI Grid (Telerik)](https://svgrid.com/compare/kendo-ui-grid/): Kendo is a polished enterprise suite with full vendor support - and a commercial license to match.
+- [SvGrid vs MUI X DataGrid](https://svgrid.com/compare/mui-x-datagrid/): Moving a MUI X DataGrid to Svelte 5: what SvGrid ships MIT that MUI X sells as Pro or Premium, measured bundle sizes, dated pricing, and a migration guide.
+- [SvGrid vs NocoDB](https://svgrid.com/compare/nocodb/): A table database inside your own Svelte app instead of a NocoDB iframe: SvGrid Base vs NocoDB on licence, embedding, views, automations and your Postgres.
+- [SvGrid vs PrimeVue / PrimeNG / PrimeReact DataTable](https://svgrid.com/compare/primevue-datatable/): Prime DataTable is the natural pick inside the Prime suites for Vue, Angular and React, and since PrimeVue 5 it is a commercial product with a...
+- [SvGrid vs React Data Grid (adazzle)](https://svgrid.com/compare/react-data-grid/): react-data-grid is a strong, lightweight React grid with great editing. SvGrid is the Svelte-5-native equivalent, with a similar feature set and no...
+- [SvGrid vs Smart.Grid (Smart Web Components)](https://svgrid.com/compare/smart-grid/): Same team again. Smart.Grid is a great framework-agnostic web component that even works inside Svelte; SvGrid is the runes-native option, with Svelte...
+- [SvGrid vs SVAR Svelte DataGrid](https://svgrid.com/compare/svar-svelte-datagrid/): SVAR Svelte DataGrid and SvGrid are both MIT and Svelte-5-native. Where they differ: grouping, master/detail, range editing, charts, a headless core.
+- [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/): svelte-headless-table is Svelte 4 only, with no Svelte 5 port planned. SvGrid keeps the headless approach on runes and adds a rendered grid. Facts, guide.
+- [SvGrid vs Flowbite / Skeleton / shadcn-svelte tables](https://svgrid.com/compare/svelte-ui-kit-tables/): UI-kit tables are perfect for small, mostly-static tables that match your design system. Reach for SvGrid the moment you need sorting, filtering,...
+- [SvGrid vs Syncfusion Grid](https://svgrid.com/compare/syncfusion-grid/): Syncfusion is an enormous commercial suite with a free community license for small teams. SvGrid is Svelte-5-native with an MIT core and no revenue /...
+- [SvGrid vs Tabulator](https://svgrid.com/compare/tabulator/): Tabulator is enormously capable and free, but it is vanilla JS you wire into Svelte imperatively.
+- [SvGrid vs TanStack Table (Svelte)](https://svgrid.com/compare/tanstack-table/): TanStack Table's Svelte adapter is headless by design; SvGrid keeps a headless core and adds a rendered grid with filters, editing and virtualization.
+- [SvGrid vs @vincjo/datatables](https://svgrid.com/compare/vincjo-datatables/): @vincjo/datatables is a great minimal pick when you want to keep your own table markup and just need sort / filter / paginate.
+
+### Which Svelte table library should I use?
+
+The short answer, taken from the "when to choose" lists on each comparison page below. Every library here is the right pick for some project.
+
+Pick SvGrid when:
+
+- You want a finished data grid component on Svelte 5: sorting, filtering, inline editing, grouping, paging and virtual scrolling, without building the table markup yourself.
+- The rows are many or come from a server: row and column virtualization, and a server data source for paging, sorting and filtering.
+- You want the same engine headless under your own markup, with the grid features above under MIT.
+
+Pick SVAR Svelte DataGrid when ([SvGrid vs SVAR Svelte DataGrid](https://svgrid.com/compare/svar-svelte-datagrid/)):
+
+- You want a fully free grid with print included and no paid tier at all.
+- You ship to React and Vue as well as Svelte and want one grid across them.
+- A smaller bundle matters more than grouping with aggregation, master/detail, range editing and the other features SvGrid adds.
+- You are already adopting the wider SVAR suite: Gantt, Calendar, Kanban, File Manager.
+
+Pick svelte-headless-table when ([SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/)):
+
+- You are staying on Svelte 4 for now and the plugin set already covers you.
+- You want the smallest possible engine and will keep writing the markup yourself.
+- You want the same plugin API on Svelte 5 and are happy to move to the @humanspeak fork.
+
+Pick @vincjo/datatables when ([SvGrid vs @vincjo/datatables](https://svgrid.com/compare/vincjo-datatables/)):
+
+- You only need sort / filter / paginate over a small dataset.
+- You want to keep full control of your own table markup.
+- You want the smallest possible bundle for a simple table.
+
+Pick Flowbite / Skeleton / shadcn-svelte tables when ([SvGrid vs Flowbite / Skeleton / shadcn-svelte tables](https://svgrid.com/compare/svelte-ui-kit-tables/)):
+
+- You render a small, static table that never sorts or filters.
+- You want a pixel-perfect match with your UI kit and nothing more.
+- Bundle size for a trivial table is the priority.
+
+Pick TanStack Table (Svelte) when ([SvGrid vs TanStack Table (Svelte)](https://svgrid.com/compare/tanstack-table/)):
+
+- You ship to multiple frameworks (React, Vue, Svelte) and want one API across them.
+- You explicitly want a headless library and intend to build your own render layer.
+- You want the smallest possible engine and the largest possible community.
+- A shadcn-svelte data table built on TanStack already does what you need.

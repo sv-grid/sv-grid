@@ -129,6 +129,11 @@ export function installEnterprise<
   // Register the Gantt view (no-op without the `gantt` prop).
   enableGanttView()
   enableSelectionBar()
+  // Relative date operators, cell-text checklist labels and the status-bar row
+  // count (each a no-op until a grid uses it).
+  enableRelativeDateFilters()
+  enableFilterLabels()
+  enableRowCount()
   // Register the export engine so built-in AI exports (aiExport) can write the
   // enterprise formats (xlsx / pdf / ...); free grids without it get the plan only.
   registerExportProvider(exportGrid as never)
@@ -136,8 +141,8 @@ export function installEnterprise<
   enableAdvancedFilter()
   // Register the Excel keymap (Ctrl+Arrow, Ctrl+D, Ctrl+A and the rest). The
   // grid interprets a key itself only when nothing claims it, so a free grid
-  // is unaffected.
-  enableSheet()
+  // is unaffected. No spreadsheet nudge: this app may only export or pivot.
+  registerSheetKeymap()
   // Raise the unlicensed nudge for the server-side row model. No registry to fill -
   // the model hands the grid ordinary rows - so this only nudges when unlicensed.
   enableServerRowModel()

@@ -7,9 +7,9 @@ see [the main reference index](../index.md).
 
 ## @svgrid/grid
 
-- [`@svgrid/grid/core.ts`](./svgrid-grid-core.md) - 68 exports
+- [`@svgrid/grid/core.ts`](./svgrid-grid-core.md) - 70 exports
 - [`@svgrid/grid/svgrid-wrapper.types.ts`](./svgrid-grid-svgrid-wrapper.types.md) - 10 exports
-- [`@svgrid/grid/ai.ts`](./svgrid-grid-ai.md) - 34 exports
+- [`@svgrid/grid/ai.ts`](./svgrid-grid-ai.md) - 42 exports
 - [`@svgrid/grid/scheduler-model.ts`](./svgrid-grid-scheduler-model.md) - 30 exports
 - [`@svgrid/grid/dock-model.ts`](./svgrid-grid-dock-model.md) - 25 exports
 - [`@svgrid/grid/dock-manager-model.ts`](./svgrid-grid-dock-manager-model.md) - 32 exports
@@ -29,7 +29,7 @@ see [the main reference index](../index.md).
 - [`@svgrid/grid/chart-motion.ts`](./svgrid-grid-chart-motion.md) - 1 exports
 - [`@svgrid/grid/chart-sync.svelte.ts`](./svgrid-grid-chart-sync.svelte.md) - 4 exports
 - [`@svgrid/grid/chart-indicators.ts`](./svgrid-grid-chart-indicators.md) - 14 exports
-- [`@svgrid/grid/chart-export-pdf.ts`](./svgrid-grid-chart-export-pdf.md) - 3 exports
+- [`@svgrid/grid/chart-export-pdf.ts`](./svgrid-grid-chart-export-pdf.md) - 5 exports
 - [`@svgrid/grid/chart-samples.ts`](./svgrid-grid-chart-samples.md) - 3 exports
 - [`@svgrid/grid/SvGridChart.types.ts`](./svgrid-grid-SvGridChart.types.md) - 10 exports
 - [`@svgrid/grid/createTree.svelte.ts`](./svgrid-grid-createTree.svelte.md) - 12 exports
@@ -53,7 +53,7 @@ see [the main reference index](../index.md).
 - [`@svgrid/grid/positioning.ts`](./svgrid-grid-positioning.md) - 10 exports
 - [`@svgrid/grid/toast-store.svelte.ts`](./svgrid-grid-toast-store.svelte.md) - 14 exports
 - [`@svgrid/grid/spreadsheet.ts`](./svgrid-grid-spreadsheet.md) - 7 exports
-- [`@svgrid/grid/chart-export.ts`](./svgrid-grid-chart-export.md) - 7 exports
+- [`@svgrid/grid/chart-export.ts`](./svgrid-grid-chart-export.md) - 8 exports
 - [`@svgrid/grid/scheduler-ical.ts`](./svgrid-grid-scheduler-ical.md) - 5 exports
 - [`@svgrid/grid/duration.ts`](./svgrid-grid-duration.md) - 2 exports
 - [`@svgrid/grid/datetime/date-core.ts`](./svgrid-grid-date-core.md) - 22 exports
@@ -67,12 +67,21 @@ see [the main reference index](../index.md).
 
 ## @svgrid/enterprise
 
-- [`@svgrid/enterprise/export.ts`](./svgrid-enterprise-export.md) - 17 exports
+- [`@svgrid/enterprise/export.ts`](./svgrid-enterprise-export.md) - 20 exports
 - [`@svgrid/enterprise/pivot.ts`](./svgrid-enterprise-pivot.md) - 10 exports
 - [`@svgrid/enterprise/pivot-chart.ts`](./svgrid-enterprise-pivot-chart.md) - 2 exports
-- [`@svgrid/enterprise/import.ts`](./svgrid-enterprise-import.md) - 13 exports
+- [`@svgrid/enterprise/import.ts`](./svgrid-enterprise-import.md) - 16 exports
 - [`@svgrid/enterprise/install.ts`](./svgrid-enterprise-install.md) - 4 exports
 - [`@svgrid/enterprise/server/server-row-model.ts`](./svgrid-enterprise-server-row-model.md) - 19 exports
 - [`@svgrid/enterprise/server/server-selection.ts`](./svgrid-enterprise-server-selection.md) - 6 exports
 - [`@svgrid/enterprise/server/server-pivot.ts`](./svgrid-enterprise-server-pivot.md) - 2 exports
 - [`@svgrid/enterprise/server/svgrid-adapter.ts`](./svgrid-enterprise-svgrid-adapter.md) - 16 exports
+- [`@svgrid/enterprise/review/model.svelte.ts`](./svgrid-enterprise-review-model.svelte.md) - 8 exports
+- [`@svgrid/enterprise/review/types.ts`](./svgrid-enterprise-review-types.md) - 7 exports
+- [`@svgrid/enterprise/review/agent.ts`](./svgrid-enterprise-review-agent.md) - 4 exports
+- [`@svgrid/enterprise/review/adapters.ts`](./svgrid-enterprise-review-adapters.md) - 8 exports
+- [`@svgrid/enterprise/review/cluster.ts`](./svgrid-enterprise-review-cluster.md) - 3 exports
+- [`@svgrid/enterprise/review/equal.ts`](./svgrid-enterprise-review-equal.md) - 2 exports
+- [`@svgrid/enterprise/review/messages.ts`](./svgrid-enterprise-review-messages.md) - 2 exports
+- [`@svgrid/enterprise/review/formats.ts`](./svgrid-enterprise-review-formats.md) - 5 exports
+- [`@svgrid/enterprise/review/ghost.ts`](./svgrid-enterprise-review-ghost.md) - 1 exports
