@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-10-25T12:14:45.393Z",
+  "generatedAt": "2026-10-25T12:30:28.109Z",
   "counts": {
     "pages": 462,
     "enterprise": 107,
@@ -4365,12 +4365,12 @@
       "path": "help/rows/row-pagination.md",
       "url": "/docs/help/rows/row-pagination/",
       "title": "Row pagination",
-      "summary": "Pagination is opt-in. Register the feature, register the row model, then either turn it on with showPagination or drive its state from outside.",
+      "summary": "Pagination is opt-in: pageable turns it on (the longer showPagination does the same) and pageSize sets the slice. <SvGrid> pages its rows itself, so there is nothing else to register. rowPaginationFeature and createPaginatedRowModel are for the headless engine, where the row model goes in _rowModels.paginatedRowModel of createSvGridCore (see Row models); <SvGrid> has no options prop to pass them through.",
       "section": "help/rows",
       "pillar": "grid",
       "tier": "community",
-      "words": 528,
-      "lastUpdated": "2026-09-18",
+      "words": 545,
+      "lastUpdated": "2026-10-25",
       "demoIds": [
         "02-sort-filter-paginate"
       ]

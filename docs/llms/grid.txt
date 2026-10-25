@@ -134,7 +134,7 @@
 - [Row data](https://svgrid.com/docs/help/rows/row-data/): Row data is whatever you pass to <SvGrid data={...}>. It is a ReadonlyArray<TData> where TData is your row type. Any shape works; the grid does not require a base class or interface.
 - [Row dragging](https://svgrid.com/docs/help/rows/row-dragging/): Managed row dragging lets users reorder rows within a grid and move rows between grids. Turn on rowDragManaged and every row can be dragged by its row-number cell (a grip shows while the pointer...
 - [Row height](https://svgrid.com/docs/help/rows/row-height/): Row height is a single integer in pixels.
-- [Row pagination](https://svgrid.com/docs/help/rows/row-pagination/): Pagination is opt-in. Register the feature, register the row model, then either turn it on with showPagination or drive its state from outside.
+- [Row pagination](https://svgrid.com/docs/help/rows/row-pagination/): Pagination is opt-in: pageable turns it on (the longer showPagination does the same) and pageSize sets the slice. <SvGrid> pages its rows itself, so there is nothing else to register.
 - [Row pinning (top / bottom)](https://svgrid.com/docs/help/rows/row-pinning/): Pin specific rows to the top or bottom of the grid so they stay visible while the rest of the data scrolls. Typical use cases:
 - [Row sorting](https://svgrid.com/docs/help/rows/row-sorting/): Sorting is a feature you opt into. Try it live - click any column header to cycle none → asc → desc → none; shift-click adds the column to the sort key list (multi-sort):
 - [Row spanning](https://svgrid.com/docs/help/rows/row-spanning/): "Row spanning" lets one cell's content cover multiple rows, the way a merged cell does in a spreadsheet.
