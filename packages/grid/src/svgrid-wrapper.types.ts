@@ -1,4 +1,4 @@
-﻿import type { CellFormatConfig, ColumnDef, RowData, SvGridOptions, TableFeatures } from './core'
+﻿import type { CellFormatConfig, ColumnDef, GroupAggregator, RowData, SvGridOptions, TableFeatures } from './core'
 // Type-only import (the reverse of SvGrid.types importing SvGridApi); TS resolves the
 // type-level cycle. Backs the generic key/value typing of `setOption` / `getOption`.
 import type { FilterOperator, Props } from './SvGrid.types'
@@ -495,6 +495,9 @@ export type SvGridApi<
     cellDataType?: 'text' | 'number' | 'boolean' | 'date' | 'dateString'
     /** The column's `editorType`, when set: what edits it. */
     editorType?: string
+    /** The column's group `aggregate`, when set, so an export's subtotals
+     *  match the group rows on screen. */
+    aggregate?: GroupAggregator<TData>
   }>
 
   // ----- Free data export (CSV / TSV / JSON + clipboard) -----
