@@ -42,7 +42,7 @@ financial statements) go to sales@jqwidgets.com.
 | Question | Answer |
 | --- | --- |
 | How is code tested before release? | Every push to `main` runs the Test workflow (`.github/workflows/test.yml`): type checks of every package, lint, the grid and Enterprise unit suites, browser specs in Chromium, bundle-size budgets and SBOM drift. The release workflow (`.github/workflows/publish-npm.yml`) runs when a push to `main` finishes its Test run green, and publishes that commit; there is no scheduled publish. A manual run is the maintainer's override. |
-| Security-relevant tests | HTML sanitization of cell content (`sanitize-html.test.ts`); formula injection in CSV, TSV and chart CSV exports (`csv-injection.test.ts`); crafted .xlsx files that address cells far outside the sheet (`import-xlsx-limits.dom.test.ts`); LIMIT and OFFSET rejected unless they are non-negative integers in the SvelteKit SQL data source (`sql-source.test.ts`); and the accessibility suites. |
+| Security-relevant tests | HTML sanitization of cell content (`sanitize-html.test.ts`); formula injection in CSV, TSV and chart CSV exports (`csv-injection.test.ts`); crafted .xlsx files that address cells far outside the sheet (`import-xlsx-limits.dom.test.ts`) or unzip to far more than they weigh (`xlsx-zip-bomb.dom.test.ts`); LIMIT and OFFSET rejected unless they are non-negative integers in the SvelteKit SQL data source (`sql-source.test.ts`); and the accessibility suites. |
 | CSV / formula injection | File exports prefix text that a spreadsheet would run as a formula (`=`, `+`, `-`, `@`, tab, carriage return) with `'`, by default. See [export](../help/export.md). |
 | Can a version change after release? | No. npm does not allow a published version to be overwritten. |
 

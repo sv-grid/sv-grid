@@ -18,6 +18,7 @@ import { tokenize, type TableRefToken } from './tokenize'
 import { formatKeyAt, type CellFormatEntry } from './format-store'
 import type { SheetDocument, SheetState, SheetStateEntry } from './document'
 import { linkAt, type LinksMap } from './links'
+import { createUnzipBudget, readZipEntry } from '../xlsx-limits'
 import { threadAt, type CommentsMap } from './comments'
 import type { Rect } from './rects'
 import { loadZip, type ZipCtor } from './xlsx-document'
@@ -659,13 +660,14 @@ function durationSeconds(text: string): number | null {
 export async function documentFromOds(file: Blob | ArrayBuffer | Uint8Array, JSZip?: ZipCtor): Promise<SheetState> {
   const Zip = await loadZip(JSZip)
   const zip = await Zip.loadAsync(file)
+  const budget = createUnzipBudget()
   const parts: Record<string, string> = {}
   const pending: Array<Promise<void>> = []
   zip.forEach((path, entry) => {
     if (entry.dir) return
     if (!/\.(xml)$/i.test(path)) return
     const clean = path.replace(/^\//, '')
-    pending.push(entry.async('string').then((text) => { parts[clean] = text }))
+    pending.push(readZipEntry(entry, 'string', budget).then((text) => { parts[clean] = text }))
   })
   await Promise.all(pending)
   return sheetStateFromOds(parts)

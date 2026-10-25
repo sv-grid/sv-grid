@@ -15,6 +15,7 @@ import { sheetStateFromOds } from './ods-document'
 import { sheetStateFromCsv } from './csv'
 import { isXlsFile, sheetStateFromXls } from './xls-document'
 import type { SheetState } from './document'
+import { createUnzipBudget, readZipEntry } from '../xlsx-limits'
 
 /** A picture travels as the data URL the document holds, as in the xlsx reader. */
 const MEDIA_PREFIX = 'xl/media/'
@@ -38,17 +39,18 @@ export async function readSpreadsheetFile(
   }
   const Zip = await loadZip(JSZip)
   const zip = await Zip.loadAsync(file)
+  const budget = createUnzipBudget()
   const parts: Record<string, string> = {}
   const pending: Array<Promise<void>> = []
   zip.forEach((path, entry) => {
     if (entry.dir) return
     const clean = path.replace(/^\//, '')
     if (clean.startsWith(MEDIA_PREFIX)) {
-      pending.push(entry.async('base64').then((base64) => { parts[clean] = `data:${mediaTypeOf(clean)};base64,${base64}` }))
+      pending.push(readZipEntry(entry, 'base64', budget).then((base64) => { parts[clean] = `data:${mediaTypeOf(clean)};base64,${base64}` }))
       return
     }
     if (!/\.(xml|rels|vml)$/i.test(clean)) return
-    pending.push(entry.async('string').then((text) => { parts[clean] = text }))
+    pending.push(readZipEntry(entry, 'string', budget).then((text) => { parts[clean] = text }))
   })
   await Promise.all(pending)
   if (parts['content.xml'] && !parts['xl/workbook.xml']) return { state: sheetStateFromOds(parts), kind: 'ods' }

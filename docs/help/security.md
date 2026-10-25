@@ -60,7 +60,7 @@ Every observable side effect, mapped:
 | `<SvGrid>` mount                     | Sets up `requestAnimationFrame`, `ResizeObserver`, and DOM event listeners on the grid container. |
 | Inline editing                       | Reads + writes `document` selection; commits via your `onCellValueChange`. |
 | Export to xlsx / pdf / csv / tsv / html | Creates a `Blob` and triggers a download via a synthetic `<a download>`. No network. CSV and TSV prefix formula-like text with `'` so a spreadsheet does not run it ([export](./export.md)). |
-| Import from xlsx / csv / tsv / json  | Reads the user-provided `File` via `arrayBuffer()` / `text()`. No network. An .xlsx cell addressed outside the sheet (past column XFD) is rejected, and so is a sheet that would need more than ten million blank cells to lay out, so a crafted file cannot exhaust memory. |
+| Import from xlsx / csv / tsv / json  | Reads the user-provided `File` via `arrayBuffer()` / `text()`. No network. An .xlsx cell addressed outside the sheet (past column XFD) is rejected, and so is a sheet that would need more than ten million blank cells to lay out. An .xlsx or .ods is unzipped as a stream and refused once its parts pass 256 MB together, so a zip bomb never lands in memory. A crafted file cannot exhaust memory either way. |
 | Print                                | Opens a sandbox popup window with an isolated HTML document and calls its `print()`. |
 | AI helpers                           | Build a prompt locally and call the consumer-registered `AIProvider`. The grid itself never opens a connection. |
 | License key check                    | A 4-line string-prefix check against an in-memory revoked-key set. No network. |

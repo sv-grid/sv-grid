@@ -26,7 +26,7 @@
 
 import type { RowData, SvGridApi, TableFeatures } from '@svgrid/grid'
 import { assertEnterpriseLicensed } from './license'
-import { XLSX_MAX_COLS, XLSX_MAX_FILL, xlsxFillError, xlsxRangeError } from './xlsx-limits'
+import { createUnzipBudget, readZipEntry, XLSX_MAX_COLS, XLSX_MAX_FILL, xlsxFillError, xlsxRangeError } from './xlsx-limits'
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -328,12 +328,13 @@ async function parseXlsx(file: File | Blob): Promise<string[][]> {
   const J = await getJSZip()
   const buf = await (file as Blob).arrayBuffer()
   const zip = await J.loadAsync(buf)
+  const budget = createUnzipBudget()
 
   // Read sharedStrings.xml if it exists.
   let sharedStrings: string[] = []
   const ssEntry = zip.file('xl/sharedStrings.xml')
   if (ssEntry) {
-    const ssText = await ssEntry.async('string')
+    const ssText = await readZipEntry(ssEntry, 'string', budget)
     sharedStrings = parseSharedStrings(ssText)
   }
 
@@ -347,7 +348,7 @@ async function parseXlsx(file: File | Blob): Promise<string[][]> {
       '@svgrid/enterprise: could not locate sheet1.xml in the .xlsx archive',
     )
   }
-  const sheetText = await sheetEntry.async('string')
+  const sheetText = await readZipEntry(sheetEntry, 'string', budget)
   return parseSheetXml(sheetText, sharedStrings)
 }
 

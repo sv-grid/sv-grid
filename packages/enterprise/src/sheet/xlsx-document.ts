@@ -41,7 +41,7 @@ import { drawingPartsFor, objectsFromDrawing, rectOfRef, REL_DRAWING } from './x
 import { objectId } from './objects'
 import { sparklineLines, sparklineId, type SparklineGroup } from './sparklines'
 import { autoFilterXlsx, filteredRows, filtersFromXlsx } from './filter-files'
-import { XLSX_MAX_COLS, XLSX_MAX_FILL, XLSX_MAX_ROWS, xlsxFillError } from '../xlsx-limits'
+import { createUnzipBudget, readZipEntry, XLSX_MAX_COLS, XLSX_MAX_FILL, XLSX_MAX_ROWS, xlsxFillError, type ZipEntryLike } from '../xlsx-limits'
 
 // ---------------------------------------------------------------------------
 // Shared pieces
@@ -1696,7 +1696,7 @@ export function documentFromXlsxParts(parts: Record<string, string>): SheetState
 
 export type ZipCtor = {
   new (): { file(path: string, data: string, options?: { base64?: boolean; compression?: 'STORE' | 'DEFLATE' }): void; generateAsync(opts: { type: 'blob'; mimeType?: string }): Promise<Blob> }
-  loadAsync(data: ArrayBuffer | Blob | Uint8Array): Promise<{ file(path: string): { async(type: 'string' | 'base64'): Promise<string> } | null; forEach(fn: (path: string, entry: { dir: boolean; async(type: 'string' | 'base64'): Promise<string> }) => void): void }>
+  loadAsync(data: ArrayBuffer | Blob | Uint8Array): Promise<{ file(path: string): { async(type: 'string' | 'base64'): Promise<string> } | null; forEach(fn: (path: string, entry: ZipEntryLike & { dir: boolean }) => void): void }>
 }
 
 /**
@@ -1753,6 +1753,7 @@ export async function documentToXlsx(doc: SheetDocument, JSZip?: ZipCtor): Promi
 export async function documentFromXlsx(file: Blob | ArrayBuffer | Uint8Array, JSZip?: ZipCtor): Promise<SheetState> {
   const Zip = await loadZip(JSZip)
   const zip = await Zip.loadAsync(file)
+  const budget = createUnzipBudget()
   const parts: Record<string, string> = {}
   const pending: Array<Promise<void>> = []
   zip.forEach((path, entry) => {
@@ -1761,11 +1762,11 @@ export async function documentFromXlsx(file: Blob | ArrayBuffer | Uint8Array, JS
     // A picture comes back as the data URL an image object holds, so the
     // rest of the reader never has to think about bytes.
     if (clean.startsWith(MEDIA_PREFIX)) {
-      pending.push(entry.async('base64').then((base64) => { parts[clean] = `data:${mediaTypeOf(clean)};base64,${base64}` }))
+      pending.push(readZipEntry(entry, 'base64', budget).then((base64) => { parts[clean] = `data:${mediaTypeOf(clean)};base64,${base64}` }))
       return
     }
     if (!/\.(xml|rels|vml)$/i.test(path)) return
-    pending.push(entry.async('string').then((text) => { parts[clean] = text }))
+    pending.push(readZipEntry(entry, 'string', budget).then((text) => { parts[clean] = text }))
   })
   await Promise.all(pending)
   return documentFromXlsxParts(parts)
