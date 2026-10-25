@@ -122229,6 +122229,18 @@ For machine-readable releases, fetch
   `width` / `height`, `ariaLabel`, and the shared field-contract on
   `SvFileUpload`).
 
+### @svgrid/mcp
+
+#### Changed
+
+- **A cold `npx -y @svgrid/mcp` installs 20 packages instead of 111.** The
+  server speaks MCP over stdio itself instead of through
+  `@modelcontextprotocol/sdk`, whose HTTP and OAuth dependencies (Express, Hono,
+  JOSE, AJV) a stdio server never runs. On an empty npm cache the install took
+  6 to 8 seconds instead of 12, which had left little room under an MCP client's
+  30 second connect timeout. The protocol is unchanged: version negotiation,
+  errors and every tool, resource and prompt answer as before.
+
 ## [1.0.0] - 2026-06-16
 
 Initial public release - the Svelte 5-native data grid: `@svgrid/grid`
