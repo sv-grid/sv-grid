@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:dbf3941a-6527-40a7-afdf-7f988e900295",
+  "serialNumber": "urn:uuid:5e87de3a-e6a8-415c-a36f-44cf0795b196",
   "version": 1,
   "metadata": {
     "tools": {
@@ -16,10 +16,10 @@
     },
     "component": {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/enterprise@3.1.26",
+      "bom-ref": "pkg:npm/%40svgrid/enterprise@3.1.27",
       "name": "@svgrid/enterprise",
-      "version": "3.1.26",
-      "purl": "pkg:npm/%40svgrid/enterprise@3.1.26",
+      "version": "3.1.27",
+      "purl": "pkg:npm/%40svgrid/enterprise@3.1.27",
       "scope": "required",
       "licenses": [
         {
@@ -122,7 +122,7 @@
   ],
   "dependencies": [
     {
-      "ref": "pkg:npm/%40svgrid/enterprise@3.1.26",
+      "ref": "pkg:npm/%40svgrid/enterprise@3.1.27",
       "dependsOn": [
         "pkg:npm/%40svgrid/grid@3.0.23",
         "pkg:npm/jszip@3.10.1",
