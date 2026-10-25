@@ -26819,6 +26819,33 @@ result rather than the first rows of your array.
 <SvGrid data={people} {columns} pageable pageSize={2} sortable filterable />
 ```
 
+## Go to the page a row is on
+
+`api.getRowPosition(id)` is where a row sits in the filtered, sorted rows
+across every page, or `null` when a filter hides it. Divide by the page size
+and `api.setPage` turns to that page, whatever order the user has sorted
+into. The id is the one `getRowId` returns. With grouping, pages are counted
+in groups and the division does not hold.
+
+```svelte {runnable}
+<script lang="ts">
+  import { SvGrid, type SvGridApi } from '@svgrid/grid'
+
+  let api = $state<SvGridApi<{}, Person> | null>(null)
+
+  function showRow(id: string) {
+    const position = api?.getRowPosition(id)
+    if (api && position != null) api.setPage(Math.floor(position / api.getPageInfo().pageSize))
+  }
+</script>
+
+<button onclick={() => showRow('4')}>Show Radia Perlman</button>
+<SvGrid data={people} {columns} pageable pageSize={2} sortable getRowId={(r) => String(r.id)} onApiReady={(next) => (api = next)} />
+```
+
+`api.getPageInfo()` also returns `pageIndex` and `pageCount`, and
+`api.setPageSize(n)` changes the slice from code.
+
 ## See also
 
 - [Server-side guide](../../getting-started.md#11-server-side-data)
