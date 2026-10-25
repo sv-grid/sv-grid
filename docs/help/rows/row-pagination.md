@@ -1,7 +1,12 @@
 # Row pagination
 
-Pagination is opt-in. Register the feature, register the row model, then
-either turn it on with `showPagination` or drive its state from outside.
+Pagination is opt-in: `pageable` turns it on (the longer `showPagination`
+does the same) and `pageSize` sets the slice. `<SvGrid>` pages its rows
+itself, so there is nothing else to register. `rowPaginationFeature` and
+`createPaginatedRowModel` are for the headless engine, where the row model
+goes in `_rowModels.paginatedRowModel` of `createSvGridCore` (see
+[Row models](../headless/row-models.md)); `<SvGrid>` has no `options` prop
+to pass them through.
 <div data-docs-demo="02-sort-filter-paginate" data-height="540"></div>
 
 The examples on this page run against these rows:
@@ -43,16 +48,7 @@ The examples on this page run against these rows:
 ```
 
 ```svelte {runnable}
-<script lang="ts">
-  import {
-    SvGrid, tableFeatures,
-    rowPaginationFeature, createPaginatedRowModel,
-  } from '@svgrid/grid'
-
-  const features = tableFeatures({ rowPaginationFeature })
-</script>
-
-<SvGrid {data} {columns} features={features} showPagination={true} />
+<SvGrid {data} {columns} pageable />
 ```
 
 The wrapper renders a footer with page nav and a page-size selector.
