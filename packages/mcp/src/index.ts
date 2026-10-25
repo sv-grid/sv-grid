@@ -19,16 +19,9 @@
  */
 
 import { createRequire } from 'node:module'
-import { Server } from '@modelcontextprotocol/sdk/server/index.js'
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
-import {
-  CallToolRequestSchema,
-  GetPromptRequestSchema,
-  ListPromptsRequestSchema,
-  ListResourcesRequestSchema,
-  ListToolsRequestSchema,
-  ReadResourceRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js'
+// Our own stdio transport, not @modelcontextprotocol/sdk: the SDK's HTTP and
+// OAuth dependencies were most of a cold npx install (see stdio-server.ts).
+import { StdioMcpServer } from './stdio-server.js'
 import type { ToolResult } from './core-tools.js'
 import { CORE_TOOLS, PREVIEW_TOOL } from './tool-defs.js'
 import { PROMPTS, getPrompt } from './prompts.js'
@@ -148,7 +141,7 @@ const pkgVersion = (() => {
   }
 })()
 
-const server = new Server(
+const server = new StdioMcpServer(
   { name: '@svgrid/mcp', version: pkgVersion },
   {
     // Tools alone was half the protocol. The corpus is a natural fit for
@@ -208,7 +201,7 @@ async function listedTools() {
   return tools
 }
 
-server.setRequestHandler(ListToolsRequestSchema, async () => {
+server.setRequestHandler('tools/list', async () => {
   const tools = await listedTools()
   // Warm the corpus once this reply is on the wire, so its first load overlaps
   // the model choosing a tool rather than the first call.
@@ -218,11 +211,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 
 // ---- resources ------------------------------------------------------------
 
-server.setRequestHandler(ListResourcesRequestSchema, async (req) =>
+server.setRequestHandler('resources/list', async (req) =>
   (await corpus()).resources.listResources(req.params?.cursor),
 )
 
-server.setRequestHandler(ReadResourceRequestSchema, async (req) => {
+server.setRequestHandler('resources/read', async (req) => {
   const { preview, resources } = await corpus()
   const found = preview.readPreviewResource(req.params.uri) ?? resources.readResource(req.params.uri)
   if (!found) throw new Error(`No SvGrid resource at "${req.params.uri}".`)
@@ -231,9 +224,9 @@ server.setRequestHandler(ReadResourceRequestSchema, async (req) => {
 
 // ---- prompts --------------------------------------------------------------
 
-server.setRequestHandler(ListPromptsRequestSchema, async () => ({ prompts: PROMPTS }))
+server.setRequestHandler('prompts/list', async () => ({ prompts: PROMPTS }))
 
-server.setRequestHandler(GetPromptRequestSchema, async (req) => {
+server.setRequestHandler('prompts/get', async (req) => {
   const found = getPrompt(req.params.name, (req.params.arguments ?? {}) as Record<string, unknown>)
   if (!found) throw new Error(`No SvGrid prompt named "${req.params.name}".`)
   return found
@@ -355,8 +348,10 @@ const LEGACY_TARGET: Record<string, string> = {
   get_api_reference: 'svgrid_get',
 }
 
-server.setRequestHandler(CallToolRequestSchema, async (req) => {
+server.setRequestHandler('tools/call', async (req) => {
   const { name, arguments: rawArgs } = req.params
+  // As the SDK answered it: a call that names no tool is invalid params.
+  if (typeof name !== 'string') throw Object.assign(new Error('Invalid params: tools/call needs a tool name'), { code: -32602 })
   const args = (rawArgs ?? {}) as Record<string, unknown>
   const [{ core: coreTools, preview }] = await Promise.all([corpus(), loadStudio()])
 
@@ -417,13 +412,12 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
 })
 
 async function main() {
-  // Connect and nothing else: `initialize` is answered by the SDK and needs
-  // neither the corpus nor enterprise. They load on the first request that
+  // Connect and nothing else: `initialize` is answered by the transport and
+  // needs neither the corpus nor enterprise. They load on the first request that
   // does (normally tools/list). Loading them eagerly after connect did not
   // help: the first read of the 12 MB corpus held the event loop for seconds,
   // and the initialize reply waited behind it.
-  const transport = new StdioServerTransport()
-  await server.connect(transport)
+  server.connect()
   process.stderr.write(`@svgrid/mcp ${pkgVersion} on stdio\n`)
 }
 

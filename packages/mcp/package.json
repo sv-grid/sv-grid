@@ -40,9 +40,7 @@
     "lint": "eslint ./src"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.4",
-    "svelte": "^5.55.5",
-    "zod": "^3.23.8"
+    "svelte": "^5.55.5"
   },
   "peerDependencies": {
     "@svgrid/enterprise": "workspace:^"

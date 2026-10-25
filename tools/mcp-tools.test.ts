@@ -1030,3 +1030,66 @@ describe.skipIf(!hasDist)('studio_apply rejects a mis-shaped schema early', () =
     expect(res?.isError, (res?.content ?? []).map((c) => c.text).join('')).toBeFalsy()
   })
 })
+
+// ---- the stdio transport (packages/mcp/src/stdio-server.ts) -----------------
+// The server answers MCP itself instead of through @modelcontextprotocol/sdk,
+// whose HTTP and OAuth dependencies made up most of a cold npx install. These
+// pin the parts of the protocol the SDK used to answer for it.
+describe('the stdio transport', () => {
+  const load = async () => {
+    const { StdioMcpServer, LATEST_PROTOCOL_VERSION } = await import('../packages/mcp/src/stdio-server')
+    const server = new StdioMcpServer({ name: 't', version: '1' }, { capabilities: { tools: {} } })
+    server.setRequestHandler('tools/list', async () => ({ tools: [] }))
+    server.setRequestHandler('boom', async () => {
+      throw new Error('it broke')
+    })
+    server.setRequestHandler('coded', async () => {
+      throw Object.assign(new Error('bad args'), { code: -32602 })
+    })
+    return { server, LATEST_PROTOCOL_VERSION }
+  }
+
+  it('negotiates the protocol version as the SDK did', async () => {
+    const { server, LATEST_PROTOCOL_VERSION } = await load()
+    const known = (await server.handle({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18' } })) as any
+    expect(known.result).toMatchObject({ protocolVersion: '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 't', version: '1' } })
+    const unknown = (await server.handle({ jsonrpc: '2.0', id: 2, method: 'initialize', params: { protocolVersion: '1999-01-01' } })) as any
+    expect(unknown.result.protocolVersion).toBe(LATEST_PROTOCOL_VERSION)
+  })
+
+  it('answers ping, routes a request, and reports unknown methods and thrown errors', async () => {
+    const { server } = await load()
+    expect(await server.handle({ jsonrpc: '2.0', id: 1, method: 'ping' })).toEqual({ jsonrpc: '2.0', id: 1, result: {} })
+    expect(await server.handle({ jsonrpc: '2.0', id: 'a', method: 'tools/list' })).toEqual({ jsonrpc: '2.0', id: 'a', result: { tools: [] } })
+    expect(((await server.handle({ jsonrpc: '2.0', id: 3, method: 'nope' })) as any).error.code).toBe(-32601)
+    expect(((await server.handle({ jsonrpc: '2.0', id: 4, method: 'boom' })) as any).error).toEqual({ code: -32603, message: 'it broke' })
+    expect(((await server.handle({ jsonrpc: '2.0', id: 5, method: 'coded' })) as any).error.code).toBe(-32602)
+  })
+
+  it('never answers a notification', async () => {
+    const { server } = await load()
+    expect(await server.handle({ jsonrpc: '2.0', method: 'notifications/initialized' })).toBeNull()
+    expect(await server.handle({ jsonrpc: '2.0', method: 'tools/list' })).toBeNull()
+  })
+
+  it.skipIf(!hasDist)('the built server: a tools/call without a name is invalid params, and a bad line is a parse error', async () => {
+    const child = spawn(process.execPath, [SERVER], { stdio: ['pipe', 'pipe', 'ignore'] })
+    const replies: Array<Record<string, any>> = []
+    let buf = ''
+    child.stdout.on('data', (d) => {
+      buf += d
+      let nl
+      while ((nl = buf.indexOf('\n')) !== -1) {
+        replies.push(JSON.parse(buf.slice(0, nl)))
+        buf = buf.slice(nl + 1)
+      }
+    })
+    child.stdin.write('{not json\n')
+    child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 9, method: 'tools/call', params: {} }) + '\n')
+    const deadline = Date.now() + 20_000
+    while (replies.length < 2 && Date.now() < deadline) await new Promise((r) => setTimeout(r, 50))
+    child.kill()
+    expect(replies.find((r) => r.id === null)?.error.code).toBe(-32700)
+    expect(replies.find((r) => r.id === 9)?.error.code).toBe(-32602)
+  }, 30_000)
+})
