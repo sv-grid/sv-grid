@@ -136,6 +136,10 @@ Not tied to a single criterion, and on the list for remediation:
   through `localization.text`.
 - No browser test yet for RTL on the plain grid (the sheet has one).
 - No screen-reader pass recorded (see *Known limits*).
+- PDF exports are not tagged PDF (PDF/UA): the renderer, pdfmake, writes no
+  structure tree, so a screen reader reads a PDF table as loose text. Exports
+  to XLSX and HTML keep the table structure; offer one of those where an
+  accessible document is required.
 
 ## Revised Section 508
 

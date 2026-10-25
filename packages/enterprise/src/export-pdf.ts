@@ -154,7 +154,114 @@ export type PdfExportOptions = {
    * read.
    */
   matchTheme?: boolean
+  /**
+   * What to do when the columns do not fit across the page.
+   * - `'auto'` (default): shrink the table text, down to three quarters of
+   *   `fontSize`; past that, split the columns over several pages.
+   * - `'shrink'`: only shrink, down to 4 pt.
+   * - `'split'`: only split.
+   * - `'none'`: leave it to pdfmake, which lets a wide table run off the page.
+   */
+  fit?: 'auto' | 'shrink' | 'split' | 'none'
+  /** When the columns are split over pages, how many leading columns repeat on every page. Default 1. */
+  repeatColumns?: number
+  /** A grouped export ends with a total row over every row. Default true. */
+  grandTotal?: boolean
+  /**
+   * The words the PDF prints itself, for another language or house style:
+   * the page footer, the footer date, a group's subtotal label, and the total
+   * row's label.
+   */
+  labels?: {
+    page?: (page: number, pages: number) => string
+    date?: (now: Date) => string
+    subtotal?: (group: string) => string
+    total?: string
+  }
+  /** Text printed large and faint across every page: "DRAFT", "CONFIDENTIAL". */
+  watermark?: string | { text: string; color?: string; opacity?: number }
+  /** Author recorded in the PDF's document properties. */
+  author?: string
+  /**
+   * Render in a worker instead of on the page: a function returning a new
+   * Worker whose script calls `servePdfWorker()` from
+   * `@svgrid/enterprise/pdf-worker`. A large export then keeps the page
+   * responsive and reports progress. A `labels.page` function reaches the
+   * worker as a template: it is called once with stand-in numbers, so it must
+   * print them as given.
+   */
+  worker?: () => PdfWorkerLike
+  /**
+   * A font to print with instead of Roboto, which has no Chinese, Japanese,
+   * Korean, Arabic, Hebrew, Thai or Indic characters (they print as empty
+   * boxes). Each file is the font's base64 data or a URL pdfmake can fetch.
+   * It must cover Latin too: the whole document uses it.
+   */
+  font?: PdfFont
 }
+
+/** What `pdf.worker` returns: a Worker, or anything that talks like one. */
+export type PdfWorkerLike = {
+  postMessage(message: unknown): void
+  addEventListener(type: 'message', listener: (event: MessageEvent) => void): void
+  addEventListener(type: 'error', listener: (event: ErrorEvent) => void): void
+  terminate(): void
+}
+
+/** A TrueType / OpenType font for the PDF. Missing styles fall back to `normal`. */
+export type PdfFont = {
+  name: string
+  normal: string
+  bold?: string
+  italics?: string
+  bolditalics?: string
+}
+
+const ROBOTO = { normal: 'Roboto-Regular.ttf', bold: 'Roboto-Medium.ttf', italics: 'Roboto-Italic.ttf', bolditalics: 'Roboto-MediumItalic.ttf' }
+
+/**
+ * Register `font` with pdfmake next to Roboto. Base64 files go into the
+ * virtual file system, merged with what is there (`addVirtualFileSystem`
+ * replaces the map rather than adding to it); URLs are passed through for
+ * pdfmake to fetch.
+ */
+export function registerPdfFont(
+  pdfMake: PdfMakeLike & { fonts?: Record<string, unknown>; addFonts?: (fonts: Record<string, unknown>) => void },
+  font: PdfFont,
+): void {
+  const files: PdfVirtualFileSystem = {}
+  const isUrl = (s: string) => /^(https?:|blob:|data:|\/|\.\.?\/)/i.test(s)
+  const file = (style: string, src: string | undefined): string | undefined => {
+    if (!src) return undefined
+    if (isUrl(src)) return src
+    const key = `svgrid-${font.name}-${style}.ttf`
+    files[key] = src
+    return key
+  }
+  const normal = file('normal', font.normal)!
+  const bold = file('bold', font.bold) ?? normal
+  const entry = {
+    normal,
+    bold,
+    italics: file('italics', font.italics) ?? normal,
+    bolditalics: file('bolditalics', font.bolditalics) ?? bold,
+  }
+  if (Object.keys(files).length) {
+    const vfs = { ...(pdfMake.vfs ?? {}), ...files }
+    if (typeof pdfMake.addVirtualFileSystem === 'function') pdfMake.addVirtualFileSystem(vfs)
+    pdfMake.vfs = vfs
+  }
+  const fonts = { Roboto: ROBOTO, ...(pdfMake.fonts ?? {}), [font.name]: entry }
+  if (typeof pdfMake.addFonts === 'function') pdfMake.addFonts(fonts)
+  pdfMake.fonts = fonts
+}
+
+/**
+ * Text Roboto has no glyphs for: CJK, Hangul, Arabic, Hebrew, Thai, the Indic
+ * scripts, dingbats (check marks, stars) and emoji. Exported so an export can
+ * warn that it needs `pdf.font`.
+ */
+export const PDF_ROBOTO_MISSING = /[֐-ࣿऀ-෿฀-๿ᄀ-ᇿ☀-➿⺀-鿿가-힯豈-﫿＀-￯\u{1f000}-\u{1faff}]/u
 
 /** One cell's look, the same keys `ExportCellStyle` has. */
 export type PdfCellStyle = {
@@ -323,12 +430,43 @@ export async function resolvePdfCharts(
  * summary row (bold, aligned like the data).
  */
 export type PdfBodyRow =
-  | { kind: 'data'; cells: ReadonlyArray<string> }
+  | { kind: 'data'; cells: ReadonlyArray<string>; /** The row's index in the exported rows. */ source?: number }
   | { kind: 'group'; label: string; level?: number }
   | { kind: 'subtotal'; cells: ReadonlyArray<string> }
 
+/**
+ * The conditional-format icon sets as shapes. Their glyphs (arrows,
+ * triangles, coloured circles) are not in Roboto and printed as empty boxes,
+ * so they are drawn instead, in the red / amber / green the sets mean.
+ */
+const ICON_RED = '#dc2626'
+const ICON_AMBER = '#d97706'
+const ICON_YELLOW = '#eab308'
+const ICON_GREEN = '#16a34a'
+type Pt = { x: number; y: number }
+const poly = (points: Pt[], color: string) => ({ type: 'polyline', points, closePath: true, lineWidth: 0.1, lineColor: color, color })
+const arrowUp = (s: number): Pt[] => [
+  { x: s / 2, y: 0 }, { x: s, y: s * 0.5 }, { x: s * 0.68, y: s * 0.5 }, { x: s * 0.68, y: s },
+  { x: s * 0.32, y: s }, { x: s * 0.32, y: s * 0.5 }, { x: 0, y: s * 0.5 },
+]
+const PDF_ICON_SHAPES: Record<string, (s: number) => unknown[]> = {
+  '↑': (s) => [poly(arrowUp(s), ICON_GREEN)],
+  '↓': (s) => [poly(arrowUp(s).map((p) => ({ x: p.x, y: s - p.y })), ICON_RED)],
+  '→': (s) => [poly(arrowUp(s).map((p) => ({ x: s - p.y, y: p.x })), ICON_AMBER)],
+  '▲': (s) => [poly([{ x: 0, y: s }, { x: s / 2, y: 0 }, { x: s, y: s }], ICON_GREEN)],
+  '▼': (s) => [poly([{ x: 0, y: 0 }, { x: s, y: 0 }, { x: s / 2, y: s }], ICON_RED)],
+  '◆': (s) => [poly([{ x: s / 2, y: 0 }, { x: s, y: s / 2 }, { x: s / 2, y: s }, { x: 0, y: s / 2 }], ICON_AMBER)],
+  '🔴': (s) => [{ type: 'ellipse', x: s / 2, y: s / 2, r1: s / 2, r2: s / 2, color: ICON_RED }],
+  '🟡': (s) => [{ type: 'ellipse', x: s / 2, y: s / 2, r1: s / 2, r2: s / 2, color: ICON_YELLOW }],
+  '🟢': (s) => [{ type: 'ellipse', x: s / 2, y: s / 2, r1: s / 2, r2: s / 2, color: ICON_GREEN }],
+  // A true boolean, where the grid draws a ticked checkbox.
+  '✓': (s) => [{ type: 'polyline', points: [{ x: 0, y: s * 0.55 }, { x: s * 0.38, y: s * 0.92 }, { x: s, y: s * 0.08 }], lineWidth: Math.max(1, s * 0.16), lineColor: '#334155' }],
+}
+
 type PdfCell = {
-  text: string
+  text?: string
+  columns?: unknown[]
+  columnGap?: number
   bold?: boolean
   alignment?: 'left' | 'center' | 'right'
   color?: string
@@ -342,20 +480,32 @@ type PdfCell = {
   decoration?: string
 }
 
-export type PdfDocDefinition = {
+/** A table's look, as data; {@link hydratePdfDoc} turns it into pdfmake's layout callbacks. */
+export type PdfLayoutSpec =
+  | { kind: 'table'; stripes: number[]; zebraColor: string; lineColor: string }
+  | { kind: 'kpi' }
+
+/** The document as plain data, safe to post to a worker. */
+export type PdfDocData = {
   pageSize: PdfPageSize
   pageOrientation: 'portrait' | 'landscape'
   pageMargins: [number, number, number, number]
-  defaultStyle: { fontSize: number }
+  defaultStyle: { fontSize: number; font?: string }
   content: unknown[]
+  watermark?: { text: string; color: string; opacity: number; bold: boolean }
+  /** The PDF's document properties, which a viewer shows in place of the file name. */
+  info?: { title?: string; author?: string; subject?: string; creator: string; creationDate: Date }
+  /** The footer, as data: margins, the date text, and a page template with `{page}` / `{pages}`. */
+  svgridFooter?: { margin: number[]; date: string; page: string }
+}
+
+/** The document pdfmake renders: the data with its layouts and footer as functions. */
+export type PdfDocDefinition = PdfDocData & {
   footer?: (currentPage: number, pageCount: number) => unknown
 }
 
-/**
- * Build a pdfmake docDefinition from resolved columns + formatted string rows.
- * `now` is injected for a deterministic footer date in tests.
- */
-export function buildPdfDocDefinition(params: {
+/** What the PDF table is built from. `now` is injected for a deterministic footer date in tests. */
+export type PdfDocParams = {
   columns: ReadonlyArray<{ header: string; align?: 'left' | 'center' | 'right' }>
   /** Data rows as pre-formatted strings, in column order (no header row).
    *  Convenience for the flat (ungrouped) case. */
@@ -365,7 +515,7 @@ export function buildPdfDocDefinition(params: {
   body?: ReadonlyArray<PdfBodyRow>
   /** Per-data-cell visual override (conditional formatting). `dataRowIdx` is
    *  the 0-based index among data rows. */
-  dataCellStyle?: (dataRowIdx: number, colIdx: number) => { fill?: string; color?: string; bold?: boolean } | undefined
+  dataCellStyle?: (dataRowIdx: number, colIdx: number) => { fill?: string; color?: string; bold?: boolean; icon?: string; iconOnly?: boolean } | undefined
   /** Per-data-cell hyperlink URL. */
   dataCellLink?: (dataRowIdx: number, colIdx: number) => string | undefined
   opts?: PdfExportOptions
@@ -384,7 +534,15 @@ export function buildPdfDocDefinition(params: {
   /** Merged data cells; ignored with a structured `body`, whose rows own the layout. */
   merges?: ReadonlyArray<PdfMerge>
   now?: Date
-}): PdfDocDefinition {
+}
+
+/**
+ * Build the pdfmake document from resolved columns + formatted string rows,
+ * as plain data: no functions, so it can be posted to a worker. Hand it to
+ * {@link hydratePdfDoc} before pdfmake sees it, or use
+ * {@link buildPdfDocDefinition}, which does both.
+ */
+export function buildPdfDocData(params: PdfDocParams): PdfDocData {
   const { columns } = params
   const o = params.opts ?? {}
   const st = params.styles ?? {}
@@ -437,9 +595,10 @@ export function buildPdfDocDefinition(params: {
     o.pageOrientation ??
     (columns.length > (o.autoLandscapeThreshold ?? 8) ? 'landscape' : 'portrait')
 
-  const widths: Array<number | 'auto' | '*'> = Array.isArray(o.columnWidths)
-    ? o.columnWidths
-    : columns.map(() => (o.columnWidths === 'auto' ? 'auto' : '*'))
+  const margins = o.margins ?? [28, 34, 28, 34]
+  const [pw, ph] = PAGE_PT[o.pageSize ?? 'A4']
+  const contentWidth = (orientation === 'landscape' ? ph : pw) - margins[0] - margins[2]
+  const contentHeight = (orientation === 'landscape' ? pw : ph) - margins[1] - margins[3]
 
   // Header row.
   const headerRow: PdfCell[] = columns.map((c, ci) => {
@@ -466,6 +625,9 @@ export function buildPdfDocDefinition(params: {
   const dataCellLink = params.dataCellLink
   let dataOrdinal = 0
   const dataRowIdx = new Set<number>()
+  const groupRowIdx = new Set<number>()
+  /** Cells with a drawn icon: [body row, column, icon]. Drawn after the layout is measured. */
+  const icons: Array<[number, number, string]> = []
   const bodyCells: PdfCell[][] = [headerRow]
   model.forEach((row, i) => {
     const bi = i + 1 // +1 for the header row
@@ -479,6 +641,7 @@ export function buildPdfDocDefinition(params: {
         margin: [(row.level ?? 0) * 12, 2, 0, 2],
       }
       const rest: PdfCell[] = Array.from({ length: Math.max(0, columns.length - 1) }, () => ({ text: '' }))
+      groupRowIdx.add(bi)
       bodyCells.push([first, ...rest])
     } else if (row.kind === 'subtotal') {
       bodyCells.push(
@@ -505,6 +668,9 @@ export function buildPdfDocDefinition(params: {
             if (s.fill) cell.fillColor = s.fill
             if (s.color) cell.color = s.color
             if (s.bold) cell.bold = true
+            if (s.icon && s.iconOnly) cell.text = ''
+            if (s.icon && PDF_ICON_SHAPES[s.icon]) icons.push([bi, ci, s.icon])
+            else if (s.icon) cell.text = s.iconOnly ? s.icon : `${s.icon} ${cell.text ?? ''}`
           }
           const href = dataCellLink?.(ord, ci)
           if (href) {
@@ -543,27 +709,176 @@ export function buildPdfDocDefinition(params: {
     }
   }
 
-  const table = {
-    table: {
-      headerRows: repeatHeader ? 1 : 0,
-      dontBreakRows: true,
-      widths,
-      body: bodyCells,
-    },
-    layout: {
-      // Zebra fill: only plain data rows (group / subtotal have their own).
-      fillColor: (rowIndex: number) =>
-        zebra && rowIndex > 0 && rowIndex % 2 === 0 && dataRowIdx.has(rowIndex) ? zebraColor : null,
-      hLineWidth: () => 0.5,
-      vLineWidth: () => 0.5,
-      hLineColor: () => borderColor,
-      vLineColor: () => borderColor,
-      paddingTop: () => 3,
-      paddingBottom: () => 3,
-      paddingLeft: () => 5,
-      paddingRight: () => 5,
-    },
+  // ---- Layout -------------------------------------------------------------
+  // pdfmake sizes a '*' column no narrower than its longest word, so a wide
+  // grid ran off the right edge and its last columns were never printed. The
+  // widths are worked out here instead, from the text, against the page:
+  // shrink the type, or split the columns over pages, so every column prints.
+  // Measured with Roboto's average advance, on the wide side so a column is
+  // never narrower than its text.
+  const n = columns.length
+  const PAD = 10.5 // padding left + right, and one vertical line
+  const emOf = (bold: boolean | undefined) => (bold ? 0.62 : 0.56)
+  const iconAt = new Set(icons.map(([bi, ci]) => `${bi}:${ci}`))
+  // Widths at a 1 pt font: the longest word (a column cannot be narrower) and
+  // the longest line (what it would like). Spanning cells are left out.
+  const minAt1 = new Array<number>(n).fill(0)
+  const natAt1 = new Array<number>(n).fill(0)
+  bodyCells.forEach((row, bi) => {
+    if (groupRowIdx.has(bi)) return
+    row.forEach((cell, ci) => {
+      if ((cell.colSpan ?? 1) > 1 || ci >= n) return
+      const k = emOf(cell.bold) * (cell.fontSize ?? fontSize) / fontSize
+      const extra = iconAt.has(`${bi}:${ci}`) ? 2 : 0
+      let word = 0
+      let line = 0
+      for (const l of (cell.text ?? '').split('\n')) {
+        line = Math.max(line, l.length)
+        for (const w of l.split(/\s+/)) word = Math.max(word, w.length)
+      }
+      // A 60-character URL should not claim a third of the page; past 28
+      // characters a word is left to wrap or overflow its cell.
+      minAt1[ci] = Math.max(minAt1[ci]!, (Math.min(word, 28) + extra) * k)
+      natAt1[ci] = Math.max(natAt1[ci]!, (line + extra) * k)
+    })
+  })
+  const budget = (count: number) => contentWidth - count * PAD - 2
+  const sumMin = (cols: number[], f: number) => cols.reduce((a, ci) => a + Math.max(minAt1[ci]! * f, f), 0)
+
+  const fit = o.fit ?? 'auto'
+  const explicitWidths = Array.isArray(o.columnWidths) ? o.columnWidths : null
+  const all = columns.map((_, i) => i)
+  let tableFont = fontSize
+  let chunks: number[][] = [all]
+  if (fit !== 'none' && !explicitWidths && n > 0 && sumMin(all, fontSize) > budget(n)) {
+    const room = budget(n)
+    const fitFont = room > 0 ? (fontSize * room) / sumMin(all, fontSize) : 0
+    const floor = fit === 'shrink' ? 4 : Math.max(5, fontSize * 0.75)
+    if (fit !== 'split' && fitFont >= floor) tableFont = Math.floor(fitFont * 10) / 10
+    else if (fit === 'shrink') tableFont = floor
+    else {
+      // Split: the leading columns on every page, the rest packed in order.
+      const keep = Math.max(0, Math.min(o.repeatColumns ?? 1, n - 1))
+      const lead = all.slice(0, keep)
+      chunks = []
+      let cur: number[] = []
+      for (let ci = keep; ci < n; ci++) {
+        if (cur.length && sumMin([...lead, ...cur, ci], fontSize) > budget(lead.length + cur.length + 1)) {
+          chunks.push([...lead, ...cur])
+          cur = []
+        }
+        cur.push(ci)
+      }
+      if (cur.length) chunks.push([...lead, ...cur])
+    }
   }
+
+  const widthsFor = (cols: number[]): Array<number | 'auto' | '*'> => {
+    if (explicitWidths) {
+      // Explicit numbers are kept unless together they run off the page.
+      const nums = explicitWidths.filter((w): w is number => typeof w === 'number')
+      const total = nums.reduce((a, b) => a + b, 0)
+      const room = budget(explicitWidths.length)
+      return total > room && fit !== 'none'
+        ? explicitWidths.map((w) => (typeof w === 'number' ? Math.floor((w * room) / total) : w))
+        : explicitWidths
+    }
+    if (fit === 'none') return cols.map(() => (o.columnWidths === 'auto' ? 'auto' : '*'))
+    const min = cols.map((ci) => Math.max(minAt1[ci]! * tableFont, tableFont))
+    const nat = cols.map((ci, i) => Math.max(min[i]!, natAt1[ci]! * tableFont))
+    const room = budget(cols.length)
+    const sumNat = nat.reduce((a, b) => a + b, 0)
+    let out: number[]
+    if (o.columnWidths === 'auto' && sumNat <= room) out = nat
+    else if (sumNat <= room) out = nat.map((w) => w + (room - sumNat) / cols.length)
+    else {
+      // Every column gets its longest word; what is left goes to the
+      // columns that want more, in proportion, so a notes column takes the
+      // room an id column does not need.
+      const sumMinW = min.reduce((a, b) => a + b, 0)
+      const spare = Math.max(0, room - sumMinW)
+      const want = nat.reduce((a, w, i) => a + (w - min[i]!), 0)
+      out = min.map((m, i) => m + (want > 0 ? (spare * (nat[i]! - m)) / want : spare / cols.length))
+    }
+    return out.map((w) => Math.floor(w * 100) / 100)
+  }
+
+  // A row taller than the page cannot be kept whole, and pdfmake drops it
+  // without a word when told not to break rows. So rows stay whole unless one
+  // would come near a page's height; then rows may break.
+  const lineHeight = tableFont * 1.25
+  const rowHeight = (row: PdfCell[], cols: number[], widths: Array<number | 'auto' | '*'>) => {
+    let h = 0
+    cols.forEach((ci, i) => {
+      const cell = row[ci]
+      const w = widths[i]
+      if (!cell || (cell.rowSpan ?? 1) > 1 || typeof w !== 'number') return
+      const k = emOf(cell.bold) * (cell.fontSize ?? tableFont)
+      let lines = 0
+      for (const l of (cell.text ?? '').split('\n')) lines += Math.max(1, Math.ceil((l.length * k) / Math.max(w, 1)))
+      h = Math.max(h, lines * lineHeight * ((cell.fontSize ?? tableFont) / tableFont))
+    })
+    return h + 6
+  }
+
+  // The icons, drawn next to the text now that the widths are known.
+  for (const [bi, ci, icon] of icons) {
+    const cell = bodyCells[bi]?.[ci]
+    if (!cell) continue
+    const size = tableFont * 0.8
+    const { text, alignment, color, bold, italics, fontSize: fs, link, decoration } = cell
+    delete cell.text
+    const shape = { width: size + 3, canvas: PDF_ICON_SHAPES[icon]!(size), margin: [0, tableFont * 0.2, 0, 0] }
+    const gap = { width: '*', text: '' }
+    // An icon with text beside it leads the cell; one on its own (a ticked
+    // boolean) sits where the column aligns its values.
+    cell.columns = text
+      ? [shape, { width: '*', text, alignment, color, bold, italics, fontSize: fs, link, decoration }]
+      : alignment === 'center' ? [gap, shape, gap] : alignment === 'right' ? [gap, shape] : [shape, gap]
+    cell.columnGap = 0
+    for (const key of ['alignment', 'color', 'bold', 'italics', 'fontSize', 'link', 'decoration'] as const) delete cell[key]
+  }
+
+  // One table per chunk of columns. Group rows span the chunk; a merge is
+  // cut to the columns the chunk holds.
+  const sliceRow = (row: PdfCell[], bi: number, cols: number[]): PdfCell[] => {
+    if (cols.length === n && cols.every((c, i) => c === i)) return row
+    if (groupRowIdx.has(bi)) return [{ ...row[0]!, colSpan: cols.length }, ...cols.slice(1).map(() => ({ text: '' }))]
+    return cols.map((ci, k) => {
+      const cell = row[ci]!
+      const span = cell.colSpan ?? 1
+      if (span <= 1) return cell
+      let run = 1
+      while (run < span && cols[k + run] === ci + run) run += 1
+      return { ...cell, colSpan: run }
+    })
+  }
+  // The table's look as data (see hydratePdfDoc): zebra fill on every other
+  // plain data row (group / subtotal rows carry their own fill).
+  const svgridLayout: PdfLayoutSpec = {
+    kind: 'table',
+    stripes: zebra ? [...dataRowIdx].filter((r) => r > 0 && r % 2 === 0) : [],
+    zebraColor,
+    lineColor: borderColor,
+  }
+  const tables = chunks.map((cols, i) => {
+    const widths = widthsFor(cols)
+    const body = bodyCells.map((row, bi) => sliceRow(row, bi, cols))
+    const headerHeight = repeatHeader ? rowHeight(body[0]!, cols.map((_, k) => k), widths) : 0
+    const room = contentHeight - headerHeight
+    const tall = body.some((row, bi) => bi > 0 && !groupRowIdx.has(bi) && rowHeight(row, cols.map((_, k) => k), widths) > room * 0.7)
+    return {
+      ...(i > 0 ? { pageBreak: 'before' } : {}),
+      ...(tableFont !== fontSize ? { fontSize: tableFont } : {}),
+      table: {
+        headerRows: repeatHeader ? 1 : 0,
+        dontBreakRows: !tall,
+        widths,
+        body,
+      },
+      svgridLayout,
+    }
+  })
 
   // The lines `ExportOptions.header` / `footer` carry: text with a style, an
   // image, or a left / centre / right triple, above and below the table the
@@ -612,23 +927,12 @@ export function buildPdfDocDefinition(params: {
           })),
         ],
       },
-      layout: {
-        hLineWidth: () => 0,
-        vLineWidth: () => 4,
-        vLineColor: () => '#ffffff',
-        paddingLeft: () => 0,
-        paddingRight: () => 0,
-        paddingTop: () => 0,
-        paddingBottom: () => 0,
-      },
+      svgridLayout: { kind: 'kpi' } satisfies PdfLayoutSpec,
       margin: [0, 0, 0, 10],
     })
   }
 
   // Charts: the resolved images, at the content width unless told otherwise.
-  const margins = o.margins ?? [28, 34, 28, 34]
-  const [pw, ph] = PAGE_PT[o.pageSize ?? 'A4']
-  const contentWidth = (orientation === 'landscape' ? ph : pw) - margins[0] - margins[2]
   const chartImages = params.charts ?? (o.charts ?? []).filter((c): c is PdfChartImage => 'image' in c)
   const chartBlocks: unknown[] = chartImages.map((c) => ({
     stack: [
@@ -640,31 +944,125 @@ export function buildPdfDocDefinition(params: {
     unbreakable: true,
   }))
   if (o.chartsPosition !== 'below') content.push(...chartBlocks)
-  content.push(table)
+  content.push(...tables)
   if (o.chartsPosition === 'below') {
     if (chartBlocks.length) content.push({ text: '', margin: [0, 0, 0, 12] })
     content.push(...chartBlocks)
   }
   content.push(...pageLines(params.footerLines, [0, 4, 0, 0]))
 
-  const def: PdfDocDefinition = {
+  const def: PdfDocData = {
     pageSize: o.pageSize ?? 'A4',
     pageOrientation: orientation,
-    pageMargins: o.margins ?? [28, 34, 28, 34],
-    defaultStyle: { fontSize },
+    pageMargins: margins,
+    defaultStyle: o.font ? { fontSize, font: o.font.name } : { fontSize },
     content,
+    info: {
+      ...(o.title ? { title: o.title } : {}),
+      ...(o.author ? { author: o.author } : {}),
+      ...(o.subtitle ? { subject: o.subtitle } : {}),
+      creator: 'SvGrid',
+      creationDate: now,
+    },
+  }
+
+  if (o.watermark) {
+    const w = typeof o.watermark === 'string' ? { text: o.watermark } : o.watermark
+    def.watermark = { text: w.text, color: w.color ?? '#94a3b8', opacity: w.opacity ?? 0.15, bold: true }
   }
 
   if (o.showPageNumbers ?? true) {
-    const dateStr = now.toISOString().slice(0, 10)
-    def.footer = (currentPage: number, pageCount: number) => ({
-      margin: [28, 6, 28, 0],
-      columns: [
-        { text: dateStr, alignment: 'left', fontSize: 7, color: '#94a3b8' },
-        { text: `Page ${currentPage} of ${pageCount}`, alignment: 'right', fontSize: 7, color: '#94a3b8' },
-      ],
-    })
+    // The date where the export ran, not in UTC: toISOString() printed
+    // yesterday for anyone east of Greenwich exporting after midnight.
+    const pad = (v: number) => String(v).padStart(2, '0')
+    const dateStr = o.labels?.date?.(now) ?? `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+    // The page label travels as a template, for a worker that cannot be
+    // handed the function: it is called once with stand-in numbers, which are
+    // then swapped for placeholders. A label that formats its numbers (a
+    // thousands separator) loses them, and the default text is used instead.
+    let page = 'Page {page} of {pages}'
+    if (o.labels?.page) {
+      const sample = o.labels.page(PAGE_STAND_IN, PAGES_STAND_IN)
+      if (sample.includes(String(PAGE_STAND_IN)) && sample.includes(String(PAGES_STAND_IN))) {
+        page = sample.split(String(PAGE_STAND_IN)).join('{page}').split(String(PAGES_STAND_IN)).join('{pages}')
+      }
+    }
+    def.svgridFooter = { margin: [margins[0], 6, margins[2], 0], date: dateStr, page }
   }
 
   return def
+}
+
+const PAGE_STAND_IN = 86421
+const PAGES_STAND_IN = 97531
+
+/**
+ * Build the pdfmake document for a table and hand it over ready to render.
+ * Same as {@link buildPdfDocData}, with its layouts and footer turned into
+ * the functions pdfmake calls.
+ */
+export function buildPdfDocDefinition(params: PdfDocParams): PdfDocDefinition {
+  return hydratePdfDoc(buildPdfDocData(params), { page: params.opts?.labels?.page })
+}
+
+/**
+ * Give a document from {@link buildPdfDocData} the functions pdfmake calls:
+ * each table's fill and line callbacks and the page footer. Runs where the
+ * PDF is rendered, which may be a worker the functions could not be sent to.
+ * `page` overrides the footer's page template with the caller's own function.
+ */
+export function hydratePdfDoc(
+  doc: PdfDocData,
+  opts: { page?: (page: number, pages: number) => string } = {},
+): PdfDocDefinition {
+  const visit = (node: unknown): void => {
+    if (Array.isArray(node)) {
+      node.forEach(visit)
+      return
+    }
+    if (!node || typeof node !== 'object') return
+    const n = node as { svgridLayout?: PdfLayoutSpec; layout?: unknown; stack?: unknown; columns?: unknown }
+    if (n.svgridLayout) n.layout = layoutFor(n.svgridLayout)
+    if (n.stack) visit(n.stack)
+  }
+  visit(doc.content)
+  const def = doc as PdfDocDefinition
+  const footer = doc.svgridFooter
+  if (footer) {
+    const page = opts.page ?? ((p: number, n: number) => footer.page.split('{page}').join(String(p)).split('{pages}').join(String(n)))
+    def.footer = (currentPage: number, pageCount: number) => ({
+      margin: footer.margin,
+      columns: [
+        { text: footer.date, alignment: 'left', fontSize: 7, color: '#94a3b8' },
+        { text: page(currentPage, pageCount), alignment: 'right', fontSize: 7, color: '#94a3b8' },
+      ],
+    })
+  }
+  return def
+}
+
+function layoutFor(spec: PdfLayoutSpec): Record<string, unknown> {
+  if (spec.kind === 'kpi') {
+    return {
+      hLineWidth: () => 0,
+      vLineWidth: () => 4,
+      vLineColor: () => '#ffffff',
+      paddingLeft: () => 0,
+      paddingRight: () => 0,
+      paddingTop: () => 0,
+      paddingBottom: () => 0,
+    }
+  }
+  const stripes = new Set(spec.stripes)
+  return {
+    fillColor: (rowIndex: number) => (stripes.has(rowIndex) ? spec.zebraColor : null),
+    hLineWidth: () => 0.5,
+    vLineWidth: () => 0.5,
+    hLineColor: () => spec.lineColor,
+    vLineColor: () => spec.lineColor,
+    paddingTop: () => 3,
+    paddingBottom: () => 3,
+    paddingLeft: () => 5,
+    paddingRight: () => 5,
+  }
 }

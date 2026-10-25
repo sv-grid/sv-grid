@@ -286,7 +286,7 @@ describe('buildGroupedPdfBody', () => {
     { region: 'South', company: 'C', price: 5 },
   ]
 
-  it('emits group header + data rows + a subtotal per cluster', () => {
+  it('emits group header + data rows + a subtotal per cluster, and a grand total', () => {
     const body = buildGroupedPdfBody(cols, gRows, ['region'])
     expect(body.map((b) => b.kind)).toEqual([
       'group',
@@ -296,11 +296,53 @@ describe('buildGroupedPdfBody', () => {
       'group',
       'data',
       'subtotal',
+      'subtotal',
     ])
     expect(body[0]).toMatchObject({ kind: 'group', label: 'Region: North (2)' })
     const subtotal = body[3] as { kind: 'subtotal'; cells: string[] }
     expect(subtotal.cells[0]).toBe('Subtotal (North)') // label in first non-numeric col
     expect(subtotal.cells[2]).toBe('$30.00') // summed currency
+    expect((body.at(-1) as { cells: readonly string[] }).cells).toEqual(['Total', '', '$35.00'])
+  })
+
+  it('totals each column with its own aggregate, as the group rows on screen do', () => {
+    const aggCols = [
+      { field: 'region', header: 'Region' },
+      { field: 'company', header: 'Company', aggregate: 'count' as const },
+      { field: 'price', header: 'Price', format: { type: 'currency', currency: 'USD', locales: 'en-US' } as const, aggregate: 'avg' as const },
+      { field: 'qty', header: 'Qty', format: { type: 'number' } as const, aggregate: 'max' as const },
+    ]
+    const rows = gRows.map((r, i) => ({ ...r, qty: [3, 9, 4][i]! }))
+    const body = buildGroupedPdfBody(aggCols, rows, ['region'])
+    const north = body[3] as { cells: readonly string[] }
+    // The label goes in Region, the only column with no total of its own.
+    expect(north.cells).toEqual(['Subtotal (North)', '2', '$15.00', '9'])
+    // A count is a number of rows, never formatted as an amount.
+    expect((body.at(-1) as { cells: readonly string[] }).cells).toEqual(['Total', '3', '$11.67', '9'])
+  })
+
+  it('names a group the way the grid shows its value', () => {
+    const dated = [{ day: new Date(2026, 9, 3), amount: 1 }, { day: new Date(2026, 9, 3), amount: 2 }]
+    const body = buildGroupedPdfBody(
+      [{ field: 'day', header: 'Day', format: { type: 'date', locales: 'en-US' } as never }, { field: 'amount', header: 'Amount', format: { type: 'number' } as const }],
+      dated,
+      ['day'],
+    )
+    const label = (body[0] as { label: string }).label
+    expect(label).toMatch(/^Day: .*2026 \(2\)$/)
+    expect(label).not.toMatch(/GMT|T\d\d:/)
+  })
+
+  it('carries each data row\'s index in the exported rows, for conditional formatting and links', () => {
+    const body = buildGroupedPdfBody(cols, gRows, ['region'])
+    expect(body.flatMap((b) => (b.kind === 'data' ? [b.source] : []))).toEqual([0, 1, 2])
+  })
+
+  it('drops the grand total and uses the labels it is given', () => {
+    const body = buildGroupedPdfBody(cols, gRows, ['region'], { grandTotal: false, labels: { subtotal: (g) => `Zwischensumme ${g}` } })
+    expect(body.at(-1)!.kind).toBe('subtotal')
+    expect((body.at(-1) as { cells: readonly string[] }).cells[0]).toBe('Zwischensumme South')
+    expect(buildGroupedPdfBody(cols, gRows, ['region'], { labels: { total: 'Gesamt' } }).at(-1)).toMatchObject({ cells: ['Gesamt', '', '$35.00'] })
   })
 
   it('nests multi-level grouping', () => {

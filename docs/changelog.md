@@ -603,6 +603,36 @@ For machine-readable releases, fetch
 
 #### Added
 
+- **PDF: `pdf.fit`, `pdf.repeatColumns` and `pdf.font`.** `fit` chooses what
+  happens when the columns do not fit across the page (shrink the text, split
+  the columns over pages, or both, the default); `repeatColumns` says how many
+  leading columns repeat on each page of a split. `font` prints with a font
+  you supply, base64 or a URL, for scripts Roboto lacks (Chinese, Japanese,
+  Korean, Arabic, Hebrew, Thai, Indic, emoji); without one the export now
+  warns when it sees them.
+- **PDF export in a worker: `pdf.worker` and `@svgrid/enterprise/pdf-worker`.**
+  pdfmake renders in one synchronous run, about a second per thousand rows on
+  a desktop machine, and on the page that froze the tab. With
+  `pdf.worker: () => new Worker(...)` and a worker script that calls
+  `servePdfWorker()`, the document goes to the worker as data and the page
+  stays responsive: a 5,000-row export took about two seconds while the page
+  kept drawing at 60 fps, with progress through `onProgress` and an abort that
+  terminates the worker. A PDF of more than 2,000 rows rendered on the page now
+  logs a warning that points here. `buildPdfDocData` and `hydratePdfDoc` split
+  the document builder for this; `buildPdfDocDefinition` works as before.
+- **Grouped PDFs total like the grid.** Subtotals use each column's
+  `aggregate` (avg, min, max, count, countDistinct, a function) instead of
+  always summing, a total row closes the table (`pdf.grandTotal: false` to
+  leave it out), and group names are formatted as on screen. `getColumns()` in
+  `@svgrid/grid` now reports each column's `aggregate` for this.
+- **PDF: `pdf.labels`, `pdf.watermark`, `pdf.author`.** Replace the footer's
+  page and date text and the subtotal and total labels; print a faint
+  watermark across every page; and fill the document properties, so a viewer
+  shows the report's title rather than the file name.
+- **PDF column widths follow the text.** Each column gets at least its
+  longest word and the rest of the page goes to the columns with the most to
+  say, instead of equal widths: a 60-row, 8-column order list went from three
+  pages to two.
 - **The pivot designer's Chart view grew up.** It offers every shape a pivot
   can take (bar, line, area, lollipop, pareto, the three radial forms, pie,
   funnel, waterfall, radar, heat map, stream) in the panel's groups, with
@@ -640,6 +670,26 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **A wide grid lost columns in the PDF.** pdfmake sizes a column no narrower
+  than its longest word, so a 22-column report ran off the right edge and only
+  15 columns printed, without a warning. The columns are now fitted to the
+  page (see `pdf.fit` above).
+- **A row taller than a page was missing from the PDF.** Rows are kept whole
+  on a page, and pdfmake drops a row that cannot fit on any page. Such a row
+  now breaks across pages.
+- **Conditional-format icons printed as empty boxes in the PDF.** The arrow,
+  triangle and traffic-light glyphs are not in Roboto; they are drawn as
+  shapes now.
+- **The PDF footer could show yesterday's date.** It printed the UTC date, so
+  an export after midnight east of Greenwich was dated the day before. It
+  prints the local date, and the footer follows custom page margins.
+- **Grouped PDFs dropped conditional formatting and links.** They now carry
+  both, as flat exports do.
+- **Booleans printed as "true" and "false" in the PDF.** They print a tick or
+  nothing, like the grid's checkbox. An icon set's `iconOnly` is honoured too:
+  it printed the value next to the icon.
+- **A number or date column passed in `columns` without `align` printed
+  left-aligned in the PDF.** It right-aligns from its `format`, as on screen.
 - **A pivot chart drew an empty cell as a zero bar.** An average over no rows
   is `null` in the pivot and the bridge read it as 0; it is a gap on the
   chart now. A sum over no rows stays the 0 the engine wrote.
@@ -676,6 +726,23 @@ For machine-readable releases, fetch
   `#000000` defaults the grid renders with. Because `@svgrid/enterprise` ships its
   `src`, this had surfaced as a stray `svelte-check` error in consuming apps - a
   clean app now type-checks with zero errors.
+
+#### Security
+
+- **A crafted .xlsx could crash the tab.** `importData` and the spreadsheet's
+  File > Open filled every gap before a cell with blanks, sized by the cell
+  reference in the file: `<c r="ZZZZZZZ1">` asked for about eight billion.
+  `importData` now rejects a cell past column XFD; the spreadsheet skips a cell
+  outside the sheet, as it does other malformed parts. Both refuse a sheet that
+  would need more than ten million blank cells to lay out.
+- **A zip bomb could exhaust the tab's memory.** Every .xlsx and .ods reader
+  (`importData`, File > Open, `documentFromXlsx`, `documentFromOds`) unzipped
+  each part whole before looking at it, so a small file whose parts inflate to
+  gigabytes was read into memory first. Parts are now unzipped as a stream and
+  counted as they inflate; a file whose parts pass 256 MB together is refused
+  at that point.
+- **CSV and TSV from `exportData` neutralise formula-like text**, through the
+  same `@svgrid/grid` serializer (see the grid's Security entry).
 
 ### @svgrid/grid-wc
 
@@ -727,17 +794,6 @@ For machine-readable releases, fetch
   generated `.d.ts` augments `HTMLElementTagNameMap` and
   `HTMLElementEventMap`, so the element and its events are typed without
   hand-written declarations.
-#### Security
-
-- **A crafted .xlsx could crash the tab.** `importData` and the spreadsheet's
-  File > Open filled every gap before a cell with blanks, sized by the cell
-  reference in the file: `<c r="ZZZZZZZ1">` asked for about eight billion.
-  `importData` now rejects a cell past column XFD; the spreadsheet skips a cell
-  outside the sheet, as it does other malformed parts. Both refuse a sheet that
-  would need more than ten million blank cells to lay out.
-- **CSV and TSV from `exportData` neutralise formula-like text**, through the
-  same `@svgrid/grid` serializer (see the grid's Security entry).
-
 - **`<sv-grid-shadow>` - the grid in an open shadow root**, so a host page's
   CSS cannot reach it. Same properties, attributes and events as `<sv-grid>`;
   a separate element rather than an attribute because Svelte resolves

@@ -1,5 +1,6 @@
 ﻿/// <reference path="./pdfmake-shims.d.ts" />
-import type { CellFormatConfig, RowData, TableFeatures } from '@svgrid/grid'
+import type { CellFormatConfig, GroupAggregator, RowData, TableFeatures } from '@svgrid/grid'
+import { applyGroupAggregate } from '@svgrid/grid/core'
 import type { SvGridApi } from '@svgrid/grid'
 // Import the pure formatters from the grid's Svelte-free `/format` subpath so
 // this module (and the enterprise unit tests) don't drag in SvGrid.svelte.
@@ -19,7 +20,11 @@ import {
 } from './export-serialize'
 import { serializeSpreadsheetML } from './export-xls'
 import { buildXlsxParts, packageXlsx, type XlsxCell, type XlsxCondFormat, type XlsxTableSpec } from './export-ooxml'
-import { buildPdfDocDefinition, pdfBlob, readGridPdfTheme, registerPdfFonts, resolvePdfCharts, type PdfBodyRow, type PdfExportOptions, type PdfMakeLike } from './export-pdf'
+import { buildPdfDocData, buildPdfDocDefinition, pdfBlob, PDF_ROBOTO_MISSING, readGridPdfTheme, registerPdfFont, registerPdfFonts, resolvePdfCharts, type PdfBodyRow, type PdfDocParams, type PdfExportOptions, type PdfMakeLike } from './export-pdf'
+import { renderPdfInWorker } from './pdf-worker'
+
+/** Rows past which a PDF rendered on the page earns a warning: about a second of blocked page per thousand. */
+const LARGE_PDF_ROWS = 2000
 import { buildConditionalResolver, type ExportCellVisualFn } from './export-conditional'
 import type { ConditionalFormat } from '@svgrid/grid/format'
 
@@ -81,6 +86,12 @@ export type ExportColumn<TData = RowData> = {
    * `format`. Return a number / Date to keep it typed in xlsx.
    */
   exportValue?: (row: TData) => string | number | Date | null | undefined
+  /**
+   * How the column totals in a grouped PDF's subtotal and total rows: the
+   * grid's `GroupAggregator`. Taken from the grid's column when you don't pass
+   * `columns`. Without one, number and currency columns sum.
+   */
+  aggregate?: GroupAggregator<TData>
 }
 
 /** Progress reported during an export. `phase` is 'project' while building
@@ -425,6 +436,7 @@ export function resolveColumns<TFeatures extends TableFeatures, TData extends Ro
       header: c.header,
       format: c.format,
       align: c.align,
+      aggregate: c.aggregate as GroupAggregator<TData> | undefined,
     }))
   }
   if (sourceRows.length > 0) {
@@ -929,59 +941,102 @@ function isSummableColumn<TData extends RowData>(col: ExportColumn<TData>): bool
   return col.format?.type === 'number' || col.format?.type === 'currency'
 }
 
+/** The words a grouped PDF prints around its totals; see `PdfExportOptions.labels`. */
+export type GroupedPdfLabels = {
+  subtotal?: (group: string) => string
+  total?: string
+}
+
 /**
  * Build a grouped PDF body: a bold group header per cluster (nested for
- * multi-level grouping), the cluster's data rows, then a subtotal row summing
- * the numeric / currency columns. Values use the same formatting as the grid.
+ * multi-level grouping), the cluster's data rows, a subtotal row, and a grand
+ * total at the end. A column totals with its own `aggregate` (avg, min, max,
+ * count, ...), as the grid's group rows do; without one, number and currency
+ * columns sum. Values and group names use the same formatting as the grid.
+ * Each data row carries its index in `rows`, so conditional formatting and
+ * links can find their row.
  */
 export function buildGroupedPdfBody<TData extends RowData>(
   cols: ReadonlyArray<ExportColumn<TData>>,
   rows: ReadonlyArray<TData>,
   groupBy: ReadonlyArray<string>,
+  opts: { grandTotal?: boolean; labels?: GroupedPdfLabels } = {},
 ): PdfBodyRow[] {
   const out: PdfBodyRow[] = []
-  const headerOf = (field: string) => cols.find((c) => c.field === field)?.header ?? field
-  // Put the "Subtotal" label in the first NON-numeric column; if every column
-  // is numeric, -1 means "don't overwrite a sum with the label".
-  const labelColIdx = cols.findIndex((c) => !isSummableColumn(c))
+  const colOf = (field: string) => cols.find((c) => c.field === field)
+  const aggOf = (c: ExportColumn<TData>): GroupAggregator<TData> | undefined =>
+    c.aggregate ?? (isSummableColumn(c) ? 'sum' : undefined)
+  const hasTotals = cols.some((c) => aggOf(c) !== undefined)
+  // The label goes in the first column that has no total of its own; if
+  // every column has one, -1 means "don't overwrite a total with the label".
+  const labelColIdx = cols.findIndex((c) => aggOf(c) === undefined)
+  const index = new Map<TData, number>()
+  rows.forEach((r, i) => index.set(r, i))
+
+  const field = (r: TData, f: string) => (r as Record<string, unknown>)[f]
+  const total = (c: ExportColumn<TData>, subset: ReadonlyArray<TData>): string => {
+    const agg = aggOf(c)
+    if (agg === undefined) return ''
+    // The grid's own aggregator, over the same values the column shows.
+    const v = applyGroupAggregate(
+      agg,
+      c.field,
+      subset.map((r) => ({ original: r, getCellValueByColumnId: () => field(r, c.field) })) as never,
+    )
+    if (v == null || (typeof v === 'number' && !Number.isFinite(v))) return ''
+    // A count is a number of rows, not an amount: no currency or percent.
+    if (agg === 'count' || agg === 'countDistinct') return String(v)
+    if (Array.isArray(v)) return v.map((x) => formatValueForExport(x, c.format)).join(' - ')
+    return formatValueForExport(v, c.format)
+  }
+  const totalRow = (subset: ReadonlyArray<TData>, label: string): PdfBodyRow => {
+    const cells = cols.map((c) => total(c, subset))
+    if (labelColIdx >= 0) cells[labelColIdx] = label
+    return { kind: 'subtotal', cells }
+  }
 
   const recurse = (subset: ReadonlyArray<TData>, level: number) => {
     if (level >= groupBy.length) {
       for (const r of subset) {
-        out.push({ kind: 'data', cells: cols.map((c) => String(cellValueFor(c, r, false) ?? '')) })
+        out.push({ kind: 'data', cells: cols.map((c) => String(cellValueFor(c, r, false) ?? '')), source: index.get(r) })
       }
       return
     }
-    const field = groupBy[level]!
+    const groupField = groupBy[level]!
+    const groupCol = colOf(groupField)
     // Preserve first-seen order of group keys.
     const buckets = new Map<string, TData[]>()
     for (const r of subset) {
-      const key = String((r as Record<string, unknown>)[field] ?? '')
+      const key = String(field(r, groupField) ?? '')
       const bucket = buckets.get(key)
       if (bucket) bucket.push(r)
       else buckets.set(key, [r])
     }
     for (const [key, groupRows] of buckets) {
-      out.push({ kind: 'group', label: `${headerOf(field)}: ${key} (${groupRows.length})`, level })
+      // The name as the grid shows it: a date group reads "Oct 3, 2026", not
+      // the timestamp it is keyed by.
+      const shown = groupCol ? String(cellValueFor(groupCol, groupRows[0]!, false) ?? key) : key
+      out.push({ kind: 'group', label: `${groupCol?.header ?? groupField}: ${shown} (${groupRows.length})`, level })
       recurse(groupRows, level + 1)
-      // Subtotal row for the numeric columns of this cluster.
-      const hasSummable = cols.some(isSummableColumn)
-      if (hasSummable) {
-        const cells = cols.map((c) => {
-          if (!isSummableColumn(c)) return ''
-          const sum = groupRows.reduce(
-            (a, r) => a + (Number((r as Record<string, unknown>)[c.field]) || 0),
-            0,
-          )
-          return formatValueForExport(sum, c.format)
-        })
-        if (labelColIdx >= 0) cells[labelColIdx] = `Subtotal (${key})`
-        out.push({ kind: 'subtotal', cells })
-      }
+      if (hasTotals) out.push(totalRow(groupRows, opts.labels?.subtotal?.(shown) ?? `Subtotal (${shown})`))
     }
   }
   recurse(rows, 0)
+  if (hasTotals && opts.grandTotal !== false && rows.length) out.push(totalRow(rows, opts.labels?.total ?? 'Total'))
   return out
+}
+
+/**
+ * Say so when the PDF holds text Roboto cannot draw. Without a `pdf.font` it
+ * prints as empty boxes, and nothing else would tell the developer why.
+ */
+function warnMissingGlyphs(texts: ReadonlyArray<string>): void {
+  const hit = texts.find((t) => PDF_ROBOTO_MISSING.test(t))
+  if (hit === undefined) return
+  console.warn(
+    `@svgrid/enterprise: the PDF has text its default font (Roboto) cannot draw, such as "${hit.slice(0, 40)}"; ` +
+      'it prints as empty boxes. Pass pdf.font with a font that covers it (Noto Sans CJK, Noto Sans Arabic, ...).',
+  )
 }
 
 /**
@@ -994,25 +1049,18 @@ async function exportPdf<
   TFeatures extends TableFeatures,
   TData extends RowData,
 >(api: SvGridApi<TFeatures, TData>, opts: ExportOptions<TData>): Promise<ExportResult> {
-  await ensureGlobals('pdf')
-  const pdfMake = (globalThis as unknown as {
-    pdfMake?: {
-      createPdf: (def: unknown) => {
-        download(name: string): void
-        getBlob(cb?: (b: Blob) => void): unknown
-      }
-    }
-  }).pdfMake
-  if (!pdfMake) {
-    throw new Error('@svgrid/enterprise: pdf export requires the "pdfmake" peer dependency.')
-  }
   const sourceRows = resolveRowSource(api, opts.rows)
   if (sourceRows.length === 0) {
     throw new Error('@svgrid/enterprise: nothing to export - the grid has no rows')
   }
   const cols = resolveColumns(api, opts, sourceRows)
   const fields = cols.map((c) => c.field)
-  const columns = cols.map((c) => ({ header: c.header ?? c.field, align: c.align }))
+  // The grid's columns arrive with the alignment the screen uses; columns an
+  // app passes itself may not say, so a number or date format right-aligns,
+  // as it does on screen.
+  const alignOf = (c: ExportColumn<TData>) =>
+    c.align ?? (c.format && ['number', 'currency', 'percent', 'date', 'datetime', 'time'].includes(String((c.format as { type?: string }).type)) ? 'right' : undefined)
+  const columns = cols.map((c) => ({ header: c.header ?? c.field, align: alignOf(c) }))
 
   // Carry the grid's active grouping into group + subtotal rows (unless the
   // caller opted out or passed hierarchical), matching the xlsx outline path.
@@ -1047,31 +1095,66 @@ async function exportPdf<
     return chartToPngBlob(el, { scale: 2 })
   })
   const now = new Date()
-  let def
+  let params: PdfDocParams
+  // A boolean prints as the grid's checkbox does: a tick for true and nothing
+  // for false, rather than the words. Only plain fields: a column with a
+  // format or an `exportValue` prints what it asks for.
+  const boolAt = (rowIdx: number, colIdx: number): boolean | undefined => {
+    const col = cols[colIdx]
+    if (!col || col.exportValue || col.format) return undefined
+    const v = (sourceRows[rowIdx] as Record<string, unknown> | undefined)?.[col.field]
+    return typeof v === 'boolean' ? v : undefined
+  }
+  const withTick = (v: ReturnType<ExportCellVisualFn> | undefined, b: boolean | undefined) => {
+    const icon = v?.icon ?? (b ? '✓' : undefined)
+    return v || icon ? { fill: v?.fill, color: v?.color, bold: v?.bold, icon, iconOnly: v?.iconOnly } : undefined
+  }
+
   if (effGroupBy?.length) {
-    // Conditional formatting is skipped for grouped PDFs (group / subtotal
-    // rows own the layout); the grid colors still show on screen.
-    const body = buildGroupedPdfBody(cols, sourceRows, effGroupBy)
-    def = buildPdfDocDefinition({ columns, body, opts: pdfOpts, styles: opts.styles, theme, ...lines, charts, now })
+    const grouped = buildGroupedPdfBody(cols, sourceRows, effGroupBy, { grandTotal: pdfOpts.grandTotal, labels: pdfOpts.labels })
+    const body = grouped.map((row) =>
+      row.kind === 'data' && row.source !== undefined
+        ? { ...row, cells: row.cells.map((text, c) => (boolAt(row.source!, c) === undefined ? text : '')) }
+        : row,
+    )
+    if (!pdfOpts.font) warnMissingGlyphs(body.flatMap((r) => (r.kind === 'group' ? [r.label] : r.cells)))
+    // Data rows come out in group order; conditional formatting and links are
+    // looked up by each row's place in the exported rows.
+    const sources = body.flatMap((r) => (r.kind === 'data' ? [r.source ?? -1] : []))
+    const visual = buildConditionalResolver(cols, sourceRows, opts.conditionalFormats)
+    const link = buildLinkResolver(cols, sourceRows)
+    params = {
+      columns,
+      body,
+      dataCellStyle: (r, c) => {
+        const at = sources[r] ?? -1
+        return at >= 0 ? withTick(visual(at, c), boolAt(at, c)) : undefined
+      },
+      dataCellLink: link
+        ? (r, c) => {
+            const at = sources[r] ?? -1
+            return at >= 0 ? link(at, c) : undefined
+          }
+        : undefined,
+      opts: pdfOpts,
+      styles: opts.styles,
+      theme,
+      ...lines,
+      charts,
+      now,
+    }
   } else {
     const projected = await projectRows(sourceRows, cols, opts)
-    const dataRows = projected.slice(1).map((r) => fields.map((f) => String(r[f] ?? '')))
-    // Conditional formatting -> per-cell fill / color / bold + icon prefix.
+    const dataRows = projected.slice(1).map((r, ri) => fields.map((f, c) => (boolAt(ri, c) === undefined ? String(r[f] ?? '') : '')))
+    // Conditional formatting -> per-cell fill / color / bold, and the icon,
+    // which the builder draws (the icon sets' glyphs are not in the font).
     const visual = buildConditionalResolver(cols, sourceRows, opts.conditionalFormats)
-    for (let r = 0; r < dataRows.length; r++) {
-      for (let c = 0; c < cols.length; c++) {
-        const icon = visual(r, c)?.icon
-        if (icon) dataRows[r]![c] = `${icon} ${dataRows[r]![c] ?? ''}`
-      }
-    }
     const link = buildLinkResolver(cols, sourceRows)
-    def = buildPdfDocDefinition({
+    if (!pdfOpts.font) warnMissingGlyphs([...columns.map((c) => c.header), ...dataRows.flat()])
+    params = {
       columns,
       rows: dataRows,
-      dataCellStyle: (r, c) => {
-        const v = visual(r, c)
-        return v ? { fill: v.fill, color: v.color, bold: v.bold } : undefined
-      },
+      dataCellStyle: (r, c) => withTick(visual(r, c), boolAt(r, c)),
       dataCellLink: link,
       opts: pdfOpts,
       styles: opts.styles,
@@ -1080,11 +1163,34 @@ async function exportPdf<
       merges: opts.merges,
       charts,
       now,
-    })
+    }
   }
   const filename = (opts.filename ?? 'grid').trim() || 'grid'
-  const blob = await pdfBlob(pdfMake.createPdf(def))
-  opts.onProgress?.({ phase: 'write', ratio: 1, total: sourceRows.length })
+  const total = sourceRows.length
+  let blob: Blob
+  if (pdfOpts.worker) {
+    // The document crosses to the worker as data; pdfmake is loaded there.
+    blob = await renderPdfInWorker(pdfOpts.worker, buildPdfDocData(params), {
+      font: pdfOpts.font,
+      signal: opts.signal,
+      onProgress: (ratio) => opts.onProgress?.({ phase: 'write', ratio, total }),
+    })
+  } else {
+    if (total > LARGE_PDF_ROWS) {
+      console.warn(
+        `@svgrid/enterprise: rendering a ${total.toLocaleString('en-US')}-row PDF on the page; pdfmake blocks it until done ` +
+          '(about a second per thousand rows). Pass pdf.worker to render in a worker instead.',
+      )
+    }
+    await ensureGlobals('pdf')
+    const pdfMake = (globalThis as unknown as { pdfMake?: { createPdf: (def: unknown) => { getBlob(cb?: (b: Blob) => void): unknown } } }).pdfMake
+    if (!pdfMake) {
+      throw new Error('@svgrid/enterprise: pdf export requires the "pdfmake" peer dependency.')
+    }
+    if (pdfOpts.font) registerPdfFont(pdfMake as unknown as Parameters<typeof registerPdfFont>[0], pdfOpts.font)
+    blob = await pdfBlob(pdfMake.createPdf(buildPdfDocDefinition(params)))
+  }
+  opts.onProgress?.({ phase: 'write', ratio: 1, total })
   return deliver(blob, ensureExt(filename, 'pdf'), 'application/pdf', sourceRows.length, opts.download)
 }
 

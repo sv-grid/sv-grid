@@ -77,6 +77,10 @@
       "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js"
     },
+    "./pdf-worker": {
+      "types": "./dist/pdf-worker.d.ts",
+      "import": "./dist/pdf-worker.js"
+    },
     "./license": {
       "types": "./dist/license.d.ts",
       "svelte": "./dist/license.js",

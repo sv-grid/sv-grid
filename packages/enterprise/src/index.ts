@@ -42,7 +42,7 @@ export {
   type ClipboardExportOptions,
 } from './export'
 export { default as SvExportMenu } from './SvExportMenu.svelte'
-export { buildPdfDocDefinition, resolvePdfCharts, resolvePdfVfs, registerPdfFonts, type PdfExportOptions, type PdfPageSize, type PdfChart, type PdfKpi, type PdfChartImage, type PdfVirtualFileSystem, type PdfMakeLike } from './export-pdf'
+export { buildPdfDocDefinition, buildPdfDocData, hydratePdfDoc, resolvePdfCharts, resolvePdfVfs, registerPdfFonts, registerPdfFont, type PdfExportOptions, type PdfDocData, type PdfDocParams, type PdfWorkerLike, type PdfPageSize, type PdfChart, type PdfKpi, type PdfChartImage, type PdfVirtualFileSystem, type PdfMakeLike, type PdfFont } from './export-pdf'
 export { printGrid, type PrintOptions } from './print'
 export {
   importData,

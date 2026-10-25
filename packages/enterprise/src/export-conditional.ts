@@ -29,6 +29,8 @@ export type ExportCellVisual = {
   bold?: boolean
   /** Icon-set glyph to prepend to the cell text. */
   icon?: string
+  /** The icon set's `iconOnly`: show the icon instead of the value. */
+  iconOnly?: boolean
 }
 
 export type ExportCellVisualFn = (rowIdx: number, colIdx: number) => ExportCellVisual | undefined
@@ -58,6 +60,7 @@ function toVisual(resolved: ResolvedCellFormat): ExportCellVisual | undefined {
     v.bold = true
   }
   if (resolved.icon) v.icon = resolved.icon
+  if (resolved.icon && resolved.iconOnly) v.iconOnly = true
   return Object.keys(v).length > 0 ? v : undefined
 }
 

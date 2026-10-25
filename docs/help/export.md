@@ -463,6 +463,8 @@ await api.exportData({
     headerColor: '#334155',   // header row fill
     zebra: true,              // striped rows
     columnWidths: '*',        // '*' fill, 'auto', or a per-column pt array
+    fit: 'auto',              // wide grids: 'auto' | 'shrink' | 'split' | 'none'
+    repeatColumns: 1,         // columns repeated on every page when split
     // repeatHeader (default true), showPageNumbers (default true) also available
   },
 })
@@ -471,6 +473,67 @@ await api.exportData({
 The header row repeats on every page, each page gets a `Page X of Y` +
 date footer, per-column alignment is honored, and wide grids auto-switch to
 landscape (override with `pdf.pageOrientation`).
+
+**Every column and every row prints.** Column widths follow the text: each
+column gets at least its longest word, and the rest of the page goes to the
+columns with the most to say, so a notes column is wide and an id column is
+narrow. When the columns still do not fit across the page, `fit: 'auto'`
+shrinks the table text down to three quarters of `fontSize`, and past that
+splits the columns over pages, repeating the first `repeatColumns` columns
+on each, so a 22-column report prints as two runs of pages instead of losing
+its right-hand side. `fit: 'shrink'` and `fit: 'split'` pick one of the two;
+`fit: 'none'` leaves the layout to pdfmake. Explicit numeric `columnWidths`
+are kept, and scaled down only if together they are wider than the page.
+Rows stay whole on a page, except that a row taller than a page breaks
+across pages rather than being dropped.
+
+**Conditional-format icons** (arrows, triangles, traffic lights) are drawn as
+shapes in red, amber and green, since their characters are not in the PDF
+font.
+
+**Other scripts need a font.** The default font, Roboto, covers Latin,
+Greek and Cyrillic. Chinese, Japanese, Korean, Arabic, Hebrew, Thai, the
+Indic scripts and emoji print as empty boxes, and the export logs a warning
+when it sees them. Supply a font that covers them (and Latin, since the
+whole document uses it) as base64 or a URL:
+
+```ts
+pdf: {
+  font: { name: 'NotoSansKR', normal: notoRegularBase64, bold: notoBoldBase64 },
+}
+```
+
+**Large PDFs: render in a worker.** pdfmake lays out and writes the whole
+document in one go, about a second per thousand rows of eight columns on a
+desktop machine, and on the page that time is a frozen tab (the export logs a
+warning past 2,000 rows). Give it a worker instead and the page keeps
+responding while `onProgress` reports the render:
+
+```ts
+// pdf.worker.ts, a file in your app
+import { servePdfWorker } from '@svgrid/enterprise/pdf-worker'
+servePdfWorker()
+```
+
+```ts
+await api.exportData({
+  format: 'pdf',
+  pdf: { worker: () => new Worker(new URL('./pdf.worker.ts', import.meta.url), { type: 'module' }) },
+  onProgress: ({ ratio }) => (progress = ratio),
+  signal: controller.signal, // aborting terminates the worker
+})
+```
+
+The worker loads `pdfmake` itself, so the page never does. Everything else
+works the same, with one difference: a `labels.page` function cannot be sent
+to a worker, so it is called once with stand-in numbers and used as a
+template. It must print the numbers as given; one that formats them (a
+thousands separator) falls back to `Page X of Y`.
+
+Right-to-left text is not fully supported by pdfmake. In a test with
+Tahoma, Hebrew and Arabic letters drew correctly but the space between words
+was lost ("שלום עולם" printed as one word), so check right-to-left documents
+before relying on them.
 
 The PDF looks like the grid it came from. With `pdf.matchTheme` (default
 true) the exporter reads the mounted grid's computed colours - header fill
@@ -487,10 +550,34 @@ html, `header` / `footer` lines print above and below the table, and
 `merges` span data cells.
 
 When the grid is grouped, the PDF carries the grouping: a bold **group header**
-per cluster (nested for multi-level grouping) and a **subtotal row** summing the
-number / currency columns - matching the xlsx outline export. It's on by
+per cluster (nested for multi-level grouping), named the way the grid shows the
+value, a **subtotal row** per cluster and a **total row** at the end. Each
+column totals with its own `aggregate` (`avg`, `min`, `max`, `count`,
+`countDistinct`, a function, ...), as the group rows on screen do; a column
+without one sums if it is a number or currency column. Conditional formatting
+and links carry into grouped exports as they do into flat ones. It's on by
 default (`autoGroup`); pass `groupBy` to override or `autoGroup: false` to get a
-flat table.
+flat table, and `pdf.grandTotal: false` to leave out the total row.
+
+A boolean column prints a tick for `true` and nothing for `false`, as its
+checkbox does on screen. An icon set with `iconOnly` prints the icon without
+the value.
+
+The words the PDF writes itself can be replaced, and the document can carry a
+watermark and an author:
+
+```ts
+pdf: {
+  labels: {
+    page: (page, pages) => `Seite ${page} von ${pages}`,
+    date: (now) => now.toLocaleDateString('de-DE'),
+    subtotal: (group) => `Zwischensumme ${group}`,
+    total: 'Gesamt',
+  },
+  watermark: 'ENTWURF',   // or { text, color, opacity }
+  author: 'Finance',      // with title / subtitle, in the document properties
+}
+```
 
 #### Charts and a KPI strip
 
