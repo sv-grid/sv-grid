@@ -1611,6 +1611,24 @@ async function main() {
   for (const [oldId, newId] of Object.entries(renamed)) await writeRedirectStub(`demos/${oldId}`, `demos/${newId}`)
   // The short EULA address the shipped LICENSE files have carried.
   await writeRedirectStub('eula', 'docs/legal/EULA')
+  // A doc page that moved (the empty-anchor entry in docs/_data/doc-moves.json)
+  // keeps its old URL the same way. The docs route follows the move after
+  // hydration, but a crawler or a cold load got a 404 (Search Console listed
+  // them). Skipped while the old page is still a real one, or while the new
+  // one waits for its release date.
+  const docMoves = JSON.parse(await readFile(join(DOCS_DIR, '_data', 'doc-moves.json'), 'utf-8'))
+  for (const [from, anchors] of Object.entries(docMoves)) {
+    const to = anchors['']
+    if (!to || knownSlugs.has(from) || !knownSlugs.has(to)) continue
+    await writeRedirectStub(`docs/${from}`, `docs/${to}`)
+  }
+  // Pages that were public once and have no route now, still in Google's index:
+  // the reference tree moved to /api, the designer page into the Studio docs.
+  if (!knownSlugs.has('reference/index')) await writeRedirectStub('docs/reference', 'api')
+  for (const name of ['SvGrid', 'SvGridApi', 'ColumnDef', 'enterprise', 'features', 'headless-engine']) {
+    if (!knownSlugs.has(`reference/${name}`)) await writeRedirectStub(`docs/reference/${name}`, 'api')
+  }
+  await writeRedirectStub('studio/app-designer', 'docs/enterprise/studio/app-designer')
 
   // 4e. Prerender each solution page (/svelte/<slug>) - one landing page per
   // thing people search for by name, linking down into the demos and docs that

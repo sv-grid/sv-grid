@@ -6,7 +6,7 @@ lanes** instead of a table. It is the same `<SvGrid>`, the same `data` and
 dragging a card to another lane tells you to reassign that field on your own
 data.
 
-For a board built up option by option, see [Build a sprint board](../kanban/sprint-board.md); this page is the reference for everything the `board` prop can say.
+For a board built up option by option, see [Build a sprint board](../kanban/sprint-board.md); for the overview, see [Svelte Kanban board](https://svgrid.com/svelte/kanban-board/). This page is the reference for everything the `board` prop can say.
 
 ![The same grid rows bucketed into lanes by a groupBy field, each row a card, with a drag reassigning the field.](/docs-media/grid-kanban.svg)
 

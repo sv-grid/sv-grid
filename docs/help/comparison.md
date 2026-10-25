@@ -1,5 +1,5 @@
 ---
-seoTitle: SvGrid vs AG Grid vs TanStack Table - Svelte 5 Data Grid Comparison
+seoTitle: SvGrid vs AG Grid vs TanStack Table: Svelte Data Grid Comparison
 seoDescription: SvGrid, AG Grid and TanStack Table side by side for a Svelte 5 project, with dated facts from npm, measured bundle sizes, a rerunnable benchmark and the cases where each one is the right choice.
 keywords:
   - svelte data grid comparison

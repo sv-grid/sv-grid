@@ -1,3 +1,7 @@
+---
+seoTitle: Migrate From PrimeVue DataTable to a Svelte Data Grid
+---
+
 # Migrating from PrimeVue / PrimeNG / PrimeReact DataTable
 
 The Prime DataTable is the grid in the Prime UI suites for Vue, Angular,

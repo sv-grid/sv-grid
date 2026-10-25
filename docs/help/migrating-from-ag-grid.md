@@ -1,3 +1,7 @@
+---
+seoDescription: AG Grid to SvGrid on Svelte 5: column definitions and gridApi mapped one to one, editing, grouping and server-data patterns, the gotchas. 1-3 hours a grid.
+---
+
 # Migrating from AG Grid to SvGrid
 
 If you tried AG Grid on a Svelte 5 project - via `ag-grid-svelte`, the

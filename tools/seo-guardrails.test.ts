@@ -446,3 +446,37 @@ describe('comparison pages', () => {
     expect(problems).toEqual([])
   })
 })
+
+describe('security.txt', () => {
+  // RFC 9116: a security.txt past its Expires date is to be treated as stale,
+  // so a reader looking for the disclosure contact gets none. A month's notice.
+  it('names a contact and the policy, and does not expire within 30 days', async () => {
+    const text = await readFile(join(ROOT, 'website', 'public', '.well-known', 'security.txt'), 'utf-8')
+    const field = (name: string) => text.match(new RegExp(`^${name}: (.+)$`, 'm'))?.[1]?.trim()
+    expect(field('Contact')).toMatch(/^(https:|mailto:)/)
+    expect(field('Policy')).toBe('https://github.com/sv-grid/sv-grid/blob/main/SECURITY.md')
+    expect(field('Canonical')).toBe('https://svgrid.com/.well-known/security.txt')
+    const expires = Date.parse(field('Expires') ?? '')
+    expect(expires - Date.now()).toBeGreaterThan(30 * 86_400_000)
+  })
+})
+
+describe('blog anchors', () => {
+  // docs/_data/blog-anchors.json gives a post its demo and docs links. The
+  // links tool drops one that no longer resolves, so a rename would remove the
+  // link silently; this is where it shows up instead.
+  it('names published posts, gallery demos and routed docs pages', async () => {
+    const { parseDemoRegistry } = await import('./lib/demo-registry.mjs')
+    const anchors = JSON.parse(await readFile(join(DOCS_DIR, '_data', 'blog-anchors.json'), 'utf-8'))
+    const demos = new Set((await parseDemoRegistry(ROOT)).map((d: { id: string }) => d.id))
+    const problems: string[] = []
+    for (const [post, a] of Object.entries(anchors as Record<string, { demo?: string; doc?: string } | string>)) {
+      if (post === '_about' || typeof a === 'string') continue
+      if (!existsSync(join(ROOT, 'website', 'src', 'content', 'blog', `${post}.md`))) problems.push(`${post}: no such post`)
+      if (!a.demo && !a.doc) problems.push(`${post}: names neither a demo nor a doc`)
+      if (a.demo && !demos.has(a.demo)) problems.push(`${post}: demo ${a.demo} is not in the gallery`)
+      if (a.doc && (isHiddenDoc(a.doc) || !existsSync(join(DOCS_DIR, `${a.doc}.md`)))) problems.push(`${post}: doc ${a.doc} has no page`)
+    }
+    expect(problems).toEqual([])
+  })
+})

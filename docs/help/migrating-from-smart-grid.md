@@ -1,3 +1,7 @@
+---
+seoTitle: Migrate From Smart.Grid to a Svelte Data Grid | SvGrid
+---
+
 # Migrating from Smart.Grid (Smart Web Components)
 
 Smart.Grid (htmlelements.com) and SvGrid come from the **same team**.

@@ -30,6 +30,8 @@
 import { readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseDemoRegistry } from './lib/demo-registry.mjs'
+import { isHiddenDoc } from './lib/doc-meta.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const BLOG_DIR = join(HERE, '..', 'website', 'src', 'content', 'blog')
@@ -112,6 +114,33 @@ const comparisons = existsSync(COMPARISONS_DIR)
       }))
   : []
 
+// A demo and a docs page for posts whose body links neither, picked by hand
+// (docs/_data/blog-anchors.json). Titles come from the gallery registry and
+// each page's H1, so a rename reaches the link without editing the list, and a
+// demo or page that is gone, hidden or not released yet drops out.
+const ANCHORS_FILE = join(HERE, '..', 'docs', '_data', 'blog-anchors.json')
+const anchors = existsSync(ANCHORS_FILE) ? JSON.parse(readFileSync(ANCHORS_FILE, 'utf-8')) : {}
+const demoTitles = new Map((await parseDemoRegistry(join(HERE, '..'))).map((d) => [d.id, d.title]))
+
+function docTitle(slug) {
+  const file = join(HERE, '..', 'docs', `${slug}.md`)
+  if (isHiddenDoc(slug) || !existsSync(file)) return null
+  const h1 = readFileSync(file, 'utf-8').match(/^#\s+(.+)$/m)?.[1]
+  return h1 ? h1.replace(/`/g, '').trim() : null
+}
+
+/** "Live demo" and "Docs" lines for a post listed in the anchors file. */
+function anchorLinks(post) {
+  const a = anchors[post.slug]
+  if (!a || typeof a !== 'object') return []
+  const lines = []
+  const demo = a.demo && demoTitles.get(a.demo)
+  if (demo) lines.push(`- [Live demo: ${demo}](/demos/${a.demo}/)`)
+  const doc = a.doc && docTitle(a.doc)
+  if (doc) lines.push(`- [Docs: ${doc}](/docs/${a.doc}/)`)
+  return lines
+}
+
 /** Comparisons whose competitor a post names in its title, slug or tags. */
 function compareLinks(post) {
   const hay = `${post.title} ${post.slug.replace(/-/g, ' ')} ${post.tags.join(' ')}`.toLowerCase()
@@ -134,8 +163,9 @@ function related(post) {
     .map((x) => x.c)
 }
 
-function buildBlock(list, compares = []) {
+function buildBlock(list, compares = [], anchorLines = []) {
   const items = [
+    ...anchorLines,
     ...list.map((p) => `- [${p.title}](/blog/${p.slug})`),
     ...compares.map((c) => `- [${c.title}](/compare/${c.slug}/) - the comparison page, with a source and date for every claim`),
   ].join('\n')
@@ -160,11 +190,12 @@ for (const post of posts) {
 
   const list = related(post)
   const compares = compareLinks(post)
-  if (list.length === 0 && compares.length === 0) {
+  const anchorLines = post.canonical ? [] : anchorLinks(post)
+  if (list.length === 0 && compares.length === 0 && anchorLines.length === 0) {
     skippedNoRelated++
     continue
   }
-  const block = buildBlock(list, compares)
+  const block = buildBlock(list, compares, anchorLines)
   const next = applyBlock(post.raw, block)
   if (next === post.raw) continue
   changed++

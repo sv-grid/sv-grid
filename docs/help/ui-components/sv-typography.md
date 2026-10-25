@@ -1,3 +1,7 @@
+---
+seoTitle: Svelte Typography Components - Title, Text, List | SvGrid UI
+---
+
 # Typography - SvTitle, SvText, SvAnchor, SvBlockquote, SvMark, SvList
 
 A small set of prose primitives so headings, body copy, links, quotes,

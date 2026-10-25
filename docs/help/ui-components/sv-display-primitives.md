@@ -1,3 +1,7 @@
+---
+seoTitle: Svelte Kbd, Code, AspectRatio, VisuallyHidden | SvGrid UI
+---
+
 # Display primitives - SvKbd, SvCode, SvAspectRatio, SvVisuallyHidden
 
 The small display helpers you reach for constantly in docs, command palettes, and

@@ -1,3 +1,7 @@
+---
+seoTitle: Svelte UI-Kit Table to Data Grid: Flowbite, Skeleton, shadcn
+---
+
 # Migrating from a UI-kit table (Flowbite / Skeleton / shadcn-svelte)
 
 Flowbite-Svelte, Skeleton, and shadcn-svelte all ship a styled `<Table>`

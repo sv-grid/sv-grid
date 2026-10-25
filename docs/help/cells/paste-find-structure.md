@@ -1,3 +1,7 @@
+---
+seoTitle: Svelte Grid Paste Special, Find and Replace, Freeze Panes
+---
+
 # Paste Special, Find and Replace, and structural edits
 
 The three Excel operations that write more than one cell, plus freeze panes.

@@ -1,3 +1,7 @@
+---
+seoTitle: Spreadsheet Web Component Built in Svelte: sv-sheet | SvGrid
+---
+
 # `<sv-sheet>`: the spreadsheet as a custom element
 
 The spreadsheet shell of `@svgrid/enterprise`, ribbon and formula engine

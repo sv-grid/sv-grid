@@ -112,6 +112,17 @@ export const ROUTE_SEO = {
     keywords: ['sveltekit crud app builder', 'svelte app builder', 'svgrid studio', 'sveltekit code generator', 'svelte admin panel builder', 'svelte crud generator'],
     path: '/studio',
   },
+  // The designer's "New app" wizard, linked from the Studio docs. An app
+  // screen rather than a page to rank, so it answers 200 (prerendered) and
+  // stays out of the sitemap and the index.
+  'studio/new': {
+    title: 'New App - SvGrid Studio',
+    description:
+      'Start a SvelteKit app in SvGrid Studio: the same wizard as npx @svgrid/studio init, in the browser. Pick where the app starts, its tables and fields, and the screens per table.',
+    path: '/studio/new',
+    sitemap: false,
+    noindex: true,
+  },
   base: {
     title: 'SvGrid Base - A Table Database for Svelte Apps',
     description:

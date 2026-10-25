@@ -1,3 +1,8 @@
+---
+seoTitle: Move svelte-headless-table to Svelte 5 With a Codemod | SvGrid
+seoDescription: svelte-headless-table runs on Svelte 4 stores. Move each table to SvGrid on Svelte 5 runes with npx @svgrid/migrate: cheat sheet, before/after code, 1-3 hours.
+---
+
 # Migrating from svelte-headless-table
 
 svelte-headless-table popularised the headless-table pattern in the
