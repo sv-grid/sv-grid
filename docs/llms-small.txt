@@ -2535,7 +2535,6 @@ deterministic `mockAIProvider`, so no keys required:
 
 > Live demo: AI assistant - https://svgrid.com/demos/51-ai-assistant/
 
-
 ## What it is
 
 Import the helpers from `@svgrid/grid` and call them with your grid `api`
