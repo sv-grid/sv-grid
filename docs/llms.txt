@@ -44,9 +44,9 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## Key facts
 
-- Package: `@svgrid/grid` 3.0.24, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
+- Package: `@svgrid/grid` 3.0.25, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
 - Peer dependency: `svelte` ^5. Works in SvelteKit, including server-side rendering.
-- Size (gzip, Svelte external, measured 2026-10-26 on 3.0.24): 99.7 KB for the full `<SvGrid>` entry plus 11.3 KB CSS; 3.2 KB for the headless entry. Features load on demand.
+- Size (gzip, Svelte external, measured 2026-10-26 on 3.0.25): 99.8 KB for the full `<SvGrid>` entry plus 11.3 KB CSS; 3.2 KB for the headless entry. Features load on demand.
 - Styling: `--sg-*` CSS custom properties, and 20 theme stylesheets, each with a light and a dark palette. No CSS framework is required; Tailwind and shadcn-svelte setups are documented.
 - Accessibility: the WAI-ARIA grid pattern with full keyboard navigation and screen-reader announcements.
 - AI helpers ship free in `@svgrid/grid` and work with any model: `setAIProvider`, `aiFilter`, `aiSmartFill`, `aiSummarize`, `aiClassify`, `aiFindAnomalies`.
@@ -69,8 +69,8 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 - Every docs page has a plain-markdown copy at its URL with the trailing slash replaced by `.md`, e.g. https://svgrid.com/docs/getting-started/1-install.md
 - This index by product, each part on its own and sized for one fetch: [SvGrid](https://svgrid.com/llms/grid.txt) (49 KB), [SvGrid UI](https://svgrid.com/llms/ui.txt) (28 KB), [SvGrid Enterprise](https://svgrid.com/llms/enterprise.txt) (7 KB), [SvGrid Spreadsheet](https://svgrid.com/llms/sheet.txt) (3 KB), [SvGrid Base](https://svgrid.com/llms/base.txt) (4 KB), [SvGrid Studio](https://svgrid.com/llms/studio.txt) (11 KB), [Comparisons: which Svelte table library to use](https://svgrid.com/llms/compare.txt) (7 KB)
-- [llms-small.txt](https://svgrid.com/llms-small.txt) (172 KB): not an index. The brief above plus the FULL TEXT of the getting-started path and the pages asked about most before choosing a grid.
-- [llms-full.txt](https://svgrid.com/llms-full.txt) (5.0 MB): the full text of every docs page, the comparison pages and the API reference, in reading order. Too large for one fetch; read the parts above, or one page as .md.
+- [llms-small.txt](https://svgrid.com/llms-small.txt) (169 KB): not an index. The brief above plus the FULL TEXT of the getting-started path and the pages asked about most before choosing a grid.
+- [llms-full.txt](https://svgrid.com/llms-full.txt) (4.9 MB): the full text of every docs page, the comparison pages and the API reference, in reading order. Too large for one fetch; read the parts above, or one page as .md.
 - [docs.json](https://svgrid.com/docs.json): the route manifest with section, tier and demo links per page.
 - [demos.md](https://svgrid.com/demos.md): every live demo by category. Each has a markdown copy with its full source at /demos/<id>.md, e.g. https://svgrid.com/demos/01-quick-start.md
 - [API reference as JSON](https://svgrid.com/api.json): look up any function, type, option or api method of @svgrid/grid and @svgrid/enterprise by name. Every export by module, with the member names of each type (options objects, props, SvGridApi). https://svgrid.com/api/<name lowercased>.json has a symbol's doc and signature, e.g. https://svgrid.com/api/createsvgrid.json; a member name (getRowPosition, onCellClick) has a file naming its type. `<SvGrid>` props, each with its signature: https://svgrid.com/api/svgrid.json

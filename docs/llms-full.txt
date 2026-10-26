@@ -44,9 +44,9 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## Key facts
 
-- Package: `@svgrid/grid` 3.0.24, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
+- Package: `@svgrid/grid` 3.0.25, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
 - Peer dependency: `svelte` ^5. Works in SvelteKit, including server-side rendering.
-- Size (gzip, Svelte external, measured 2026-10-26 on 3.0.24): 99.7 KB for the full `<SvGrid>` entry plus 11.3 KB CSS; 3.2 KB for the headless entry. Features load on demand.
+- Size (gzip, Svelte external, measured 2026-10-26 on 3.0.25): 99.8 KB for the full `<SvGrid>` entry plus 11.3 KB CSS; 3.2 KB for the headless entry. Features load on demand.
 - Styling: `--sg-*` CSS custom properties, and 20 theme stylesheets, each with a light and a dark palette. No CSS framework is required; Tailwind and shadcn-svelte setups are documented.
 - Accessibility: the WAI-ARIA grid pattern with full keyboard navigation and screen-reader announcements.
 - AI helpers ship free in `@svgrid/grid` and work with any model: `setAIProvider`, `aiFilter`, `aiSmartFill`, `aiSummarize`, `aiClassify`, `aiFindAnomalies`.
@@ -102914,11 +102914,11 @@ Migration guide: moving from AG Grid (community + enterprise) to SvGrid: https:/
 | Last published | 11 Sep 2026 | 5 Aug 2026 | 12 Sep 2026 |
 | Svelte 5 support | Native (Svelte 5 runes) | No Svelte package (JavaScript, React, Angular, Vue) | 12 Sep 2026 |
 | npm downloads, 30 days to 10 Sep 2026 | 16,900 | 12,400,000 | 12 Sep 2026 |
-| Bundle, minified + gzip | 99.7 KB JS + 11.3 KB CSS | 317.5 KB JS, no separate stylesheet | 12 Sep 2026 |
+| Bundle, minified + gzip | 99.8 KB JS + 11.3 KB CSS | 317.5 KB JS, no separate stylesheet | 12 Sep 2026 |
 | Frameworks | Svelte 5 | JavaScript, React, Angular, Vue | 12 Sep 2026 |
 | Pricing | MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise | AG Grid Community is free under MIT. AG Grid Enterprise is listed at $999 USD per developer with one year of updates and Zendesk support; the Enterprise Bundle with AG Charts Enterprise is $1,498 USD per developer | 12 Sep 2026 |
 
-Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.24 measured 26 Oct 2026 with packages/grid/scripts/measure-size.mjs; ag-grid-community 36.1.0 entry `createGrid + AllCommunityModule + themeQuartz` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
+Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.25 measured 26 Oct 2026 with packages/grid/scripts/measure-size.mjs; ag-grid-community 36.1.0 entry `createGrid + AllCommunityModule + themeQuartz` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
 
 ## Overview
 
@@ -103618,11 +103618,11 @@ Migration guide: moving from Glide Data Grid to SvGrid: https://svgrid.com/docs/
 | Last published | 11 Sep 2026 | 3 Feb 2024 | 12 Sep 2026 |
 | Svelte 5 support | Native (Svelte 5 runes) | No Svelte package (React) | 12 Sep 2026 |
 | npm downloads, 30 days to 10 Sep 2026 | 16,900 | 1,180,000 | 12 Sep 2026 |
-| Bundle, minified + gzip | 99.7 KB JS + 11.3 KB CSS | 71.1 KB JS + 0.2 KB CSS, lodash + marked + react + react-dom + react-responsive-carousel external | 12 Sep 2026 |
+| Bundle, minified + gzip | 99.8 KB JS + 11.3 KB CSS | 71.1 KB JS + 0.2 KB CSS, lodash + marked + react + react-dom + react-responsive-carousel external | 12 Sep 2026 |
 | Frameworks | Svelte 5 | React | 12 Sep 2026 |
 | Pricing | MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise | Glide Data Grid is MIT and, in its own words, fully free and open source; no licence is sold for the grid | 12 Sep 2026 |
 
-Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.24 measured 26 Oct 2026 with packages/grid/scripts/measure-size.mjs; @glideapps/glide-data-grid 6.0.3 entry `DataEditor component` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
+Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.25 measured 26 Oct 2026 with packages/grid/scripts/measure-size.mjs; @glideapps/glide-data-grid 6.0.3 entry `DataEditor component` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
 
 ## Overview
 
@@ -103762,11 +103762,11 @@ Migration guide: moving from Grid.js to SvGrid: https://svgrid.com/docs/help/mig
 | Last published | 11 Sep 2026 | 3 Mar 2024 | 12 Sep 2026 |
 | Svelte 5 support | Native (Svelte 5 runes) | No Svelte package (JavaScript) | 12 Sep 2026 |
 | npm downloads, 30 days to 10 Sep 2026 | 16,900 | 161,000 | 12 Sep 2026 |
-| Bundle, minified + gzip | 99.7 KB JS + 11.3 KB CSS | 17.8 KB JS + 2.4 KB CSS | 12 Sep 2026 |
+| Bundle, minified + gzip | 99.8 KB JS + 11.3 KB CSS | 17.8 KB JS + 2.4 KB CSS | 12 Sep 2026 |
 | Frameworks | Svelte 5 | JavaScript | 12 Sep 2026 |
 | Pricing | MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise | Grid.js is MIT, free and open source; no licence is sold | 12 Sep 2026 |
 
-Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.24 measured 26 Oct 2026 with packages/grid/scripts/measure-size.mjs; gridjs 6.2.0 entry `Grid` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
+Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.25 measured 26 Oct 2026 with packages/grid/scripts/measure-size.mjs; gridjs 6.2.0 entry `Grid` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
 
 ## Overview
 
@@ -104370,11 +104370,11 @@ Migration guide: moving from MUI X DataGrid to SvGrid: https://svgrid.com/docs/h
 | Last published | 11 Sep 2026 | 4 Sep 2026 | 12 Sep 2026 |
 | Svelte 5 support | Native (Svelte 5 runes) | No Svelte package (React) | 12 Sep 2026 |
 | npm downloads, 30 days to 10 Sep 2026 | 16,900 | 11,800,000 | 12 Sep 2026 |
-| Bundle, minified + gzip | 99.7 KB JS + 11.3 KB CSS | 155.0 KB JS, no separate stylesheet, @emotion/react + @emotion/styled + @mui/material + @mui/system + react + react-dom external | 12 Sep 2026 |
+| Bundle, minified + gzip | 99.8 KB JS + 11.3 KB CSS | 155.0 KB JS, no separate stylesheet, @emotion/react + @emotion/styled + @mui/material + @mui/system + react + react-dom external | 12 Sep 2026 |
 | Frameworks | Svelte 5 | React | 12 Sep 2026 |
 | Pricing | MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise | MUI X Community is free under MIT. mui.com lists Pro at $299 per year per developer, Premium at $599 per year per developer and Enterprise at $1,399 per year per developer, with perpetual and annual licence models | 12 Sep 2026 |
 
-Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.24 measured 26 Oct 2026 with packages/grid/scripts/measure-size.mjs; @mui/x-data-grid 9.13.0 entry `DataGrid component` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
+Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.25 measured 26 Oct 2026 with packages/grid/scripts/measure-size.mjs; @mui/x-data-grid 9.13.0 entry `DataGrid component` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
 
 ## Overview
 
@@ -104874,11 +104874,11 @@ Migration guide: moving from React Data Grid (adazzle) to SvGrid: https://svgrid
 | Last published | 11 Sep 2026 | 14 Jul 2026 | 12 Sep 2026 |
 | Svelte 5 support | Native (Svelte 5 runes) | No Svelte package (React) | 12 Sep 2026 |
 | npm downloads, 30 days to 10 Sep 2026 | 16,900 | 2,180,000 | 12 Sep 2026 |
-| Bundle, minified + gzip | 99.7 KB JS + 11.3 KB CSS | 15.7 KB JS + 2.1 KB CSS, react + react-dom external | 12 Sep 2026 |
+| Bundle, minified + gzip | 99.8 KB JS + 11.3 KB CSS | 15.7 KB JS + 2.1 KB CSS, react + react-dom external | 12 Sep 2026 |
 | Frameworks | Svelte 5 | React | 12 Sep 2026 |
 | Pricing | MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise | react-data-grid is MIT on npm and free; no licence is sold | 12 Sep 2026 |
 
-Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.24 measured 26 Oct 2026 with packages/grid/scripts/measure-size.mjs; react-data-grid 7.0.0-beta.61 entry `DataGrid component` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
+Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.25 measured 26 Oct 2026 with packages/grid/scripts/measure-size.mjs; react-data-grid 7.0.0-beta.61 entry `DataGrid component` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
 
 ## Overview
 
@@ -105161,12 +105161,12 @@ Migration guide: moving from SVAR Svelte DataGrid to SvGrid: https://svgrid.com/
 | Last published | 11 Sep 2026 | 3 Jun 2026 | 12 Sep 2026 |
 | Svelte 5 support | Native (Svelte 5 runes) | Svelte package, no peer range declared | 12 Sep 2026 |
 | npm downloads, 30 days to 10 Sep 2026 | 16,900 | 62,800 | 12 Sep 2026 |
-| Bundle, minified + gzip | 99.7 KB JS + 11.3 KB CSS | 51.5 KB JS, no separate stylesheet, svelte external | 12 Sep 2026 |
+| Bundle, minified + gzip | 99.8 KB JS + 11.3 KB CSS | 51.5 KB JS, no separate stylesheet, svelte external | 12 Sep 2026 |
 | Engine alone, minified + gzip | 3.2 KB JS, no separate stylesheet (`createSvGrid` from `@svgrid/grid/core`) | the row above; the package is the engine | 26 Oct 2026 |
 | Frameworks | Svelte 5 | Svelte, React, Vue | 12 Sep 2026 |
 | Pricing | MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise | The DataGrid is MIT and free for commercial use with no paid tier; svar.dev sells PRO editions of its Gantt, Calendar and Kanban components and offers paid consulting and custom development, with no price list for the grid | 12 Sep 2026 |
 
-Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.24 measured 26 Oct 2026 with packages/grid/scripts/measure-size.mjs; wx-svelte-grid 2.7.0 entry `Grid component` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
+Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.25 measured 26 Oct 2026 with packages/grid/scripts/measure-size.mjs; wx-svelte-grid 2.7.0 entry `Grid component` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
 
 ## Overview
 
@@ -105365,12 +105365,12 @@ Migration guide: moving from svelte-headless-table to SvGrid: https://svgrid.com
 | Last published | 11 Sep 2026 | 28 Oct 2024 | 12 Sep 2026 |
 | Svelte 5 support | Native (Svelte 5 runes) | Svelte 4 range (peer svelte ^4.0.0) | 12 Sep 2026 |
 | npm downloads, 30 days to 10 Sep 2026 | 16,900 | 90,100 | 12 Sep 2026 |
-| Bundle, minified + gzip | 99.7 KB JS + 11.3 KB CSS | 5.7 KB JS, no separate stylesheet, svelte external | 12 Sep 2026 |
+| Bundle, minified + gzip | 99.8 KB JS + 11.3 KB CSS | 5.7 KB JS, no separate stylesheet, svelte external | 12 Sep 2026 |
 | Engine alone, minified + gzip | 3.2 KB JS, no separate stylesheet (`createSvGrid` from `@svgrid/grid/core`) | the row above; the package is the engine | 26 Oct 2026 |
 | Frameworks | Svelte 5 | Svelte | 12 Sep 2026 |
 | Pricing | MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise | svelte-headless-table is MIT and free; no paid licence or support is offered, and the author states there are no plans for a Svelte 5 port | 12 Sep 2026 |
 
-Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.24 measured 26 Oct 2026 with packages/grid/scripts/measure-size.mjs; svelte-headless-table 0.18.3 entry `whole package` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
+Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.25 measured 26 Oct 2026 with packages/grid/scripts/measure-size.mjs; svelte-headless-table 0.18.3 entry `whole package` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
 
 ## Overview
 
@@ -105808,11 +105808,11 @@ Migration guide: moving from Tabulator to SvGrid: https://svgrid.com/docs/help/m
 | Last published | 11 Sep 2026 | 23 Jun 2026 | 12 Sep 2026 |
 | Svelte 5 support | Native (Svelte 5 runes) | No Svelte package (JavaScript) | 12 Sep 2026 |
 | npm downloads, 30 days to 10 Sep 2026 | 16,900 | 672,000 | 12 Sep 2026 |
-| Bundle, minified + gzip | 99.7 KB JS + 11.3 KB CSS | 106.9 KB JS + 3.8 KB CSS | 12 Sep 2026 |
+| Bundle, minified + gzip | 99.8 KB JS + 11.3 KB CSS | 106.9 KB JS + 3.8 KB CSS | 12 Sep 2026 |
 | Frameworks | Svelte 5 | JavaScript | 12 Sep 2026 |
 | Pricing | MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise | Tabulator is MIT and free; no licence or support plan is sold | 12 Sep 2026 |
 
-Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.24 measured 26 Oct 2026 with packages/grid/scripts/measure-size.mjs; tabulator-tables 6.5.2 entry `TabulatorFull` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
+Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.25 measured 26 Oct 2026 with packages/grid/scripts/measure-size.mjs; tabulator-tables 6.5.2 entry `TabulatorFull` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
 
 ## Overview
 
@@ -105952,12 +105952,12 @@ Migration guide: moving from TanStack Table (Svelte) to SvGrid: https://svgrid.c
 | Last published | 11 Sep 2026 | 28 Aug 2026 | 12 Sep 2026 |
 | Svelte 5 support | Native (Svelte 5 runes) | Yes (peer svelte ^5.0.0) | 12 Sep 2026 |
 | npm downloads, 30 days to 10 Sep 2026 | 16,900 | 231,000 | 12 Sep 2026 |
-| Bundle, minified + gzip | 99.7 KB JS + 11.3 KB CSS | 36.3 KB JS, no separate stylesheet, svelte external | 12 Sep 2026 |
+| Bundle, minified + gzip | 99.8 KB JS + 11.3 KB CSS | 36.3 KB JS, no separate stylesheet, svelte external | 12 Sep 2026 |
 | Engine alone, minified + gzip | 3.2 KB JS, no separate stylesheet (`createSvGrid` from `@svgrid/grid/core`) | the row above; the package is the engine | 26 Oct 2026 |
 | Frameworks | Svelte 5 | Svelte, React, Vue, Solid, Qwik, Lit | 12 Sep 2026 |
 | Pricing | MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise | TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table | 12 Sep 2026 |
 
-Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.24 measured 26 Oct 2026 with packages/grid/scripts/measure-size.mjs; @tanstack/svelte-table 9.2.4 entry `whole package` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
+Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.25 measured 26 Oct 2026 with packages/grid/scripts/measure-size.mjs; @tanstack/svelte-table 9.2.4 entry `whole package` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
 
 ## Overview
 
@@ -106141,12 +106141,12 @@ Migration guide: moving from @vincjo/datatables to SvGrid: https://svgrid.com/do
 | Last published | 11 Sep 2026 | 4 Jun 2026 | 12 Sep 2026 |
 | Svelte 5 support | Native (Svelte 5 runes) | Yes (peer svelte ^5.56.1) | 12 Sep 2026 |
 | npm downloads, 30 days to 10 Sep 2026 | 16,900 | 72,800 | 12 Sep 2026 |
-| Bundle, minified + gzip | 99.7 KB JS + 11.3 KB CSS | 10.2 KB JS, no separate stylesheet, svelte external | 12 Sep 2026 |
+| Bundle, minified + gzip | 99.8 KB JS + 11.3 KB CSS | 10.2 KB JS, no separate stylesheet, svelte external | 12 Sep 2026 |
 | Engine alone, minified + gzip | 3.2 KB JS, no separate stylesheet (`createSvGrid` from `@svgrid/grid/core`) | the row above; the package is the engine | 26 Oct 2026 |
 | Frameworks | Svelte 5 | Svelte | 12 Sep 2026 |
 | Pricing | MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise | @vincjo/datatables is MIT on npm and free; no licence is sold | 12 Sep 2026 |
 
-Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.24 measured 26 Oct 2026 with packages/grid/scripts/measure-size.mjs; @vincjo/datatables 2.8.1 entry `whole package` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
+Bundle sizes: each package built alone with Vite in library mode, minified, gzip level 9, Svelte kept external where a package uses it (it is a peer dependency). SvGrid 3.0.25 measured 26 Oct 2026 with packages/grid/scripts/measure-size.mjs; @vincjo/datatables 2.8.1 entry `whole package` measured 12 Sep 2026 with packages/grid/scripts/measure-competitor-bundles.mjs.
 
 ## Overview
 
