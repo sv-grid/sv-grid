@@ -357,6 +357,13 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **Toggling a checkbox cell did not fire `onCellValueChange`.** A click or
+  Space on a checkbox cell wrote the row and stopped, so an app that saves
+  edits from `onCellValueChange` lost every checkbox change, and Ctrl+Z could
+  not take one back. The toggle now takes the inline editor's commit path:
+  one undo step, then `onCellValueChange` with the old and new value and the
+  row's position in `data`.
+
 - **Arrow keys lagged whenever the active cell had to scroll.** On the
   10,000 x 53 large-dataset demo one ArrowDown at the bottom of the viewport
   cost about 37 ms of main-thread work and painted over two frames; it is now

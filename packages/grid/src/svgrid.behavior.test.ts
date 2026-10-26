@@ -691,6 +691,35 @@ describe('SvGrid - custom snippet cell', () => {
     }
   })
 
+  it('clicking a checkbox cell fires onCellValueChange, and Ctrl+Z takes it back', async () => {
+    // The toggle wrote row.original and stopped: no callback, no undo step, so
+    // an app saving edits from onCellValueChange lost every checkbox change.
+    const onCellValueChange = vi.fn()
+    const data = people.map((p) => ({ ...p }))
+    const { api, target, destroy } = await mountGrid({ data, onCellValueChange, showRowSelection: false })
+    try {
+      await tick()
+      const cell = target.querySelector<HTMLElement>('.sv-grid-cell[data-col-id="active"]:not(.sv-grid-header-cell)')
+      expect(cell, 'no body cell for the checkbox column').toBeTruthy()
+      cell!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      await tick()
+      expect(onCellValueChange).toHaveBeenCalledTimes(1)
+      expect(onCellValueChange.mock.calls[0]?.[0]).toMatchObject({
+        rowIndex: 0,
+        columnId: 'active',
+        oldValue: true,
+        newValue: false,
+      })
+      expect(api.getData()[0]!.active).toBe(false)
+
+      api.undo()
+      await tick()
+      expect(api.getData()[0]!.active).toBe(true)
+    } finally {
+      destroy()
+    }
+  })
+
   it('a boolean column without a renderer still draws the read-only checkbox', async () => {
     const { target, destroy } = await mountGrid({ showRowSelection: false })
     try {

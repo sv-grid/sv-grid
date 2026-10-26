@@ -296,7 +296,7 @@ All of them are optional. The signatures are copied from `SvGrid.types.ts`.
 
 | Prop | Signature | Fires when |
 | ---- | --------- | ---------- |
-| `onCellValueChange` | `(event: { rowIndex: number; columnId: string; oldValue: unknown; newValue: unknown; row: TData }) => void` | An inline edit commits, and once per cell for a paste, a fill drag, a cleared range, and undo / redo. The grid has already applied the value, so this is a notification, not a veto. `api.setCellValue()` does not fire it. |
+| `onCellValueChange` | `(event: { rowIndex: number; columnId: string; oldValue: unknown; newValue: unknown; row: TData }) => void` | An inline edit commits or a checkbox cell is toggled (click or Space), and once per cell for a paste, a fill drag, a cleared range, and undo / redo. The grid has already applied the value, so this is a notification, not a veto. `api.setCellValue()` does not fire it. |
 | `onPasteClipboard` | `(payload: { text: string; html: string \| null; source: "event" \| "async" }) => boolean \| void` | The user pastes. Return `true` to say you applied the paste; anything else lets the grid paste the text itself. |
 | `onNoteChange` | `(event: { rowId: string; columnId: string; note: string }) => void` | A cell comment is saved or removed (empty `note`), with `editableComments` on. |
 

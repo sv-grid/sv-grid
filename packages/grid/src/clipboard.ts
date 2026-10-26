@@ -749,27 +749,52 @@ export function createClipboard<
     ctx.setActiveCell(dest.minRow, dest.minCol);
   }
 
+  /**
+   * Click or Space on a checkbox cell. This is an edit like any other, so it
+   * takes the same steps as committing the inline editor: write the row, one
+   * undo step, then `onCellValueChange`. It used to write `row.original` and
+   * stop there, so an app saving edits from that callback lost every checkbox
+   * change, and Ctrl+Z could not take one back.
+   */
   function toggleBooleanCell(rowIndex: number, colIndex: number) {
     const row = ctx.allRows[rowIndex];
     const column = ctx.allColumns[colIndex];
     if (!row || !column) return;
-    if (!column.columnDef.field) return;
+    const field = column.columnDef.field;
+    if (!field) return;
 
+    const rowData = row.original as Record<string, unknown>;
+    const oldValue = rowData[field];
     const baseValue = getColumnBaseValue(row, column);
     const currentValue = Boolean(
       ctx.getCellDisplayValue(row.id, column.id, baseValue),
     );
     const nextValue = !currentValue;
-    (row.original as Record<string, unknown>)[column.columnDef.field] =
-      nextValue;
-    getGridExtension()?.cellEdited?.(ctx, { row: row.original, columnId: column.id });
 
-    const key = getCellKey(row.id, column.id);
-    ctx.editedCellValues = {
-      ...ctx.editedCellValues,
-      [key]: nextValue,
-    };
-    ctx.grid.store.setState((prev: any) => ({ ...prev }));
+    // One group, as saveEditingCell does: a step the consumer's callback
+    // records belongs to the same Ctrl+Z as the toggle.
+    runHistoryGroup(ctx, () => {
+      rowData[field] = nextValue;
+      const key = getCellKey(row.id, column.id);
+      ctx.editedCellValues = {
+        ...ctx.editedCellValues,
+        [key]: nextValue,
+      };
+      ctx.grid.store.setState((prev: any) => ({ ...prev }));
+      getGridExtension()?.cellEdited?.(ctx, { row: rowData, columnId: column.id });
+      // The display can disagree with the row when an edit overlay is set;
+      // flipping it back to what the row already holds changes no data.
+      if (oldValue === nextValue) return;
+      pushHistory(ctx, [{ rowId: row.id, columnId: column.id, field, before: oldValue, after: nextValue }]);
+      // `rowIndex` is the position in `props.data`, as the inline editor reports it.
+      ctx.props.onCellValueChange?.({
+        rowIndex: ctx.internalData.indexOf(rowData as TData),
+        columnId: column.id,
+        oldValue,
+        newValue: nextValue,
+        row: rowData as TData,
+      });
+    });
   }
 
   /**

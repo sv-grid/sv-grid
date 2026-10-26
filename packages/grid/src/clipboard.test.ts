@@ -691,6 +691,50 @@ describe('toggleBooleanCell', () => {
     cb.toggleBooleanCell(0, 0)
     expect(ctx.grid.store.setState).not.toHaveBeenCalled()
   })
+
+  // A checkbox toggle is an edit: an app that saves from onCellValueChange
+  // lost every one of them while the toggle only wrote row.original.
+  it('fires onCellValueChange with the old and new value', () => {
+    const ctx = makeCtx({
+      columns: [{ id: 'a', field: 'a', editable: true }],
+      data: [{ a: false }],
+    })
+    const onCellValueChange = vi.fn()
+    ctx.props = { onCellValueChange }
+    createClipboard(ctx).toggleBooleanCell(0, 0)
+    expect(onCellValueChange).toHaveBeenCalledTimes(1)
+    expect(onCellValueChange).toHaveBeenCalledWith({
+      rowIndex: 0,
+      columnId: 'a',
+      oldValue: false,
+      newValue: true,
+      row: ctx.internalData[0],
+    })
+  })
+
+  it('reports the position in data, not on screen, under a sort', () => {
+    const ctx = makeCtx({
+      columns: [{ id: 'a', field: 'a', editable: true }],
+      data: [{ a: false }, { a: true }],
+      displayOrder: [1, 0],
+    })
+    const onCellValueChange = vi.fn()
+    ctx.props = { onCellValueChange }
+    // Displayed row 0 is data row 1.
+    createClipboard(ctx).toggleBooleanCell(0, 0)
+    expect(onCellValueChange.mock.calls[0]?.[0]).toMatchObject({ rowIndex: 1, oldValue: true, newValue: false })
+    expect(ctx.internalData[1].a).toBe(false)
+  })
+
+  it('records one undo step', () => {
+    const ctx = makeCtx({
+      columns: [{ id: 'a', field: 'a', editable: true }],
+      data: [{ a: false }],
+    })
+    createClipboard(ctx).toggleBooleanCell(0, 0)
+    expect(ctx.history).toHaveLength(1)
+    expect(ctx.history[0]).toMatchObject({ rowId: '0', columnId: 'a', field: 'a', before: false, after: true })
+  })
 })
 
 describe('copySelectionToClipboard', () => {
