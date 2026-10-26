@@ -39,7 +39,7 @@ const columns = [
 const features = tableFeatures({ rowSortingFeature, columnGroupingFeature })
 const tick = () => new Promise<void>((r) => queueMicrotask(r))
 
-function mountGrid(groupFooters: boolean) {
+function mountGrid(groupFooters: boolean, extra: Record<string, unknown> = {}) {
   const target = document.createElement('div')
   document.body.appendChild(target)
   let api: { setGroupBy: (ids: string[]) => void } | null = null
@@ -62,6 +62,7 @@ function mountGrid(groupFooters: boolean) {
       },
       containerHeight: 600,
       virtualization: false,
+      ...extra,
     } as never,
   })
   return {
@@ -117,5 +118,28 @@ describe('groupFooters', () => {
       expect(f.classList.contains('sv-grid-group-row')).toBe(false)
       expect(f.querySelector('.sv-grid-group-toggle')).toBeNull()
     }
+  })
+
+  // A footer is a totals row, not a record. It used to draw a row-selection
+  // checkbox (ticking it selected the synthetic row) and an empty checkbox in
+  // every editorType 'checkbox' column.
+  it('draws no checkboxes: nothing to select, no boolean to show', async () => {
+    const g = mountGrid(true, {
+      columns: [...columns, { field: 'paid', header: 'Paid', width: 80, editorType: 'checkbox' }],
+      data: data.map((r) => ({ ...r, paid: r.id % 2 === 0 })),
+      showRowSelection: true,
+    })
+    cleanup = g.destroy
+    await g.setup()
+    const rows = footers(g.target)
+    expect(rows).toHaveLength(2)
+    for (const f of rows) {
+      expect(f.querySelector('.sv-grid-selection-cell')).not.toBeNull()
+      expect(f.querySelector('[role="checkbox"]')).toBeNull()
+    }
+    // Record rows keep both.
+    const selectable = [...g.target.querySelectorAll('[aria-label="Select row"]')]
+    expect(selectable.length).toBeGreaterThan(0)
+    expect(selectable.every((b) => !b.closest('tr.sv-grid-group-footer-row'))).toBe(true)
   })
 })

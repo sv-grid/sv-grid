@@ -90,6 +90,30 @@ function inlineCss(build) {
   }
 }
 
+// Svelte emits the element's registration as a bare top-level statement,
+// `customElements.define("sv-grid", create_custom_element(...))`, and
+// create_custom_element extends HTMLElement. Neither exists on a server, so
+// importing the package during SSR threw `customElements is not defined` -
+// which is every React wrapper import in a server-rendered app (TanStack
+// Start, Next, Remix). Guarding the statement skips both on the server; the
+// browser import registers the element as before, and SSR emits a plain
+// <sv-grid> tag that upgrades on hydration.
+function ssrSafeDefine() {
+  return {
+    name: '@svgrid/grid-wc:ssr-safe-define',
+    apply: 'build',
+    enforce: 'post',
+    renderChunk(code, chunk) {
+      if (!chunk.isEntry) return null
+      const out = code.replace(/^customElements\.define\("sv-/gm, 'typeof customElements < "u" && customElements.define("sv-')
+      if (!/typeof customElements < "u" && customElements\.define\("sv-/.test(out)) {
+        this.error('ssr-safe-define: the element registration was not found; Svelte changed its output')
+      }
+      return { code: out, map: null }
+    },
+  }
+}
+
 // ONE ELEMENT PER BUILD, selected by SVGRID_WC_SHADOW, and `pnpm build` runs
 // the config twice.
 //
@@ -134,6 +158,7 @@ export default defineConfig({
       },
     }),
     inlineCss(BUILD),
+    ssrSafeDefine(),
   ],
   build: {
     lib: {

@@ -357,6 +357,12 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **Group footer and grand-total rows drew checkboxes.** With
+  `showRowSelection`, each totals row had a row-selection checkbox, and
+  ticking it selected the synthetic row. A checkbox column with no `aggregate`
+  showed a checkbox too, holding a leaf's value carried over from the group
+  row. Totals rows keep the selection cell for alignment but leave it empty,
+  and a boolean column without an aggregate renders nothing there.
 - **Toggling a checkbox cell did not fire `onCellValueChange`.** A click or
   Space on a checkbox cell wrote the row and stopped, so an app that saves
   edits from `onCellValueChange` lost every checkbox change, and Ctrl+Z could
@@ -827,6 +833,22 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **Importing the package on a server threw `customElements is not defined`.**
+  Svelte registers each element with a bare top-level
+  `customElements.define(...)`, so any server-rendered React app
+  (TanStack Start, which Lovable now generates, Next.js, Remix) crashed on
+  `import { SvGrid } from '@svgrid/grid-wc/react'`. The build now guards the
+  registration; on a server the import is inert and SSR emits a plain
+  `<sv-grid>` that upgrades on hydration. Guarded by `test/ssr.test.ts`.
+- **The React wrapper lost props the grid reads once at mount.** It wrote
+  props in a passive `useEffect`, which runs after paint; the element mounts a
+  microtask after insertion, so it had already mounted with defaults and
+  `pageSize={25}` showed 10 rows a page (the wrapper's own pagination example
+  did). Props are now written in a layout effect, before the element mounts.
+  The same change in the `<sv-chart>` wrapper.
+- **`style` on the React wrappers took `Record<string, string | number>`,** so
+  passing a React `CSSProperties` object failed to type-check. It is
+  `CSSProperties` now.
 - **The React wrapper re-did all its work on every parent render.** Both of its
   effects had no dependency array, so any state change anywhere in the parent
   reassigned all 98 properties and rebound all 20 event listeners - 40 listener

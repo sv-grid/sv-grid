@@ -625,6 +625,10 @@
   const isGrandTotalRow = (row: Row<TData>): boolean =>
     (row as { __grandTotal?: boolean }).__grandTotal === true ||
     (row.original as { __grandTotal?: boolean } | null)?.__grandTotal === true;
+  // A totals row is not a record: nothing to select, and a checkbox column has
+  // no value in it. Both used to draw an empty checkbox on every footer, and
+  // ticking the selection one selected the synthetic row.
+  const isSummaryRow = (row: Row<TData>): boolean => isGroupFooterRow(row) || isGrandTotalRow(row);
   const computeCellClass = $derived(ctrl.computeCellClass);
   const computeCellTooltip = $derived(ctrl.computeCellTooltip);
   const computeCellValidity = $derived(ctrl.computeCellValidity);
@@ -1426,6 +1430,9 @@
          pill used to come out as a read-only checkbox, with `cell` never called. -->
     {#if column.columnDef.fieldType && column.columnDef.cell == null && gridExt?.cell && gridExt.hasCell?.(column.columnDef) !== false}
       <gridExt.cell {ctrl} {row} {column} value={cellValue} />
+    {:else if isSummaryRow(row) && !column.columnDef.aggregate && (column.columnDef.editorType === "checkbox" || typeof cellValue === "boolean") && column.columnDef.cell == null}
+      <!-- A totals row has no boolean to show unless the column aggregates
+           one; the value here is a leaf's, carried over from the group row. -->
     {:else if (column.columnDef.editorType === "checkbox" || typeof cellValue === "boolean") && column.columnDef.cell == null}
       <div
         class="sv-grid-checkbox sv-grid-checkbox-readonly"
@@ -1925,7 +1932,13 @@
                           >{#if RowHeader}<RowHeader {ctrl} {row} {rowIndex} />{:else}<span class="sv-grid-cell-line">{rowIndex + 1}</span>{/if}</td
                         >
                       {/if}
-                      {#if showRowSelectionEffective}
+                      {#if showRowSelectionEffective && isSummaryRow(row)}
+                        <!-- Kept for column alignment; a totals row has nothing to select. -->
+                        <td
+                          class="sv-grid-cell sv-grid-selection-cell"
+                          style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; inset-inline-start: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}
+                        ></td>
+                      {:else if showRowSelectionEffective}
                         <td
                           class="sv-grid-cell sv-grid-selection-cell"
                           style={`width: ${selectionColumnWidth}px; min-width: ${selectionColumnWidth}px; max-width: ${selectionColumnWidth}px; inset-inline-start: ${showRowNumbersEffective ? rowNumberColumnWidth : 0}px;`}

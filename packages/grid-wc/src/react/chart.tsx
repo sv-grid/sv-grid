@@ -4,9 +4,13 @@
  *
  * React wrapper for <sv-chart>. Assigns object props (the spec above all) as properties, which React <=18 would otherwise stringify onto attributes.
  */
-import { createElement, forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
-import type { Ref } from 'react'
+import { createElement, forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef } from 'react'
+import type { CSSProperties, Ref } from 'react'
 import '@svgrid/grid-wc/chart'
+
+// Layout effect for the same reason as the grid wrapper: the element mounts a
+// microtask after insertion and must find its props already set.
+const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 
 export interface SvChartProps {
   /** `property only` - ChartSpec */
@@ -95,7 +99,7 @@ export interface SvChartProps {
 
   /** Forwarded to the host element. */
   className?: string
-  style?: Record<string, string | number>
+  style?: CSSProperties
 }
 
 /** The host element, reachable through a ref. */
@@ -117,7 +121,7 @@ export const SvChart = forwardRef(function SvChart(props: SvChartProps, ref: Ref
   const { className, style, ...rest } = props
 
   const written = useRef<Record<string, unknown>>({})
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const el = hostRef.current as unknown as Record<string, unknown> | null
     if (!el) return
     for (const name of PROP_NAMES) {

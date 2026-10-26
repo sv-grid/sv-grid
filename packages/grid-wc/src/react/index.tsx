@@ -4,9 +4,17 @@
  *
  * React wrapper. React <=18 assigns object props to ATTRIBUTES, which turns `columns` into "[object Object]"; this assigns them as properties instead.
  */
-import { createElement, forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
-import type { Ref } from 'react'
+import { createElement, forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef } from 'react'
+import type { CSSProperties, Ref } from 'react'
 import '@svgrid/grid-wc'
+
+// Props are written in a LAYOUT effect. A Svelte custom element mounts one
+// microtask after it is inserted, reading whatever properties it holds by
+// then; a passive useEffect runs after paint, by which point the grid has
+// mounted with its defaults and the props it reads once (pageSize,
+// initialSorting, initialColumnPinning) are lost. React 18 warns about
+// useLayoutEffect during SSR, hence the server fallback.
+const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 
 export interface SvGridProps {
   /** `property only` - ReadonlyArray<TData> */
@@ -329,7 +337,7 @@ export interface SvGridProps {
   shadow?: boolean
   /** Forwarded to the host element. */
   className?: string
-  style?: Record<string, string | number>
+  style?: CSSProperties
 }
 
 /** The grid's imperative api, reachable through a ref. */
@@ -366,7 +374,7 @@ export const SvGrid = forwardRef(function SvGrid(props: SvGridProps, ref: Ref<Sv
   // fresh values per keystroke of parent state. Comparing first also stops the
   // wrapper clobbering a value the grid maintains itself.
   const written = useRef<Record<string, unknown>>({})
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const el = hostRef.current as (HTMLElement & Record<string, unknown>) | null
     if (!el) return
     for (const name of PROP_NAMES) {
