@@ -1,6 +1,9 @@
 name = "svgrid-mcp"
 main = "src/index.ts"
 compatibility_date = "2026-01-01"
+# The account the custom domain lives in. Not a secret; pinned so a deploy
+# from CI needs only CLOUDFLARE_API_TOKEN.
+account_id = "a60a4cf36c678cd71f3e562f7aefb169"
 
 # No `workers_dev = true` here: this account has never registered a
 # workers.dev subdomain, and asking for one fails the deploy outright in a
