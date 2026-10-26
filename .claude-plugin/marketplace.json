@@ -14,7 +14,7 @@
       "name": "svgrid",
       "source": "./plugins/svgrid",
       "description": "Write SvGrid code that runs: the house-style skill plus the MCP server that checks every file against the real API surface before you see it.",
-      "version": "3.0.33",
+      "version": "3.0.34",
       "author": {
         "name": "jQWidgets",
         "email": "sales@jqwidgets.com",

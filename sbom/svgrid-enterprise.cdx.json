@@ -34,10 +34,10 @@
   "components": [
     {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/grid@3.0.23",
+      "bom-ref": "pkg:npm/%40svgrid/grid@3.0.24",
       "name": "@svgrid/grid",
-      "version": "3.0.23",
-      "purl": "pkg:npm/%40svgrid/grid@3.0.23",
+      "version": "3.0.24",
+      "purl": "pkg:npm/%40svgrid/grid@3.0.24",
       "scope": "required",
       "description": "Peer dependency (declared range: workspace:^)"
     },
@@ -124,7 +124,7 @@
     {
       "ref": "pkg:npm/%40svgrid/enterprise@3.1.27",
       "dependsOn": [
-        "pkg:npm/%40svgrid/grid@3.0.23",
+        "pkg:npm/%40svgrid/grid@3.0.24",
         "pkg:npm/jszip@3.10.1",
         "pkg:npm/pdfmake@0.2.23",
         "pkg:npm/react@19.2.8",
@@ -135,7 +135,7 @@
       ]
     },
     {
-      "ref": "pkg:npm/%40svgrid/grid@3.0.23",
+      "ref": "pkg:npm/%40svgrid/grid@3.0.24",
       "dependsOn": []
     },
     {
