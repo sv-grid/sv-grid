@@ -52,13 +52,13 @@ breakdown are on the [bundle size reference](./bundle-size.md). An earlier
 version of this page typed these and sat a month behind the measurement.
 
 <!-- size:start -->
-Re-measured **26 Oct 2026** at `@svgrid/grid` 3.0.24 with the script that ships in the repo (`pnpm size:json`):
+Re-measured **26 Oct 2026** at `@svgrid/grid` 3.0.25 with the script that ships in the repo (`pnpm size:json`):
 
 | Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |
 | --- | ---: | ---: | ---: |
 | Headless core (`createSvGrid`) | **3.2 KB** | - | - |
 | Headless subpath (`@svgrid/grid/core`) | **10.0 KB** | - | - |
-| Full render component (`<SvGrid>`) | **99.7 KB** | **11.3 KB** | **197.4 KB** |
+| Full render component (`<SvGrid>`) | **99.8 KB** | **11.3 KB** | **197.4 KB** |
 | Standalone chart (`<SvChart>`) | **71.9 KB** | - | **15.0 KB** |
 <!-- size:end -->
 

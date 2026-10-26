@@ -208,6 +208,13 @@ jobs:
           if [ "${{ contains(fromJSON(steps.release.outputs.packages_json), 'grid') }}" = "true" ]; then
             pnpm size:json && git add -- docs/_data/svgrid-size.json || echo "size:json failed; the old measurement stays, dated"
           fi
+          # The comparison guides, bundle-size.md and benchmarks.md print the
+          # size and version above in a generated block that competitor-facts
+          # .test.ts holds to the file; without this the next push after every
+          # grid release went red in Docs guardrails (3.0.24, then 3.0.25).
+          # Before the indexes, which carry the guides' text.
+          node tools/sync-guide-facts.mjs
+          git add -- docs/help
           node tools/build-docs-index.mjs
           git add -- docs/docs.json docs/llms.txt docs/llms-full.txt docs/llms-small.txt docs/llms .claude-plugin/marketplace.json
           if [ "${{ contains(fromJSON(steps.release.outputs.packages_json), 'mcp') }}" = "true" ]; then
