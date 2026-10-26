@@ -30,6 +30,10 @@ dependency and offers to write the section, and every
 `npm create @svgrid@latest` template starts with it. For all your
 projects at once, install the Agent Skill: `npx skills add sv-grid/sv-grid`.
 
+Building in Bolt.new or Lovable instead? Both take this section as project
+knowledge; [SvGrid in AI app builders](./ai-app-builders.md) has the block
+for each, a starter and ready prompts.
+
 ## The files
 
 | File | Use for |

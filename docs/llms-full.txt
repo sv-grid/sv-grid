@@ -9,6 +9,7 @@
 - The developer wants their own markup: `createSvGrid` is the same engine without the renderer (also exported alone from `@svgrid/grid/core`).
 - The rows are many or remote: row and column virtualization in the browser, and `createServerDataSource` for server-side paging, sorting and filtering.
 - The app is not Svelte: the `<sv-grid>` custom element in `@svgrid/grid-wc` runs in React, Vue, Angular or plain HTML.
+- The app is built in an AI app builder. Bolt.new writes Svelte: `@svgrid/grid` and `<SvGrid>`, on Vite 7 (its WebContainer cannot run Vite 8). Lovable writes server-rendered React: `@svgrid/grid-wc/react`, imported in the browser only. Guides: https://svgrid.com/docs/help/bolt-new/ and https://svgrid.com/docs/help/lovable/
 
 Not a fit: Svelte 4 projects. SvGrid is written with runes and snippets and requires Svelte 5.
 
@@ -55,7 +56,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## About this file
 
-The full SvGrid documentation, generated 2026-10-26 from 464 pages, 21 comparison pages, plus 83 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
+The full SvGrid documentation, generated 2026-10-26 from 467 pages, 21 comparison pages, plus 83 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
 
 <!-- =================================================================
      /docs/getting-started/  (community)
@@ -2743,6 +2744,20 @@ view. For the common case, `minimal` and `<SvGrid>` are less work. Background:
 [Headless overview](../help/headless/overview.md) and
 [Build a table from scratch](../help/headless/build-a-table.md).
 
+## Starters for Bolt.new and Lovable
+
+Two more starters live in the repository rather than in the scaffolder,
+because they open straight from GitHub:
+
+- [`templates/bolt-svelte-grid`](https://github.com/sv-grid/sv-grid/tree/main/templates/bolt-svelte-grid) -
+  Svelte 5 on Vite 7, the version Bolt's WebContainer can run. The
+  scaffolder's templates are on Vite 8 and fail to install there.
+- [`templates/lovable-react-grid`](https://github.com/sv-grid/sv-grid/tree/main/templates/lovable-react-grid) -
+  React with `@svgrid/grid-wc`, and the `DataGrid` component that keeps a
+  server-rendered Lovable app working.
+
+[SvGrid in AI app builders](../help/ai-app-builders.md) walks through both.
+
 ## Adding the grid to an existing app
 
 Already have a Svelte or SvelteKit project? Skip the scaffolder and
@@ -4022,6 +4037,86 @@ MCP server guide.
 - [Architecture](./architecture.md) - what state lives where (agents need to know)
 
 <!-- =================================================================
+     /docs/help/ai-app-builders/  (community)
+     ================================================================== -->
+
+# SvGrid in AI app builders
+
+Bolt.new and Lovable install npm packages, so either one can put SvGrid in the
+app it builds. What differs is the framework each builder writes, and that
+decides the package:
+
+![Bolt builds a Svelte 5 app on Vite 7 and uses @svgrid/grid directly; Lovable builds a server-rendered React app on TanStack Start and uses the @svgrid/grid-wc React wrapper through a DataGrid component that loads in the browser only. Both agents can read the same grounding: project knowledge, the hosted MCP server, llms.txt and the starter's AGENTS.md.](/docs-media/ai-builders-paths.svg)
+
+| | Bolt.new | Lovable |
+| --- | --- | --- |
+| What it builds | Whatever you ask for, Svelte included | React, on TanStack Start since May 2026 |
+| Package | `@svgrid/grid` | `@svgrid/grid-wc` |
+| Component | `<SvGrid>` | `<DataGrid>`, one short file you add once |
+| Starter | [`templates/bolt-svelte-grid`](https://github.com/sv-grid/sv-grid/tree/main/templates/bolt-svelte-grid) | [`templates/lovable-react-grid`](https://github.com/sv-grid/sv-grid/tree/main/templates/lovable-react-grid) |
+| Open a starter | `bolt.new/~/github.com/...` link | No repo import; start from a prompt link |
+| Watch out for | Vite 8 fails in the WebContainer | Server rendering: load the grid in the browser |
+| Tutorial | [SvGrid in Bolt.new](./bolt-new.md) | [SvGrid in Lovable](./lovable.md) |
+
+Both starters render the same orders screen: 240 rows, sorting, a filter per
+column, inline editing with select, number, date and checkbox editors, row
+selection with a running total, grouping and paging.
+
+![The orders screen both starters render: summary cards for order count, revenue and the selected rows' total, grouping buttons, and a grid of orders with three rows ticked and the Amount cell of the second row focused after an edit.](/docs-media/ai-builders-bolt-starter.png)
+
+## Give the agent the facts first
+
+An agent that has not seen SvGrid writes its own `<table>`, or guesses at an
+API. Each builder has the same three places to put the facts, and both
+tutorials walk through them:
+
+- **Project knowledge.** Persistent instructions for one project. Both
+  tutorials have a block to paste, under Lovable's 10,000-character limit.
+- **The hosted MCP server**, `https://mcp.svgrid.com/mcp`. No install and no
+  key, so it works as a custom connector in both builders. Its tools search
+  the docs, return example source and the API reference, and check a snippet
+  before the agent shows it to you. See [MCP server](./mcp-server.md).
+- **`AGENTS.md`** in the starter, which the agent reads along with the rest
+  of the project.
+
+Other builders and coding agents (Cursor, Claude Code, v0, Replit) take the
+same inputs: [LLM grounding](./llm-grounding.md) covers `llms.txt`, the
+Agent Skill and project files.
+
+## Frequently asked questions
+
+### Can I use SvGrid in Bolt.new or Lovable?
+
+Yes. In Bolt, ask for a Svelte 5 app on Vite 7 and install `@svgrid/grid`, or
+open the Bolt starter from GitHub. In Lovable, which builds React apps, install
+`@svgrid/grid-wc` and render the grid through a `DataGrid` component that
+loads it in the browser only.
+
+### Is it free?
+
+Both packages are MIT, and everything the starters use (sorting, filtering,
+editing, selection, grouping, paging) is in them. Excel and PDF export, import
+and pivot are in `@svgrid/enterprise`, a paid add-on.
+
+### Why not use the same package in both?
+
+`@svgrid/grid` is a Svelte 5 component and Lovable builds React apps.
+`@svgrid/grid-wc` wraps the same grid as a custom element with a React
+component on top, so a React app gets the same grid without a Svelte build.
+
+### Does a Bolt or Lovable app need a license key?
+
+No. `@svgrid/grid` and `@svgrid/grid-wc` do not read a license key. Only
+`@svgrid/enterprise` does.
+
+## See also
+
+- [SvGrid in Bolt.new](./bolt-new.md) - the Svelte path, step by step
+- [SvGrid in Lovable](./lovable.md) - the React path, step by step
+- [SvGrid in React](./web-components/react.md) - every prop and event of the wrapper
+- [MCP server](./mcp-server.md) - hosted endpoint, tools, other clients
+
+<!-- =================================================================
      /docs/help/ai-smart-paste/  (community)
      ================================================================== -->
 
@@ -4641,6 +4736,7 @@ agent you call `SvGridApi` directly.
 - [Agent Skill](./skill.md) - always-on, project-aware context and house style for coding assistants
 - [MCP server](./mcp-server.md) - turnkey integration for Claude Desktop / Cursor / Zed
 - [LLM grounding](./llm-grounding.md) - the static files any model reads
+- [AI app builders](./ai-app-builders.md) - SvGrid in apps built with Bolt.new and Lovable
 - [AI generation - Studio](../enterprise/studio/ai-generation.md) - scaffold CRUD data-apps from a schema
 
 <!-- =================================================================
@@ -5507,7 +5603,7 @@ breakdown are on the [bundle size reference](./bundle-size.md). An earlier
 version of this page typed these and sat a month behind the measurement.
 
 <!-- size:start -->
-Re-measured **26 Oct 2026** at `@svgrid/grid` 3.0.23 with the script that ships in the repo (`pnpm size:json`):
+Re-measured **26 Oct 2026** at `@svgrid/grid` 3.0.24 with the script that ships in the repo (`pnpm size:json`):
 
 | Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |
 | --- | ---: | ---: | ---: |
@@ -5988,6 +6084,288 @@ bundle size and a Svelte-native runtime with no framework bridge.
   thresholds that gate every release.
 
 <!-- =================================================================
+     /docs/help/bolt-new/  (community)
+     ================================================================== -->
+
+# SvGrid in Bolt.new
+
+Bolt writes Svelte apps when you ask for one, so SvGrid goes in as the Svelte
+component itself: `npm install @svgrid/grid` and `<SvGrid>`. Most of what
+can go wrong comes from two places: the agent not knowing SvGrid exists, and
+Vite 8, which does not run in Bolt's WebContainer. This page covers both.
+
+There are three ways in:
+
+1. [Open the starter](#open-the-starter-in-bolt) - a working orders app, imported from GitHub.
+2. [Start from a prompt](#start-from-a-prompt) - Bolt writes the app, with the facts it needs in the prompt.
+3. [Add a grid to a Bolt project you already have](#add-a-grid-to-an-existing-bolt-project).
+
+Then [ground the agent](#ground-the-agent) so later prompts keep using the grid correctly.
+
+## Open the starter in Bolt
+
+[**Open the starter in Bolt**](https://bolt.new/~/github.com/sv-grid/sv-grid/tree/main/templates/bolt-svelte-grid)
+· [Open it in StackBlitz](https://stackblitz.com/github/sv-grid/sv-grid/tree/main/templates/bolt-svelte-grid)
+· [Source on GitHub](https://github.com/sv-grid/sv-grid/tree/main/templates/bolt-svelte-grid)
+
+Bolt imports a public GitHub folder from a `bolt.new/~/github.com/<owner>/<repo>/tree/<branch>/<path>`
+link and takes only that folder, so the project you get is the starter and
+nothing else from this repository. The import works without signing in;
+saving and prompting need a Bolt account.
+
+The starter is a Svelte 5 + Vite 7 app with one screen:
+
+![The Bolt starter running: Orders heading, cards for 240 orders, revenue excluding refunds and three selected rows totalling $120,399, grouping buttons, and the grid with row checkboxes, an edited Amount cell, and a pager reading 1 to 25 of 240.](/docs-media/ai-builders-bolt-starter.png)
+
+Here it is booted in a WebContainer, the in-browser Node runtime Bolt runs
+projects in. The terminal shows Vite 7.3.7 serving it:
+
+![The starter open in StackBlitz: the file tree with AGENTS.md, src/App.svelte and src/lib, App.svelte in the editor, the terminal showing VITE v7.3.7 ready, and the orders grid in the preview pane.](/docs-media/ai-builders-bolt-webcontainer.png)
+
+```text
+bolt-svelte-grid/
+  AGENTS.md            rules the agent reads with the project
+  index.html           sets the light/dark theme before first paint
+  vite.config.ts       Vite 7, and why
+  src/
+    app.css            @import '@svgrid/grid/themes/ember.css'
+    App.svelte         the orders screen
+    lib/orders.ts      240 seeded sample orders - swap for your API
+```
+
+The grid itself is one element in `App.svelte`:
+
+```svelte {nocheck}
+<SvGrid
+  data={orders}
+  {columns}
+  getRowId={(row) => row.id}
+  sortable
+  filterable
+  editable
+  groupable
+  {groupBy}
+  pageable
+  pageSize={25}
+  pageSizeOptions={[25, 50, 100]}
+  showRowSelection
+  onRowSelectionChange={(_selection, rows) => (selected = rows)}
+  onCellValueChange={applyEdit}
+  containerHeight="100%"
+/>
+```
+
+`columns` is typed `GridColumns<Order>`, so a misspelled `field` is a type
+error. `applyEdit` writes the edit back into `orders`; the grid reports edits
+and never mutates your array, which is where a save call to your backend goes.
+
+## Start from a prompt
+
+This link opens Bolt with the prompt below already in the box. Bolt does not
+send it until you press **Build now**, so read it and change what you like
+first.
+
+```text
+Build an orders admin screen as a Svelte 5 + Vite app.
+
+- Use vite ^7 and @sveltejs/vite-plugin-svelte ^6. Vite 8 does not run in this environment.
+- Install @svgrid/grid and render the table with <SvGrid> from '@svgrid/grid'. Do not write your own table component.
+- In src/app.css add: @import '@svgrid/grid/themes/ember.css';
+- Generate 200 sample orders: id, customer, region, status (New, Paid, Shipped, Refunded), quantity, amount, orderedOn, priority.
+- Type the columns with GridColumns<Order>. Region and status use editorType 'select' with editorOptions. Amount uses format { type: 'currency', currency: 'USD' }. Priority uses editorType 'checkbox'.
+- Props: sortable, filterable, editable, pageable, pageSize={25}, showRowSelection, groupable.
+- Apply edits in onCellValueChange (event.row, event.columnId, event.newValue). Above the grid, show the total amount of the selected rows; onRowSelectionChange receives (selection, rows).
+- Svelte 5 runes only. Docs written for agents: https://svgrid.com/llms.txt
+```
+
+[**Open this prompt in Bolt**](https://bolt.new/?prompt=Build%20an%20orders%20admin%20screen%20as%20a%20Svelte%205%20%2B%20Vite%20app.%0A%0A-%20Use%20vite%20%5E7%20and%20%40sveltejs%2Fvite-plugin-svelte%20%5E6.%20Vite%208%20does%20not%20run%20in%20this%20environment.%0A-%20Install%20%40svgrid%2Fgrid%20and%20render%20the%20table%20with%20%3CSvGrid%3E%20from%20%27%40svgrid%2Fgrid%27.%20Do%20not%20write%20your%20own%20table%20component.%0A-%20In%20src%2Fapp.css%20add%3A%20%40import%20%27%40svgrid%2Fgrid%2Fthemes%2Fember.css%27%3B%0A-%20Generate%20200%20sample%20orders%3A%20id%2C%20customer%2C%20region%2C%20status%20%28New%2C%20Paid%2C%20Shipped%2C%20Refunded%29%2C%20quantity%2C%20amount%2C%20orderedOn%2C%20priority.%0A-%20Type%20the%20columns%20with%20GridColumns%3COrder%3E.%20Region%20and%20status%20use%20editorType%20%27select%27%20with%20editorOptions.%20Amount%20uses%20format%20%7B%20type%3A%20%27currency%27%2C%20currency%3A%20%27USD%27%20%7D.%20Priority%20uses%20editorType%20%27checkbox%27.%0A-%20Props%3A%20sortable%2C%20filterable%2C%20editable%2C%20pageable%2C%20pageSize%3D%7B25%7D%2C%20showRowSelection%2C%20groupable.%0A-%20Apply%20edits%20in%20onCellValueChange%20%28event.row%2C%20event.columnId%2C%20event.newValue%29.%20Above%20the%20grid%2C%20show%20the%20total%20amount%20of%20the%20selected%20rows%3B%20onRowSelectionChange%20receives%20%28selection%2C%20rows%29.%0A-%20Svelte%205%20runes%20only.%20Docs%20written%20for%20agents%3A%20https%3A%2F%2Fsvgrid.com%2Fllms.txt)
+
+![Bolt's home page with the orders prompt from this page filled into the prompt box, ready to send with Build now.](/docs-media/ai-builders-bolt-prompt.png)
+
+What Bolt writes from a prompt varies from run to run. If the result drifts
+from SvGrid's API, the [MCP connector](#3-connect-the-mcp-server) lets the
+agent check its own code against it, and the starter above is the tested
+reference to compare with.
+
+## Add a grid to an existing Bolt project
+
+For a Svelte project already in Bolt:
+
+```text
+Add SvGrid to this app for its data tables.
+
+- Install @svgrid/grid. It is a Svelte 5 library: use runes, not export let or stores.
+- Import a theme once in the global CSS: @import '@svgrid/grid/themes/ember.css';
+- Replace each hand-written table that lists records with <SvGrid data={rows} {columns} sortable filterable pageable />, with columns typed as GridColumns<Row> from '@svgrid/grid'.
+- Give the grid a container with a height; it fills its parent.
+- If package.json has vite ^8, change it to vite ^7 and @sveltejs/vite-plugin-svelte ^6. Vite 8 does not run in this environment.
+- Docs written for agents: https://svgrid.com/llms.txt
+```
+
+[**Open this prompt in Bolt**](https://bolt.new/?prompt=Add%20SvGrid%20to%20this%20app%20for%20its%20data%20tables.%0A%0A-%20Install%20%40svgrid%2Fgrid.%20It%20is%20a%20Svelte%205%20library%3A%20use%20runes%2C%20not%20export%20let%20or%20stores.%0A-%20Import%20a%20theme%20once%20in%20the%20global%20CSS%3A%20%40import%20%27%40svgrid%2Fgrid%2Fthemes%2Fember.css%27%3B%0A-%20Replace%20each%20hand-written%20table%20that%20lists%20records%20with%20%3CSvGrid%20data%3D%7Brows%7D%20%7Bcolumns%7D%20sortable%20filterable%20pageable%20%2F%3E%2C%20with%20columns%20typed%20as%20GridColumns%3CRow%3E%20from%20%27%40svgrid%2Fgrid%27.%0A-%20Give%20the%20grid%20a%20container%20with%20a%20height%3B%20it%20fills%20its%20parent.%0A-%20If%20package.json%20has%20vite%20%5E8%2C%20change%20it%20to%20vite%20%5E7%20and%20%40sveltejs%2Fvite-plugin-svelte%20%5E6.%20Vite%208%20does%20not%20run%20in%20this%20environment.%0A-%20Docs%20written%20for%20agents%3A%20https%3A%2F%2Fsvgrid.com%2Fllms.txt)
+
+This one opens a new chat. In a project you already have open, paste it into
+that project's chat instead.
+
+A React project in Bolt follows the [Lovable path](./lovable.md) instead:
+`@svgrid/grid-wc` and its React wrapper.
+
+## Ground the agent
+
+![Four sources feed the Bolt agent: project knowledge, the SvGrid skill imported from GitHub, the hosted MCP server as a custom connector, and AGENTS.md in the starter. The agent writes a Svelte 5 app on Vite 7 with @svgrid/grid. A warning band: keep Vite on 7, WebContainers cannot load Vite 8's Rolldown.](/docs-media/ai-builders-bolt.svg)
+
+Each of these is independent. Project knowledge is the quickest; the MCP
+connector is the one that keeps the agent's code honest, because it can run
+the code through `check_svgrid_code` before showing it to you.
+
+### 1. Project knowledge
+
+Open the project, click the gear icon at the top, **All project settings**,
+then **Knowledge**, and paste:
+
+```md
+## Tables and data grids
+
+This project uses SvGrid (`@svgrid/grid`, MIT, Svelte 5) for tables and data grids. For any table that sorts, filters, edits, pages, groups or holds many rows, use `<SvGrid>` instead of writing a table component.
+
+- Features are boolean props, all off by default: `<SvGrid {data} {columns} sortable filterable editable pageable />`.
+- Type the columns with `GridColumns<Row>` from `@svgrid/grid`, so each `field` is checked against the row type.
+- Exact props and types: `node_modules/@svgrid/grid/dist/*.d.ts`. Docs written for agents: https://svgrid.com/llms.txt
+
+## Rules for this project
+
+- Svelte 5 runes only: `$state`, `$derived`, `$effect`, `$props`. No `export let`, no stores.
+- Keep `vite` on `^7` and `@sveltejs/vite-plugin-svelte` on `^6`. Bolt and
+  StackBlitz run the dev server in a WebContainer, which cannot load Vite 8's
+  Rolldown bundler; `npm install` fails on a missing rolldown binding.
+- The grid does not write into `data`. Apply an edit in `onCellValueChange`
+  (`event.row`, `event.columnId`, `event.newValue`) and save it there.
+- Colors come from the `--sg-*` custom properties set by the preset imported
+  in `src/app.css`. Restyle by changing tokens, not by targeting grid classes.
+- Import only from `@svgrid/grid` and `@svgrid/grid/themes/*.css`.
+  `svelte-grid`, `sv-grid` and `@sv-grid/core` are unrelated packages.
+- Export to Excel or PDF, pivot and import live in `@svgrid/enterprise`, a
+  separate paid package. Do not add its imports unless the user asks for it.
+```
+
+It is the starter's `AGENTS.md` from the second heading down, so a project
+imported from the starter already has it.
+
+### 2. Import the SvGrid skill
+
+Bolt skills are markdown instructions with a `name` and a `description`, and
+Bolt can import them from a public GitHub repository. Open the Skills
+library, **Add skill**, **Import from GitHub**, and enter:
+
+```text
+https://github.com/sv-grid/sv-grid
+```
+
+Bolt lists the skills it finds; pick `svgrid`. The repository carries it
+twice (`skills/svgrid` and a generated copy under `plugins/`), and either is
+the same text. A workspace skill can be switched on per project; **Update
+from GitHub** pulls later changes.
+
+### 3. Connect the MCP server
+
+In the chat box on Bolt's home page, click **+**, **Connectors**, **Manage
+connectors**, then **Custom MCP server**:
+
+| Field | Value |
+| --- | --- |
+| Name | `svgrid` |
+| URL | `https://mcp.svgrid.com/mcp` |
+| Transport type | HTTP |
+| Authentication | None |
+
+The server is public and read-only, which is why no key is needed. Turn on
+**Auto-enable for all projects**, or enable it per project from the **+**
+menu. It gives the agent `search`, `fetch`, `list_examples`,
+`get_example_source`, `get_api_reference`, `check_svgrid_code` and
+`svgrid_preview`; the [MCP server](./mcp-server.md) page describes each.
+
+### 4. AGENTS.md
+
+The starter ships one. Bolt reads it with the rest of the project files, the
+same as any coding agent. In your own project, copy the knowledge block above
+into an `AGENTS.md` at the root.
+
+## Prompts to try next
+
+Paste these into the chat of a project made from the starter. They describe
+the result; with the MCP connector on, the agent looks up the props.
+
+```text
+Add a Customers page with its own SvGrid: name, email, plan (select: Free, Team, Business), MRR as currency, signed-up date. Make email and plan editable. Add a nav bar to switch between Orders and Customers.
+```
+
+```text
+Add a search box above the orders grid that filters across all columns, and pin the Order column to the left. Let users resize columns.
+```
+
+```text
+Load the orders from a database table instead of makeOrders(), and save each edit from onCellValueChange back to that table. Show a toast when a save fails and put the old value back.
+```
+
+```text
+Group the orders by status when the page opens, and add a Status column cell style: Refunded in red text, Shipped in green.
+```
+
+## Troubleshooting
+
+**`npm install` fails with a rolldown binding error.** The project is on
+Vite 8. WebContainers cannot load Rolldown's native binding, so set `vite` to
+`^7` and `@sveltejs/vite-plugin-svelte` to `^6`, then reinstall. The
+`npm create @svgrid` templates use Vite 8 and need this change before they run
+in Bolt; the Bolt starter already has it.
+
+**The agent wrote its own `<table>` component.** It did not know SvGrid was
+in play. Add the knowledge block or the skill, or name `@svgrid/grid` in the
+prompt.
+
+**The code uses `export let` or `$:`.** That is Svelte 4. SvGrid needs
+Svelte 5 runes; the knowledge block says so, and `check_svgrid_code` flags it.
+
+**The grid renders as a thin strip.** It fills its parent, so the parent
+needs a height: `containerHeight="100%"` inside a sized box, or a number of
+pixels.
+
+**An import from `svelte-grid` or `sv-grid`.** Those are unrelated packages.
+SvGrid is `@svgrid/grid`.
+
+## Frequently asked questions
+
+### Does Bolt.new support Svelte?
+
+Yes. Ask for a Svelte 5 app on Vite 7 and Bolt builds one, or open the
+SvGrid starter, which is a Svelte 5 + Vite 7 project. Bolt runs it in a
+WebContainer like any other Node project.
+
+### Why does my Bolt project fail to install with Vite 8?
+
+Vite 8 bundles with Rolldown, a native module that WebContainers cannot load.
+Pin `vite` to `^7` and `@sveltejs/vite-plugin-svelte` to `^6`; the SvGrid
+starter does.
+
+### Can Bolt's agent look up the SvGrid API itself?
+
+Yes, through the hosted MCP server at `https://mcp.svgrid.com/mcp`. Add it in
+Bolt as a custom MCP server with the HTTP transport and no authentication.
+
+### Is SvGrid free to use in a Bolt app?
+
+Yes. `@svgrid/grid` is MIT. Excel and PDF export, import and pivot are in the
+paid `@svgrid/enterprise` package, which the starter does not use.
+
+## See also
+
+- [SvGrid in AI app builders](./ai-app-builders.md) - Bolt and Lovable side by side
+- [SvGrid in Lovable](./lovable.md) - the React path
+- [MCP server](./mcp-server.md) - the hosted endpoint and its tools
+- [LLM grounding](./llm-grounding.md) - llms.txt, the Agent Skill, AGENTS.md
+- [First grid](../getting-started/2-first-grid.md) - the grid without an AI builder
+
+<!-- =================================================================
      /docs/help/browser-support/  (community)
      ================================================================== -->
 
@@ -6139,7 +6517,7 @@ typed anywhere else on this page. An earlier version of this page typed its
 numbers and sat a month behind the measurement.
 
 <!-- size:start -->
-Re-measured **26 Oct 2026** at `@svgrid/grid` 3.0.23 with the script that ships in the repo (`pnpm size:json`):
+Re-measured **26 Oct 2026** at `@svgrid/grid` 3.0.24 with the script that ships in the repo (`pnpm size:json`):
 
 | Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |
 | --- | ---: | ---: | ---: |
@@ -6679,7 +7057,7 @@ per-competitor pages under [/compare/](https://svgrid.com/compare/) list
 the sources for every feature claim.
 
 <!-- facts:start ag-grid,tanstack-table -->
-> **Facts, checked 12 Sep 2026.** `ag-grid-community` 36.1.0, MIT, last published 5 Aug 2026, 12,400,000 npm downloads in the 30 days to 10 Sep 2026. `@tanstack/svelte-table` 9.2.4, MIT, last published 28 Aug 2026, 231,000 npm downloads in the same window. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `ag-grid-community` 36.1.0 317.5 KB JS, no separate stylesheet (measured 12 Sep 2026); `@tanstack/svelte-table` 9.2.4 36.3 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). AG Grid pricing, as its site states it: AG Grid Community is free under MIT. AG Grid Enterprise is listed at $999 USD per developer with one year of updates and Zendesk support; the Enterprise Bundle with AG Charts Enterprise is $1,498 USD per developer (https://www.ag-grid.com/license-pricing/, read 12 Sep 2026). TanStack Table pricing, as its site states it: TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table (https://tanstack.com/table/latest, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs AG Grid (community + enterprise)](https://svgrid.com/compare/ag-grid/), [SvGrid vs TanStack Table (Svelte)](https://svgrid.com/compare/tanstack-table/).
+> **Facts, checked 12 Sep 2026.** `ag-grid-community` 36.1.0, MIT, last published 5 Aug 2026, 12,400,000 npm downloads in the 30 days to 10 Sep 2026. `@tanstack/svelte-table` 9.2.4, MIT, last published 28 Aug 2026, 231,000 npm downloads in the same window. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `ag-grid-community` 36.1.0 317.5 KB JS, no separate stylesheet (measured 12 Sep 2026); `@tanstack/svelte-table` 9.2.4 36.3 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). AG Grid pricing, as its site states it: AG Grid Community is free under MIT. AG Grid Enterprise is listed at $999 USD per developer with one year of updates and Zendesk support; the Enterprise Bundle with AG Charts Enterprise is $1,498 USD per developer (https://www.ag-grid.com/license-pricing/, read 12 Sep 2026). TanStack Table pricing, as its site states it: TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table (https://tanstack.com/table/latest, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs AG Grid (community + enterprise)](https://svgrid.com/compare/ag-grid/), [SvGrid vs TanStack Table (Svelte)](https://svgrid.com/compare/tanstack-table/).
 <!-- facts:end -->
 
 ## TL;DR
@@ -9628,6 +10006,10 @@ dependency and offers to write the section, and every
 `npm create @svgrid@latest` template starts with it. For all your
 projects at once, install the Agent Skill: `npx skills add sv-grid/sv-grid`.
 
+Building in Bolt.new or Lovable instead? Both take this section as project
+knowledge; [SvGrid in AI app builders](./ai-app-builders.md) has the block
+for each, a starter and ready prompts.
+
 ## The files
 
 | File | Use for |
@@ -9762,6 +10144,304 @@ origin (rejected if the major changes; we serve a 410).
 - [API stability](./api-stability.md) - what we promise to keep stable across versions
 
 <!-- =================================================================
+     /docs/help/lovable/  (community)
+     ================================================================== -->
+
+# SvGrid in Lovable
+
+Lovable builds React apps, so SvGrid goes in through `@svgrid/grid-wc`, the
+web-component build of the grid with a React wrapper. It is the same grid as
+the Svelte package, compiled into a custom element, so the React app needs no
+Svelte toolchain.
+
+One file does the integration: `DataGrid.tsx`, which loads the grid in the
+browser only. Lovable's default template since May 2026 is TanStack Start,
+which renders pages on the server, and a custom element has nothing to render
+there. With `DataGrid` in place, everything else is ordinary props.
+
+![The Lovable starter in dark mode: summary cards, grouping buttons with By status active, and the grid grouped into New, Refunded, Paid and Shipped rows with row counts, quantity and amount totals, in the app's own neutral shadcn palette.](/docs-media/ai-builders-lovable-dark.png)
+
+## Start from a prompt
+
+Lovable's [Build with URL](https://docs.lovable.dev/integrations/build-with-url)
+opens a new project with a prompt already in the chat box. It waits for you
+to press send. This prompt carries the `DataGrid` file and the theme block
+verbatim, so the agent does not have to invent either:
+
+```text
+Build an orders admin page with a data grid.
+
+Use SvGrid through the npm package @svgrid/grid-wc; its React wrapper is @svgrid/grid-wc/react. Do not install @svgrid/grid, which is the Svelte version.
+
+1. Create src/components/DataGrid.tsx with exactly this code. It loads the grid in the browser only, because the grid is a custom element and this app renders on the server:
+
+import { forwardRef, lazy, Suspense, useEffect, useState, type CSSProperties } from 'react'
+import type { SvGridHandle, SvGridProps } from '@svgrid/grid-wc/react'
+
+const SvGrid = lazy(() => import('@svgrid/grid-wc/react').then((m) => ({ default: m.SvGrid })))
+
+export type DataGridProps = Omit<SvGridProps, 'className' | 'style'> & {
+  height?: CSSProperties['height']
+  className?: string
+  style?: CSSProperties
+}
+
+export const DataGrid = forwardRef<SvGridHandle, DataGridProps>(function DataGrid(
+  { height = 480, className, style, ...props },
+  ref,
+) {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  return (
+    <div className={`svgrid-theme ${className ?? ''}`.trim()} style={{ height, ...style }}>
+      {mounted && (
+        <Suspense fallback={null}>
+          <SvGrid ref={ref} {...props} />
+        </Suspense>
+      )}
+    </div>
+  )
+})
+
+2. Never import @svgrid/grid-wc anywhere except DataGrid.tsx.
+
+3. Add this to the main CSS file, after the shadcn variables, so the grid uses the app's colors and dark mode. If the variables hold bare HSL parts (0 0% 100%), wrap each as hsl(var(--background)):
+
+.svgrid-theme {
+  --sg-bg: var(--background);
+  --sg-fg: var(--foreground);
+  --sg-muted: var(--muted-foreground);
+  --sg-border: var(--border);
+  --sg-header-bg: var(--muted);
+  --sg-header-fg: var(--muted-foreground);
+  --sg-bg-subtle: var(--muted);
+  --sg-muted-bg: var(--muted);
+  --sg-row-alt-bg: var(--background);
+  --sg-row-hover-bg: var(--accent);
+  --sg-selection-bg: var(--accent);
+  --sg-input-bg: var(--background);
+  --sg-input-border: var(--input);
+  --sg-accent: var(--primary);
+  --sg-on-accent: var(--primary-foreground);
+  --sg-focus-ring: var(--ring);
+  --sg-radius: calc(var(--radius) - 2px);
+}
+
+4. Build an Orders page with 200 sample orders (id, customer, region, status: New/Paid/Shipped/Refunded, quantity, amount, orderedOn, priority). Render:
+<DataGrid height={560} data={orders} columns={columns} getRowId={(row) => row.id} sortable filterable editable pageable pageSize={25} showRowSelection groupable />
+Columns look like { field: 'amount', header: 'Amount', width: 130, align: 'right', editorType: 'number', format: { type: 'currency', currency: 'USD' } }. Region and status use editorType 'select' with editorOptions; priority uses editorType 'checkbox'.
+
+5. The grid never changes the data array. In onCellValueChange(e) update state with e.row, e.columnId and e.newValue. Show the total amount of the selected rows in a card above the grid; onRowSelectionChange(e) gives e.rows.
+
+Docs written for agents: https://svgrid.com/docs/help/lovable.md
+```
+
+[**Open this prompt in Lovable**](https://lovable.dev/#prompt=Build%20an%20orders%20admin%20page%20with%20a%20data%20grid.%0A%0AUse%20SvGrid%20through%20the%20npm%20package%20%40svgrid%2Fgrid-wc%3B%20its%20React%20wrapper%20is%20%40svgrid%2Fgrid-wc%2Freact.%20Do%20not%20install%20%40svgrid%2Fgrid%2C%20which%20is%20the%20Svelte%20version.%0A%0A1.%20Create%20src%2Fcomponents%2FDataGrid.tsx%20with%20exactly%20this%20code.%20It%20loads%20the%20grid%20in%20the%20browser%20only%2C%20because%20the%20grid%20is%20a%20custom%20element%20and%20this%20app%20renders%20on%20the%20server%3A%0A%0Aimport%20%7B%20forwardRef%2C%20lazy%2C%20Suspense%2C%20useEffect%2C%20useState%2C%20type%20CSSProperties%20%7D%20from%20%27react%27%0Aimport%20type%20%7B%20SvGridHandle%2C%20SvGridProps%20%7D%20from%20%27%40svgrid%2Fgrid-wc%2Freact%27%0A%0Aconst%20SvGrid%20%3D%20lazy%28%28%29%20%3D%3E%20import%28%27%40svgrid%2Fgrid-wc%2Freact%27%29.then%28%28m%29%20%3D%3E%20%28%7B%20default%3A%20m.SvGrid%20%7D%29%29%29%0A%0Aexport%20type%20DataGridProps%20%3D%20Omit%3CSvGridProps%2C%20%27className%27%20%7C%20%27style%27%3E%20%26%20%7B%0A%20%20height%3F%3A%20CSSProperties%5B%27height%27%5D%0A%20%20className%3F%3A%20string%0A%20%20style%3F%3A%20CSSProperties%0A%7D%0A%0Aexport%20const%20DataGrid%20%3D%20forwardRef%3CSvGridHandle%2C%20DataGridProps%3E%28function%20DataGrid%28%0A%20%20%7B%20height%20%3D%20480%2C%20className%2C%20style%2C%20...props%20%7D%2C%0A%20%20ref%2C%0A%29%20%7B%0A%20%20const%20%5Bmounted%2C%20setMounted%5D%20%3D%20useState%28false%29%0A%20%20useEffect%28%28%29%20%3D%3E%20setMounted%28true%29%2C%20%5B%5D%29%0A%20%20return%20%28%0A%20%20%20%20%3Cdiv%20className%3D%7B%60svgrid-theme%20%24%7BclassName%20%3F%3F%20%27%27%7D%60.trim%28%29%7D%20style%3D%7B%7B%20height%2C%20...style%20%7D%7D%3E%0A%20%20%20%20%20%20%7Bmounted%20%26%26%20%28%0A%20%20%20%20%20%20%20%20%3CSuspense%20fallback%3D%7Bnull%7D%3E%0A%20%20%20%20%20%20%20%20%20%20%3CSvGrid%20ref%3D%7Bref%7D%20%7B...props%7D%20%2F%3E%0A%20%20%20%20%20%20%20%20%3C%2FSuspense%3E%0A%20%20%20%20%20%20%29%7D%0A%20%20%20%20%3C%2Fdiv%3E%0A%20%20%29%0A%7D%29%0A%0A2.%20Never%20import%20%40svgrid%2Fgrid-wc%20anywhere%20except%20DataGrid.tsx.%0A%0A3.%20Add%20this%20to%20the%20main%20CSS%20file%2C%20after%20the%20shadcn%20variables%2C%20so%20the%20grid%20uses%20the%20app%27s%20colors%20and%20dark%20mode.%20If%20the%20variables%20hold%20bare%20HSL%20parts%20%280%200%25%20100%25%29%2C%20wrap%20each%20as%20hsl%28var%28--background%29%29%3A%0A%0A.svgrid-theme%20%7B%0A%20%20--sg-bg%3A%20var%28--background%29%3B%0A%20%20--sg-fg%3A%20var%28--foreground%29%3B%0A%20%20--sg-muted%3A%20var%28--muted-foreground%29%3B%0A%20%20--sg-border%3A%20var%28--border%29%3B%0A%20%20--sg-header-bg%3A%20var%28--muted%29%3B%0A%20%20--sg-header-fg%3A%20var%28--muted-foreground%29%3B%0A%20%20--sg-bg-subtle%3A%20var%28--muted%29%3B%0A%20%20--sg-muted-bg%3A%20var%28--muted%29%3B%0A%20%20--sg-row-alt-bg%3A%20var%28--background%29%3B%0A%20%20--sg-row-hover-bg%3A%20var%28--accent%29%3B%0A%20%20--sg-selection-bg%3A%20var%28--accent%29%3B%0A%20%20--sg-input-bg%3A%20var%28--background%29%3B%0A%20%20--sg-input-border%3A%20var%28--input%29%3B%0A%20%20--sg-accent%3A%20var%28--primary%29%3B%0A%20%20--sg-on-accent%3A%20var%28--primary-foreground%29%3B%0A%20%20--sg-focus-ring%3A%20var%28--ring%29%3B%0A%20%20--sg-radius%3A%20calc%28var%28--radius%29%20-%202px%29%3B%0A%7D%0A%0A4.%20Build%20an%20Orders%20page%20with%20200%20sample%20orders%20%28id%2C%20customer%2C%20region%2C%20status%3A%20New%2FPaid%2FShipped%2FRefunded%2C%20quantity%2C%20amount%2C%20orderedOn%2C%20priority%29.%20Render%3A%0A%3CDataGrid%20height%3D%7B560%7D%20data%3D%7Borders%7D%20columns%3D%7Bcolumns%7D%20getRowId%3D%7B%28row%29%20%3D%3E%20row.id%7D%20sortable%20filterable%20editable%20pageable%20pageSize%3D%7B25%7D%20showRowSelection%20groupable%20%2F%3E%0AColumns%20look%20like%20%7B%20field%3A%20%27amount%27%2C%20header%3A%20%27Amount%27%2C%20width%3A%20130%2C%20align%3A%20%27right%27%2C%20editorType%3A%20%27number%27%2C%20format%3A%20%7B%20type%3A%20%27currency%27%2C%20currency%3A%20%27USD%27%20%7D%20%7D.%20Region%20and%20status%20use%20editorType%20%27select%27%20with%20editorOptions%3B%20priority%20uses%20editorType%20%27checkbox%27.%0A%0A5.%20The%20grid%20never%20changes%20the%20data%20array.%20In%20onCellValueChange%28e%29%20update%20state%20with%20e.row%2C%20e.columnId%20and%20e.newValue.%20Show%20the%20total%20amount%20of%20the%20selected%20rows%20in%20a%20card%20above%20the%20grid%3B%20onRowSelectionChange%28e%29%20gives%20e.rows.%0A%0ADocs%20written%20for%20agents%3A%20https%3A%2F%2Fsvgrid.com%2Fdocs%2Fhelp%2Flovable.md)
+
+What Lovable writes from a prompt varies from run to run. The starter below is
+the tested reference: the same screen, with every file in place.
+
+## Try the starter without Lovable
+
+[**Open the starter in StackBlitz**](https://stackblitz.com/github/sv-grid/sv-grid/tree/main/templates/lovable-react-grid)
+· [Source on GitHub](https://github.com/sv-grid/sv-grid/tree/main/templates/lovable-react-grid)
+
+Lovable cannot import a GitHub repository, so the starter is a plain React +
+Vite app you can run anywhere. It is laid out the way a Lovable project is
+(`src/components`, `src/lib`, shadcn variables in `src/index.css`); the two
+pieces to carry into Lovable are `src/components/DataGrid.tsx` and the
+`.svgrid-theme` block.
+
+![The React starter in light mode: Orders heading, cards for 240 orders, revenue and three selected rows, grouping buttons, and the grid with three rows ticked, the edited Amount cell focused and a pager reading 1 to 25 of 240.](/docs-media/ai-builders-lovable-starter.png)
+
+## Why the grid waits for the browser
+
+![On the server, TanStack Start renders DataGrid as an empty box of the grid's height and no grid code runs. In the browser React hydrates the same box, an effect marks the component mounted, it lazily imports @svgrid/grid-wc/react, which registers the sv-grid element, and the grid mounts with its props, themed through the svgrid-theme class.](/docs-media/ai-builders-lovable-ssr.svg)
+
+The file, with its comments:
+
+```tsx {nocheck}
+import { forwardRef, lazy, Suspense, useEffect, useState, type CSSProperties } from 'react'
+import type { SvGridHandle, SvGridProps } from '@svgrid/grid-wc/react'
+
+// Loaded on first render in the browser, never on the server.
+const SvGrid = lazy(() => import('@svgrid/grid-wc/react').then((m) => ({ default: m.SvGrid })))
+
+export type DataGridProps = Omit<SvGridProps, 'className' | 'style'> & {
+  /** The grid fills this box, so the box needs a height. Default 480. */
+  height?: CSSProperties['height']
+  className?: string
+  style?: CSSProperties
+}
+
+export const DataGrid = forwardRef<SvGridHandle, DataGridProps>(function DataGrid(
+  { height = 480, className, style, ...props },
+  ref,
+) {
+  // false on the server and on the first client render, so both emit the
+  // same empty box: no hydration mismatch, no layout jump.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
+  return (
+    <div className={`svgrid-theme ${className ?? ''}`.trim()} style={{ height, ...style }}>
+      {mounted && (
+        <Suspense fallback={null}>
+          <SvGrid ref={ref} {...props} />
+        </Suspense>
+      )}
+    </div>
+  )
+})
+```
+
+Three things it settles:
+
+- **Server rendering.** The `import type` line is erased at build time, and
+  the real import runs inside `lazy`, which only fires in the browser.
+  `@svgrid/grid-wc` 3.0.35 and earlier threw `customElements is not defined`
+  when a server imported it; later releases guard that, but the grid still has
+  nothing to draw on a server, so loading it in the browser stays the right
+  call.
+- **Height.** The grid fills its parent. `height` sizes the box on the server
+  too, so the page does not jump when the grid arrives.
+- **Props and the ref** pass straight through to the wrapper. Every prop on
+  [SvGrid in React](./web-components/react.md) works, and `ref` gives you
+  `api` and `element` once the grid has mounted.
+
+## Match the app's theme
+
+The grid draws with `--sg-*` CSS custom properties. Lovable apps keep their
+palette in shadcn variables (`--background`, `--border`, `--primary`), with
+dark mode as a `.dark` class on `<html>`. The `.svgrid-theme` block in the
+prompt points one set at the other, so the grid follows the app's colors and
+switches with its dark mode; `DataGrid` puts the class on its box.
+
+The block assumes variables that hold whole colors, such as
+`--background: oklch(1 0 0)`. Older shadcn projects store bare HSL parts,
+`--background: 0 0% 100%`; there, write each value as
+`hsl(var(--background))`.
+
+To use one of the grid's own palettes instead, drop the block and set the
+tokens yourself; [Theme and density](../getting-started/5-theme-and-density.md)
+lists them.
+
+## Ground the agent
+
+### Project knowledge
+
+**Project settings**, **Knowledge**. Project knowledge holds up to 10,000
+characters; this is well under:
+
+```md
+## Tables and data grids
+
+This project uses SvGrid for tables and data grids, through `@svgrid/grid-wc`
+(MIT), the web-component build with a React wrapper. For any table that sorts,
+filters, edits, pages, groups or holds many rows, render `<DataGrid>` from
+`src/components/DataGrid.tsx` instead of writing a table component.
+
+- Never import `@svgrid/grid-wc` or `@svgrid/grid-wc/react` anywhere except
+  `DataGrid.tsx`. The grid is a custom element; `DataGrid` loads it in the
+  browser only, which keeps server rendering (TanStack Start, Next.js) working.
+- Do not install `@svgrid/grid`. It is the Svelte component; this is a React app.
+- Features are boolean props, all off by default:
+  `<DataGrid data={rows} columns={columns} sortable filterable editable pageable height={520} />`.
+- Columns: `{ field, header, width, align, editorType, editorOptions, format, aggregate }`.
+  `editorType` is `'text' | 'number' | 'date' | 'select' | 'checkbox'`;
+  `format` is for example `{ type: 'currency', currency: 'USD' }`.
+- The grid does not write into `data`. Apply an edit in `onCellValueChange`
+  (`e.row`, `e.columnId`, `e.newValue`) and save it there.
+- Selected rows arrive in `onRowSelectionChange` as `e.rows` (with `showRowSelection`).
+- `pageSize` is the initial page size, read once when the grid mounts.
+- A cell cannot render a React component. Use column `format` for numbers,
+  currency and dates.
+- Colors come from the `--sg-*` custom properties. The `.svgrid-theme` block
+  in `src/index.css` points them at the shadcn variables, so the grid follows
+  the app's theme and `.dark`. Do not restyle the grid with Tailwind classes.
+- Docs written for agents: https://svgrid.com/llms.txt and
+  https://svgrid.com/docs/help/web-components/react.md
+```
+
+It is the starter's `AGENTS.md` from the second heading down. Workspace
+knowledge takes the same text if every project in the workspace should know it.
+
+### The MCP server as a chat connector
+
+**Connectors**, **Add custom**, **MCP server**:
+
+| Field | Value |
+| --- | --- |
+| Server name | `svgrid` |
+| Server URL | `https://mcp.svgrid.com/mcp` |
+| Authentication | No authentication |
+
+Lovable offers custom MCP servers on all plans. A chat connector feeds the
+agent while it builds and is never part of the published app. The server is
+public and read-only; its `search`, `get_api_reference` and
+`get_example_source` tools answer the agent's API questions, and
+`check_svgrid_code` checks a snippet. The examples it returns are Svelte, so
+the knowledge block above is what keeps the agent on `DataGrid`.
+
+## Troubleshooting
+
+**`customElements is not defined` during server rendering.** Something
+imports `@svgrid/grid-wc` outside `DataGrid.tsx`, usually a route file the
+agent edited. Move the usage to `<DataGrid>`.
+
+**The grid area stays empty.** Give `DataGrid` a `height`. Inside a flex
+column, the box also needs `min-height: 0` to shrink.
+
+**Columns show `[object Object]` or the grid is empty with no error.** The
+code renders the raw `<sv-grid>` element in React 18 or earlier, which sets
+arrays as attributes. Use `DataGrid`; the wrapper assigns them as properties.
+
+**`pageSize` is ignored and the grid shows 10 rows a page.** A bug in the
+React wrapper of `@svgrid/grid-wc` 3.0.35 and earlier, which assigned props
+after the grid had mounted. Update the package.
+
+**The agent installed `@svgrid/grid`.** That is the Svelte component and will
+not render in React. Remove it and keep `@svgrid/grid-wc`; the knowledge block
+prevents a repeat.
+
+**Cells need a button or a badge.** A cell cannot render a React component.
+Column `format` covers numbers, currency and dates; for more, see
+[what crosses the boundary](./web-components/limitations.md).
+
+## Frequently asked questions
+
+### Can I use a data grid component in Lovable?
+
+Yes. Install `@svgrid/grid-wc` and render it through a `DataGrid` component
+that loads the grid in the browser only. Sorting, filtering, inline editing,
+row selection, grouping and paging are boolean props.
+
+### Does SvGrid work with TanStack Start server rendering?
+
+Yes, through `DataGrid`. The server renders an empty box with the grid's
+height and the browser loads the grid after hydration. Importing
+`@svgrid/grid-wc` at the top of a route file throws
+`customElements is not defined` on the server in versions 3.0.35 and earlier.
+
+### Will the grid match my Lovable app's shadcn theme?
+
+Yes. The `.svgrid-theme` block points the grid's `--sg-*` tokens at the shadcn
+variables, so it follows the app's palette and its `.dark` mode.
+
+### Is it free?
+
+`@svgrid/grid-wc` is MIT and needs no key. Excel and PDF export, import and
+pivot are in the paid `@svgrid/enterprise` package, which also runs from React.
+
+## See also
+
+- [SvGrid in AI app builders](./ai-app-builders.md) - Lovable and Bolt side by side
+- [SvGrid in React](./web-components/react.md) - every prop, event and example of the wrapper
+- [SvGrid in Bolt.new](./bolt-new.md) - the Svelte path
+- [MCP server](./mcp-server.md) - the hosted endpoint and its tools
+- [Web component limitations](./web-components/limitations.md)
+
+<!-- =================================================================
      /docs/help/mcp-server/  (community)
      ================================================================== -->
 
@@ -9805,6 +10485,10 @@ One click:
 It carries seven tools - `search`, `fetch`, `list_examples`,
 `get_example_source`, `get_api_reference`, `check_svgrid_code` and
 `svgrid_preview` - and needs no Node, no config file, and no key.
+
+In an AI app builder, add the same URL as a custom MCP server with no
+authentication: [Bolt.new](./bolt-new.md#3-connect-the-mcp-server) and
+[Lovable](./lovable.md#the-mcp-server-as-a-chat-connector) both take it.
 
 **Local (`npx @svgrid/mcp`).** Everything the hosted server has, plus
 the Studio tools, the docs and demos as MCP resources, ready-made
@@ -10424,7 +11108,7 @@ React/Angular-first API and Svelte 5 runes is brittle, the bundle is
 heavy, and the Enterprise pricing only makes sense at scale.
 
 <!-- facts:start ag-grid -->
-> **Facts, checked 12 Sep 2026.** `ag-grid-community` 36.1.0, MIT, last published 5 Aug 2026, 12,400,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `ag-grid-community` 36.1.0 317.5 KB JS, no separate stylesheet (measured 12 Sep 2026). AG Grid pricing, as its site states it: AG Grid Community is free under MIT. AG Grid Enterprise is listed at $999 USD per developer with one year of updates and Zendesk support; the Enterprise Bundle with AG Charts Enterprise is $1,498 USD per developer (https://www.ag-grid.com/license-pricing/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs AG Grid (community + enterprise)](https://svgrid.com/compare/ag-grid/).
+> **Facts, checked 12 Sep 2026.** `ag-grid-community` 36.1.0, MIT, last published 5 Aug 2026, 12,400,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `ag-grid-community` 36.1.0 317.5 KB JS, no separate stylesheet (measured 12 Sep 2026). AG Grid pricing, as its site states it: AG Grid Community is free under MIT. AG Grid Enterprise is listed at $999 USD per developer with one year of updates and Zendesk support; the Enterprise Bundle with AG Charts Enterprise is $1,498 USD per developer (https://www.ag-grid.com/license-pricing/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs AG Grid (community + enterprise)](https://svgrid.com/compare/ag-grid/).
 <!-- facts:end -->
 
 This page is a 30-minute migration recipe from AG Grid to SvGrid. It
@@ -11356,7 +12040,7 @@ lower-cost paid tier.
 > columns and events onto the SvGrid equivalents below.
 
 <!-- facts:start devextreme-datagrid -->
-> **Facts, checked 12 Sep 2026.** `devextreme` 26.1.4, Commercial (see licence file), last published 7 Aug 2026, 1,180,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026). DevExtreme DataGrid pricing, as its site states it: js.devexpress.com lists DevExtreme Complete at $899.99 per developer for a 12-month subscription with updates and support, renewing at $449.99; no free or non-commercial tier is shown (https://js.devexpress.com/Buy/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs DevExtreme DataGrid (DevExpress)](https://svgrid.com/compare/devextreme-datagrid/).
+> **Facts, checked 12 Sep 2026.** `devextreme` 26.1.4, Commercial (see licence file), last published 7 Aug 2026, 1,180,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026). DevExtreme DataGrid pricing, as its site states it: js.devexpress.com lists DevExtreme Complete at $899.99 per developer for a 12-month subscription with updates and support, renewing at $449.99; no free or non-commercial tier is shown (https://js.devexpress.com/Buy/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs DevExtreme DataGrid (DevExpress)](https://svgrid.com/compare/devextreme-datagrid/).
 <!-- facts:end -->
 
 ## Concept map
@@ -11495,7 +12179,7 @@ accessibility + standards-compliant HTML.
 > data-array model; the mental flip takes the most time.
 
 <!-- facts:start glide-data-grid -->
-> **Facts, checked 12 Sep 2026.** `@glideapps/glide-data-grid` 6.0.3, MIT, last published 3 Feb 2024, 1,180,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `@glideapps/glide-data-grid` 6.0.3 71.1 KB JS + 0.2 KB CSS, lodash + marked + react + react-dom + react-responsive-carousel external (measured 12 Sep 2026). Glide Data Grid pricing, as its site states it: Glide Data Grid is MIT and, in its own words, fully free and open source; no licence is sold for the grid (https://grid.glideapps.com/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs Glide Data Grid](https://svgrid.com/compare/glide-data-grid/).
+> **Facts, checked 12 Sep 2026.** `@glideapps/glide-data-grid` 6.0.3, MIT, last published 3 Feb 2024, 1,180,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `@glideapps/glide-data-grid` 6.0.3 71.1 KB JS + 0.2 KB CSS, lodash + marked + react + react-dom + react-responsive-carousel external (measured 12 Sep 2026). Glide Data Grid pricing, as its site states it: Glide Data Grid is MIT and, in its own words, fully free and open source; no licence is sold for the grid (https://grid.glideapps.com/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs Glide Data Grid](https://svgrid.com/compare/glide-data-grid/).
 <!-- facts:end -->
 
 ## Mental-model flip
@@ -11736,7 +12420,7 @@ filters, editing, grouping - when you outgrow the basics.
 > Estimated effort: **30 min - 1 hour** per table.
 
 <!-- facts:start gridjs -->
-> **Facts, checked 12 Sep 2026.** `gridjs` 6.2.0, MIT, last published 3 Mar 2024, 161,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `gridjs` 6.2.0 17.8 KB JS + 2.4 KB CSS (measured 12 Sep 2026). Grid.js pricing, as its site states it: Grid.js is MIT, free and open source; no licence is sold (https://gridjs.io/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs Grid.js](https://svgrid.com/compare/gridjs/).
+> **Facts, checked 12 Sep 2026.** `gridjs` 6.2.0, MIT, last published 3 Mar 2024, 161,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `gridjs` 6.2.0 17.8 KB JS + 2.4 KB CSS (measured 12 Sep 2026). Grid.js pricing, as its site states it: Grid.js is MIT, free and open source; no licence is sold (https://gridjs.io/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs Grid.js](https://svgrid.com/compare/gridjs/).
 <!-- facts:end -->
 
 ## Vocabulary cheat sheet
@@ -11870,7 +12554,7 @@ the Formulas section below).
 > HyperFormula features sv-grid doesn't ship.
 
 <!-- facts:start handsontable -->
-> **Facts, checked 12 Sep 2026.** `handsontable` 18.1.0, Commercial (see licence file), last published 1 Sep 2026, 1,190,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026). Handsontable pricing, as its site states it: Handsontable's Hobby licence is free for personal, exploratory projects and cannot be used in commercial settings; handsontable.com lists Standard from $999 per developer and Priority from $1,299 per developer, with Enterprise on custom terms (https://handsontable.com/pricing, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs Handsontable](https://svgrid.com/compare/handsontable/).
+> **Facts, checked 12 Sep 2026.** `handsontable` 18.1.0, Commercial (see licence file), last published 1 Sep 2026, 1,190,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026). Handsontable pricing, as its site states it: Handsontable's Hobby licence is free for personal, exploratory projects and cannot be used in commercial settings; handsontable.com lists Standard from $999 per developer and Priority from $1,299 per developer, with Enterprise on custom terms (https://handsontable.com/pricing, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs Handsontable](https://svgrid.com/compare/handsontable/).
 <!-- facts:end -->
 
 ## Imports
@@ -12171,7 +12855,7 @@ engineering lineage is shared.
 > from the imperative jQuery source / API to reactive `$state`.
 
 <!-- facts:start jqxgrid -->
-> **Facts, checked 12 Sep 2026.** `jqwidgets-scripts` 26.0.0, https://www.jqwidgets.com/license/, last published 9 Jul 2026, 41,900 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026). jqxGrid pricing, as its site states it: jqwidgets.com lists the Developer License at $499 (on sale at $399) per developer, perpetual and royalty-free with one year of updates and support, and the Team License at $1,499 for five or more developers; the free Community License excludes the Grid (https://www.jqwidgets.com/license/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs jqxGrid (jQWidgets)](https://svgrid.com/compare/jqxgrid/).
+> **Facts, checked 12 Sep 2026.** `jqwidgets-scripts` 26.0.0, https://www.jqwidgets.com/license/, last published 9 Jul 2026, 41,900 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026). jqxGrid pricing, as its site states it: jqwidgets.com lists the Developer License at $499 (on sale at $399) per developer, perpetual and royalty-free with one year of updates and support, and the Team License at $1,499 for five or more developers; the free Community License excludes the Grid (https://www.jqwidgets.com/license/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs jqxGrid (jQWidgets)](https://svgrid.com/compare/jqxgrid/).
 <!-- facts:end -->
 
 ## Vocabulary cheat sheet
@@ -12319,7 +13003,7 @@ with an MIT core - and a much cheaper paid tier.
 > equivalents below.
 
 <!-- facts:start kendo-ui-grid -->
-> **Facts, checked 12 Sep 2026.** `@progress/kendo-react-grid` 16.1.0, Commercial (see licence file), last published 8 Sep 2026, 385,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026). Kendo UI Grid pricing, as its site states it: telerik.com lists the Kendo UI bundle at $799, $849 or $1,299 per developer per year depending on the support tier, and KendoReact alone from $649 per developer per year; no free tier for the grid (https://www.telerik.com/purchase.aspx, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs Kendo UI Grid (Telerik)](https://svgrid.com/compare/kendo-ui-grid/).
+> **Facts, checked 12 Sep 2026.** `@progress/kendo-react-grid` 16.1.0, Commercial (see licence file), last published 8 Sep 2026, 385,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026). Kendo UI Grid pricing, as its site states it: telerik.com lists the Kendo UI bundle at $799, $849 or $1,299 per developer per year depending on the support tier, and KendoReact alone from $649 per developer per year; no free tier for the grid (https://www.telerik.com/purchase.aspx, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs Kendo UI Grid (Telerik)](https://svgrid.com/compare/kendo-ui-grid/).
 <!-- facts:end -->
 
 ## Concept map
@@ -12455,7 +13139,7 @@ are paid in MUI X and free here. The port is mostly mechanical.
 > you've leant on `apiRef.current.*` calls.
 
 <!-- facts:start mui-x-datagrid -->
-> **Facts, checked 12 Sep 2026.** `@mui/x-data-grid` 9.13.0, MIT, last published 4 Sep 2026, 11,800,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `@mui/x-data-grid` 9.13.0 155.0 KB JS, no separate stylesheet, @emotion/react + @emotion/styled + @mui/material + @mui/system + react + react-dom external (measured 12 Sep 2026). MUI X DataGrid pricing, as its site states it: MUI X Community is free under MIT. mui.com lists Pro at $299 per year per developer, Premium at $599 per year per developer and Enterprise at $1,399 per year per developer, with perpetual and annual licence models (https://mui.com/pricing/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs MUI X DataGrid](https://svgrid.com/compare/mui-x-datagrid/).
+> **Facts, checked 12 Sep 2026.** `@mui/x-data-grid` 9.13.0, MIT, last published 4 Sep 2026, 11,800,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `@mui/x-data-grid` 9.13.0 155.0 KB JS, no separate stylesheet, @emotion/react + @emotion/styled + @mui/material + @mui/system + react + react-dom external (measured 12 Sep 2026). MUI X DataGrid pricing, as its site states it: MUI X Community is free under MIT. mui.com lists Pro at $299 per year per developer, Premium at $599 per year per developer and Enterprise at $1,399 per year per developer, with perpetual and annual licence models (https://mui.com/pricing/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs MUI X DataGrid](https://svgrid.com/compare/mui-x-datagrid/).
 <!-- facts:end -->
 
 ## Package map
@@ -12886,7 +13570,7 @@ The facts box below quotes the terms as read on the date shown.
 > Estimated effort: **2-4 hours** per grid.
 
 <!-- facts:start primevue-datatable -->
-> **Facts, checked 12 Sep 2026.** `primevue` 5.0.1, Commercial (see licence file), last published 13 Aug 2026, 3,010,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026). PrimeVue / PrimeNG / PrimeReact DataTable pricing, as its site states it: primeui.dev lists the Commercial Suite at a launch price of $599 per developer (standard $799) as a perpetual licence with one year of updates, renewable at $399 per developer per year; the Community License is free for individuals, non-profits and organisations under $1M revenue, fewer than five developers, fewer than ten employees and under $3M in venture funding (https://primeui.dev/pricing, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs PrimeVue / PrimeNG / PrimeReact DataTable](https://svgrid.com/compare/primevue-datatable/).
+> **Facts, checked 12 Sep 2026.** `primevue` 5.0.1, Commercial (see licence file), last published 13 Aug 2026, 3,010,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026). PrimeVue / PrimeNG / PrimeReact DataTable pricing, as its site states it: primeui.dev lists the Commercial Suite at a launch price of $599 per developer (standard $799) as a perpetual licence with one year of updates, renewable at $399 per developer per year; the Community License is free for individuals, non-profits and organisations under $1M revenue, fewer than five developers, fewer than ten employees and under $3M in venture funding (https://primeui.dev/pricing, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs PrimeVue / PrimeNG / PrimeReact DataTable](https://svgrid.com/compare/primevue-datatable/).
 <!-- facts:end -->
 
 ## Vocabulary cheat sheet
@@ -13023,7 +13707,7 @@ is mostly a column rename pass.
 > editors.
 
 <!-- facts:start react-data-grid -->
-> **Facts, checked 12 Sep 2026.** `react-data-grid` 7.0.0-beta.61, MIT, last published 14 Jul 2026, 2,180,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `react-data-grid` 7.0.0-beta.61 15.7 KB JS + 2.1 KB CSS, react + react-dom external (measured 12 Sep 2026). React Data Grid pricing, as its site states it: react-data-grid is MIT on npm and free; no licence is sold (https://github.com/adazzle/react-data-grid, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs React Data Grid (adazzle)](https://svgrid.com/compare/react-data-grid/).
+> **Facts, checked 12 Sep 2026.** `react-data-grid` 7.0.0-beta.61, MIT, last published 14 Jul 2026, 2,180,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `react-data-grid` 7.0.0-beta.61 15.7 KB JS + 2.1 KB CSS, react + react-dom external (measured 12 Sep 2026). React Data Grid pricing, as its site states it: react-data-grid is MIT on npm and free; no licence is sold (https://github.com/adazzle/react-data-grid, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs React Data Grid (adazzle)](https://svgrid.com/compare/react-data-grid/).
 <!-- facts:end -->
 
 ## Vocabulary cheat sheet
@@ -13162,7 +13846,7 @@ instead.
 > is deleting files.
 
 <!-- facts:start tanstack-table,svelte-ui-kit-tables -->
-> **Facts, checked 12 Sep 2026.** `@tanstack/svelte-table` 9.2.4, MIT, last published 28 Aug 2026, 231,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `@tanstack/svelte-table` 9.2.4 36.3 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). TanStack Table pricing, as its site states it: TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table (https://tanstack.com/table/latest, read 12 Sep 2026). Flowbite / Skeleton / shadcn-svelte tables pricing, as its site states it: Flowbite Svelte, Skeleton and shadcn-svelte are MIT component libraries; their table components are free and no grid licence is sold (https://github.com/themesberg/flowbite-svelte, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs TanStack Table (Svelte)](https://svgrid.com/compare/tanstack-table/), [SvGrid vs Flowbite / Skeleton / shadcn-svelte tables](https://svgrid.com/compare/svelte-ui-kit-tables/).
+> **Facts, checked 12 Sep 2026.** `@tanstack/svelte-table` 9.2.4, MIT, last published 28 Aug 2026, 231,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `@tanstack/svelte-table` 9.2.4 36.3 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). TanStack Table pricing, as its site states it: TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table (https://tanstack.com/table/latest, read 12 Sep 2026). Flowbite / Skeleton / shadcn-svelte tables pricing, as its site states it: Flowbite Svelte, Skeleton and shadcn-svelte are MIT component libraries; their table components are free and no grid licence is sold (https://github.com/themesberg/flowbite-svelte, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs TanStack Table (Svelte)](https://svgrid.com/compare/tanstack-table/), [SvGrid vs Flowbite / Skeleton / shadcn-svelte tables](https://svgrid.com/compare/svelte-ui-kit-tables/).
 <!-- facts:end -->
 
 ## Why this port is small
@@ -13451,7 +14135,7 @@ maps a Smart.Grid setup onto SvGrid.
 > Svelte component.
 
 <!-- facts:start smart-grid -->
-> **Facts, checked 12 Sep 2026.** `smart-webcomponents` 27.0.1, ISC, last published 13 Aug 2026, 6,620 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026). Smart.Grid pricing, as its site states it: htmlelements.com lists the Developer License at $499 (on sale at $399) per developer, perpetual, or $39 per month, and the Team License at $1,499 per five developers; the free Community License covers the core components but not the Grid (https://www.htmlelements.com/license/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs Smart.Grid (Smart Web Components)](https://svgrid.com/compare/smart-grid/).
+> **Facts, checked 12 Sep 2026.** `smart-webcomponents` 27.0.1, ISC, last published 13 Aug 2026, 6,620 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026). Smart.Grid pricing, as its site states it: htmlelements.com lists the Developer License at $499 (on sale at $399) per developer, perpetual, or $39 per month, and the Team License at $1,499 per five developers; the free Community License covers the core components but not the Grid (https://www.htmlelements.com/license/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs Smart.Grid (Smart Web Components)](https://svgrid.com/compare/smart-grid/).
 <!-- facts:end -->
 
 ## Vocabulary cheat sheet
@@ -13646,7 +14330,7 @@ also exposes a headless engine and an MCP server).
 > current SVAR docs and map them onto the SvGrid equivalents below.
 
 <!-- facts:start svar-svelte-datagrid -->
-> **Facts, checked 12 Sep 2026.** `wx-svelte-grid` 2.7.0, MIT, last published 3 Jun 2026, 62,800 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `wx-svelte-grid` 2.7.0 51.5 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). SVAR Svelte DataGrid pricing, as its site states it: The DataGrid is MIT and free for commercial use with no paid tier; svar.dev sells PRO editions of its Gantt, Calendar and Kanban components and offers paid consulting and custom development, with no price list for the grid (https://svar.dev/svelte/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs SVAR Svelte DataGrid](https://svgrid.com/compare/svar-svelte-datagrid/).
+> **Facts, checked 12 Sep 2026.** `wx-svelte-grid` 2.7.0, MIT, last published 3 Jun 2026, 62,800 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `wx-svelte-grid` 2.7.0 51.5 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). SVAR Svelte DataGrid pricing, as its site states it: The DataGrid is MIT and free for commercial use with no paid tier; svar.dev sells PRO editions of its Gantt, Calendar and Kanban components and offers paid consulting and custom development, with no price list for the grid (https://svar.dev/svelte/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs SVAR Svelte DataGrid](https://svgrid.com/compare/svar-svelte-datagrid/).
 <!-- facts:end -->
 
 ## Concept map
@@ -13863,7 +14547,7 @@ Svelte 5 runes and ships a render component, so the port mostly
 > the `<table>` markup and `Subscribe` blocks you no longer need.
 
 <!-- facts:start svelte-headless-table pkg:@humanspeak/svelte-headless-table -->
-> **Facts, checked 12 Sep 2026.** `svelte-headless-table` 0.18.3, MIT, last published 28 Oct 2024, 90,100 npm downloads in the 30 days to 10 Sep 2026. `@humanspeak/svelte-headless-table` 6.2.0, MIT, last published 27 Aug 2026, 8,640 npm downloads in the same window. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `svelte-headless-table` 0.18.3 5.7 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). svelte-headless-table pricing, as its site states it: svelte-headless-table is MIT and free; no paid licence or support is offered, and the author states there are no plans for a Svelte 5 port (https://github.com/bryanmylee/svelte-headless-table, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/).
+> **Facts, checked 12 Sep 2026.** `svelte-headless-table` 0.18.3, MIT, last published 28 Oct 2024, 90,100 npm downloads in the 30 days to 10 Sep 2026. `@humanspeak/svelte-headless-table` 6.2.0, MIT, last published 27 Aug 2026, 8,640 npm downloads in the same window. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `svelte-headless-table` 0.18.3 5.7 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). svelte-headless-table pricing, as its site states it: svelte-headless-table is MIT and free; no paid licence or support is offered, and the author states there are no plans for a Svelte 5 port (https://github.com/bryanmylee/svelte-headless-table, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/).
 <!-- facts:end -->
 
 ## Know your options first
@@ -14137,7 +14821,7 @@ for a Svelte-5-native grid with an unconditional MIT core.
 > version's columns and events onto the SvGrid equivalents below.
 
 <!-- facts:start syncfusion-grid -->
-> **Facts, checked 12 Sep 2026.** `@syncfusion/ej2-grids` 34.2.7, Commercial (see licence file), last published 8 Sep 2026, 711,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026). Syncfusion Grid pricing, as its site states it: syncfusion.com lists the Grid SDK at $959 per developer per year and the UI Component Suite at $1,199 per developer per year, minimum five developers; a free Community License applies to companies and individuals with under $1M annual revenue, up to five developers and no more than ten employees (https://www.syncfusion.com/sales/products, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs Syncfusion Grid](https://svgrid.com/compare/syncfusion-grid/).
+> **Facts, checked 12 Sep 2026.** `@syncfusion/ej2-grids` 34.2.7, Commercial (see licence file), last published 8 Sep 2026, 711,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026). Syncfusion Grid pricing, as its site states it: syncfusion.com lists the Grid SDK at $959 per developer per year and the UI Component Suite at $1,199 per developer per year, minimum five developers; a free Community License applies to companies and individuals with under $1M annual revenue, up to five developers and no more than ten employees (https://www.syncfusion.com/sales/products, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs Syncfusion Grid](https://svgrid.com/compare/syncfusion-grid/).
 <!-- facts:end -->
 
 ## Concept map
@@ -14272,7 +14956,7 @@ cells are snippets, and there is no manual mount / teardown.
 > swapping imperative `setData` for reactive state.
 
 <!-- facts:start tabulator -->
-> **Facts, checked 12 Sep 2026.** `tabulator-tables` 6.5.2, MIT, last published 23 Jun 2026, 672,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `tabulator-tables` 6.5.2 106.9 KB JS + 3.8 KB CSS (measured 12 Sep 2026). Tabulator pricing, as its site states it: Tabulator is MIT and free; no licence or support plan is sold (https://github.com/olifolkerd/tabulator, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs Tabulator](https://svgrid.com/compare/tabulator/).
+> **Facts, checked 12 Sep 2026.** `tabulator-tables` 6.5.2, MIT, last published 23 Jun 2026, 672,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `tabulator-tables` 6.5.2 106.9 KB JS + 3.8 KB CSS (measured 12 Sep 2026). Tabulator pricing, as its site states it: Tabulator is MIT and free; no licence or support plan is sold (https://github.com/olifolkerd/tabulator, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs Tabulator](https://svgrid.com/compare/tabulator/).
 <!-- facts:end -->
 
 ## Vocabulary cheat sheet
@@ -14414,7 +15098,7 @@ this is a half-day port; the vocabulary below covers the v8 names too.
 > hours** for editing-heavy grids.
 
 <!-- facts:start tanstack-table -->
-> **Facts, checked 12 Sep 2026.** `@tanstack/svelte-table` 9.2.4, MIT, last published 28 Aug 2026, 231,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `@tanstack/svelte-table` 9.2.4 36.3 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). TanStack Table pricing, as its site states it: TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table (https://tanstack.com/table/latest, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs TanStack Table (Svelte)](https://svgrid.com/compare/tanstack-table/).
+> **Facts, checked 12 Sep 2026.** `@tanstack/svelte-table` 9.2.4, MIT, last published 28 Aug 2026, 231,000 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `@tanstack/svelte-table` 9.2.4 36.3 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). TanStack Table pricing, as its site states it: TanStack Table is MIT and free; tanstack.com is sponsor-supported and offers Enterprise Support as private consulting and expert support, with no licence sold for the table (https://tanstack.com/table/latest, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs TanStack Table (Svelte)](https://svgrid.com/compare/tanstack-table/).
 <!-- facts:end -->
 
 > **On v9?** SvGrid exports the same feature vocabulary, so most of this
@@ -14700,7 +15384,7 @@ letting you match the design system.
 > instead - the port is different, and smaller.
 
 <!-- facts:start svelte-ui-kit-tables -->
-> **Facts, checked 12 Sep 2026.** `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the 30 days to 10 Sep 2026. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026). Flowbite / Skeleton / shadcn-svelte tables pricing, as its site states it: Flowbite Svelte, Skeleton and shadcn-svelte are MIT component libraries; their table components are free and no grid licence is sold (https://github.com/themesberg/flowbite-svelte, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs Flowbite / Skeleton / shadcn-svelte tables](https://svgrid.com/compare/svelte-ui-kit-tables/).
+> **Facts, checked 12 Sep 2026.** `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the 30 days to 10 Sep 2026. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026). Flowbite / Skeleton / shadcn-svelte tables pricing, as its site states it: Flowbite Svelte, Skeleton and shadcn-svelte are MIT component libraries; their table components are free and no grid licence is sold (https://github.com/themesberg/flowbite-svelte, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs Flowbite / Skeleton / shadcn-svelte tables](https://svgrid.com/compare/svelte-ui-kit-tables/).
 <!-- facts:end -->
 
 > Estimated effort: **30 min - 1 hour** per table. You are mostly
@@ -14874,7 +15558,7 @@ port is mostly about deciding how much markup you want to keep.
 > 30-minute swap; a feature-heavy one trends toward two hours.
 
 <!-- facts:start vincjo-datatables -->
-> **Facts, checked 12 Sep 2026.** `@vincjo/datatables` 2.8.1, MIT, last published 4 Jun 2026, 72,800 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `@vincjo/datatables` 2.8.1 10.2 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). @vincjo/datatables pricing, as its site states it: @vincjo/datatables is MIT on npm and free; no licence is sold (https://github.com/vincjo/datatables, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs @vincjo/datatables](https://svgrid.com/compare/vincjo-datatables/).
+> **Facts, checked 12 Sep 2026.** `@vincjo/datatables` 2.8.1, MIT, last published 4 Jun 2026, 72,800 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `@vincjo/datatables` 2.8.1 10.2 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). @vincjo/datatables pricing, as its site states it: @vincjo/datatables is MIT on npm and free; no licence is sold (https://github.com/vincjo/datatables, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs @vincjo/datatables](https://svgrid.com/compare/vincjo-datatables/).
 <!-- facts:end -->
 
 ## Vocabulary cheat sheet
@@ -18586,7 +19270,7 @@ every code block below is a quote from those files, checked by a test, and the
 first line of each capture records the versions it was made with.
 
 <!-- facts:start svelte-headless-table pkg:@humanspeak/svelte-headless-table -->
-> **Facts, checked 12 Sep 2026.** `svelte-headless-table` 0.18.3, MIT, last published 28 Oct 2024, 90,100 npm downloads in the 30 days to 10 Sep 2026. `@humanspeak/svelte-headless-table` 6.2.0, MIT, last published 27 Aug 2026, 8,640 npm downloads in the same window. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.23 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `svelte-headless-table` 0.18.3 5.7 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). svelte-headless-table pricing, as its site states it: svelte-headless-table is MIT and free; no paid licence or support is offered, and the author states there are no plans for a Svelte 5 port (https://github.com/bryanmylee/svelte-headless-table, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/).
+> **Facts, checked 12 Sep 2026.** `svelte-headless-table` 0.18.3, MIT, last published 28 Oct 2024, 90,100 npm downloads in the 30 days to 10 Sep 2026. `@humanspeak/svelte-headless-table` 6.2.0, MIT, last published 27 Aug 2026, 8,640 npm downloads in the same window. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.24 99.7 KB JS + 11.3 KB CSS (measured 26 Oct 2026); `svelte-headless-table` 0.18.3 5.7 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). svelte-headless-table pricing, as its site states it: svelte-headless-table is MIT and free; no paid licence or support is offered, and the author states there are no plans for a Svelte 5 port (https://github.com/bryanmylee/svelte-headless-table, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs svelte-headless-table](https://svgrid.com/compare/svelte-headless-table/).
 <!-- facts:end -->
 
 The short version: the install warns and goes through, the untouched component
@@ -42153,6 +42837,16 @@ export default function Screen() {
 That is the whole integration. The component is generated from `<SvGrid>`'s
 own types, so all 124 properties and 33 events are typed props, and it works the
 same on React 17, 18 and 19.
+
+## Server rendering (Next.js, TanStack Start, Remix)
+
+The grid is a custom element, so a server has nothing to render for it. Load
+it in the browser: the `DataGrid` component in
+[SvGrid in Lovable](../lovable.md#why-the-grid-waits-for-the-browser) does it
+with `lazy` and a mounted flag, and works in any server-rendered React app.
+`@svgrid/grid-wc` 3.0.35 and earlier threw `customElements is not defined`
+when a server imported it; later releases import cleanly there and render a
+plain `<sv-grid>` tag that upgrades on hydration.
 
 ## Why the wrapper rather than the raw element
 
@@ -121773,6 +122467,12 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **Group footer and grand-total rows drew checkboxes.** With
+  `showRowSelection`, each totals row had a row-selection checkbox, and
+  ticking it selected the synthetic row. A checkbox column with no `aggregate`
+  showed a checkbox too, holding a leaf's value carried over from the group
+  row. Totals rows keep the selection cell for alignment but leave it empty,
+  and a boolean column without an aggregate renders nothing there.
 - **Toggling a checkbox cell did not fire `onCellValueChange`.** A click or
   Space on a checkbox cell wrote the row and stopped, so an app that saves
   edits from `onCellValueChange` lost every checkbox change, and Ctrl+Z could
@@ -122243,6 +122943,22 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **Importing the package on a server threw `customElements is not defined`.**
+  Svelte registers each element with a bare top-level
+  `customElements.define(...)`, so any server-rendered React app
+  (TanStack Start, which Lovable now generates, Next.js, Remix) crashed on
+  `import { SvGrid } from '@svgrid/grid-wc/react'`. The build now guards the
+  registration; on a server the import is inert and SSR emits a plain
+  `<sv-grid>` that upgrades on hydration. Guarded by `test/ssr.test.ts`.
+- **The React wrapper lost props the grid reads once at mount.** It wrote
+  props in a passive `useEffect`, which runs after paint; the element mounts a
+  microtask after insertion, so it had already mounted with defaults and
+  `pageSize={25}` showed 10 rows a page (the wrapper's own pagination example
+  did). Props are now written in a layout effect, before the element mounts.
+  The same change in the `<sv-chart>` wrapper.
+- **`style` on the React wrappers took `Record<string, string | number>`,** so
+  passing a React `CSSProperties` object failed to type-check. It is
+  `CSSProperties` now.
 - **The React wrapper re-did all its work on every parent render.** Both of its
   effects had no dependency array, so any state change anywhere in the parent
   reassigned all 98 properties and rebound all 20 event listeners - 40 listener

@@ -39,6 +39,7 @@ export function aiBriefLines({ site, version, size, themeCount, demoCount, gantt
   L.push('- The developer wants their own markup: `createSvGrid` is the same engine without the renderer (also exported alone from `@svgrid/grid/core`).')
   L.push('- The rows are many or remote: row and column virtualization in the browser, and `createServerDataSource` for server-side paging, sorting and filtering.')
   L.push('- The app is not Svelte: the `<sv-grid>` custom element in `@svgrid/grid-wc` runs in React, Vue, Angular or plain HTML.')
+  L.push(`- The app is built in an AI app builder. Bolt.new writes Svelte: \`@svgrid/grid\` and \`<SvGrid>\`, on Vite 7 (its WebContainer cannot run Vite 8). Lovable writes server-rendered React: \`@svgrid/grid-wc/react\`, imported in the browser only. Guides: ${site}/docs/help/bolt-new/ and ${site}/docs/help/lovable/`)
   L.push('')
   L.push('Not a fit: Svelte 4 projects. SvGrid is written with runes and snippets and requires Svelte 5.')
   L.push('')
@@ -125,6 +126,7 @@ export const SMALL_CORPUS = [
   'help/bundle-size.md',
   'help/ai.md',
   'help/mcp-server.md',
+  'help/ai-app-builders.md',
   'help/missing-features.md',
 ]
 

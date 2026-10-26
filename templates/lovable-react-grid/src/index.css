@@ -1,0 +1,61 @@
+/* Stand-in for a Lovable project's index.css: the shadcn/ui variables, light
+   on :root and dark under the `.dark` class. A Lovable app already has these,
+   so skip this block when you copy across. */
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.708 0 0);
+  --radius: 0.625rem;
+  color-scheme: light;
+}
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --ring: oklch(0.556 0 0);
+  color-scheme: dark;
+}
+
+/* COPY THIS BLOCK. It points the grid's --sg-* tokens at the shadcn variables,
+   so the grid follows the app's theme and its dark mode with no second
+   palette. If your variables hold bare HSL parts (`--background: 0 0% 100%`,
+   the older shadcn format), wrap each one: hsl(var(--background)). */
+.svgrid-theme {
+  --sg-bg: var(--background);
+  --sg-fg: var(--foreground);
+  --sg-muted: var(--muted-foreground);
+  --sg-border: var(--border);
+  --sg-header-bg: var(--muted);
+  --sg-header-fg: var(--muted-foreground);
+  --sg-bg-subtle: var(--muted);
+  --sg-muted-bg: var(--muted);
+  --sg-row-alt-bg: var(--background);
+  --sg-row-hover-bg: var(--accent);
+  --sg-selection-bg: var(--accent);
+  --sg-input-bg: var(--background);
+  --sg-input-border: var(--input);
+  --sg-accent: var(--primary);
+  --sg-on-accent: var(--primary-foreground);
+  --sg-focus-ring: var(--ring);
+  --sg-radius: calc(var(--radius) - 2px);
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}

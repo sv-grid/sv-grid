@@ -150,6 +150,20 @@ view. For the common case, `minimal` and `<SvGrid>` are less work. Background:
 [Headless overview](../help/headless/overview.md) and
 [Build a table from scratch](../help/headless/build-a-table.md).
 
+## Starters for Bolt.new and Lovable
+
+Two more starters live in the repository rather than in the scaffolder,
+because they open straight from GitHub:
+
+- [`templates/bolt-svelte-grid`](https://github.com/sv-grid/sv-grid/tree/main/templates/bolt-svelte-grid) -
+  Svelte 5 on Vite 7, the version Bolt's WebContainer can run. The
+  scaffolder's templates are on Vite 8 and fail to install there.
+- [`templates/lovable-react-grid`](https://github.com/sv-grid/sv-grid/tree/main/templates/lovable-react-grid) -
+  React with `@svgrid/grid-wc`, and the `DataGrid` component that keeps a
+  server-rendered Lovable app working.
+
+[SvGrid in AI app builders](../help/ai-app-builders.md) walks through both.
+
 ## Adding the grid to an existing app
 
 Already have a Svelte or SvelteKit project? Skip the scaffolder and

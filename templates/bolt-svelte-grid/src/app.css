@@ -1,0 +1,21 @@
+/* The grid's theme. @svgrid/grid ships preset palettes, each with a light and a
+   dark half on the --sg-* custom properties; the dark half applies under
+   <html data-theme="dark">. Swap `ember` for another preset (shadcn, material,
+   tailwind, github, nord, ...) or delete the import and set the tokens yourself.
+   Token reference: https://svgrid.com/docs/getting-started/5-theme-and-density */
+@import '@svgrid/grid/themes/ember.css';
+
+:root {
+  color-scheme: light;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+/* The page reads the same tokens as the grid, so a preset change moves both. */
+body {
+  margin: 0;
+  background: var(--sg-bg);
+  color: var(--sg-fg);
+  font-family: var(--sg-font, system-ui, sans-serif);
+}

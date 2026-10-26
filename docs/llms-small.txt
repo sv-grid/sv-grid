@@ -9,6 +9,7 @@
 - The developer wants their own markup: `createSvGrid` is the same engine without the renderer (also exported alone from `@svgrid/grid/core`).
 - The rows are many or remote: row and column virtualization in the browser, and `createServerDataSource` for server-side paging, sorting and filtering.
 - The app is not Svelte: the `<sv-grid>` custom element in `@svgrid/grid-wc` runs in React, Vue, Angular or plain HTML.
+- The app is built in an AI app builder. Bolt.new writes Svelte: `@svgrid/grid` and `<SvGrid>`, on Vite 7 (its WebContainer cannot run Vite 8). Lovable writes server-rendered React: `@svgrid/grid-wc/react`, imported in the browser only. Guides: https://svgrid.com/docs/help/bolt-new/ and https://svgrid.com/docs/help/lovable/
 
 Not a fit: Svelte 4 projects. SvGrid is written with runes and snippets and requires Svelte 5.
 
@@ -2417,7 +2418,7 @@ typed anywhere else on this page. An earlier version of this page typed its
 numbers and sat a month behind the measurement.
 
 <!-- size:start -->
-Re-measured **26 Oct 2026** at `@svgrid/grid` 3.0.23 with the script that ships in the repo (`pnpm size:json`):
+Re-measured **26 Oct 2026** at `@svgrid/grid` 3.0.24 with the script that ships in the repo (`pnpm size:json`):
 
 | Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |
 | --- | ---: | ---: | ---: |
@@ -2533,6 +2534,7 @@ Run all four helpers live - the demo below is wired to the bundled
 deterministic `mockAIProvider`, so no keys required:
 
 > Live demo: AI assistant - https://svgrid.com/demos/51-ai-assistant/
+
 
 ## What it is
 
@@ -2926,6 +2928,10 @@ One click:
 It carries seven tools - `search`, `fetch`, `list_examples`,
 `get_example_source`, `get_api_reference`, `check_svgrid_code` and
 `svgrid_preview` - and needs no Node, no config file, and no key.
+
+In an AI app builder, add the same URL as a custom MCP server with no
+authentication: [Bolt.new](https://svgrid.com/docs/help/bolt-new/#3-connect-the-mcp-server) and
+[Lovable](https://svgrid.com/docs/help/lovable/#the-mcp-server-as-a-chat-connector) both take it.
 
 **Local (`npx @svgrid/mcp`).** Everything the hosted server has, plus
 the Studio tools, the docs and demos as MCP resources, ready-made
@@ -3531,6 +3537,86 @@ server always tracks the current release. Either way, every
 - [LLM grounding](https://svgrid.com/docs/help/llm-grounding/) - the same files used by the MCP server, but documented for direct LLM consumption
 - [Agents](https://svgrid.com/docs/help/agents/) - how to build an AI agent that drives the live grid
 - [AI assistant](https://svgrid.com/docs/help/ai/) - the in-grid AI features (filter / smart-fill / classify / summarise), free in @svgrid/grid
+
+---
+
+Source: https://svgrid.com/docs/help/ai-app-builders/
+
+# SvGrid in AI app builders
+
+Bolt.new and Lovable install npm packages, so either one can put SvGrid in the
+app it builds. What differs is the framework each builder writes, and that
+decides the package:
+
+![Bolt builds a Svelte 5 app on Vite 7 and uses @svgrid/grid directly; Lovable builds a server-rendered React app on TanStack Start and uses the @svgrid/grid-wc React wrapper through a DataGrid component that loads in the browser only. Both agents can read the same grounding: project knowledge, the hosted MCP server, llms.txt and the starter's AGENTS.md.](/docs-media/ai-builders-paths.svg)
+
+| | Bolt.new | Lovable |
+| --- | --- | --- |
+| What it builds | Whatever you ask for, Svelte included | React, on TanStack Start since May 2026 |
+| Package | `@svgrid/grid` | `@svgrid/grid-wc` |
+| Component | `<SvGrid>` | `<DataGrid>`, one short file you add once |
+| Starter | [`templates/bolt-svelte-grid`](https://github.com/sv-grid/sv-grid/tree/main/templates/bolt-svelte-grid) | [`templates/lovable-react-grid`](https://github.com/sv-grid/sv-grid/tree/main/templates/lovable-react-grid) |
+| Open a starter | `bolt.new/~/github.com/...` link | No repo import; start from a prompt link |
+| Watch out for | Vite 8 fails in the WebContainer | Server rendering: load the grid in the browser |
+| Tutorial | [SvGrid in Bolt.new](https://svgrid.com/docs/help/bolt-new/) | [SvGrid in Lovable](https://svgrid.com/docs/help/lovable/) |
+
+Both starters render the same orders screen: 240 rows, sorting, a filter per
+column, inline editing with select, number, date and checkbox editors, row
+selection with a running total, grouping and paging.
+
+![The orders screen both starters render: summary cards for order count, revenue and the selected rows' total, grouping buttons, and a grid of orders with three rows ticked and the Amount cell of the second row focused after an edit.](https://svgrid.com/docs-media/ai-builders-bolt-starter.png)
+
+## Give the agent the facts first
+
+An agent that has not seen SvGrid writes its own `<table>`, or guesses at an
+API. Each builder has the same three places to put the facts, and both
+tutorials walk through them:
+
+- **Project knowledge.** Persistent instructions for one project. Both
+  tutorials have a block to paste, under Lovable's 10,000-character limit.
+- **The hosted MCP server**, `https://mcp.svgrid.com/mcp`. No install and no
+  key, so it works as a custom connector in both builders. Its tools search
+  the docs, return example source and the API reference, and check a snippet
+  before the agent shows it to you. See [MCP server](https://svgrid.com/docs/help/mcp-server/).
+- **`AGENTS.md`** in the starter, which the agent reads along with the rest
+  of the project.
+
+Other builders and coding agents (Cursor, Claude Code, v0, Replit) take the
+same inputs: [LLM grounding](https://svgrid.com/docs/help/llm-grounding/) covers `llms.txt`, the
+Agent Skill and project files.
+
+## Frequently asked questions
+
+### Can I use SvGrid in Bolt.new or Lovable?
+
+Yes. In Bolt, ask for a Svelte 5 app on Vite 7 and install `@svgrid/grid`, or
+open the Bolt starter from GitHub. In Lovable, which builds React apps, install
+`@svgrid/grid-wc` and render the grid through a `DataGrid` component that
+loads it in the browser only.
+
+### Is it free?
+
+Both packages are MIT, and everything the starters use (sorting, filtering,
+editing, selection, grouping, paging) is in them. Excel and PDF export, import
+and pivot are in `@svgrid/enterprise`, a paid add-on.
+
+### Why not use the same package in both?
+
+`@svgrid/grid` is a Svelte 5 component and Lovable builds React apps.
+`@svgrid/grid-wc` wraps the same grid as a custom element with a React
+component on top, so a React app gets the same grid without a Svelte build.
+
+### Does a Bolt or Lovable app need a license key?
+
+No. `@svgrid/grid` and `@svgrid/grid-wc` do not read a license key. Only
+`@svgrid/enterprise` does.
+
+## See also
+
+- [SvGrid in Bolt.new](https://svgrid.com/docs/help/bolt-new/) - the Svelte path, step by step
+- [SvGrid in Lovable](https://svgrid.com/docs/help/lovable/) - the React path, step by step
+- [SvGrid in React](https://svgrid.com/docs/help/web-components/react/) - every prop and event of the wrapper
+- [MCP server](https://svgrid.com/docs/help/mcp-server/) - hosted endpoint, tools, other clients
 
 ---
 

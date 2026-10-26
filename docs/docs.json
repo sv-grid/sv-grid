@@ -1,9 +1,9 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-10-26T08:44:11.231Z",
+  "generatedAt": "2026-10-26T15:13:36.970Z",
   "counts": {
-    "pages": 464,
+    "pages": 467,
     "enterprise": 107,
     "withDemo": 338
   },
@@ -120,12 +120,14 @@
         "help/web-components.md",
         "help/accessibility.md",
         "help/agents.md",
+        "help/ai-app-builders.md",
         "help/ai-smart-paste.md",
         "help/ai-toolkit.md",
         "help/ai.md",
         "help/api-stability.md",
         "help/architecture.md",
         "help/benchmarks.md",
+        "help/bolt-new.md",
         "help/browser-support.md",
         "help/bundle-size.md",
         "help/collaboration.md",
@@ -141,6 +143,7 @@
         "help/i18n-rtl.md",
         "help/icons.md",
         "help/llm-grounding.md",
+        "help/lovable.md",
         "help/mcp-server.md",
         "help/migrating-from-ag-grid.md",
         "help/migrating-from-airtable.md",
@@ -1010,7 +1013,7 @@
       "section": "",
       "pillar": "grid",
       "tier": "community",
-      "words": 11547,
+      "words": 11774,
       "lastUpdated": "2026-10-26",
       "demoIds": []
     },
@@ -1897,8 +1900,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 1249,
-      "lastUpdated": "2026-10-06",
+      "words": 1324,
+      "lastUpdated": "2026-10-26",
       "demoIds": []
     },
     {
@@ -1945,6 +1948,29 @@
       "demoIds": []
     },
     {
+      "path": "help/ai-app-builders.md",
+      "url": "/docs/help/ai-app-builders/",
+      "title": "SvGrid in AI app builders",
+      "summary": "Bolt.new and Lovable install npm packages, so either one can put SvGrid in the app it builds. What differs is the framework each builder writes, and that decides the package:",
+      "seoTitle": "Svelte data grid in Bolt.new and Lovable apps - SvGrid",
+      "seoDescription": "Add a sortable, filterable, editable data grid to an app built in Bolt.new or Lovable. Which SvGrid package each builder needs, starters, prompts and MCP setup.",
+      "keywords": [
+        "bolt.new data grid",
+        "lovable data grid",
+        "ai app builder table",
+        "bolt.new table component",
+        "lovable table component",
+        "vibe coding data grid",
+        "svgrid mcp"
+      ],
+      "section": "help",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 629,
+      "lastUpdated": "2026-10-26",
+      "demoIds": []
+    },
+    {
       "path": "help/ai-smart-paste.md",
       "url": "/docs/help/ai-smart-paste/",
       "title": "AI Smart Paste",
@@ -1966,8 +1992,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2136,
-      "lastUpdated": "2026-10-20",
+      "words": 2149,
+      "lastUpdated": "2026-10-26",
       "demoIds": [
         "51-ai-assistant"
       ]
@@ -2325,6 +2351,29 @@
       "tutorialIds": [
         "million-rows-scroll"
       ]
+    },
+    {
+      "path": "help/bolt-new.md",
+      "url": "/docs/help/bolt-new/",
+      "title": "SvGrid in Bolt.new",
+      "summary": "Bolt writes Svelte apps when you ask for one, so SvGrid goes in as the Svelte component itself: npm install @svgrid/grid and <SvGrid>. Most of what can go wrong comes from two places: the agent not knowing SvGrid exists, and Vite 8, which does not run in Bolt's WebContainer. This page covers both.",
+      "seoTitle": "Bolt.new data grid - a Svelte 5 table app with SvGrid",
+      "seoDescription": "Build a Bolt.new app with a sortable, filterable, editable data grid. A starter that opens in Bolt, ready prompts, project knowledge and the SvGrid MCP connector.",
+      "keywords": [
+        "bolt.new data grid",
+        "bolt.new svelte",
+        "bolt.new table",
+        "bolt new svelte data table",
+        "bolt.new mcp server",
+        "bolt.new project knowledge",
+        "svelte data grid ai"
+      ],
+      "section": "help",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 1885,
+      "lastUpdated": "2026-10-26",
+      "demoIds": []
     },
     {
       "path": "help/browser-support.md",
@@ -3762,8 +3811,31 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1084,
-      "lastUpdated": "2026-10-10",
+      "words": 1112,
+      "lastUpdated": "2026-10-26",
+      "demoIds": []
+    },
+    {
+      "path": "help/lovable.md",
+      "url": "/docs/help/lovable/",
+      "title": "SvGrid in Lovable",
+      "summary": "Lovable builds React apps, so SvGrid goes in through @svgrid/grid-wc, the web-component build of the grid with a React wrapper. It is the same grid as the Svelte package, compiled into a custom element, so the React app needs no Svelte toolchain.",
+      "seoTitle": "Lovable data grid - SvGrid, the Svelte grid, in React",
+      "seoDescription": "Add a sortable, filterable, editable data grid to a Lovable app. One component that survives TanStack Start server rendering, shadcn theming, prompts and MCP setup.",
+      "keywords": [
+        "lovable data grid",
+        "lovable table component",
+        "lovable react table",
+        "lovable tanstack start",
+        "lovable shadcn table",
+        "lovable mcp server",
+        "react data grid web component"
+      ],
+      "section": "help",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 1909,
+      "lastUpdated": "2026-10-26",
       "demoIds": []
     },
     {
@@ -3774,8 +3846,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 3710,
-      "lastUpdated": "2026-10-25",
+      "words": 3733,
+      "lastUpdated": "2026-10-26",
       "demoIds": []
     },
     {
@@ -7362,8 +7434,8 @@
       "pillar": "grid",
       "tier": "community",
       "group": "Frameworks",
-      "words": 2547,
-      "lastUpdated": "2026-10-14",
+      "words": 2625,
+      "lastUpdated": "2026-10-26",
       "demoIds": [
         "10-custom-cells-and-themes"
       ]

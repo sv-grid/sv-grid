@@ -123,7 +123,9 @@ jobs:
         # within the size budget.
         # zazo-brain + zazo-voice: the demo helper understands what it should,
         # and every line, demo title and tip he can say has a current clip.
-        run: pnpm vitest run tools/docs-snippets.test.ts tools/studio-docs.test.ts tools/ui-docs.test.ts tools/seo-guardrails.test.ts tools/indexnow.test.ts tools/docs-corpus.test.ts tools/competitor-facts.test.ts tools/migration-lab.test.ts tools/tutorials.test.ts tools/ai-brief.test.ts tools/skill-frontmatter.test.ts tools/zazo-brain.test.ts tools/zazo-voice.test.ts tools/trial-bundle.test.ts
+        # ai-builder-docs: the Bolt and Lovable tutorials quote the starters
+        # under templates/ verbatim, and each prompt link carries its prompt.
+        run: pnpm vitest run tools/docs-snippets.test.ts tools/studio-docs.test.ts tools/ui-docs.test.ts tools/seo-guardrails.test.ts tools/indexnow.test.ts tools/docs-corpus.test.ts tools/competitor-facts.test.ts tools/migration-lab.test.ts tools/tutorials.test.ts tools/ai-brief.test.ts tools/skill-frontmatter.test.ts tools/zazo-brain.test.ts tools/zazo-voice.test.ts tools/trial-bundle.test.ts tools/ai-builder-docs.test.ts
 
       - name: Demo page parity + meta coverage + search quality
         # A demo page's crawlable half is rendered twice, by the prerenderer

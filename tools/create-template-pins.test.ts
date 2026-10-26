@@ -6,8 +6,9 @@
  * project did not even load its config.
  *
  * Reads the templates as published (packages/create-sv-grid/templates) plus
- * the admin-dashboard source at templates/sveltekit-admin-dashboard, which the
- * package only copies in on prepack.
+ * every standalone starter under templates/: the admin-dashboard source, which
+ * the package only copies in on prepack, and the Bolt and Lovable starters,
+ * which people open straight from GitHub.
  */
 import { execFileSync } from 'node:child_process'
 import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
@@ -55,8 +56,15 @@ function manifests(root: string): Array<[string, string]> {
       if (existsSync(deps)) out.push([`${t}/${v}`, deps])
     }
   }
-  const source = join(root, 'templates', 'sveltekit-admin-dashboard', 'package.json')
-  if (existsSync(source)) out.push(['sveltekit-admin-dashboard', source])
+  // The standalone starters under templates/ (the admin-dashboard source, the
+  // Bolt and Lovable starters), which people open straight from GitHub.
+  const standalone = join(root, 'templates')
+  if (existsSync(standalone)) {
+    for (const t of readdirSync(standalone)) {
+      const pkg = join(standalone, t, 'package.json')
+      if (existsSync(pkg)) out.push([t, pkg])
+    }
+  }
   return out
 }
 
@@ -122,8 +130,8 @@ function viteConfigs(root: string): string[] {
     }
   }
   walk(join(root, 'packages', 'create-sv-grid', 'templates'))
-  const source = join(root, 'templates', 'sveltekit-admin-dashboard')
-  if (existsSync(source)) walk(source)
+  const standalone = join(root, 'templates')
+  if (existsSync(standalone)) walk(standalone)
   return out
 }
 
@@ -152,7 +160,12 @@ afterAll(() => {
 describe('create template pins', () => {
   it('finds the templates it is meant to check', () => {
     const labels = manifests(repoRoot).map(([l]) => l)
-    expect(labels).toEqual(expect.arrayContaining(['base', 'base/browser', 'minimal', 'sveltekit', 'pivot-dashboard', 'headless']))
+    expect(labels).toEqual(
+      expect.arrayContaining([
+        'base', 'base/browser', 'minimal', 'sveltekit', 'pivot-dashboard', 'headless',
+        'sveltekit-admin-dashboard', 'bolt-svelte-grid', 'lovable-react-grid',
+      ]),
+    )
     expect(viteConfigs(repoRoot).length).toBeGreaterThanOrEqual(5)
   })
 

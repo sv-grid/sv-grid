@@ -39,6 +39,10 @@ It carries seven tools - `search`, `fetch`, `list_examples`,
 `get_example_source`, `get_api_reference`, `check_svgrid_code` and
 `svgrid_preview` - and needs no Node, no config file, and no key.
 
+In an AI app builder, add the same URL as a custom MCP server with no
+authentication: [Bolt.new](./bolt-new.md#3-connect-the-mcp-server) and
+[Lovable](./lovable.md#the-mcp-server-as-a-chat-connector) both take it.
+
 **Local (`npx @svgrid/mcp`).** Everything the hosted server has, plus
 the Studio tools, the docs and demos as MCP resources, ready-made
 prompts, and a `svgrid_check_code` that additionally *compiles* the file

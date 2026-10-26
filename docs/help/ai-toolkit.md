@@ -306,4 +306,5 @@ agent you call `SvGridApi` directly.
 - [Agent Skill](./skill.md) - always-on, project-aware context and house style for coding assistants
 - [MCP server](./mcp-server.md) - turnkey integration for Claude Desktop / Cursor / Zed
 - [LLM grounding](./llm-grounding.md) - the static files any model reads
+- [AI app builders](./ai-app-builders.md) - SvGrid in apps built with Bolt.new and Lovable
 - [AI generation - Studio](../enterprise/studio/ai-generation.md) - scaffold CRUD data-apps from a schema

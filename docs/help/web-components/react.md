@@ -27,6 +27,16 @@ That is the whole integration. The component is generated from `<SvGrid>`'s
 own types, so all 124 properties and 33 events are typed props, and it works the
 same on React 17, 18 and 19.
 
+## Server rendering (Next.js, TanStack Start, Remix)
+
+The grid is a custom element, so a server has nothing to render for it. Load
+it in the browser: the `DataGrid` component in
+[SvGrid in Lovable](../lovable.md#why-the-grid-waits-for-the-browser) does it
+with `lazy` and a mounted flag, and works in any server-rendered React app.
+`@svgrid/grid-wc` 3.0.35 and earlier threw `customElements is not defined`
+when a server imported it; later releases import cleanly there and render a
+plain `<sv-grid>` tag that upgrades on hydration.
+
 ## Why the wrapper rather than the raw element
 
 - **React 18 and earlier stringify object props onto attributes.**
