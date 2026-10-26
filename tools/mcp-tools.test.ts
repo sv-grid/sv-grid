@@ -14,6 +14,7 @@ import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { skillToolNames } from './lib/skill-tools.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const SERVER = join(ROOT, 'packages', 'mcp', 'dist', 'index.js')
@@ -130,6 +131,16 @@ describe.skipIf(!hasDist)('the tool surface stays small', () => {
     // tokens a request for them is a straight loss.
     const tools = await listTools()
     expect(tools.some((t: { name: string }) => t.name.startsWith('studio_'))).toBe(false)
+  }, 30_000)
+
+  it('lists every tool the Agent Skill tells a model to call on the npm server', async () => {
+    // The Skill's grounding table has one column per server. A client can only
+    // call a listed tool, so a Skill naming an unlisted one sends the model
+    // nowhere - which is what the hosted column did until 2026-10-26.
+    const names = (await listTools()).map((t: { name: string }) => t.name)
+    const { npm } = skillToolNames()
+    expect(npm.length).toBeGreaterThan(2)
+    for (const n of npm) expect(names, `SKILL.md names ${n}`).toContain(n)
   }, 30_000)
 })
 
@@ -327,6 +338,65 @@ describe.skipIf(!hasDist)('check_svgrid_code catches what a model gets wrong', (
     const theirs = "<script>\n  import Grid from 'svelte-grid'\n</script>\n\n<Grid />"
     const quiet = await callJson('check_svgrid_code', { source: theirs, filename: 'Theirs.svelte' })
     expect(quiet.diagnostics.map((x: { rule: string }) => x.rule)).not.toContain('svgrid/lookalike-package')
+  }, 30_000)
+
+  it('warns when a look-alike package is imported next to @svgrid/grid', async () => {
+    const mixed = [
+      '<script>',
+      "  import { DataGrid } from 'svelte-grid'",
+      "  import { SvGrid } from '@svgrid/grid'",
+      '</script>',
+      '',
+      '<SvGrid data={[]} columns={[]} />',
+    ].join('\n')
+    const body = await callJson('svgrid_check_code', { source: mixed, filename: 'Mixed.svelte' })
+    const d = body.diagnostics.find((x: { rule: string }) => x.rule === 'svgrid/lookalike-package-mixed')
+    expect(d, JSON.stringify(body.diagnostics)).toBeTruthy()
+    expect(d.severity).toBe('warning')
+    expect(d.line).toBe(2)
+  }, 30_000)
+
+  it('rewrites an on: directive to the callback prop in `fixed`, unless the handler reads .detail', async () => {
+    const legacy = [
+      '<script>',
+      "  import { SvGrid } from '@svgrid/grid'",
+      '</script>',
+      '',
+      '<SvGrid data={[]} columns={[]} on:cellClick={(e) => console.log(e)} />',
+      '<SvGrid data={[]} columns={[]} on:rowClick={(e) => console.log(e.detail)} />',
+    ].join('\n')
+    const body = await callJson('svgrid_check_code', { source: legacy, filename: 'Legacy.svelte' })
+    expect(body.applied).toContain('on:cellClick -> onCellClick (line 5)')
+    expect(body.fixed).toContain('onCellClick={(e) => console.log(e)}')
+    // A CustomEvent's .detail is not what the callback prop receives.
+    expect(body.fixed).toContain('on:rowClick=')
+  }, 30_000)
+
+  it('passes the example in the AGENTS.md that ships inside @svgrid/grid', async () => {
+    // An agent reading node_modules copies this first; it has to be right.
+    const { readFileSync } = await import('node:fs')
+    const doc = readFileSync(join(ROOT, 'packages', 'grid', 'AGENTS.md'), 'utf8')
+    const snippet = /```svelte\r?\n([\s\S]*?)```/.exec(doc)?.[1]
+    expect(snippet).toBeTruthy()
+    const body = await callJson('svgrid_check_code', { source: snippet, filename: 'Agents.svelte' })
+    expect(body.diagnostics, JSON.stringify(body.diagnostics)).toHaveLength(0)
+    const pkg = JSON.parse(readFileSync(join(ROOT, 'packages', 'grid', 'package.json'), 'utf8'))
+    expect(pkg.files).toContain('AGENTS.md')
+  }, 30_000)
+
+  it('takes the file as `code` too, the name models guess first', async () => {
+    const body = await callJson('svgrid_check_code', { code: '<p>hi</p>' })
+    expect(body.ok).toBe(true)
+  }, 30_000)
+
+  it('sends instructions in initialize that name the check tool', async () => {
+    const res = (await send('initialize', {
+      protocolVersion: '2025-06-18',
+      capabilities: {},
+      clientInfo: { name: 'instructions-test', version: '1' },
+    })) as { result?: { instructions?: string } }
+    expect(res.result?.instructions).toContain('svgrid_check_code')
+    expect(res.result?.instructions).toContain('svgrid_search')
   }, 30_000)
 
   it('reports a parse error from the real compiler, not just the static rules', async () => {

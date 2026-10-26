@@ -7,6 +7,22 @@
  * re-export these for existing imports.
  */
 
+/**
+ * The `instructions` both servers send in `initialize`. A client puts this in
+ * front of the model on every turn, which no tool description gets, so it
+ * carries the two habits that decide whether the code works: look the API up,
+ * then check the file. The tool names differ between the npm server and the
+ * hosted one (`search` and `fetch` are fixed names there), hence the argument.
+ */
+export function serverInstructions(names: { search: string; get: string; check: string }): string {
+  return [
+    'SvGrid is a Svelte 5 data grid (@svgrid/grid, MIT; @svgrid/enterprise adds export, import, pivot, print, Kanban, scheduler and spreadsheet).',
+    'Svelte 5 only: runes ($state, $derived, $props) and snippets, callback props such as onCellClick, never `export let`, `on:` directives or stores.',
+    `Before writing grid code, call ${names.search} for the feature and ${names.get} for the page or demo it returns, so prop and option names come from this version rather than from memory.`,
+    `Run ${names.check} on every file you write that uses SvGrid, before showing it to the user, and use its \`fixed\` copy when it returns one.`,
+  ].join(' ')
+}
+
 export const UI_RESOURCE_URI = 'ui://svgrid/preview.html'
 export const UI_RESOURCE_META_KEY = 'ui/resourceUri'
 

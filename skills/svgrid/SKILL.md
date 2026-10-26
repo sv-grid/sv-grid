@@ -9,8 +9,9 @@ allowed-tools: Bash(npm create @svgrid@latest *), Bash(pnpm create @svgrid *), B
 
 SvGrid is a modern **Svelte 5** data grid: a headless core engine paired
 with a render component (`<SvGrid>`). It scales from a 10-row read-only
-table to a virtualized 100k-row editing surface with grouping, filtering,
-server-side data, and full keyboard + screen-reader support. Two packages:
+table to a virtualized editing surface of 100k rows x 100 columns, or 1M
+rows x 9 columns, with grouping, filtering, server-side data, and full
+keyboard + screen-reader support. Two packages:
 `@svgrid/grid` (MIT) and `@svgrid/enterprise` (commercial add-on).
 
 > **This is a library, not a source-copy CLI.** You `import` from
@@ -155,20 +156,29 @@ detail is uncertain, **fetch, don't hallucinate**:
 | Resource | Use for |
 | --- | --- |
 | `https://svgrid.com/llms.txt` | Topic map with one-line summaries - the index to fetch first |
-| `https://svgrid.com/llms-full.txt` | Every doc page concatenated - deep API detail |
+| `https://svgrid.com/llms/grid.txt` | The grid docs in one file, sized to fetch whole; `llms/ui.txt`, `llms/enterprise.txt`, `llms/sheet.txt` for the rest |
+| `https://svgrid.com/docs/<slug>.md` | One docs page as markdown, e.g. `/docs/help/columns/column-pinning.md` |
+| `https://svgrid.com/api/<name>.json` | One export's signature and doc, by lowercased name, e.g. `/api/createsvgrid.json`, `/api/svgridapi.json` |
 | `https://svgrid.com/schemas/column-def.json` | JSON Schema for `ColumnDef` - validate generated columns against it |
 | `https://svgrid.com/schemas/svgrid-options.json` | JSON Schema for `<SvGrid>` props |
 
 If the project uses an MCP client (Claude Desktop, Cursor, Zed, Claude
-Code), the **`@svgrid/mcp`** server exposes the same facts as callable
-tools (`svgrid_search`, `svgrid_get`) - prefer it for
-version-pinned answers. It needs no API key and runs locally.
+Code), the **SvGrid MCP server** exposes the same facts as callable tools -
+prefer it for version-pinned answers. It needs no API key. The tool names
+depend on which copy is connected:
+
+| | npm (`npx @svgrid/mcp`) | hosted (`https://mcp.svgrid.com/mcp`, the plugin's) |
+| --- | --- | --- |
+| Search docs, demos, API | `svgrid_search` | `search` |
+| Read one page or demo | `svgrid_get` | `fetch` |
+| Check a file | `svgrid_check_code` | `svgrid_check_code` |
 
 When that server is available, **run `svgrid_check_code` on every file you
 write** before showing it to the user. It validates the file against the
-exported surface of the installed version and compiles it, and returns the
-exact replacement for each problem. It is the difference between code that
-looks right and code that is right.
+exported surface of the current version, compiles it, and returns the exact
+replacement for each problem plus a corrected copy (`fixed`) when the fix is
+mechanical. It is the difference between code that looks right and code that
+is right.
 
 ## Package boundary
 

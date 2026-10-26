@@ -55,7 +55,7 @@ export function queries(days) {
       FROM ${DATASET} WHERE ${since} AND blob3 != ''
       GROUP BY id ORDER BY calls DESC LIMIT 25`,
     rules: `SELECT blob4 AS rules, ${n} AS calls
-      FROM ${DATASET} WHERE ${since} AND blob1 = 'check_svgrid_code' AND blob4 != ''
+      FROM ${DATASET} WHERE ${since} AND blob1 IN ('check_svgrid_code', 'svgrid_check_code') AND blob4 != ''
       GROUP BY rules ORDER BY calls DESC LIMIT 500`,
   }
 }

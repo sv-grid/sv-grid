@@ -152,8 +152,10 @@ onRowSelectionChange?: (
 ) => void
 ```
 
-`selection` is keyed by row index; `rows` is the materialised array of
-selected rows.
+`selection` is keyed by row id (`getRowId`, or the row's index in `data`
+when you pass none), so it stays right after sorting; `rows` is the
+materialised array of selected rows, across every page of the filtered
+data.
 
 ### `onCellValueChange(event)`
 

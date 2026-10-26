@@ -57,6 +57,12 @@ export type ExportColumn<TData = RowData> = {
    * `format`. Return a number / Date to keep it typed in xlsx.
    */
   exportValue?: (row: TData) => string | number | Date | null | undefined
+  /**
+   * How the column totals in a grouped PDF's subtotal and total rows: the
+   * grid's `GroupAggregator`. Taken from the grid's column when you don't pass
+   * `columns`. Without one, number and currency columns sum.
+   */
+  aggregate?: GroupAggregator<TData>
 }
 ```
 
@@ -377,17 +383,33 @@ export function buildLinkResolver<TData extends RowData>(
 ): ((rowIdx: number, colIdx: number) => string | undefined) | undefined
 ```
 
+### `type GroupedPdfLabels`
+
+The words a grouped PDF prints around its totals; see `PdfExportOptions.labels`.
+
+```ts
+export type GroupedPdfLabels = {
+  subtotal?: (group: string) => string
+  total?: string
+}
+```
+
 ### `function buildGroupedPdfBody`
 
 Build a grouped PDF body: a bold group header per cluster (nested for
-multi-level grouping), the cluster's data rows, then a subtotal row summing
-the numeric / currency columns. Values use the same formatting as the grid.
+multi-level grouping), the cluster's data rows, a subtotal row, and a grand
+total at the end. A column totals with its own `aggregate` (avg, min, max,
+count, ...), as the grid's group rows do; without one, number and currency
+columns sum. Values and group names use the same formatting as the grid.
+Each data row carries its index in `rows`, so conditional formatting and
+links can find their row.
 
 ```ts
 export function buildGroupedPdfBody<TData extends RowData>(
   cols: ReadonlyArray<ExportColumn<TData>>,
   rows: ReadonlyArray<TData>,
   groupBy: ReadonlyArray<string>,
+  opts: { grandTotal?: boolean; labels?: GroupedPdfLabels } = {},
 ): PdfBodyRow[]
 ```
 

@@ -10,20 +10,8 @@
 import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
 import { join } from 'node:path'
-import type { CompileFn, Diagnostic } from './validate.js'
-
-type SvelteMessage = {
-  code?: string
-  message?: string
-  start?: { line?: number; column?: number }
-}
-
-/** Compiler warnings that repeat per element and drown the real findings. */
-const MAX_WARNINGS = 15
-
-type CompileApi = {
-  compile: (src: string, options: Record<string, unknown>) => { warnings: SvelteMessage[] }
-}
+import type { CompileFn } from './validate.js'
+import { compileDiagnostics, type CompileApi } from './compile-core.js'
 
 /**
  * Prefer the Svelte the USER's project is on, so the check matches what their
@@ -59,29 +47,5 @@ async function loadCompiler(): Promise<CompileApi | null> {
 export const compileWithSvelte: CompileFn = async (source, filename) => {
   const mod = await loadCompiler()
   if (!mod) return { available: false, diagnostics: [] }
-  const compile = mod.compile
-
-  const diagnostics: Diagnostic[] = []
-  try {
-    const { warnings } = compile(source, { filename, generate: 'client' })
-    for (const w of warnings.slice(0, MAX_WARNINGS)) {
-      diagnostics.push({
-        rule: `svelte/${w.code ?? 'warning'}`,
-        severity: 'warning',
-        line: w.start?.line ?? 1,
-        message: w.message ?? 'compiler warning',
-      })
-    }
-  } catch (err) {
-    const e = err as SvelteMessage & { name?: string }
-    diagnostics.push({
-      rule: `svelte/${e.code ?? 'compile-error'}`,
-      severity: 'error',
-      line: e.start?.line ?? 1,
-      message: (e.message ?? String(err)).split('\n')[0],
-      fix: 'The file does not parse. Fix this first - every other check ran on unparsed text.',
-    })
-  }
-
-  return { available: true, diagnostics }
+  return { available: true, diagnostics: compileDiagnostics(mod, source, filename) }
 }

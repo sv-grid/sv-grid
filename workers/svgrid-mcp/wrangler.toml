@@ -17,6 +17,10 @@ binding = "ASSETS"
 [vars]
 # Shown in the landing page and in the MCP `initialize` response.
 PUBLIC_URL = "https://mcp.svgrid.com"
+# check runs the bundled Svelte compiler. A cold first compile measured 31 ms
+# of CPU, over the Workers Free plan's 10 ms per request; on Free, set "off"
+# and the check reports `compiler: "unavailable"` as it did before.
+COMPILE = "on"
 
 [observability]
 enabled = true

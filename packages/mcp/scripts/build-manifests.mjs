@@ -7,6 +7,7 @@ import { join, dirname, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseDocFrontmatter, sectionOf, SECTION_TITLES } from '../../../tools/lib/doc-meta.mjs'
 import { plainTitle } from '../../../tools/lib/docs-page.mjs'
+import { tutorialPointers } from '../../../tools/lib/ai-brief.mjs'
 import { isPendingDoc, pendingDemoIds } from '../../../tools/lib/releases.mjs'
 import { parseDemoRegistry } from '../../../tools/lib/demo-registry.mjs'
 import { buildApiSurface } from './api-surface.mjs'
@@ -118,7 +119,9 @@ const routedDocs = readAll(docsDir, '.md')
   .map((path) => {
     // Search-facing frontmatter (seoTitle etc.) is for the website; the model
     // gets the page body only.
-    const markdown = parseDocFrontmatter(readFileSync(path, 'utf8')).body
+    // Each tutorial video's <figure> markup becomes one "> Video: title (URL)"
+    // line: a model can do nothing with a <video> element.
+    const markdown = tutorialPointers(parseDocFrontmatter(readFileSync(path, 'utf8')).body)
     const slug = relative(docsDir, path).replaceAll('\\', '/').replace(/\.md$/, '')
     const titleMatch = markdown.replace(/^﻿/, '').match(/^#\s+(.+?)\s*$/m)
     const section = sectionOf(slug)

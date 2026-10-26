@@ -129,10 +129,14 @@ can parse this table directly.
 
 | Symbol                           | Deprecated since | Removal target | Replacement                                              | Reason                                              |
 | -------------------------------- | ---------------- | -------------- | -------------------------------------------------------- | --------------------------------------------------- |
-| `<SvGrid filterMode="row">`      | v1.4             | v2.0           | `filterMode="menu"` + `showFilterRow={true}` if you really want both | The two modes were mutually exclusive in the type but both rendered when set; the split makes the intent explicit |
-| `mockAIProvider` named export    | v1.6             | v2.0           | `import { mockAIProvider } from '@svgrid/enterprise/test-utils'` | Test helpers are moving out of the production bundle |
-| `ColumnDef.cellClassRules`       | v1.3             | v2.0           | `cellClass: (ctx) => Record<string, boolean>`            | One field is enough; the rules format was unnecessary indirection |
-| `<SvGrid onCellClick>`           | v1.5             | v2.0           | `onActiveCellChange` + your own click handler            | The grid intercepts click already for selection / editing; surfacing it as a prop double-fires |
+| `<SvGrid showFilterMenu>`        | 2.6.17           | not scheduled  | `showColumnFilters`, or `filterMode="menu"` (the default) | Nothing in the grid reads it; it is kept so existing code keeps compiling |
+
+This table matches the `@deprecated` tags in the published types. An
+earlier version of it listed `filterMode="row"`, `mockAIProvider`,
+`ColumnDef.cellClassRules` and `onCellClick` as deprecated for removal in
+v2.0; none of those was ever deprecated in the code. `filterMode="row"`,
+`mockAIProvider` (in `@svgrid/grid`) and `onCellClick` are current API, and
+`cellClassRules` never shipped - use `cellClass`.
 
 Empty section means "no current deprecations" - we'd link the
 previous-version deprecation log in the changelog.

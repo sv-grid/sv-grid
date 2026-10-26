@@ -46,7 +46,7 @@ packages/create-sv-grid/  @svgrid/create        - grid scaffolder
 packages/create-studio/   @svgrid/create-studio - Studio app scaffolder
 packages/migrate/         @svgrid/migrate       - svelte-headless-table codemod
 packages/svgrid-sv/       @svgrid/sv            - Svelte CLI add-on (sv add @svgrid)
-examples/                                       - 370+ live demos
+examples/                                       - 500+ live demos
 website/                                        - svgrid.com source (private submodule)
 docs/                                           - markdown docs
 ```

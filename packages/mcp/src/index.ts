@@ -23,10 +23,10 @@ import { createRequire } from 'node:module'
 // OAuth dependencies were most of a cold npx install (see stdio-server.ts).
 import { StdioMcpServer } from './stdio-server.js'
 import type { ToolResult } from './core-tools.js'
-import { CORE_TOOLS, PREVIEW_TOOL } from './tool-defs.js'
+import { CORE_TOOLS, PREVIEW_TOOL, serverInstructions } from './tool-defs.js'
 import { PROMPTS, getPrompt } from './prompts.js'
 import { installedGrid, versionNote } from './installed.js'
-import { applyFixes, checkSvGridCode, type ApiSurface } from './validate.js'
+import { applyFixes, checkSvGridCode, sourceArg, type ApiSurface } from './validate.js'
 import { compileWithSvelte } from './compile-svelte.js'
 import { ENTERPRISE_LINE, checkNeedsEnterprise } from './enterprise.js'
 import type { EntitySchema } from '@svgrid/enterprise/studio'
@@ -148,6 +148,7 @@ const server = new StdioMcpServer(
     // resources (the user attaches a doc, no tool call needed) and the common
     // tasks are a natural fit for prompts.
     capabilities: { tools: {}, resources: {}, prompts: {} },
+    instructions: serverInstructions({ search: 'svgrid_search', get: 'svgrid_get', check: 'svgrid_check_code' }),
   },
 )
 
@@ -235,10 +236,8 @@ server.setRequestHandler('prompts/get', async (req) => {
 // ---- tool calls -----------------------------------------------------------
 
 async function runCheck(args: Record<string, unknown>): Promise<ToolResult> {
-  const source = args.source
-  if (typeof source !== 'string' || !source.trim()) {
-    return errText('source (the file contents to check) is required')
-  }
+  const source = sourceArg(args)
+  if (!source) return errText('source (the file contents to check) is required')
   const { apiSurface } = await corpus()
   const result = await checkSvGridCode(source, apiSurface as ApiSurface, {
     filename: typeof args.filename === 'string' ? args.filename : undefined,

@@ -278,6 +278,12 @@ jobs:
       - name: Build remote MCP worker corpus
         run: node workers/svgrid-mcp/scripts/build-data.mjs
 
+      # Its one runtime dependency, the Svelte compiler the hosted check runs.
+      # --prod leaves wrangler and workerd out; the guardrails only import src.
+      - name: Install remote MCP worker dependencies
+        working-directory: workers/svgrid-mcp
+        run: pnpm install --ignore-workspace --prod --frozen-lockfile
+
       - name: Remote MCP worker guardrails
         run: pnpm vitest run tools/mcp-worker.test.ts
 

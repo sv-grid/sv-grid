@@ -16,6 +16,7 @@ import { describe, it, expect } from 'vitest'
 import { existsSync, readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { skillToolNames } from './lib/skill-tools.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const WORKER_DIR = join(ROOT, 'workers', 'svgrid-mcp')
@@ -49,7 +50,7 @@ async function loadWorker(): Promise<{ fetch: Fetcher }> {
 
 let nextId = 0
 
-async function rpc(method: string, params: unknown) {
+async function rpc(method: string, params: unknown, vars: Record<string, string> = {}) {
   const worker = await loadWorker()
   const res = await worker.fetch(
     new Request('https://mcp.svgrid.com/mcp', {
@@ -57,14 +58,14 @@ async function rpc(method: string, params: unknown) {
       headers: { 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream' },
       body: JSON.stringify({ jsonrpc: '2.0', id: ++nextId, method, params }),
     }),
-    env,
+    { ...env, ...vars },
   )
   return { status: res.status, body: res.status === 202 ? null : ((await res.json()) as never) }
 }
 
 /** The text payload of a tools/call result, minus the shared docs footer. */
-async function callTool(name: string, args: Record<string, unknown>): Promise<string> {
-  const { body } = (await rpc('tools/call', { name, arguments: args })) as {
+async function callTool(name: string, args: Record<string, unknown>, vars: Record<string, string> = {}): Promise<string> {
+  const { body } = (await rpc('tools/call', { name, arguments: args }, vars)) as {
     body: { result: { content: { text: string }[] } }
   }
   return body.result.content.map((c) => c.text).join('').split('\n\nSvGrid reference')[0]!
@@ -81,6 +82,11 @@ describe.skipIf(!ready)('remote MCP worker speaks the protocol', () => {
     expect(init.body.result.protocolVersion).toBe('2025-06-18')
     expect(init.body.result.serverInfo.name).toBe('svgrid')
     expect(init.body.result.capabilities).toHaveProperty('tools')
+    // Clients put `instructions` in front of the model on every turn; it must
+    // name the check tool by the name this server lists.
+    const instructions = (init.body.result as { instructions?: string }).instructions ?? ''
+    expect(instructions).toContain('svgrid_check_code')
+    expect(instructions).toMatch(/Svelte 5/)
 
     const list = (await rpc('tools/list', {})) as { body: { result: { tools: { name: string }[] } } }
     const names = list.body.result.tools.map((t) => t.name)
@@ -88,10 +94,17 @@ describe.skipIf(!ready)('remote MCP worker speaks the protocol', () => {
     // server; renaming either one silently drops it out of those clients.
     expect(names).toContain('search')
     expect(names).toContain('fetch')
-    expect(names).toContain('check_svgrid_code')
+    // The npm name: Claude Code only calls a listed tool, and the Agent Skill
+    // shipped in the same plugin tells the model to call this one.
+    expect(names).toContain('svgrid_check_code')
     // The Studio tools belong to the stdio server; they need a filesystem.
     expect(names.filter((n) => n.startsWith('studio_'))).toHaveLength(0)
     expect(names.length).toBeLessThanOrEqual(8)
+    // The Claude Code plugin installs this server next to the Skill; every
+    // hosted tool the Skill names has to be one a client can call.
+    const { hosted } = skillToolNames()
+    expect(hosted.length).toBeGreaterThan(2)
+    for (const n of hosted) expect(names, `SKILL.md names ${n}`).toContain(n)
   })
 
   it('answers a notification with 202 and no body', async () => {
@@ -139,13 +152,29 @@ describe.skipIf(!ready)('remote MCP worker speaks the protocol', () => {
       '<SvGrid rowData={rows} {columns} />',
     ].join('\n')
 
-    const result = JSON.parse(await callTool('check_svgrid_code', { source, filename: 'P.svelte' }))
+    const result = JSON.parse(await callTool('svgrid_check_code', { source, filename: 'P.svelte' }, { COMPILE: 'off' }))
     expect(result.ok).toBe(false)
     expect(result.diagnostics.map((d: { rule: string }) => d.rule)).toContain('svgrid/renamed-prop')
-    // A Worker has no Svelte compiler, and the result has to say so rather
-    // than letting a caller read `ok` as "this compiles".
+    // With the compile switched off the result has to say so, rather than
+    // letting a caller read `ok` as "this compiles".
     expect(result.compiler).toBe('unavailable')
     expect(result.summary).toMatch(/svelte-check/i)
+    // The corrected copy comes back here as it does from the npm server.
+    expect(result.applied.length).toBeGreaterThan(0)
+    expect(result.fixed).toContain('<SvGrid data={rows}')
+  })
+
+  it('compiles with the bundled Svelte and reports a file that does not parse', async () => {
+    const broken = '<script lang="ts">\n  let a = $state(1)\n</script>\n\n{#if a}\n  <p>yes</p>\n'
+    const result = JSON.parse(await callTool('svgrid_check_code', { source: broken, filename: 'Broken.svelte' }))
+    expect(result.compiler, 'svelte is a dependency of the worker; is it installed?').toBe('svelte')
+    expect(result.ok).toBe(false)
+    expect(result.diagnostics.some((d: { severity: string; rule: string }) => d.severity === 'error' && d.rule.startsWith('svelte/'))).toBe(true)
+  })
+
+  it('takes the file as `code` too, the name models guess first', async () => {
+    const result = JSON.parse(await callTool('svgrid_check_code', { code: '<p>hi</p>' }))
+    expect(result.ok).toBe(true)
   })
 
   it('reports unknown tools and methods as JSON-RPC errors', async () => {
@@ -164,7 +193,7 @@ describe.skipIf(!ready)('remote MCP worker speaks the protocol', () => {
     expect(res.status).toBe(200)
     const body = (await res.json()) as { endpoint: string; tools: string[] }
     expect(body.endpoint).toMatch(/\/mcp$/)
-    expect(body.tools).toContain('check_svgrid_code')
+    expect(body.tools).toContain('svgrid_check_code')
   })
 })
 
@@ -197,8 +226,8 @@ describe.skipIf(!ready)('the hosted server answers the npm tool names', () => {
     expect(raw.length).toBeGreaterThan(200)
   })
 
-  it('resolves svgrid_check_code', async () => {
-    const raw = await callTool('svgrid_check_code', {
+  it('resolves check_svgrid_code, the name this server listed before', async () => {
+    const raw = await callTool('check_svgrid_code', {
       source: '<script>\n  import { SvGrid } from "@svgrid/grid"\n</script>\n<SvGrid notARealProp />',
     })
     expect(raw).not.toMatch(/Unknown tool/)
@@ -217,7 +246,7 @@ describe.skipIf(!ready)('the hosted server answers the npm tool names', () => {
       body: { result: { tools: { name: string }[] } }
     }
     const names = body.result.tools.map((t) => t.name)
-    for (const alias of ['svgrid_search', 'svgrid_get', 'svgrid_check_code']) {
+    for (const alias of ['svgrid_search', 'svgrid_get', 'check_svgrid_code']) {
       expect(names, `${alias} should not be listed`).not.toContain(alias)
     }
   })

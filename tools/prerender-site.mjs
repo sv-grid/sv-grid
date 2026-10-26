@@ -128,6 +128,21 @@ function prependToMain(body, block) {
   if (!open) throw new Error('prerender: a route video needs a body that starts with <main data-prerender>')
   return open[0] + block + body.slice(open[0].length)
 }
+/** What an agent reading the 404 page as text needs to find the page it wanted. */
+const NOT_FOUND_BODY = [
+  '<main class="prerender-404" data-prerender="1">',
+  '<h1>Page not found</h1>',
+  '<p>This URL does not exist on svgrid.com. The machine-readable copies of the site:</p>',
+  '<ul>',
+  '<li><a href="/llms.txt">/llms.txt</a> - the index of every docs page, with one-line summaries.</li>',
+  '<li><a href="/docs.json">/docs.json</a> - every docs slug; each page is markdown at /docs/&lt;slug&gt;.md.</li>',
+  '<li><a href="/demos.md">/demos.md</a> - every demo; each is markdown with its source at /demos/&lt;id&gt;.md.</li>',
+  '<li><a href="/api.json">/api.json</a> - every export of @svgrid/grid and @svgrid/enterprise; one symbol or member at /api/&lt;name, lowercased&gt;.json.</li>',
+  '<li><a href="/.well-known/mcp.json">/.well-known/mcp.json</a> - the MCP server, which searches all of the above in one call.</li>',
+  '</ul>',
+  '</main>',
+].join('')
+
 function injectBody(html, bodyHtml) {
   if (!html.includes('<div id="root"></div>')) {
     throw new Error('prerender: SPA shell has no empty <div id="root"></div> to inject into')
@@ -2062,7 +2077,11 @@ ${feedItems.join('\n')}
 
   // 6. SPA 404 fallback. Uses the clean shell template, not the enriched home
   // body, so a missing URL never serves homepage content under a "/" canonical.
-  await writeFile(join(DIST, '404.html'), template, 'utf-8')
+  // GitHub Pages serves this one file for every miss, including an agent's
+  // guessed /api/<name>.json or /docs/<slug>.md, so the body says where the
+  // machine-readable copies are. Hidden by [data-prerender] and cleared on
+  // mount, so a person only ever sees the SPA's own not-found page.
+  await writeFile(join(DIST, '404.html'), injectBody(template, NOT_FOUND_BODY), 'utf-8')
 
   // 7. Persist the hashes. Written last so a failed build cannot leave the map
   // claiming pages are current when their HTML was never produced.

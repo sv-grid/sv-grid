@@ -8,7 +8,7 @@ writing SvGrid code in someone else's project.
 Ground yourself before you generate. SvGrid ships three grounding surfaces,
 in order of preference:
 
-1. **MCP server** - live, version-pinned API and 400+ demo sources.
+1. **MCP server** - live, version-pinned API and the source of every demo (500+).
    ```bash
    claude mcp add svgrid -- npx -y @svgrid/mcp
    # or add to any MCP client:

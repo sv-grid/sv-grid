@@ -25,7 +25,7 @@ A merge declaration. The cell at (rowIndex, columnId) is the ORIGIN;
 
 ```ts
 export type MergeSpec = {
-  /** Display-row index — the same value the grid puts on
+  /** Display-row index - the same value the grid puts on
    *  `data-svgrid-row`. After sorting/filtering, recompute the spec
    *  against the new display order. */
   rowIndex: number

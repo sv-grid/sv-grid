@@ -1,9 +1,9 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-10-25T23:57:25.297Z",
+  "generatedAt": "2026-10-26T06:41:57.579Z",
   "counts": {
-    "pages": 463,
+    "pages": 464,
     "enterprise": 107,
     "withDemo": 338
   },
@@ -133,6 +133,7 @@
         "help/comparison.md",
         "help/conditional-form-schema.md",
         "help/errors.md",
+        "help/events.md",
         "help/expressions-query.md",
         "help/figma.md",
         "help/glossary.md",
@@ -1753,24 +1754,24 @@
       "path": "getting-started-full.md",
       "url": "/docs/getting-started-full/",
       "title": "Getting started: the complete guide on one page",
-      "summary": "SvGrid is a modern, production-ready data grid for Svelte 5 - a headless core engine paired with a Svelte render component (<SvGrid>). It scales from a 10-row read-only table to a virtualized 100,000-row, 100-column editing surface with grouping, multi-column filtering, server-side data, and full keyboard and screen-reader support.",
+      "summary": "SvGrid is a modern, production-ready data grid for Svelte 5 - a headless core engine paired with a Svelte render component (<SvGrid>). It scales from a 10-row read-only table to a virtualized 100,000-row, 100-column editing surface (or 1,000,000 rows, 9 columns) with grouping, multi-column filtering, server-side data, and full keyboard and screen-reader support.",
       "section": "",
       "pillar": "grid",
       "tier": "community",
-      "words": 3603,
-      "lastUpdated": "2026-10-17",
+      "words": 3608,
+      "lastUpdated": "2026-10-26",
       "demoIds": []
     },
     {
       "path": "getting-started.md",
       "url": "/docs/getting-started/",
       "title": "Getting started with SvGrid",
-      "summary": "SvGrid is a modern, production-ready data grid for Svelte 5 - a headless core engine paired with a Svelte render component (<SvGrid>). It scales from a 10-row read-only table to a virtualized 100,000-row × 100-column editing surface with grouping, multi-column filtering, server-side data, and full keyboard and screen-reader support.",
+      "summary": "SvGrid is a modern, production-ready data grid for Svelte 5 - a headless core engine paired with a Svelte render component (<SvGrid>). It scales from a 10-row read-only table to a virtualized 100,000-row × 100-column editing surface (or 1,000,000 rows × 9 columns) with grouping, multi-column filtering, server-side data, and full keyboard and screen-reader support.",
       "section": "",
       "pillar": "grid",
       "tier": "community",
-      "words": 576,
-      "lastUpdated": "2026-10-06",
+      "words": 582,
+      "lastUpdated": "2026-10-26",
       "demoIds": [],
       "tutorialIds": [
         "mk-what-is-svgrid"
@@ -2039,8 +2040,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1175,
-      "lastUpdated": "2026-08-31",
+      "words": 1138,
+      "lastUpdated": "2026-10-26",
       "demoIds": []
     },
     {
@@ -2317,7 +2318,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 4724,
-      "lastUpdated": "2026-09-23",
+      "lastUpdated": "2026-10-26",
       "demoIds": [
         "06-large-dataset"
       ],
@@ -2346,7 +2347,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 774,
-      "lastUpdated": "2026-09-23",
+      "lastUpdated": "2026-10-26",
       "demoIds": []
     },
     {
@@ -3065,7 +3066,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 3849,
-      "lastUpdated": "2026-10-25",
+      "lastUpdated": "2026-10-26",
       "demoIds": [
         "139-migration-from-ag-grid",
         "186-headless-table"
@@ -3250,6 +3251,18 @@
       "tier": "community",
       "words": 1485,
       "lastUpdated": "2026-10-07",
+      "demoIds": []
+    },
+    {
+      "path": "help/events.md",
+      "url": "/docs/help/events/",
+      "title": "Grid events and callback props",
+      "summary": "<SvGrid> does not dispatch component events. Every event is a callback prop: you pass a function, and the grid calls it with a plain object. A cell click is onCellClick, a committed edit is onCellValueChange, a reordered column is onColumnOrderChange. The grid reads the prop when the event happens, so an inline arrow function is fine and swapping the function later takes effect on the next event.",
+      "section": "help",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 2503,
+      "lastUpdated": "2026-10-26",
       "demoIds": []
     },
     {
@@ -3775,7 +3788,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 3404,
-      "lastUpdated": "2026-10-25",
+      "lastUpdated": "2026-10-26",
       "demoIds": [
         "139-migration-from-ag-grid"
       ]
@@ -3813,7 +3826,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 837,
-      "lastUpdated": "2026-10-07",
+      "lastUpdated": "2026-10-26",
       "demoIds": []
     },
     {
@@ -3825,7 +3838,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1314,
-      "lastUpdated": "2026-10-07",
+      "lastUpdated": "2026-10-26",
       "demoIds": []
     },
     {
@@ -3837,7 +3850,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 762,
-      "lastUpdated": "2026-10-07",
+      "lastUpdated": "2026-10-26",
       "demoIds": []
     },
     {
@@ -3849,7 +3862,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2130,
-      "lastUpdated": "2026-10-07",
+      "lastUpdated": "2026-10-26",
       "demoIds": [
         "208-freeze-panes",
         "207-blank-sheet"
@@ -3864,7 +3877,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 946,
-      "lastUpdated": "2026-10-07",
+      "lastUpdated": "2026-10-26",
       "demoIds": []
     },
     {
@@ -3876,7 +3889,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 871,
-      "lastUpdated": "2026-10-07",
+      "lastUpdated": "2026-10-26",
       "demoIds": []
     },
     {
@@ -3888,7 +3901,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1641,
-      "lastUpdated": "2026-10-07",
+      "lastUpdated": "2026-10-26",
       "demoIds": [
         "148-server-row-model",
         "467-server-row-model-1m"
@@ -3916,7 +3929,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 939,
-      "lastUpdated": "2026-10-25",
+      "lastUpdated": "2026-10-26",
       "demoIds": []
     },
     {
@@ -3928,7 +3941,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 816,
-      "lastUpdated": "2026-10-07",
+      "lastUpdated": "2026-10-26",
       "demoIds": []
     },
     {
@@ -3940,7 +3953,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1790,
-      "lastUpdated": "2026-10-07",
+      "lastUpdated": "2026-10-26",
       "demoIds": []
     },
     {
@@ -3953,7 +3966,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1088,
-      "lastUpdated": "2026-10-25",
+      "lastUpdated": "2026-10-26",
       "demoIds": [
         "77-smart-chart"
       ]
@@ -3967,7 +3980,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1630,
-      "lastUpdated": "2026-10-07",
+      "lastUpdated": "2026-10-26",
       "demoIds": [
         "07-grouping-aggregation",
         "181-master-detail-grid"
@@ -3984,7 +3997,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1905,
-      "lastUpdated": "2026-10-25",
+      "lastUpdated": "2026-10-26",
       "demoIds": [
         "186-headless-table"
       ]
@@ -3998,7 +4011,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 841,
-      "lastUpdated": "2026-10-07",
+      "lastUpdated": "2026-10-26",
       "demoIds": []
     },
     {
@@ -4010,7 +4023,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 832,
-      "lastUpdated": "2026-10-07",
+      "lastUpdated": "2026-10-26",
       "demoIds": []
     },
     {
@@ -4022,7 +4035,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1610,
-      "lastUpdated": "2026-10-07",
+      "lastUpdated": "2026-10-26",
       "demoIds": [
         "148-server-row-model",
         "186-headless-table"
@@ -4038,7 +4051,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1053,
-      "lastUpdated": "2026-10-25",
+      "lastUpdated": "2026-10-26",
       "demoIds": []
     },
     {
@@ -4050,7 +4063,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 987,
-      "lastUpdated": "2026-10-07",
+      "lastUpdated": "2026-10-26",
       "demoIds": []
     },
     {
@@ -5187,7 +5200,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2407,
-      "lastUpdated": "2026-10-07",
+      "lastUpdated": "2026-10-26",
       "demoIds": []
     },
     {

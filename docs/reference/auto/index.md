@@ -33,6 +33,8 @@ see [the main reference index](../index.md).
 - [`@svgrid/grid/chart-samples.ts`](./svgrid-grid-chart-samples.md) - 3 exports
 - [`@svgrid/grid/SvGridChart.types.ts`](./svgrid-grid-SvGridChart.types.md) - 10 exports
 - [`@svgrid/grid/createTree.svelte.ts`](./svgrid-grid-createTree.svelte.md) - 12 exports
+- [`@svgrid/grid/createGrid.svelte.ts`](./svgrid-grid-createGrid.svelte.md) - 3 exports
+- [`@svgrid/grid/createGridState.svelte.ts`](./svgrid-grid-createGridState.svelte.md) - 2 exports
 - [`@svgrid/grid/editor-contract.ts`](./svgrid-grid-editor-contract.md) - 11 exports
 - [`@svgrid/grid/editor-registry.ts`](./svgrid-grid-editor-registry.md) - 9 exports
 - [`@svgrid/grid/list-option.ts`](./svgrid-grid-list-option.md) - 14 exports
@@ -67,7 +69,7 @@ see [the main reference index](../index.md).
 
 ## @svgrid/enterprise
 
-- [`@svgrid/enterprise/export.ts`](./svgrid-enterprise-export.md) - 20 exports
+- [`@svgrid/enterprise/export.ts`](./svgrid-enterprise-export.md) - 21 exports
 - [`@svgrid/enterprise/pivot.ts`](./svgrid-enterprise-pivot.md) - 10 exports
 - [`@svgrid/enterprise/pivot-chart.ts`](./svgrid-enterprise-pivot-chart.md) - 2 exports
 - [`@svgrid/enterprise/import.ts`](./svgrid-enterprise-import.md) - 16 exports

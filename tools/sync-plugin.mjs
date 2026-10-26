@@ -52,9 +52,9 @@ const manifest = {
     'mcp',
     'code verification',
   ],
-  // The hosted server, so the plugin works with no Node and no install. Six
+  // The hosted server, so the plugin works with no Node and no install. Seven
   // tools instead of the stdio server's 36; swapping to `npx @svgrid/mcp`
-  // trades that for the Svelte compiler pass and the Studio tools.
+  // adds the Studio tools and checks against the project's own Svelte.
   mcpServers: {
     svgrid: { type: 'http', url: 'https://mcp.svgrid.com/mcp' },
   },
@@ -104,6 +104,14 @@ for (const rel of files) {
   )
 }
 wanted.set(join('.claude-plugin', 'plugin.json'), Buffer.from(JSON.stringify(manifest, null, 2) + '\n'))
+
+// The marketplace entry carries its own copy of the version, and a client
+// compares the two to decide whether an update exists. It sat at 2.6.7 while
+// plugin.json said 3.0.32, because nothing wrote it. Now this script does.
+const MARKETPLACE = join(ROOT, '.claude-plugin', 'marketplace.json')
+const market = JSON.parse(readFileSync(MARKETPLACE, 'utf8'))
+for (const p of market.plugins ?? []) if (p.name === manifest.name) p.version = manifest.version
+const marketWanted = Buffer.from(JSON.stringify(market, null, 2) + '\n')
 // The plugin directories (Claude's, cursor.directory) want a LICENSE in the
 // plugin folder itself, and the repository root's says "mixed". The skill and
 // the MCP server it points at are both MIT, so it is the MCP package's text.
@@ -134,11 +142,12 @@ wanted.set(
       '- the **svgrid skill**, which carries the house style - column shapes, the',
       '  `--sg-*` theming convention, which package a symbol lives in;',
       '- the **MCP server** at `https://mcp.svgrid.com/mcp`, whose',
-      '  `check_svgrid_code` tool validates every file against the real exported',
-      '  surface of the installed version before you ever see the code.',
+      '  `svgrid_check_code` tool validates and compiles every file against the',
+      '  real exported surface before you ever see the code.',
       '',
-      'The hosted server needs no Node and no key. For the Svelte compiler pass and',
-      'the Studio tools, point the server at `npx @svgrid/mcp` instead - see',
+      'The hosted server needs no Node and no key. To check against the Svelte your',
+      'project has, and for the Studio tools, point the server at `npx @svgrid/mcp`',
+      'instead - see',
       '<https://svgrid.com/docs/help/mcp-server/>.',
       '',
       'Privacy: the hosted server logs the tool name, timing, search text and the',
@@ -177,6 +186,8 @@ for (const [rel, buf] of wanted) {
 for (const rel of existing) {
   if (!wantedPaths.has(rel)) drift.push(`${rel} (stale)`)
 }
+const marketDrift = !sameContent(readFileSync(MARKETPLACE), marketWanted)
+if (marketDrift) drift.push('.claude-plugin/marketplace.json (version)')
 
 if (check) {
   if (drift.length) {
@@ -194,4 +205,5 @@ for (const [rel, buf] of wanted) {
   mkdirSync(dirname(dest), { recursive: true })
   writeFileSync(dest, buf)
 }
+if (marketDrift) writeFileSync(MARKETPLACE, marketWanted)
 console.log(`sync-plugin: wrote plugins/svgrid (${wanted.size} files, v${manifest.version})`)

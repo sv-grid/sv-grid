@@ -3,7 +3,7 @@
 SvGrid is a modern, production-ready data grid for Svelte 5 - a headless
 core engine paired with a Svelte render component (`<SvGrid>`). It
 scales from a 10-row read-only table to a virtualized
-100,000-row × 100-column editing surface with grouping, multi-column
+100,000-row × 100-column editing surface (or 1,000,000 rows × 9 columns) with grouping, multi-column
 filtering, server-side data, and full keyboard and screen-reader support.
 
 <!-- tutorial:mk-what-is-svgrid -->

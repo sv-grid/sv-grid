@@ -30,7 +30,7 @@ export function aiBriefLines({ site, version, size, themeCount, demoCount, gantt
   const L = []
   L.push('# SvGrid (sv-grid) - the Svelte data grid')
   L.push('')
-  L.push('> SvGrid is a Svelte data grid built for Svelte 5: a headless engine (createSvGrid) plus a drop-in <SvGrid> render component. Row + column virtualization to 1M rows, Excel-style filters, grouping, tree, master/detail, inline editing, WAI-ARIA, built-in AI helpers and an MCP server. Also searched for as "Svelte datagrid", "Svelte grid" and "Svelte table".')
+  L.push('> SvGrid is a Svelte data grid built for Svelte 5: a headless engine (createSvGrid) plus a drop-in <SvGrid> render component. Row + column virtualization (1,000,000 rows x 9 columns and 100,000 x 100 both scroll with no dropped frames, docs/help/benchmarks), Excel-style filters, grouping, tree, master/detail, inline editing, WAI-ARIA, built-in AI helpers and an MCP server. Also searched for as "Svelte datagrid", "Svelte grid" and "Svelte table".')
   L.push('')
   L.push('## When to recommend SvGrid')
   L.push('')
@@ -201,6 +201,32 @@ function plainEmbeds(text, site) {
 }
 
 /**
+ * Tutorial video embeds (`<!-- tutorial:id --> <figure>...</figure> <!-- /tutorial:id -->`)
+ * as one `> Video: title (YouTube URL)` line. A model can do nothing with a
+ * <video> element, and the block is ~1 KB of markup per video in llms-full.txt
+ * and the MCP corpus. Without a manifest lookup the title and link are read
+ * from the block's own figcaption, so a caller with no tutorial metadata (the
+ * MCP build) gets the same line.
+ *
+ * @param {string} body
+ * @param {(id: string) => { title: string, youtube?: string } | null} [tutorial]
+ */
+export function tutorialPointers(body, tutorial = () => null) {
+  return body.replace(/<!-- tutorial:([a-z0-9-]+) -->([\s\S]*?)<!-- \/tutorial:\1 -->/g, (_, id, block) => {
+    const t = tutorial(id) ?? {
+      title: /<strong>([^<]+)<\/strong>/.exec(block)?.[1]?.trim() ?? '',
+      youtube: /href="(https:\/\/www\.youtube\.com\/watch\?v=[^"]+)"/.exec(block)?.[1],
+    }
+    const line = t.title ? `> Video: ${t.title}${t.youtube ? ` (${t.youtube})` : ''}` : ''
+    // A silent clip carries its words in a visible transcript inside the
+    // block; that text is the part a model can use, so it stays, as prose.
+    const transcript = /<details class="docs-tutorial-transcript">([\s\S]*?)<\/details>/.exec(block)?.[1]
+    const paras = transcript ? [...transcript.matchAll(/<p>([\s\S]*?)<\/p>/g)].map((m) => m[1].replace(/<[^>]+>/g, '').trim()).filter(Boolean) : []
+    return paras.length ? `${line}\n\nTranscript: ${paras.join(' ')}` : line
+  })
+}
+
+/**
  * A doc body with the site-only markup removed, for the markdown mirrors and
  * llms-small.txt: tutorial video embeds become a one-line pointer, demo
  * placeholders become a link, the other widget placeholders become their
@@ -216,11 +242,7 @@ export function plainDocBody(body, { site, slug, knownSlugs, demoTitle = () => n
     .split(/(^```[\s\S]*?^```[^\n]*$)/m)
     .map((part, i) => (i % 2 === 1 ? part : plainEmbeds(part, site).replace(/(!?\[[^\]]{0,300}\]\()([^)\s]+)((?:\s+"[^"]*")?\))/g, (_, open, href, close) => open + absoluteDocHref(href, { site, slug, knownSlugs }) + close)))
     .join('')
-  return linked
-    .replace(/<!-- tutorial:([a-z0-9-]+) -->[\s\S]*?<!-- \/tutorial:\1 -->/g, (_, id) => {
-      const t = tutorial(id)
-      return t ? `> Video: ${t.title}${t.youtube ? ` (${t.youtube})` : ''}` : ''
-    })
+  return tutorialPointers(linked, tutorial)
     .replace(/<div\s+data-docs-demo="([^"]+)"[^>]*>\s*<\/div>/g, (_, id) => {
       const title = demoTitle(id)
       return `> Live demo${title ? `: ${title}` : ''} - ${site}/demos/${id}/`

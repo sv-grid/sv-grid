@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * Event calendar - the extended SvCalendar as a FullCalendar-style scheduler.
+   * Event calendar - the extended SvCalendar as a month-view event scheduler.
    * Two new capabilities do the work:
    *   - the `day` snippet renders rich content (event chips) in each cell, and
    *   - `recurrence` marks repeating days (the standup ring) and drives the

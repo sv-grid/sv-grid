@@ -35,9 +35,10 @@ import { compareSeo, compareKeywords } from './lib/compare-meta.mjs'
 import { guardGenerator } from './lib/generator-guard.mjs'
 import { clampDescription } from './lib/seo-text.mjs'
 import { parseDemoRegistry } from './lib/demo-registry.mjs'
+import { parseTypeMembers } from '../packages/mcp/scripts/api-surface.mjs'
 import { tutorialIdsIn, normalizeNarration } from './lib/tutorial-media.mjs'
 import { readManifest as readTutorialManifest } from './tutorials/lib/manifest.mjs'
-import { aiBriefLines, START_HERE, SMALL_CORPUS, OPTIONAL_SECTIONS, OPTIONAL_PAGES, plainDocBody } from './lib/ai-brief.mjs'
+import { aiBriefLines, START_HERE, SMALL_CORPUS, OPTIONAL_SECTIONS, OPTIONAL_PAGES, plainDocBody, tutorialPointers } from './lib/ai-brief.mjs'
 
 // Resolved from this file, not process.cwd(): the website's `prebuild` runs this
 // with cwd set to website/, which used to make DOCS_DIR website/docs and fail.
@@ -600,13 +601,16 @@ async function main() {
   llmsLines.push('')
   llmsLines.push('## Machine-readable copies')
   llmsLines.push('')
+  // Sizes are filled in once every file is built (SIZE_OF below): an agent
+  // deciding what to fetch needs them, and llms-full.txt is past what any fetch
+  // tool returns whole.
   llmsLines.push(`- Every docs page has a plain-markdown copy at its URL with the trailing slash replaced by \`.md\`, e.g. ${SITE}/docs/getting-started/1-install.md`)
-  llmsLines.push(`- [llms-small.txt](${SITE}/llms-small.txt): the brief above plus the full text of the getting-started path and the pages asked about most before choosing a grid.`)
-  llmsLines.push(`- [llms-full.txt](${SITE}/llms-full.txt): the full text of every docs page, the comparison pages and the API reference, in reading order.`)
+  llmsLines.push(`- This index by product, each part on its own and sized for one fetch: ${[...manifest.pillars.map((p) => `[${p.title}](${SITE}/llms/${p.id}.txt) (@@size:llms/${p.id}@@)`), `[Comparisons: which Svelte table library to use](${SITE}/llms/compare.txt) (@@size:llms/compare@@)`].join(', ')}`)
+  llmsLines.push(`- [llms-small.txt](${SITE}/llms-small.txt) (@@size:small@@): not an index. The brief above plus the FULL TEXT of the getting-started path and the pages asked about most before choosing a grid.`)
+  llmsLines.push(`- [llms-full.txt](${SITE}/llms-full.txt) (@@size:full@@): the full text of every docs page, the comparison pages and the API reference, in reading order. Too large for one fetch; read the parts above, or one page as .md.`)
   llmsLines.push(`- [docs.json](${SITE}/docs.json): the route manifest with section, tier and demo links per page.`)
-  llmsLines.push(`- This index by product, each part on its own (use one if this file was cut short): ${[...manifest.pillars.map((p) => `[${p.title}](${SITE}/llms/${p.id}.txt)`), `[Comparisons: which Svelte table library to use](${SITE}/llms/compare.txt)`].join(', ')}`)
   llmsLines.push(`- [demos.md](${SITE}/demos.md): every live demo by category. Each has a markdown copy with its full source at /demos/<id>.md, e.g. ${SITE}/demos/01-quick-start.md`)
-  llmsLines.push(`- [API reference as JSON](${SITE}/api.json): look up any function, type, option or api method of @svgrid/grid and @svgrid/enterprise by name. Every export by module, with the member names of each type (options objects, props, SvGridApi). ${SITE}/api/<name>.json has a symbol's doc and signature, e.g. ${SITE}/api/svgridapi.json`)
+  llmsLines.push(`- [API reference as JSON](${SITE}/api.json): look up any function, type, option or api method of @svgrid/grid and @svgrid/enterprise by name. Every export by module, with the member names of each type (options objects, props, SvGridApi). ${SITE}/api/<name lowercased>.json has a symbol's doc and signature, e.g. ${SITE}/api/createsvgrid.json; a member name (getRowPosition, onCellClick) has a file naming its type. \`<SvGrid>\` props, each with its signature: ${SITE}/api/svgrid.json`)
   llmsLines.push(`- MCP server: the remote endpoint ${MCP_REMOTE} (streamable HTTP, no install), or \`npx -y @svgrid/mcp\` locally. Described at ${SITE}/.well-known/mcp.json.`)
   llmsLines.push('')
   // Pages in reading order: pillar, then section, then the curated page
@@ -672,7 +676,6 @@ async function main() {
     for (const d of optional) llmsLines.push(listLine(d))
     llmsLines.push('')
   }
-  await writeFile(join(DOCS_DIR, 'llms.txt'), llmsLines.join('\n'), 'utf-8')
   // This file is past 100 KB, about where an agent's fetch tool cuts a
   // response, and the last pillars (Studio) and the comparisons sat beyond the
   // cut. Each part also stands alone, linked from the top of this file.
@@ -708,7 +711,12 @@ async function main() {
     llmsFullLines.push(`     ${d.url}  (${d.tier})`)
     llmsFullLines.push(`     ================================================================== -->`)
     llmsFullLines.push('')
-    llmsFullLines.push(body.trim())
+    // The <figure><video> markup becomes one pointer line; the narration
+    // follows below as text, which is the part a model can use.
+    llmsFullLines.push(tutorialPointers(body, (id) => {
+      const t = TUTORIAL_BY_ID.get(id)
+      return t ? { title: t.title, youtube: t.youtubeId ? `https://www.youtube.com/watch?v=${t.youtubeId}` : undefined } : null
+    }).trim())
     // A narrated video's words are on the page as audio, as a captions track
     // and in its VideoObject, but not as prose - the visible transcript block
     // is only rendered for silent clips, where it is the sole text. A model
@@ -784,16 +792,45 @@ async function main() {
   const llmsSmall = llmsSmallLines.join('\n')
   await writeFile(join(DOCS_DIR, 'llms-small.txt'), llmsSmall, 'utf-8')
 
+  // ---- llms.txt, with the size of each file it points at ----------------
+  // Written last: the sizes are the files' own, measured here, not typed.
+  const SIZE_OF = {
+    full: llmsFullLines.join('\n'),
+    small: llmsSmall,
+    ...Object.fromEntries(llmsSlices.map((sl) => [`llms/${sl.id}`, sl.text])),
+  }
+  const humanSize = (text) => {
+    const kb = Buffer.byteLength(text, 'utf-8') / 1024
+    return kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(kb))} KB`
+  }
+  const llmsText = llmsLines
+    .join('\n')
+    .replace(/ \(@@size:([a-z0-9/-]+)@@\)/g, (_, key) => (key in SIZE_OF ? ` (${humanSize(SIZE_OF[key])})` : ''))
+  await writeFile(join(DOCS_DIR, 'llms.txt'), llmsText, 'utf-8')
+
   // ---- Sync served copies ----------------------------------------------
   // The website fetches these at /llms.txt, /llms-full.txt, /docs.json, so the
   // crawler-facing copies must live under website/public.
   await mkdir(PUBLIC_DIR, { recursive: true })
   await writeFile(join(PUBLIC_DIR, 'docs.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf-8')
-  await writeFile(join(PUBLIC_DIR, 'llms.txt'), llmsLines.join('\n'), 'utf-8')
+  await writeFile(join(PUBLIC_DIR, 'llms.txt'), llmsText, 'utf-8')
   await writeFile(join(PUBLIC_DIR, 'llms-full.txt'), llmsFullLines.join('\n'), 'utf-8')
   await writeFile(join(PUBLIC_DIR, 'llms-small.txt'), llmsSmall, 'utf-8')
   await mkdir(join(PUBLIC_DIR, 'llms'), { recursive: true })
   for (const s of llmsSlices) await writeFile(join(PUBLIC_DIR, 'llms', `${s.id}.txt`), s.text, 'utf-8')
+  // The hand-written API reference (reference/SvGrid.md for <SvGrid>'s props,
+  // ColumnDef, SvGridApi, ...) has no HTML route - /docs/reference/* redirects
+  // to /api/ - so an agent following check_svgrid_code's `see: reference/SvGrid`
+  // or /api/svgrid.json's `props` link had nothing to fetch outside
+  // llms-full.txt. A markdown copy is not a second page for search engines.
+  // reference/auto/* is per-module and already served as /api/<name>.json.
+  for (const d of llmOnly) {
+    if (!/^reference\/[^/]+\.md$/.test(d.path)) continue
+    const file = join(PUBLIC_DIR, 'docs', ...d.path.split('/'))
+    await mkdir(dirname(file), { recursive: true })
+    const body = plainDocBody(d.body, { site: SITE, slug: d.path.replace(/\.md$/, ''), knownSlugs, demoTitle: (id) => demoTitles.get(id) ?? null, tutorial: tutorialRef })
+    await writeFile(file, `${body}\n`, 'utf-8')
+  }
   const apiCount = await writeApiJson()
   await writeMcpDiscovery()
 
@@ -834,7 +871,8 @@ async function writeApiJson() {
     versions: { '@svgrid/grid': version('grid'), '@svgrid/enterprise': version('enterprise') },
     symbol: `${SITE}/api/<name lowercased>.json has a symbol's doc and signature, e.g. ${SITE}/api/svgridapi.json`,
     // Agents asked for /api/getRowPosition.json first: a member has no file of its own.
-    member: `A member (a method or option such as getRowPosition) has no file: find it in the members of a type below and fetch that type's file, e.g. getRowPosition -> ${SITE}/api/svgridapi.json`,
+    member: `A member (a method or option such as getRowPosition) has a small file naming the types it belongs to, e.g. ${SITE}/api/getrowposition.json -> ${SITE}/api/svgridapi.json`,
+    component: `<SvGrid> props, each with its signature: ${SITE}/api/svgrid.json (component.props). The SvGrid type in this index is the headless instance, not the component.`,
     docs: `${SITE}/llms.txt`,
     modules: [...modules.values()],
   }
@@ -845,8 +883,54 @@ async function writeApiJson() {
   await mkdir(dir, { recursive: true })
   // Clear the old files first: a removed export must not keep its page.
   for (const f of await readdir(dir)) if (f.endsWith('.json')) await rm(join(dir, f))
+
+  // Agents guess /api/<member>.json (getRowPosition, onCellClick) before they
+  // read the hint above, and got the HTML 404. Each member name now answers
+  // with the types it belongs to; a name that is also a symbol says both.
+  const memberOf = new Map()
+  const addMember = (member, type, entry) => {
+    const key = member.toLowerCase()
+    if (!memberOf.has(key)) memberOf.set(key, { name: member, of: new Map() })
+    memberOf.get(key).of.set(type, entry)
+  }
+  for (const s of symbols) {
+    for (const m of s.members) addMember(m, s.name, { url: `${SITE}/api/${s.name.toLowerCase()}.json` })
+  }
+  // <SvGrid>'s own props (onCellClick, rowHeight, ...) are not members of any
+  // exported type, so they come from the component's Props, read the same way
+  // the MCP server reads them for check_svgrid_code.
+  const propsText = readFileSync(join(ROOT, 'packages', 'grid', 'src', 'SvGrid.types.ts'), 'utf-8')
+  const gridProps = parseTypeMembers(propsText, 'Props').map((p) => ({ name: p.name, signature: `${p.name}${p.optional ? '?' : ''}: ${p.type}` }))
+  for (const p of gridProps) addMember(p.name, '<SvGrid> prop', { url: `${SITE}/api/svgrid.json`, signature: p.signature })
+  const pointers = (key) => [...memberOf.get(key).of].map(([type, entry]) => ({ type, ...entry }))
+
+  // `SvGrid` the type is the headless instance; `<SvGrid>` the component has
+  // the same name and its props live elsewhere. /api/svgrid.json is the first
+  // URL an agent tries for the component, so it says so up front.
+  const COMPONENTS = {
+    svgrid: {
+      name: '<SvGrid>',
+      usage: "import { SvGrid } from '@svgrid/grid'",
+      summary: 'The render component. Its props are listed here, read from its Props type; they are NOT the members of the `SvGrid` type below (that type is the headless instance createSvGrid returns).',
+      guide: `${SITE}/docs/reference/SvGrid.md`,
+      api: `${SITE}/api/svgridapi.json`,
+      props: gridProps,
+    },
+  }
+
   for (const [key, list] of byName) {
-    await writeFile(join(dir, `${key}.json`), JSON.stringify({ symbols: list }, null, 1) + '\n', 'utf-8')
+    const body = {
+      ...(COMPONENTS[key] ? { component: COMPONENTS[key] } : {}),
+      symbols: list,
+      ...(memberOf.has(key) ? { memberOf: pointers(key) } : {}),
+    }
+    await writeFile(join(dir, `${key}.json`), JSON.stringify(body, null, 1) + '\n', 'utf-8')
+  }
+  for (const [key, { name }] of memberOf) {
+    if (byName.has(key)) continue
+    // A member name can contain characters a file name cannot hold.
+    if (!/^[a-z0-9_$-]+$/.test(key)) continue
+    await writeFile(join(dir, `${key}.json`), JSON.stringify({ member: name, memberOf: pointers(key) }, null, 1) + '\n', 'utf-8')
   }
   return symbols.length
 }

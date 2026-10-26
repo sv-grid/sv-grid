@@ -95,7 +95,7 @@ until its prop is set, so a grid you never configured stays small. `GridColumns<
 |---|---|
 | **License** | MIT, free for commercial use |
 | **Requires** | `svelte@^5` (peer dependency), Node 16+ |
-| **Bundle (gzip)** | ~2.7 KB headless core, ~98 KB full `<SvGrid>` + ~10 KB CSS; charts, date pickers, menus and export load as separate chunks on first use |
+| **Bundle (gzip)** | ~3.2 KB headless core, ~100 KB full `<SvGrid>` + ~11 KB CSS; charts, date pickers, menus and export load as separate chunks on first use |
 | **Types** | Bundled, no `@types/` package needed |
 | **Module format** | ESM, plus a CDN build at `@svgrid/grid/cdn` |
 | **SSR** | Works under SvelteKit SSR and static builds |
@@ -151,7 +151,7 @@ import {
 ```
 
 - **Headless** - drive `createSvGrid` and the row-model factories, render your own markup.
-  `getGrid*A11yProps` helpers keep custom markup accessible. About 2.7 KB gzipped.
+  `getGrid*A11yProps` helpers keep custom markup accessible. About 3.2 KB gzipped.
 - **Render-ready** - `<SvGrid />` is a complete, accessible, themeable grid you configure with props.
 
 Compatibility aliases are provided for the framework-neutral names: `createGrid`, `createGridState`,
@@ -161,7 +161,7 @@ Compatibility aliases are provided for the framework-neutral names: `createGrid`
 
 SvGrid publishes an [MCP server](https://www.npmjs.com/package/@svgrid/mcp) plus
 [llms.txt](https://svgrid.com/llms.txt) and [llms-full.txt](https://svgrid.com/llms-full.txt), so Claude,
-Cursor, and Zed answer with accurate, version-pinned APIs and all 400+ demo sources as context rather
+Cursor, and Zed answer with accurate, version-pinned APIs and all 500+ demo sources as context rather
 than hallucinated methods.
 
 ```bash

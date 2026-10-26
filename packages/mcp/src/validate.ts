@@ -468,6 +468,8 @@ function checkImports(ctx: Ctx) {
   const { scan, raw, surface } = ctx
   // Both `import { a } from 'x'` and the bare `import 'x'` a stylesheet uses.
   const re = /import\s+(?:(type\s+)?([\s\S]*?)\s+from\s*)?(['"])([^'"]*)\3/g
+  /** Look-alike imports of names SvGrid does not export, judged after the loop. */
+  const foreign: { spec: string; line: number; names: string[] }[] = []
 
   for (let m: RegExpExecArray | null; (m = re.exec(scan)); ) {
     const clause = m[2] ?? ''
@@ -502,6 +504,8 @@ function checkImports(ctx: Ctx) {
           fix: `import { ${ours.join(', ')} } from '${from}'`,
           ...(exact ? { rename: { from: spec, to: from } } : {}),
         })
+      } else {
+        foreign.push({ spec, line, names })
       }
       continue
     }
@@ -597,9 +601,24 @@ function checkImports(ctx: Ctx) {
       }
     }
   }
+
+  // A look-alike package used with its own names is that library's business,
+  // unless the same file also imports SvGrid: then a model has most likely
+  // mixed the two up, and the import that does nothing for SvGrid is a lead.
+  if (foreign.length && [...ctx.importedFrom].some((s) => s.startsWith('@svgrid/'))) {
+    for (const f of foreign) {
+      push(ctx, {
+        rule: 'svgrid/lookalike-package-mixed',
+        severity: 'warning',
+        line: f.line,
+        message: `"${f.spec}" is an unrelated project, imported next to @svgrid/*${f.names.length ? ` (\`${f.names.join('`, `')}\`)` : ''}.`,
+        fix: `Drop the "${f.spec}" import if this file renders <SvGrid>; SvGrid needs no second grid package.`,
+      })
+    }
+  }
 }
 
-type TagAttr = { name: string; line: number; valueRaw: string; shorthand: boolean }
+type TagAttr ={ name: string; line: number; valueRaw: string; shorthand: boolean }
 
 /** Attributes on every `<Tag ...>` occurrence, expressions and shorthands included. */
 function readTagAttrs(ctx: Ctx, tag: string): { attrs: TagAttr[]; spread: boolean; count: number }[] {
@@ -701,6 +720,10 @@ function checkGridProps(ctx: Ctx) {
         const evt = name.slice(3)
         const callback = `on${evt.charAt(0).toUpperCase()}${evt.slice(1)}`
         const real = known.find((k) => k.toLowerCase() === callback.toLowerCase())
+        // The rename is exact only for an inline handler that never reads
+        // `.detail`: a callback prop gets the payload itself, not a CustomEvent,
+        // and a bare `on:cellClick` forwards the event, which has no prop form.
+        const exact = !!real && attr.valueRaw.startsWith('{') && !/\bdetail\b/.test(attr.valueRaw)
         push(ctx, {
           rule: 'svelte/legacy-event-directive',
           severity: 'error',
@@ -709,6 +732,7 @@ function checkGridProps(ctx: Ctx) {
           fix: real
             ? `Use \`${real}={...}\`.`
             : `Look for the matching \`on...\` prop - call svgrid_get with ref:"api" or read reference/SvGrid.`,
+          ...(exact ? { rename: { from: name, to: real } } : {}),
           see: 'reference/SvGrid',
         })
         continue
@@ -1500,6 +1524,19 @@ export function checkStatic(source: string, surface: ApiSurface, filename = 'Com
   return [...unique.values()]
     .filter((d) => d.severity === 'error' || !hasError.has(`${d.rule}|${d.line}`))
     .sort((a, b) => rank[a.severity] - rank[b.severity] || a.line - b.line)
+}
+
+/**
+ * The file to check, from a tool call's arguments. The schema names it
+ * `source`, but models guess `code` first and `content` second; answering to
+ * those costs nothing and saves the caller a failed round trip.
+ */
+export function sourceArg(args: Record<string, unknown>): string | undefined {
+  for (const key of ['source', 'code', 'content']) {
+    const v = args[key]
+    if (typeof v === 'string' && v.trim()) return v
+  }
+  return undefined
 }
 
 /**

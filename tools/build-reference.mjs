@@ -42,6 +42,10 @@ const SOURCES = [
       'chart-indicators.ts', 'chart-export-pdf.ts', 'chart-samples.ts',
       'SvGridChart.types.ts',
       'createTree.svelte.ts',
+      // The Svelte entry to the headless engine. Named in llms.txt and the
+      // headless guides; an agent looking it up at /api/createsvgrid.json got
+      // a 404 while it was missing here.
+      'createGrid.svelte.ts', 'createGridState.svelte.ts',
       // Extension points: registering an editor or a filter engine, shaping
       // list options.
       'editor-contract.ts', 'editor-registry.ts', 'list-option.ts',

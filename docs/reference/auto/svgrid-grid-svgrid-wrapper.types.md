@@ -523,6 +523,9 @@ export type SvGridApi<
     cellDataType?: 'text' | 'number' | 'boolean' | 'date' | 'dateString'
     /** The column's `editorType`, when set: what edits it. */
     editorType?: string
+    /** The column's group `aggregate`, when set, so an export's subtotals
+     *  match the group rows on screen. */
+    aggregate?: GroupAggregator<TData>
   }>
 
   // ----- Free data export (CSV / TSV / JSON + clipboard) -----

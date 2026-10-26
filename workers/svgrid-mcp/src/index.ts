@@ -18,16 +18,20 @@
  * codegen needs a filesystem, and a model that just wants a grid should not
  * pay context for 27 app-builder tools it will never call.
  */
-import { checkSvGridCode, type ApiSurface } from './generated/validate.js'
+import { applyFixes, checkSvGridCode, sourceArg, type ApiSurface, type CompileFn } from './generated/validate.js'
+import { compileDiagnostics, type CompileApi } from './generated/compile-core.js'
 import { rankDocs, type RankableDoc } from './generated/search.js'
 import { apiReference, apiSurface, docs, examples } from './generated/index.js'
 import { PROMPTS, getPrompt } from './generated/prompts.js'
 import { PREVIEW_TOOL, handlePreview, previewResource, readPreviewResource } from './generated/preview.js'
+import { serverInstructions } from './generated/tool-defs.js'
 import { ENTERPRISE_LINE, ENTERPRISE_NOTE, checkNeedsEnterprise, isPaidQuestion } from './generated/enterprise.js'
 
 export type Env = {
   ASSETS: { fetch: (req: Request | string) => Promise<Response> }
   PUBLIC_URL?: string
+  /** "off" skips the Svelte compile in check (see wrangler.toml). */
+  COMPILE?: string
   /** One data point per tool call (see `record`). Unbound, nothing is kept. */
   MCP_EVENTS?: AnalyticsEngineDataset
 }
@@ -79,6 +83,23 @@ async function loadExample(env: Env, id: string): Promise<ExampleSource | null> 
   const res = await env.ASSETS.fetch(`https://assets.local/_data/examples/${safe}.json`)
   if (!res.ok) return null
   return (await res.json()) as ExampleSource
+}
+
+/**
+ * The Svelte compiler, bundled into the Worker and loaded on the first check.
+ * It runs here as it does in the browser REPL; what it costs is CPU (a cold
+ * first compile of a 150-line demo measured 31 ms locally, warm 8 ms), which
+ * the Workers Paid limit covers and the Free plan's 10 ms does not.
+ */
+let compiler: Promise<CompileApi | null> | null = null
+
+const compileInWorker: CompileFn = async (source, filename) => {
+  compiler ??= import('svelte/compiler')
+    .then((m) => (typeof m.compile === 'function' ? (m as unknown as CompileApi) : null))
+    .catch(() => null)
+  const mod = await compiler
+  if (!mod) return { available: false, diagnostics: [] }
+  return { available: true, diagnostics: compileDiagnostics(mod, source, filename) }
 }
 
 // ---------------------------------------------------------------------------
@@ -158,9 +179,9 @@ const TOOLS = [
     inputSchema: { type: 'object', properties: {} },
   },
   {
-    name: 'check_svgrid_code',
+    name: 'svgrid_check_code',
     description:
-      'Verify SvGrid code BEFORE handing it to the user. Checks the source against the real exported surface of the current version - <SvGrid> prop names, ColumnDef keys, grid API methods, importable symbols and theme files - plus Svelte 5 runes rules, and returns line-numbered diagnostics with the exact replacement for each. Run it on every file you write that uses SvGrid, fix what it reports, and run it again.',
+      'Verify SvGrid code BEFORE handing it to the user. Checks the source against the real exported surface of the current version - <SvGrid> prop names, ColumnDef keys, grid API methods, importable symbols and theme files - plus Svelte 5 runes rules, compiles it, and returns line-numbered diagnostics with the exact replacement for each, plus a corrected copy of the file (`fixed`) whenever the correction is exact. Run it on every file you write that uses SvGrid, use `fixed`, and run it again.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -188,7 +209,9 @@ const TOOLS = [
 const ALIASES: Record<string, string> = {
   svgrid_search: 'search',
   svgrid_get: 'fetch',
-  svgrid_check_code: 'check_svgrid_code',
+  // Listed as svgrid_check_code, the npm name: Claude Code
+  // can only call a tool it was shown, and the Skill names that one.
+  check_svgrid_code: 'svgrid_check_code',
 }
 
 /**
@@ -313,20 +336,23 @@ async function callTool(
     case 'get_api_reference':
       return withDocs(json(apiReference))
 
-    case 'check_svgrid_code': {
-      const source = args.source
-      if (typeof source !== 'string' || !source.trim()) {
-        return fail('source (the file contents to check) is required')
-      }
-      // No `compile` here: there is no Svelte compiler in a Worker, so this is
-      // the static half only. The result says so in its own summary rather
-      // than letting a caller assume the file was compiled.
+    case 'svgrid_check_code': {
+      const source = sourceArg(args)
+      if (!source) return fail('source (the file contents to check) is required')
       const result = await checkSvGridCode(source, apiSurface as ApiSurface, {
         filename: typeof args.filename === 'string' ? args.filename : undefined,
+        compile: env.COMPILE === 'off' ? undefined : compileInWorker,
       })
       meta.rules = [...new Set(result.diagnostics.map((d) => d.rule))]
       meta.paid = checkNeedsEnterprise(result.diagnostics)
-      return text(json(meta.paid ? { ...result, enterprise: ENTERPRISE_LINE } : result))
+      // The same corrected copy the npm server returns, from the same function.
+      const { fixed, applied } = applyFixes(source, result.diagnostics)
+      const payload = {
+        ...result,
+        ...(applied.length ? { applied, fixed } : {}),
+        ...(meta.paid ? { enterprise: ENTERPRISE_LINE } : {}),
+      }
+      return text(json(payload))
     }
 
     default:
@@ -361,7 +387,7 @@ async function callTool(
 function record(env: Env, tool: string, args: Record<string, unknown>, meta: CallMeta, ms: number, ok: boolean) {
   const query = tool === 'search' || tool === 'list_examples' ? String(args.query ?? '').slice(0, 200) : ''
   const id = tool === 'fetch' || tool === 'get_example_source' ? String(args.id ?? '').slice(0, 200) : ''
-  const sourceBytes = tool === 'check_svgrid_code' ? String(args.source ?? '').length : 0
+  const sourceBytes = tool === 'svgrid_check_code' ? (sourceArg(args) ?? '').length : 0
   const rules = (meta.rules ?? []).join(',').slice(0, 1000)
 
   console.log(
@@ -421,8 +447,7 @@ async function handleRpc(msg: RpcRequest, env: Env): Promise<object | null> {
         protocolVersion: PROTOCOL_VERSIONS.includes(asked) ? asked : DEFAULT_PROTOCOL,
         capabilities: { tools: {}, resources: {}, prompts: {} },
         serverInfo: { name: SERVER_NAME, version: SERVER_VERSION },
-        instructions:
-          'SvGrid is a Svelte 5 data grid. Search the docs before writing grid code, and run check_svgrid_code on what you write before showing it to the user.',
+        instructions: serverInstructions({ search: 'search', get: 'fetch', check: 'svgrid_check_code' }),
       })
     }
 

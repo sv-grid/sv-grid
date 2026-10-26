@@ -138,7 +138,8 @@
     "!src/**/test-setup.*",
     "!src/**/test-fixtures",
     "themes",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "AGENTS.md"
   ],
   "scripts": {
     "clean": "rimraf ./build && rimraf ./dist",

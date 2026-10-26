@@ -201,8 +201,15 @@ jobs:
           # only when mcp itself was published, whose prepublishOnly build has
           # just regenerated it at the bumped versions. Committing it after a
           # grid-only release would release mcp again on the next run.
+          # The bundle size llms.txt quotes to agents comes from this file, and
+          # nothing re-measured it: on 2026-10-26 it still said 3.0.4, nineteen
+          # patches back. Re-measured whenever the grid itself is released,
+          # before the indexes that print it are rebuilt.
+          if [ "${{ contains(fromJSON(steps.release.outputs.packages_json), 'grid') }}" = "true" ]; then
+            pnpm size:json && git add -- docs/_data/svgrid-size.json || echo "size:json failed; the old measurement stays, dated"
+          fi
           node tools/build-docs-index.mjs
-          git add -- docs/docs.json docs/llms.txt docs/llms-full.txt docs/llms-small.txt docs/llms
+          git add -- docs/docs.json docs/llms.txt docs/llms-full.txt docs/llms-small.txt docs/llms .claude-plugin/marketplace.json
           if [ "${{ contains(fromJSON(steps.release.outputs.packages_json), 'mcp') }}" = "true" ]; then
             git add -- packages/mcp/src/data.ts
           fi
@@ -229,6 +236,27 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run deploy-website.yml --ref main
+
+      # mcp.svgrid.com (workers/svgrid-mcp) checks code against the corpus built
+      # into it, so every grid or mcp release left it a version behind until
+      # someone deployed by hand; the Claude Code plugin points at it. Skipped
+      # with a warning, not failed, while the CLOUDFLARE_API_TOKEN secret is
+      # unset; tools/post-publish/checks/mcp-remote.mjs reports the gap either way.
+      - name: Deploy the hosted MCP server
+        if: steps.release.outputs.any == 'true' && (contains(fromJSON(steps.release.outputs.packages_json), 'grid') || contains(fromJSON(steps.release.outputs.packages_json), 'mcp'))
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::warning::CLOUDFLARE_API_TOKEN is not set; mcp.svgrid.com was not redeployed"
+            exit 0
+          fi
+          pnpm --filter @svgrid/mcp build
+          cd workers/svgrid-mcp
+          pnpm install --ignore-workspace --frozen-lockfile
+          pnpm run deploy
 
       # Packages with no release tag yet are already on npm at their current
       # version, so the first run starts their history instead of republishing.

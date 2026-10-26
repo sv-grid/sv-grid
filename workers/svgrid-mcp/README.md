@@ -5,7 +5,7 @@ instead of a local Node install.
 
 The npm package (`npx @svgrid/mcp`) is not going away - it is the right thing
 for offline work, for enterprise machines that will not talk to a third-party
-endpoint, and it is the only one of the two that can run the Svelte compiler.
+endpoint, and for checking against the Svelte version a project actually has.
 This exists because stdio costs us the things that decide whether anyone finds
 the server at all:
 
@@ -27,7 +27,7 @@ the server at all:
 
 ## Tools
 
-Six, on purpose. The stdio server also carries 27 `studio_*` project-model
+Seven with `svgrid_preview`, on purpose. The stdio server also carries 27 `studio_*` project-model
 tools; those need a filesystem, and a model that just wants a data grid should
 not spend context on an app builder it will never call.
 
@@ -38,14 +38,20 @@ not spend context on an app builder it will never call.
 | `list_examples` | Browse the demo catalogue by category. |
 | `get_example_source` | The full `.svelte` source of one demo. |
 | `get_api_reference` | The public API surface by category. |
-| `check_svgrid_code` | Validate SvGrid code against the real exported surface. |
+| `svgrid_check_code` | Validate SvGrid code against the real exported surface, compile it, and return the corrected file. |
 
 `search` and `fetch` are named that way deliberately: those two exact names are
-what a connector needs to index this server.
+what a connector needs to index this server. The check tool carries the npm
+name, `svgrid_check_code`, because a client only calls tools it was shown and
+the Agent Skill names that one. The other npm names (`svgrid_search`,
+`svgrid_get`) and the old `check_svgrid_code` are accepted as unlisted aliases.
 
-`check_svgrid_code` runs the static half only here - a Worker has no Svelte
-compiler - and its own `compiler: "unavailable"` field says so, so a caller
-never mistakes it for a full compile. Run the npm server for that half.
+`svgrid_check_code` compiles with the Svelte bundled into the Worker
+(`dependencies` in package.json) and returns the same `fixed` / `applied`
+corrected copy as the npm server. The compile costs CPU: a cold first compile
+of a 150-line demo measured 31 ms locally, over the Workers Free plan's 10 ms
+per request. `COMPILE = "off"` in wrangler.toml skips it, and the result then
+says `compiler: "unavailable"` so a caller never mistakes it for a compile.
 
 ## Connect
 
@@ -85,7 +91,7 @@ cannot: that much object literal blows the startup CPU budget on every cold
 start. So the split is:
 
 - **bundled** (`src/generated/index.js`, ~150 KB): listings and the API surface,
-  needed by `tools/list` and by every `check_svgrid_code` call.
+  needed by `tools/list` and by every `svgrid_check_code` call.
 - **assets** (`public/_data/`): doc bodies in one `docs.json`, and one file per
   demo source. Pulled through the `ASSETS` binding on first use and cached in
   module scope for the life of the isolate, so it is one fetch per cold start
@@ -117,7 +123,7 @@ worse than no entry.
 
 Every tool call logs one JSON line: tool name, duration, whether it succeeded,
 the query or id it was given, how many results matched the whole query, and
-whether the answer carried the Enterprise trial note. `check_svgrid_code` logs
+whether the answer carried the Enterprise trial note. `svgrid_check_code` logs
 the **size** of the submitted source and the rule ids that fired - the source
 itself is never logged. Read them with `npx wrangler tail`, or in the dashboard
 (observability is on in `wrangler.toml`).

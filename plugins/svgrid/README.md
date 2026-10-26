@@ -13,11 +13,12 @@ Installs two things together:
 - the **svgrid skill**, which carries the house style - column shapes, the
   `--sg-*` theming convention, which package a symbol lives in;
 - the **MCP server** at `https://mcp.svgrid.com/mcp`, whose
-  `check_svgrid_code` tool validates every file against the real exported
-  surface of the installed version before you ever see the code.
+  `svgrid_check_code` tool validates and compiles every file against the
+  real exported surface before you ever see the code.
 
-The hosted server needs no Node and no key. For the Svelte compiler pass and
-the Studio tools, point the server at `npx @svgrid/mcp` instead - see
+The hosted server needs no Node and no key. To check against the Svelte your
+project has, and for the Studio tools, point the server at `npx @svgrid/mcp`
+instead - see
 <https://svgrid.com/docs/help/mcp-server/>.
 
 Privacy: the hosted server logs the tool name, timing, search text and the
