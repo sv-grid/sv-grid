@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:947d5633-04dd-47c3-a195-b208e2b57f18",
+  "serialNumber": "urn:uuid:f3644cdd-b8f3-4b6f-abe6-0afb3378d8cb",
   "version": 1,
   "metadata": {
     "tools": {
@@ -16,10 +16,10 @@
     },
     "component": {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/enterprise@3.1.29",
+      "bom-ref": "pkg:npm/%40svgrid/enterprise@3.1.30",
       "name": "@svgrid/enterprise",
-      "version": "3.1.29",
-      "purl": "pkg:npm/%40svgrid/enterprise@3.1.29",
+      "version": "3.1.30",
+      "purl": "pkg:npm/%40svgrid/enterprise@3.1.30",
       "scope": "required",
       "licenses": [
         {
@@ -34,10 +34,10 @@
   "components": [
     {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/grid@3.0.26",
+      "bom-ref": "pkg:npm/%40svgrid/grid@3.0.27",
       "name": "@svgrid/grid",
-      "version": "3.0.26",
-      "purl": "pkg:npm/%40svgrid/grid@3.0.26",
+      "version": "3.0.27",
+      "purl": "pkg:npm/%40svgrid/grid@3.0.27",
       "scope": "required",
       "description": "Peer dependency (declared range: workspace:^)"
     },
@@ -122,9 +122,9 @@
   ],
   "dependencies": [
     {
-      "ref": "pkg:npm/%40svgrid/enterprise@3.1.29",
+      "ref": "pkg:npm/%40svgrid/enterprise@3.1.30",
       "dependsOn": [
-        "pkg:npm/%40svgrid/grid@3.0.26",
+        "pkg:npm/%40svgrid/grid@3.0.27",
         "pkg:npm/jszip@3.10.1",
         "pkg:npm/pdfmake@0.2.23",
         "pkg:npm/react@19.2.8",
@@ -135,7 +135,7 @@
       ]
     },
     {
-      "ref": "pkg:npm/%40svgrid/grid@3.0.26",
+      "ref": "pkg:npm/%40svgrid/grid@3.0.27",
       "dependsOn": []
     },
     {
