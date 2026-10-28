@@ -1003,7 +1003,9 @@ export function createClipboard<
           "text") as CellEditorType;
         const field = column.columnDef.field;
         const oldValue = updated[field];
-        const cleared = parseEditorValue(editorType, "");
+        // A number goes to null, not through the parser: `Number("")` is 0,
+        // so a cleared Revenue cell used to read "$0" instead of empty.
+        const cleared = editorType === "number" ? null : parseEditorValue(editorType, "");
         updated[field] = cleared;
         rowChanged = true;
         steps.push({ rowId: row.id, columnId: column.id, field, before: oldValue, after: cleared });

@@ -187,4 +187,49 @@ describe('SvGrid context menu', () => {
     expect(target.querySelector('.sv-grid-context-menu')).toBeNull()
     destroy()
   })
+
+  // The row and column items used to be covered only by their labels. Each of
+  // these clicks the item on the first cell and reads the rendered rows back.
+  async function clickItem(target: HTMLElement, label: string) {
+    const menu = await openContextMenu(target)
+    const item = [...menu.querySelectorAll('.sv-grid-menu-item')].find(
+      (b) => b.textContent?.trim() === label,
+    ) as HTMLElement
+    item.click()
+    await tick()
+  }
+  const names = (target: HTMLElement) =>
+    [...target.querySelectorAll('.sv-grid-cell[data-svgrid-col="0"]')].map((c) => c.textContent?.trim())
+
+  it('Insert row above puts an empty row before the clicked one', async () => {
+    const { target, destroy } = await mountGrid(true)
+    await tick()
+    await clickItem(target, 'Insert row above')
+    const after = names(target)
+    expect(after).toHaveLength(7)
+    expect(after[0]).toBe('')
+    expect(after[1]).toBe('Person 1')
+    destroy()
+  })
+
+  it('Insert row below puts an empty row after the clicked one', async () => {
+    const { target, destroy } = await mountGrid(true)
+    await tick()
+    await clickItem(target, 'Insert row below')
+    const after = names(target)
+    expect(after).toHaveLength(7)
+    expect(after[0]).toBe('Person 1')
+    expect(after[1]).toBe('')
+    destroy()
+  })
+
+  it('Remove row removes the clicked row', async () => {
+    const { target, destroy } = await mountGrid(true)
+    await tick()
+    await clickItem(target, 'Remove row')
+    const after = names(target)
+    expect(after).toHaveLength(5)
+    expect(after[0]).toBe('Person 2')
+    destroy()
+  })
 })

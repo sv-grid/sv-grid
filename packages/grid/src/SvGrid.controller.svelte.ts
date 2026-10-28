@@ -736,7 +736,10 @@ export function createSvGridController<
   let inSuggestPos = $state<MenuPosition>({ x: 0, y: 0 });
   let inSuggestQuery = $state("");
   let chooseColumnsPos = $state<MenuPosition | null>(null);
-  let contextMenuFor = $state<ContextMenuTarget<TData> | null>(null);
+  // Raw: the target carries the consumer's row object, and a deep `$state`
+  // handed back a proxy of it, so `indexOf(target.row)` in Insert row / Remove
+  // row (and in a consumer's own item action) never found the row.
+  let contextMenuFor = $state.raw<ContextMenuTarget<TData> | null>(null);
   let contextMenuPos = $state<MenuPosition>({ x: 0, y: 0 });
   // Editable comments: internal overlay (rowId -> columnId -> note) merged on
   // top of props.notes for immediate feedback, plus the open-editor state.

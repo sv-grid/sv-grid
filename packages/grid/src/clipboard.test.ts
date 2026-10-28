@@ -1040,7 +1040,7 @@ describe('clearSelectedCells', () => {
     expect(ctx.historyPtr).toBe(1)
   })
 
-  it('clears a number cell via parseEditorValue coercion', () => {
+  it('clears a number cell to null, not 0', () => {
     const ctx = makeCtx({
       columns: [{ id: 'a', field: 'a', editable: true, editorType: 'number' }],
       data: [{ a: 5 }],
@@ -1051,8 +1051,9 @@ describe('clearSelectedCells', () => {
     }
     const cb = createClipboard(ctx)
     cb.clearSelectedCells()
-    // parseEditorValue('number', '') coerces '' -> 0 (Number('') is finite).
-    expect(ctx.internalData[0].a).toBe(0)
+    // parseEditorValue('number', '') would give 0 (Number('') is finite), which
+    // a currency column renders as "$0".
+    expect(ctx.internalData[0].a).toBe(null)
   })
 
   it('falls back to the active cell when no selection range', () => {
