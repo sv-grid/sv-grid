@@ -1288,6 +1288,106 @@ export function createPaginatedRowModel<TData extends RowData>(): RowModelFactor
     return rows.slice(start, start + pagination.pageSize)
   }
 }
+/** A grouping column an ancestor bucket fixed, and its raw value: a chain
+ *  up to the outermost level rather than a Map per group. */
+type GroupFixed = {
+  /** The column id. */
+  i: string
+  /** Its raw value. */
+  v: unknown
+  /** The next fixed column up. */
+  p: GroupFixed | null
+}
+
+/** What a group row answers from, one object per group. A million rows grouped
+ *  five deep make about a million group rows, and ten closures plus a Map on
+ *  each was most of the ~800 MB such a grid added. One-letter fields: names
+ *  survive minification, and this ships in the headless entry. */
+type GroupState<TData extends RowData> = {
+  /** The table. */
+  t: SvGrid<TData>
+  /** Its columns. */
+  c: Array<Column<TData>>
+  /** The leaf rows under the group. */
+  r: Array<Row<TData>>
+  /** The column this level groups by. */
+  g: string
+  /** The bucket key, the value the group shows for its own column. */
+  k: string
+  /** The parent's fixed columns: this group's own column is `g`. */
+  f: GroupFixed | null
+  /** The group's values, once read. */
+  v: Record<string, unknown> | undefined
+}
+
+const GROUP_STATE = Symbol('svgrid.group.state')
+type GroupRowState<TData extends RowData> = Row<TData> & { [GROUP_STATE]: GroupState<TData> }
+
+/** The value every leaf shares in `columnId`, or undefined when they differ.
+ *  A column an ancestor grouped by is fixed by construction, so it is not
+ *  scanned again. */
+function groupResolve<TData extends RowData>(s: GroupState<TData>, columnId: string): unknown {
+  if (columnId === s.g) return s.k
+  for (let f = s.f; f; f = f.p) if (f.i === columnId) return f.v
+  const rows = s.r
+  const first = rows[0]?.getCellValueByColumnId(columnId)
+  for (let i = 1; i < rows.length; i++) if (rows[i]!.getCellValueByColumnId(columnId) !== first) return undefined
+  return first
+}
+
+/** A group row's values - aggregates, and the value its leaves share in every
+ *  other column - worked out on first read: only the group rows on screen
+ *  are ever read. */
+function groupValues<TData extends RowData>(s: GroupState<TData>): Record<string, unknown> {
+  if (s.v) return s.v
+  const values: Record<string, unknown> = {}
+  for (const column of s.c) {
+    const field = column.columnDef.field
+    if (!field) continue
+    const agg = column.columnDef.aggregate
+    values[field] = agg ? applyGroupAggregate(agg, column.id, s.r) : groupResolve(s, column.id)
+  }
+  return (s.v = values)
+}
+
+function groupOriginal(this: GroupRowState<RowData>) {
+  return groupValues(this[GROUP_STATE])
+}
+
+/** Shared by every group row, reading the row through `this`; own properties
+ *  as on data rows, so `{ ...row }` keeps them (see BASE_ROW_METHODS). */
+const GROUP_ROW_METHODS = {
+  getCanExpand() {
+    return true
+  },
+  getIsExpanded(this: GroupRowState<RowData>) {
+    return Boolean((this[GROUP_STATE].t.getState().expanded ?? {})[this.id])
+  },
+  toggleExpanded(this: GroupRowState<RowData>) {
+    const id = this.id
+    this[GROUP_STATE].t.setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))
+  },
+  getIsSelected(this: GroupRowState<RowData>) {
+    return Boolean((this[GROUP_STATE].t.getState().rowSelection ?? {})[this.id])
+  },
+  toggleSelected(this: GroupRowState<RowData>) {
+    const id = this.id
+    this[GROUP_STATE].t.setRowSelection((prev) => ({ ...prev, [id]: !prev[id] }))
+  },
+  getAllCells() {
+    return []
+  },
+  // The precomputed group value (which carries aggregates), then the
+  // shared-value resolver for columns without a field.
+  getCellValueByColumnId(this: GroupRowState<RowData>, columnId: string) {
+    const s = this[GROUP_STATE]
+    const field = s.c.find((c) => c.id === columnId)?.columnDef.field
+    const values = groupValues(s)
+    if (field && field in values) return values[field]
+    return groupResolve(s, columnId)
+  },
+}
+
 /**
  * Buckets rows by the active {@link GroupingState} and inserts a group row
  * ahead of each bucket, carrying that bucket's aggregates.
@@ -1299,17 +1399,14 @@ export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<
     const columns = table.getAllColumns()
 
     // Recursively bucket rows by each grouping column in turn. At every level a
-    // group row is built that stands in for its children - a non-group column
-    // resolves to the value shared by every leaf row, or to undefined when the
-    // leaves disagree.
+    // group row stands in for its children: a non-group column resolves to the
+    // value shared by every leaf row, or to undefined when the leaves disagree.
     function buildGroups(
       input: Array<Row<TData>>,
       levelIndex: number,
       depth: number,
       idPrefix: string,
-      /** Grouping columns already fixed by an ancestor bucket, and their raw
-       *  values - `undefined` where that bucket mixed several. */
-      fixedValues: ReadonlyMap<string, unknown>,
+      fixed: GroupFixed | null,
     ): Array<Row<TData>> {
       if (levelIndex >= grouping.length) {
         // Leaves: actual data rows, with their nesting depth recorded.
@@ -1319,11 +1416,9 @@ export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<
       if (!groupKey) return input
 
       // Buckets carry the RAW grouping value alongside the rows, plus whether
-      // the bucket saw more than one distinct raw value. Both are needed to let
-      // deeper levels skip re-scanning this column: buckets are keyed by
-      // `String(value ?? '')`, so `null`, `undefined` and `''` collapse into one
-      // bucket, and a scan of such a bucket would report disagreement. Tracking
-      // it here costs one comparison per row and keeps the shortcut honest.
+      // the bucket saw more than one distinct raw value. Buckets are keyed by
+      // `String(value ?? '')`, so `null`, `undefined` and `''` share one, and
+      // a mixed bucket must not hand its children a fixed value.
       type Bucket = { rows: Array<Row<TData>>; raw: unknown; mixed: boolean }
       const buckets = new Map<string, Bucket>()
       for (const row of input) {
@@ -1343,105 +1438,32 @@ export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<
       buckets.forEach((bucket, key) => {
         const children = bucket.rows
         const id = `${idPrefix}_${groupKey}_${key}`
-        // Record this column as fixed for deeper levels ONLY when the bucket is
-        // homogeneous. If all rows here share a raw value, so does every subset
-        // of them, which is what makes the shortcut sound.
-        //
-        // A MIXED bucket must not be recorded at all - not even as "undefined".
-        // `null`, `undefined` and `''` share a bucket key, so a mixed bucket can
-        // still split into homogeneous children one level down, and those
-        // children have a real shared value that a scan would find. Marking the
-        // column resolved here would hand them the parent's disagreement.
-        const nextFixed = bucket.mixed ? fixedValues : new Map(fixedValues).set(groupKey, bucket.raw)
-        const subRows = buildGroups(children, levelIndex + 1, depth + 1, id, nextFixed)
-        const isDeepest = levelIndex + 1 >= grouping.length
-        const leafCount = isDeepest
-          ? subRows.length
-          : subRows.reduce((sum, sub) => sum + (sub.leafCount ?? 0), 0)
-
-        // Every grouping column ABOVE this level is already resolved: bucketing
-        // by it is what made it constant, so scanning the children to rediscover
-        // it is pure waste. Only the current level's key short-circuited before,
-        // so a second-level group walked all of its children to re-derive the
-        // first level's value - about 100,000 reads on the 100k x 9 two-level
-        // case, for an answer already in hand.
-        //
-        // The current level still returns the stringified bucket key rather than
-        // the raw value, because that is what it has always returned and the
-        // group row's display depends on it.
-        const resolveColumnValue = (columnId: string): unknown => {
-          if (columnId === groupKey) return key
-          if (fixedValues.has(columnId)) return fixedValues.get(columnId)
-          let resolved: unknown
-          let hasResolved = false
-          for (const child of children) {
-            const childValue = child.getCellValueByColumnId(columnId)
-            if (!hasResolved) {
-              resolved = childValue
-              hasResolved = true
-            } else if (childValue !== resolved) {
-              return undefined
-            }
-          }
-          return resolved
-        }
-
-        // A group row's values - aggregates, and the value its children share
-        // in every other column - are worked out on first read. A million rows
-        // grouped five deep make hundreds of thousands of group rows, each of
-        // which scanned its children for every column, and only the ones on
-        // screen are ever read.
-        let groupOriginal: Record<string, unknown> | undefined
-        const groupValues = (): Record<string, unknown> => {
-          if (groupOriginal) return groupOriginal
-          const values: Record<string, unknown> = {}
-          columns.forEach((column) => {
-            const field = column.columnDef.field
-            if (!field) return
-            const agg = column.columnDef.aggregate
-            values[field] = agg
-              ? applyGroupAggregate(agg, column.id, children)
-              : resolveColumnValue(column.id)
-          })
-          return (groupOriginal = values)
-        }
-
-        const groupRow: Row<TData> = {
+        const subRows = buildGroups(
+          children,
+          levelIndex + 1,
+          depth + 1,
+          id,
+          bucket.mixed ? fixed : { i: groupKey, v: bucket.raw, p: fixed },
+        )
+        const state: GroupState<TData> = { t: table, c: columns, r: children, g: groupKey, k: key, f: fixed, v: undefined }
+        const groupRow = {
           id,
           index: index++,
-          get original() {
-            return groupValues() as TData
-          },
           depth,
           subRows,
-          leafCount,
-          getCanExpand: () => true,
-          getIsExpanded: () => Boolean((table.getState().expanded ?? {})[id]),
-          toggleExpanded: () => {
-            table.setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))
-          },
-          getIsSelected: () => Boolean((table.getState().rowSelection ?? {})[id]),
-          toggleSelected: () => {
-            table.setRowSelection((prev) => ({ ...prev, [id]: !prev[id] }))
-          },
-          getAllCells: () => [],
-          // Prefer the precomputed group value (which carries aggregates)
-          // and fall back to the shared-value resolver for columns without
-          // a field.
-          getCellValueByColumnId: (columnId: string) => {
-            const col = columns.find((c) => c.id === columnId)
-            const field = col?.columnDef.field
-            const values = groupValues()
-            if (field && field in values) return values[field]
-            return resolveColumnValue(columnId)
-          },
-        }
+          leafCount: levelIndex + 1 >= grouping.length
+            ? subRows.length
+            : subRows.reduce((sum, sub) => sum + (sub.leafCount ?? 0), 0),
+          [GROUP_STATE]: state,
+          ...GROUP_ROW_METHODS,
+        } as unknown as Row<TData>
+        Object.defineProperty(groupRow, 'original', { get: groupOriginal, enumerable: true })
         groupRows.push(groupRow)
       })
       return groupRows
     }
 
-    return buildGroups(rows, 0, 0, 'group', new Map())
+    return buildGroups(rows, 0, 0, 'group', null)
   }
 }
 /**

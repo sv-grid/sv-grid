@@ -650,8 +650,6 @@
   const toggleRowSelectionById = $derived(ctrl.toggleRowSelectionById);
   const headerSelectionState = $derived(ctrl.headerSelectionState);
   const toggleSelectAllRows = $derived(ctrl.toggleSelectAllRows);
-  const setActiveCell = $derived(ctrl.setActiveCell);
-  const scrollActiveCellIntoView = $derived(ctrl.scrollActiveCellIntoView);
   const cellSelectionState = $derived(ctrl.cellSelectionState);
   const isInFillPreview = $derived(ctrl.isInFillPreview);
   const fillMarqueeEdges = $derived(ctrl.fillMarqueeEdges);

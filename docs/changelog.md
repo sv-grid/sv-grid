@@ -367,6 +367,16 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **Grouping five million rows ran out of memory.** Every group row carried
+  ten closures and a Map of its ancestors' values, and a million rows grouped
+  five deep make about a million group rows. Group rows now share their
+  methods and keep their state in one object. Grouping 1,000,000 rows that
+  way adds about 500 MB instead of 785 MB, and 5,000,000 rows group in 56 s
+  on a laptop within Chrome's default heap.
+- **Every selection change serialized the whole selection.** Deciding
+  whether to call `onRowSelectionChange` ran `JSON.stringify` over the
+  selection state; selecting half of a 5,000,000-row grid built a string of
+  tens of megabytes per change. The two states are now compared key by key.
 - **A mount built rows nobody could see, and laid the grid out five
   times.** The first paint now draws the rows on screen and at most two
   overscan rows, and the rest of `overscan` follows a frame after that paint:
@@ -746,6 +756,12 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **A pivot filtered its rows again for every column.** For each row group,
+  `createPivotModel` went through the group's rows once per column-axis leaf.
+  The rows are now bucketed by column path in one pass, in the same order,
+  and the result is the same. On one laptop, a pivot of 100,000 rows over
+  Year x Month went from 3.6 s to 0.6 s, and 1,000,000 rows from 147 s to
+  4 s.
 - **A grouped Excel export slowed down with the square of its rows.** The
   writer looked up each string cell's shared-string index, and checked the
   group rows already written, by scanning an array. Both are hash lookups

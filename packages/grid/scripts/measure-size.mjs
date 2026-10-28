@@ -585,7 +585,13 @@ const BUDGET_KB = {
   // comparator the sort direction. @svgrid/enterprise's blanksLast /
   // blanksFirst need the direction to hold blanks at one end both ways, and
   // only the core sees it. 35 bytes gzip; the entry had 3 bytes of headroom.
-  'headless subpath (@svgrid/grid/core)': 10.0,
+  //
+  // 10.0 -> 10.1 (measured 10.043, 9.973 before) for the grouped row model
+  // (2026-10-28): group rows share their methods and keep their state in one
+  // object instead of ten closures and a Map each. A million rows grouped
+  // five deep make about a million group rows, and the closures were most of
+  // the ~800 MB such a grid added; five million rows ran out of heap.
+  'headless subpath (@svgrid/grid/core)': 10.1,
   // Measured 26.3 KB: SvGridChart.svelte plus the chart.ts engine it statically
   // imports. Nobody pays this unless they chart - SvGrid reaches both through
   // `import()` - but it is the biggest deferred thing in the package and until

@@ -158,6 +158,15 @@ const COLUMN_OVERSCAN = 3;
 /** Rows past the viewport in the first paint; the rest of `overscan` follows a frame later. */
 const MOUNT_OVERSCAN = 2;
 
+/** The same ids with the same values, as `JSON.stringify` equality meant. */
+function sameSelection(a: Record<string, boolean>, b: Record<string, boolean>): boolean {
+  if (a === b) return true;
+  const keys = Object.keys(a);
+  if (keys.length !== Object.keys(b).length) return false;
+  for (const key of keys) if (a[key] !== b[key] || !(key in b)) return false;
+  return true;
+}
+
 /**
  * The grouping stage, kept while its input rows, grouping and columns are the
  * same. Expanding or collapsing a group changes `expanded`, which re-runs the
@@ -2213,15 +2222,15 @@ export function createSvGridController<
   // starting selection instead of reporting it, so consumers don't get a
   // spurious callback on mount. (This was seeded with "", which never matched
   // "{}", so the mount call this comment always promised to skip was made.)
-  let lastSelectionSerialized: string | null = null;
+  // Compared key by key, not as JSON: the store replaces the object on every
+  // change, and serializing 2.5 million selected ids built a string of tens
+  // of megabytes per change.
+  let lastSelection: Record<string, boolean> | null = null;
   $effect(() => {
-    const serialized = JSON.stringify(rowSelectionState);
-    if (lastSelectionSerialized === null) {
-      lastSelectionSerialized = serialized;
-      return;
-    }
-    if (serialized === lastSelectionSerialized) return;
-    lastSelectionSerialized = serialized;
+    const selection = rowSelectionState;
+    const previous = lastSelection;
+    lastSelection = selection;
+    if (previous === null || sameSelection(previous, selection)) return;
     const callback = props.onRowSelectionChange;
     if (!callback) return;
     // Resolve selected rows by row id (not numeric index) so this is correct
@@ -5300,8 +5309,6 @@ export function createSvGridController<
     get selectionBarTarget() { return selectionBarTarget; },
     get selectionBarCount() { return selectionBarCount; },
     get selectionBarVisible() { return selectionBarVisible; },
-    get lastSelectionSerialized() { return lastSelectionSerialized; },
-    set lastSelectionSerialized(v) { lastSelectionSerialized = v as never; },
     get lastCellRangeSerialized() { return lastCellRangeSerialized; },
     set lastCellRangeSerialized(v) { lastCellRangeSerialized = v as never; },
     get statusBarEnabled() { return statusBarEnabled; },

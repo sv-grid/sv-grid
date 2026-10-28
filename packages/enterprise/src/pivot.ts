@@ -326,14 +326,43 @@ function computeRowValues(
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {}
 
-  // For each col-axis leaf path, filter the source rows to those matching
-  // every dim value, then run each measure aggregator.
+  // The rows under each col-axis path, bucketed in one pass per path length.
+  // Filtering the rows again for every column leaf was rows x leaves for each
+  // row node: a 100,000-row pivot over Year x Month spent ~3 s there. A
+  // bucket keeps the rows in source order, as the filter did, so order-
+  // dependent aggregators see the same sequence.
+  const byLength = new Map<number, Map<unknown, unknown>>()
+  const rowsAt = (path: ReadonlyArray<unknown>): ReadonlyArray<Record<string, unknown>> => {
+    let root = byLength.get(path.length)
+    if (!root) {
+      root = new Map()
+      for (const r of sourceRows) {
+        let node = root
+        for (let i = 0; i < path.length - 1; i += 1) {
+          const v = r[colFields[i]!]
+          let next = node.get(v) as Map<unknown, unknown> | undefined
+          if (!next) node.set(v, (next = new Map()))
+          node = next
+        }
+        const v = r[colFields[path.length - 1]!]
+        const list = node.get(v) as Array<Record<string, unknown>> | undefined
+        if (list) list.push(r)
+        else node.set(v, [r])
+      }
+      byLength.set(path.length, root)
+    }
+    let node: unknown = root
+    for (const value of path) {
+      node = (node as Map<unknown, unknown>).get(value)
+      if (node === undefined) return []
+    }
+    return node as ReadonlyArray<Record<string, unknown>>
+  }
+
+  // For each col-axis leaf path, the source rows matching every dim value,
+  // then each measure aggregator over them.
   for (const colPath of colLeafPaths) {
-    const matched = colPath.length === 0
-      ? sourceRows
-      : sourceRows.filter((r) =>
-          colPath.every((value, i) => r[colFields[i]!] === value),
-        )
+    const matched = colPath.length === 0 ? sourceRows : rowsAt(colPath)
     for (let i = 0; i < values.length; i += 1) {
       const value = values[i]!
       const fn = resolveAgg(value.agg)
