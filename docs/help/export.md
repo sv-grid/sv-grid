@@ -130,10 +130,22 @@ license key removes the unlicensed watermark:
 `<SvGrid onApiReady>` with two methods:
 
 - `api.exportData({ format, filename?, columns?, rows?, pageOrientation? })`
-- `api.print({ title?, columns?, rows?, orientation? })`
+- `api.print({ title?, columns?, rows?, orientation?, open? })`
 
 Both methods default to **the currently displayed rows** - sort, filter,
 or paginate the grid, and the export reflects that view automatically.
+
+`print()` resolves to the printable HTML document it built. Pass
+`open: false` to get that document without the print window and dialog,
+for a preview pane of your own:
+
+```ts
+const html = await api.print({ title: 'Orders', open: false })
+preview.srcdoc = html
+```
+
+It is a plain table, not the grid, so a print of 100,000 rows does not
+render 100,000 rows of grid cells.
 
 ## When to use it
 

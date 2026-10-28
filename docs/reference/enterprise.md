@@ -105,6 +105,8 @@ helpers directly:
 import { exportGrid, printGrid } from '@svgrid/enterprise'
 await exportGrid(api, { format: 'xlsx' })
 await printGrid(api)
+// The printable document, without the print window and dialog:
+const html = await printGrid(api, { open: false })
 ```
 
 ## Import

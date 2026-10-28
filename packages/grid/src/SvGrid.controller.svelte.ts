@@ -40,7 +40,7 @@ import {
 } from "./virtualization/scroll-scaling";
 import { buildPreMeasureItems } from "./virtualization/virtualizer";
 // Not on the public barrel: turns a lazy row list into a plain array before a full pass.
-import { denseRows } from "./core";
+import { denseRows, type RowModelFactory } from "./core";
 import { isWindowedData } from "./windowed-brand";
 import { applyFieldColumns } from "./grid-extension.svelte";
 import { DEV } from "esm-env";
@@ -157,6 +157,31 @@ const COLUMN_WINDOW_STEP = 3;
 const COLUMN_OVERSCAN = 3;
 /** Rows past the viewport in the first paint; the rest of `overscan` follows a frame later. */
 const MOUNT_OVERSCAN = 2;
+
+/**
+ * The grouping stage, kept while its input rows, grouping and columns are the
+ * same. Expanding or collapsing a group changes `expanded`, which re-runs the
+ * row pipeline, but not the groups: the filter and sort stages hand this
+ * stage the same array again, and group rows read their expansion when
+ * called. Re-bucketing every row per toggle made one expand ~400 ms at 100k
+ * rows. Here rather than in core.ts, whose headless entry has no room.
+ */
+export function keepGroups<TData extends RowData>(stage: RowModelFactory<TData>): RowModelFactory<TData> {
+  // Closure variables rather than an object: they minify, property names do not.
+  let input: unknown, grouping: unknown, columns: unknown, output: Row<TData>[] | undefined;
+  return (args) => {
+    const g = args.table.getState().grouping;
+    const c = args.table.getAllColumns();
+    if (output && input === args.rows && grouping === g && columns === c) return output;
+    const out = stage(args);
+    // Nothing kept while ungrouped, so the last groups are not held.
+    output = g?.length ? out : undefined;
+    input = args.rows;
+    grouping = g;
+    columns = c;
+    return out;
+  };
+}
 
 /**
  * The browser's actual maximum *scrollable* element height in CSS px. Browsers
@@ -1086,7 +1111,7 @@ export function createSvGridController<
           parentField: treeDataConfig.parentField,
           idField: treeDataConfig.idField,
         })
-      : createGroupedRowModel<TData>(),
+      : keepGroups(createGroupedRowModel<TData>()),
     expandedRowModel: createExpandedRowModel<TData>(),
   };
 
@@ -1624,9 +1649,7 @@ export function createSvGridController<
   // ---- Conditional formatting --------------------------------------------
   // True when the feature is in use; gates the per-cell positioning context
   // (cells are otherwise non-relative for scroll performance).
-  const hasConditionalFormats = $derived(
-    (props.conditionalFormats?.length ?? 0) > 0,
-  );
+  const hasConditionalFormats = $derived(!!props.conditionalFormats?.length);
   // The formatting engine loads with the first `conditionalFormats`, not with
   // the grid: until it lands, cells draw unformatted (one frame on a warm cache).
   let conditionalFormatting = $state.raw<typeof import("./conditional-formatting") | null>(null);

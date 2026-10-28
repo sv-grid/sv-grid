@@ -6,6 +6,31 @@ import {
   valueForExcel,
 } from './export-format'
 import type { CellFormatConfig } from './core'
+import { dateFormatOptions } from './cell-formatting'
+
+describe('a calendar date with a timeZone option', () => {
+  const utc: CellFormatConfig = {
+    type: 'date',
+    locales: 'en-US',
+    options: { year: 'numeric', month: 'numeric', day: 'numeric', timeZone: 'UTC' },
+  }
+
+  // '2026-10-07' is read as local midnight; formatting that in UTC showed
+  // October 6th anywhere east of UTC. (A UTC machine passes either way.)
+  it('shows the day in the string', () => {
+    expect(formatValueForExport('2026-10-07', utc)).toBe('10/7/2026')
+  })
+
+  it('drops timeZone only for a bare calendar date', () => {
+    const format = { type: 'date' as const, options: { day: 'numeric', timeZone: 'UTC' } as Intl.DateTimeFormatOptions }
+    expect(dateFormatOptions(format, '2026-10-07')).toEqual({ day: 'numeric' })
+    expect(dateFormatOptions(format, ' 2026-10-07 ')).toEqual({ day: 'numeric' })
+    expect(dateFormatOptions(format, '2026-10-07T10:00:00Z')).toEqual({ day: 'numeric', timeZone: 'UTC' })
+    expect(dateFormatOptions(format, new Date())).toEqual({ day: 'numeric', timeZone: 'UTC' })
+    // The column's own options object is never changed.
+    expect(format.options.timeZone).toBe('UTC')
+  })
+})
 
 describe('formatValueForExport', () => {
   it('returns "" for null / undefined', () => {

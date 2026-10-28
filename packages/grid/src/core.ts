@@ -1110,20 +1110,33 @@ export const BASE_ROW_METHODS = {
     return this[ROW_CELLS] ?? buildBaseRowCells(this)
   },
   getCellValueByColumnId(this: BaseRowState<RowData>, columnId: string) {
-    const ctx = this[ROW_CTX]
-    const idx = ctx.columnIndexById.get(columnId)
-    if (idx === undefined) return undefined
-    const values = this[ROW_VALUES]
-    if (values) return values[idx]
-    // A plain field reads as cheaply from the data as from a cached array, so
-    // only a computed column builds the row's values. A sort, filter or group
-    // reads one column of every row; building all of them there kept an
-    // array of every column's value on every row, which only the rows on
-    // screen use.
-    const def = ctx.columns[idx]!.columnDef
-    if (!def.fieldFn) return def.field ? (this.original as Record<string, unknown>)[def.field] : undefined
-    return (this[ROW_VALUES] = baseRowValues(this))[idx]
+    const idx = this[ROW_CTX].columnIndexById.get(columnId)
+    return idx === undefined ? undefined : rowValueAt(this, idx)
   },
+}
+
+/** A computed value not read yet, in a row's value cache. */
+const UNREAD = Symbol()
+
+/**
+ * One column's value for a row. A plain field reads as cheaply from the data
+ * as from a cache, so it is read there. A computed (`fieldFn`) column is
+ * computed once and cached on the row, by itself: a sort, filter or group
+ * reads a few columns of every row, and computing every column of the row on
+ * the first read ran each `fieldFn` of a 22-column grid for 5 grouped ones -
+ * most of grouping a million rows.
+ */
+function rowValueAt<TData extends RowData>(row: BaseRowState<TData>, idx: number): unknown {
+  let values = row[ROW_VALUES]
+  if (values) {
+    const v = values[idx]
+    if (v !== UNREAD) return v
+  }
+  const ctx = row[ROW_CTX]
+  const def = ctx.columns[idx]!.columnDef
+  if (!def.fieldFn) return def.field ? (row.original as Record<string, unknown>)[def.field] : undefined
+  values ??= row[ROW_VALUES] = new Array<unknown>(ctx.columnCount).fill(UNREAD)
+  return (values[idx] = def.fieldFn(row.original))
 }
 
 /**
@@ -1143,10 +1156,7 @@ function buildBaseRowCells<TData extends RowData>(row: BaseRowState<TData>): Arr
       id: `${row.id}_${column.id}`,
       row,
       column,
-      getValue: () => {
-        if (!row[ROW_VALUES]) row[ROW_VALUES] = baseRowValues(row)
-        return row[ROW_VALUES][colIndex]
-      },
+      getValue: () => rowValueAt(row, colIndex),
       getContext: () => ({
         cell,
         row,
@@ -1161,22 +1171,6 @@ function buildBaseRowCells<TData extends RowData>(row: BaseRowState<TData>): Arr
   return built
 }
 
-/**
- * Resolve every column's value for one row. Kept lazy: a 100k-row grid showing
- * twenty rows must not materialise 900k values to paint.
- */
-function baseRowValues<TData extends RowData>(row: BaseRowState<TData>): Array<unknown> {
-  const { columns, columnCount } = row[ROW_CTX]
-  const original = row.original as Record<string, unknown>
-  const values = new Array<unknown>(columnCount)
-  for (let i = 0; i < columnCount; i++) {
-    const def = columns[i]!.columnDef
-    if (def.fieldFn) values[i] = def.fieldFn(original as TData)
-    else if (def.field) values[i] = original[def.field]
-    else values[i] = undefined
-  }
-  return values
-}
 
 /**
  * One stage of the row pipeline: takes the rows produced so far and returns the
@@ -1392,20 +1386,32 @@ export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<
           return resolved
         }
 
-        const groupOriginal: Record<string, unknown> = {}
-        columns.forEach((column) => {
-          const field = column.columnDef.field
-          if (!field) return
-          const agg = column.columnDef.aggregate
-          groupOriginal[field] = agg
-            ? applyGroupAggregate(agg, column.id, children)
-            : resolveColumnValue(column.id)
-        })
+        // A group row's values - aggregates, and the value its children share
+        // in every other column - are worked out on first read. A million rows
+        // grouped five deep make hundreds of thousands of group rows, each of
+        // which scanned its children for every column, and only the ones on
+        // screen are ever read.
+        let groupOriginal: Record<string, unknown> | undefined
+        const groupValues = (): Record<string, unknown> => {
+          if (groupOriginal) return groupOriginal
+          const values: Record<string, unknown> = {}
+          columns.forEach((column) => {
+            const field = column.columnDef.field
+            if (!field) return
+            const agg = column.columnDef.aggregate
+            values[field] = agg
+              ? applyGroupAggregate(agg, column.id, children)
+              : resolveColumnValue(column.id)
+          })
+          return (groupOriginal = values)
+        }
 
         const groupRow: Row<TData> = {
           id,
           index: index++,
-          original: groupOriginal as TData,
+          get original() {
+            return groupValues() as TData
+          },
           depth,
           subRows,
           leafCount,
@@ -1425,7 +1431,8 @@ export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<
           getCellValueByColumnId: (columnId: string) => {
             const col = columns.find((c) => c.id === columnId)
             const field = col?.columnDef.field
-            if (field && field in groupOriginal) return groupOriginal[field]
+            const values = groupValues()
+            if (field && field in values) return values[field]
             return resolveColumnValue(columnId)
           },
         }
@@ -2687,26 +2694,24 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
         grouping: store.state.grouping,
         expanded: store.state.expanded,
       }
+      const last = cachedSlices
       if (
         cachedRowModel &&
+        last &&
         cachedRowModelBaseRows === cachedBaseRows &&
         cachedPipeline === options._rowModels &&
-        cachedSlices?.sorting === currentSlices.sorting &&
-        cachedSlices?.columnFilters === currentSlices.columnFilters &&
-        cachedSlices?.pagination === currentSlices.pagination &&
-        cachedSlices?.grouping === currentSlices.grouping &&
-        cachedSlices?.expanded === currentSlices.expanded
+        (Object.keys(currentSlices) as Array<keyof typeof currentSlices>).every((k) => last[k] === currentSlices[k])
       ) {
         return cachedRowModel
       }
 
       // A stage with work to do reads every row; give it the dense array.
       const anyStageActive =
-        (currentSlices.sorting?.length ?? 0) > 0 ||
-        (currentSlices.columnFilters?.length ?? 0) > 0 ||
-        (currentSlices.grouping?.length ?? 0) > 0 ||
+        !!currentSlices.sorting?.length ||
+        !!currentSlices.columnFilters?.length ||
+        !!currentSlices.grouping?.length ||
         (currentSlices.expanded as unknown) === true ||
-        Object.keys(currentSlices.expanded ?? {}).length > 0
+        !!Object.keys(currentSlices.expanded ?? {}).length
       let rows: Array<Row<TData>> = anyStageActive ? denseRows(cachedBaseRows) : cachedBaseRows
 
       const pipeline = options._rowModels ?? {}

@@ -76014,10 +76014,22 @@ license key removes the unlicensed watermark:
 `<SvGrid onApiReady>` with two methods:
 
 - `api.exportData({ format, filename?, columns?, rows?, pageOrientation? })`
-- `api.print({ title?, columns?, rows?, orientation? })`
+- `api.print({ title?, columns?, rows?, orientation?, open? })`
 
 Both methods default to **the currently displayed rows** - sort, filter,
 or paginate the grid, and the export reflects that view automatically.
+
+`print()` resolves to the printable HTML document it built. Pass
+`open: false` to get that document without the print window and dialog,
+for a preview pane of your own:
+
+```ts
+const html = await api.print({ title: 'Orders', open: false })
+preview.srcdoc = html
+```
+
+It is a plain table, not the grid, so a print of 100,000 rows does not
+render 100,000 rows of grid cells.
 
 ## When to use it
 
@@ -121236,6 +121248,8 @@ helpers directly:
 import { exportGrid, printGrid } from '@svgrid/enterprise'
 await exportGrid(api, { format: 'xlsx' })
 await printGrid(api)
+// The printable document, without the print window and dialog:
+const html = await printGrid(api, { open: false })
 ```
 
 ## Import
@@ -122494,6 +122508,9 @@ For machine-readable releases, fetch
 
 #### Changed
 
+- **The find bar loads on the first Ctrl+F.** It is its own chunk now, so a
+  grid nobody searches does not carry it; the first open shows the bar once
+  the chunk has loaded.
 - **`alignedGridGroup` loads its module on demand.** The shared group that
   mirrors horizontal scroll and column widths between grids is now a lazy
   chunk, fetched by the first grid that sets the prop, the way managed row
@@ -122551,6 +122568,18 @@ For machine-readable releases, fetch
   browser bench, a 60 px scroll step went from 4.05 to 3.68 ms of
   main-thread work (median). Sticky frozen and group rows keep
   `position: sticky`.
+- **Expanding one group re-grouped every row.** A toggle re-ran the row
+  pipeline, and the grouping stage bucketed all rows again although only the
+  expansion had changed. It now keeps its groups while its input rows,
+  grouping and columns are the same. On a 100,000-row grid grouped by five
+  columns, one expand went from 521 to 98 ms, and expanding or collapsing
+  every group from 473 to 82 ms.
+- **A calendar date with `timeZone: 'UTC'` showed the day before.** A
+  bare date string such as `'2026-10-07'` is read as local midnight, so a
+  date `format` whose `options` carried `timeZone: 'UTC'` (the usual fix
+  from when such strings were read as UTC) showed October 6th anywhere east
+  of UTC. A calendar date has no zone: `timeZone` is now ignored for one,
+  on screen and in exports.
 - **A cell note's corner marker sat at the grid's corner.** The marker is
   positioned against its cell, but a cell with a note was not positioned, so
   it anchored to the grid. A cell with a note is now a positioning context,
@@ -122823,6 +122852,11 @@ For machine-readable releases, fetch
 
 #### Added
 
+- **`print({ open: false })` returns the printable document.** `print()` and
+  `printGrid()` now resolve to the HTML they built, and `open: false` skips
+  the print window and dialog, for a preview pane or anything that times the
+  printable view. It is a plain table, not the grid.
+
 - **PDF: `pdf.fit`, `pdf.repeatColumns` and `pdf.font`.** `fit` chooses what
   happens when the columns do not fit across the page (shrink the text, split
   the columns over pages, or both, the default); `repeatColumns` says how many
@@ -122889,6 +122923,17 @@ For machine-readable releases, fetch
   New demos: booking rules, financial trading hours, and HR shift coverage.
 
 #### Fixed
+
+- **A grouped Excel export slowed down with the square of its rows.** The
+  writer looked up each string cell's shared-string index, and checked the
+  group rows already written, by scanning an array. Both are hash lookups
+  now and the file is byte for byte the same. A 10,000-row export grouped by
+  five columns went from 4.8 s to 0.45 s, and 100,000 rows finish in 9 s.
+- **A sheet chart hung below the window was not drawn until a scroll.** The
+  sheet measured its objects once after mount, from their anchor cells, and
+  the grid now adds most of its overscan rows a frame after its first paint;
+  a chart hung from a row in between had no cell to measure. While an object
+  has no box, rows the grid adds now measure it again.
 
 - **A wide grid lost columns in the PDF.** pdfmake sizes a column no narrower
   than its longest word, so a 22-column report ran off the right edge and only

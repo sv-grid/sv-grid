@@ -40,12 +40,18 @@ export type PrintOptions<TData> = {
   /** Conditional formatting rules (same array as `<SvGrid conditionalFormats>`);
    *  carried into the print view as cell background / color / bold + icons. */
   conditionalFormats?: ReadonlyArray<ConditionalFormat<TData>>
+  /** Open the print window and its dialog. Default true. `false` only builds
+   *  the document and returns it, for a preview pane or a test. */
+  open?: boolean
 }
 
+/** Print the grid: builds a printable HTML document of its rows, opens it in a
+ *  new window and calls the browser's print dialog. Resolves to that document,
+ *  so `{ open: false }` gives a printable view without a window or a dialog. */
 export async function printGrid<
   TFeatures extends TableFeatures,
   TData extends RowData,
->(api: SvGridApi<TFeatures, TData>, opts?: PrintOptions<TData>): Promise<void> {
+>(api: SvGridApi<TFeatures, TData>, opts?: PrintOptions<TData>): Promise<string> {
   assertEnterpriseLicensed('Print')
   if (typeof window === 'undefined') {
     throw new Error('@svgrid/enterprise: print requires a browser environment')
@@ -80,6 +86,7 @@ export async function printGrid<
     cellLink: link,
     opts: docOpts,
   })
+  if (opts?.open === false) return html
 
   const w = window.open('', '_blank', 'width=900,height=700')
   if (!w) {
@@ -104,4 +111,5 @@ export async function printGrid<
       // ignore - the listener path will have fired
     }
   }, 300)
+  return html
 }

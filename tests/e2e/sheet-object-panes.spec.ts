@@ -129,6 +129,16 @@ test.describe('objects under frozen panes (#116)', () => {
     expect(await topAt(page, colA.x + colA.width / 2, frozen.y + frozen.height + 10)).toBe('object:2')
   })
 
+  test('a chart hung below the first paint is drawn without a scroll', async ({ page }) => {
+    // The grid's first paint carries two overscan rows and the rest a frame
+    // later; the sheet measured its objects once, in between, so a chart hung
+    // from row 6 under a short window had no anchor cell and was never drawn.
+    // CI's taller text layout hit it at 700px; 560 hits it everywhere.
+    await page.setViewportSize({ width: 1000, height: 560 })
+    await open(page)
+    await expect(page.locator('.sv-sheet .sheet-object')).toHaveCount(2)
+  })
+
   test('a chart hanging past the sheet does not make the page taller', async ({ page }) => {
     // A chart's clip-path hid the part below the sheet's window, but it still
     // counted as overflow: the page was taller by it, and scrolling the sheet

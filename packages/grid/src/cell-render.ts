@@ -14,8 +14,8 @@ import {
 import "./sv-grid-scrollbar";
 import {
   formatNumericWithConfig,
+  dateFormatOptions,
   getDateFormatter,
-  resolveDatePattern,
 } from "./cell-formatting";
 import type { ResolvedCellFormat } from "./conditional-formatting";
 import {
@@ -408,26 +408,10 @@ export function createCellRender<
     if (formatConfig.type === "date" || formatConfig.type === "datetime") {
       const parsedDate = asDate(value);
       if (parsedDate) {
-        const preset = resolveDatePattern(
-          formatConfig.pattern,
-          formatConfig.type,
-        );
-        const merged: Intl.DateTimeFormatOptions =
-          preset || formatConfig.options
-            ? { ...preset, ...formatConfig.options }
-            : formatConfig.type === "date"
-              ? { year: "numeric", month: "2-digit", day: "2-digit" }
-              : {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                };
-
-        return getDateFormatter((formatConfig.locales ?? ctx.props.localization?.locale), merged).format(
-          parsedDate,
-        );
+        return getDateFormatter(
+          formatConfig.locales ?? ctx.props.localization?.locale,
+          dateFormatOptions(formatConfig, value),
+        ).format(parsedDate);
       }
     }
 
@@ -481,14 +465,10 @@ export function createCellRender<
     if (formatConfig.type === "date" || formatConfig.type === "datetime") {
       const parsedDate = asDate(value);
       if (parsedDate) {
-        const preset = resolveDatePattern(formatConfig.pattern, formatConfig.type);
-        const merged: Intl.DateTimeFormatOptions =
-          preset || formatConfig.options
-            ? { ...preset, ...formatConfig.options }
-            : formatConfig.type === "date"
-              ? { year: "numeric", month: "2-digit", day: "2-digit" }
-              : { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" };
-        return getDateFormatter((formatConfig.locales ?? ctx.props.localization?.locale), merged).format(parsedDate);
+        return getDateFormatter(
+          formatConfig.locales ?? ctx.props.localization?.locale,
+          dateFormatOptions(formatConfig, value),
+        ).format(parsedDate);
       }
     }
     return String(value ?? "");

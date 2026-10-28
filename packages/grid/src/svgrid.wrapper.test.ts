@@ -17,6 +17,7 @@ describe('SvGrid wrapper', () => {
       './SvGrid.controller.svelte.ts',
       './GridMenus.svelte',
       './GridFooter.svelte',
+      './GridFind.svelte',
       './SvGrid.types.ts',
       './SvGrid.helpers.ts',
       './filter-operators.ts',

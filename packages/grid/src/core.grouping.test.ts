@@ -23,6 +23,7 @@ import {
   type ColumnDef,
   type Row,
 } from './core'
+import { keepGroups } from './SvGrid.controller.svelte'
 
 type Data = Record<string, unknown>
 
@@ -142,5 +143,54 @@ describe('createGroupedRowModel - ancestor value resolution', () => {
     ]
     const inner = atDepth(grouped(data, FIELDS, ['region', 'status']), 1)
     expect(inner[0]!.getCellValueByColumnId('owner')).toBeUndefined()
+  })
+})
+
+describe('keepGroups - the grouping kept across an expand', () => {
+  const FIELDS = ['region', 'amount']
+  const data: Data[] = [
+    { region: 'EU', amount: 1 },
+    { region: 'US', amount: 2 },
+    { region: 'EU', amount: 3 },
+  ]
+  // The grouping stage alone, fed the core rows the way the pipeline feeds it.
+  function stageFor(rows: Data[]) {
+    const grid = createSvGridCore({
+      _features: tableFeatures({ columnGroupingFeature }),
+      _rowModels: { coreRowModel: createCoreRowModel() },
+      columns: FIELDS.map((f) => ({ field: f })) as unknown as Array<ColumnDef<ReturnType<typeof tableFeatures>, Data>>,
+      data: rows,
+      state: { grouping: ['region'] },
+      onGroupingChange: () => {},
+    })
+    let expanded: Record<string, boolean> = {}
+    const grouping = ['region']
+    const table = {
+      getState: () => ({ grouping, expanded }),
+      getAllColumns: () => grid.getAllColumns(),
+      setExpanded: (fn: (prev: Record<string, boolean>) => Record<string, boolean>) => { expanded = fn(expanded) },
+    } as unknown as Parameters<ReturnType<typeof createGroupedRowModel<Data>>>[0]['table']
+    return { table, input: [...grid.getRowModel().rows] }
+  }
+
+  // Toggling a group re-runs the pipeline with the same input; re-bucketing
+  // every row each time made one expand cost ~400 ms at 100,000 rows.
+  it('returns the same group rows when only the expansion changed', () => {
+    const stage = keepGroups(createGroupedRowModel<Data>())
+    const { table, input } = stageFor(data)
+    const first = stage({ table, rows: input })
+    first[0]!.toggleExpanded()
+    const second = stage({ table, rows: input })
+    expect(second).toBe(first)
+    expect(second[0]!.getIsExpanded()).toBe(true)
+  })
+
+  it('groups again when the rows change', () => {
+    const stage = keepGroups(createGroupedRowModel<Data>())
+    const { table, input } = stageFor(data)
+    const first = stage({ table, rows: input })
+    const next = stage({ table, rows: input.slice(0, 2) })
+    expect(next).not.toBe(first)
+    expect(next.find((r) => r.id.endsWith('EU'))!.leafCount).toBe(1)
   })
 })

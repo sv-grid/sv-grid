@@ -3,7 +3,7 @@
  * more strongly, and a match counts in what the cell shows (the column's
  * formatter) as well as in its raw value.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { flushSync, mount, unmount } from 'svelte'
 import SvGrid from './SvGrid.svelte'
 import type { SvGridApi } from './index'
@@ -37,7 +37,13 @@ describe('find marks', () => {
       flushSync()
       ;(api as unknown as { openFind: () => void }).openFind()
       flushSync()
-      const input = target.querySelector<HTMLInputElement>('.sv-grid-find input, input[type="search"]')!
+      // The find bar is its own chunk, loaded on the first open.
+      const input = await vi.waitFor(() => {
+        flushSync()
+        const el = target.querySelector<HTMLInputElement>('.sv-grid-find input')
+        if (!el) throw new Error('find bar not loaded yet')
+        return el
+      })
       input.value = 'ana'
       input.dispatchEvent(new Event('input', { bubbles: true }))
       flushSync()

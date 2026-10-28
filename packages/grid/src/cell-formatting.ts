@@ -127,6 +127,35 @@ export function getNumberFormatter(
   return fmt
 }
 
+const CALENDAR_DATE = /^(\d{4})-(\d{2})-(\d{2})$/
+
+/**
+ * The Intl options a date / datetime `format` formats `value` with: the
+ * pattern's preset, then the column's own options, else a numeric default.
+ *
+ * Without `timeZone` when `value` is a bare calendar date. parseDateValue reads
+ * '2026-10-07' as local midnight, so a `timeZone` moved it: `timeZone: 'UTC'`,
+ * the usual fix back when such strings were read as UTC, showed October 6th
+ * east of UTC. A calendar date has no zone; the day in the string is the day
+ * shown.
+ */
+export function dateFormatOptions(
+  format: { type: 'date' | 'datetime'; pattern?: string; options?: Intl.DateTimeFormatOptions },
+  value: unknown,
+): Intl.DateTimeFormatOptions {
+  const preset = resolveDatePattern(format.pattern, format.type)
+  const options: Intl.DateTimeFormatOptions =
+    preset || format.options
+      ? { ...preset, ...format.options }
+      : format.type === 'date'
+        ? { year: 'numeric', month: '2-digit', day: '2-digit' }
+        : { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }
+  if (options.timeZone !== undefined && typeof value === 'string' && CALENDAR_DATE.test(value.trim())) {
+    delete options.timeZone
+  }
+  return options
+}
+
 /**
  * A cell value as a Date, or null when it is not one. Accepts a Date, epoch ms,
  * or a parseable string.
@@ -145,7 +174,7 @@ export function parseDateValue(value: unknown): Date | null {
   if (typeof value !== 'string') return null
   const s = value.trim()
   if (s === '') return null
-  const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
+  const ymd = CALENDAR_DATE.exec(s)
   if (ymd) {
     const [y, m, day] = [Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3])]
     const d = new Date(0)

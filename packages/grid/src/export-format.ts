@@ -18,10 +18,10 @@
  */
 import type { CellFormatConfig } from './core'
 import {
+  dateFormatOptions,
   formatNumericWithConfig,
   getDateFormatter,
   parseDateValue,
-  resolveDatePattern,
 } from './cell-formatting'
 import { escapeFormulaCell } from './csv-injection'
 
@@ -93,22 +93,7 @@ export function formatValueForExport(
 
   if (format.type === 'date' || format.type === 'datetime') {
     const parsed = coerceExportDate(value)
-    if (parsed) {
-      const preset = resolveDatePattern(format.pattern, format.type)
-      const merged: Intl.DateTimeFormatOptions =
-        preset || format.options
-          ? { ...preset, ...format.options }
-          : format.type === 'date'
-            ? { year: 'numeric', month: '2-digit', day: '2-digit' }
-            : {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-              }
-      return getDateFormatter(format.locales, merged).format(parsed)
-    }
+    if (parsed) return getDateFormatter(format.locales, dateFormatOptions(format, value)).format(parsed)
   }
 
   return String(value)

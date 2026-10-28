@@ -2523,6 +2523,22 @@
     if (!activeObjects.length) { objectBoxes = {}; return }
     void tick().then(() => requestAnimationFrame(measureObjects))
   })
+  // An object is measured from its anchor cell, so one whose row was not
+  // rendered yet got no box. The grid adds most of its overscan rows a frame
+  // after its first paint, which came after the measure above: a chart hung
+  // two rows below the window was never drawn until the sheet scrolled.
+  // While an object has no box, rows the grid adds re-measure it.
+  $effect(() => {
+    const host = gridHost
+    if (!host || !activeObjects.length) return
+    let frame = 0
+    const rows = new MutationObserver(() => {
+      if (frame || activeObjects.every((o) => objectBoxes[o.id])) return
+      frame = requestAnimationFrame(() => { frame = 0; measureObjects() })
+    })
+    rows.observe(host, { childList: true, subtree: true })
+    return () => { rows.disconnect(); cancelAnimationFrame(frame) }
+  })
 
   // --- presence -------------------------------------------------------------
   /**

@@ -114,6 +114,11 @@
     if ((ctrl.paginationEnabled || ctrl.statusBarEnabled) && !GridFooter)
       import("./GridFooter.svelte").then((m) => (GridFooter = m.default));
   });
+  // The find bar loads on the first Ctrl+F, so a grid nobody searches never does.
+  let GridFind = $state<typeof import("./GridFind.svelte").default | null>(null);
+  $effect(() => {
+    if (ctrl.findOpen && !GridFind) import("./GridFind.svelte").then((m) => (GridFind = m.default));
+  });
   // The pin splitter (`pinSplitter`) loads with the prop, so a grid without it never does.
   let PinSplitter = $state<typeof import("./PinSplitter.svelte").default | null>(null);
   $effect(() => {
@@ -3326,92 +3331,8 @@
       <GridFooter {ctrl} {icon} pager={(opt.paginationPosition ?? "bottom") !== "top"} pageSizeOptions={opt.pageSizeOptions} />
     {/if}
 
-    {#if ctrl.findOpen}
-      <!-- Find-in-grid overlay. Anchored to the TOP of the grid root so
-           it tracks the grid even when the page scrolls. Ctrl+F opens;
-           Enter cycles to the next hit; Esc closes. -->
-      <div class="sv-grid-find" role="search" aria-label="Find in grid">
-        {@render icon("search")}
-        <input
-          class="sv-grid-find-input"
-          type="search"
-          placeholder="Find in grid…"
-          autofocus
-          bind:value={ctrl.findQuery}
-          oninput={() => (ctrl.findHitIndex = 0)}
-          onkeydown={(event) => {
-            event.stopPropagation();
-            if (event.key === "Enter") {
-              event.preventDefault();
-              if (findHits.length === 0) return;
-              ctrl.findHitIndex =
-                (ctrl.findHitIndex +
-                  (event.shiftKey ? -1 : 1) +
-                  findHits.length) %
-                findHits.length;
-              const hit = findHits[ctrl.findHitIndex];
-              if (hit) {
-                setActiveCell(hit.rowIndex, hit.colIndex);
-                scrollActiveCellIntoView(hit.rowIndex, hit.colIndex);
-              }
-            }
-            if (event.key === "Escape") {
-              event.preventDefault();
-              ctrl.findOpen = false;
-              ctrl.findQuery = "";
-              // Return focus to the grid instead of letting it fall to <body> (#80).
-              ctrl.gridRootEl?.focus({ preventScroll: true });
-            }
-          }}
-        />
-        <span class="sv-grid-find-count">
-          {findHits.length === 0 && ctrl.findQuery.trim()
-            ? "No matches"
-            : findHits.length === 0
-              ? ""
-              : `${ctrl.findHitIndex + 1} of ${findHits.length}`}
-        </span>
-        <button
-          type="button"
-          class="sv-grid-find-step"
-          aria-label="Previous match"
-          disabled={findHits.length === 0}
-          onclick={() => {
-            ctrl.findHitIndex =
-              (ctrl.findHitIndex - 1 + findHits.length) % findHits.length;
-            const hit = findHits[ctrl.findHitIndex];
-            if (hit) {
-              setActiveCell(hit.rowIndex, hit.colIndex);
-              scrollActiveCellIntoView(hit.rowIndex, hit.colIndex);
-            }
-          }}>{@render icon("find-prev")}</button
-        >
-        <button
-          type="button"
-          class="sv-grid-find-step"
-          aria-label="Next match"
-          disabled={findHits.length === 0}
-          onclick={() => {
-            ctrl.findHitIndex = (ctrl.findHitIndex + 1) % findHits.length;
-            const hit = findHits[ctrl.findHitIndex];
-            if (hit) {
-              setActiveCell(hit.rowIndex, hit.colIndex);
-              scrollActiveCellIntoView(hit.rowIndex, hit.colIndex);
-            }
-          }}>{@render icon("find-next")}</button
-        >
-        <button
-          type="button"
-          class="sv-grid-find-close"
-          aria-label="Close find"
-          onclick={() => {
-            ctrl.findOpen = false;
-            ctrl.findQuery = "";
-            // Return focus to the grid instead of letting it fall to <body> (#80).
-            ctrl.gridRootEl?.focus({ preventScroll: true });
-          }}>{@render icon("close")}</button
-        >
-      </div>
+    {#if ctrl.findOpen && GridFind}
+      <GridFind {ctrl} {icon} />
     {/if}
 
     {#if opt.loading && opt.loadingOverlay}

@@ -98,8 +98,9 @@ export type EnterpriseGridApi<
   /** Copy the grid (view / selection / all) to the clipboard in a native text
    *  format (default `tsv`, pastes into Excel / Sheets as columns). */
   copyExport(opts?: ClipboardExportOptions<TData>): Promise<void>
-  /** Open a printable view of the current visible rows in a new window. */
-  print(opts?: PrintOptions<TData>): Promise<void>
+  /** Open a printable view of the current visible rows in a new window.
+   *  Resolves to the printable HTML; `{ open: false }` only returns it. */
+  print(opts?: PrintOptions<TData>): Promise<string>
   /** Read an Excel / CSV / TSV / JSON file (or inline text) into typed
    *  rows. Caller decides whether to commit into the grid or preview
    *  the parsed result first via the returned `ImportResult`. */
