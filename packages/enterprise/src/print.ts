@@ -8,7 +8,7 @@ import {
   type ExportColumn,
   type ExportRowSource,
 } from './export'
-import { buildPrintDocument, type PrintDocOptions } from './export-print'
+import { buildPrintDocument, type PrintDocOptions, type PrintGroupRow } from './export-print'
 import { buildConditionalResolver } from './export-conditional'
 import type { ConditionalFormat } from '@svgrid/grid/format'
 
@@ -43,6 +43,54 @@ export type PrintOptions<TData> = {
   /** Open the print window and its dialog. Default true. `false` only builds
    *  the document and returns it, for a preview pane or a test. */
   open?: boolean
+  /** A header row above each group when the grid is grouped, "Column: value
+   *  (rows)", indented by level. Default true. */
+  groupRows?: boolean
+}
+
+/**
+ * The group header rows for a grouped grid: where each group starts among the
+ * printed rows, in their order, at every grouping level. A group's value is
+ * the printed (formatted) text when its column is printed, else the raw value.
+ */
+function printGroups<TFeatures extends TableFeatures, TData extends RowData>(
+  api: SvGridApi<TFeatures, TData>,
+  cols: ReadonlyArray<ExportColumn<TData>>,
+  sourceRows: ReadonlyArray<TData>,
+  projected: ReadonlyArray<Record<string, unknown>>,
+): PrintGroupRow[] | undefined {
+  const grouping = (api.getState().grouping ?? []) as string[]
+  if (!grouping.length) return undefined
+  const gridCols = api.getColumns()
+  const levels = grouping.map((id) => {
+    const printed = cols.find((c) => c.field === id)
+    const gridCol = gridCols.find((c) => c.id === id)
+    const field = printed?.field ?? gridCol?.field ?? id
+    return {
+      header: printed?.header ?? gridCol?.header ?? id,
+      value: (i: number) =>
+        String((printed ? projected[i + 1]![field] : (sourceRows[i] as Record<string, unknown>)[field]) ?? ''),
+    }
+  })
+  const groups: Array<PrintGroupRow & { value: string }> = []
+  const open: Array<PrintGroupRow & { value: string }> = []
+  for (let i = 0; i < sourceRows.length; i++) {
+    let changed = false
+    levels.forEach((level, depth) => {
+      const value = level.value(i)
+      if (!changed && open[depth]?.value === value) return
+      changed = true
+      const g = { before: i, label: '', depth, value }
+      open[depth] = g
+      groups.push(g)
+    })
+  }
+  // "(rows)": the rows up to the next group at the same level or above.
+  return groups.map((g, k) => {
+    let end = sourceRows.length
+    for (let j = k + 1; j < groups.length; j++) if (groups[j]!.depth <= g.depth) { end = groups[j]!.before; break }
+    return { before: g.before, depth: g.depth, label: `${levels[g.depth]!.header}: ${g.value} (${end - g.before})` }
+  })
 }
 
 /** Print the grid: builds a printable HTML document of its rows, opens it in a
@@ -84,6 +132,7 @@ export async function printGrid<
     rows: dataRows,
     cellStyle: (r, c) => visual(r, c),
     cellLink: link,
+    groups: opts?.groupRows === false ? undefined : printGroups(api, cols, sourceRows, projected),
     opts: docOpts,
   })
   if (opts?.open === false) return html

@@ -145,7 +145,9 @@ preview.srcdoc = html
 ```
 
 It is a plain table, not the grid, so a print of 100,000 rows does not
-render 100,000 rows of grid cells.
+render 100,000 rows of grid cells. A grouped grid prints a header row above
+each group, "Region: EU (12)", indented by level; `groupRows: false` prints
+the rows alone.
 
 ## When to use it
 

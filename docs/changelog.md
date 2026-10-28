@@ -684,6 +684,10 @@ For machine-readable releases, fetch
 
 #### Added
 
+- **A grouped grid prints its groups.** `print()` printed a grouped grid's
+  leaf rows only. It now prints a header row above each group, "Region: EU
+  (12)", indented by level; `groupRows: false` leaves them out.
+
 - **`print({ open: false })` returns the printable document.** `print()` and
   `printGrid()` now resolve to the HTML they built, and `open: false` skips
   the print window and dialog, for a preview pane or anything that times the

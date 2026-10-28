@@ -51,6 +51,9 @@ function esc(value: unknown): string {
  */
 export type PrintCellVisual = { fill?: string; color?: string; bold?: boolean; icon?: string }
 
+/** A group header row, printed full width above data row `before`. */
+export type PrintGroupRow = { before: number; label: string; depth: number }
+
 export function buildPrintDocument(params: {
   columns: ReadonlyArray<{ header: string; align?: 'left' | 'center' | 'right' }>
   rows: ReadonlyArray<ReadonlyArray<string>>
@@ -58,9 +61,12 @@ export function buildPrintDocument(params: {
   cellStyle?: (rowIdx: number, colIdx: number) => PrintCellVisual | undefined
   /** Per-data-cell hyperlink URL. */
   cellLink?: (rowIdx: number, colIdx: number) => string | undefined
+  /** Group header rows, in `before` order. */
+  groups?: ReadonlyArray<PrintGroupRow>
   opts?: PrintDocOptions
 }): string {
   const { columns, rows } = params
+  const groups = params.groups ?? []
   const cellStyle = params.cellStyle
   const cellLink = params.cellLink
   const o = params.opts ?? {}
@@ -94,11 +100,21 @@ export function buildPrintDocument(params: {
     if (href) text = `<a href="${esc(href)}">${text}</a>`
     return `<td${style}>${text}</td>`
   }
+  let gi = 0
+  const groupHtml = (ri: number) => {
+    let html = ''
+    for (; gi < groups.length && groups[gi]!.before === ri; gi++) {
+      const g = groups[gi]!
+      html += `<tr class="group"><td colspan="${columns.length}" style="padding-left:${6 + g.depth * 14}px">${esc(g.label)}</td></tr>`
+    }
+    return html
+  }
   const tbody =
     '<tbody>' +
     rows
       .map(
         (r, ri) =>
+          groupHtml(ri) +
           '<tr>' + columns.map((c, ci) => cellHtml(c, r[ci] ?? '', ri, ci)).join('') + '</tr>',
       )
       .join('') +
@@ -124,6 +140,7 @@ export function buildPrintDocument(params: {
   th, td { border: 1px solid #cbd5e1; padding: 4px 7px; text-align: left; }
   th { background: ${headerColor}; color: ${headerTextColor}; font-weight: 700; }
   ${zebra ? `tbody tr:nth-child(even) { background: ${zebraColor}; }` : ''}
+  tbody tr.group td { background: ${headerColor}; font-weight: 700; }
 </style></head>
 <body>
   ${band.join('\n  ')}
