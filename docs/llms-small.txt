@@ -44,9 +44,9 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## Key facts
 
-- Package: `@svgrid/grid` 3.0.25, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
+- Package: `@svgrid/grid` 3.0.26, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
 - Peer dependency: `svelte` ^5. Works in SvelteKit, including server-side rendering.
-- Size (gzip, Svelte external, measured 2026-10-26 on 3.0.25): 99.8 KB for the full `<SvGrid>` entry plus 11.3 KB CSS; 3.2 KB for the headless entry. Features load on demand.
+- Size (gzip, Svelte external, measured 2026-10-28 on 3.0.26): 99.6 KB for the full `<SvGrid>` entry plus 11.3 KB CSS; 3.2 KB for the headless entry. Features load on demand.
 - Styling: `--sg-*` CSS custom properties, and 20 theme stylesheets, each with a light and a dark palette. No CSS framework is required; Tailwind and shadcn-svelte setups are documented.
 - Accessibility: the WAI-ARIA grid pattern with full keyboard navigation and screen-reader announcements.
 - AI helpers ship free in `@svgrid/grid` and work with any model: `setAIProvider`, `aiFilter`, `aiSmartFill`, `aiSummarize`, `aiClassify`, `aiFindAnomalies`.
@@ -2418,13 +2418,13 @@ typed anywhere else on this page. An earlier version of this page typed its
 numbers and sat a month behind the measurement.
 
 <!-- size:start -->
-Re-measured **26 Oct 2026** at `@svgrid/grid` 3.0.25 with the script that ships in the repo (`pnpm size:json`):
+Re-measured **28 Oct 2026** at `@svgrid/grid` 3.0.26 with the script that ships in the repo (`pnpm size:json`):
 
 | Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |
 | --- | ---: | ---: | ---: |
 | Headless core (`createSvGrid`) | **3.2 KB** | - | - |
 | Headless subpath (`@svgrid/grid/core`) | **10.0 KB** | - | - |
-| Full render component (`<SvGrid>`) | **99.8 KB** | **11.3 KB** | **197.4 KB** |
+| Full render component (`<SvGrid>`) | **99.6 KB** | **11.3 KB** | **198.9 KB** |
 | Standalone chart (`<SvChart>`) | **71.9 KB** | - | **15.0 KB** |
 <!-- size:end -->
 
