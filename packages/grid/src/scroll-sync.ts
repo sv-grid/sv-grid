@@ -38,6 +38,9 @@ export function createScrollSync<
       ctx.virtualizer.setScrollOffset(ctx.domToLogicalRowOffset(ctx.pendingScrollTop));
     if (ctx.columnVirtualizationEnabled)
       ctx.columnVirtualizer.setHorizontalOffset(ctx.pendingScrollLeft);
+    // The scrollbars move in this flush, with the rows, from the position
+    // already in hand rather than one read on the next frame.
+    ctx.applyKnownScrollPosition?.(ctx.pendingScrollTop, ctx.pendingScrollLeft);
   }
 
   /**

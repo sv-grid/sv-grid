@@ -20,6 +20,13 @@ import { loadLedger, LEDGER_FILE } from './lib/compare-data.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const RUN_FILE = join(ROOT, 'tests', 'perf', '.last-compare.json')
+/** examples/src/bench/run.ts CHURN_FRAMES: the untimed scroll frames churn is counted over. */
+const CHURN_FRAMES = 60
+const perFrame = (v) => (Number.isFinite(v) ? Number((v / CHURN_FRAMES).toFixed(1)) : null)
+
+/** MB of JS heap at harness mark `at` above the data-only mark, or null when the run has no heap marks. */
+const heapOver = (r, at) =>
+  r.heap?.[at] && r.heap?.data ? Number((r.heap[at].heapMB - r.heap.data.heapMB).toFixed(1)) : null
 
 /** Harness key -> what the ledger publishes. Anything else is dropped. */
 const PUBLISHABLE = {
@@ -56,11 +63,23 @@ for (const r of run.results) {
       filter: ms(r.filter),
       scrollP95: ms(r.scrollP95),
       scrollDropped: Number.isFinite(r.scrollDropped) ? r.scrollDropped : null,
+      // Main-thread work per 60 px scroll step (tests/perf/bench-phases.ts):
+      // the p95 above is quantised to the refresh rate and reads the same
+      // for a 3 ms frame and a 15 ms one.
+      scrollWorkMs: Number.isFinite(r.scrollWork?.taskMs) ? Number(r.scrollWork.taskMs.toFixed(1)) : null,
       // A tick is only recorded when the grid kept the sort across it;
       // otherwise it did less than the others and the number would mislead.
       tickP95: r.tickSortHeld ? ms(r.tickP95) : null,
       tickOverBudget: r.tickSortHeld && Number.isFinite(r.tickOverBudget) ? r.tickOverBudget : null,
       domRows: r.domRows,
+      // The grid's heap less the data-only mark (rows + harness, no grid),
+      // all after a forced GC: once mounted, and once it has sorted and
+      // filtered, which is where a lazy row model pays. Churn per frame over
+      // the untimed stretch the harness counts it on (run.ts CHURN_FRAMES).
+      heapGridMB: heapOver(r, 'mounted'),
+      heapSortedMB: heapOver(r, 'sorted'),
+      scrollBuilt: perFrame(r.scrollBuilt),
+      scrollMoved: perFrame(r.scrollMoved),
     },
   })
 }

@@ -2028,7 +2028,9 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
   /**
    * Extra rows rendered above and below the viewport, so fast scrolling does
    * not reach empty space before the next batch renders. Defaults to 8.
-   * Raise it for very tall rows, lower it to trim DOM work.
+   * Raise it for very tall rows, lower it to trim DOM work. The first paint
+   * after mount carries at most 2 of them, so the rows on screen appear
+   * sooner; the rest are added in the frame after that paint.
    */
   overscan?: number;
   /**

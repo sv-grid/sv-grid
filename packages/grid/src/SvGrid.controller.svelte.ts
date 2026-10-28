@@ -87,9 +87,6 @@ import {
     createColumns,
   } from "./columns";
 import {
-    createAlignedGrids,
-  } from "./aligned-grids";
-import {
     resolveColumnTypes,
   } from "./column-types";
 import {
@@ -158,6 +155,8 @@ const COLUMN_WINDOW_STEP = 3;
  *  viewport measures 0 px - jsdom, where apps test their grids - and 2 left
  *  the fourth column out of tests that read it. */
 const COLUMN_OVERSCAN = 3;
+/** Rows past the viewport in the first paint; the rest of `overscan` follows a frame later. */
+const MOUNT_OVERSCAN = 2;
 
 /**
  * The browser's actual maximum *scrollable* element height in CSS px. Browsers
@@ -780,8 +779,12 @@ export function createSvGridController<
   function readScrollMetrics() {
     const el = scrollContainer;
     if (!el) return;
-    const scrollTop = el.scrollTop;
-    const scrollLeft = el.scrollLeft;
+    // The position comes from the scroll handler (applyKnownScrollPosition),
+    // not from the element: a scroll set in an earlier rAF callback of this
+    // frame is visible here before its `scroll` event, and reading it moved
+    // the thumb a frame ahead of the rows, with its own style pass.
+    const scrollTop = pendingScrollTop;
+    const scrollLeft = pendingScrollLeft;
     const scrollHeight = el.scrollHeight;
     const scrollWidth = el.scrollWidth;
     const prev = scrollMetrics;
@@ -794,6 +797,21 @@ export function createSvGridController<
       return;
     }
     scrollMetrics = { scrollTop, scrollLeft, scrollHeight, scrollWidth };
+  }
+  /**
+   * The scroll position a scroll flush already knows (the `scroll` event
+   * read it before anything was written), applied in that flush. Without it
+   * the scrollbars learned the position from the next frame's
+   * readScrollMetrics, so the thumb trailed the rows by a frame and moving
+   * it took a second style pass and paint in a frame that had nothing else
+   * to do: two style recalcs per scroll step against one for other grids.
+   * Heights stay with readScrollMetrics; that rAF read then finds the
+   * position unchanged and writes nothing.
+   */
+  function applyKnownScrollPosition(scrollTop: number, scrollLeft: number) {
+    const prev = scrollMetrics;
+    if (prev.scrollTop === scrollTop && prev.scrollLeft === scrollLeft) return;
+    scrollMetrics = { ...prev, scrollTop, scrollLeft };
   }
   $effect(function scrollMetrics_e() {
     scrollVersion;
@@ -3203,6 +3221,37 @@ export function createSvGridController<
     typeof props.containerHeight === "number" ? props.containerHeight : 520,
   );
 
+  // The first paint draws the rows on screen and MOUNT_OVERSCAN more; the
+  // rest of `overscan` follows in the frame after that paint. The overscan
+  // rows are below the fold at mount, and a 520 px grid built 26 rows to
+  // show 14; a row costs about the same to build whether or not it is on
+  // screen. Two frames, not one:
+  // a rAF queued during mount runs before the first paint, so the rows it
+  // added would still have delayed it.
+  let fullRowOverscan = $state(false);
+  $effect(() => {
+    if (fullRowOverscan) return;
+    if (typeof requestAnimationFrame !== "function") {
+      fullRowOverscan = true;
+      return;
+    }
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => {
+        fullRowOverscan = true;
+      });
+    });
+    return () => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+    };
+  });
+  const rowOverscan = $derived(
+    fullRowOverscan
+      ? (props.overscan ?? 8)
+      : Math.min(props.overscan ?? 8, MOUNT_OVERSCAN),
+  );
+
   const virtualRows = $derived.by(function virtualRows_d() {
     virtualizer.version;
     const items = virtualizer.getVirtualItems();
@@ -3215,7 +3264,7 @@ export function createSvGridController<
       allRows.length,
       preMeasureRowHeight,
       preMeasureViewport,
-      props.overscan ?? 8,
+      rowOverscan,
     );
   });
   const virtualRowTotalSize = $derived.by(function virtualRowTotalSize_d() {
@@ -4226,7 +4275,12 @@ export function createSvGridController<
     virtualizer.setOptions({
       count: allRows.length,
       estimateSize,
-      overscan: props.overscan ?? 8,
+      // The full overscan stays behind a scroll too, unlike columns. Rows
+      // are positioned, so the ones a scroll has passed keep their recorded
+      // paint and cost next to nothing; keeping two behind saved no
+      // measurable work, and on a grid with slow cells a reversal showed
+      // a blank strip before the rows behind were built.
+      overscan: rowOverscan,
       viewportHeight: measuredHeight,
     });
   });
@@ -4340,8 +4394,25 @@ export function createSvGridController<
     if (!el) return;
     if (el !== scrollSyncedContainer) {
       scrollSyncedContainer = el;
-      pendingScrollTop = el.scrollTop;
-      pendingScrollLeft = el.scrollLeft;
+      // A container the grid has just rendered sits at 0. Reading it here
+      // ran in the middle of the first render, after the shell was written
+      // and before the rows were, and forced a layout of the grid on every
+      // mount. The next frame reads it where the read is free, and syncs if
+      // something scrolled it first (an app scrolling to a row from
+      // onApiReady, a user scrolling server-rendered markup).
+      pendingScrollTop = 0;
+      pendingScrollLeft = 0;
+      if (typeof requestAnimationFrame === "function") {
+        requestAnimationFrame(() => {
+          if (scrollSyncedContainer !== el) return;
+          const top = el.scrollTop;
+          const left = el.scrollLeft;
+          if (top !== pendingScrollTop || left !== pendingScrollLeft) syncScrollNow(top, left);
+        });
+      } else {
+        pendingScrollTop = el.scrollTop;
+        pendingScrollLeft = el.scrollLeft;
+      }
     }
     if (rowVirtualizationEnabled)
       virtualizer.setScrollOffset(domToLogicalRowOffset(pendingScrollTop));
@@ -5105,6 +5176,7 @@ export function createSvGridController<
     get viewportWidth() { return viewportWidth; },
     get viewportHeight() { return viewportHeight; },
     get scrollMetrics() { return scrollMetrics; },
+    get applyKnownScrollPosition() { return applyKnownScrollPosition; },
     get hasVerticalOverflow() { return hasVerticalOverflow; },
     get showGlobalFilterEffective() { return showGlobalFilterEffective; },
     get showFilterRowEffective() { return showFilterRowEffective; },
@@ -5719,7 +5791,17 @@ export function createSvGridController<
   const onRowDragEnd = () => rowDrag?.onRowDragEnd();
   const onRowPointerDown = (e: PointerEvent, rowIndex: number) => rowDrag?.onRowPointerDown(e, rowIndex);
   const destroyRowDrag = () => rowDrag?.destroyRowDrag();
-  const { register: registerAlignedGrid, broadcastScroll: broadcastAlignedScroll, broadcastWidths: broadcastAlignedWidths } = createAlignedGrids<TFeatures, TData>(ctx);
+  // Aligned grids load with the first `alignedGridGroup`, as row drag does:
+  // the module is only the shared group bus, and a grid outside a group never
+  // downloads it. Every grid of a group imports the same instance.
+  let aligned = $state.raw<ReturnType<typeof import("./aligned-grids").createAlignedGrids> | null>(null);
+  $effect(() => {
+    if (props.alignedGridGroup != null && !aligned)
+      import("./aligned-grids").then((m) => {
+        if (!aligned) aligned = m.createAlignedGrids<TFeatures, TData>(ctx);
+      });
+  });
+  const broadcastAlignedScroll = (left: number) => aligned?.broadcastScroll(left);
   const { buildApi } = createGridApi<TFeatures, TData>(ctx);
   const { readCellRaw, writeCellRaw, applyFillPattern, clearSelectedCellValues, startFillDrag, onFillPointerMove, onFillPointerUp, fillDownToNeighbour, isOnMoveGrabStrip, startMoveDrag, onMovePointerMove, onMovePointerUp, applyMoveRange, moveDestRect, trackEdgeScroll, stopEdgeScroll, toggleBooleanCell, copySelectionToClipboard, clearSelectedCells, cutSelectionToClipboard } = createClipboard(ctx);
 
@@ -5781,13 +5863,13 @@ export function createSvGridController<
   // resizes to peers whenever columnWidths changes. Horizontal-scroll mirroring
   // is driven from onBodyScroll (via ctx.broadcastAlignedScroll).
   $effect(() => {
-    if (props.alignedGridGroup == null) return;
-    return registerAlignedGrid();
+    if (props.alignedGridGroup == null || !aligned) return;
+    return aligned.register();
   });
   $effect(() => {
     // Track columnWidths reactively, then broadcast to aligned peers.
     void columnWidths;
-    broadcastAlignedWidths();
+    aligned?.broadcastWidths();
   });
 
   // Unmount teardown. Reads no reactive state, so the cleanup runs once on

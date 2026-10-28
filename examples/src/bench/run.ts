@@ -96,6 +96,33 @@ async function phase(label: string): Promise<void> {
   if (hook) await hook(label)
 }
 
+/**
+ * Heap marks, the same way: the Playwright spec exposes `window.__benchHeap`,
+ * forces a full GC and reads the JS heap and the renderer's node count. Taken
+ * between timed steps, never inside one, so the GC it forces is not on any
+ * clock. By hand there is no hook and nothing is collected.
+ */
+async function heap(label: string): Promise<void> {
+  const hook = (globalThis as { __benchHeap?: (label: string) => Promise<void> }).__benchHeap
+  if (hook) await hook(label)
+}
+
+/**
+ * Replace the event Svelte keeps from the last delegated dispatch, the way
+ * an app's next click does. Its target is inside the grid just destroyed, so
+ * without this every Svelte grid's heap after destroy reads as the whole
+ * grid still alive. See EventSink.svelte.
+ */
+async function releaseLastSvelteEvent(): Promise<void> {
+  const [{ mount, unmount }, { default: EventSink }] = await Promise.all([import('svelte'), import('./EventSink.svelte')])
+  const box = document.createElement('div')
+  document.body.appendChild(box)
+  const app = mount(EventSink, { target: box })
+  box.querySelector('button')?.click()
+  await unmount(app)
+  box.remove()
+}
+
 async function timed(fn: () => Promise<unknown>): Promise<number> {
   const t0 = performance.now()
   await fn()
@@ -181,6 +208,14 @@ export type GridResult = {
   /** Whether the first rows were still in sorted order after the ticks. */
   tickSortHeld: boolean
   domRows: number
+  /**
+   * Over CHURN_FRAMES more frames of the same scroll, after the timed ones:
+   * elements created and inserted (built), and elements the grid already had
+   * and inserted again (moved; a keyed list recycling a row). A grid that
+   * rewrites rows in place reads 0 for both.
+   */
+  scrollBuilt: number
+  scrollMoved: number
   error?: string
 }
 
@@ -188,6 +223,8 @@ export type GridResult = {
 export const TICK_ROWS = 1_000
 export const TICK_FRAMES = 180
 const FRAME_BUDGET_MS = 1000 / 60
+/** Untimed scroll frames the DOM churn is counted over. */
+export const CHURN_FRAMES = 60
 
 /**
  * A live feed against a grid sorted by the column that ticks.
@@ -235,6 +272,7 @@ async function measureTicks(adapter: GridAdapter, rows: BenchRow[], frames: numb
     await update(t.next, t.changed) // warm-up
   }
   const times: number[] = []
+  await phase('ticks:start')
   for (let i = 0; i < frames; i++) {
     const t = tick()
     // The new top amount, worked out before the clock starts.
@@ -244,6 +282,7 @@ async function measureTicks(adapter: GridAdapter, rows: BenchRow[], frames: numb
       await untilTop(adapter, 'amount', (text) => asNumber(text) === top, 'tick')
     }))
   }
+  await phase('ticks:end')
   const sorted = [...times].sort((a, b) => a - b)
   // The order must have held, or the grid did less than the others and its
   // number is not comparable. Descending by amount: each row >= the next.
@@ -288,8 +327,43 @@ async function waitScrollable(adapter: GridAdapter, axis: 'top' | 'left') {
   }, `${adapter.name} scrollable (${axis})`, 10_000)
 }
 
-/** Scroll for `frames` frames, returning the frame-interval distribution. */
-async function measureScroll(adapter: GridAdapter, frames: number) {
+/**
+ * Elements inserted under `host` while it runs, split into ones that existed
+ * before (moved: a keyed list re-inserting a row it kept) and ones that did
+ * not (built). A MutationObserver reports a move as a removal plus an
+ * insertion, so counting records alone charges a grid that recycles its rows
+ * as if it built them.
+ */
+function domInsertions(host: HTMLElement) {
+  const known = new WeakSet<Element>()
+  for (const el of host.getElementsByTagName('*')) known.add(el)
+  let built = 0
+  let moved = 0
+  const tally = (records: MutationRecord[]) => {
+    for (const r of records) {
+      for (const node of r.addedNodes) {
+        if (node.nodeType !== 1) continue
+        const els = [node as Element, ...(node as Element).getElementsByTagName('*')]
+        for (const el of els) {
+          if (known.has(el)) moved += 1
+          else { built += 1; known.add(el) }
+        }
+      }
+    }
+  }
+  const observer = new MutationObserver(tally)
+  observer.observe(host, { childList: true, subtree: true })
+  return {
+    stop() {
+      tally(observer.takeRecords())
+      observer.disconnect()
+      return { built, moved }
+    },
+  }
+}
+
+/** Scroll for `frames` frames, returning the frame-interval distribution and the DOM churn. */
+async function measureScroll(adapter: GridAdapter, host: HTMLElement, frames: number) {
   const deltas: number[] = []
   await waitScrollable(adapter, 'top')
   const startTop = adapter.scroller?.()?.scrollTop ?? 0
@@ -304,11 +378,21 @@ async function measureScroll(adapter: GridAdapter, frames: number) {
     last = now
   }
   await phase('vscroll:end')
+  // Churn on a further, untimed stretch of the same scroll: the observer's
+  // callback is main-thread work that grows with the churn, so inside the
+  // timed frames it would charge the grids that churn twice. Text rewrites
+  // are characterData, or a text node swapped under a cell; only elements
+  // count, so this is rows and cells built, or kept and re-inserted.
+  const insertions = domInsertions(host)
+  for (let i = 0; i < CHURN_FRAMES; i++) await adapter.scrollBy(60)
+  const { built, moved } = insertions.stop()
   const sorted = [...deltas].sort((a, b) => a - b)
   const p50 = sorted[Math.floor(sorted.length * 0.5)]!
   return {
     p95: sorted[Math.floor(sorted.length * 0.95)]!,
     dropped: deltas.filter((d) => d > p50 * 1.5).length,
+    built,
+    moved,
   }
 }
 
@@ -323,8 +407,12 @@ export async function runOne(
   if (!make) throw new Error(`no adapter "${key}"`)
 
   let adapter: GridAdapter | null = null
+  let ok = false
   try {
     adapter = await make()
+    // The data and the harness, before any grid exists: what the marks
+    // after it are read against.
+    await heap('data')
 
     // Mount is measured on a fresh container each repeat: a second mount into a
     // warm container would measure a different thing than a user's first paint.
@@ -343,6 +431,7 @@ export async function runOne(
       if (i < repeats - 1) a.destroy()
       else adapter = a
     }
+    await heap('mounted')
 
     const sortText: number[] = []
     const sortNumber: number[] = []
@@ -371,12 +460,16 @@ export async function runOne(
       }))
       await adapter.filter('region', '')
     }
+    // Sorted and filtered once each: what the row model keeps for them.
+    await heap('sorted')
 
-    const scroll = await measureScroll(adapter, 180)
+    const scroll = await measureScroll(adapter, host, 180)
     const domRows = adapter.domRowCount()
+    await heap('scrolled')
     // Last, and after the scroll, on the same mounted grid: sorting for the
     // ticks changes nothing the earlier measurements read.
     const ticks = await measureTicks(adapter, rows, tickFrames)
+    ok = true
 
     return {
       grid: adapter.name,
@@ -393,6 +486,8 @@ export async function runOne(
       ticks: tickFrames,
       tickSortHeld: ticks.sortHeld,
       domRows,
+      scrollBuilt: scroll.built,
+      scrollMoved: scroll.moved,
     }
   } catch (err) {
     return {
@@ -410,11 +505,21 @@ export async function runOne(
       ticks: tickFrames,
       tickSortHeld: false,
       domRows: 0,
+      scrollBuilt: NaN,
+      scrollMoved: NaN,
       error: err instanceof Error ? err.message : String(err),
     }
   } finally {
     adapter?.destroy()
     await painted()
+    // What the grid leaves behind once destroyed, as destroy() left it and
+    // after the next delegated event: anything above the 'data' mark at
+    // 'released' is held by something the grid did not let go of.
+    if (ok) {
+      await heap('destroyed')
+      await releaseLastSvelteEvent()
+      await heap('released')
+    }
   }
 }
 

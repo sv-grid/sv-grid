@@ -250,6 +250,9 @@ export async function svgridAdapter(): Promise<GridAdapter> {
     },
     destroy() {
       if (app) unmount(app as never)
+      // The component wrote closures over its state here; left in place they
+      // keep that state alive and the heap after destroy charges the grid.
+      for (const key of Object.keys(handle)) delete handle[key as keyof typeof handle]
       app = null
       host = null
     },
@@ -471,6 +474,9 @@ async function svelteComponentAdapter(opts: {
     },
     destroy() {
       if (app) unmount(app as never)
+      // The component wrote closures over its state here; left in place they
+      // keep that state alive and the heap after destroy charges the grid.
+      for (const key of Object.keys(handle)) delete handle[key as keyof typeof handle]
       app = null
       host = null
     },

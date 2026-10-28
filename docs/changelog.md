@@ -330,6 +330,13 @@ For machine-readable releases, fetch
 
 #### Changed
 
+- **`alignedGridGroup` loads its module on demand.** The shared group that
+  mirrors horizontal scroll and column widths between grids is now a lazy
+  chunk, fetched by the first grid that sets the prop, the way managed row
+  drag is. A grid outside a group no longer carries it, which kept the base
+  bundle under its 100 KB budget after this release's scroll and mount
+  changes. Mirroring starts once the chunk has loaded, a frame on a warm
+  cache.
 - **BREAKING: column resizing is now off by default.** Every column used to have
   a drag handle unconditionally - there was no prop, no per-column option and no
   way to turn it off, so a `width` you set was only ever a starting value a user
@@ -357,6 +364,42 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **A mount built rows nobody could see, and laid the grid out five
+  times.** The first paint now draws the rows on screen and at most two
+  overscan rows, and the rest of `overscan` follows a frame after that paint:
+  a 520 px grid built 26 rows to show 14. Reading the scroll position of the
+  container the grid had just created, and each scrollbar measuring its
+  track on connect and on every attribute change, forced four layouts of the
+  half-built grid before it painted. The position is now confirmed on the
+  next frame and the track is measured by the scrollbar's resize observer;
+  the one forced layout left is the container size the windows need.
+- **The scrollbar thumb trailed the rows by a frame.** The custom scrollbar
+  read the scroll position on the frame after the scroll flush, so the thumb
+  moved one frame late and each scroll step paid a second style pass and
+  paint for it. The flush now hands the scrollbar the position it already
+  has, and the scrollbar keeps its measured track instead of measuring it
+  inside the flush.
+- **A vertical scroll frame repainted every rendered row.** Body rows were
+  not positioned, so on any frame that moved or rewrote a row Chrome painted
+  every rendered row again cell by cell. Flex-layout body rows are now
+  `position: relative` (no z-index, no clip), which lets the browser reuse an
+  unchanged row's paint whole. In six interleaved rounds of the 100,000-row
+  browser bench, a 60 px scroll step went from 4.05 to 3.68 ms of
+  main-thread work (median). Sticky frozen and group rows keep
+  `position: sticky`.
+- **A cell note's corner marker sat at the grid's corner.** The marker is
+  positioned against its cell, but a cell with a note was not positioned, so
+  it anchored to the grid. A cell with a note is now a positioning context,
+  like the active cell.
+- **A sort or filter kept every column's value on every row.** Reading one
+  column built and cached an array of all of a row's values, so sorting a
+  1,000,000-row grid by one column left 1,000,000 of them behind. A plain
+  `field` column is now read from the data; a computed (`fieldFn`) column
+  still builds the array. The heap a sorted and filtered 1,000,000 x 9 grid
+  adds went from 196 MB to 128 MB in the browser harness.
+- **`applyTransaction({ remove })` scanned the data once per row object.**
+  Removing 10,000 row objects from 1,000,000 rows took about 1.8 s to find
+  them; past eight objects the transaction now builds one identity map.
 - **Group footer and grand-total rows drew checkboxes.** With
   `showRowSelection`, each totals row had a row-selection checkbox, and
   ticking it selected the synthetic row. A checkbox column with no `aggregate`

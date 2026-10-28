@@ -477,36 +477,45 @@
     }
   },
   "benchmarks": {
-    "measuredAt": "2026-09-12",
+    "measuredAt": "2026-10-28",
     "rows": 100000,
-    "repeats": 7,
+    "repeats": 3,
     "cases": [
       "mount",
       "sortText",
       "sortNumber",
       "filter",
-      "scrollP95"
+      "scrollP95",
+      "tickP95"
     ],
     "rig": {
-      "statistic": "fastest of 7 samples per operation, each grid in a fresh page",
+      "statistic": "fastest of 3 samples per operation, each grid in a fresh page",
       "browser": "Chromium through Playwright, headless",
       "machine": "win32 10.0.26200 x64, Intel(R) Core(TM) Ultra 7 255U; a developer workstation, not a dedicated bench rig",
-      "container": "1000 x 520 px container, 32 px rows, 140 px columns, each grid with its default theme"
+      "container": "1000 x 520 px container, 32 px rows, 140 px columns, each grid with its default theme",
+      "tick": "1,000 of the rows replaced per tick with a new amount, the grid sorted by amount, on the update path each grid provides, timed until the changed cells paint; 180 ticks after 10 to warm up"
     },
     "grids": [
       {
         "id": "svgrid",
         "label": "SvGrid",
         "npm": "@svgrid/grid",
-        "version": "3.0.3",
+        "version": "3.0.25",
         "results": {
-          "mount": 75.5,
-          "sortText": 149,
-          "sortNumber": 115.7,
-          "filter": 99.6,
-          "scrollP95": 34.6,
+          "mount": 30.7,
+          "sortText": 77.4,
+          "sortNumber": 32.8,
+          "filter": 34.5,
+          "scrollP95": 34.3,
           "scrollDropped": 0,
-          "domRows": 27
+          "scrollWorkMs": 3.5,
+          "tickP95": 48.6,
+          "tickOverBudget": 115,
+          "domRows": 36,
+          "heapGridMB": 5.7,
+          "heapSortedMB": 17.6,
+          "scrollBuilt": 0,
+          "scrollMoved": 37.3
         }
       },
       {
@@ -515,13 +524,20 @@
         "npm": "ag-grid-community",
         "version": "36.1.0",
         "results": {
-          "mount": 51.4,
-          "sortText": 282.8,
-          "sortNumber": 270,
-          "filter": 170.4,
-          "scrollP95": 35.9,
+          "mount": 67,
+          "sortText": 213.9,
+          "sortNumber": 216.7,
+          "filter": 148.8,
+          "scrollP95": 34.5,
           "scrollDropped": 0,
-          "domRows": 35
+          "scrollWorkMs": 4.5,
+          "tickP95": 259.2,
+          "tickOverBudget": 180,
+          "domRows": 36,
+          "heapGridMB": 42.1,
+          "heapSortedMB": 26.2,
+          "scrollBuilt": 30.1,
+          "scrollMoved": 35.8
         }
       },
       {
@@ -531,12 +547,19 @@
         "version": "2.7.0",
         "results": {
           "mount": 11.4,
-          "sortText": 187.2,
-          "sortNumber": 165.1,
-          "filter": 32.6,
-          "scrollP95": 34.8,
+          "sortText": 135.4,
+          "sortNumber": 141.7,
+          "filter": 26.1,
+          "scrollP95": 34.6,
           "scrollDropped": 0,
-          "domRows": 19
+          "scrollWorkMs": 3,
+          "tickP95": 152.2,
+          "tickOverBudget": 180,
+          "domRows": 19,
+          "heapGridMB": 2.3,
+          "heapSortedMB": 3.9,
+          "scrollBuilt": 16.8,
+          "scrollMoved": 0
         }
       },
       {
@@ -545,13 +568,20 @@
         "npm": "@tanstack/svelte-table",
         "version": "9.2.4",
         "results": {
-          "mount": 196,
-          "sortText": 466,
-          "sortNumber": 374.6,
-          "filter": 111.7,
-          "scrollP95": 35.3,
-          "scrollDropped": 1,
-          "domRows": 27
+          "mount": 170.2,
+          "sortText": 360.9,
+          "sortNumber": 178.2,
+          "filter": 51.1,
+          "scrollP95": 34.3,
+          "scrollDropped": 0,
+          "scrollWorkMs": 2.9,
+          "tickP95": 563.4,
+          "tickOverBudget": 180,
+          "domRows": 27,
+          "heapGridMB": 109.9,
+          "heapSortedMB": 113.3,
+          "scrollBuilt": 18.7,
+          "scrollMoved": 0
         }
       }
     ]

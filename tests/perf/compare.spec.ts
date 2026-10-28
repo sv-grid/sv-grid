@@ -15,7 +15,7 @@
 import { test, expect } from '@playwright/test'
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { trackPhases, type PhaseWork } from './bench-phases'
+import { trackHeap, trackPhases, type HeapMark, type PhaseWork } from './bench-phases'
 
 // Recording video costs CPU during the measurement; the config records every test.
 test.use({ video: 'off' })
@@ -35,8 +35,15 @@ type GridResult = {
   ticks: number
   tickSortHeld: boolean
   domRows: number
+  /** Elements built, and elements re-inserted, over the untimed churn frames (run.ts CHURN_FRAMES). */
+  scrollBuilt: number
+  scrollMoved: number
   /** Main-thread work per scroll frame (bench-phases.ts); frame intervals sit at the refresh rate. */
   scrollWork?: PhaseWork | null
+  /** Main-thread work per live tick, including the polling that waits for the paint. */
+  tickWork?: PhaseWork | null
+  /** JS heap and nodes after a forced GC at each harness mark: data, mounted, sorted, scrolled, destroyed, released. */
+  heap?: Record<string, HeapMark>
   error?: string
 }
 
@@ -44,6 +51,8 @@ const ROWS = Number(process.env.BENCH_ROWS ?? 100_000)
 const REPEATS = Number(process.env.BENCH_REPEATS ?? 3)
 const GRIDS = process.env.BENCH_GRIDS ?? 'svgrid,aggrid'
 const TICKS = Number(process.env.BENCH_TICKS ?? 180)
+/** examples/src/bench/run.ts CHURN_FRAMES; the spec cannot import the page's module. */
+const CHURN_FRAMES = 60
 
 test('grid comparison', async ({ page }) => {
   test.setTimeout(Number(process.env.BENCH_TIMEOUT_MS ?? 900_000))
@@ -105,6 +114,7 @@ test('grid comparison', async ({ page }) => {
     const fresh = await page.context().newPage()
     fresh.on('pageerror', (e) => errors.push(String(e)))
     const phases = await trackPhases(fresh)
+    const heap = await trackHeap(fresh)
     try {
       await fresh.goto(url)
       await fresh.locator('#run').waitFor({ timeout: 60_000 })
@@ -118,7 +128,11 @@ test('grid comparison', async ({ page }) => {
         }).__gridBench
         return bench.runAll(bench.host, { ...bench.DEFAULTS, grids: [key] })
       }, grid)) as GridResult[]
-      for (const r of one) r.scrollWork = phases.work('vscroll', 180)
+      for (const r of one) {
+        r.scrollWork = phases.work('vscroll', 180)
+        r.tickWork = phases.work('ticks', r.ticks)
+        r.heap = { ...heap.marks }
+      }
       results.push(...one)
     } finally {
       await fresh.close()
@@ -148,6 +162,41 @@ test('grid comparison', async ({ page }) => {
   }
   for (const r of results) {
     if (!r.error) console.log(`      ${r.grid}: ${r.version}, ${r.license}`)
+  }
+
+  // Memory, and what a scroll frame does to the DOM. Heap is after a forced
+  // full GC; "grid" is the mounted heap less the data-only mark, which holds
+  // the rows and the harness and no grid.
+  const mb = (v: number | undefined) => (v !== undefined && Number.isFinite(v) ? v.toFixed(0) : '-')
+  console.log('\n  Memory (MB of JS heap after GC) and DOM work per scroll frame\n')
+  console.log(
+    `    ${pad('grid', 24)} ${rpad('data', 6)} ${rpad('mounted', 8)} ${rpad('grid', 6)} ${rpad('sorted', 7)} ${rpad('scrolled', 9)} ` +
+    `${rpad('destroyed', 10)} ${rpad('released', 9)} ${rpad('detached', 9)} ${rpad('after release', 14)} ${rpad('built/frame', 12)} ${rpad('moved/frame', 12)} ${rpad('layouts', 8)} ${rpad('styles', 7)}`,
+  )
+  for (const r of results) {
+    if (r.error) continue
+    const h = r.heap ?? {}
+    console.log(
+      `    ${pad(r.grid, 24)} ${rpad(mb(h.data?.heapMB), 6)} ${rpad(mb(h.mounted?.heapMB), 8)} ` +
+      `${rpad(mb((h.mounted?.heapMB ?? NaN) - (h.data?.heapMB ?? NaN)), 6)} ${rpad(mb(h.sorted?.heapMB), 7)} ${rpad(mb(h.scrolled?.heapMB), 9)} ` +
+      `${rpad(mb(h.destroyed?.heapMB), 10)} ${rpad(mb(h.released?.heapMB), 9)} ` +
+      `${rpad(h.scrolled?.detachedNodes ?? '-', 9)} ${rpad(h.released?.detachedNodes ?? '-', 14)} ${rpad(num(r.scrollBuilt / CHURN_FRAMES), 12)} ${rpad(num(r.scrollMoved / CHURN_FRAMES), 12)} ` +
+      `${rpad(r.scrollWork ? r.scrollWork.layouts.toFixed(2) : '-', 8)} ${rpad(r.scrollWork ? r.scrollWork.styleRecalcs.toFixed(2) : '-', 7)}`,
+    )
+  }
+  console.log('\n    sorted: after one text sort, one numeric sort and one filter per repeat; scrolled: after the scroll too.')
+  console.log('    destroyed: right after destroy(); released: after one more Svelte-delegated click (run.ts releaseLastSvelteEvent).')
+  console.log('    detached: DOM nodes held after GC that are not in the document, after the scroll and after release.')
+  console.log('    built/frame, moved/frame: elements created, and elements re-inserted, per scroll frame; 0 and 0 means rows are rewritten in place.')
+  console.log('    layouts, styles: layout passes and style recalcs per timed scroll frame.\n')
+  console.log('  Main-thread work per live tick (ms): task, script, style + layout, rest (paint, GC, other tasks)\n')
+  for (const r of results) {
+    const w = r.tickWork
+    if (r.error || !w) continue
+    console.log(
+      `    ${pad(r.grid, 24)} ${rpad(num(w.taskMs), 8)} ${rpad(num(w.scriptMs), 8)} ${rpad(num(w.styleLayoutMs), 8)} ` +
+      `${rpad(num(w.taskMs - w.scriptMs - w.styleLayoutMs), 8)}  layouts ${w.layouts.toFixed(2)}, styles ${w.styleRecalcs.toFixed(2)}`,
+    )
   }
   console.log('\n    Lower is better except DOM rows, which shows virtualization is on.')
   console.log('    Filter is indicative only - see the note in examples/src/bench/run.ts.')

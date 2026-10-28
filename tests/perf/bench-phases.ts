@@ -13,7 +13,18 @@
  */
 import type { Page } from '@playwright/test'
 
-export type PhaseWork = { taskMs: number; scriptMs: number; styleLayoutMs: number }
+export type PhaseWork = {
+  taskMs: number
+  scriptMs: number
+  styleLayoutMs: number
+  /**
+   * Layout passes and style recalcs per operation. A frame that writes the
+   * DOM, reads a geometry and writes again lays out twice; a count above one
+   * per frame is that interleaving, whatever the milliseconds say.
+   */
+  layouts: number
+  styleRecalcs: number
+}
 
 export async function trackPhases(page: Page) {
   const cdp = await page.context().newCDPSession(page)
@@ -29,12 +40,50 @@ export async function trackPhases(page: Page) {
       const a = marks[`${name}:start`]
       const b = marks[`${name}:end`]
       if (!a || !b) return null
-      const per = (key: string) => (((b[key] ?? 0) - (a[key] ?? 0)) * 1000) / count
+      const diff = (key: string) => ((b[key] ?? 0) - (a[key] ?? 0)) / count
       return {
-        taskMs: per('TaskDuration'),
-        scriptMs: per('ScriptDuration'),
-        styleLayoutMs: per('RecalcStyleDuration') + per('LayoutDuration'),
+        taskMs: diff('TaskDuration') * 1000,
+        scriptMs: diff('ScriptDuration') * 1000,
+        styleLayoutMs: (diff('RecalcStyleDuration') + diff('LayoutDuration')) * 1000,
+        layouts: diff('LayoutCount'),
+        styleRecalcs: diff('RecalcStyleCount'),
       }
     },
   }
+}
+
+export type HeapMark = {
+  /** JS heap in use after a forced full GC, MB. */
+  heapMB: number
+  /** DOM nodes the renderer holds after that GC, in the document or not. */
+  nodes: number
+  /** Of those, nodes not in the document: detached, and still referenced. */
+  detachedNodes: number
+}
+
+/**
+ * The harness's `window.__benchHeap(label)`: a full GC, then the JS heap and
+ * the node count. Chrome's `Nodes` metric counts every node the renderer
+ * still holds; after a GC, the ones not reachable from the document are
+ * detached nodes something kept a reference to.
+ */
+export async function trackHeap(page: Page) {
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Performance.enable')
+  const marks: Record<string, HeapMark> = {}
+  await page.exposeFunction('__benchHeap', async (label: string) => {
+    // Twice: the first pass can leave objects a finalizer or a weak callback
+    // frees only for the second.
+    await cdp.send('HeapProfiler.collectGarbage')
+    await cdp.send('HeapProfiler.collectGarbage')
+    const { usedSize } = (await cdp.send('Runtime.getHeapUsage')) as { usedSize: number }
+    const { metrics } = (await cdp.send('Performance.getMetrics')) as { metrics: Array<{ name: string; value: number }> }
+    const nodes = metrics.find((m) => m.name === 'Nodes')?.value ?? NaN
+    const { result } = (await cdp.send('Runtime.evaluate', {
+      expression: `(() => { let n = 0; const it = document.createNodeIterator(document, NodeFilter.SHOW_ALL); while (it.nextNode()) n++; return n })()`,
+      returnByValue: true,
+    })) as { result: { value: number } }
+    marks[label] = { heapMB: usedSize / 1048576, nodes, detachedNodes: nodes - result.value }
+  })
+  return { marks }
 }

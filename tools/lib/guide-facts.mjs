@@ -184,6 +184,9 @@ export function benchmarkBlock(ledger) {
     if (!b.grids.some((g) => Number.isFinite(g.results?.[key]))) continue
     lines.push(`| ${label} | ${b.grids.map((g) => (Number.isFinite(g.results?.[key]) ? `${g.results[key]} ms` : 'n/a')).join(' | ')} |`)
   }
+  if (b.grids.some((g) => Number.isFinite(g.results?.scrollWorkMs))) {
+    lines.push(`| Main-thread work per 60 px scroll step, mean | ${b.grids.map((g) => (Number.isFinite(g.results?.scrollWorkMs) ? `${g.results.scrollWorkMs} ms` : 'n/a')).join(' | ')} |`)
+  }
   if (b.grids.some((g) => Number.isFinite(g.results?.scrollDropped))) {
     lines.push(`| Frames dropped while scrolling, of 180 | ${b.grids.map((g) => (Number.isFinite(g.results?.scrollDropped) ? String(g.results.scrollDropped) : 'n/a')).join(' | ')} |`)
   }
@@ -192,6 +195,22 @@ export function benchmarkBlock(ledger) {
   }
   if (b.grids.some((g) => Number.isFinite(g.results?.domRows))) {
     lines.push(`| Rows kept in the DOM (virtualization on) | ${b.grids.map((g) => (Number.isFinite(g.results?.domRows) ? String(g.results.domRows) : 'n/a')).join(' | ')} |`)
+  }
+  const heapRows = [
+    ['heapGridMB', 'JS heap the grid adds, mounted, after GC'],
+    ['heapSortedMB', 'JS heap the grid adds, after sorting and filtering, after GC'],
+  ]
+  for (const [key, label] of heapRows) {
+    if (!b.grids.some((g) => Number.isFinite(g.results?.[key]))) continue
+    lines.push(`| ${label} | ${b.grids.map((g) => (Number.isFinite(g.results?.[key]) ? `${g.results[key]} MB` : 'n/a')).join(' | ')} |`)
+  }
+  const churnRows = [
+    ['scrollBuilt', 'Elements created per scroll frame'],
+    ['scrollMoved', 'Elements re-inserted per scroll frame (rows recycled)'],
+  ]
+  for (const [key, label] of churnRows) {
+    if (!b.grids.some((g) => Number.isFinite(g.results?.[key]))) continue
+    lines.push(`| ${label} | ${b.grids.map((g) => (Number.isFinite(g.results?.[key]) ? String(g.results[key]) : 'n/a')).join(' | ')} |`)
   }
   lines.push('')
   lines.push(`Versions: ${b.grids.map((g) => `\`${g.npm}\` ${g.version}`).join(', ')}.`)

@@ -375,10 +375,25 @@ is most likely to develop.
 ## Memory
 
 **Measured** (`pnpm bench`, Node heap): building the row model for
-100,000 rows x 9 columns retains **16.0 MB**, or roughly 160 bytes per
-row, with no renderer attached.
+100,000 rows x 9 columns with no sort, filter or grouping retains
+**0.8 MB**, with no renderer attached. A row object is made the first time
+something reads it, so a grid showing twenty rows makes a screenful of
+them, not 100,000.
 
-It was 64.9 MB until recently. Each row was an object literal whose seven
+The first sort, filter or grouping reads every row and makes them all. The
+browser harness measures that as the "after sorting and filtering" row in
+the [comparison](./comparison.md#measured-performance): 17.8 MB at
+100,000 rows, and 128 MB at 1,000,000 (27 Oct 2026,
+`BENCH_ROWS=1000000 BENCH_GRIDS=svgrid pnpm bench:compare`), so about 130
+bytes a row: the row object, its id, and the sort key it keeps so a live
+update can be merged in without re-reading the rows. The 1,000,000-row
+figure was 196 MB the day before. Reading one column used to build an
+array of every column's value on every row and keep it there, which only
+the rows on screen use; a plain `field` column is now read from the data,
+and only a computed (`fieldFn`) column still builds the array.
+
+The fully built row model was 16.0 MB at 100,000 rows before rows became
+lazy, and 64.9 MB before that. Each row was an object literal whose seven
 methods were closures, so a 100k-row grid allocated 700k closures and a
 closure scope per row before painting anything. The methods are now
 defined once and shared, reading their row through `this`: 4x less memory

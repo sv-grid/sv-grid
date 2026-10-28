@@ -56,7 +56,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## About this file
 
-The full SvGrid documentation, generated 2026-10-26 from 467 pages, 21 comparison pages, plus 83 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
+The full SvGrid documentation, generated 2026-10-28 from 467 pages, 21 comparison pages, plus 83 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
 
 <!-- =================================================================
      /docs/getting-started/  (community)
@@ -5917,10 +5917,25 @@ is most likely to develop.
 ## Memory
 
 **Measured** (`pnpm bench`, Node heap): building the row model for
-100,000 rows x 9 columns retains **16.0 MB**, or roughly 160 bytes per
-row, with no renderer attached.
+100,000 rows x 9 columns with no sort, filter or grouping retains
+**0.8 MB**, with no renderer attached. A row object is made the first time
+something reads it, so a grid showing twenty rows makes a screenful of
+them, not 100,000.
 
-It was 64.9 MB until recently. Each row was an object literal whose seven
+The first sort, filter or grouping reads every row and makes them all. The
+browser harness measures that as the "after sorting and filtering" row in
+the [comparison](./comparison.md#measured-performance): 17.8 MB at
+100,000 rows, and 128 MB at 1,000,000 (27 Oct 2026,
+`BENCH_ROWS=1000000 BENCH_GRIDS=svgrid pnpm bench:compare`), so about 130
+bytes a row: the row object, its id, and the sort key it keeps so a live
+update can be merged in without re-reading the rows. The 1,000,000-row
+figure was 196 MB the day before. Reading one column used to build an
+array of every column's value on every row and keep it there, which only
+the rows on screen use; a plain `field` column is now read from the data,
+and only a computed (`fieldFn`) column still builds the array.
+
+The fully built row model was 16.0 MB at 100,000 rows before rows became
+lazy, and 64.9 MB before that. Each row was an object literal whose seven
 methods were closures, so a 100k-row grid allocated 700k closures and a
 closure scope per row before painting anything. The methods are now
 defined once and shared, reading their row through `this`: 4x less memory
@@ -7234,27 +7249,50 @@ The table is generated from the ledger by `tools/sync-guide-facts.mjs`;
 the versions and the date are part of it.
 
 <!-- bench:start -->
-Measured 12 Sep 2026 with `pnpm bench:compare` (tests/perf/compare.spec.ts, recorded by tools/record-benchmarks.mjs): 100,000 rows x 9 columns; 1000 x 520 px container, 32 px rows, 140 px columns, each grid with its default theme; fastest of 7 samples per operation, each grid in a fresh page; Chromium through Playwright, headless; win32 10.0.26200 x64, Intel(R) Core(TM) Ultra 7 255U; a developer workstation, not a dedicated bench rig. Lower is better.
+Measured 28 Oct 2026 with `pnpm bench:compare` (tests/perf/compare.spec.ts, recorded by tools/record-benchmarks.mjs): 100,000 rows x 9 columns; 1000 x 520 px container, 32 px rows, 140 px columns, each grid with its default theme; fastest of 3 samples per operation, each grid in a fresh page; Chromium through Playwright, headless; win32 10.0.26200 x64, Intel(R) Core(TM) Ultra 7 255U; a developer workstation, not a dedicated bench rig; tick: 1,000 of the rows replaced per tick with a new amount, the grid sorted by amount, on the update path each grid provides, timed until the changed cells paint; 180 ticks after 10 to warm up. Lower is better.
 
 | Operation | SvGrid | AG Grid Community | SVAR Svelte DataGrid | TanStack Table, minimal DOM |
 | --- | --- | --- | --- | --- |
-| Mount | 75.5 ms | 51.4 ms | 11.4 ms | 196 ms |
-| Sort, text column | 149 ms | 282.8 ms | 187.2 ms | 466 ms |
-| Sort, numeric column | 115.7 ms | 270 ms | 165.1 ms | 374.6 ms |
-| Filter, one column (indicative only, see below) | 99.6 ms | 170.4 ms | 32.6 ms | 111.7 ms |
-| Scroll, p95 frame | 34.6 ms | 35.9 ms | 34.8 ms | 35.3 ms |
-| Frames dropped while scrolling, of 180 | 0 | 0 | 0 | 1 |
-| Rows kept in the DOM (virtualization on) | 27 | 35 | 19 | 27 |
+| Mount | 30.7 ms | 67 ms | 11.4 ms | 170.2 ms |
+| Sort, text column | 77.4 ms | 213.9 ms | 135.4 ms | 360.9 ms |
+| Sort, numeric column | 32.8 ms | 216.7 ms | 141.7 ms | 178.2 ms |
+| Filter, one column (indicative only, see below) | 34.5 ms | 148.8 ms | 26.1 ms | 51.1 ms |
+| Scroll, p95 frame | 34.3 ms | 34.5 ms | 34.6 ms | 34.3 ms |
+| Live tick, 1,000 rows replaced, sorted by that column, p95 | 48.6 ms | 259.2 ms | 152.2 ms | 563.4 ms |
+| Main-thread work per 60 px scroll step, mean | 3.5 ms | 4.5 ms | 3 ms | 2.9 ms |
+| Frames dropped while scrolling, of 180 | 0 | 0 | 0 | 0 |
+| Ticks over one 60 Hz frame, of 180 | 115 | 180 | 180 | 180 |
+| Rows kept in the DOM (virtualization on) | 36 | 36 | 19 | 27 |
+| JS heap the grid adds, mounted, after GC | 5.7 MB | 42.1 MB | 2.3 MB | 109.9 MB |
+| JS heap the grid adds, after sorting and filtering, after GC | 17.6 MB | 26.2 MB | 3.9 MB | 113.3 MB |
+| Elements created per scroll frame | 0 | 30.1 | 16.8 | 18.7 |
+| Elements re-inserted per scroll frame (rows recycled) | 37.3 | 35.8 | 0 | 0 |
 
-Versions: `@svgrid/grid` 3.0.3, `ag-grid-community` 36.1.0, `wx-svelte-grid` 2.7.0, `@tanstack/svelte-table` 9.2.4.
+Versions: `@svgrid/grid` 3.0.25, `ag-grid-community` 36.1.0, `wx-svelte-grid` 2.7.0, `@tanstack/svelte-table` 9.2.4.
 <!-- bench:end -->
 
-Read that as: **SvGrid sorts faster than AG Grid Community and SVAR on both
-column types, scrolling is level across all four, and mounting is where the
-lighter grids are ahead** - SVAR paints its first rows fastest, AG Grid is
-ahead of SvGrid, and the TanStack renderer pays for building a row object
-per record before it can draw anything. Anyone claiming a single headline
+Read that as: **SvGrid sorts and keeps a live sort current faster than the
+other three, scrolling is level across all four, and SVAR is ahead on mount
+and memory** - it paints its first rows in under half of SvGrid's time and
+holds the least heap. Every grid scrolls at the display rate here, so the
+p95 frame reads the same for all four; the work row under it is what a
+slower machine or a 120 Hz display would feel. There TanStack and SVAR do
+the least per scroll step, about half a millisecond under SvGrid, and AG
+Grid the most. The row varies from run to run, so read the order of the
+first three as close, not settled. SvGrid makes its row objects the first time a
+sort or filter reads every row rather than at mount, which is why its two
+heap rows differ. The TanStack renderer pays for building a row object per
+record before it can draw anything. Anyone claiming a single headline
 number for a grid comparison is selling something.
+
+**The heap rows are the JS heap after a forced garbage collection, less the
+same page with the data built and no grid,** so the 100,000 rows themselves
+count against no one. The two DOM rows are counted over 60 untimed scroll
+frames after the timed ones. "Created" is elements that did not exist
+before; "re-inserted" is elements the grid already had and moved, which is
+how a keyed list recycles a row from one end of the window to the other.
+SvGrid creates none and moves the two rows that cross the edge each frame;
+a grid that rewrote its rows in place would score 0 on both.
 
 **The filter row is not a like-for-like comparison and is shown only because
 hiding a number we win looks worse than explaining it.** The grids' single-
@@ -7276,6 +7314,11 @@ column whose distinct values are far fewer than its rows it collates the
 distinct values once and sorts by rank. Mounting is the other direction -
 see the accounting in [benchmarks](./benchmarks.md).
 
+At 1,000,000 rows the harness runs one grid per invocation
+(`BENCH_ROWS=1000000 BENCH_GRIDS=<one> BENCH_TICKS=30`); TanStack's
+adapter does not finish at that size. Those runs are not in the table
+because only a run that measured every grid together is comparable.
+
 Two methodology notes, both of which were bugs in this harness before they
 were notes, and both of which changed the numbers by more than any code
 change did:
@@ -7284,7 +7327,9 @@ change did:
   the same one, where the first warmed the JIT, fragmented the heap and
   left a hundred thousand rows of garbage for the next. Back-to-back runs
   on an idle machine disagreed with themselves by a factor of two.
-  Run-to-run variance is now a few percent.
+  That order effect is gone, but this workstation still varies by about
+  2x between whole runs taken minutes apart, for every grid at once, so
+  compare the columns of one run and not one run against another.
 - **Operations are timed until the DOM changes, not for a fixed two
   frames.** The old fixed wait put a two-frame floor under every number -
   an operation that recomputed nothing at all measured the floor, and a
@@ -30822,13 +30867,15 @@ with the server. Holding the old value across the await is the whole trick.
 
   let rows = $state<Person[]>(seed.map((p) => ({ ...p })))
   let status = $state('idle')
+  let api = $state<SvGridApi<any, Person> | null>(null)
 
   // Fails on purpose for anything under 18, to show the rollback path.
-  async function persist(row: Person, field: string, value: unknown, previous: unknown) {
+  async function persist(e: { rowIndex: number; columnId: string; newValue: unknown; oldValue: unknown }) {
     status = 'saving'
     await new Promise((r) => setTimeout(r, 500))
-    if (field === 'age' && Number(value) < 18) {
-      (row as Record<string, unknown>)[field] = previous
+    if (e.columnId === 'age' && Number(e.newValue) < 18) {
+      // Through the api: the grid draws its own copy of the row.
+      api?.setCellValue(e.rowIndex, e.columnId, e.oldValue)
       status = 'rejected by server, rolled back'
       return
     }
@@ -30845,7 +30892,8 @@ with the server. Holding the old value across the await is the whole trick.
   data={rows}
   {columns}
   editable
-  onCellValueChange={(e) => persist(e.row, e.columnId, e.newValue, e.oldValue)}
+  onCellValueChange={persist}
+  onApiReady={(a) => (api = a)}
 />
 
 <p>Status: <strong>{status}</strong> (try an age under 18)</p>
@@ -102987,16 +103035,18 @@ Yes: shipped in the package. Partial: needs extra work or a companion package. P
 
 ## Measured performance
 
-Measured 12 Sep 2026 with the harness in the repository (pnpm bench:compare): 100,000 rows, fastest of 7 samples per operation, each grid in a fresh page, Chromium through Playwright, headless, on win32 10.0.26200 x64, Intel(R) Core(TM) Ultra 7 255U; a developer workstation, not a dedicated bench rig. Versions: @svgrid/grid 3.0.3, ag-grid-community 36.1.0. Lower is better.
+Measured 28 Oct 2026 with the harness in the repository (pnpm bench:compare): 100,000 rows, fastest of 3 samples per operation, each grid in a fresh page, Chromium through Playwright, headless, on win32 10.0.26200 x64, Intel(R) Core(TM) Ultra 7 255U; a developer workstation, not a dedicated bench rig. Versions: @svgrid/grid 3.0.25, ag-grid-community 36.1.0. Lower is better. Tick: 1,000 of the rows replaced per tick with a new amount, the grid sorted by amount, on the update path each grid provides, timed until the changed cells paint; 180 ticks after 10 to warm up.
 
 | Operation | SvGrid | AG Grid (community + enterprise) |
 | --- | --- | --- |
-| Mount | 75.5 ms | 51.4 ms |
-| Sort, text column | 149 ms | 282.8 ms |
-| Sort, numeric column | 115.7 ms | 270 ms |
-| Filter, one column (indicative only) | 99.6 ms | 170.4 ms |
-| Scroll, p95 frame | 34.6 ms | 35.9 ms |
-| Rows kept in the DOM (virtualization on) | 27 | 35 |
+| Mount | 30.7 ms | 67 ms |
+| Sort, text column | 77.4 ms | 213.9 ms |
+| Sort, numeric column | 32.8 ms | 216.7 ms |
+| Filter, one column (indicative only) | 34.5 ms | 148.8 ms |
+| Scroll, p95 frame | 34.3 ms | 34.5 ms |
+| Live tick, 1,000 rows replaced, sorted by that column, p95 | 48.6 ms | 259.2 ms |
+| Ticks over one 60 Hz frame, of 180 | 115 | 180 |
+| Rows kept in the DOM (virtualization on) | 36 | 36 |
 
 The filter row is not like for like: each grid is driven through its own single-column filter API, and the amount of work differs. The comparison guide explains the method, what is left out and why.
 
@@ -105240,16 +105290,18 @@ Yes: shipped in the package. Partial: needs extra work or a companion package. P
 
 ## Measured performance
 
-Measured 12 Sep 2026 with the harness in the repository (pnpm bench:compare): 100,000 rows, fastest of 7 samples per operation, each grid in a fresh page, Chromium through Playwright, headless, on win32 10.0.26200 x64, Intel(R) Core(TM) Ultra 7 255U; a developer workstation, not a dedicated bench rig. Versions: @svgrid/grid 3.0.3, wx-svelte-grid 2.7.0. Lower is better.
+Measured 28 Oct 2026 with the harness in the repository (pnpm bench:compare): 100,000 rows, fastest of 3 samples per operation, each grid in a fresh page, Chromium through Playwright, headless, on win32 10.0.26200 x64, Intel(R) Core(TM) Ultra 7 255U; a developer workstation, not a dedicated bench rig. Versions: @svgrid/grid 3.0.25, wx-svelte-grid 2.7.0. Lower is better. Tick: 1,000 of the rows replaced per tick with a new amount, the grid sorted by amount, on the update path each grid provides, timed until the changed cells paint; 180 ticks after 10 to warm up.
 
 | Operation | SvGrid | SVAR Svelte DataGrid |
 | --- | --- | --- |
-| Mount | 75.5 ms | 11.4 ms |
-| Sort, text column | 149 ms | 187.2 ms |
-| Sort, numeric column | 115.7 ms | 165.1 ms |
-| Filter, one column (indicative only) | 99.6 ms | 32.6 ms |
-| Scroll, p95 frame | 34.6 ms | 34.8 ms |
-| Rows kept in the DOM (virtualization on) | 27 | 19 |
+| Mount | 30.7 ms | 11.4 ms |
+| Sort, text column | 77.4 ms | 135.4 ms |
+| Sort, numeric column | 32.8 ms | 141.7 ms |
+| Filter, one column (indicative only) | 34.5 ms | 26.1 ms |
+| Scroll, p95 frame | 34.3 ms | 34.6 ms |
+| Live tick, 1,000 rows replaced, sorted by that column, p95 | 48.6 ms | 152.2 ms |
+| Ticks over one 60 Hz frame, of 180 | 115 | 180 |
+| Rows kept in the DOM (virtualization on) | 36 | 19 |
 
 The filter row is not like for like: each grid is driven through its own single-column filter API, and the amount of work differs. The comparison guide explains the method, what is left out and why.
 
@@ -106020,16 +106072,18 @@ Yes: shipped in the package. Partial: needs extra work or a companion package. P
 
 ## Measured performance
 
-Measured 12 Sep 2026 with the harness in the repository (pnpm bench:compare): 100,000 rows, fastest of 7 samples per operation, each grid in a fresh page, Chromium through Playwright, headless, on win32 10.0.26200 x64, Intel(R) Core(TM) Ultra 7 255U; a developer workstation, not a dedicated bench rig. Versions: @svgrid/grid 3.0.3, @tanstack/svelte-table 9.2.4. Lower is better.
+Measured 28 Oct 2026 with the harness in the repository (pnpm bench:compare): 100,000 rows, fastest of 3 samples per operation, each grid in a fresh page, Chromium through Playwright, headless, on win32 10.0.26200 x64, Intel(R) Core(TM) Ultra 7 255U; a developer workstation, not a dedicated bench rig. Versions: @svgrid/grid 3.0.25, @tanstack/svelte-table 9.2.4. Lower is better. Tick: 1,000 of the rows replaced per tick with a new amount, the grid sorted by amount, on the update path each grid provides, timed until the changed cells paint; 180 ticks after 10 to warm up.
 
 | Operation | SvGrid | TanStack Table (Svelte) |
 | --- | --- | --- |
-| Mount | 75.5 ms | 196 ms |
-| Sort, text column | 149 ms | 466 ms |
-| Sort, numeric column | 115.7 ms | 374.6 ms |
-| Filter, one column (indicative only) | 99.6 ms | 111.7 ms |
-| Scroll, p95 frame | 34.6 ms | 35.3 ms |
-| Rows kept in the DOM (virtualization on) | 27 | 27 |
+| Mount | 30.7 ms | 170.2 ms |
+| Sort, text column | 77.4 ms | 360.9 ms |
+| Sort, numeric column | 32.8 ms | 178.2 ms |
+| Filter, one column (indicative only) | 34.5 ms | 51.1 ms |
+| Scroll, p95 frame | 34.3 ms | 34.3 ms |
+| Live tick, 1,000 rows replaced, sorted by that column, p95 | 48.6 ms | 563.4 ms |
+| Ticks over one 60 Hz frame, of 180 | 115 | 180 |
+| Rows kept in the DOM (virtualization on) | 36 | 27 |
 
 The filter row is not like for like: each grid is driven through its own single-column filter API, and the amount of work differs. The comparison guide explains the method, what is left out and why.
 
@@ -122440,6 +122494,13 @@ For machine-readable releases, fetch
 
 #### Changed
 
+- **`alignedGridGroup` loads its module on demand.** The shared group that
+  mirrors horizontal scroll and column widths between grids is now a lazy
+  chunk, fetched by the first grid that sets the prop, the way managed row
+  drag is. A grid outside a group no longer carries it, which kept the base
+  bundle under its 100 KB budget after this release's scroll and mount
+  changes. Mirroring starts once the chunk has loaded, a frame on a warm
+  cache.
 - **BREAKING: column resizing is now off by default.** Every column used to have
   a drag handle unconditionally - there was no prop, no per-column option and no
   way to turn it off, so a `width` you set was only ever a starting value a user
@@ -122467,6 +122528,42 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **A mount built rows nobody could see, and laid the grid out five
+  times.** The first paint now draws the rows on screen and at most two
+  overscan rows, and the rest of `overscan` follows a frame after that paint:
+  a 520 px grid built 26 rows to show 14. Reading the scroll position of the
+  container the grid had just created, and each scrollbar measuring its
+  track on connect and on every attribute change, forced four layouts of the
+  half-built grid before it painted. The position is now confirmed on the
+  next frame and the track is measured by the scrollbar's resize observer;
+  the one forced layout left is the container size the windows need.
+- **The scrollbar thumb trailed the rows by a frame.** The custom scrollbar
+  read the scroll position on the frame after the scroll flush, so the thumb
+  moved one frame late and each scroll step paid a second style pass and
+  paint for it. The flush now hands the scrollbar the position it already
+  has, and the scrollbar keeps its measured track instead of measuring it
+  inside the flush.
+- **A vertical scroll frame repainted every rendered row.** Body rows were
+  not positioned, so on any frame that moved or rewrote a row Chrome painted
+  every rendered row again cell by cell. Flex-layout body rows are now
+  `position: relative` (no z-index, no clip), which lets the browser reuse an
+  unchanged row's paint whole. In six interleaved rounds of the 100,000-row
+  browser bench, a 60 px scroll step went from 4.05 to 3.68 ms of
+  main-thread work (median). Sticky frozen and group rows keep
+  `position: sticky`.
+- **A cell note's corner marker sat at the grid's corner.** The marker is
+  positioned against its cell, but a cell with a note was not positioned, so
+  it anchored to the grid. A cell with a note is now a positioning context,
+  like the active cell.
+- **A sort or filter kept every column's value on every row.** Reading one
+  column built and cached an array of all of a row's values, so sorting a
+  1,000,000-row grid by one column left 1,000,000 of them behind. A plain
+  `field` column is now read from the data; a computed (`fieldFn`) column
+  still builds the array. The heap a sorted and filtered 1,000,000 x 9 grid
+  adds went from 196 MB to 128 MB in the browser harness.
+- **`applyTransaction({ remove })` scanned the data once per row object.**
+  Removing 10,000 row objects from 1,000,000 rows took about 1.8 s to find
+  them; past eight objects the transaction now builds one identity map.
 - **Group footer and grand-total rows drew checkboxes.** With
   `showRowSelection`, each totals row had a row-selection checkbox, and
   ticking it selected the synthetic row. A checkbox column with no `aggregate`

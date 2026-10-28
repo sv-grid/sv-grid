@@ -491,14 +491,15 @@
   tbody tr:hover > .sv-grid-cell:not([data-selected-range="true"]) {
   background-color: var(--sg-row-hover-bg, #eef2ff);
 }
-/* Only the active cell + the cell hosting the fill handle become a
-   positioning context (so the absolutely-positioned handle anchors
-   to the cell box). Adding `position: relative` to EVERY cell paints
+/* Only the active cell, the cell hosting the fill handle and a cell
+   with a note become a positioning context (so the absolutely-positioned
+   handle and note corner anchor to the cell box, not to the row). Adding `position: relative` to EVERY cell paints
    each one as its own layout box and noticeably slows vertical
    scroll on dense grids - keep it scoped. Sticky / pinned cells are
    already positioning contexts via `position: sticky`. */
 .sv-grid-cell-active,
-.sv-grid-cell-has-fill-handle {
+.sv-grid-cell-has-fill-handle,
+.sv-grid-cell-has-note {
   position: relative;
 }
 /* The cell that owns the fill handle gets overflow: visible so the
@@ -3723,6 +3724,17 @@ select.sv-grid-fr-editor {
    main-thread work. An app can still opt in with --sg-row-contain. */
 .sv-grid-table-flex:not([data-row-layout="table"]) > tbody > tr {
   contain: var(--sg-row-contain, none);
+}
+/* Positioned rows, though, without a clip. A positioned box is a paint layer
+   of its own, and Chrome reuses an unchanged layer's recorded paint whole;
+   an unpositioned row was painted cell by cell again on every frame that
+   moved or rewrote any row. In the 100,000-row bench a scroll step did
+   about a tenth less main-thread work. No z-index,
+   so no stacking context: a cell's popover or z-indexed content still
+   stacks against the grid. :where() keeps the specificity at zero, so the
+   sticky frozen and group rows, and an app's own rule, win. */
+:where(.sv-grid-table-flex:not([data-row-layout="table"]) > tbody > tr) {
+  position: relative;
 }
 /* Cells: a fixed-width flex item each, centring what they hold vertically
    the way a table cell's `vertical-align: middle` did. */

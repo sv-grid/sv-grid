@@ -161,6 +161,8 @@ class SvGridScrollbarElement extends ScrollbarBase {
   private holdTimer: ReturnType<typeof setTimeout> | null = null
   private resizeObserver: ResizeObserver | null = null
   private resizeFrame = 0
+  /** The track's last measured length; 0 until it has been laid out. */
+  private trackLength = 0
 
   connectedCallback() {
     if (this.shadowRoot) return
@@ -188,11 +190,18 @@ class SvGridScrollbarElement extends ScrollbarBase {
       btn.addEventListener('pointercancel', this.stopHold)
     }
 
-    // Coalesce resize notifications into a single next-frame render so the
-    // observer callback never re-lays-out the observed element within the same
-    // delivery cycle (which is what triggers the benign but noisy
-    // "ResizeObserver loop completed with undelivered notifications" warning).
+    // The track is measured here and nowhere else. An observer callback runs
+    // after the browser's own layout, so the read costs nothing; the same
+    // read from connectedCallback or an attribute change landed while the
+    // grid was still writing its first rows and forced a layout of the whole
+    // grid, three times per mount. The observer reports the initial size on
+    // its first delivery, so a new scrollbar is measured in its first frame.
+    // The render is coalesced into the next frame so the callback never
+    // re-lays-out the observed element within the same delivery cycle (which
+    // is what triggers the benign but noisy "ResizeObserver loop completed
+    // with undelivered notifications" warning).
     this.resizeObserver = new ResizeObserver(() => {
+      this.measureTrack()
       if (this.resizeFrame) return
       this.resizeFrame = requestAnimationFrame(() => {
         this.resizeFrame = 0
@@ -215,6 +224,10 @@ class SvGridScrollbarElement extends ScrollbarBase {
   }
 
   attributeChangedCallback() {
+    // No measuring: the grid sets these in the flush that writes its rows
+    // (`value` on every scroll step), where a read forced a layout of the
+    // whole table. The track's length only changes when the element resizes,
+    // which the observer measures.
     this.render()
   }
 
@@ -244,12 +257,24 @@ class SvGridScrollbarElement extends ScrollbarBase {
   }
 
   /** Measured length of the track between the two arrows, in the active axis. */
-  private getTrackLength(): number {
+  /** Read the track's length; called only from the resize observer (see connectedCallback). */
+  private measureTrack() {
+    if (!this.track) return
     const rect = this.track.getBoundingClientRect()
-    const measured = this.orientation === 'vertical' ? rect.height : rect.width
-    if (measured > 0) return measured
-    // Pre-layout fallback so the thumb still has a sensible size on first render.
+    this.trackLength = this.orientation === 'vertical' ? rect.height : rect.width
+  }
+
+  private getTrackLength(): number {
+    if (this.trackLength > 0) return this.trackLength
+    // Before the first observer delivery: the viewport less the two arrows,
+    // which the measured track replaces a frame later. The host starts at
+    // opacity 0 and fades in, so that frame is not seen.
     return Math.max(this.viewportSize - ARROW_SIZE * 2, 1)
+  }
+
+  /** Inline style writes only when the value changes, so a render that moves nothing invalidates nothing. */
+  private static setStyle(el: HTMLElement, prop: 'opacity' | 'pointerEvents' | 'height' | 'width' | 'transform', value: string) {
+    if (el.style[prop] !== value) el.style[prop] = value
   }
 
   private computeThumbSize(trackLength: number): number {
@@ -348,11 +373,12 @@ class SvGridScrollbarElement extends ScrollbarBase {
 
   private render() {
     if (!this.shadowRoot) return
+    const set = SvGridScrollbarElement.setStyle
     const viewport = this.viewportSize
     const content = this.contentSize
     const hidden = content <= viewport || viewport <= 0
-    this.style.opacity = hidden ? '0' : '1'
-    this.style.pointerEvents = hidden ? 'none' : 'auto'
+    set(this, 'opacity', hidden ? '0' : '1')
+    set(this, 'pointerEvents', hidden ? 'none' : 'auto')
 
     const trackLength = this.getTrackLength()
     const thumbSize = this.computeThumbSize(trackLength)
@@ -361,11 +387,11 @@ class SvGridScrollbarElement extends ScrollbarBase {
     const offset = ratio * Math.max(trackLength - thumbSize, 0)
 
     if (this.orientation === 'vertical') {
-      this.thumb.style.height = `${thumbSize}px`
-      this.thumb.style.transform = `translateY(${offset}px)`
+      set(this.thumb, 'height', `${thumbSize}px`)
+      set(this.thumb, 'transform', `translateY(${offset}px)`)
     } else {
-      this.thumb.style.width = `${thumbSize}px`
-      this.thumb.style.transform = `translateX(${offset}px)`
+      set(this.thumb, 'width', `${thumbSize}px`)
+      set(this.thumb, 'transform', `translateX(${offset}px)`)
     }
     this.startArrow.disabled = hidden || this.value <= 0
     this.endArrow.disabled = hidden || this.value >= maxValue

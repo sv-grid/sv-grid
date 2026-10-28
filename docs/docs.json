@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-10-26T19:16:27.274Z",
+  "generatedAt": "2026-10-28T16:18:51.193Z",
   "counts": {
     "pages": 467,
     "enterprise": 107,
@@ -1013,8 +1013,8 @@
       "section": "",
       "pillar": "grid",
       "tier": "community",
-      "words": 11774,
-      "lastUpdated": "2026-10-26",
+      "words": 12285,
+      "lastUpdated": "2026-10-28",
       "demoIds": []
     },
     {
@@ -2343,8 +2343,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 4724,
-      "lastUpdated": "2026-10-26",
+      "words": 4891,
+      "lastUpdated": "2026-10-28",
       "demoIds": [
         "06-large-dataset"
       ],
@@ -3114,8 +3114,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 3849,
-      "lastUpdated": "2026-10-26",
+      "words": 4311,
+      "lastUpdated": "2026-10-28",
       "demoIds": [
         "139-migration-from-ag-grid",
         "186-headless-table"
@@ -3236,8 +3236,8 @@
       "section": "help/editing",
       "pillar": "grid",
       "tier": "community",
-      "words": 840,
-      "lastUpdated": "2026-09-04",
+      "words": 860,
+      "lastUpdated": "2026-10-28",
       "demoIds": [
         "05-inline-editing"
       ]

@@ -198,27 +198,50 @@ The table is generated from the ledger by `tools/sync-guide-facts.mjs`;
 the versions and the date are part of it.
 
 <!-- bench:start -->
-Measured 12 Sep 2026 with `pnpm bench:compare` (tests/perf/compare.spec.ts, recorded by tools/record-benchmarks.mjs): 100,000 rows x 9 columns; 1000 x 520 px container, 32 px rows, 140 px columns, each grid with its default theme; fastest of 7 samples per operation, each grid in a fresh page; Chromium through Playwright, headless; win32 10.0.26200 x64, Intel(R) Core(TM) Ultra 7 255U; a developer workstation, not a dedicated bench rig. Lower is better.
+Measured 28 Oct 2026 with `pnpm bench:compare` (tests/perf/compare.spec.ts, recorded by tools/record-benchmarks.mjs): 100,000 rows x 9 columns; 1000 x 520 px container, 32 px rows, 140 px columns, each grid with its default theme; fastest of 3 samples per operation, each grid in a fresh page; Chromium through Playwright, headless; win32 10.0.26200 x64, Intel(R) Core(TM) Ultra 7 255U; a developer workstation, not a dedicated bench rig; tick: 1,000 of the rows replaced per tick with a new amount, the grid sorted by amount, on the update path each grid provides, timed until the changed cells paint; 180 ticks after 10 to warm up. Lower is better.
 
 | Operation | SvGrid | AG Grid Community | SVAR Svelte DataGrid | TanStack Table, minimal DOM |
 | --- | --- | --- | --- | --- |
-| Mount | 75.5 ms | 51.4 ms | 11.4 ms | 196 ms |
-| Sort, text column | 149 ms | 282.8 ms | 187.2 ms | 466 ms |
-| Sort, numeric column | 115.7 ms | 270 ms | 165.1 ms | 374.6 ms |
-| Filter, one column (indicative only, see below) | 99.6 ms | 170.4 ms | 32.6 ms | 111.7 ms |
-| Scroll, p95 frame | 34.6 ms | 35.9 ms | 34.8 ms | 35.3 ms |
-| Frames dropped while scrolling, of 180 | 0 | 0 | 0 | 1 |
-| Rows kept in the DOM (virtualization on) | 27 | 35 | 19 | 27 |
+| Mount | 30.7 ms | 67 ms | 11.4 ms | 170.2 ms |
+| Sort, text column | 77.4 ms | 213.9 ms | 135.4 ms | 360.9 ms |
+| Sort, numeric column | 32.8 ms | 216.7 ms | 141.7 ms | 178.2 ms |
+| Filter, one column (indicative only, see below) | 34.5 ms | 148.8 ms | 26.1 ms | 51.1 ms |
+| Scroll, p95 frame | 34.3 ms | 34.5 ms | 34.6 ms | 34.3 ms |
+| Live tick, 1,000 rows replaced, sorted by that column, p95 | 48.6 ms | 259.2 ms | 152.2 ms | 563.4 ms |
+| Main-thread work per 60 px scroll step, mean | 3.5 ms | 4.5 ms | 3 ms | 2.9 ms |
+| Frames dropped while scrolling, of 180 | 0 | 0 | 0 | 0 |
+| Ticks over one 60 Hz frame, of 180 | 115 | 180 | 180 | 180 |
+| Rows kept in the DOM (virtualization on) | 36 | 36 | 19 | 27 |
+| JS heap the grid adds, mounted, after GC | 5.7 MB | 42.1 MB | 2.3 MB | 109.9 MB |
+| JS heap the grid adds, after sorting and filtering, after GC | 17.6 MB | 26.2 MB | 3.9 MB | 113.3 MB |
+| Elements created per scroll frame | 0 | 30.1 | 16.8 | 18.7 |
+| Elements re-inserted per scroll frame (rows recycled) | 37.3 | 35.8 | 0 | 0 |
 
-Versions: `@svgrid/grid` 3.0.3, `ag-grid-community` 36.1.0, `wx-svelte-grid` 2.7.0, `@tanstack/svelte-table` 9.2.4.
+Versions: `@svgrid/grid` 3.0.25, `ag-grid-community` 36.1.0, `wx-svelte-grid` 2.7.0, `@tanstack/svelte-table` 9.2.4.
 <!-- bench:end -->
 
-Read that as: **SvGrid sorts faster than AG Grid Community and SVAR on both
-column types, scrolling is level across all four, and mounting is where the
-lighter grids are ahead** - SVAR paints its first rows fastest, AG Grid is
-ahead of SvGrid, and the TanStack renderer pays for building a row object
-per record before it can draw anything. Anyone claiming a single headline
+Read that as: **SvGrid sorts and keeps a live sort current faster than the
+other three, scrolling is level across all four, and SVAR is ahead on mount
+and memory** - it paints its first rows in under half of SvGrid's time and
+holds the least heap. Every grid scrolls at the display rate here, so the
+p95 frame reads the same for all four; the work row under it is what a
+slower machine or a 120 Hz display would feel. There TanStack and SVAR do
+the least per scroll step, about half a millisecond under SvGrid, and AG
+Grid the most. The row varies from run to run, so read the order of the
+first three as close, not settled. SvGrid makes its row objects the first time a
+sort or filter reads every row rather than at mount, which is why its two
+heap rows differ. The TanStack renderer pays for building a row object per
+record before it can draw anything. Anyone claiming a single headline
 number for a grid comparison is selling something.
+
+**The heap rows are the JS heap after a forced garbage collection, less the
+same page with the data built and no grid,** so the 100,000 rows themselves
+count against no one. The two DOM rows are counted over 60 untimed scroll
+frames after the timed ones. "Created" is elements that did not exist
+before; "re-inserted" is elements the grid already had and moved, which is
+how a keyed list recycles a row from one end of the window to the other.
+SvGrid creates none and moves the two rows that cross the edge each frame;
+a grid that rewrote its rows in place would score 0 on both.
 
 **The filter row is not a like-for-like comparison and is shown only because
 hiding a number we win looks worse than explaining it.** The grids' single-
@@ -240,6 +263,11 @@ column whose distinct values are far fewer than its rows it collates the
 distinct values once and sorts by rank. Mounting is the other direction -
 see the accounting in [benchmarks](./benchmarks.md).
 
+At 1,000,000 rows the harness runs one grid per invocation
+(`BENCH_ROWS=1000000 BENCH_GRIDS=<one> BENCH_TICKS=30`); TanStack's
+adapter does not finish at that size. Those runs are not in the table
+because only a run that measured every grid together is comparable.
+
 Two methodology notes, both of which were bugs in this harness before they
 were notes, and both of which changed the numbers by more than any code
 change did:
@@ -248,7 +276,9 @@ change did:
   the same one, where the first warmed the JIT, fragmented the heap and
   left a hundred thousand rows of garbage for the next. Back-to-back runs
   on an idle machine disagreed with themselves by a factor of two.
-  Run-to-run variance is now a few percent.
+  That order effect is gone, but this workstation still varies by about
+  2x between whole runs taken minutes apart, for every grid at once, so
+  compare the columns of one run and not one run against another.
 - **Operations are timed until the DOM changes, not for a fixed two
   frames.** The old fixed wait put a two-frame floor under every number -
   an operation that recomputed nothing at all measured the floor, and a

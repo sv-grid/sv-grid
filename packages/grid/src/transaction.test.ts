@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount, unmount } from 'svelte'
 import SvGrid from './SvGrid.svelte'
 import {
@@ -111,6 +111,51 @@ describe('api.applyTransaction', () => {
       expect(api.getData().map((o) => o.id)).toEqual(['c'])
     } finally {
       destroy()
+    }
+  })
+
+  it('a large reference removal scans the data once, not once per row', async () => {
+    // One `indexOf` per removed object was rows x removed: 10k objects out of
+    // a 1M-row grid scanned the array 10k times. Past a handful of objects
+    // the transaction builds one identity map instead.
+    const big: Order[] = Array.from({ length: 2_000 }, (_, i) => ({ id: `r${i}`, symbol: 'X', price: i }))
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    let captured: SvGridApi<typeof features, Order> | null = null
+    const app = mount(SvGrid, {
+      target,
+      props: {
+        data: big,
+        columns,
+        features,
+        getRowId: (o: Order) => o.id,
+        _rowModels: { coreRowModel: createCoreRowModel() },
+        containerHeight: 400,
+        onApiReady(api: SvGridApi<typeof features, Order>) { captured = api },
+      } as any,
+    })
+    const indexOf = vi.spyOn(Array.prototype, 'indexOf')
+    try {
+      await tick()
+      const api = captured!
+      const data = api.getData()
+      // Every other row from the back half, plus one id, in shuffled order.
+      const refs = data.filter((_, i) => i >= 1_000 && i % 2 === 0).reverse()
+      indexOf.mockClear()
+      const result = api.applyTransaction({ remove: [...refs, 'r1', refs[0]!] })
+      const scans = indexOf.mock.calls.length
+      await tick()
+      expect(scans).toBe(0)
+      expect(result.removed).toBe(refs.length + 1)
+      const ids = api.getData().map((o) => o.id)
+      expect(ids).toHaveLength(2_000 - refs.length - 1)
+      expect(ids.slice(0, 3)).toEqual(['r0', 'r2', 'r3'])
+      expect(ids).toContain('r1001')
+      expect(ids).not.toContain('r1000')
+    } finally {
+      indexOf.mockRestore()
+      unmount(app)
+      target.remove()
     }
   })
 

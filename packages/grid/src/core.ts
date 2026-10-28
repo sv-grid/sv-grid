@@ -1110,10 +1110,19 @@ export const BASE_ROW_METHODS = {
     return this[ROW_CELLS] ?? buildBaseRowCells(this)
   },
   getCellValueByColumnId(this: BaseRowState<RowData>, columnId: string) {
-    const idx = this[ROW_CTX].columnIndexById.get(columnId)
+    const ctx = this[ROW_CTX]
+    const idx = ctx.columnIndexById.get(columnId)
     if (idx === undefined) return undefined
-    if (!this[ROW_VALUES]) this[ROW_VALUES] = baseRowValues(this)
-    return this[ROW_VALUES][idx]
+    const values = this[ROW_VALUES]
+    if (values) return values[idx]
+    // A plain field reads as cheaply from the data as from a cached array, so
+    // only a computed column builds the row's values. A sort, filter or group
+    // reads one column of every row; building all of them there kept an
+    // array of every column's value on every row, which only the rows on
+    // screen use.
+    const def = ctx.columns[idx]!.columnDef
+    if (!def.fieldFn) return def.field ? (this.original as Record<string, unknown>)[def.field] : undefined
+    return (this[ROW_VALUES] = baseRowValues(this))[idx]
   },
 }
 

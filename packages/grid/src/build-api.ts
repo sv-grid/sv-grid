@@ -51,6 +51,10 @@ type OrientedRange = {
  */
 const rowIndexByData = new WeakMap<ReadonlyArray<unknown>, Map<string, number>>()
 
+/** Up to this many row objects in `applyTransaction({ remove })` are found
+ *  with `indexOf`; past it, one identity -> index map over the data. */
+const REMOVE_BY_REF_SCAN_MAX = 8
+
 function rowIndexOf<TData>(
   data: ReadonlyArray<TData>,
   getId: (row: TData, index: number) => string,
@@ -294,15 +298,30 @@ export function createGridApi<
         let removed = 0;
 
         // Everything resolves against the indices of `current`: the id ->
-        // index map answers updates and id removals with one lookup each, a
-        // reference removal with one `indexOf`, and no pass over the rows
-        // that did not change. A row both updated and removed in the same
-        // transaction ends up removed, as it did when removes ran first.
+        // index map answers updates and id removals with one lookup each, and
+        // no pass is made over the rows that did not change. A row both
+        // updated and removed in the same transaction ends up removed, as it
+        // did when removes ran first.
         const removeIdx = new Set<number>();
         if (tx.remove?.length) {
           const byId = getId ? rowIndexOf(current, getId) : null;
+          // Reference removals: a few scan with `indexOf`; more build one
+          // identity -> index map. One `indexOf` per row was rows x removed:
+          // removing 10k objects from a 1M-row grid scanned the array 10k
+          // times. First occurrence wins, as `indexOf` answers.
+          let refs = 0;
+          for (const r of tx.remove) if (typeof r !== "string") refs += 1;
+          let byRef: Map<unknown, number> | null = null;
+          if (refs > REMOVE_BY_REF_SCAN_MAX) {
+            byRef = new Map();
+            for (let i = 0; i < current.length; i++) {
+              if (!byRef.has(current[i])) byRef.set(current[i], i);
+            }
+          }
           for (const r of tx.remove) {
-            const idx = typeof r === "string" ? byId?.get(r) : current.indexOf(r as TData);
+            const idx = typeof r === "string"
+              ? byId?.get(r)
+              : byRef ? byRef.get(r) : current.indexOf(r as TData);
             if (idx !== undefined && idx >= 0) removeIdx.add(idx);
           }
         }
