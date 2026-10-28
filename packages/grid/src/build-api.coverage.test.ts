@@ -18,7 +18,7 @@
  * from onApiReady.
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { mount, unmount } from "svelte";
 import SvGrid from "./SvGrid.svelte";
 import {
@@ -123,6 +123,34 @@ describe("SvGridApi - cell read / write", () => {
       expect(api.getCellValue(0, "name")).toBe("Ada L.");
       // other rows untouched
       expect(api.getCellValue(1, "name")).toBe("Grace Hopper");
+    } finally {
+      destroy();
+    }
+  });
+
+  // A save that the server rejects writes the old value back. The inline edit
+  // left an override the cell reads first, so the write must replace it.
+  it("setCellValue shows over a value the user just edited inline", async () => {
+    const { api, target, destroy } = await mountGrid({ editable: true });
+    const nameCell = () =>
+      [...target.querySelectorAll('[data-svgrid-row="0"]')].find((c) =>
+        /Ada|Countess/.test(c.textContent ?? ""),
+      );
+    try {
+      expect(api.startEditing(0, "name")).toBe(true);
+      // The cell editor is a lazy chunk.
+      await vi.waitFor(() => expect(target.querySelector("input")).not.toBeNull());
+      const input = target.querySelector("input") as HTMLInputElement;
+      input.value = "Countess";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      api.stopEditing();
+      await flush();
+      expect(nameCell()?.textContent).toContain("Countess");
+
+      api.setCellValue(0, "name", "Ada Lovelace");
+      await flush();
+      expect(api.getCellValue(0, "name")).toBe("Ada Lovelace");
+      expect(nameCell()?.textContent).toContain("Ada Lovelace");
     } finally {
       destroy();
     }

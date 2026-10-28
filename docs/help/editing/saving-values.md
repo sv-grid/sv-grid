@@ -173,13 +173,15 @@ with the server. Holding the old value across the await is the whole trick.
 
   let rows = $state<Person[]>(seed.map((p) => ({ ...p })))
   let status = $state('idle')
+  let api = $state<SvGridApi<any, Person> | null>(null)
 
   // Fails on purpose for anything under 18, to show the rollback path.
-  async function persist(row: Person, field: string, value: unknown, previous: unknown) {
+  async function persist(e: { rowIndex: number; columnId: string; newValue: unknown; oldValue: unknown }) {
     status = 'saving'
     await new Promise((r) => setTimeout(r, 500))
-    if (field === 'age' && Number(value) < 18) {
-      (row as Record<string, unknown>)[field] = previous
+    if (e.columnId === 'age' && Number(e.newValue) < 18) {
+      // Through the api: the grid draws its own copy of the row.
+      api?.setCellValue(e.rowIndex, e.columnId, e.oldValue)
       status = 'rejected by server, rolled back'
       return
     }
@@ -196,7 +198,8 @@ with the server. Holding the old value across the await is the whole trick.
   data={rows}
   {columns}
   editable
-  onCellValueChange={(e) => persist(e.row, e.columnId, e.newValue, e.oldValue)}
+  onCellValueChange={persist}
+  onApiReady={(a) => (api = a)}
 />
 
 <p>Status: <strong>{status}</strong> (try an age under 18)</p>

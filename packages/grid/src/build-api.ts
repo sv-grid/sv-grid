@@ -30,6 +30,7 @@ import { undoHistory, redoHistory, peekUndoHistory, peekRedoHistory } from "./hi
 import { buildCommandContext } from "./command-context";
 import { applyFieldColumns } from "./grid-extension.svelte";
 import { columnDataType } from "./column-types";
+import { getCellKey } from "./SvGrid.helpers";
 
 type OrientedRange = {
   from: { row: number; col: number }
@@ -158,9 +159,19 @@ export function createGridApi<
         const row = ctx.internalData[rowIndex];
         const column = findColumn(columnId);
         if (!row || !column?.columnDef.field) return;
+        // An inline edit leaves an override in `editedCellValues` that the
+        // cell reads before the row, so a write over it (a rejected save put
+        // back, say) changed the data but not the screen. Look up the row id
+        // before internalData swaps: `allRows` then holds the new object.
+        const edited = ctx.editedCellValues;
+        const rowId = Object.keys(edited).length > 0
+          ? ctx.allRows.find((r: { original?: unknown }) => r.original === row)?.id
+          : undefined;
+        const key = rowId != null ? getCellKey(rowId, column.id) : null;
         const next = ctx.internalData.slice() as Array<TData>;
         next[rowIndex] = { ...row, [column.columnDef.field]: value } as TData;
         ctx.internalData = next;
+        if (key && key in edited) ctx.editedCellValues = { ...edited, [key]: value };
       },
       startEditing(rowIndex, columnId) {
         return ctx.startEditing(rowIndex, columnId);
