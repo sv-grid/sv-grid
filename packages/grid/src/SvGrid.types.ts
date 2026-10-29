@@ -2847,6 +2847,20 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
   /** Fires every time the column order changes (drag or `api.setColumnOrder`). */
   onColumnOrderChange?: (order: ReadonlyArray<string>) => void;
   /**
+   * Fires when the set of hidden columns changes: the column menu,
+   * `api.setColumnVisible`, or `api.setState`.
+   * Gets the ids of the hidden columns, the same list as
+   * `api.getState().hiddenColumns`. Mounting is not reported, so columns
+   * declared `visible: false` do not fire it.
+   */
+  onColumnVisibilityChange?: (hiddenColumns: ReadonlyArray<string>) => void;
+  /**
+   * Fires when a column is pinned or unpinned, from the column menu,
+   * `api.setColumnPinning`, or `api.setState`. Gets the same shape as
+   * `api.getState().columnPinning`. Mounting is not reported.
+   */
+  onColumnPinningChange?: (pinning: { left: ReadonlyArray<string>; right: ReadonlyArray<string> }) => void;
+  /**
    * Infer each column's data type (number / boolean / date / ISO date-string /
    * text) from the first data row, for columns that declare neither an
    * explicit `editorType` nor a `cellDataType`. Sets the matching editor,

@@ -3133,6 +3133,28 @@ export function createSvGridController<
     props.onSortingChange?.(sorting);
   });
 
+  // Hiding and pinning report the same way: deduped on the serialized value,
+  // seeded at mount so mounting is not a change. Every writer (menu, chooser,
+  // api, setState) replaces the state, so one effect per slice sees them all.
+  function reportChanges<T>(read: () => T, report: (value: T) => void): void {
+    let last = JSON.stringify(untrack(read));
+    $effect(() => {
+      const value = read();
+      const serialized = JSON.stringify(value);
+      if (serialized === last) return;
+      last = serialized;
+      report(value);
+    });
+  }
+  reportChanges(
+    () => Object.keys(hiddenColumns).filter((id) => hiddenColumns[id]),
+    (hidden) => props.onColumnVisibilityChange?.(hidden),
+  );
+  reportChanges(
+    () => ({ left: columnPinning.left.slice(), right: columnPinning.right.slice() }),
+    (pinning) => props.onColumnPinningChange?.(pinning),
+  );
+
   // A row model starts unsorted and takes no initial sort of its own. It
   // learned `initialSorting` from the mount report above; now that there is
   // none, hand the starting sort over directly - to each model the grid is

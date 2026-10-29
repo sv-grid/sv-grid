@@ -317,6 +317,8 @@ All of them are optional. The signatures are copied from `SvGrid.types.ts`.
 | ---- | --------- | ---------- |
 | `onColumnOrderChange` | `(order: ReadonlyArray<string>) => void` | The column order changes, by header drag (`enableColumnReorder`) or `api.setColumnOrder()`. |
 | `onColumnResize` | `(event: { columnId: string; width: number }) => void` | The user drags a column edge or double-clicks it to autosize. `api.setColumnWidth` does not fire it. |
+| `onColumnVisibilityChange` | `(hiddenColumns: ReadonlyArray<string>) => void` | A column is hidden or shown, from the column menu, `api.setColumnVisible` or `api.setState`. Gets the same list as `api.getState().hiddenColumns`. Not fired on mount. |
+| `onColumnPinningChange` | `(pinning: { left: ReadonlyArray<string>; right: ReadonlyArray<string> }) => void` | A column is pinned or unpinned, from the column menu, `api.setColumnPinning` or `api.setState`. Same shape as `api.getState().columnPinning`. Not fired on mount. |
 
 ### Scrolling
 

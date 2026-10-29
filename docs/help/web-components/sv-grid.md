@@ -174,7 +174,7 @@ only be assigned in script: `el.columns = [...]`.
 | `pinnedBottomRows` | `ReadonlyArray<TData>` |
 | `columnOrder` | `ReadonlyArray<string>` |
 
-### Events (32)
+### Events (34)
 
 `detail` is the callback's argument. The one callback that takes two carries
 an object keyed by its parameter names.
@@ -211,6 +211,8 @@ an object keyed by its parameter names.
 | `retryrow` | `onRetryRow` | `{ row, rowIndex }` |
 | `detailtoggle` | `onDetailToggle` | `{ row, rowIndex }` |
 | `columnorderchange` | `onColumnOrderChange` | `order` |
+| `columnvisibilitychange` | `onColumnVisibilityChange` | `hiddenColumns` |
+| `columnpinningchange` | `onColumnPinningChange` | `pinning` |
 | `rowdragend` | `onRowDragEnd` | `event` |
 | `rowdrop` | `onRowDrop` | `event` |
 

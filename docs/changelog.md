@@ -25,6 +25,20 @@ For machine-readable releases, fetch
 
 #### Added
 
+- **`onColumnVisibilityChange` and `onColumnPinningChange`.** Hiding,
+  showing, pinning or unpinning a column, from the column menu, the api
+  setters or `api.setState`, now calls back with the hidden ids or the
+  `{ left, right }` pinning, the same shapes `api.getState()` reports. Both
+  are deduped on the value and do not fire on mount. An app saving the
+  layout no longer has to poll `getState()` to notice either. The
+  `<sv-grid>` element fires `columnvisibilitychange` and
+  `columnpinningchange`.
+
+- **`SvGridProps` is exported.** The full prop type, for a wrapper that
+  forwards a typed options bag to `<SvGrid>`. Without it a wrapper had to
+  hand-write a `declare module "@svgrid/grid"` stub, which shadows the
+  package's own types.
+
 - **`chartSpecToTable`.** The rows and columns a spec amounts to, in the
   shape `SvGrid` takes: one row per category with a column per series (a
   grouped axis adds a Group column, a histogram From and To, candles their

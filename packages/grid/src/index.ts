@@ -97,6 +97,11 @@ export type {
   RowColorConfig,
   RowColorTarget,
 } from './SvGrid.types'
+// The whole prop surface, for a wrapper component that forwards a typed bag
+// of options to <SvGrid> (`Partial<SvGridProps<F, Row>>`). Without it, an app
+// wrapping the grid ended up hand-writing a `declare module` stub, which
+// shadows the real types.
+export type { Props as SvGridProps } from './SvGrid.types'
 // Built-in AI helpers (free): natural-language filter, smart-fill, summarize,
 // classify, anomaly detection, chart-this and export planning. They ship no
 // model client and no-op until you register one with `setAIProvider(...)`, so

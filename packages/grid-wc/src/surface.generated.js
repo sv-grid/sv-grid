@@ -1002,6 +1002,22 @@ export const ELEMENT_EVENTS = [
     "detail": "ReadonlyArray<string>"
   },
   {
+    "callback": "onColumnVisibilityChange",
+    "event": "columnvisibilitychange",
+    "params": [
+      "hiddenColumns"
+    ],
+    "detail": "ReadonlyArray<string>"
+  },
+  {
+    "callback": "onColumnPinningChange",
+    "event": "columnpinningchange",
+    "params": [
+      "pinning"
+    ],
+    "detail": "{ left: ReadonlyArray<string>; right: ReadonlyArray<string> }"
+  },
+  {
     "callback": "onRowDragEnd",
     "event": "rowdragend",
     "params": [

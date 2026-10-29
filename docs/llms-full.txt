@@ -8438,6 +8438,8 @@ All of them are optional. The signatures are copied from `SvGrid.types.ts`.
 | ---- | --------- | ---------- |
 | `onColumnOrderChange` | `(order: ReadonlyArray<string>) => void` | The column order changes, by header drag (`enableColumnReorder`) or `api.setColumnOrder()`. |
 | `onColumnResize` | `(event: { columnId: string; width: number }) => void` | The user drags a column edge or double-clicks it to autosize. `api.setColumnWidth` does not fire it. |
+| `onColumnVisibilityChange` | `(hiddenColumns: ReadonlyArray<string>) => void` | A column is hidden or shown, from the column menu, `api.setColumnVisible` or `api.setState`. Gets the same list as `api.getState().hiddenColumns`. Not fired on mount. |
+| `onColumnPinningChange` | `(pinning: { left: ReadonlyArray<string>; right: ReadonlyArray<string> }) => void` | A column is pinned or unpinned, from the column menu, `api.setColumnPinning` or `api.setState`. Same shape as `api.getState().columnPinning`. Not fired on mount. |
 
 ### Scrolling
 
@@ -42525,7 +42527,7 @@ only be assigned in script: `el.columns = [...]`.
 | `pinnedBottomRows` | `ReadonlyArray<TData>` |
 | `columnOrder` | `ReadonlyArray<string>` |
 
-### Events (32)
+### Events (34)
 
 `detail` is the callback's argument. The one callback that takes two carries
 an object keyed by its parameter names.
@@ -42562,6 +42564,8 @@ an object keyed by its parameter names.
 | `retryrow` | `onRetryRow` | `{ row, rowIndex }` |
 | `detailtoggle` | `onDetailToggle` | `{ row, rowIndex }` |
 | `columnorderchange` | `onColumnOrderChange` | `order` |
+| `columnvisibilitychange` | `onColumnVisibilityChange` | `hiddenColumns` |
+| `columnpinningchange` | `onColumnPinningChange` | `pinning` |
 | `rowdragend` | `onRowDragEnd` | `event` |
 | `rowdrop` | `onRowDrop` | `event` |
 
@@ -122204,6 +122208,20 @@ For machine-readable releases, fetch
 ### @svgrid/grid
 
 #### Added
+
+- **`onColumnVisibilityChange` and `onColumnPinningChange`.** Hiding,
+  showing, pinning or unpinning a column, from the column menu, the api
+  setters or `api.setState`, now calls back with the hidden ids or the
+  `{ left, right }` pinning, the same shapes `api.getState()` reports. Both
+  are deduped on the value and do not fire on mount. An app saving the
+  layout no longer has to poll `getState()` to notice either. The
+  `<sv-grid>` element fires `columnvisibilitychange` and
+  `columnpinningchange`.
+
+- **`SvGridProps` is exported.** The full prop type, for a wrapper that
+  forwards a typed options bag to `<SvGrid>`. Without it a wrapper had to
+  hand-write a `declare module "@svgrid/grid"` stub, which shadows the
+  package's own types.
 
 - **`chartSpecToTable`.** The rows and columns a spec amounts to, in the
   shape `SvGrid` takes: one row per category with a column per series (a

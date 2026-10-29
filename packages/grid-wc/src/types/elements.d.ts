@@ -302,6 +302,8 @@ declare global {
     retryrow: CustomEvent<unknown>
     detailtoggle: CustomEvent<unknown>
     columnorderchange: CustomEvent<unknown>
+    columnvisibilitychange: CustomEvent<unknown>
+    columnpinningchange: CustomEvent<unknown>
     rowdragend: CustomEvent<unknown>
     rowdrop: CustomEvent<unknown>
     selectionchange: CustomEvent<unknown>
