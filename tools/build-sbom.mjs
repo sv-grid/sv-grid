@@ -28,6 +28,10 @@ import { createHash } from 'node:crypto'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const PKG_DIR = join(ROOT, 'packages')
 const OUT_DIR = join(ROOT, 'sbom')
+
+// Package directories under packages/. The Studio CLI sits one level down,
+// inside the private enterprise submodule.
+const pkgDirs = () => [...readdirSync(PKG_DIR), 'enterprise/studio-cli']
 const CHECK_ONLY = process.argv.includes('--check')
 
 /** npm scopes must be percent-encoded in a purl: @svgrid/grid -> %40svgrid/grid */
@@ -191,7 +195,7 @@ let workspaceVersions = null
 function workspaceVersion(name) {
   if (!workspaceVersions) {
     workspaceVersions = new Map()
-    for (const dir of readdirSync(PKG_DIR)) {
+    for (const dir of pkgDirs()) {
       try {
         const p = readPkg(dir)
         workspaceVersions.set(p.name, p.version)
@@ -240,7 +244,7 @@ function main() {
   let drifted = 0
   const written = []
 
-  for (const dir of readdirSync(PKG_DIR)) {
+  for (const dir of pkgDirs()) {
     let pkg
     try {
       pkg = readPkg(dir)

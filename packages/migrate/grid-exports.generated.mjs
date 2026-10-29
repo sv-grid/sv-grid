@@ -558,6 +558,7 @@ export const GRID_EXPORTS = new Set([
   "SvGridFilterOperator",
   "SvGridInstance",
   "SvGridOptions",
+  "SvGridProps",
   "SvGridSelect",
   "SvGridSelectedRange",
   "SvGridViewState",
