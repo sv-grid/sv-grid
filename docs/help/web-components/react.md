@@ -24,7 +24,7 @@ export default function Screen() {
 ```
 
 That is the whole integration. The component is generated from `<SvGrid>`'s
-own types, so all 124 properties and 33 events are typed props, and it works the
+own types, so all 124 properties and 35 events are typed props, and it works the
 same on React 17, 18 and 19.
 
 ## Server rendering (Next.js, TanStack Start, Remix)
