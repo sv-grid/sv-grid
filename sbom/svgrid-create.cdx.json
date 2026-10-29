@@ -34,10 +34,10 @@
   "components": [
     {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/grid@3.0.27",
+      "bom-ref": "pkg:npm/%40svgrid/grid@3.0.28",
       "name": "@svgrid/grid",
-      "version": "3.0.27",
-      "purl": "pkg:npm/%40svgrid/grid@3.0.27",
+      "version": "3.0.28",
+      "purl": "pkg:npm/%40svgrid/grid@3.0.28",
       "scope": "required",
       "description": "Runtime dependency (declared range: workspace:^)"
     }
@@ -46,11 +46,11 @@
     {
       "ref": "pkg:npm/%40svgrid/create@3.0.7",
       "dependsOn": [
-        "pkg:npm/%40svgrid/grid@3.0.27"
+        "pkg:npm/%40svgrid/grid@3.0.28"
       ]
     },
     {
-      "ref": "pkg:npm/%40svgrid/grid@3.0.27",
+      "ref": "pkg:npm/%40svgrid/grid@3.0.28",
       "dependsOn": []
     }
   ]

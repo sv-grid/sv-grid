@@ -52,7 +52,7 @@ breakdown are on the [bundle size reference](./bundle-size.md). An earlier
 version of this page typed these and sat a month behind the measurement.
 
 <!-- size:start -->
-Re-measured **28 Oct 2026** at `@svgrid/grid` 3.0.27 with the script that ships in the repo (`pnpm size:json`):
+Re-measured **29 Oct 2026** at `@svgrid/grid` 3.0.28 with the script that ships in the repo (`pnpm size:json`):
 
 | Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |
 | --- | ---: | ---: | ---: |
