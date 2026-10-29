@@ -51,7 +51,9 @@ concurrency:
 
 jobs:
   record:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04 on 2026-10-29 and Playwright 1.60
+    # has no Chromium build for it ("does not support chromium on ubuntu26.04-x64").
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5

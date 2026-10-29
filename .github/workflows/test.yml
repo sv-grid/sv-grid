@@ -388,7 +388,9 @@ jobs:
 
   e2e:
     name: End-to-end (Playwright)
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04 on 2026-10-29 and Playwright 1.60
+    # has no Chromium build for it ("does not support chromium on ubuntu26.04-x64").
+    runs-on: ubuntu-24.04
     # Independent of the unit job so the two run in parallel: this one is
     # dominated by browser wall-clock, not by anything the unit job produces.
     steps:

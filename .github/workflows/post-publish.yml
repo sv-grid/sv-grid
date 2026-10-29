@@ -30,7 +30,8 @@ jobs:
             node: 22
           - os: macos-latest
             node: 24
-          - os: ubuntu-latest
+          # Not ubuntu-latest: 26.04 has no Playwright 1.60 Chromium build.
+          - os: ubuntu-24.04
             node: 22
     runs-on: ${{ matrix.os }}
     timeout-minutes: 150
