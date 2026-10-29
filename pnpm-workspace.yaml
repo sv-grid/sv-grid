@@ -1,5 +1,7 @@
 packages:
   - packages/*
+  # The Studio CLI lives inside the private enterprise submodule.
+  - packages/enterprise/studio-cli
   - examples
   - website
 

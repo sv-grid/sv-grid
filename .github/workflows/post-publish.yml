@@ -38,13 +38,14 @@ jobs:
       - uses: actions/checkout@v5
 
       # The repo's own install provides Playwright; a frozen install needs the
-      # private website submodule as a workspace member (see test.yml).
-      - name: Check out the private website submodule
+      # private website and enterprise submodules as workspace members (see
+      # test.yml).
+      - name: Check out the private website and enterprise submodules
         env:
           WEBSITE_TOKEN: ${{ secrets.WEBSITE_TOKEN }}
         run: |
           git config --global url."https://x-access-token:${WEBSITE_TOKEN}@github.com/".insteadOf https://github.com/
-          git submodule update --init website
+          git submodule update --init website packages/enterprise
 
       - uses: pnpm/action-setup@v4
         with:

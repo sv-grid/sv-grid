@@ -33,6 +33,9 @@ on:
       # The trial zip (built in the deploy) and what goes into it.
       - 'tools/build-trial-bundle.mjs'
       - 'tools/trial-bundle/**'
+      # A submodule since the enterprise pack went private: a push that moves
+      # it changes this one path, which the glob below does not match.
+      - 'packages/enterprise'
       - 'packages/enterprise/**'
   # Instant deploy: the PRIVATE website repo (sv-grid/website) fires this via a
   # repository_dispatch on every push to its main (see its notify-monorepo
@@ -89,6 +92,16 @@ jobs:
           rm -rf website
           git clone --depth 1 --branch main \
             "https://x-access-token:${WEBSITE_TOKEN}@github.com/sv-grid/website.git" website
+
+      # @svgrid/enterprise is a PRIVATE submodule (sv-grid/sv-grid-enterprise).
+      # Four workspace packages depend on it with workspace:^, so a frozen
+      # install fails without it.
+      - name: Check out the private enterprise submodule
+        env:
+          WEBSITE_TOKEN: ${{ secrets.WEBSITE_TOKEN }}
+        run: |
+          git config --global url."https://x-access-token:${WEBSITE_TOKEN}@github.com/".insteadOf https://github.com/
+          git submodule update --init packages/enterprise
 
       # Regenerate the blog's SEO structure against the fresh clone: the four
       # tips pages, the three pillar hubs, and every post's "Related reading"

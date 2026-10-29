@@ -47,8 +47,8 @@ in order of preference:
 
 ```
 packages/grid/            @svgrid/grid          - MIT data grid + UI component suite
-packages/enterprise/      @svgrid/enterprise    - paid feature pack + Studio codegen
-packages/studio/          @svgrid/studio        - Studio CLI + visual designer
+packages/enterprise/      @svgrid/enterprise    - paid feature pack + Studio codegen (PRIVATE submodule)
+packages/enterprise/studio-cli/ @svgrid/studio  - Studio CLI + visual designer
 packages/mcp/             @svgrid/mcp           - MCP server
 packages/grid-wc/         @svgrid/grid-wc       - <sv-grid> web component
 packages/svgrid-ui/       @svgrid/ui            - UI component CLI
@@ -59,8 +59,10 @@ website/                                        - svgrid.com source (PRIVATE sub
 docs/                                           - markdown docs
 ```
 
-`website/` is a private git submodule. Changes there commit and push
-separately from the parent repo.
+`website/` and `packages/enterprise/` (sv-grid/sv-grid-enterprise) are
+private git submodules. Changes there commit and push separately from the
+parent repo: push the submodule first, then the parent commit that moves its
+gitlink, or CI cannot fetch the commit it points at.
 
 ### Commands
 

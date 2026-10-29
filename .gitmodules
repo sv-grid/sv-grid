@@ -2,3 +2,7 @@
 	path = website
 	url = https://github.com/sv-grid/website.git
 	branch = main
+[submodule "packages/enterprise"]
+	path = packages/enterprise
+	url = https://github.com/sv-grid/sv-grid-enterprise.git
+	branch = main

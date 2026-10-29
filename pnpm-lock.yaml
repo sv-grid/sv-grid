@@ -182,6 +182,19 @@ importers:
         specifier: ^8.2.1
         version: 8.2.1(@types/node@22.19.19)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1)(sass@1.104.0)
 
+  packages/enterprise/studio-cli:
+    dependencies:
+      '@svgrid/enterprise':
+        specifier: workspace:^
+        version: link:..
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.7
+        version: 22.19.19
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   packages/grid:
     dependencies:
       esm-env:
@@ -294,19 +307,6 @@ importers:
       vitest:
         specifier: ^4.1.7
         version: 4.1.7(@types/node@22.19.19)(@vitest/coverage-v8@4.1.7)(jsdom@29.1.1)(vite@8.2.1(@types/node@22.19.19)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1)(sass@1.104.0))
-
-  packages/studio:
-    dependencies:
-      '@svgrid/enterprise':
-        specifier: workspace:^
-        version: link:../enterprise
-    devDependencies:
-      '@types/node':
-        specifier: ^22.10.7
-        version: 22.19.19
-      typescript:
-        specifier: 6.0.3
-        version: 6.0.3
 
   packages/svgrid-sv:
     devDependencies:

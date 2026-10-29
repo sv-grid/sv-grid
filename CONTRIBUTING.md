@@ -37,8 +37,8 @@ This is a **pnpm workspace** monorepo:
 
 ```
 packages/grid/            @svgrid/grid          - MIT data grid + UI component suite
-packages/enterprise/      @svgrid/enterprise    - paid feature pack + Studio codegen
-packages/studio/          @svgrid/studio        - Studio CLI + visual designer
+packages/enterprise/      @svgrid/enterprise    - paid feature pack + Studio codegen (private submodule)
+packages/enterprise/studio-cli/ @svgrid/studio  - Studio CLI + visual designer
 packages/mcp/             @svgrid/mcp           - MCP server
 packages/grid-wc/         @svgrid/grid-wc       - <sv-grid> web component
 packages/svgrid-ui/       @svgrid/ui            - UI component CLI
@@ -51,8 +51,11 @@ website/                                        - svgrid.com source (private sub
 docs/                                           - markdown docs
 ```
 
-`website/` is a private git submodule, so a fresh clone shows it as an empty
-directory. Nothing in the MIT packages depends on it.
+`website/` and `packages/enterprise/` are private git submodules, so a fresh
+clone shows them as empty directories. Nothing in the MIT packages depends
+on the website. `@svgrid/grid-wc`, `@svgrid/mcp`, `@svgrid/create-studio` and
+the example gallery depend on `@svgrid/enterprise` through the workspace, so
+a full `pnpm install` needs read access to sv-grid/sv-grid-enterprise.
 
 ## Setup
 

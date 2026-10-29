@@ -12,8 +12,10 @@
  * How "changed since last publish" is decided:
  *   - Each publish creates a git tag `<dir>-v<version>` (the workflow does this).
  *   - We find the highest such tag = the commit that package was last published at.
- *   - If `git diff <tag>..HEAD` touches any of that package's WATCH paths, there
- *     are changes worth shipping; otherwise we skip it.
+ *   - If any of that package's WATCH paths has different content at the tag
+ *     than at HEAD, there are changes worth shipping; otherwise we skip it.
+ *     Paths inside the private enterprise submodule are read from the
+ *     submodule commit each side's gitlink records (see objectAt).
  *
  * WATCH lists only the files that end up in the tarball (its `files` field plus
  * the scripts that generate `dist/`). Tests, docs and demos do not trigger a
@@ -90,8 +92,12 @@ const PACKAGES = [
     watch: ['packages/mcp/src', 'packages/mcp/scripts', 'packages/mcp/server.json', 'packages/mcp/package.json'],
   },
   {
+    // `dir` names the tags (studio-v*) and the --only/--publish argument;
+    // `path` is where the package sits since it moved into the private
+    // enterprise submodule.
     dir: 'studio',
-    watch: ['packages/studio/src', 'packages/studio/package.json'],
+    path: 'packages/enterprise/studio-cli',
+    watch: ['packages/enterprise/studio-cli/src', 'packages/enterprise/studio-cli/package.json'],
   },
   {
     dir: 'svgrid-ui',
@@ -157,7 +163,8 @@ const cmpVer = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2]
 const fmtVer = (v) => v.join('.')
 const bumpPatch = (v) => [v[0], v[1], v[2] + 1]
 
-const manifestPath = (dir) => join(ROOT, 'packages', dir, 'package.json')
+const pkgPath = (dir) => PACKAGES.find((p) => p.dir === dir)?.path ?? `packages/${dir}`
+const manifestPath = (dir) => join(ROOT, pkgPath(dir), 'package.json')
 
 function highestReleaseTag(prefix) {
   let tags = []
@@ -178,14 +185,52 @@ function highestReleaseTag(prefix) {
   return best
 }
 
-function changedSince(tag, watch) {
-  // --quiet exits 1 when there ARE differences, 0 when there are none.
+// packages/enterprise is a private submodule. The parent stores only its
+// gitlink, so `git diff <tag>..HEAD -- packages/enterprise/src` sees nothing
+// below it. Each watch path is resolved to the object id it had at either
+// end instead: two ids match exactly when the content matches, which is
+// what the diff answered.
+const SUBMODULES = (() => {
   try {
-    execFileSync('git', ['diff', '--quiet', `${tag}..HEAD`, '--', ...watch], { cwd: ROOT })
-    return false // exit 0 -> no differences
+    return git(['config', '-f', '.gitmodules', '--get-regexp', '\\.path$'])
+      .split('\n')
+      .map((l) => l.split(' ')[1])
+      .filter(Boolean)
   } catch {
-    return true // non-zero -> differences exist
+    return []
   }
+})()
+
+// Where a watched path lived before it moved, for tags laid down before the
+// move. The trees are identical (the private repo was split out with its
+// history), so an unchanged package keeps the same id across the move.
+const MOVED = [['packages/enterprise/studio-cli/', 'packages/studio/']]
+
+function revParse(cwd, spec) {
+  try {
+    return execFileSync('git', ['rev-parse', '--verify', '-q', spec], { cwd, encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
+  } catch {
+    return null
+  }
+}
+
+function objectAt(ref, path) {
+  const direct = revParse(ROOT, `${ref}:${path}`)
+  if (direct) return direct
+  const sub = SUBMODULES.find((s) => path.startsWith(`${s}/`))
+  if (sub) {
+    const link = revParse(ROOT, `${ref}:${sub}`)
+    const inner = link && revParse(join(ROOT, sub), `${link}:${path.slice(sub.length + 1)}`)
+    if (inner) return inner
+  }
+  for (const [now, was] of MOVED) {
+    if (path.startsWith(now)) return objectAt(ref, was + path.slice(now.length))
+  }
+  return null
+}
+
+function changedSince(tag, watch) {
+  return watch.some((p) => objectAt(tag, p) !== objectAt('HEAD', p))
 }
 
 function emit(lines) {
@@ -202,13 +247,13 @@ function emit(lines) {
  * release tripped it: the manifest moved, the constant did not.
  */
 function syncVersionConstant(dir, version) {
-  const file = join(ROOT, 'packages', dir, 'src', 'version.ts')
+  const file = join(ROOT, pkgPath(dir), 'src', 'version.ts')
   if (!existsSync(file)) return []
   const text = readFileSync(file, 'utf8')
   const next = text.replace(/(export const SVGRID_VERSION = ')[^']*(')/, `$1${version}$2`)
   if (next === text) return []
   writeFileSync(file, next)
-  return [`packages/${dir}/src/version.ts`]
+  return [`${pkgPath(dir)}/src/version.ts`]
 }
 
 /**
@@ -303,7 +348,7 @@ function publishMode(dirs) {
     const args = ['publish', '--access', 'public', '--no-git-checks']
     if (process.env.GITHUB_ACTIONS === 'true') args.push('--provenance')
     const r = spawnSync('pnpm', args, {
-      cwd: join(ROOT, 'packages', pkg.dir),
+      cwd: join(ROOT, pkgPath(pkg.dir)),
       stdio: 'inherit',
       shell: process.platform === 'win32',
     })
@@ -411,7 +456,7 @@ function main() {
     if (!CHECK_ONLY) {
       manifest.version = nextStr
       writeFileSync(file, JSON.stringify(manifest, null, 2) + '\n')
-      touched.push(`packages/${pkg.dir}/package.json`)
+      touched.push(`${pkgPath(pkg.dir)}/package.json`)
       touched.push(...syncVersionConstant(pkg.dir, nextStr))
       // Releasing the grid also moves GRID_VERSION inside the enterprise
       // package, which is what scaffolded apps pin.

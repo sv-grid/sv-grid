@@ -20,7 +20,10 @@ name: Publish npm packages
 #
 # Required repo secrets:
 #   NPM_TOKEN     - an npm automation token with publish rights to the @svgrid scope.
-#   WEBSITE_TOKEN - read access to the private website submodule (a workspace member).
+#   WEBSITE_TOKEN - read access to the private website submodule (a workspace member),
+#                   and write access to sv-grid/sv-grid-enterprise, the private
+#                   submodule at packages/enterprise: the version bumps of
+#                   @svgrid/enterprise and @svgrid/studio are committed there.
 #
 # Publishing follows a push and its tests, nothing else: there is no schedule.
 # The daily cron that used to sweep up after cancelled runs published main HEAD
@@ -80,14 +83,15 @@ jobs:
           fetch-depth: 0 # need full history + tags for change detection
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # website is a PRIVATE submodule; init it so `pnpm install --frozen-lockfile`
-      # finds the workspace member. Only the submodule fetch uses WEBSITE_TOKEN.
-      - name: Check out the private website submodule
+      # website and packages/enterprise are PRIVATE submodules; init them so
+      # `pnpm install --frozen-lockfile` finds the workspace members. Only the
+      # submodule fetches (and the enterprise release push) use WEBSITE_TOKEN.
+      - name: Check out the private website and enterprise submodules
         env:
           WEBSITE_TOKEN: ${{ secrets.WEBSITE_TOKEN }}
         run: |
           git config --global url."https://x-access-token:${WEBSITE_TOKEN}@github.com/".insteadOf https://github.com/
-          git submodule update --init website
+          git submodule update --init website packages/enterprise
 
       - uses: pnpm/action-setup@v4
         with:
@@ -220,7 +224,31 @@ jobs:
           if [ "${{ contains(fromJSON(steps.release.outputs.packages_json), 'mcp') }}" = "true" ]; then
             git add -- packages/mcp/src/data.ts
           fi
-          git add -- ${{ steps.release.outputs.files }} plugins/svgrid sbom
+          # Files under packages/enterprise belong to the private submodule.
+          # They are committed and pushed there first, and the parent commit
+          # then records the new gitlink: a later checkout cannot fetch a
+          # submodule commit that only ever existed on this runner.
+          SUB=packages/enterprise
+          PARENT_FILES=""
+          SUB_FILES=""
+          for f in ${{ steps.release.outputs.files }}; do
+            case "$f" in
+              "$SUB"/*) SUB_FILES="$SUB_FILES ${f#"$SUB"/}" ;;
+              *) PARENT_FILES="$PARENT_FILES $f" ;;
+            esac
+          done
+          if [ -n "$SUB_FILES" ]; then
+            git -C "$SUB" config user.name "github-actions[bot]"
+            git -C "$SUB" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git -C "$SUB" add -- $SUB_FILES
+            git -C "$SUB" commit -m "release: ${{ steps.release.outputs.summary }}"
+            git -C "$SUB" push origin HEAD:main || {
+              git -C "$SUB" pull --rebase --autostash origin main
+              git -C "$SUB" push origin HEAD:main
+            }
+            git add -- "$SUB"
+          fi
+          git add -- $PARENT_FILES plugins/svgrid sbom
           git commit -m "release: ${{ steps.release.outputs.summary }} [skip ci]" || echo "nothing to commit"
           # main can gain commits while a release builds; rebase the bump on top
           # rather than failing the run after the packages are already on npm.

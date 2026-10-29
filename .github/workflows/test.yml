@@ -25,17 +25,20 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # website is a PRIVATE submodule; init it so it's a valid pnpm workspace
-      # member (else `pnpm install --frozen-lockfile` fails on the missing
-      # importer). Only the submodule fetch uses WEBSITE_TOKEN (read access to
-      # sv-grid/website); the main checkout stays on the default token. Fork PRs
-      # are skipped by the job-level `if` above because they lack the secret.
-      - name: Check out the private website submodule
+      # website and packages/enterprise are PRIVATE submodules; init them so
+      # they are valid pnpm workspace members (else `pnpm install
+      # --frozen-lockfile` fails on the missing importer, and every package
+      # that depends on @svgrid/enterprise with workspace:^ cannot resolve).
+      # Only the submodule fetch uses WEBSITE_TOKEN (read access to
+      # sv-grid/website and sv-grid/sv-grid-enterprise); the main checkout
+      # stays on the default token. Fork PRs are skipped by the job-level `if`
+      # above because they lack the secret.
+      - name: Check out the private website and enterprise submodules
         env:
           WEBSITE_TOKEN: ${{ secrets.WEBSITE_TOKEN }}
         run: |
           git config --global url."https://x-access-token:${WEBSITE_TOKEN}@github.com/".insteadOf https://github.com/
-          git submodule update --init website
+          git submodule update --init website packages/enterprise
 
       - uses: pnpm/action-setup@v4
         with:
@@ -397,12 +400,12 @@ jobs:
       # It is not part of CI for that reason." That stopped being true once the
       # unit job started checking the submodule out with WEBSITE_TOKEN, and the
       # 122 specs went on not running for nobody's benefit.
-      - name: Check out the private website submodule
+      - name: Check out the private website and enterprise submodules
         env:
           WEBSITE_TOKEN: ${{ secrets.WEBSITE_TOKEN }}
         run: |
           git config --global url."https://x-access-token:${WEBSITE_TOKEN}@github.com/".insteadOf https://github.com/
-          git submodule update --init website
+          git submodule update --init website packages/enterprise
 
       - uses: pnpm/action-setup@v4
         with:

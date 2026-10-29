@@ -14,9 +14,9 @@ Per-package licensing
   packages/svgrid-ui/       @svgrid/ui            MIT
   packages/create-sv-grid/  @svgrid/create        MIT
   packages/create-studio/   @svgrid/create-studio MIT
-  packages/enterprise/      @svgrid/enterprise    Commercial
-  packages/studio/          @svgrid/studio        Commercial
-  website/                                        Proprietary
+  packages/enterprise/      @svgrid/enterprise    Commercial (private submodule)
+  packages/enterprise/studio-cli/ @svgrid/studio  Commercial (private submodule)
+  website/                                        Proprietary (private submodule)
 
 Each of the above ships its own LICENSE file, which is authoritative
 for that package. The MIT text reproduced below is the license for the
@@ -25,9 +25,10 @@ MIT-licensed packages in that list.
 The commercial and proprietary packages (the Enterprise feature pack,
 SvGrid Studio, the marketing + docs website, and any package added
 later that does not ship its own MIT LICENSE) may not be
-copied, modified, or redistributed without a paid license. Source is
-visible in this repository for transparency and for paying customers;
-visibility does not grant a license.
+copied, modified, or redistributed without a paid license. Their source
+is kept in private git submodules and is not part of this repository.
+Where commercial source is visible, including in published npm
+packages, visibility does not grant a license.
 
 ------------------------------------------------------------------------
 MIT License (applies to the MIT-licensed packages listed above)

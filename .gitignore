@@ -2,9 +2,10 @@
 # The marketing website (which also owns the private SvGrid Studio visual
 # designer under website/src/lib/designer + website/designer-app) lives in a
 # PRIVATE repo, mounted here as a git submodule (see .gitmodules). It is NOT
-# ignored - the parent tracks a submodule pointer. The public @svgrid/enterprise
-# keeps only the Studio *codegen* (@svgrid/enterprise/studio), which the MCP
-# server depends on.
+# ignored - the parent tracks a submodule pointer. @svgrid/enterprise (with the
+# Studio codegen, the spreadsheet and Base) and the Studio CLI live in a second
+# PRIVATE repo, sv-grid/sv-grid-enterprise, mounted at packages/enterprise the
+# same way.
 
 # Dependencies
 node_modules/
