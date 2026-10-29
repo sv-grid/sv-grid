@@ -44,9 +44,9 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## Key facts
 
-- Package: `@svgrid/grid` 3.0.28, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
+- Package: `@svgrid/grid` 3.0.29, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
 - Peer dependency: `svelte` ^5. Works in SvelteKit, including server-side rendering.
-- Size (gzip, Svelte external, measured 2026-10-29 on 3.0.28): 99.7 KB for the full `<SvGrid>` entry plus 11.3 KB CSS; 3.2 KB for the headless entry. Features load on demand.
+- Size (gzip, Svelte external, measured 2026-10-29 on 3.0.29): 99.8 KB for the full `<SvGrid>` entry plus 11.3 KB CSS; 3.2 KB for the headless entry. Features load on demand.
 - Styling: `--sg-*` CSS custom properties, and 20 theme stylesheets, each with a light and a dark palette. No CSS framework is required; Tailwind and shadcn-svelte setups are documented.
 - Accessibility: the WAI-ARIA grid pattern with full keyboard navigation and screen-reader announcements.
 - AI helpers ship free in `@svgrid/grid` and work with any model: `setAIProvider`, `aiFilter`, `aiSmartFill`, `aiSummarize`, `aiClassify`, `aiFindAnomalies`.
@@ -295,7 +295,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - [<sv-grid> reference](https://svgrid.com/docs/help/web-components/sv-grid/): Every property, attribute and event of the custom element.
 - [<sv-chart> reference](https://svgrid.com/docs/help/web-components/sv-chart/): Every property, attribute and event of the chart custom element.
 - [Shadow DOM: <sv-grid-shadow>](https://svgrid.com/docs/help/web-components/shadow-dom/): Two elements ship, and which one you want is a styling decision:
-- [SvGrid in React](https://svgrid.com/docs/help/web-components/react/): That is the whole integration. The component is generated from <SvGrid>'s own types, so all 124 properties and 33 events are typed props, and it works the same on React 17, 18 and 19.
+- [SvGrid in React](https://svgrid.com/docs/help/web-components/react/): That is the whole integration. The component is generated from <SvGrid>'s own types, so all 124 properties and 35 events are typed props, and it works the same on React 17, 18 and 19.
 - [SvGrid in Vue](https://svgrid.com/docs/help/web-components/vue/): The component is generated from <SvGrid>'s own types, and it removes the two things a raw custom element needs in Vue: the isCustomElement build config, and a .prop modifier on every object binding.
 - [SvGrid in Angular](https://svgrid.com/docs/help/web-components/angular/): A standalone component, compiled with ng-packagr in partial-Ivy mode, generated from <SvGrid>'s own types: every property is an @Input and every event an @Output.
 - [TypeScript with the custom element](https://svgrid.com/docs/help/web-components/typescript/): The element is plain JavaScript at the boundary, so TypeScript needs to be told it exists. Two declarations get completion and checking back.

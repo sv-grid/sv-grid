@@ -43,10 +43,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/enterprise@3.1.31",
+      "bom-ref": "pkg:npm/%40svgrid/enterprise@3.1.32",
       "name": "@svgrid/enterprise",
-      "version": "3.1.31",
-      "purl": "pkg:npm/%40svgrid/enterprise@3.1.31",
+      "version": "3.1.32",
+      "purl": "pkg:npm/%40svgrid/enterprise@3.1.32",
       "scope": "optional",
       "description": "Peer dependency (declared range: workspace:^)"
     }
@@ -56,7 +56,7 @@
       "ref": "pkg:npm/%40svgrid/mcp@3.0.38",
       "dependsOn": [
         "pkg:npm/svelte@5.55.9",
-        "pkg:npm/%40svgrid/enterprise@3.1.31"
+        "pkg:npm/%40svgrid/enterprise@3.1.32"
       ]
     },
     {
@@ -64,7 +64,7 @@
       "dependsOn": []
     },
     {
-      "ref": "pkg:npm/%40svgrid/enterprise@3.1.31",
+      "ref": "pkg:npm/%40svgrid/enterprise@3.1.32",
       "dependsOn": []
     }
   ]

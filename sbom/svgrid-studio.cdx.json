@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:625924ab-96d6-4294-aaed-a29313bfc7ab",
+  "serialNumber": "urn:uuid:ded10061-26da-4e6f-a1ed-a768c58876e4",
   "version": 1,
   "metadata": {
     "tools": {
@@ -16,10 +16,10 @@
     },
     "component": {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/studio@0.8.4",
+      "bom-ref": "pkg:npm/%40svgrid/studio@0.8.5",
       "name": "@svgrid/studio",
-      "version": "0.8.4",
-      "purl": "pkg:npm/%40svgrid/studio@0.8.4",
+      "version": "0.8.5",
+      "purl": "pkg:npm/%40svgrid/studio@0.8.5",
       "scope": "required",
       "licenses": [
         {
@@ -34,23 +34,23 @@
   "components": [
     {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/enterprise@3.1.31",
+      "bom-ref": "pkg:npm/%40svgrid/enterprise@3.1.32",
       "name": "@svgrid/enterprise",
-      "version": "3.1.31",
-      "purl": "pkg:npm/%40svgrid/enterprise@3.1.31",
+      "version": "3.1.32",
+      "purl": "pkg:npm/%40svgrid/enterprise@3.1.32",
       "scope": "required",
       "description": "Runtime dependency (declared range: workspace:^)"
     }
   ],
   "dependencies": [
     {
-      "ref": "pkg:npm/%40svgrid/studio@0.8.4",
+      "ref": "pkg:npm/%40svgrid/studio@0.8.5",
       "dependsOn": [
-        "pkg:npm/%40svgrid/enterprise@3.1.31"
+        "pkg:npm/%40svgrid/enterprise@3.1.32"
       ]
     },
     {
-      "ref": "pkg:npm/%40svgrid/enterprise@3.1.31",
+      "ref": "pkg:npm/%40svgrid/enterprise@3.1.32",
       "dependsOn": []
     }
   ]
