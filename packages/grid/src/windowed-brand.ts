@@ -12,6 +12,13 @@ export type WindowedSource<T> = {
   readonly length: number
   /** The entry at `index`: a loaded row, a placeholder, or undefined. */
   at(index: number): T | undefined
+  /**
+   * The indexes that hold loaded rows, ascending, when the source can say.
+   * Every other index is a placeholder, so a walk that only wants real rows
+   * (select all, the header checkbox) visits these instead of all `length`
+   * entries: 10M reads through the Proxy took ten seconds.
+   */
+  loaded?(): number[]
 }
 
 const isIndexKey = (key: string | symbol): key is string =>
@@ -22,8 +29,12 @@ const isIndexKey = (key: string | symbol): key is string =>
  * over an empty one) carrying the windowed mark. Each call returns a new
  * array identity, which is how a source tells the grid its rows changed.
  */
-export function makeWindowedArray<T>(length: number, at: (index: number) => T | undefined): T[] {
-  const source: WindowedSource<T> = { length, at }
+export function makeWindowedArray<T>(
+  length: number,
+  at: (index: number) => T | undefined,
+  loaded?: () => number[],
+): T[] {
+  const source: WindowedSource<T> = { length, at, loaded }
   const target: T[] = []
   return new Proxy(target, {
     get(t, key, receiver) {

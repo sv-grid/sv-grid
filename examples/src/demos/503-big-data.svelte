@@ -11,9 +11,10 @@
    *
    * Pick a size, then sort a column, type in a filter, group, or edit a cell
    * (balance, rating, status, game, bought, the months and the metrics are
-   * editable). "Run benchmark" times each of those against the current size
-   * and lists the results. Every number on the page is measured live in this
-   * browser.
+   * editable). The header checkbox selects every row as a rule, so ticking
+   * all 10M is one write, not 10M. "Run benchmark" times each of those
+   * against the current size and lists the results. Every number on the page
+   * is measured live in this browser.
    */
   import { onDestroy, onMount } from 'svelte'
   import {
@@ -215,6 +216,9 @@
       ],
       childCount: (r) => Number((r as Record<string, unknown>).__count) || undefined,
       getRowId: (r) => String(r.id),
+      // Selection kept as a rule ("all, except these"), so the header box
+      // selects every row, loaded or not, without visiting any of them.
+      selection: { groupSelects: 'descendants' },
     })
     gridKey += 1
     await waitPainted()

@@ -456,6 +456,19 @@ export function createBlockCache<TData>(options: BlockCacheOptions<TData>): Bloc
     return row ?? LOADING_ROW
   }
 
+  /** The indexes of loaded rows, ascending: all a whole-list walk needs to visit. */
+  function loadedIndexes(): number[] {
+    const out: number[] = []
+    const length = currentLength()
+    for (const index of [...blocks.keys()].sort((a, b) => a - b)) {
+      const block = blocks.get(index)!
+      if (block.status !== 'loaded') continue
+      const start = startOf(index)
+      for (let i = 0; i < block.rows.length && start + i < length; i += 1) out.push(start + i)
+    }
+    return out
+  }
+
   function abortAll(): void {
     for (const block of blocks.values()) block.controller?.abort()
     inFlight = 0
@@ -504,7 +517,7 @@ export function createBlockCache<TData>(options: BlockCacheOptions<TData>): Bloc
 
     windowedRows() {
       if (windowedCache) return windowedCache
-      windowedCache = createWindowedData<TData>(currentLength(), (i) => rowAt(i) as TData)
+      windowedCache = createWindowedData<TData>(currentLength(), (i) => rowAt(i) as TData, loadedIndexes)
       return windowedCache
     },
 

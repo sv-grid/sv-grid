@@ -116,8 +116,9 @@ describe('api.applyTransaction', () => {
 
   it('a large reference removal scans the data once, not once per row', async () => {
     // One `indexOf` per removed object was rows x removed: 10k objects out of
-    // a 1M-row grid scanned the array 10k times. Past a handful of objects
-    // the transaction builds one identity map instead.
+    // a 1M-row grid scanned the array 10k times. The transaction crosses
+    // them off in its filter pass instead; these are out of data order and
+    // one repeats, so they take the second pass, through a Set.
     const big: Order[] = Array.from({ length: 2_000 }, (_, i) => ({ id: `r${i}`, symbol: 'X', price: i }))
     const target = document.createElement('div')
     document.body.appendChild(target)
@@ -154,6 +155,42 @@ describe('api.applyTransaction', () => {
       expect(ids).not.toContain('r1000')
     } finally {
       indexOf.mockRestore()
+      unmount(app)
+      target.remove()
+    }
+  })
+
+  it('a removal of row objects alone asks getRowId about no row', async () => {
+    // The id -> index map answers id removals; building it for a batch of
+    // objects was a getRowId call per row, a million on a million-row grid.
+    const big: Order[] = Array.from({ length: 50 }, (_, i) => ({ id: `r${i}`, symbol: 'X', price: i }))
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    let calls = 0
+    let captured: SvGridApi<typeof features, Order> | null = null
+    const app = mount(SvGrid, {
+      target,
+      props: {
+        data: big,
+        columns,
+        features,
+        getRowId: (o: Order) => { calls++; return o.id },
+        _rowModels: { coreRowModel: createCoreRowModel() },
+        containerHeight: 400,
+        onApiReady(api: SvGridApi<typeof features, Order>) { captured = api },
+      } as any,
+    })
+    try {
+      await tick()
+      const api = captured!
+      const refs = api.getData().slice(10, 30)
+      calls = 0
+      const result = api.applyTransaction({ remove: refs })
+      expect(calls).toBe(0)
+      expect(result.removed).toBe(20)
+      await tick()
+      expect(api.getData().map((o) => o.id)).toEqual([...big.slice(0, 10), ...big.slice(30)].map((o) => o.id))
+    } finally {
       unmount(app)
       target.remove()
     }

@@ -82,6 +82,9 @@ import {
 import {
     createSelection,
     headerSelectionStateOf,
+    loadedRows,
+    tickedCount,
+    tickedOriginals,
   } from "./selection";
 import {
     createColumns,
@@ -158,9 +161,14 @@ const COLUMN_OVERSCAN = 3;
 /** Rows past the viewport in the first paint; the rest of `overscan` follows a frame later. */
 const MOUNT_OVERSCAN = 2;
 
-/** The same ids with the same values, as `JSON.stringify` equality meant. */
+/**
+ * The same ids with the same values, as `JSON.stringify` equality meant. Maps
+ * that tick a different number of rows differ, which the recorded counts say
+ * without a pass over a million keys.
+ */
 function sameSelection(a: Record<string, boolean>, b: Record<string, boolean>): boolean {
   if (a === b) return true;
+  if (tickedCount(a) !== tickedCount(b)) return false;
   const keys = Object.keys(a);
   if (keys.length !== Object.keys(b).length) return false;
   for (const key of keys) if (a[key] !== b[key] || !(key in b)) return false;
@@ -2196,7 +2204,7 @@ export function createSvGridController<
     const isPlaceholder = ask
       ? (row: Row<TData>) => !isGroupRow(row) && !!ask(row.original as TData, row.index)
       : () => false;
-    for (const row of allRows) {
+    for (const row of loadedRows(allRows)) {
       if (isGroupRow(row) || isPlaceholder(row)) continue;
       const selected = model
         ? model.isSelected(row.id, row.original as TData)
@@ -2239,12 +2247,11 @@ export function createSvGridController<
     // Resolve selected rows by row id (not numeric index) so this is correct
     // with a custom getRowId and after sorting (#45). Iterate the full filtered
     // model - not the paginated slice - so selections on other pages are kept.
-    const selectedRows: TData[] = [];
-    for (const row of allRowsBeforePagination) {
-      if (isGroupRow(row)) continue;
-      if (rowSelectionState[row.id]) selectedRows.push(row.original as TData);
-    }
-    callback(rowSelectionState, selectedRows);
+    // The map is read once, not as a signal per row, and the rows dense, not
+    // through the lazy list's Proxy: at a million rows those two were ~200 ms
+    // of every checkbox click.
+    const rows = tickedCount(selection) > 0 ? loadedRows(allRowsBeforePagination as Row<TData>[]) : [];
+    callback(selection, tickedOriginals<TData>(rows, selection));
   });
 
   // Forward cell-selection rectangle changes to the consumer. Same
@@ -2442,7 +2449,7 @@ export function createSvGridController<
 
   let lastAnnouncedSelectionCount = 0;
   $effect(() => {
-    const count = Object.values(rowSelectionState).filter(Boolean).length;
+    const count = tickedCount(rowSelectionState);
     const messages = gridMessages;
     untrack(() => {
       const message = selectionAnnouncement(
@@ -4538,15 +4545,12 @@ export function createSvGridController<
     // Nothing checked is the common case and needs no walk: this derived
     // re-runs on every data change, and on a 100k-row live feed the walk
     // below was 30 ms per tick spent to conclude "none".
-    let anyChecked = false;
-    for (const id in rowSelectionState) {
-      if (rowSelectionState[id]) { anyChecked = true; break; }
-    }
-    if (!anyChecked) return "none";
-    // `denseRows`: with no sort or filter, `allRows` is the lazy row list,
+    if (!tickedCount(rowSelectionState)) return "none";
+    // `loadedRows`: with no sort or filter, `allRows` is the lazy row list,
     // and reading it through its Proxy cost ~0.7 us per row, up to 0.9 s per
-    // tick at 1M rows. The backing array is the same rows, without the trap.
-    return headerSelectionStateOf(denseRows(allRows), rowSelectionState, props.rowPlaceholder);
+    // tick at 1M rows; the backing array is the same rows, without the trap.
+    // On a server model only the loaded rows are read, not 10M placeholders.
+    return headerSelectionStateOf(loadedRows(allRows), rowSelectionState, props.rowPlaceholder);
   });
 
 

@@ -105,7 +105,10 @@ export function enableWindowedRowModel(): void {
         }
         return row
       }
-      const model: RowModel<TData> = { rows: makeWindowedArray(source.length, rowAt) as Array<Row<TData>> }
+      // A row sits at its data's index, so the loaded indexes carry over.
+      const model: RowModel<TData> = {
+        rows: makeWindowedArray(source.length, rowAt, source.loaded) as Array<Row<TData>>,
+      }
       current = { input: data, columns, model }
       return model
     }

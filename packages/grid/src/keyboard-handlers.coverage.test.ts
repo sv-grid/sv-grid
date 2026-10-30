@@ -256,27 +256,31 @@ describe('onGridKeyDown / F2 + activation', () => {
     expect(ctx.onCellDoubleClick).toHaveBeenCalledWith(1, 1)
   })
 
-  it('Space toggles row selection', () => {
+  it('Space toggles row selection through the checkbox path', () => {
+    // Not row.toggleSelected(): that writes the grid's own map, which a
+    // rowSelectionModel never reads, and spreads a million-key selection.
     const toggleSelected = vi.fn()
+    const original = { n: 1 }
     const ctx = makeCtx({
-      allRows: [{}, { toggleSelected }],
+      allRows: [{}, { id: 'r1', original, toggleSelected }],
       allColumns: [{}, {}],
+      toggleRowSelectionById: vi.fn(),
     })
     const { onGridKeyDown } = createKeyboard(ctx)
     onGridKeyDown(rootKeyEvent({ key: ' ' }))
-    expect(toggleSelected).toHaveBeenCalled()
+    expect(ctx.toggleRowSelectionById).toHaveBeenCalledWith('r1', original)
+    expect(toggleSelected).not.toHaveBeenCalled()
   })
 
   it('Space on an expandable row toggles selection (space branch wins over expand)', () => {
     // getKeyboardIntent(" ") === "activate". The handler checks `event.key === " "`
     // FIRST and toggles row selection, returning before the ctrl/expand branch.
-    const toggleSelected = vi.fn()
     const toggleExpanded = vi.fn()
-    const row = { toggleSelected, getCanExpand: () => true, toggleExpanded }
-    const ctx = makeCtx({ allRows: [{}, row], allColumns: [{}, {}] })
+    const row = { id: 'g', getCanExpand: () => true, toggleExpanded }
+    const ctx = makeCtx({ allRows: [{}, row], allColumns: [{}, {}], toggleRowSelectionById: vi.fn() })
     const { onGridKeyDown } = createKeyboard(ctx)
     onGridKeyDown(rootKeyEvent({ key: ' ', ctrlKey: true }))
-    expect(toggleSelected).toHaveBeenCalled()
+    expect(ctx.toggleRowSelectionById).toHaveBeenCalledWith('g', undefined)
     expect(toggleExpanded).not.toHaveBeenCalled()
   })
 

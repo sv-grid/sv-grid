@@ -31,6 +31,8 @@ import { buildCommandContext } from "./command-context";
 import { applyFieldColumns } from "./grid-extension.svelte";
 import { columnDataType } from "./column-types";
 import { getCellKey } from "./SvGrid.helpers";
+import { copySelection, loadedRows, tickedCount, tickedOriginals, withTickedCount } from "./selection";
+import { denseRows } from "./core";
 
 type OrientedRange = {
   from: { row: number; col: number }
@@ -50,10 +52,6 @@ type OrientedRange = {
  * map with it.
  */
 const rowIndexByData = new WeakMap<ReadonlyArray<unknown>, Map<string, number>>()
-
-/** Up to this many row objects in `applyTransaction({ remove })` are found
- *  with `indexOf`; past it, one identity -> index map over the data. */
-const REMOVE_BY_REF_SCAN_MAX = 8
 
 function rowIndexOf<TData>(
   data: ReadonlyArray<TData>,
@@ -303,26 +301,18 @@ export function createGridApi<
         // updated and removed in the same transaction ends up removed, as it
         // did when removes ran first.
         const removeIdx = new Set<number>();
+        // Row objects to remove are matched by identity in the filter pass
+        // below, not one `indexOf` each: that was rows x removed, and removing
+        // 10k objects from a 1M-row grid scanned the array 10k times.
+        let refs: unknown[] = [];
         if (tx.remove?.length) {
-          const byId = getId ? rowIndexOf(current, getId) : null;
-          // Reference removals: a few scan with `indexOf`; more build one
-          // identity -> index map. One `indexOf` per row was rows x removed:
-          // removing 10k objects from a 1M-row grid scanned the array 10k
-          // times. First occurrence wins, as `indexOf` answers.
-          let refs = 0;
-          for (const r of tx.remove) if (typeof r !== "string") refs += 1;
-          let byRef: Map<unknown, number> | null = null;
-          if (refs > REMOVE_BY_REF_SCAN_MAX) {
-            byRef = new Map();
-            for (let i = 0; i < current.length; i++) {
-              if (!byRef.has(current[i])) byRef.set(current[i], i);
-            }
-          }
+          refs = tx.remove.filter((r) => typeof r !== "string");
+          // The id map is a getRowId call per row; only id removals need it.
+          const byId = getId && refs.length < tx.remove.length ? rowIndexOf(current, getId) : null;
+          // The map's keys are ids, so a row object finds nothing in it.
           for (const r of tx.remove) {
-            const idx = typeof r === "string"
-              ? byId?.get(r)
-              : byRef ? byRef.get(r) : current.indexOf(r as TData);
-            if (idx !== undefined && idx >= 0) removeIdx.add(idx);
+            const idx = byId?.get(r as string);
+            if (idx !== undefined) removeIdx.add(idx);
           }
         }
 
@@ -338,9 +328,22 @@ export function createGridApi<
           if (!removeIdx.size && !tx.add?.length) rowIndexByData.set(next, byId);
         }
 
-        if (removeIdx.size) {
-          next = next.filter((_, i) => !removeIdx.has(i));
-          removed = removeIdx.size;
+        if (removeIdx.size || refs.length) {
+          // Matched against `current`, not `next`: an update may have put a
+          // new object at that index. Objects usually come in data order (a
+          // filter of getData()), so they are crossed off in step; out of
+          // order, a second pass asks a Set, whose `delete` is true once per
+          // object, so only the first occurrence goes. A Set of a million
+          // objects was most of the cost of removing them in step.
+          let j = 0;
+          let kept = next.filter((_, i) => (current[i] === refs[j] ? (j++, false) : !removeIdx.has(i)));
+          if (j < refs.length) {
+            const drop = new Set(refs);
+            kept = next.filter((_, i) => !drop.delete(current[i]) && !removeIdx.has(i));
+          }
+          next = kept;
+          // Updates replace rows in place, so `next` had the length of `current`.
+          removed = current.length - next.length;
         }
 
         if (tx.add?.length) {
@@ -581,12 +584,11 @@ export function createGridApi<
         // has subRows, but it is a real data row that renders its own cells, so
         // dropping it here silently truncated every tree read - including the
         // enterprise export, whose default row source is this method.
-        const out: TData[] = [];
-        for (const row of ctx.allRows) {
-          if (isGroupRow(row)) continue;
-          out.push(row.original as TData);
-        }
-        return out;
+        // `denseRows`: with no sort or filter `allRows` is the lazy row list,
+        // and a trap per read made this ~85 ms at 1M rows.
+        return denseRows(ctx.allRows as any[])
+          .filter((row) => !isGroupRow(row))
+          .map((row) => row.original as TData);
       },
       getData() {
         return ctx.internalData;
@@ -835,26 +837,22 @@ export function createGridApi<
       getFindHits() { return ctx.findHits.slice() },
       // ---- Row selection (read + write)
       getSelectedRows() {
-        const out: TData[] = [];
-        for (const row of ctx.allRows) {
-          if (isGroupRow(row)) continue;
-          if (ctx.rowSelectionState[row.id]) out.push(row.original as TData);
-        }
-        return out;
+        return tickedOriginals<TData>(loadedRows(ctx.allRows), ctx.rowSelectionState);
       },
       getSelectedRowIds() {
-        const out: string[] = [];
-        for (const row of ctx.allRows) {
-          if (!isGroupRow(row) && ctx.rowSelectionState[row.id]) out.push(row.id);
-        }
-        return out;
+        return tickedOriginals<string>(loadedRows(ctx.allRows), ctx.rowSelectionState, "id");
       },
       selectRows(ids, additive = false) {
-        const set = new Set(ids);
+        // Written straight into the map, which drops repeats itself, and
+        // counted on the way so no reader has to count a million keys again.
         ctx.grid.setRowSelection((prev: any) => {
-          const next: Record<string, boolean> = additive ? { ...prev } : {};
-          for (const id of set) next[id] = true;
-          return next;
+          let count = additive ? tickedCount(prev) : 0;
+          const next: Record<string, boolean> = additive ? copySelection(prev) : {};
+          for (const id of ids) {
+            if (!next[id]) count += 1;
+            next[id] = true;
+          }
+          return withTickedCount(next, count);
         });
       },
       selectAllRows() {

@@ -29,8 +29,14 @@ export { windowedSourceOf, isWindowedData, type WindowedSource } from './windowe
 /**
  * An array of `length` entries read through `at(i)`. Each call returns a new
  * array identity, which is how a source tells the grid its rows changed.
+ * `loaded`, when given, lists the indexes that hold real rows (ascending);
+ * the grid's whole-list walks, such as select all, then skip the rest.
  */
-export function createWindowedData<T>(length: number, at: (index: number) => T | undefined): T[] {
+export function createWindowedData<T>(
+  length: number,
+  at: (index: number) => T | undefined,
+  loaded?: () => number[],
+): T[] {
   enableWindowedRowModel()
-  return makeWindowedArray(length, at)
+  return makeWindowedArray(length, at, loaded)
 }

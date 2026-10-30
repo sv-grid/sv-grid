@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createBlockCache, rowPlaceholderState } from './server-block-cache'
+import { windowedSourceOf } from './windowed-brand'
 
 type Row = { id: number }
 
@@ -667,6 +668,30 @@ describe('createBlockCache read-after-write', () => {
     cache.rows() // prime the cached array
     cache.patch(3, { id: 999 })
     expect(cache.rows()[3]).toEqual({ id: 999 })
+    cache.dispose()
+  })
+
+  it('lists the loaded rows of its windowed list, so a walk can skip the rest', async () => {
+    // Blocks 0 and 5 load, block 3 fails: only the 200 loaded rows are listed,
+    // ascending whatever order they arrived in.
+    const server = scriptedFetch({ total: 1000, failBlocks: new Set([3]) })
+    const cache = createBlockCache<Row>({
+      blockSize: 100,
+      fetch: server.fetch,
+      onChange: () => {},
+      schedule: sync,
+    })
+    cache.setViewport(500, 520)
+    await server.flush()
+    cache.setViewport(300, 320)
+    await server.flush()
+    cache.setViewport(0, 20)
+    await server.flush()
+    const loaded = windowedSourceOf<Row>(cache.windowedRows())!.loaded!()
+    expect(loaded).toHaveLength(200)
+    expect(loaded.slice(0, 2)).toEqual([0, 1])
+    expect(loaded.slice(99, 102)).toEqual([99, 500, 501])
+    expect(loaded.at(-1)).toBe(599)
     cache.dispose()
   })
 })

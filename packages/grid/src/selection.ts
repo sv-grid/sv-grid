@@ -15,6 +15,7 @@ import {
   isGroupRow,
 } from "./cell-values";
 import { denseRows } from "./core";
+import { windowedSourceOf } from "./windowed-brand";
 
 /**
  * What the header checkbox shows: whether all, some or none of the selectable
@@ -46,6 +47,71 @@ export function headerSelectionStateOf(
   return off ? "some" : "all";
 }
 
+/**
+ * How many ids a selection map ticks, per map object. The store replaces the
+ * map on every change and several readers want the count (the announcement,
+ * the change forwarder's equality check); at a million ticked rows each
+ * `Object.values(...).filter(Boolean)` was most of a second. The grid's own
+ * setters know the count of the map they build and record it; any other map
+ * is counted once, on first read.
+ */
+const tickedCounts = new WeakMap<object, number>();
+
+export function tickedCount(selection: Readonly<Record<string, unknown>>): number {
+  let n = tickedCounts.get(selection);
+  if (n === undefined) {
+    n = 0;
+    for (const id in selection) if (selection[id]) n += 1;
+    tickedCounts.set(selection, n);
+  }
+  return n;
+}
+
+export function withTickedCount<T extends object>(selection: T, count: number): T {
+  tickedCounts.set(selection, count);
+  return selection;
+}
+
+/**
+ * The originals of the ticked rows in `rows`, in row order, skipping group
+ * rows. A few ticked ids are asked through a Set: a map of a handful of keys
+ * is a fast-mode object, and a keyed read of it with a row id it does not
+ * hold was ~110 ms over a million rows, against ~14 ms for `Set.has`.
+ * `key: "id"` gives the ticked rows' ids instead.
+ */
+export function tickedOriginals<TData>(
+  rows: ReadonlyArray<any>,
+  selection: Readonly<Record<string, unknown>>,
+  key: "original" | "id" = "original",
+): TData[] {
+  const out: TData[] = [];
+  const few = tickedCount(selection) * 16 < rows.length
+    ? new Set(Object.keys(selection).filter((id) => selection[id]))
+    : null;
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    if ((few ? few.has(row.id) : selection[row.id]) && !isGroupRow(row)) out.push(row[key] as TData);
+  }
+  return out;
+}
+
+/**
+ * The rows a selection walk visits. Windowed data from a server model is
+ * mostly placeholders, which no walk ticks or counts; when the source lists
+ * its loaded indexes, only those are read. Anything else is read dense.
+ */
+export function loadedRows<T>(rows: T[]): T[] {
+  const source = windowedSourceOf<T>(rows);
+  return source?.loaded ? (source.loaded().map(source.at) as T[]) : denseRows(rows);
+}
+
+/** A copy of a selection map. A `for...in` copy is about twice as fast as `{ ...prev }` on a dictionary-mode object of a million keys. */
+export function copySelection(prev: Readonly<Record<string, boolean>>): Record<string, boolean> {
+  const next: Record<string, boolean> = {};
+  for (const id in prev) next[id] = prev[id] as boolean;
+  return next;
+}
+
 export function createSelection<
   TFeatures extends TableFeatures = TableFeatures,
   TData extends RowData = RowData,
@@ -57,7 +123,7 @@ export function createSelection<
    * row, that scan held the page for seconds after a sort.
    */
   function rowOriginal(rowId: string): { found: boolean; original?: unknown } {
-    const row = ctx.allRows.find((r: any) => r.id === rowId);
+    const row = loadedRows(ctx.allRows as any[]).find((r) => r.id === rowId);
     return row ? { found: true, original: row.original } : { found: false };
   }
 
@@ -79,7 +145,11 @@ export function createSelection<
       model.toggle(rowId, hit.original, !model.isSelected(rowId, hit.original));
       return;
     }
-    ctx.grid.setRowSelection((prev: any) => ({ ...prev, [rowId]: !prev[rowId] }));
+    ctx.grid.setRowSelection((prev: any) => {
+      const next = copySelection(prev);
+      const on = (next[rowId] = !prev[rowId]);
+      return withTickedCount(next, tickedCount(prev) + (on ? 1 : -1));
+    });
   }
 
   function toggleSelectAllRows() {
@@ -98,22 +168,25 @@ export function createSelection<
       return;
     }
     // Placeholder rows are excluded: there is no row there to select yet,
-    // and ticking one would leave a selected id that never resolves. The rows
-    // are read dense and the prop once, as in headerSelectionStateOf.
-    const rows = denseRows(ctx.allRows as any[]);
+    // and ticking one would leave a selected id that never resolves, so only
+    // loaded rows are read. The prop is read once, as in headerSelectionStateOf.
+    const rows = loadedRows(ctx.allRows as any[]);
     const placeholder = ctx.props.rowPlaceholder as
       | ((original: unknown, index: number) => unknown)
       | undefined;
     ctx.grid.setRowSelection((prev: any) => {
-      const next = { ...prev };
+      let count = tickedCount(prev);
+      const next = copySelection(prev);
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
         if (isGroupRow(row)) continue;
         if (placeholder && placeholder(row.original, row.index)) continue;
+        // Ticking an unticked row, or unticking a ticked one, moves the count.
+        if (!next[row.id] === select) count += select ? 1 : -1;
         if (select) next[row.id] = true;
         else delete next[row.id];
       }
-      return next;
+      return withTickedCount(next, count);
     });
   }
 

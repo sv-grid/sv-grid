@@ -192,7 +192,9 @@ export function createKeyboard<
       const row = ctx.allRows[current.rowIndex];
       const column = ctx.allColumns[current.colIndex];
       if (event.key === " ") {
-        row?.toggleSelected?.();
+        // The checkbox's own path: it asks a `rowSelectionModel` when there
+        // is one, and copies a large selection without a spread.
+        if (row) ctx.toggleRowSelectionById(row.id, row.original);
         return;
       }
       if (event.ctrlKey && row?.getCanExpand?.()) {
