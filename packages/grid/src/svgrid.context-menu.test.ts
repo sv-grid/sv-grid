@@ -223,6 +223,26 @@ describe('SvGrid context menu', () => {
     destroy()
   })
 
+  it('Clear acts on the right-clicked cell when nothing is selected', async () => {
+    const { target, destroy } = await mountGrid(true)
+    await tick()
+    await clickItem(target, 'Clear')
+    expect(names(target)[0]).toBe('')
+    destroy()
+  })
+
+  it('right-click outside the selection moves it to the clicked cell', async () => {
+    const { target, destroy } = await mountGrid(true)
+    await tick()
+    ;(target.querySelector('.sv-grid-cell[data-svgrid-row="3"][data-svgrid-col="0"]') as HTMLElement).click()
+    await tick()
+    await clickItem(target, 'Clear')
+    const after = names(target)
+    expect(after[0]).toBe('')
+    expect(after[3]).toBe('Person 4')
+    destroy()
+  })
+
   it('Remove row removes the clicked row', async () => {
     const { target, destroy } = await mountGrid(true)
     await tick()

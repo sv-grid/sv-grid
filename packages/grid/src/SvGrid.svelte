@@ -265,9 +265,6 @@
   const hasVerticalOverflow = $derived(ctrl.hasVerticalOverflow);
   const showGlobalFilterEffective = $derived(ctrl.showGlobalFilterEffective);
   const showFilterRowEffective = $derived(ctrl.showFilterRowEffective);
-  const showInlineColumnFilterEffective = $derived(
-    ctrl.showInlineColumnFilterEffective,
-  );
   const showRowSelectionEffective = $derived(ctrl.showRowSelectionEffective);
   const rowSummariesEnabled = $derived(ctrl.rowSummariesEnabled);
   const grid = $derived(ctrl.grid);
@@ -2801,31 +2798,6 @@
                             {@render icon("menu")}
                           </button>
                         </div>
-                        {#if showInlineColumnFilterEffective && header.column.getCanFilter()}
-                          <input
-                            class="sv-grid-column-filter"
-                            placeholder="Filter"
-                            oninput={(event) => {
-                              const value = (
-                                event.currentTarget as HTMLInputElement
-                              ).value;
-                              grid.setColumnFilters((prev) => [
-                                ...prev.filter(
-                                  (entry) => entry.id !== header.column.id,
-                                ),
-                                ...(value
-                                  ? [
-                                      {
-                                        id: header.column.id,
-                                        value,
-                                        fn: "includesString" as const,
-                                      },
-                                    ]
-                                  : []),
-                              ]);
-                            }}
-                          />
-                        {/if}
                       {/if}
                     </th>
                   {/if}

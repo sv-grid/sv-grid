@@ -258,13 +258,14 @@ describe('SvGrid - global filter', () => {
 })
 
 describe('SvGrid - column filter row', () => {
-  it('showColumnFilters renders the filter row inputs', async () => {
+  it('showColumnFilters puts no input in the header; the filter row is showFilterRow', async () => {
+    // It used to add a plain text input to every header cell, a second
+    // filter row beside showFilterRow's.
     const { target, destroy } = await mountGrid({ showColumnFilters: true })
     try {
       await tick()
-      const inputs = target.querySelectorAll('.sv-grid-column-filter')
-      // One filter input per filterable column.
-      expect(inputs.length).toBeGreaterThan(0)
+      expect(target.querySelectorAll('thead input:not([type=checkbox])')).toHaveLength(0)
+      expect(target.querySelector('.sv-grid-col-menu-btn')).not.toBeNull()
     } finally {
       destroy()
     }

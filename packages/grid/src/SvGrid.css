@@ -1890,7 +1890,6 @@ select.sv-grid-fr-editor {
    editor is styled separately - it's borderless and fills its cell. Shipping
    this with the grid means filters look like real inputs with no host
    stylesheet. */
-.sv-grid-column-filter,
 .sv-grid-filter-value,
 .sv-grid-global-filter input,
 .sv-grid-menu-search,
@@ -1902,11 +1901,6 @@ select.sv-grid-fr-editor {
   padding: 0 8px;
   box-sizing: border-box;
   font: inherit;
-}
-.sv-grid-column-filter {
-  height: 28px;
-  width: 100%;
-  font-size: 0.8125rem;
 }
 /* The global "Filter all rows" search: a labelled input bar above the grid. Ships
    styled so it never renders as a bare, unpositioned text label + input. */
@@ -1924,7 +1918,6 @@ select.sv-grid-fr-editor {
   min-width: 220px;
   font-size: 0.8125rem;
 }
-.sv-grid-column-filter::placeholder,
 .sv-grid-filter-value::placeholder,
 .sv-grid-menu-search::placeholder,
 .sv-grid-global-filter input::placeholder,
@@ -1936,7 +1929,6 @@ select.sv-grid-fr-editor {
 /* Calm, theme-aware focus (a soft box-shadow rather than a hard outline). */
 .sv-grid-global-filter input:focus,
 .sv-grid-filter-value:focus,
-.sv-grid-column-filter:focus,
 .sv-grid-menu-search:focus,
 .sv-grid-menu-condition-value:focus,
 .sv-grid-menu-operator:focus,

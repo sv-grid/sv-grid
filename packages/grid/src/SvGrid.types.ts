@@ -1911,11 +1911,8 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
   /**
    * Show the filter section inside each column's menu. Explicitly setting this
    * wins over `filterMode`; unset, it follows `filterMode` (default `'menu'`,
-   * so this is normally on).
-   *
-   * Setting it `true` also adds the inline "floating filter" input under each
-   * header - that surface requires the explicit opt-in, since it otherwise
-   * duplicates the menu's own filter popover.
+   * so this is normally on). The always-visible inputs under the headers are
+   * the filter row, `showFilterRow`.
    */
   showColumnFilters?: boolean;
   /**

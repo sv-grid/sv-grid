@@ -56,6 +56,9 @@ function makeCtx(overrides: any = {}) {
     cutSelectionToClipboard: vi.fn(),
     pasteFromClipboard: vi.fn(),
     clearSelectedCells: vi.fn(),
+    isCellInSelectedRange: vi.fn(() => false),
+    setActiveCell: vi.fn(),
+    setSelection: vi.fn(),
     allRows: [],
     grid: {
       getState: () => gridState,
@@ -573,6 +576,18 @@ describe('createMenus - context menu open/close', () => {
       row: { id: 0, name: 'x' },
     })
     expect(ctx.contextMenuPos).toBeTruthy()
+    // Outside the selection: the clicked cell becomes the selection.
+    expect(ctx.setActiveCell).toHaveBeenCalledWith(0, 1)
+    expect(ctx.setSelection).toHaveBeenCalledWith(0, 1)
+  })
+
+  it('openContextMenu keeps a selection that contains the clicked cell', () => {
+    const ctx = makeCtx({ props: { contextMenu: true }, allRows: [] })
+    ctx.isCellInSelectedRange = vi.fn(() => true)
+    const m = createMenus(ctx)
+    m.openContextMenu(fakeContextEvent(), 0, 1, 'name')
+    expect(ctx.setActiveCell).not.toHaveBeenCalled()
+    expect(ctx.setSelection).not.toHaveBeenCalled()
   })
 
   it('openContextMenu falls back to rowIndex when the row model is missing', () => {

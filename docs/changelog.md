@@ -344,6 +344,12 @@ For machine-readable releases, fetch
 
 #### Changed
 
+- **`showColumnFilters` no longer puts an input in the header.** Set to
+  `true`, it also drew a plain "Filter" text box in every header cell,
+  which with `showFilterRow` made two filter inputs per column. It now
+  only turns on the column menu's filter section, as documented. For
+  always-visible inputs use the filter row: `showFilterRow` or
+  `filterMode="row"`.
 - **The find bar loads on the first Ctrl+F.** It is its own chunk now, so a
   grid nobody searches does not carry it; the first open shows the bar once
   the chunk has loaded.

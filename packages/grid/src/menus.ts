@@ -327,6 +327,14 @@ export function createMenus<
     event.preventDefault();
     closeMenus();
     ctx.contextMenuFor = null;
+    // Right-click outside the selection moves it to the clicked cell, as in a
+    // spreadsheet; inside, the range stays for Copy / Clear / Chart. It used
+    // to move nothing, so Clear wiped whatever cell was selected before, and
+    // with nothing selected Copy, Cut, Paste and Clear did nothing.
+    if (!ctx.isCellInSelectedRange(rowIndex, colIndex)) {
+      ctx.setActiveCell(rowIndex, colIndex);
+      ctx.setSelection(rowIndex, colIndex);
+    }
     const rowModel = ctx.allRows[rowIndex];
     const row = rowModel?.original ?? null;
     const rowId = rowModel?.id ?? String(rowIndex);

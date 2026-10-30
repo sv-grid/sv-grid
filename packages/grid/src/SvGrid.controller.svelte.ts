@@ -904,12 +904,6 @@ export function createSvGridController<
   const showColumnFiltersEffective = $derived(
     props.showColumnFilters ?? (props.filterMode ?? "menu") === "menu",
   );
-  // The inline "floating filter" input under each header duplicates the
-  // column menu's funnel popover when both are active, so it requires an
-  // explicit opt-in via the `showColumnFilters` prop.
-  const showInlineColumnFilterEffective = $derived(
-    props.showColumnFilters === true,
-  );
 
   // Effective selection-surface flags. `selectionMode` defaults to 'both' so
   // existing consumers keep their current behaviour.
@@ -5242,7 +5236,6 @@ export function createSvGridController<
     get showGlobalFilterEffective() { return showGlobalFilterEffective; },
     get showFilterRowEffective() { return showFilterRowEffective; },
     get showColumnFiltersEffective() { return showColumnFiltersEffective; },
-    get showInlineColumnFilterEffective() { return showInlineColumnFilterEffective; },
     get showRowSelectionEffective() { return showRowSelectionEffective; },
     get rowSummariesEnabled() { return rowSummariesEnabled; },
     get enableCellSelectionEffective() { return enableCellSelectionEffective; },

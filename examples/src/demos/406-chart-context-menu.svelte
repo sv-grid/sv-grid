@@ -110,7 +110,7 @@
       field: 'category',
       header: 'Category',
       width: 150,
-      cell: (ctx) => renderSnippet(CategoryChip, { value: String(ctx.getValue()) }),
+      cell: (ctx) => renderSnippet(CategoryChip, { value: String(ctx.getValue() ?? '') }),
     },
     {
       field: 'trend',
@@ -130,14 +130,14 @@
       header: 'Rating',
       width: 130,
       align: 'center',
-      cell: (ctx) => renderSnippet(RatingStars, { value: Number(ctx.getValue()) }),
+      cell: (ctx) => renderSnippet(RatingStars, { value: Number(ctx.getValue() ?? NaN) }),
     },
     {
       field: 'status',
       header: 'Status',
       width: 120,
       align: 'center',
-      cell: (ctx) => renderSnippet(StatusPill, { value: String(ctx.getValue()) }),
+      cell: (ctx) => renderSnippet(StatusPill, { value: String(ctx.getValue() ?? '') }),
     },
   ]
 
@@ -151,43 +151,53 @@
   ]
 </script>
 
+<!-- Each renderer draws nothing for an empty value: "Insert row" in the
+     context menu adds a blank row. -->
 {#snippet ProductCell(props: { row: Row })}
-  {@const c = catColor(props.row.category)}
-  <span class="pc">
-    <span class="pc-badge" style="background: linear-gradient(135deg, {c}, color-mix(in srgb, {c} 55%, #0f172a));">
-      {props.row.product.charAt(0)}
+  {#if props.row.product}
+    {@const c = catColor(props.row.category)}
+    <span class="pc">
+      <span class="pc-badge" style="background: linear-gradient(135deg, {c}, color-mix(in srgb, {c} 55%, #0f172a));">
+        {props.row.product.charAt(0)}
+      </span>
+      <span class="pc-text">
+        <span class="pc-name">{props.row.product}</span>
+        <span class="pc-sku">{props.row.sku}</span>
+      </span>
     </span>
-    <span class="pc-text">
-      <span class="pc-name">{props.row.product}</span>
-      <span class="pc-sku">{props.row.sku}</span>
-    </span>
-  </span>
+  {/if}
 {/snippet}
 
 {#snippet CategoryChip(props: { value: string })}
-  {@const c = catColor(props.value)}
-  <span class="chip" style="color: {c}; background: color-mix(in srgb, {c} 16%, transparent); border-color: color-mix(in srgb, {c} 40%, transparent);">
-    <span class="chip-dot" style="background: {c};"></span>{props.value}
-  </span>
+  {#if props.value}
+    {@const c = catColor(props.value)}
+    <span class="chip" style="color: {c}; background: color-mix(in srgb, {c} 16%, transparent); border-color: color-mix(in srgb, {c} 40%, transparent);">
+      <span class="chip-dot" style="background: {c};"></span>{props.value}
+    </span>
+  {/if}
 {/snippet}
 
 {#snippet RatingStars(props: { value: number })}
-  <span class="stars" title="{props.value} / 5" aria-label="{props.value} out of 5">
-    {#each [0, 1, 2, 3, 4] as i (i)}
-      {@const fill = Math.max(0, Math.min(1, props.value - i))}
-      <span class="star">
-        <span class="star-bg">★</span>
-        <span class="star-fg" style="width: {fill * 100}%">★</span>
-      </span>
-    {/each}
-  </span>
+  {#if Number.isFinite(props.value)}
+    <span class="stars" title="{props.value} / 5" aria-label="{props.value} out of 5">
+      {#each [0, 1, 2, 3, 4] as i (i)}
+        {@const fill = Math.max(0, Math.min(1, props.value - i))}
+        <span class="star">
+          <span class="star-bg">★</span>
+          <span class="star-fg" style="width: {fill * 100}%">★</span>
+        </span>
+      {/each}
+    </span>
+  {/if}
 {/snippet}
 
 {#snippet StatusPill(props: { value: string })}
-  {@const c = statusColor(props.value)}
-  <span class="status" style="color: {c}; background: color-mix(in srgb, {c} 15%, transparent);">
-    <span class="status-dot" style="background: {c};"></span>{props.value}
-  </span>
+  {#if props.value}
+    {@const c = statusColor(props.value)}
+    <span class="status" style="color: {c}; background: color-mix(in srgb, {c} 15%, transparent);">
+      <span class="status-dot" style="background: {c};"></span>{props.value}
+    </span>
+  {/if}
 {/snippet}
 
 <div class="cc-demo">
