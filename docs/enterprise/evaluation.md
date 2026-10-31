@@ -6,6 +6,14 @@ a console message, and that is the only difference.
 
 ![The evaluation: install, try every feature while the watermark and the console message show, then set a license key when ready, with no gated-off code paths.](/docs-media/enterprise-evaluation.svg)
 
+Two ways to try it, both running every feature with only the watermark and
+console notice:
+
+- **Browse the demos offline.** Download the bundle below: a demo browser
+  with every example and its source. Nothing to build.
+- **Build your own app.** Install from npm and follow steps 1 to 3. This is
+  the path if you want to write code against the grid.
+
 ## Start a 30-day trial
 
 One download has both packages, the demo browser to run offline with every
@@ -15,7 +23,28 @@ SvGrid answers. The features are the same as installing from npm below.
 
 <div data-docs-trial="docs-evaluation"></div>
 
-## 1. Install
+## 1. Create an app
+
+`@svgrid/grid` and `@svgrid/enterprise` are libraries you import, not a
+project on their own. Running the install in an empty folder leaves you with
+only a `node_modules` folder and nowhere to put a component, so start from an
+app.
+
+The quickest, with Enterprise already wired in:
+
+```bash
+npm create @svgrid@latest my-grid-app -- --template pivot-dashboard
+cd my-grid-app
+npm install
+npm run dev
+```
+
+That opens a running grid at the printed `localhost` address, and the code
+lives in `src/`. Other templates are `minimal`, `admin-dashboard`, `base`,
+`sveltekit` and `headless`; drop `--template` to choose interactively.
+
+Already have a Svelte 5 or SvelteKit app? Install the packages into it
+instead:
 
 ```bash
 npm install @svgrid/grid @svgrid/enterprise
@@ -24,9 +53,13 @@ npm install jszip pdfmake   # only needed for Excel and PDF export
 
 ## 2. Add Enterprise to a grid
 
+Put this in a component (`src/App.svelte` in a Vite app, a `+page.svelte` in
+SvelteKit), then run `npm run dev`:
+
 ```svelte
 <script>
   import { SvGrid } from '@svgrid/grid'
+  import '@svgrid/grid/themes/ember.css'
   import { installEnterprise } from '@svgrid/enterprise'
 
   let api = $state(null)

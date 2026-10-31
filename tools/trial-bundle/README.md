@@ -30,7 +30,19 @@ server is there.
 
 ## 2. Use SvGrid in your app
 
-In a Svelte 5 or SvelteKit project, install both packages from this folder:
+SvGrid is a library you import, not a project on its own: installing it into
+an empty folder only creates a `node_modules` folder with nowhere to put a
+component. You need a Svelte 5 or SvelteKit app. If you do not have one yet,
+scaffold one with Enterprise already wired in:
+
+```bash
+npm create @svgrid@latest my-grid-app -- --template pivot-dashboard
+cd my-grid-app
+npm install
+npm run dev
+```
+
+In that app (or your own), install both packages from this folder:
 
 ```bash
 npm install ./path/to/packages/{{GRID_TGZ}} ./path/to/packages/{{ENTERPRISE_TGZ}}
@@ -42,7 +54,8 @@ or from npm, the same code:
 npm install @svgrid/grid @svgrid/enterprise
 ```
 
-Then render a grid:
+Then render a grid from a component (`src/App.svelte` in a Vite app, a
+`+page.svelte` in SvelteKit), and run `npm run dev`:
 
 ```svelte
 <script lang="ts">
