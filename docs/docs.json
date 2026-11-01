@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-10-30T15:31:55.541Z",
+  "generatedAt": "2026-11-01T10:35:41.298Z",
   "counts": {
-    "pages": 467,
+    "pages": 477,
     "enterprise": 107,
-    "withDemo": 338
+    "withDemo": 347
   },
   "pillars": [
     {
@@ -44,8 +44,10 @@
       "title": "SvGrid Enterprise",
       "blurb": "The paid modules on the grid; licensing, support, compliance, legal.",
       "sections": [
+        "help",
         "help/rows",
         "help/server",
+        "help/gantt",
         "help/export",
         "help/pivot",
         "help/kanban",
@@ -117,6 +119,7 @@
       "pillar": "grid",
       "pages": [
         "help/charts.md",
+        "help/gantt.md",
         "help/web-components.md",
         "help/accessibility.md",
         "help/agents.md",
@@ -240,7 +243,6 @@
         "help/rows/accessing-rows.md",
         "help/rows/full-width-rows.md",
         "help/rows/gallery.md",
-        "help/rows/gantt.md",
         "help/rows/master-detail.md",
         "help/rows/row-data.md",
         "help/rows/row-dragging.md",
@@ -380,6 +382,50 @@
           "pages": [
             "help/charts/from-the-grid.md",
             "help/charts/api.md"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "help/gantt",
+      "title": "Gantt",
+      "pillar": "enterprise",
+      "pages": [
+        "help/gantt/start.md",
+        "help/gantt/work-breakdown.md",
+        "help/gantt/dependencies.md",
+        "help/gantt/editing.md",
+        "help/gantt/axis-and-working-time.md",
+        "help/gantt/critical-path.md",
+        "help/gantt/resources.md",
+        "help/gantt/customizing.md",
+        "help/gantt/views.md",
+        "help/gantt/api.md"
+      ],
+      "groups": [
+        {
+          "label": "Start here",
+          "pages": [
+            "help/gantt/start.md",
+            "help/gantt/work-breakdown.md",
+            "help/gantt/dependencies.md",
+            "help/gantt/editing.md",
+            "help/gantt/axis-and-working-time.md"
+          ]
+        },
+        {
+          "label": "Planning",
+          "pages": [
+            "help/gantt/critical-path.md",
+            "help/gantt/resources.md"
+          ]
+        },
+        {
+          "label": "Beyond the chart",
+          "pages": [
+            "help/gantt/customizing.md",
+            "help/gantt/views.md",
+            "help/gantt/api.md"
           ]
         }
       ]
@@ -1013,8 +1059,8 @@
       "section": "",
       "pillar": "grid",
       "tier": "community",
-      "words": 12975,
-      "lastUpdated": "2026-10-29",
+      "words": 13031,
+      "lastUpdated": "2026-10-31",
       "demoIds": []
     },
     {
@@ -1097,8 +1143,8 @@
       "section": "enterprise",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 521,
-      "lastUpdated": "2026-10-14",
+      "words": 713,
+      "lastUpdated": "2026-10-31",
       "demoIds": []
     },
     {
@@ -3589,6 +3635,177 @@
       ]
     },
     {
+      "path": "help/gantt.md",
+      "url": "/docs/help/gantt/",
+      "title": "Gantt chart mode",
+      "summary": "Set one gantt prop and the grid renders its rows as a **task table beside a time chart**: one bar per row, placed by its start and finish, nested into a work-breakdown tree, with arrows between linked tasks. It is the same <SvGrid>, the same data and columns - only the presentation changes.",
+      "section": "help",
+      "pillar": "enterprise",
+      "tier": "enterprise",
+      "words": 746,
+      "lastUpdated": "2026-09-22",
+      "demoIds": [
+        "474-gantt-intro",
+        "478-gantt-four-views",
+        "479-gantt-roadmap",
+        "480-gantt-program",
+        "481-gantt-portfolio-console"
+      ]
+    },
+    {
+      "path": "help/gantt/api.md",
+      "url": "/docs/help/gantt/api/",
+      "title": "Gantt: config reference",
+      "summary": "Every option on the gantt prop, with the page that explains it. The base config (GanttConfig) ships in @svgrid/grid; the Enterprise superset (GanttProConfig) and the renderer ship in @svgrid/enterprise.",
+      "section": "help/gantt",
+      "pillar": "enterprise",
+      "tier": "community",
+      "group": "Beyond the chart",
+      "words": 1667,
+      "lastUpdated": "2026-09-19",
+      "demoIds": []
+    },
+    {
+      "path": "help/gantt/axis-and-working-time.md",
+      "url": "/docs/help/gantt/axis-and-working-time/",
+      "title": "Gantt: the axis and working time",
+      "summary": "The time axis: its five presets and how to move between them, the window it spans, the today line, non-working days and holidays, and the Enterprise option that folds weekends out of the chart.",
+      "section": "help/gantt",
+      "pillar": "enterprise",
+      "tier": "community",
+      "group": "Start here",
+      "words": 986,
+      "lastUpdated": "2026-09-19",
+      "demoIds": [
+        "479-gantt-roadmap",
+        "477-gantt-resources"
+      ]
+    },
+    {
+      "path": "help/gantt/critical-path.md",
+      "url": "/docs/help/gantt/critical-path/",
+      "title": "Gantt: critical path, baselines and constraints",
+      "summary": "The planning layer: the chain of tasks with no slack, the dates the plan was signed off with, and the dates a task is pinned to. All three are Enterprise options on GanttProConfig, the superset of the free grid's config - structurally assignable to the gantt prop, so the free grid never needs to know about them:",
+      "section": "help/gantt",
+      "pillar": "enterprise",
+      "tier": "community",
+      "group": "Planning",
+      "words": 1353,
+      "lastUpdated": "2026-09-19",
+      "demoIds": [
+        "481-gantt-portfolio-console",
+        "476-gantt-critical-path"
+      ]
+    },
+    {
+      "path": "help/gantt/customizing.md",
+      "url": "/docs/help/gantt/customizing/",
+      "title": "Gantt: custom bars, tooltips and menus",
+      "summary": "What the chart draws inside a bar, says on hover and offers on right-click are all yours to replace: two snippets, a menu builder, and a handful of CSS custom properties for the colours.",
+      "section": "help/gantt",
+      "pillar": "enterprise",
+      "tier": "community",
+      "group": "Beyond the chart",
+      "words": 1026,
+      "lastUpdated": "2026-09-19",
+      "demoIds": [
+        "479-gantt-roadmap"
+      ]
+    },
+    {
+      "path": "help/gantt/dependencies.md",
+      "url": "/docs/help/gantt/dependencies/",
+      "title": "Gantt: dependencies",
+      "summary": "Links between tasks: the four types, lag and lead, where the links come from, what a violated or cyclic link looks like, and the cascade that keeps every link legal when a task moves.",
+      "section": "help/gantt",
+      "pillar": "enterprise",
+      "tier": "community",
+      "group": "Start here",
+      "words": 1332,
+      "lastUpdated": "2026-09-19",
+      "demoIds": [
+        "475-gantt-editing"
+      ]
+    },
+    {
+      "path": "help/gantt/editing.md",
+      "url": "/docs/help/gantt/editing/",
+      "title": "Gantt: editing",
+      "summary": "Set editable and the chart becomes a plan you can change. This page lists every gesture, the callback it fires and what arrives in it, then the drawer, the context menu, the keyboard and undo.",
+      "section": "help/gantt",
+      "pillar": "enterprise",
+      "tier": "community",
+      "group": "Start here",
+      "words": 1486,
+      "lastUpdated": "2026-09-19",
+      "demoIds": [
+        "475-gantt-editing"
+      ]
+    },
+    {
+      "path": "help/gantt/resources.md",
+      "url": "/docs/help/gantt/resources/",
+      "title": "Gantt: resource load",
+      "summary": "Who is on each task, and whether anyone is booked twice over. An Enterprise option on GanttProConfig: resourceField names the assignee, and resourceHistogram sums the assignments into a load strip under the chart.",
+      "section": "help/gantt",
+      "pillar": "enterprise",
+      "tier": "community",
+      "group": "Planning",
+      "words": 813,
+      "lastUpdated": "2026-09-19",
+      "demoIds": [
+        "477-gantt-resources",
+        "481-gantt-portfolio-console"
+      ]
+    },
+    {
+      "path": "help/gantt/start.md",
+      "url": "/docs/help/gantt/start/",
+      "title": "Gantt: getting started",
+      "summary": "The one option a Gantt needs, how it reads your dates, what a bar, a milestone and a summary look like, and the task table beside the chart. The other Gantt pages assume this one.",
+      "section": "help/gantt",
+      "pillar": "enterprise",
+      "tier": "community",
+      "group": "Start here",
+      "words": 1360,
+      "lastUpdated": "2026-09-19",
+      "demoIds": [
+        "474-gantt-intro"
+      ]
+    },
+    {
+      "path": "help/gantt/views.md",
+      "url": "/docs/help/gantt/views/",
+      "title": "The same rows as a grid, a scheduler and a board",
+      "summary": "The Gantt is one of four ways the grid can render a set of rows. The others are the table itself, the scheduler and the Kanban board, and all four are the same <SvGrid> with a different prop. This page is about running more than one of them over one array: what to switch, how the edits get back, and the one data-shape rule that keeps the views in step.",
+      "section": "help/gantt",
+      "pillar": "enterprise",
+      "tier": "community",
+      "group": "Beyond the chart",
+      "words": 1011,
+      "lastUpdated": "2026-09-19",
+      "demoIds": [
+        "478-gantt-four-views",
+        "387-scheduler-financial",
+        "388-scheduler-hr"
+      ]
+    },
+    {
+      "path": "help/gantt/work-breakdown.md",
+      "url": "/docs/help/gantt/work-breakdown/",
+      "title": "Gantt: work breakdown",
+      "summary": "A parentField turns flat rows into phases and the tasks under them. This page covers the summary bar a phase draws, how its percent is worked out, collapse, and what a folded phase still does for the links and the planning passes.",
+      "section": "help/gantt",
+      "pillar": "enterprise",
+      "tier": "community",
+      "group": "Start here",
+      "words": 997,
+      "lastUpdated": "2026-09-19",
+      "demoIds": [
+        "480-gantt-program"
+      ]
+    },
+    {
       "path": "help/glossary.md",
       "url": "/docs/help/glossary/",
       "title": "Glossary",
@@ -4362,21 +4579,6 @@
         "506-gallery-team-directory",
         "507-gallery-listings",
         "509-gallery-at-scale"
-      ]
-    },
-    {
-      "path": "help/rows/gantt.md",
-      "url": "/docs/help/rows/gantt/",
-      "title": "Gantt chart mode",
-      "summary": "The Gantt view of the grid is in progress and due on **1 November 2026**. It is on the roadmap as an in-progress item, and this page becomes its guide on that date.",
-      "seoDescription": "The Gantt view of the Svelte data grid is in progress and due on 1 November 2026. What it will do, and what to use for a project timeline until then.",
-      "section": "help/rows",
-      "pillar": "enterprise",
-      "tier": "enterprise",
-      "words": 245,
-      "lastUpdated": "2026-09-19",
-      "demoIds": [
-        "45-gantt-chart"
       ]
     },
     {
@@ -5336,11 +5538,19 @@
       "url": "/docs/help/troubleshooting/",
       "title": "Troubleshooting",
       "summary": "Symptom first. The error reference covers the messages the library throws; this page covers the quiet failures - the grid mounts but shows nothing, a feature you switched on does nothing, the page scrolls instead of the grid. Each entry names the cause the way you would see it and the smallest change that fixes it.",
+      "keywords": [
+        "grid renders but no rows",
+        "grid shows no rows",
+        "svgrid empty",
+        "rows not showing",
+        "headers but no rows",
+        "grid is blank"
+      ],
       "section": "help",
       "pillar": "grid",
       "tier": "community",
       "words": 1520,
-      "lastUpdated": "2026-09-22",
+      "lastUpdated": "2026-11-01",
       "demoIds": [
         "79-loading-from-rest"
       ]

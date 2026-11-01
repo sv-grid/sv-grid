@@ -51,12 +51,12 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - Accessibility: the WAI-ARIA grid pattern with full keyboard navigation and screen-reader announcements.
 - AI helpers ship free in `@svgrid/grid` and work with any model: `setAIProvider`, `aiFilter`, `aiSmartFill`, `aiSummarize`, `aiClassify`, `aiFindAnomalies`.
 - For coding assistants: an MCP server (`npx -y @svgrid/mcp`, MIT) serves the version-pinned API and demo sources; an Agent Skill installs with `npx skills add sv-grid/sv-grid`.
-- Paid add-on, not needed for anything above: `@svgrid/enterprise` adds Excel / PDF export, import, print, pivot tables, the Server-Side Row Model, alert rules and the Kanban board, Scheduler and Spreadsheet views. Prices start at $299 per developer: https://svgrid.com/pricing/ . A 30-day trial (one download with both packages and the demos to run offline, plus email support for the 30 days) starts from that page; without it, the package runs in full with a watermark until a key is set.
-- 538 live demos, each with its source: https://svgrid.com/demos/ . Source code: https://github.com/sv-grid/sv-grid
+- Paid add-on, not needed for anything above: `@svgrid/enterprise` adds Excel / PDF export, import, print, pivot tables, the Server-Side Row Model, alert rules and the Kanban board, Scheduler, Gantt and Spreadsheet views. Prices start at $299 per developer: https://svgrid.com/pricing/ . A 30-day trial (one download with both packages and the demos to run offline, plus email support for the 30 days) starts from that page; without it, the package runs in full with a watermark until a key is set.
+- 546 live demos, each with its source: https://svgrid.com/demos/ . Source code: https://github.com/sv-grid/sv-grid
 
 ## About this file
 
-The full SvGrid documentation, generated 2026-10-30 from 467 pages, 21 comparison pages, plus 83 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
+The full SvGrid documentation, generated 2026-11-01 from 477 pages, 21 comparison pages, plus 83 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
 
 <!-- =================================================================
      /docs/getting-started/  (community)
@@ -72723,6 +72723,133 @@ plain elements:
 - [SvEmptyState](../ui-components/sv-empty-state.md)
 
 <!-- =================================================================
+     /docs/help/gantt/  (enterprise)
+     ================================================================== -->
+
+# Gantt chart mode
+
+Set one `gantt` prop and the grid renders its rows as a **task table beside a
+time chart**: one bar per row, placed by its start and finish, nested into a
+work-breakdown tree, with arrows between linked tasks. It is the same
+`<SvGrid>`, the same `data` and `columns` - only the presentation changes.
+
+Like [Kanban board mode](./rows/kanban-board.md) and the
+[scheduler](./rows/scheduler.md), the Gantt is a pure **view of the grid**: it
+renders the grid's already filtered, sorted and searched rows and writes back
+only through callbacks - it never mutates your data.
+
+> **Enterprise feature.** The `gantt` prop and its config types are part of the
+> free grid, but the *renderer* ships in `@svgrid/enterprise`. Register it once
+> and the view lights up:
+>
+> ```ts
+> import { setLicenseKey, enableGanttView } from '@svgrid/enterprise'
+> setLicenseKey('YOUR-KEY')   // omit to evaluate, with the watermark and console message
+> enableGanttView()
+> ```
+>
+> `installEnterprise(api)` also calls `enableGanttView()` for you. Without the
+> renderer registered, a grid with a `gantt` prop shows an upgrade note.
+
+<div data-docs-demo="474-gantt-intro" data-height="620"></div>
+
+The whole of it is one prop. This is the grid above, with the columns it shows
+in the task table and the fields the chart reads:
+
+```svelte
+<script lang="ts">
+  import { SvGrid, type GridColumns, type GanttConfig } from '@svgrid/grid'
+  import { enableGanttView } from '@svgrid/enterprise'
+
+  enableGanttView()
+
+  type Task = {
+    id: string
+    name: string
+    owner: string
+    start: string
+    end?: string
+    progress: number
+    parentId: string | null
+    milestone?: boolean
+  }
+
+  const data: Task[] = [
+    { id: 'p1', name: 'Discovery', owner: 'Priya', start: '2026-09-07', progress: 0, parentId: null },
+    { id: 't1', name: 'Interviews', owner: 'Priya', start: '2026-09-07', end: '2026-09-11', progress: 100, parentId: 'p1' },
+    { id: 't2', name: 'Synthesis', owner: 'Marco', start: '2026-09-14', end: '2026-09-18', progress: 40, parentId: 'p1' },
+    { id: 'm1', name: 'Brief signed off', owner: '-', start: '2026-09-21', progress: 0, parentId: null, milestone: true },
+  ]
+
+  const columns: GridColumns<Task> = [
+    { field: 'name', header: 'Task', width: 200 },
+    { field: 'owner', header: 'Owner', width: 100 },
+  ]
+
+  const gantt: GanttConfig<any, Task> = {
+    startField: 'start',
+    endField: 'end',
+    progressField: 'progress',
+    parentField: 'parentId',
+    milestoneField: 'milestone',
+    dependencies: [{ id: 'd1', from: 't1', to: 't2' }, { id: 'd2', from: 't2', to: 'm1' }],
+  }
+</script>
+
+<SvGrid {data} {columns} getRowId={(r) => r.id} {gantt} />
+```
+
+## Pages
+
+- [Getting started](./gantt/start.md): the one required option, how dates are read, bars and milestones, the task table, and the Gantt / Table toggle.
+- [Work breakdown](./gantt/work-breakdown.md): phases from a parent field, rolled-up summary bars, collapse, and what a folded phase still does.
+- [Dependencies](./gantt/dependencies.md): links and their four types, lag, violated and cyclic links, and auto-reschedule.
+- [Editing](./gantt/editing.md): drag, resize, the progress grip, drawing links, the drawer and menu, keyboard, undo.
+- [The axis and working time](./gantt/axis-and-working-time.md): zoom presets, the window, non-working days and holidays, the today line, folding weekends out.
+- [Critical path, baselines and constraints](./gantt/critical-path.md): the planning layer - slack, the ringed chain, ghost bars, pinned dates.
+- [Resource load](./gantt/resources.md): who is on what, the load histogram, capacity.
+- [Custom bars, tooltips and menus](./gantt/customizing.md): the `task` and `tooltip` snippets, the context menu, colours and the CSS hooks.
+- [The same rows as a grid, a scheduler and a board](./gantt/views.md): switching views over one array, and the date shape that keeps them in step.
+- [Config reference](./gantt/api.md): every option on `GanttConfig` and the Enterprise `GanttProConfig`, with the page that explains it.
+
+## More examples
+
+### One plan, four views
+
+The same rows as a table, a Gantt, a resource timeline and a Kanban board,
+each writing back to the one array.
+
+<div data-docs-demo="478-gantt-four-views" data-height="620"></div>
+
+### Product roadmap
+
+A year in quarters: initiatives per team with the owner and a status chip
+drawn inside each bar, releases as milestones, and a status filter.
+
+<div data-docs-demo="479-gantt-roadmap" data-height="620"></div>
+
+### A programme of 640 tasks
+
+Forty sites of sixteen linked tasks each, opening folded to one bar per
+site, with the critical path across every chain and windowed rows.
+
+<div data-docs-demo="480-gantt-program" data-height="640"></div>
+
+### Portfolio office
+
+A project console: a rail of projects, live KPIs, and a dockable workspace
+with the editable plan over a risk register and a workload chart.
+
+<div data-docs-demo="481-gantt-portfolio-console" data-height="700"></div>
+
+## See also
+
+- [Scheduler / calendar mode](./rows/scheduler.md) - the resource and booking
+  view. Use it for appointments and shifts; use the Gantt for a project plan.
+- [Kanban board mode](./rows/kanban-board.md) - the same rows as cards in lanes.
+- [Tree data](./rows/tree-data.md) - hierarchy in the table itself.
+
+<!-- =================================================================
      /docs/help/rows/gallery/  (enterprise)
      ================================================================== -->
 
@@ -72836,39 +72963,6 @@ column (`fieldFn`), so the image need not be stored in the rows.
 The [fields module](../fields.md)'s gallery view is this gallery, set up from
 the view: the cover field, the primary field as the title, the fields the
 grid shows as the card's fields, and a click that opens the record.
-
-<!-- =================================================================
-     /docs/help/rows/gantt/  (enterprise)
-     ================================================================== -->
-
-# Gantt chart mode
-
-The Gantt view of the grid is in progress and due on **1 November 2026**. It
-is on the [roadmap](#/roadmap) as an in-progress item, and this page becomes
-its guide on that date.
-
-What it is: one `gantt` prop on the `<SvGrid>` you already have, and the rows
-render as a task table beside a time chart. A parent field nests the rows
-into phases that draw a rolled-up bar, a dependency list draws the arrows
-between tasks, and dragging a bar reports the new dates through a callback
-and slides its successors forward over weekends. The planning layer sits on
-top: the critical path in working days with a slack column, baselines drawn
-as ghost bars, date constraints, and a resource load strip. The renderer
-ships in `@svgrid/enterprise`, like the [Kanban board](/help/rows/kanban-board)
-and the [scheduler](/help/rows/scheduler); the prop and its types are in the
-free grid.
-
-Until then, two things draw a timeline today:
-
-- **A Gantt-shaped recipe in the free grid.** One wide custom cell per row
-  positions a bar by its start and end as a percentage of the project span,
-  with phase colouring, a progress fill and a today line. It is a normal grid,
-  so it sorts, filters and virtualizes. See the
-  [recipe](/help/recipes#gantt-chart-in-a-grid) and the
-  [demo](#/demos/45-gantt-chart).
-- **The scheduler's timeline views** in `@svgrid/enterprise`, for bookings
-  across resources: bars on a time axis with drag to re-time and resize, one
-  lane per person or asset. See the [scheduler](/help/rows/scheduler).
 
 <!-- =================================================================
      /docs/help/server/row-model-walkthrough/  (enterprise)
@@ -75233,6 +75327,1933 @@ the worker):
 | `scope` | `WorkerScopeLike` | Where to listen. Default: the worker's global scope. |
 
 It returns `{ dispose() }`, which stops answering.
+
+<!-- =================================================================
+     /docs/help/gantt/start/  (community)
+     ================================================================== -->
+
+# Gantt: getting started
+
+The one option a Gantt needs, how it reads your dates, what a bar, a milestone
+and a summary look like, and the task table beside the chart. The other Gantt
+pages assume this one.
+
+The examples on this page share one setup. The renderer ships in
+`@svgrid/enterprise` and is registered once; the rows are anchored on the
+current week so the today line is always in view.
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type GanttDependency } from '@svgrid/grid'
+  import { enableGanttView, type GanttProConfig } from '@svgrid/enterprise'
+
+  enableGanttView()
+
+  // One row type wide enough for every example on this page.
+  type Task = {
+    id: string
+    name: string
+    owner?: string
+    start: string
+    end?: string
+    days?: number
+    progress?: number
+    parentId?: string | null
+    milestone?: boolean
+    color?: string
+    blockedBy?: string[]
+    bStart?: string
+    bEnd?: string
+  }
+
+  // Anchored on a Monday so the weekend shading is obvious in every sample.
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const isoDay = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  const base = new Date()
+  base.setHours(0, 0, 0, 0)
+  base.setDate(base.getDate() - ((base.getDay() + 6) % 7))
+  const at = (dayOffset: number) => {
+    const d = new Date(base)
+    d.setDate(d.getDate() + dayOffset)
+    return isoDay(d)
+  }
+
+  let data = $state<Task[]>([
+    { id: 'p1', name: 'Discovery', parentId: null, start: at(0), owner: 'Priya' },
+    { id: 't1', name: 'Interviews', parentId: 'p1', start: at(0), end: at(4), progress: 100, owner: 'Priya', days: 3, color: '#7c3aed', bStart: at(0), bEnd: at(3) },
+    { id: 't2', name: 'Synthesis', parentId: 'p1', start: at(5), end: at(11), progress: 40, owner: 'Marco', days: 5, color: '#7c3aed', bStart: at(4), bEnd: at(9) },
+    { id: 'p2', name: 'Build', parentId: null, start: at(12), owner: 'Sven' },
+    { id: 't3', name: 'Implementation', parentId: 'p2', start: at(12), end: at(25), progress: 10, owner: 'Sven', days: 10, color: '#2563eb', bStart: at(10), bEnd: at(23) },
+    { id: 'm1', name: 'Launch', parentId: null, start: at(26), milestone: true, color: '#f59e0b' },
+  ])
+
+  const dependencies: GanttDependency[] = [
+    { id: 'd1', from: 't1', to: 't2' },
+    { id: 'd2', from: 't2', to: 't3' },
+    { id: 'd3', from: 't3', to: 'm1' },
+  ]
+  const holidays = [at(17)]
+
+  const columns: GridColumns<Task> = [
+    { field: 'name', header: 'Task', width: 200 },
+    { field: 'owner', header: 'Owner', width: 100 },
+    { field: 'start', header: 'Start', width: 110 },
+    { field: 'end', header: 'Finish', width: 110 },
+  ]
+
+  // The view reports what it wants and never writes your rows, so every editing
+  // example needs this. `end` is exclusive on the way back, and these rows store
+  // an inclusive date-only finish, so it subtracts a day.
+  function writeSpan(row: Task, start: Date, end: Date) {
+    row.start = isoDay(start)
+    const last = new Date(end.getTime() - 86_400_000)
+    row.end = isoDay(last < start ? start : last)
+  }
+
+  // The Enterprise config is a superset of the free grid's, so the `gantt` prop
+  // accepts it - but an inline object literal is checked against the narrower
+  // type. Real code writes `const cfg: GanttProConfig<any, Task> = { ... }`;
+  // this one-liner is just so the Pro examples can stay inline.
+  const pro = (c: GanttProConfig<any, Task>) => c
+</script>
+```
+
+## The minimum
+
+Point `gantt.startField` at the field holding each task's start. That is the
+only required option. With an `endField` too, bars get their real length. The
+title defaults to the first column's field.
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id} gantt={{ startField: 'start', endField: 'end' }} />
+```
+
+`getRowId` matters more here than in a table: a dependency's `from` and `to`,
+a parent field and the `collapsed` list all name rows by that id. Without it
+the view makes up a key per row object, which keeps the chart stable but gives
+your links nothing to point at.
+
+## How dates are read
+
+Three rules, worth knowing before you shape your data:
+
+- **Days are local calendar days.** A date-only string is parsed as local
+  midnight, never UTC. (`new Date('2026-09-14')` is UTC midnight, which west of
+  Greenwich is the 13th - a bar a day early on every task.)
+- **`end` is exclusive, except a date-only string is inclusive of its day.** So
+  `{ start: '2026-09-14', end: '2026-09-16' }` is the **three-day** task a person
+  typing those dates means. A value carrying a time (a `Date`, epoch-ms, or an
+  ISO string with `T`) is taken literally.
+- **A task with a start but no end and no duration is a milestone** - it renders
+  as a diamond.
+
+Instead of an end you can give a length in **working days** with
+`durationField`. A three-day task starting Thursday ends Tuesday, because the
+weekend is skipped:
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={{ startField: 'start', durationField: 'days', nonWorkingDays: [0, 6] }} />
+```
+
+If the same rows also feed the [scheduler](../rows/scheduler.md), store
+timestamps rather than date-only strings - [the views page](./views.md#one-date-shape-for-every-view)
+explains why.
+
+## Bars, progress and milestones
+
+| Option | What it draws |
+| --- | --- |
+| `progressField` | A 0-100 fill inside the bar, and the rollup on parents. |
+| `milestoneField` | A diamond instead of a bar. A zero-length task is one anyway. |
+| `colorField` / `color` | The bar's accent, per task or for all of them. |
+| `summaryBars` | `false` draws parents as ordinary bars instead of a rolled-up spine. |
+| `labelPosition` | `'inside'` (default, falling back to the right when the bar is too narrow), `'right'`, or `'none'`. |
+| `rowHeight` | Height of one task row, default 32. |
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={{
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    progressField: 'progress',
+    milestoneField: 'milestone',
+    colorField: 'color',
+    labelPosition: 'right',
+  }} />
+```
+
+A bar's label sits inside it when it fits and to the right of it when it does
+not, so a two-day task at a coarse zoom is still named. A summary bar's label is
+always outside: the spine is too thin to carry text.
+
+## The task table
+
+The left pane lists the same rows. By default it shows every column that has a
+`field`; name and order them with `tableColumns`, which also accepts three
+built-ins that need no column definition:
+
+- **`__duration`** - the task's length in working days.
+- **`__progress`** - a small meter plus the percent.
+- **`__slack`** - days of room before the task would move the project finish.
+  Needs `criticalPath` (see [the planning layer](./critical-path.md)); blank
+  without it.
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={{
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    progressField: 'progress',
+    tableColumns: ['name', 'owner', '__duration', '__progress'],
+    tableWidth: 340,
+    rowHeight: 34,
+  }} />
+```
+
+Drag the divider to resize the pane. The table and the chart share one
+scroll container, so their rows can never drift apart.
+
+The pane is a compact list, not a second grid: it has no inline editing or
+per-column menus. Sorting and filtering happen on the grid itself, which is why
+the usual pattern is a **Gantt / Table toggle** over the same rows - flip the
+`gantt` prop off and the full table is back, with every column feature.
+
+<div data-docs-demo="474-gantt-intro" data-height="620"></div>
+
+## Search, filter and sort flow through
+
+The Gantt draws the rows the grid hands it, after filtering and sorting. So the
+search box above the chart, any column filters, and the sort order all apply
+without the view knowing about them. Sorting reorders tasks **within each
+phase**; children stay under their parent.
+
+The search box is the grid's global filter, shown by default; `searchable:
+false` hides it and `searchPlaceholder` renames it.
+
+## The chart fills its pane
+
+A short plan at a coarse zoom is narrower than the space beside the task
+table. Rather than stop two thirds of the way across and leave the rest blank,
+the ticks stretch to fill the pane; a plan wider than the pane scrolls at the
+preset's natural tick width. The chart opens with today a third of the way in,
+so most of what is on screen is what comes next.
+
+## See also
+
+- [Work breakdown](./work-breakdown.md) - phases, rolled-up summary bars and collapse.
+- [Dependencies](./dependencies.md) - links, arrows and auto-reschedule.
+- [Config reference](./api.md) - every option in one table.
+
+<!-- =================================================================
+     /docs/help/gantt/work-breakdown/  (community)
+     ================================================================== -->
+
+# Gantt: work breakdown
+
+A `parentField` turns flat rows into phases and the tasks under them. This page
+covers the summary bar a phase draws, how its percent is worked out, collapse,
+and what a folded phase still does for the links and the planning passes.
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type GanttDependency } from '@svgrid/grid'
+  import { enableGanttView } from '@svgrid/enterprise'
+
+  enableGanttView()
+
+  type Task = {
+    id: string
+    name: string
+    owner?: string
+    start: string
+    end?: string
+    progress?: number
+    parentId?: string | null
+    milestone?: boolean
+  }
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const isoDay = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  const base = new Date()
+  base.setHours(0, 0, 0, 0)
+  base.setDate(base.getDate() - ((base.getDay() + 6) % 7))
+  const at = (dayOffset: number) => {
+    const d = new Date(base)
+    d.setDate(d.getDate() + dayOffset)
+    return isoDay(d)
+  }
+
+  let data = $state<Task[]>([
+    { id: 'p1', name: 'Discovery', parentId: null, start: at(0), owner: 'Priya' },
+    { id: 't1', name: 'Interviews', parentId: 'p1', start: at(0), end: at(4), progress: 100, owner: 'Priya' },
+    { id: 't2', name: 'Synthesis', parentId: 'p1', start: at(5), end: at(11), progress: 40, owner: 'Marco' },
+    { id: 'p2', name: 'Build', parentId: null, start: at(12), owner: 'Sven' },
+    { id: 'p2a', name: 'Back end', parentId: 'p2', start: at(12), owner: 'Sven' },
+    { id: 't3', name: 'Data model', parentId: 'p2a', start: at(12), end: at(18), progress: 30, owner: 'Sven' },
+    { id: 't4', name: 'API', parentId: 'p2a', start: at(19), end: at(25), progress: 0, owner: 'Sven' },
+    { id: 't5', name: 'Front end', parentId: 'p2', start: at(15), end: at(29), progress: 0, owner: 'Mia' },
+    { id: 'm1', name: 'Launch', parentId: null, start: at(30), milestone: true },
+  ])
+
+  const dependencies: GanttDependency[] = [
+    { id: 'd1', from: 't1', to: 't2' },
+    { id: 'd2', from: 't2', to: 't3' },
+    { id: 'd3', from: 't3', to: 't4' },
+    { id: 'd4', from: 't5', to: 'm1' },
+  ]
+
+  const columns: GridColumns<Task> = [
+    { field: 'name', header: 'Task', width: 200 },
+    { field: 'owner', header: 'Owner', width: 100 },
+  ]
+</script>
+```
+
+## Phases from a parent field
+
+Set `parentField` to the field holding each row's **parent id** and the flat
+rows nest into a tree, to any depth. A row with children gets a collapse
+chevron and draws a **summary bar** rolled up from every descendant, so a phase
+carries no dates of its own - there is nothing to keep in sync by hand.
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={{
+    startField: 'start', endField: 'end',
+    parentField: 'parentId',
+    progressField: 'progress',
+  }} />
+```
+
+Rows whose parent id matches no task become roots rather than vanishing, which
+is what keeps a filtered-out phase from hiding its tasks. A cycle in the parent
+links (a under b under a) is broken at the first repeat and the rows involved
+become roots, so bad data cannot hang the render.
+
+> **Do not also set `treeData`.** The Gantt owns its own tree because it needs
+> every descendant - a collapsed phase still contributes to its summary bar -
+> whereas `treeData` hides collapsed children from the view before the renderer
+> sees them. Setting both makes summaries under-report, and the grid warns about
+> it in development.
+
+## How a summary rolls up
+
+The summary bar spans the earliest start to the latest finish of every
+descendant, collapsed ones included.
+
+Its percent is **weighted by duration**, not by task count: a two-day task at
+100% beside a six-day task at 0% reads as 25% done, not 50%. Weighting by count
+would report progress the plan has not made. Descendants with no duration
+(milestones) weigh nothing, so a parent holding only milestones falls back to
+their plain mean.
+
+The `__duration` column on a phase counts the working days of the rolled-up
+span, and `__slack` reports the least slack of any task under it - a phase can
+slip only as far as its tightest task, so the room after its own rollup would
+be the wrong number.
+
+`summaryBars: false` draws parents as ordinary bars instead of the thin spine,
+for a plan where the phase rows carry real dates of their own.
+
+## Collapse
+
+Collapse is the Gantt's own state by default: click a chevron, or the
+**Collapse all** / **Expand all** button in the toolbar. Hoist it with
+`collapsed` and `onCollapseChange` to persist it, drive it from elsewhere, or
+open a big plan folded:
+
+```svelte {runnable}
+<script lang="ts">
+  let collapsed = $state<string[]>(['p2'])
+</script>
+
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={{
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    dependencies,
+    collapsed,
+    onCollapseChange: (next) => (collapsed = next),
+  }} />
+```
+
+Fold a phase and three things hold:
+
+- **The summary keeps the full span.** The rollup reads every task, visible
+  or not.
+- **Links into the phase re-anchor on its summary bar.** An arrow from a task
+  outside the phase to a task inside it draws to the bar that now stands for
+  it, rather than disappearing. A link between two tasks of the same folded
+  phase draws nothing - both ends would land on the same bar.
+- **The planning passes still see the tasks.** The critical path and the
+  slack column are computed over the whole plan, so folding does not change
+  which chain is critical; a folded phase over a critical task carries the
+  ring on its summary bar. See [the planning layer](./critical-path.md).
+
+The programme demo opens every one of its forty sites folded, which is how a
+year of 640 tasks reads as forty bars:
+
+<div data-docs-demo="480-gantt-program" data-height="640"></div>
+
+## Moving a phase
+
+With [editing](./editing.md) on, dragging a summary bar moves its **whole
+subtree** by the same offset, and the one `onTaskMove` call carries the batch
+in `subtree`. Resizing a summary bar is not offered: its length is its tasks'
+length.
+
+## See also
+
+- [Getting started](./start.md) - the basics this page builds on.
+- [Dependencies](./dependencies.md) - what a link into a folded phase does.
+- [Tree data](../rows/tree-data.md) - hierarchy in the table itself, for when there is no chart.
+
+<!-- =================================================================
+     /docs/help/gantt/dependencies/  (community)
+     ================================================================== -->
+
+# Gantt: dependencies
+
+Links between tasks: the four types, lag and lead, where the links come from,
+what a violated or cyclic link looks like, and the cascade that keeps every
+link legal when a task moves.
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type GanttDependency } from '@svgrid/grid'
+  import { enableGanttView } from '@svgrid/enterprise'
+
+  enableGanttView()
+
+  type Task = {
+    id: string
+    name: string
+    owner?: string
+    start: string
+    end?: string
+    progress?: number
+    parentId?: string | null
+    milestone?: boolean
+    next?: string[]
+  }
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const isoDay = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  const base = new Date()
+  base.setHours(0, 0, 0, 0)
+  base.setDate(base.getDate() - ((base.getDay() + 6) % 7))
+  const at = (dayOffset: number) => {
+    const d = new Date(base)
+    d.setDate(d.getDate() + dayOffset)
+    return isoDay(d)
+  }
+
+  let data = $state<Task[]>([
+    { id: 'p1', name: 'Discovery', parentId: null, start: at(0), owner: 'Priya' },
+    { id: 't1', name: 'Interviews', parentId: 'p1', start: at(0), end: at(4), progress: 100, owner: 'Priya', next: ['t2'] },
+    { id: 't2', name: 'Synthesis', parentId: 'p1', start: at(5), end: at(11), progress: 40, owner: 'Marco', next: ['t3'] },
+    { id: 'p2', name: 'Build', parentId: null, start: at(12), owner: 'Sven' },
+    { id: 't3', name: 'Implementation', parentId: 'p2', start: at(12), end: at(25), progress: 10, owner: 'Sven', next: ['m1'] },
+    { id: 't4', name: 'Documentation', parentId: 'p2', start: at(14), end: at(20), progress: 0, owner: 'Lena' },
+    { id: 'm1', name: 'Launch', parentId: null, start: at(26), milestone: true },
+  ])
+
+  const dependencies: GanttDependency[] = [
+    { id: 'd1', from: 't1', to: 't2' },
+    { id: 'd2', from: 't2', to: 't3' },
+    { id: 'd3', from: 't3', to: 'm1' },
+  ]
+
+  const columns: GridColumns<Task> = [
+    { field: 'name', header: 'Task', width: 200 },
+    { field: 'owner', header: 'Owner', width: 100 },
+  ]
+
+  function writeSpan(row: Task, start: Date, end: Date) {
+    row.start = isoDay(start)
+    const last = new Date(end.getTime() - 86_400_000)
+    row.end = isoDay(last < start ? start : last)
+  }
+</script>
+```
+
+## Links and their types
+
+Link tasks with predecessor -> successor **dependencies** and the chart draws an
+arrow between them. `from` / `to` are **row ids** (your `getRowId`).
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={{
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    dependencies,
+  }} />
+```
+
+Four link types are supported, named for the two edges they join:
+
+| `type` | Means | The arrow runs |
+| --- | --- | --- |
+| `FS` *(default)* | Finish-to-start: the successor starts once the predecessor finishes. | predecessor's finish -> successor's start |
+| `SS` | Start-to-start: both start together (or the successor later). | start -> start |
+| `FF` | Finish-to-finish: both finish together (or the successor later). | finish -> finish |
+| `SF` | Start-to-finish: the successor cannot finish before the predecessor starts. | start -> finish |
+
+An optional `lag` is in **days**, negative for a lead:
+
+```ts
+const dependencies: GanttDependency[] = [
+  { id: 'd1', from: 'pour', to: 'cure', type: 'FS' },
+  { id: 'd2', from: 'cure', to: 'frame', type: 'FS', lag: 2 },   // two days after curing
+  { id: 'd3', from: 'frame', to: 'wire', type: 'SS', lag: 1 },   // wiring starts a day after framing does
+  { id: 'd4', from: 'wire', to: 'inspect', type: 'FF', lag: -1 } // inspection wraps a day early
+]
+```
+
+### How an arrow is routed
+
+An arrow leaves the predecessor on the side its type names and arrives at the
+successor on the other: a finish-anchored link (`FS`, `FF`) leaves the finish
+rightwards, a start-anchored one (`SS`, `SF`) leaves the start leftwards, and
+a link into a finish arrives from the right so it never runs the length of the
+bar it points at. Two tasks scheduled **back to back** - the everyday case -
+would need the arrow to hook round to reach the successor's start from the
+left, so it drops straight into the top of the successor instead, head
+pointing down; a milestone that follows its predecessor gets the same straight
+drop onto its apex. Only a link whose successor sits *before* its predecessor
+takes the long way round, along the boundary between the two rows.
+
+## Where the links come from
+
+Provide them as a flat `dependencies` array, or per row through
+`dependencyField` - a field on the **predecessor** holding either an array of
+`GanttDependency` objects, or just a list of its successors' ids (each
+becomes an `FS` link from that row):
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={{ startField: 'start', endField: 'end', parentField: 'parentId', dependencyField: 'next' }} />
+```
+
+The per-row form suits rows that come from an API with a `successors` or
+`next` column; the flat array suits a links table of its own. Both feed the
+same graph. A per-row object may leave `from` out - it is the row - and `id`
+out, in which case the link is named `from->to`.
+
+## Violated and cyclic links
+
+A link that is not currently satisfied - a successor sitting too early to be
+legal - draws as a **dashed red arrow**. It is not an error: a plan mid-edit,
+or one imported from a tool with different rules, can have several, and the
+chart shows them rather than moving anything on its own.
+
+Cyclic links are ignored rather than flagged: with a cycle there is no answer
+to what "late" would mean, and ignoring them is what stops an auto-reschedule
+from looping. A link pointing at a row the grid has filtered out simply draws
+nothing.
+
+A link into a **collapsed** phase re-anchors on that phase's summary bar, so
+folding a phase never makes an arrow disappear; a link between two tasks of
+the same folded phase is not drawn at all. See [work breakdown](./work-breakdown.md#collapse).
+
+## Auto-reschedule
+
+With dependencies present and [editing](./editing.md) on, moving or resizing
+a task pushes its successors forward far enough to keep every link legal,
+preserving each one's duration. The shifts arrive together in
+`onDependenciesChange`, one entry per task that moved:
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={{
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    dependencies,
+    editable: true,
+    onTaskMove: (e) => writeSpan(e.row, e.start, e.end),
+    onTaskResize: (e) => writeSpan(e.row, e.start, e.end),
+    onDependenciesChange: (moves) => {
+      for (const m of moves) {
+        const row = data.find((r) => r.id === m.id)
+        if (row) writeSpan(row, m.start, m.end)
+      }
+    },
+  }} />
+```
+
+Three rules:
+
+- Cascading only ever pushes **forward** - it never pulls a task earlier.
+  Slack is yours to keep.
+- With `respectWorkingTime` (on by default) a cascaded start lands on a
+  working day, stepping over weekends and `holidays`, and the pushed task
+  keeps its working days - five days of work stay five days of work on the
+  other side of a weekend.
+- A [constraint](./critical-path.md#constraints) on a successor caps the
+  cascade: the task stops at its ceiling and the link stays drawn as
+  unsatisfied.
+
+Set `autoReschedule: false` to draw the arrows without moving anything.
+
+## Drawing and removing links
+
+With `editable`, every bar grows a dot at each end on hover. Drag a dot onto
+another bar and `onDependencyAdd` fires with the new link; the edge you drag
+from and the half of the bar you drop on pick the type - finish to start is
+`FS`, start to start `SS`, and so on. Right-click an arrow for **Remove
+link**, which fires `onDependencyRemove` with its id.
+
+A link that would close a **cycle**, or one that already exists, is refused:
+both bars flash and no callback fires. The plan editing demo logs every one of
+these callbacks as they happen:
+
+<div data-docs-demo="475-gantt-editing" data-height="600"></div>
+
+The view never edits the `dependencies` array itself. Add the link in
+`onDependencyAdd` and pass the new array back in - a `$derived` config is the
+usual way, as the demo does.
+
+## See also
+
+- [Critical path, baselines and constraints](./critical-path.md) - what the links mean for the schedule.
+- [Editing](./editing.md) - every gesture and the callback it fires.
+- [Sequenced bookings](../rows/scheduler.md) - the scheduler has the same links for ordered bookings.
+
+<!-- =================================================================
+     /docs/help/gantt/editing/  (community)
+     ================================================================== -->
+
+# Gantt: editing
+
+Set `editable` and the chart becomes a plan you can change. This page lists
+every gesture, the callback it fires and what arrives in it, then the drawer,
+the context menu, the keyboard and undo.
+
+The view **never mutates your rows**. It moves its own overlay so the drag is
+live, and reports what it wants through a callback; writing the row is yours.
+That is what lets the same rows feed a table, a scheduler and a board without
+any of them fighting over the data.
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type GanttDependency } from '@svgrid/grid'
+  import { enableGanttView } from '@svgrid/enterprise'
+
+  enableGanttView()
+
+  type Task = {
+    id: string
+    name: string
+    owner?: string
+    start: string
+    end?: string
+    progress?: number
+    parentId?: string | null
+    milestone?: boolean
+  }
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const isoDay = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  const base = new Date()
+  base.setHours(0, 0, 0, 0)
+  base.setDate(base.getDate() - ((base.getDay() + 6) % 7))
+  const at = (dayOffset: number) => {
+    const d = new Date(base)
+    d.setDate(d.getDate() + dayOffset)
+    return isoDay(d)
+  }
+
+  let data = $state<Task[]>([
+    { id: 'p1', name: 'Discovery', parentId: null, start: at(0), owner: 'Priya' },
+    { id: 't1', name: 'Interviews', parentId: 'p1', start: at(0), end: at(4), progress: 100, owner: 'Priya' },
+    { id: 't2', name: 'Synthesis', parentId: 'p1', start: at(5), end: at(11), progress: 40, owner: 'Marco' },
+    { id: 'p2', name: 'Build', parentId: null, start: at(12), owner: 'Sven' },
+    { id: 't3', name: 'Implementation', parentId: 'p2', start: at(12), end: at(25), progress: 10, owner: 'Sven' },
+    { id: 'm1', name: 'Launch', parentId: null, start: at(26), milestone: true },
+  ])
+
+  let dependencies = $state<GanttDependency[]>([
+    { id: 'd1', from: 't1', to: 't2' },
+    { id: 'd2', from: 't2', to: 't3' },
+    { id: 'd3', from: 't3', to: 'm1' },
+  ])
+  const holidays = [at(17)]
+
+  const columns: GridColumns<Task> = [
+    { field: 'name', header: 'Task', width: 200, editorType: 'text' },
+    { field: 'owner', header: 'Owner', width: 100, editorType: 'text' },
+    { field: 'start', header: 'Start', width: 110 },
+    { field: 'end', header: 'Finish', width: 110 },
+  ]
+
+  // `end` is exclusive on the way back, and these rows store an inclusive
+  // date-only finish, so it subtracts a day.
+  function writeSpan(row: Task, start: Date, end: Date) {
+    row.start = isoDay(start)
+    const last = new Date(end.getTime() - 86_400_000)
+    row.end = isoDay(last < start ? start : last)
+  }
+  let seq = 100
+</script>
+```
+
+## Turning it on
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={{
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    progressField: 'progress',
+    dependencies,
+    editable: true,
+    history: true,
+    drawer: true,
+    onTaskMove: (e) => {
+      writeSpan(e.row, e.start, e.end)
+      // A phase carries its children: one callback, the whole batch.
+      for (const s of e.subtree ?? []) writeSpan(s.row, s.start, s.end)
+    },
+    onTaskResize: (e) => writeSpan(e.row, e.start, e.end),
+    onProgressChange: (e) => { e.row.progress = e.progress },
+    onDependenciesChange: (moves) => {
+      for (const m of moves) {
+        const row = data.find((r) => r.id === m.id)
+        if (row) writeSpan(row, m.start, m.end)
+      }
+    },
+  }} />
+```
+
+> **`end` is exclusive on the way back.** Every callback hands you `start` and
+> `end` as `Date`s with `end` the moment the task stops, which for a whole-day
+> task is midnight after its last day. If your rows store an inclusive
+> date-only finish, subtract a day when you write it:
+>
+> ```ts
+> function writeSpan(row: Task, start: Date, end: Date) {
+>   row.start = isoDay(start)
+>   const last = new Date(end.getTime() - 86_400_000)
+>   row.end = isoDay(last < start ? start : last)
+> }
+> ```
+>
+> Rows that store timestamps take the values as they come.
+
+## What each gesture reports
+
+| Gesture | Callback | What arrives |
+| --- | --- | --- |
+| Drag a bar | `onTaskMove` | `row`, the new `start` / `end`. The start lands on the nearest working day (Saturday goes back to Friday, Sunday on to Monday) and the task keeps its working days: a Monday-to-Friday task dropped on Wednesday ends the Tuesday after. Dragging a **phase** moves its whole subtree - each task landing on a working day at its own length - and fills `subtree` with one entry per task. |
+| Drag an edge | `onTaskResize` | `row`, `start`, `end` and `edge` (`'start'` or `'end'`). A bar never shrinks below a day. |
+| Drag the progress diamond | `onProgressChange` | `row` and `progress`, in whole 5% steps. Leaves only; a phase shows its rollup. |
+| Drag a bar's end dot onto another bar | `onDependencyAdd` | The new `GanttDependency`; its `type` comes from the edges joined. |
+| Right-click an arrow, **Remove link** | `onDependencyRemove` | The link's id. |
+| Any move or resize with links | `onDependenciesChange` | The cascaded shifts, one `{ id, start, end }` per successor that moved. |
+| Double-click empty space | `onTaskAdd` | `start`, `end` (one day) and the `parentId` of the row double-clicked in. |
+| Drawer save | `onTaskCommit` | `row` and `values`, the edited fields. |
+| **Delete** in the drawer or menu, or the Delete key | `onTaskDelete` | The `row`. |
+
+A drag under three pixels counts as a click, so clicking a bar still opens the
+drawer rather than nudging the plan by a day. A callback you leave out
+disables its gesture: without `onTaskAdd` a double-click does nothing, without
+`onTaskDelete` there is no Delete.
+
+A drag that reaches the edge of the chart pane keeps going: the pane scrolls
+under the pointer, faster the further past the edge it sits, until the pointer
+comes back in. That is how a bar travels beyond what is on screen and how a
+link reaches a bar that is not - hold the dot at the edge and the target
+scrolls into view. A link drag scrolls the rows too. Dragging a task before
+the plan's start grows the window on the left without the chart shifting
+under the pointer; the same holds past the end. `Escape` at any point puts
+everything back.
+
+A task dropped **earlier than a link allows** stays where it was dropped, and
+the link draws as [violated](./dependencies.md#violated-and-cyclic-links).
+The cascade only ever runs downstream of what moved; it never corrects the
+task you are holding.
+
+Every one of these, logged as it happens:
+
+<div data-docs-demo="475-gantt-editing" data-height="600"></div>
+
+## Adding and deleting tasks
+
+`onTaskAdd` is the create hook: a double-click on empty chart space fires it
+with a one-day span at that date and the phase of the row it landed in, and
+the context menu's **Add subtask** fires it with the right-clicked task as the
+parent. Add the row to your data and it draws.
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={{
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    editable: true,
+    onTaskMove: (e) => writeSpan(e.row, e.start, e.end),
+    onTaskResize: (e) => writeSpan(e.row, e.start, e.end),
+    onTaskAdd: (start, end, parentId) => {
+      data = [...data, {
+        id: `n${++seq}`, name: 'New task', owner: 'TBD',
+        start: isoDay(start), end: isoDay(new Date(end.getTime() - 86_400_000)),
+        progress: 0, parentId: parentId ?? null,
+      }]
+    },
+    onTaskDelete: (row) => { data = data.filter((r) => r.id !== row.id) },
+  }} />
+```
+
+## The drawer
+
+`drawer: true` opens a detail panel on click (or Enter) with **Start**,
+**Finish** and **Progress** pinned above the column fields, each edited with
+the column's `editorType`. Saving fires `onTaskCommit` with the values that
+changed. The object form picks the fields:
+
+```ts
+drawer: { fields: ['name', 'owner'] }
+```
+
+`onTaskDelete` adds a Delete button to the drawer.
+
+## The context menu
+
+Right-click a bar for **Edit** (with the drawer), **Add subtask** (with
+`onTaskAdd`) and **Delete** (with `onTaskDelete`). `taskMenu` appends your own
+items - see [custom bars, tooltips and menus](./customizing.md#the-context-menu).
+Right-click an arrow to remove the link it draws.
+
+## Keyboard
+
+Bars are focusable, so the whole plan is reachable without a mouse.
+
+| Key | Does |
+| --- | --- |
+| `Left` / `Right` | Move a working day (Right from Friday lands on Monday). With `Shift`, a week. With `Alt`, stretch the finish instead. |
+| `+` / `-` | Step progress by 5. |
+| `Enter` | Open the drawer. |
+| `Delete` | `onTaskDelete`. |
+| `Escape` | Cancel the drag in progress, restoring the bar. |
+| `Ctrl/Cmd+Z`, `Ctrl/Cmd+Shift+Z` (or `Ctrl+Y`) | Undo / redo, with `history`. |
+
+## Undo and redo
+
+`history: true` keeps a stack of moves, resizes and progress edits. Undo
+**re-fires the callbacks** with the reversed values, cascade included, so your
+data follows it back rather than drifting out of step with the chart. It is the
+same mechanism as a fresh edit, which is why nothing extra is needed on your
+side.
+
+## See also
+
+- [Dependencies](./dependencies.md) - auto-reschedule and drawing links.
+- [The same rows as a grid, a scheduler and a board](./views.md) - the write-back pattern across views.
+- [Undo / redo in the grid](../editing/undo-redo.md) - the table's own history.
+
+<!-- =================================================================
+     /docs/help/gantt/axis-and-working-time/  (community)
+     ================================================================== -->
+
+# Gantt: the axis and working time
+
+The time axis: its five presets and how to move between them, the window it
+spans, the today line, non-working days and holidays, and the Enterprise
+option that folds weekends out of the chart.
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+  import { enableGanttView, type GanttProConfig } from '@svgrid/enterprise'
+
+  enableGanttView()
+
+  type Task = {
+    id: string
+    name: string
+    owner?: string
+    start: string
+    end?: string
+    progress?: number
+    parentId?: string | null
+    milestone?: boolean
+  }
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const isoDay = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  const base = new Date()
+  base.setHours(0, 0, 0, 0)
+  base.setDate(base.getDate() - ((base.getDay() + 6) % 7))
+  const at = (dayOffset: number) => {
+    const d = new Date(base)
+    d.setDate(d.getDate() + dayOffset)
+    return isoDay(d)
+  }
+
+  let data = $state<Task[]>([
+    { id: 'p1', name: 'Discovery', parentId: null, start: at(0), owner: 'Priya' },
+    { id: 't1', name: 'Interviews', parentId: 'p1', start: at(0), end: at(4), progress: 100, owner: 'Priya' },
+    { id: 't2', name: 'Synthesis', parentId: 'p1', start: at(5), end: at(11), progress: 40, owner: 'Marco' },
+    { id: 'p2', name: 'Build', parentId: null, start: at(12), owner: 'Sven' },
+    { id: 't3', name: 'Implementation', parentId: 'p2', start: at(12), end: at(25), progress: 10, owner: 'Sven' },
+    { id: 't4', name: 'Hardening', parentId: 'p2', start: at(26), end: at(39), progress: 0, owner: 'Lena' },
+    { id: 'm1', name: 'Launch', parentId: null, start: at(40), milestone: true },
+  ])
+  const holidays = [at(17)]
+
+  const columns: GridColumns<Task> = [
+    { field: 'name', header: 'Task', width: 200 },
+    { field: 'owner', header: 'Owner', width: 100 },
+  ]
+
+  const pro = (c: GanttProConfig<any, Task>) => c
+</script>
+```
+
+## Zoom presets
+
+Five axis presets, each a tick unit under a coarser grouping row:
+
+| `zoom` | Ticks | Grouped by | Tick width |
+| --- | --- | --- | --- |
+| `day` | days (named) | weeks | 48 px |
+| `week` *(default)* | days | months | 28 px |
+| `month` | weeks | months | 40 px |
+| `quarter` | months | quarters | 96 px |
+| `year` | months | years | 72 px |
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={{ startField: 'start', endField: 'end', parentField: 'parentId', zoom: 'month' }} />
+```
+
+The toolbar shows a zoom stepper over `zoomLevels` (all five by default; a
+single entry hides it), and `Ctrl`/`Cmd`+wheel over the chart steps it too,
+keeping the date under the pointer fixed. `onZoomChange` reports the change.
+`zoom` is the preset the chart **opens** on; the stepper owns it afterwards.
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={{
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    zoom: 'quarter',
+    zoomLevels: ['month', 'quarter', 'year'],
+    onZoomChange: (z) => console.log('zoom', z),
+  }} />
+```
+
+Pick the ladder for the plan. A sprint reads at `day` / `week`; a roadmap at
+`month` / `quarter` / `year`, which is what the roadmap demo does:
+
+<div data-docs-demo="479-gantt-roadmap" data-height="620"></div>
+
+## The window
+
+The axis spans the first start to the last finish plus `rangePaddingDays` (7)
+of slack on each side, clamped by `minDate` / `maxDate`. A drag cannot leave
+the clamped window either.
+
+Tick widths are the axis's **natural** size, the one it scrolls at. When the
+whole window is narrower than the pane beside the task table the ticks stretch
+to fill it, so a short plan at a coarse zoom never stops two thirds of the way
+across. The chart opens with today a third of the way in (or the first task,
+when today is outside the window).
+
+A dashed **today line** crosses the chart; `todayLine: false` hides it.
+
+## Non-working days and holidays
+
+Non-working days are shaded, and every duration and cascade calculation skips
+them: a `durationField` of three days starting Thursday ends Tuesday, and a
+cascaded start never lands on a Sunday.
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={{
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    nonWorkingDays: [0, 6],   // Sun + Sat, the default
+    holidays,
+    weekStartsOn: 1,
+    zoom: 'week',
+  }} />
+```
+
+| Option | Meaning |
+| --- | --- |
+| `nonWorkingDays` | Weekday numbers, 0 = Sunday. Default `[0, 6]`. |
+| `holidays` | Specific dates (a `Date`, epoch-ms or ISO string each) that are off. |
+| `showNonWorking` | Shade the columns. Default `true`. |
+| `weekStartsOn` | First day of the week for the `day` and `month` presets' tick grouping, 0-6. Default 0. |
+| `respectWorkingTime` | Schedule in working time: a moved or cascaded task lands on a working day and keeps its working length; slack is in working days. Default `true`. |
+
+Shading is drawn for the day-granular presets. At `month` and coarser a tick
+spans several days and is never wholly off, so the shading is skipped rather
+than painting a partial column.
+
+## Folding weekends out of the axis
+
+**Enterprise.** `collapseWeekends` takes the whole non-working days out of the
+timeline and leaves a narrow hatched marker where each run was, so a quarter
+fits in the width a month used to take. Working days keep their real size -
+nothing is squashed - and a task that does run over a folded weekend still
+draws across it.
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={pro({
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    zoom: 'week', collapseWeekends: true, collapsedGapPx: 10,
+  })} />
+```
+
+`collapsedGapPx: 0` removes the folded days outright: Friday's finish and
+Monday's start land on the same pixel. Only the day-granular presets (`day`,
+`week`) have weekend columns to fold; at `month` and coarser a tick is never
+wholly non-working, so the option is ignored rather than shrinking a week by
+part of itself. The resource demo has a toggle for it:
+
+<div data-docs-demo="477-gantt-resources" data-height="620"></div>
+
+## See also
+
+- [Getting started](./start.md) - how dates and durations are read.
+- [Dependencies](./dependencies.md) - the cascade that respects working time.
+- [Config reference](./api.md) - the axis options in one table.
+
+<!-- =================================================================
+     /docs/help/gantt/critical-path/  (community)
+     ================================================================== -->
+
+# Gantt: critical path, baselines and constraints
+
+The planning layer: the chain of tasks with no slack, the dates the plan was
+signed off with, and the dates a task is pinned to. All three are Enterprise
+options on `GanttProConfig`, the superset of the free grid's config -
+structurally assignable to the `gantt` prop, so the free grid never needs to
+know about them:
+
+```ts
+import type { GanttProConfig } from '@svgrid/enterprise'
+
+const cfg: GanttProConfig<any, Task> = { startField: 'start', /* ... */ }
+```
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type GanttDependency } from '@svgrid/grid'
+  import { enableGanttView, type GanttProConfig } from '@svgrid/enterprise'
+
+  enableGanttView()
+
+  type Task = {
+    id: string
+    name: string
+    owner?: string
+    start: string
+    end?: string
+    progress?: number
+    parentId?: string | null
+    milestone?: boolean
+    bStart?: string
+    bEnd?: string
+    con?: string
+    conDate?: string
+  }
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const isoDay = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  const base = new Date()
+  base.setHours(0, 0, 0, 0)
+  base.setDate(base.getDate() - ((base.getDay() + 6) % 7))
+  const at = (dayOffset: number) => {
+    const d = new Date(base)
+    d.setDate(d.getDate() + dayOffset)
+    return isoDay(d)
+  }
+
+  // A tight chain (interviews, synthesis, implementation) beside a short
+  // branch with room (documentation), and a launch that must land by a date.
+  let data = $state<Task[]>([
+    { id: 'p1', name: 'Discovery', parentId: null, start: at(0), owner: 'Priya' },
+    { id: 't1', name: 'Interviews', parentId: 'p1', start: at(0), end: at(4), progress: 100, owner: 'Priya', bStart: at(0), bEnd: at(3) },
+    { id: 't2', name: 'Synthesis', parentId: 'p1', start: at(7), end: at(11), progress: 40, owner: 'Marco', bStart: at(4), bEnd: at(9) },
+    { id: 'p2', name: 'Build', parentId: null, start: at(14), owner: 'Sven' },
+    { id: 't3', name: 'Implementation', parentId: 'p2', start: at(14), end: at(25), progress: 10, owner: 'Sven', bStart: at(10), bEnd: at(23) },
+    { id: 't4', name: 'Documentation', parentId: 'p2', start: at(14), end: at(18), progress: 0, owner: 'Lena', bStart: at(14), bEnd: at(18) },
+    { id: 't5', name: 'Release', parentId: 'p2', start: at(28), end: at(30), progress: 0, owner: 'Lena', bStart: at(24), bEnd: at(26), con: 'FNLT', conDate: at(32) },
+  ])
+
+  const dependencies: GanttDependency[] = [
+    { id: 'd1', from: 't1', to: 't2' },
+    { id: 'd2', from: 't2', to: 't3' },
+    { id: 'd3', from: 't3', to: 't5' },
+    { id: 'd4', from: 't4', to: 't5' },
+  ]
+
+  const columns: GridColumns<Task> = [
+    { field: 'name', header: 'Task', width: 200 },
+    { field: 'owner', header: 'Owner', width: 100 },
+  ]
+
+  function writeSpan(row: Task, start: Date, end: Date) {
+    row.start = isoDay(start)
+    const last = new Date(end.getTime() - 86_400_000)
+    row.end = isoDay(last < start ? start : last)
+  }
+
+  const pro = (c: GanttProConfig<any, Task>) => c
+</script>
+```
+
+## The critical path
+
+`criticalPath: true` runs the two passes every planner knows: a forward one
+giving each task its **earliest** start and finish, a backward one giving it its
+**latest**. Where the two agree the task has no slack - it cannot slip a day
+without moving the project's finish - and that chain, with the arrows along it,
+is ringed in red.
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={pro({
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    dependencies,
+    criticalPath: true,
+    tableColumns: ['name', '__duration', '__slack'],
+    onCriticalPathChange: (keys) => console.log('critical', keys),
+  })} />
+```
+
+The `__slack` column says how many whole **working** days of room each task
+has; the critical ones read 0. A phase reports the least slack of the tasks
+under it.
+
+The passes run in working time, the same time the durations are in: a task's
+length is its working days, its latest start is counted back over working
+days, and a weekend between a task and its successor is not room. A five-day
+task ending Friday whose successor starts Monday is critical - it cannot slip
+a working day - where a calendar count would give it two days of slack. Set
+`respectWorkingTime: false` to schedule in calendar time throughout.
+
+Rules worth knowing, because each is a judgement call rather than arithmetic:
+
+- **A task in no dependency is never critical**, however late it runs. It is not
+  on any path, so calling it critical would point at something the schedule does
+  not actually turn on. It still gets a slack figure for the `__slack` column.
+- **Cyclic links are ignored**, exactly as the cascade ignores them: a cycle has
+  no legal schedule, so there is no earliest or latest to compute through it.
+- **Folding a phase changes nothing.** The passes run over every task, visible
+  or not, and a folded phase over a critical task carries the ring on its
+  summary bar. Filtering is different: the Gantt only ever sees the rows the
+  grid hands it, so a task the search box hides is out of the schedule until
+  it is back.
+- **It recomputes on every edit.** Drag a critical task shorter and the title
+  passes to whichever chain is longest next; `onCriticalPathChange` fires each
+  time with the task ids.
+
+The pass is a pure function, so a report, a KPI or a test can call it without
+rendering anything:
+
+```ts
+import { criticalPath, slackDays, makeCalendar } from '@svgrid/enterprise'
+
+const result = criticalPath(times, dependencies, makeCalendar()) // times: Map<id, { start: Date; end: Date }>
+result.critical              // Set<string> of task ids
+result.finish                // the earliest the project can end
+slackDays(result, 'task-7')  // whole working days of room (calendar days without the calendar)
+```
+
+The portfolio console's risk register is exactly that call: the open tasks
+with under three days of slack, from the same pass the chart draws.
+
+<div data-docs-demo="481-gantt-portfolio-console" data-height="700"></div>
+
+## Baselines
+
+`baselineStartField` / `baselineEndField` draw the originally agreed dates as a
+**ghost bar** under each task. Where the plan now finishes later than the
+baseline did, the ghost turns red and the tooltip says by how many days.
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={pro({
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    baselineStartField: 'bStart', baselineEndField: 'bEnd',
+    tooltip: true,
+  })} />
+```
+
+Baselines are per task. A phase draws none of its own - its drift is the
+drift of its tasks - and the programme demo counts the sites running late from
+the same two fields.
+
+## Constraints
+
+`constraintField` pins a task's dates in the classic planning vocabulary, with
+the date itself in `constraintDateField`:
+
+| Constraint | Means |
+| --- | --- |
+| `ASAP` *(default)* | Schedule as early as the links allow. |
+| `ALAP` | As late as possible. |
+| `MSO` / `MFO` | Must start / finish **on** the date. |
+| `SNET` / `SNLT` | Start no earlier / no later than. |
+| `FNET` / `FNLT` | Finish no earlier / no later than. |
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={pro({
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    dependencies,
+    constraintField: 'con', constraintDateField: 'conDate',
+    editable: true,
+    tooltip: true,
+    onTaskMove: (e) => writeSpan(e.row, e.start, e.end),
+    onTaskResize: (e) => writeSpan(e.row, e.start, e.end),
+    onDependenciesChange: (moves) => {
+      for (const m of moves) {
+        const row = data.find((r) => r.id === m.id)
+        if (row) writeSpan(row, m.start, m.end)
+      }
+    },
+  })} />
+```
+
+A constrained task draws a **pin at the date the constraint names** - a flag
+at the top of its row and a dashed tick down through it - which stays put
+while the bar is dragged toward it. The tooltip spells the rule out. A task
+whose own dates already break its rule gets a dashed red outline and a red
+pin.
+
+More usefully, the **cascade respects the ceiling**: pushing a chain into a
+task that must finish by a contract date stops *at* the date and leaves the
+link drawn as unsatisfied, rather than overrunning it silently. Drag
+Implementation to the right above and watch Release stop at its pin. A
+constraint and a dependency that disagree have no schedule satisfying both, so
+showing the conflict beats breaking one of them behind your back.
+
+All three together, on a fit-out with two pinned tasks:
+
+<div data-docs-demo="476-gantt-critical-path" data-height="620"></div>
+
+## See also
+
+- [Dependencies](./dependencies.md) - the links the passes run over.
+- [Resource load](./resources.md) - the other half of the planning layer.
+- [Config reference](./api.md#gantt-pro) - the Pro options in one table.
+
+<!-- =================================================================
+     /docs/help/gantt/resources/  (community)
+     ================================================================== -->
+
+# Gantt: resource load
+
+Who is on each task, and whether anyone is booked twice over. An Enterprise
+option on `GanttProConfig`: `resourceField` names the assignee, and
+`resourceHistogram` sums the assignments into a load strip under the chart.
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns } from '@svgrid/grid'
+  import { enableGanttView, type GanttProConfig } from '@svgrid/enterprise'
+
+  enableGanttView()
+
+  type Task = {
+    id: string
+    name: string
+    owner?: string
+    start: string
+    end?: string
+    progress?: number
+    parentId?: string | null
+  }
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const isoDay = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  const base = new Date()
+  base.setHours(0, 0, 0, 0)
+  base.setDate(base.getDate() - ((base.getDay() + 6) % 7))
+  const at = (dayOffset: number) => {
+    const d = new Date(base)
+    d.setDate(d.getDate() + dayOffset)
+    return isoDay(d)
+  }
+
+  // Priya is double-booked in the second week; Sven has two tasks that touch.
+  let data = $state<Task[]>([
+    { id: 'p1', name: 'Discovery', parentId: null, start: at(0), owner: '' },
+    { id: 't1', name: 'Interviews', parentId: 'p1', start: at(0), end: at(4), progress: 100, owner: 'Priya' },
+    { id: 't2', name: 'Survey design', parentId: 'p1', start: at(7), end: at(9), progress: 40, owner: 'Priya' },
+    { id: 't3', name: 'Synthesis', parentId: 'p1', start: at(8), end: at(11), progress: 0, owner: 'Priya' },
+    { id: 'p2', name: 'Build', parentId: null, start: at(14), owner: '' },
+    { id: 't4', name: 'Data model', parentId: 'p2', start: at(14), end: at(18), progress: 10, owner: 'Sven' },
+    { id: 't5', name: 'API', parentId: 'p2', start: at(18), end: at(25), progress: 0, owner: 'Sven' },
+    { id: 't6', name: 'Front end', parentId: 'p2', start: at(16), end: at(25), progress: 0, owner: 'Mia' },
+  ])
+
+  const columns: GridColumns<Task> = [
+    { field: 'name', header: 'Task', width: 200 },
+    { field: 'owner', header: 'Owner', width: 100 },
+  ]
+
+  // Resources for the load strip, with a capacity field of their own.
+  const crews = [
+    { id: 'Priya', title: 'Priya', cap: 1 },
+    { id: 'Sven', title: 'Sven', cap: 2 },
+    { id: 'Mia', title: 'Mia', cap: 1 },
+  ]
+
+  function writeSpan(row: Task, start: Date, end: Date) {
+    row.start = isoDay(start)
+    const last = new Date(end.getTime() - 86_400_000)
+    row.end = isoDay(last < start ? start : last)
+  }
+
+  const pro = (c: GanttProConfig<any, Task>) => c
+</script>
+```
+
+## Naming the resource
+
+`resourceField` on its own puts the assignee in the tooltip and gives the
+histogram something to count:
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={pro({
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    resourceField: 'owner',
+    tooltip: true,
+  })} />
+```
+
+## The load strip
+
+`resourceHistogram` sums the assignments into a strip under the chart - one row
+per resource, one bar per axis column, counting the tasks that touch it, with
+anything past capacity in red. `true` takes the defaults (a capacity of one,
+88 px tall); the object form names the capacity field on each resource and
+sets the strip's height.
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={pro({
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    resourceField: 'owner',
+    resources: crews,
+    resourceHistogram: { capacityField: 'cap', height: 80 },
+    editable: true,
+    onTaskMove: (e) => writeSpan(e.row, e.start, e.end),
+    onTaskResize: (e) => writeSpan(e.row, e.start, e.end),
+  })} />
+```
+
+Drag a task onto a column that is already full and the bar under it goes red;
+the strip recomputes with every edit. It sticks to the bottom of the chart and
+scrolls with the axis, so a column and its load are always in line.
+
+## How a cell is counted
+
+A cell's number is **how many of that resource's tasks overlap the column**,
+not an average and not person-hours. On a day or week axis that is exactly
+concurrency; on a coarser one it counts everything touching the column, which
+reads high rather than low. Only **leaves** are counted - a phase is its
+children, so counting it too would book its owner twice for the same work.
+
+`resources` is the ordered list of who to show, as `{ id, title, ... }` -
+the same shape the [scheduler](../rows/scheduler.md) uses, so one array can
+serve both views. Omit it and the rows come from the data, in the order the
+tasks first name them, each with a capacity of one. A resource in the list
+with no tasks still gets a row, which is how an idle crew shows up.
+
+## A field-service quarter
+
+Two regional crews and one specialist, with a capacity of two for the crew
+that runs two vans, and the weekends folded out of the axis:
+
+<div data-docs-demo="477-gantt-resources" data-height="620"></div>
+
+The portfolio console turns the same numbers into a chart - remaining working
+days per owner - from the rows alone, without the strip:
+
+<div data-docs-demo="481-gantt-portfolio-console" data-height="700"></div>
+
+## See also
+
+- [Critical path, baselines and constraints](./critical-path.md) - the rest of the planning layer.
+- [Staffing board](../rows/scheduler.md) - the scheduler's utilization histogram, for shifts rather than tasks.
+- [Config reference](./api.md#gantt-pro) - the Pro options in one table.
+
+<!-- =================================================================
+     /docs/help/gantt/customizing/  (community)
+     ================================================================== -->
+
+# Gantt: custom bars, tooltips and menus
+
+What the chart draws inside a bar, says on hover and offers on right-click are
+all yours to replace: two snippets, a menu builder, and a handful of CSS
+custom properties for the colours.
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, SvAvatar, type GridColumns, type MenuItem } from '@svgrid/grid'
+  import { enableGanttView } from '@svgrid/enterprise'
+
+  enableGanttView()
+
+  type Task = {
+    id: string
+    name: string
+    owner?: string
+    status?: 'On track' | 'At risk' | 'Done'
+    start: string
+    end?: string
+    progress?: number
+    parentId?: string | null
+    milestone?: boolean
+    color?: string
+  }
+
+  const STATUS = { 'On track': '#2563eb', 'At risk': '#d97706', Done: '#16a34a' } as const
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const isoDay = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  const base = new Date()
+  base.setHours(0, 0, 0, 0)
+  base.setDate(base.getDate() - ((base.getDay() + 6) % 7))
+  const at = (dayOffset: number) => {
+    const d = new Date(base)
+    d.setDate(d.getDate() + dayOffset)
+    return isoDay(d)
+  }
+
+  let data = $state<Task[]>([
+    { id: 'p1', name: 'Discovery', parentId: null, start: at(0) },
+    { id: 't1', name: 'Interviews', parentId: 'p1', start: at(0), end: at(6), progress: 100, owner: 'Priya', status: 'Done', color: STATUS.Done },
+    { id: 't2', name: 'Synthesis', parentId: 'p1', start: at(7), end: at(13), progress: 40, owner: 'Marco', status: 'At risk', color: STATUS['At risk'] },
+    { id: 'p2', name: 'Build', parentId: null, start: at(14) },
+    { id: 't3', name: 'Implementation', parentId: 'p2', start: at(14), end: at(27), progress: 10, owner: 'Sven', status: 'On track', color: STATUS['On track'] },
+    { id: 'm1', name: 'Launch', parentId: null, start: at(28), milestone: true, color: '#f59e0b' },
+  ])
+
+  const columns: GridColumns<Task> = [
+    { field: 'name', header: 'Task', width: 200 },
+    { field: 'owner', header: 'Owner', width: 100 },
+  ]
+
+  const fmt = (d?: string) => (d ? new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '')
+</script>
+```
+
+## The bar body
+
+`task` is a snippet that receives the row and replaces the built-in label
+inside a **task** bar. It gets the bar's full width and height and clips its
+own overflow, so keep it to one line: an avatar, a name, a chip.
+
+```svelte {runnable}
+<script lang="ts">
+  const cfg = {
+    startField: 'start' as const, endField: 'end' as const, parentField: 'parentId' as const,
+    progressField: 'progress' as const, milestoneField: 'milestone' as const, colorField: 'color' as const,
+    task: bar,
+  }
+</script>
+
+{#snippet bar(row: Task)}
+  <span style="display:inline-flex; align-items:center; gap:6px; padding:0 6px; color:#fff; font-size:0.76rem; min-width:0">
+    <SvAvatar name={row.owner ?? '?'} size={16} />
+    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600">{row.name}</span>
+    <span style="padding:1px 6px; border-radius:999px; background:rgba(255,255,255,.22); font-size:0.66rem">{row.status}</span>
+  </span>
+{/snippet}
+
+<SvGrid {data} {columns} getRowId={(r) => r.id} gantt={cfg} />
+```
+
+Two things the snippet does not touch. A phase's **summary bar** keeps its
+plain label - the spine is a few pixels tall and has no room for a body - and a
+**milestone** has no body at all. The progress fill still draws under the
+snippet, so a bar with a body reads its percent the same way.
+
+`labelPosition` is for the built-in label only: `'inside'` (the default, with
+a fallback to the right of a bar too narrow for its text), always `'right'`, or
+`'none'`.
+
+## The tooltip
+
+`tooltip: true` shows the built-in hover card: title, dates, working days and
+percent, plus the resource, slack, baseline drift and constraint when those
+options are on. Pass a snippet instead for your own:
+
+```svelte {runnable}
+<script lang="ts">
+  const cfg = {
+    startField: 'start' as const, endField: 'end' as const, parentField: 'parentId' as const,
+    progressField: 'progress' as const, milestoneField: 'milestone' as const, colorField: 'color' as const,
+    tooltip: tip,
+    tooltipDelay: 200,
+  }
+</script>
+
+{#snippet tip(row: Task)}
+  <div style="display:flex; flex-direction:column; gap:3px">
+    <strong>{row.name}</strong>
+    {#if row.milestone}
+      <span style="font-size:0.74rem; opacity:.85">Milestone on {fmt(row.start)}</span>
+    {:else if row.parentId}
+      <span style="font-size:0.74rem; opacity:.85">{row.owner} - {row.status} - {fmt(row.start)} to {fmt(row.end)}</span>
+      <span style="font-size:0.74rem; opacity:.85">{row.progress}% done</span>
+    {/if}
+  </div>
+{/snippet}
+
+<SvGrid {data} {columns} getRowId={(r) => r.id} gantt={cfg} />
+```
+
+The card is positioned above the bar and portalled to the body, so it is never
+clipped by the scroll container. `tooltipDelay` is the hover delay in ms
+(default 400). Omit `tooltip` and there is none.
+
+## The context menu
+
+Right-click on a bar opens a menu of what the config makes possible: **Edit**
+with the drawer, **Add subtask** with `onTaskAdd`, **Delete** with
+`onTaskDelete`. `taskMenu` appends items of your own - return `MenuItem`s,
+or `undefined` to add nothing for that row:
+
+```svelte {runnable}
+<script lang="ts">
+  let last = $state('')
+  const taskMenu = (row: Task): MenuItem[] | undefined => {
+    if (!row.parentId) return undefined // nothing extra on a phase
+    return [
+      { label: `Open ticket for ${row.name}`, onSelect: () => (last = `ticket: ${row.name}`) },
+      { label: 'Mark done', onSelect: () => { row.progress = 100; row.status = 'Done'; row.color = STATUS.Done } },
+    ]
+  }
+</script>
+
+<p style="margin:0 0 8px; font-size:0.8rem">Right-click a task. Last action: <code>{last || 'none'}</code></p>
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={{
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    progressField: 'progress', milestoneField: 'milestone', colorField: 'color',
+    taskMenu,
+  }} />
+```
+
+With `editable` and `onDependencyRemove`, right-clicking an arrow offers to
+remove that link.
+
+## Colours and the CSS hooks
+
+A bar takes its colour from `colorField` (per task) or `color` (all of them);
+the fill inside it is a darker shade of the same colour, and the summary spine
+a lighter one, so one field colours a whole phase. Colour by team, by status,
+by trade - the roadmap demo colours by status and keeps the team in the table:
+
+<div data-docs-demo="479-gantt-roadmap" data-height="620"></div>
+
+The chrome reads the grid's `--sg-*` tokens, so a theme that restyles the
+table restyles the chart. A few Gantt-specific properties sit on top, set them
+on any ancestor:
+
+| Property | Colours |
+| --- | --- |
+| `--sv-gantt-accent` | The default bar colour when a task has none. |
+| `--sv-gantt-dep` | Dependency arrows. |
+| `--sv-gantt-dep-bad` | Violated links, a broken constraint's outline and pin, the late baseline ghost. |
+| `--sv-gantt-critical` | The critical path ring and its arrows. |
+
+```css
+.my-plan {
+  --sv-gantt-critical: #b91c1c;
+  --sv-gantt-dep: #64748b;
+}
+```
+
+## See also
+
+- [Editing](./editing.md) - the drawer and the gestures the menu items sit beside.
+- [Theming with tokens](../tokens.md) - the `--sg-*` tokens the chrome reads.
+- [SvMenu](../ui-components/sv-menu.md) - the `MenuItem` shape `taskMenu` returns.
+
+<!-- =================================================================
+     /docs/help/gantt/views/  (community)
+     ================================================================== -->
+
+# The same rows as a grid, a scheduler and a board
+
+The Gantt is one of four ways the grid can render a set of rows. The others
+are the table itself, the [scheduler](../rows/scheduler.md) and the
+[Kanban board](../rows/kanban-board.md), and all four are the same `<SvGrid>`
+with a different prop. This page is about running more than one of them over
+one array: what to switch, how the edits get back, and the one data-shape rule
+that keeps the views in step.
+
+<div data-docs-demo="478-gantt-four-views" data-height="620"></div>
+
+## One grid, one prop per view
+
+Each view is a prop on `<SvGrid>`; the rest of the props stay as they are:
+
+```svelte
+{#if view === 'grid'}
+  <SvGrid {data} {columns} getRowId={(r) => r.id} sortable enableInlineEditing />
+{:else if view === 'gantt'}
+  <SvGrid {data} {columns} getRowId={(r) => r.id} gantt={ganttCfg} />
+{:else if view === 'scheduler'}
+  <SvGrid {data} {columns} getRowId={(r) => r.id} scheduler={schedulerCfg} />
+{:else}
+  <SvGrid {data} {columns} getRowId={(r) => r.id} board={boardCfg} />
+{/if}
+```
+
+`data`, `columns` and `getRowId` are shared, which is what makes the views
+agree: a row is the same object with the same id in all four. The columns do
+double duty - the table shows them, the Gantt's task pane lists the ones named
+in `tableColumns`, and the scheduler's and board's drawers edit them with each
+column's `editorType`.
+
+Switching the prop remounts the view, so anything a view keeps for itself (the
+Gantt's collapse state, the scheduler's current date, a lane's scroll) starts
+over. Hoist what should survive: `collapsed` / `onCollapseChange` on the
+Gantt, `initialDate` on the scheduler.
+
+## Which view for which question
+
+| Question | View | The prop |
+| --- | --- | --- |
+| What is the list, and can I edit a cell? | Table | none |
+| When does each task run, and what depends on what? | Gantt | `gantt` |
+| Who is busy when, and who has room? | Scheduler, timeline views | `scheduler` with `resourceField` |
+| What state is each item in, and what is next? | Kanban | `board` with `groupBy` |
+
+The Gantt and the scheduler overlap on "when". The Gantt is for a **plan**: a
+tree of tasks, links between them, a finish date the whole thing turns on. The
+scheduler is for **bookings**: rooms, shifts, appointments, one resource per
+row, with a calendar's month / week / day views. A task with an owner can go
+on either; a project with phases and dependencies belongs on the Gantt.
+
+## Edits flow one way: through callbacks
+
+No view mutates a row. Each reports what it wants and you write it:
+
+| View | Gesture | Callback |
+| --- | --- | --- |
+| Table | inline edit commits | `onCellValueChange` (the value is already on the row) |
+| Gantt | drag, resize, progress grip | `onTaskMove`, `onTaskResize`, `onProgressChange` |
+| Scheduler | drag to a time or a resource, resize | `onEventMove`, `onEventResize` |
+| Kanban | drag to a lane | `onCardMove` |
+
+Because the rows are shared, an edit in one view is the next view's data.
+Write the status in `onCardMove` and the table's Status column has it; write
+the dates in `onTaskMove` and the scheduler's bar has moved. The demo above
+names the last write and the view that asked for it under the switcher.
+
+Derived fields are yours to keep consistent. The demo sets `progress` to 100
+when a card lands on **Done** and flips the status to **Done** when the Gantt's
+progress grip reaches 100, so neither view can contradict the other.
+
+## One date shape for every view
+
+The views read a date-only string differently, and it is the one thing that
+will put them out of step:
+
+- The **Gantt** reads `'2026-09-16'` as the local calendar day, and an
+  `endField` holding a date-only string as **inclusive** of that day.
+- The **scheduler** reads it with `new Date(...)`, which is UTC midnight -
+  west of Greenwich that is the 15th - and its end is always exclusive.
+
+So the same `{ start: '2026-09-14', end: '2026-09-16' }` is a three-day bar on
+the Gantt and a two-day event (or a day early) on the scheduler.
+
+Store **timestamps with an exclusive end** when rows feed both. A local ISO
+string without an offset (`'2026-09-14T00:00'`) parses as local time in every
+browser, and both views take a value carrying a time literally:
+
+```ts
+type Row = {
+  id: string
+  name: string
+  start: string   // '2026-09-14T00:00' - local midnight
+  end: string     // '2026-09-17T00:00' - exclusive: the 14th, 15th and 16th
+  allDay: boolean // true, so the scheduler draws a whole-day bar
+}
+
+const iso = (d: Date) =>
+  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+
+function writeSpan(row: Row, start: Date, end: Date) {
+  // Every view hands back `end` exclusive, so it is stored as it comes.
+  row.start = iso(start)
+  row.end = iso(end)
+}
+```
+
+The table then formats the dates for display: `end` minus a day is the last
+day a task runs, which is what a Finish column should say.
+
+## Phases and milestones are Gantt-only rows
+
+A phase row carries no dates of its own; a milestone has no length. Both are
+rows the Gantt draws (as a summary bar and a diamond) and the other views
+would render as an empty card or an hour-long event. Give such rows a `kind`
+and hand the table, scheduler and board the tasks only:
+
+```ts
+const tasks = $derived(rows.filter((r) => r.kind === 'task'))
+```
+
+The Gantt gets `rows`; the other three get `tasks`. Both are views of the same
+array, so the write-back rule above still holds.
+
+## Four synced views at once
+
+The switcher above shows one view at a time. Two of the scheduler demos put
+four views on screen together in a dockable workspace, all reading one array:
+
+<div data-docs-demo="387-scheduler-financial" data-height="640"></div>
+
+<div data-docs-demo="388-scheduler-hr" data-height="640"></div>
+
+## See also
+
+- [Kanban board mode](../rows/kanban-board.md) - the `board` prop.
+- [Scheduler / calendar mode](../rows/scheduler.md) - the `scheduler` prop and its timeline views.
+- [Editing](./editing.md) - every Gantt callback and what arrives in it.
+
+<!-- =================================================================
+     /docs/help/gantt/api/  (community)
+     ================================================================== -->
+
+# Gantt: config reference
+
+Every option on the `gantt` prop, with the page that explains it. The base
+config (`GanttConfig`) ships in `@svgrid/grid`; the Enterprise superset
+(`GanttProConfig`) and the renderer ship in `@svgrid/enterprise`.
+
+```ts
+import { SvGrid, type GanttConfig, type GanttDependency } from '@svgrid/grid'
+import { enableGanttView, type GanttProConfig } from '@svgrid/enterprise'
+
+enableGanttView()
+
+const cfg: GanttProConfig<any, Task> = { startField: 'start', endField: 'end' }
+```
+
+Every example on this page runs against one setup:
+
+```svelte {preamble}
+<script lang="ts">
+  import { SvGrid, type GridColumns, type GanttDependency } from '@svgrid/grid'
+  import { enableGanttView, type GanttProConfig } from '@svgrid/enterprise'
+
+  enableGanttView()
+
+  type Task = {
+    id: string
+    name: string
+    owner?: string
+    start: string
+    end?: string
+    progress?: number
+    parentId?: string | null
+    milestone?: boolean
+    color?: string
+  }
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const isoDay = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  const base = new Date()
+  base.setHours(0, 0, 0, 0)
+  base.setDate(base.getDate() - ((base.getDay() + 6) % 7))
+  const at = (dayOffset: number) => {
+    const d = new Date(base)
+    d.setDate(d.getDate() + dayOffset)
+    return isoDay(d)
+  }
+
+  let data = $state<Task[]>([
+    { id: 'p1', name: 'Discovery', parentId: null, start: at(0), owner: 'Priya' },
+    { id: 't1', name: 'Interviews', parentId: 'p1', start: at(0), end: at(4), progress: 100, owner: 'Priya', color: '#7c3aed' },
+    { id: 't2', name: 'Synthesis', parentId: 'p1', start: at(5), end: at(11), progress: 40, owner: 'Marco', color: '#7c3aed' },
+    { id: 'p2', name: 'Build', parentId: null, start: at(12), owner: 'Sven' },
+    { id: 't3', name: 'Implementation', parentId: 'p2', start: at(12), end: at(25), progress: 10, owner: 'Sven', color: '#2563eb' },
+    { id: 'm1', name: 'Launch', parentId: null, start: at(26), milestone: true, color: '#f59e0b' },
+  ])
+  const dependencies: GanttDependency[] = [
+    { id: 'd1', from: 't1', to: 't2' },
+    { id: 'd2', from: 't2', to: 't3' },
+    { id: 'd3', from: 't3', to: 'm1' },
+  ]
+  const columns: GridColumns<Task> = [
+    { field: 'name', header: 'Task', width: 200 },
+    { field: 'owner', header: 'Owner', width: 100 },
+  ]
+  function writeSpan(row: Task, start: Date, end: Date) {
+    row.start = isoDay(start)
+    const last = new Date(end.getTime() - 86_400_000)
+    row.end = isoDay(last < start ? start : last)
+  }
+  const pro = (c: GanttProConfig<any, Task>) => c
+</script>
+```
+
+## Fields
+
+| Option | Purpose | Page |
+| --- | --- | --- |
+| `startField` *(required)* | Field holding each task's start. | [Getting started](./start.md#how-dates-are-read) |
+| `endField` | Field holding the finish. A date-only string is inclusive of its day. | [Getting started](./start.md#how-dates-are-read) |
+| `durationField` | Length in **working** days, used when `endField` is absent. | [Getting started](./start.md#how-dates-are-read) |
+| `titleField` | The task name. Defaults to the first column's field. | [Getting started](./start.md) |
+| `progressField` | Percent complete (0-100); drives the fill and the rollup. | [Bars, progress and milestones](./start.md#bars-progress-and-milestones) |
+| `parentField` | Parent task id - nests the rows into a work-breakdown tree. | [Work breakdown](./work-breakdown.md) |
+| `milestoneField` | Boolean marking a milestone. A zero-length task is one anyway. | [Bars, progress and milestones](./start.md#bars-progress-and-milestones) |
+| `colorField` / `color` | Per-task accent, or one for every bar. | [Colours](./customizing.md#colours-and-the-css-hooks) |
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={{
+    startField: 'start', endField: 'end', titleField: 'name',
+    progressField: 'progress', parentField: 'parentId', milestoneField: 'milestone', colorField: 'color',
+  }} />
+```
+
+## Dependencies
+
+| Option | Purpose | Page |
+| --- | --- | --- |
+| `dependencies` | Links as a flat list of `{ id, from, to, type?, lag? }`. `lag` is in days. | [Dependencies](./dependencies.md) |
+| `dependencyField` | Per-row links on the predecessor: objects, or successor ids. | [Where the links come from](./dependencies.md#where-the-links-come-from) |
+| `autoReschedule` | Cascade successors forward on an edit. Defaults to on with any link. | [Auto-reschedule](./dependencies.md#auto-reschedule) |
+| `respectWorkingTime` | Schedule in working time: moves and cascades land on working days and keep working lengths, slack is in working days. Default `true`. | [Auto-reschedule](./dependencies.md#auto-reschedule) |
+| `onDependenciesChange` | The cascaded shifts, `{ id, start, end }[]`. | [Auto-reschedule](./dependencies.md#auto-reschedule) |
+| `onDependencyAdd` | A link drawn by hand, as a `GanttDependency`. | [Drawing and removing links](./dependencies.md#drawing-and-removing-links) |
+| `onDependencyRemove` | A link removed from the arrow's menu, by id. | [Drawing and removing links](./dependencies.md#drawing-and-removing-links) |
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={{
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    dependencies, autoReschedule: false,
+  }} />
+```
+
+## The axis
+
+| Option | Purpose | Page |
+| --- | --- | --- |
+| `zoom` | The preset the chart opens on: `day`, `week` (default), `month`, `quarter`, `year`. | [Zoom presets](./axis-and-working-time.md#zoom-presets) |
+| `zoomLevels` | The presets the stepper and Ctrl+wheel move between. | [Zoom presets](./axis-and-working-time.md#zoom-presets) |
+| `onZoomChange` | Fired with the new preset. | [Zoom presets](./axis-and-working-time.md#zoom-presets) |
+| `weekStartsOn` | First day of the week, 0-6 (default 0). | [Non-working days](./axis-and-working-time.md#non-working-days-and-holidays) |
+| `nonWorkingDays` / `holidays` / `showNonWorking` | Which days are off, and whether to shade them. | [Non-working days](./axis-and-working-time.md#non-working-days-and-holidays) |
+| `todayLine` | The dashed today line. On by default. | [The window](./axis-and-working-time.md#the-window) |
+| `minDate` / `maxDate` / `rangePaddingDays` | The axis window and its slack. | [The window](./axis-and-working-time.md#the-window) |
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={{
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    zoom: 'day', zoomLevels: ['day', 'week'], weekStartsOn: 1, rangePaddingDays: 3,
+  }} />
+```
+
+## Layout and collapse
+
+| Option | Purpose | Page |
+| --- | --- | --- |
+| `tableColumns` | The task pane's columns, incl. `__duration`, `__progress`, `__slack`. | [The task table](./start.md#the-task-table) |
+| `tableWidth` | The pane's width in px (default 360); the splitter resizes it. | [The task table](./start.md#the-task-table) |
+| `rowHeight` | Height of one task row (default 32). | [Bars, progress and milestones](./start.md#bars-progress-and-milestones) |
+| `summaryBars` | Parents draw a rolled-up spine (default) or an ordinary bar. | [How a summary rolls up](./work-breakdown.md#how-a-summary-rolls-up) |
+| `labelPosition` | `'inside'`, `'right'` or `'none'` for the built-in label. | [The bar body](./customizing.md#the-bar-body) |
+| `collapsed` / `onCollapseChange` | Controlled work-breakdown collapse. | [Collapse](./work-breakdown.md#collapse) |
+| `searchable` / `searchPlaceholder` | The toolbar search box. | [Search, filter and sort](./start.md#search-filter-and-sort-flow-through) |
+
+## Editing
+
+| Option | Purpose | Page |
+| --- | --- | --- |
+| `editable` | Drag to move, resize, set progress and draw links. | [Editing](./editing.md) |
+| `history` | Undo / redo with `Ctrl/Cmd+Z` and `Ctrl/Cmd+Shift+Z`. | [Undo and redo](./editing.md#undo-and-redo) |
+| `onTaskMove` / `onTaskResize` / `onProgressChange` | Fired with the new values; write them to your rows. | [What each gesture reports](./editing.md#what-each-gesture-reports) |
+| `onTaskAdd` / `onTaskDelete` | Create on a double-click or from the menu; delete from the menu, drawer or Delete key. | [Adding and deleting tasks](./editing.md#adding-and-deleting-tasks) |
+| `drawer` / `onTaskCommit` | The built-in detail drawer and its save callback. | [The drawer](./editing.md#the-drawer) |
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={{
+    startField: 'start', endField: 'end', parentField: 'parentId', progressField: 'progress',
+    editable: true, history: true, drawer: true,
+    onTaskMove: (e) => writeSpan(e.row, e.start, e.end),
+    onTaskResize: (e) => writeSpan(e.row, e.start, e.end),
+    onProgressChange: (e) => { e.row.progress = e.progress },
+    onTaskCommit: (e) => Object.assign(e.row, e.values),
+  }} />
+```
+
+## Chrome
+
+| Option | Purpose | Page |
+| --- | --- | --- |
+| `task` | A snippet for a custom task-bar body. | [The bar body](./customizing.md#the-bar-body) |
+| `tooltip` / `tooltipDelay` | `true` for the built-in hover card, a snippet for your own, and its delay. | [The tooltip](./customizing.md#the-tooltip) |
+| `taskMenu` | Extra right-click items for a bar. | [The context menu](./customizing.md#the-context-menu) |
+
+## Gantt Pro
+
+The Enterprise options, on `GanttProConfig`:
+
+| Option | Purpose | Page |
+| --- | --- | --- |
+| `criticalPath` / `onCriticalPathChange` | Ring the chain with no slack, and report its task ids. | [The critical path](./critical-path.md#the-critical-path) |
+| `baselineStartField` / `baselineEndField` | The agreed dates, drawn as a ghost bar under each task. | [Baselines](./critical-path.md#baselines) |
+| `constraintField` / `constraintDateField` | Pin a task's dates; the cascade stops at the constraint. | [Constraints](./critical-path.md#constraints) |
+| `resourceField` / `resources` | Who is on each task, and the ordered resource list. | [Resource load](./resources.md) |
+| `resourceHistogram` | The load strip: `true`, or `{ capacityField, height }`. | [The load strip](./resources.md#the-load-strip) |
+| `collapseWeekends` / `collapsedGapPx` | Fold non-working days out of the axis, and the marker's width. | [Folding weekends out](./axis-and-working-time.md#folding-weekends-out-of-the-axis) |
+
+```svelte {runnable}
+<SvGrid {data} {columns} getRowId={(r) => r.id}
+  gantt={pro({
+    startField: 'start', endField: 'end', parentField: 'parentId',
+    dependencies, criticalPath: true, tableColumns: ['name', '__slack'],
+    collapseWeekends: true,
+  })} />
+```
+
+## Event types
+
+All in `@svgrid/grid`:
+
+| Type | Fields |
+| --- | --- |
+| `GanttDependency` | `id`, `from`, `to`, `type?` (`'FS' \| 'SS' \| 'FF' \| 'SF'`), `lag?` in days. |
+| `GanttTaskMoveEvent` | `row`, `start`, `end`, and `subtree?` - the descendants moved with a phase, each `{ row, start, end }`. |
+| `GanttTaskResizeEvent` | `row`, `start`, `end`, `edge` (`'start' \| 'end'`). |
+| `GanttProgressChangeEvent` | `row`, `progress` (0-100). |
+| `GanttTaskCommitEvent` | `row`, `values` - the fields the drawer changed. |
+| `GanttZoom` | `'day' \| 'week' \| 'month' \| 'quarter' \| 'year'`. |
+| `GanttDrawerConfig` | `fields`, `title`, `side`, `size`, `submitLabel`, `columns` - the same shape as the scheduler's drawer. |
+
+`GanttConstraint` (`'ASAP' \| 'ALAP' \| 'MSO' \| 'MFO' \| 'SNET' \| 'SNLT' \| 'FNET' \| 'FNLT'`) is in `@svgrid/enterprise`.
+
+## The helpers
+
+`@svgrid/enterprise` (and its `/gantt` entry point) also exports the pure
+functions the renderer is built from, for reports, tests and your own views:
+
+| Export | Does |
+| --- | --- |
+| `criticalPath(times, deps, cal?)`, `slackDays(result, id)` | The planning passes, in working time with a calendar. |
+| `resourceLoad(assignments, columns, opts)`, `overallocations(rows)` | The load strip's numbers. |
+| `resolveTasks`, `ganttTree`, `projectRange`, `ganttAxis`, `ganttScale` | Rows to bars, the tree, the window, the axis, the date-to-pixel scale. |
+| `makeCalendar`, `isWorkingDay`, `workingDays`, `addWorkingDays`, `startForWorkingDays`, `moveWorkingSpan`, `snapToWorkingDay` | Working-time arithmetic. |
+| `dependencyArrows`, `elbowPath` | The arrow geometry, shared with the scheduler's timeline. |
+
+## See also
+
+- [Gantt chart mode](../gantt.md) - the hub, with every demo.
+- [Scheduler / calendar mode](../rows/scheduler.md) - the `scheduler` prop, whose drawer and resource types the Gantt shares.
 
 <!-- =================================================================
      /docs/help/export/report/  (enterprise)
@@ -81805,6 +83826,14 @@ a console message, and that is the only difference.
 
 ![The evaluation: install, try every feature while the watermark and the console message show, then set a license key when ready, with no gated-off code paths.](/docs-media/enterprise-evaluation.svg)
 
+Two ways to try it, both running every feature with only the watermark and
+console notice:
+
+- **Browse the demos offline.** Download the bundle below: a demo browser
+  with every example and its source. Nothing to build.
+- **Build your own app.** Install from npm and follow steps 1 to 3. This is
+  the path if you want to write code against the grid.
+
 ## Start a 30-day trial
 
 One download has both packages, the demo browser to run offline with every
@@ -81814,7 +83843,28 @@ SvGrid answers. The features are the same as installing from npm below.
 
 <div data-docs-trial="docs-evaluation"></div>
 
-## 1. Install
+## 1. Create an app
+
+`@svgrid/grid` and `@svgrid/enterprise` are libraries you import, not a
+project on their own. Running the install in an empty folder leaves you with
+only a `node_modules` folder and nowhere to put a component, so start from an
+app.
+
+The quickest, with Enterprise already wired in:
+
+```bash
+npm create @svgrid@latest my-grid-app -- --template pivot-dashboard
+cd my-grid-app
+npm install
+npm run dev
+```
+
+That opens a running grid at the printed `localhost` address, and the code
+lives in `src/`. Other templates are `minimal`, `admin-dashboard`, `base`,
+`sveltekit` and `headless`; drop `--template` to choose interactively.
+
+Already have a Svelte 5 or SvelteKit app? Install the packages into it
+instead:
 
 ```bash
 npm install @svgrid/grid @svgrid/enterprise
@@ -81823,9 +83873,13 @@ npm install jszip pdfmake   # only needed for Excel and PDF export
 
 ## 2. Add Enterprise to a grid
 
+Put this in a component (`src/App.svelte` in a Vite app, a `+page.svelte` in
+SvelteKit), then run `npm run dev`:
+
 ```svelte
 <script>
   import { SvGrid } from '@svgrid/grid'
+  import '@svgrid/grid/themes/ember.css'
   import { installEnterprise } from '@svgrid/enterprise'
 
   let api = $state(null)
@@ -122528,6 +124582,12 @@ For machine-readable releases, fetch
 
 #### Changed
 
+- **`showColumnFilters` no longer puts an input in the header.** Set to
+  `true`, it also drew a plain "Filter" text box in every header cell,
+  which with `showFilterRow` made two filter inputs per column. It now
+  only turns on the column menu's filter section, as documented. For
+  always-visible inputs use the filter row: `showFilterRow` or
+  `filterMode="row"`.
 - **The find bar loads on the first Ctrl+F.** It is its own chunk now, so a
   grid nobody searches does not carry it; the first open shows the bar once
   the chunk has loaded.

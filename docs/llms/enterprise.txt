@@ -3,10 +3,13 @@
 > Part of https://svgrid.com/llms.txt. Each docs page has a markdown copy at its URL with the trailing slash replaced by `.md`.
 
 
+### Help / topic pages
+
+- [Gantt chart mode](https://svgrid.com/docs/help/gantt/): Set one gantt prop and the grid renders its rows as a task table beside a time chart: one bar per row, placed by its start and finish, nested into a work-breakdown tree, with arrows between linked...
+
 ### Rows
 
 - [Gallery mode](https://svgrid.com/docs/help/rows/gallery/): Set the gallery prop and the grid renders its rows as cards instead of a table: a cover image, a title and a few fields per row, in a wall that fills the width.
-- [Gantt chart mode](https://svgrid.com/docs/help/rows/gantt/): The Gantt view of the Svelte data grid is in progress and due on 1 November 2026. What it will do, and what to use for a project timeline until then.
 
 ### Server data
 
@@ -18,6 +21,19 @@
 - [Server transactions - Enterprise](https://svgrid.com/docs/help/server/server-transactions/): A row was added on the server and the grid should show it now, not after a refetch. A socket said a price moved. A row was deleted and its group should lose it.
 - [Server selection - Enterprise](https://svgrid.com/docs/help/server/server-selection/): A grid that keeps a list of selected ids is right until the rows it has seen are a window onto a million on a server.
 - [Worker data source - Enterprise](https://svgrid.com/docs/help/server/worker-data-source/): When every row is already in the browser, a sort or a grouping still has to walk all of them, and on the main thread nothing else happens until it is done: the page does not paint, scroll or take...
+
+### Gantt
+
+- [Gantt: getting started](https://svgrid.com/docs/help/gantt/start/): The one option a Gantt needs, how it reads your dates, what a bar, a milestone and a summary look like, and the task table beside the chart. The other Gantt pages assume this one.
+- [Gantt: work breakdown](https://svgrid.com/docs/help/gantt/work-breakdown/): A parentField turns flat rows into phases and the tasks under them. This page covers the summary bar a phase draws, how its percent is worked out, collapse, and what a folded phase still does for...
+- [Gantt: dependencies](https://svgrid.com/docs/help/gantt/dependencies/): Links between tasks: the four types, lag and lead, where the links come from, what a violated or cyclic link looks like, and the cascade that keeps every link legal when a task moves.
+- [Gantt: editing](https://svgrid.com/docs/help/gantt/editing/): Set editable and the chart becomes a plan you can change. This page lists every gesture, the callback it fires and what arrives in it, then the drawer, the context menu, the keyboard and undo.
+- [Gantt: the axis and working time](https://svgrid.com/docs/help/gantt/axis-and-working-time/): The time axis: its five presets and how to move between them, the window it spans, the today line, non-working days and holidays, and the Enterprise option that folds weekends out of the chart.
+- [Gantt: critical path, baselines and constraints](https://svgrid.com/docs/help/gantt/critical-path/): The planning layer: the chain of tasks with no slack, the dates the plan was signed off with, and the dates a task is pinned to.
+- [Gantt: resource load](https://svgrid.com/docs/help/gantt/resources/): Who is on each task, and whether anyone is booked twice over. An Enterprise option on GanttProConfig: resourceField names the assignee, and resourceHistogram sums the assignments into a load strip...
+- [Gantt: custom bars, tooltips and menus](https://svgrid.com/docs/help/gantt/customizing/): What the chart draws inside a bar, says on hover and offers on right-click are all yours to replace: two snippets, a menu builder, and a handful of CSS custom properties for the colours.
+- [The same rows as a grid, a scheduler and a board](https://svgrid.com/docs/help/gantt/views/): The Gantt is one of four ways the grid can render a set of rows. The others are the table itself, the scheduler and the Kanban board, and all four are the same <SvGrid> with a different prop.
+- [Gantt: config reference](https://svgrid.com/docs/help/gantt/api/): Every option on the gantt prop, with the page that explains it. The base config (GanttConfig) ships in @svgrid/grid; the Enterprise superset (GanttProConfig) and the renderer ship in...
 
 ### Import & export
 

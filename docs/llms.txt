@@ -51,8 +51,8 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - Accessibility: the WAI-ARIA grid pattern with full keyboard navigation and screen-reader announcements.
 - AI helpers ship free in `@svgrid/grid` and work with any model: `setAIProvider`, `aiFilter`, `aiSmartFill`, `aiSummarize`, `aiClassify`, `aiFindAnomalies`.
 - For coding assistants: an MCP server (`npx -y @svgrid/mcp`, MIT) serves the version-pinned API and demo sources; an Agent Skill installs with `npx skills add sv-grid/sv-grid`.
-- Paid add-on, not needed for anything above: `@svgrid/enterprise` adds Excel / PDF export, import, print, pivot tables, the Server-Side Row Model, alert rules and the Kanban board, Scheduler and Spreadsheet views. Prices start at $299 per developer: https://svgrid.com/pricing/ . A 30-day trial (one download with both packages and the demos to run offline, plus email support for the 30 days) starts from that page; without it, the package runs in full with a watermark until a key is set.
-- 538 live demos, each with its source: https://svgrid.com/demos/ . Source code: https://github.com/sv-grid/sv-grid
+- Paid add-on, not needed for anything above: `@svgrid/enterprise` adds Excel / PDF export, import, print, pivot tables, the Server-Side Row Model, alert rules and the Kanban board, Scheduler, Gantt and Spreadsheet views. Prices start at $299 per developer: https://svgrid.com/pricing/ . A 30-day trial (one download with both packages and the demos to run offline, plus email support for the 30 days) starts from that page; without it, the package runs in full with a watermark until a key is set.
+- 546 live demos, each with its source: https://svgrid.com/demos/ . Source code: https://github.com/sv-grid/sv-grid
 
 ## Start here
 
@@ -68,9 +68,9 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 ## Machine-readable copies
 
 - Every docs page has a plain-markdown copy at its URL with the trailing slash replaced by `.md`, e.g. https://svgrid.com/docs/getting-started/1-install.md
-- This index by product, each part on its own and sized for one fetch: [SvGrid](https://svgrid.com/llms/grid.txt) (49 KB), [SvGrid UI](https://svgrid.com/llms/ui.txt) (28 KB), [SvGrid Enterprise](https://svgrid.com/llms/enterprise.txt) (7 KB), [SvGrid Spreadsheet](https://svgrid.com/llms/sheet.txt) (3 KB), [SvGrid Base](https://svgrid.com/llms/base.txt) (4 KB), [SvGrid Studio](https://svgrid.com/llms/studio.txt) (11 KB), [Comparisons: which Svelte table library to use](https://svgrid.com/llms/compare.txt) (7 KB)
+- This index by product, each part on its own and sized for one fetch: [SvGrid](https://svgrid.com/llms/grid.txt) (49 KB), [SvGrid UI](https://svgrid.com/llms/ui.txt) (28 KB), [SvGrid Enterprise](https://svgrid.com/llms/enterprise.txt) (10 KB), [SvGrid Spreadsheet](https://svgrid.com/llms/sheet.txt) (3 KB), [SvGrid Base](https://svgrid.com/llms/base.txt) (4 KB), [SvGrid Studio](https://svgrid.com/llms/studio.txt) (11 KB), [Comparisons: which Svelte table library to use](https://svgrid.com/llms/compare.txt) (7 KB)
 - [llms-small.txt](https://svgrid.com/llms-small.txt) (169 KB): not an index. The brief above plus the FULL TEXT of the getting-started path and the pages asked about most before choosing a grid.
-- [llms-full.txt](https://svgrid.com/llms-full.txt) (4.9 MB): the full text of every docs page, the comparison pages and the API reference, in reading order. Too large for one fetch; read the parts above, or one page as .md.
+- [llms-full.txt](https://svgrid.com/llms-full.txt) (5.0 MB): the full text of every docs page, the comparison pages and the API reference, in reading order. Too large for one fetch; read the parts above, or one page as .md.
 - [docs.json](https://svgrid.com/docs.json): the route manifest with section, tier and demo links per page.
 - [demos.md](https://svgrid.com/demos.md): every live demo by category. Each has a markdown copy with its full source at /demos/<id>.md, e.g. https://svgrid.com/demos/01-quick-start.md
 - [API reference as JSON](https://svgrid.com/api.json): look up any function, type, option or api method of @svgrid/grid and @svgrid/enterprise by name. Every export by module, with the member names of each type (options objects, props, SvGridApi). https://svgrid.com/api/<name lowercased>.json has a symbol's doc and signature, e.g. https://svgrid.com/api/createsvgrid.json; a member name (getRowPosition, onCellClick) has a file naming its type. `<SvGrid>` props, each with its signature: https://svgrid.com/api/svgrid.json
@@ -492,10 +492,13 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## SvGrid Enterprise
 
+### Help / topic pages
+
+- [Gantt chart mode](https://svgrid.com/docs/help/gantt/): Set one gantt prop and the grid renders its rows as a task table beside a time chart: one bar per row, placed by its start and finish, nested into a work-breakdown tree, with arrows between linked...
+
 ### Rows
 
 - [Gallery mode](https://svgrid.com/docs/help/rows/gallery/): Set the gallery prop and the grid renders its rows as cards instead of a table: a cover image, a title and a few fields per row, in a wall that fills the width.
-- [Gantt chart mode](https://svgrid.com/docs/help/rows/gantt/): The Gantt view of the Svelte data grid is in progress and due on 1 November 2026. What it will do, and what to use for a project timeline until then.
 
 ### Server data
 
@@ -507,6 +510,19 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - [Server transactions - Enterprise](https://svgrid.com/docs/help/server/server-transactions/): A row was added on the server and the grid should show it now, not after a refetch. A socket said a price moved. A row was deleted and its group should lose it.
 - [Server selection - Enterprise](https://svgrid.com/docs/help/server/server-selection/): A grid that keeps a list of selected ids is right until the rows it has seen are a window onto a million on a server.
 - [Worker data source - Enterprise](https://svgrid.com/docs/help/server/worker-data-source/): When every row is already in the browser, a sort or a grouping still has to walk all of them, and on the main thread nothing else happens until it is done: the page does not paint, scroll or take...
+
+### Gantt
+
+- [Gantt: getting started](https://svgrid.com/docs/help/gantt/start/): The one option a Gantt needs, how it reads your dates, what a bar, a milestone and a summary look like, and the task table beside the chart. The other Gantt pages assume this one.
+- [Gantt: work breakdown](https://svgrid.com/docs/help/gantt/work-breakdown/): A parentField turns flat rows into phases and the tasks under them. This page covers the summary bar a phase draws, how its percent is worked out, collapse, and what a folded phase still does for...
+- [Gantt: dependencies](https://svgrid.com/docs/help/gantt/dependencies/): Links between tasks: the four types, lag and lead, where the links come from, what a violated or cyclic link looks like, and the cascade that keeps every link legal when a task moves.
+- [Gantt: editing](https://svgrid.com/docs/help/gantt/editing/): Set editable and the chart becomes a plan you can change. This page lists every gesture, the callback it fires and what arrives in it, then the drawer, the context menu, the keyboard and undo.
+- [Gantt: the axis and working time](https://svgrid.com/docs/help/gantt/axis-and-working-time/): The time axis: its five presets and how to move between them, the window it spans, the today line, non-working days and holidays, and the Enterprise option that folds weekends out of the chart.
+- [Gantt: critical path, baselines and constraints](https://svgrid.com/docs/help/gantt/critical-path/): The planning layer: the chain of tasks with no slack, the dates the plan was signed off with, and the dates a task is pinned to.
+- [Gantt: resource load](https://svgrid.com/docs/help/gantt/resources/): Who is on each task, and whether anyone is booked twice over. An Enterprise option on GanttProConfig: resourceField names the assignee, and resourceHistogram sums the assignments into a load strip...
+- [Gantt: custom bars, tooltips and menus](https://svgrid.com/docs/help/gantt/customizing/): What the chart draws inside a bar, says on hover and offers on right-click are all yours to replace: two snippets, a menu builder, and a handful of CSS custom properties for the colours.
+- [The same rows as a grid, a scheduler and a board](https://svgrid.com/docs/help/gantt/views/): The Gantt is one of four ways the grid can render a set of rows. The others are the table itself, the scheduler and the Kanban board, and all four are the same <SvGrid> with a different prop.
+- [Gantt: config reference](https://svgrid.com/docs/help/gantt/api/): Every option on the gantt prop, with the page that explains it. The base config (GanttConfig) ships in @svgrid/grid; the Enterprise superset (GanttProConfig) and the renderer ship in...
 
 ### Import & export
 

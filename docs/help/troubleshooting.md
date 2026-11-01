@@ -1,3 +1,7 @@
+---
+keywords: grid renders but no rows, grid shows no rows, svgrid empty, rows not showing, headers but no rows, grid is blank
+---
+
 # Troubleshooting
 
 Symptom first. The [error reference](./errors.md) covers the messages the
