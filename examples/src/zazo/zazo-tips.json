@@ -3764,5 +3764,123 @@
    "sel": "button",
    "text": "Accept rule groups"
   }
+ },
+ "705-base-undo-redo": {
+  "text": "Change a status, then press Undo or Ctrl+Z. Redo or Ctrl+Y puts it back.",
+  "target": {
+   "sel": "button",
+   "text": "Undo"
+  }
+ },
+ "706-base-trash": {
+  "text": "Open the trash: a deal, a field and a whole table wait there to be restored.",
+  "target": {
+   "sel": "button",
+   "text": "Trash, 3 items"
+  }
+ },
+ "707-base-airtable-import": {
+  "text": "Press Open as a base to turn the Airtable JSON into two linked tables.",
+  "target": {
+   "sel": "button",
+   "text": "Open as a base"
+  }
+ },
+ "708-base-formula-compat": {
+  "text": "Open Airtable functions to see what a Base formula does with each one.",
+  "target": {
+   "sel": "[role=\"tab\"]",
+   "text": "Airtable functions"
+  }
+ },
+ "709-base-import-csv-excel": {
+  "text": "Import signups.csv: each column goes to the Contacts field it names.",
+  "target": {
+   "sel": "button",
+   "text": "Import signups.csv into Contacts"
+  }
+ },
+ "710-base-personal-locked-views": {
+  "text": "Sign in as Ben, then open the views menu: his personal views are his alone.",
+  "target": {
+   "sel": "button",
+   "text": "Ben Okafor"
+  }
+ },
+ "711-base-form-logic": {
+  "text": "Open the form from the crash dialog link: it arrives filled in for a bug.",
+  "target": {
+   "sel": "button",
+   "text": "From the crash dialog"
+  }
+ },
+ "712-base-mentions": {
+  "text": "Open a comment thread and type @ to mention someone on the team.",
+  "target": {
+   "sel": "button",
+   "text": "3 comments on row 1"
+  }
+ },
+ "713-base-phone-layout": {
+  "text": "Switch to the phone width: each visit turns into a card.",
+  "target": {
+   "sel": "button",
+   "text": "Phone (390px)"
+  }
+ },
+ "714-base-web-component": {
+  "text": "Edit a cell in the element: the change arrives as one tableschange event.",
+  "target": {
+   "sel": "sv-base"
+  }
+ },
+ "715-base-checklist-color-time": {
+  "text": "Group by Prep: sessions fall into Not started, In progress and Done.",
+  "target": {
+   "sel": "button",
+   "text": "Group"
+  }
+ },
+ "716-base-ai-field": {
+  "text": "Press Generate all pitches and the AI field writes one for every product.",
+  "target": {
+   "sel": "button",
+   "text": "Generate all pitches"
+  }
+ },
+ "717-base-read-only-share": {
+  "text": "Switch to Team, edit a status, then come back: the client sees it, read only.",
+  "target": {
+   "sel": "button",
+   "text": "Team (editing)"
+  }
+ },
+ "718-base-search-all-tables": {
+  "text": "Type a name in Search all tables, or press Ctrl+K: it reads every table at once.",
+  "target": {
+   "sel": "input",
+   "text": "Search all tables"
+  }
+ },
+ "719-base-list-view": {
+  "text": "Customize the list to choose the fields under each name.",
+  "target": {
+   "sel": "button",
+   "text": "Customize list"
+  }
+ },
+ "720-base-inbox-view": {
+  "text": "Let a teammate change a ticket: it turns bold with a dot until you read it.",
+  "target": {
+   "sel": "button",
+   "text": "A teammate changes a ticket"
+  }
+ },
+ "721-base-dashboard": {
+  "text": "Press Edit dashboard to add a tile, resize one or move it.",
+  "target": {
+   "sel": "button",
+   "text": "Edit dashboard"
+  }
  }
 }
