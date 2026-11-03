@@ -177,7 +177,8 @@
         </label>
       </header>
       <div class="sbase-body">
-        <SvBase bind:tables={win.tables} editable sortable showRowNumbers showRowSelection={false} rowHeight={34} containerHeight="100%" columnAdder={false} automations={false} />
+        <!-- Each window is half the page: keep the grid down to 400px, cards on a phone. -->
+        <SvBase bind:tables={win.tables} editable sortable showRowNumbers showRowSelection={false} rowHeight={34} containerHeight="100%" columnAdder={false} automations={false} phoneLayout={400} />
       </div>
       <footer class="sbase-req" aria-label={`${win.who}'s last requests`}>
         {#each win.requests as r, i (i)}<code>{r}</code>{/each}

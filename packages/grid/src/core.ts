@@ -376,6 +376,12 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
   fieldType?: string
   /** Properties of `fieldType` (options, precision, max files, ...). */
   fieldProps?: Record<string, unknown>
+  /**
+   * What the field is for, in a sentence. `@svgrid/enterprise/fields` shows
+   * it under the field in a form, and Edit field edits it; the grid itself
+   * does not draw it.
+   */
+  description?: string
   columns?: Array<ColumnDef<TFeatures, TData>>
   /**
    * Declarative cell spanning (merged cells). Return how many COLUMNS this
