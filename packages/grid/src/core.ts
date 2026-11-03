@@ -1435,8 +1435,9 @@ export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<
       type Bucket = { rows: Array<Row<TData>>; raw: unknown; mixed: boolean }
       const buckets = new Map<string, Bucket>()
       const def = columns.find((c) => c.id === groupKey)?.columnDef
+      const groupValue = def?.groupValue ?? ((v: unknown) => v)
       for (const row of input) {
-        const value = def?.groupValue ? def.groupValue(row.getCellValueByColumnId(groupKey)) : row.getCellValueByColumnId(groupKey)
+        const value = groupValue(row.getCellValueByColumnId(groupKey))
         const key = String(value ?? '')
         const bucket = buckets.get(key)
         if (bucket) {

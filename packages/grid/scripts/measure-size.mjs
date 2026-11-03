@@ -591,7 +591,13 @@ const BUDGET_KB = {
   // object instead of ten closures and a Map each. A million rows grouped
   // five deep make about a million group rows, and the closures were most of
   // the ~800 MB such a grid added; five million rows ran out of heap.
-  'headless subpath (@svgrid/grid/core)': 10.1,
+  //
+  // 10.1 -> 10.2 (measured 10.107, 10.052 before) for the column
+  // `groupValue` and `groupOrder` (2026-11-03): group by what a value
+  // amounts to (a checklist by Not started / In progress / Done) and order
+  // the groups when the grouped column is not sorted. 57 bytes gzip, all in
+  // createGroupedRowModel; the entry had 49 bytes of headroom.
+  'headless subpath (@svgrid/grid/core)': 10.2,
   // Measured 26.3 KB: SvGridChart.svelte plus the chart.ts engine it statically
   // imports. Nobody pays this unless they chart - SvGrid reaches both through
   // `import()` - but it is the biggest deferred thing in the package and until
