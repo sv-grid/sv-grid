@@ -29,9 +29,8 @@
  */
 import { readdirSync, readFileSync, writeFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { transform } from 'esbuild'
-
-const dist = process.argv[2] || './dist'
 
 const SCRIPT_JS = {
   // Instance/module scripts: strip types and comments, pack the whitespace, but
@@ -41,6 +40,12 @@ const SCRIPT_JS = {
   // `$effect(...)` / `$derived(...)` into an expression Svelte rejects
   // (effect_invalid_placement).
   loader: 'ts',
+  // Keep every value import as written. The TS loader otherwise drops an
+  // import the script itself never reads, and a component the template uses
+  // (<BaseTabs>, <RecordView>) is exactly that: enterprise 3.1.35 shipped
+  // SvBase.svelte with none of its child components imported ("BaseTabs is
+  // not defined"). `import type` still goes.
+  tsconfigRaw: { compilerOptions: { verbatimModuleSyntax: true } },
   minifyWhitespace: true,
   minifySyntax: false,
   minifyIdentifiers: false,
@@ -78,8 +83,13 @@ async function minifyBlock(tag, body) {
   }
 }
 
+/** The components a .svelte file imports (`import Name from './Name.svelte'`). */
+export function componentImports(code) {
+  return [...code.matchAll(/import\s+([A-Za-z_$][\w$]*)\s+from\s*['"][^'"]+\.svelte['"]/g)].map((m) => m[1])
+}
+
 /** Minify a `.svelte` file: its script/style blocks, and template comments. */
-async function minifySvelte(source) {
+export async function minifySvelte(source) {
   const blocks = []
   // Pull every script/style out behind a placeholder so the HTML-comment strip
   // cannot reach into code (a `<!--` can sit inside a JS/CSS string).
@@ -95,11 +105,16 @@ async function minifySvelte(source) {
     const inner = await minifyBlock(tag, body)
     out = out.replace(`\0B${i}\0`, `<${tag}${attrs}>${inner}</${tag}>`)
   }
+  // A component the template uses must still be imported: the script cannot
+  // see the template, so a minifier that drops "unused" imports breaks it.
+  const kept = new Set(componentImports(out))
+  const lost = componentImports(source).filter((n) => !kept.has(n))
+  if (lost.length) throw new Error(`dropped component import(s): ${lost.join(', ')}`)
   return out
 }
 
 /** Minify a standalone JS/CSS file; return null to leave it unchanged. */
-async function minifyFile(name, source) {
+export async function minifyFile(name, source) {
   if (name.endsWith('.svelte')) return minifySvelte(source)
   if (name.endsWith('.svelte.js') || name.endsWith('.svelte.ts')) {
     const { code } = await transform(source, RUNE_MODULE)
@@ -138,27 +153,32 @@ function files(dir) {
   return out
 }
 
-let touched = 0
-let before = 0
-let after = 0
-for (const file of files(dist)) {
-  const source = readFileSync(file, 'utf8')
-  let next
-  try {
-    next = await minifyFile(file.replace(/\\/g, '/'), source)
-  } catch (err) {
-    console.error(`minify-dist: ${file}: ${err.message}`)
-    process.exitCode = 1
-    continue
-  }
-  if (next == null || next === source) continue
-  before += Buffer.byteLength(source)
-  after += Buffer.byteLength(next)
-  writeFileSync(file, next)
-  touched += 1
-}
+// Run as a script; tools/minify-dist.test.ts imports the functions above.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main(process.argv[2] || './dist')
 
-const kb = (n) => Math.round(n / 1024) + 'KB'
-console.log(
-  `minify-dist: minified ${touched} file(s) in ${dist} (${kb(before)} -> ${kb(after)})`,
-)
+async function main(dist) {
+  let touched = 0
+  let before = 0
+  let after = 0
+  for (const file of files(dist)) {
+    const source = readFileSync(file, 'utf8')
+    let next
+    try {
+      next = await minifyFile(file.replace(/\\/g, '/'), source)
+    } catch (err) {
+      console.error(`minify-dist: ${file}: ${err.message}`)
+      process.exitCode = 1
+      continue
+    }
+    if (next == null || next === source) continue
+    before += Buffer.byteLength(source)
+    after += Buffer.byteLength(next)
+    writeFileSync(file, next)
+    touched += 1
+  }
+
+  const kb = (n) => Math.round(n / 1024) + 'KB'
+  console.log(
+    `minify-dist: minified ${touched} file(s) in ${dist} (${kb(before)} -> ${kb(after)})`,
+  )
+}

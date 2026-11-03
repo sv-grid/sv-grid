@@ -214,6 +214,10 @@ jobs:
         # that did not parse. create-studio/index.test.ts: `--from <schema>` left a
         # starter screen importing a schema it had deleted.
         run: pnpm vitest run tools/scaffold-templates.test.ts tools/create-template-pins.test.ts packages/create-studio/index.test.ts
+      - name: Minified enterprise components keep their imports
+        # enterprise 3.1.35 shipped SvBase.svelte with its child components'
+        # imports minified away; nothing else runs the minified dist.
+        run: pnpm vitest run tools/minify-dist.test.ts
 
       - name: SSR renders rows
         # <SvGrid> silently stopped server-rendering its rows once: both
