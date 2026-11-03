@@ -104,7 +104,9 @@ keeps it.
 
 | Field type | Operators |
 |---|---|
-| Text, long text, URL, email, phone, barcode, formula, lookup | contains, does not contain, is, is not, is empty, is not empty |
+| Text, long text, URL, email, phone, barcode, color, formula, lookup | contains, does not contain, is, is not, is empty, is not empty |
+| Checklist | is complete, is not complete, % done ≥, % done <, has an item containing, is empty, is not empty |
+| Time of day | is, is before, is after, is at or before, is at or after, is empty, is not empty |
 | Number, currency, percent, rating, duration, autonumber, count, rollup | =, ≠, <, >, ≤, ≥, is empty, is not empty |
 | Single select, user | is, is not, is any of, is none of, is empty, is not empty |
 | Multiple select, multiple users | has any of, has all of, is exactly, has none of, is empty, is not empty |
@@ -240,9 +242,12 @@ A property the column sets itself wins over its type:
 | `date` | `dateFormat` (`local`, `friendly`, `us`, `european`, `iso`), `time`, `timeFormat` (`12hour`, `24hour`), `gmt` (one time zone for everyone), `showTimeZone`, `defaultToday` |
 | `phone`, `email`, `url` | none |
 | `barcode` | none |
+| `checklist` | none; values are `{ id, text, done }[]` |
+| `color` | `default`; values are `'#rrggbb'` |
 | `button` | `label`, `color`, `url` (`{Field name}` filled from the row), or `onClick` set in code |
 | `number` | `format` (`integer`, `decimal`, `currency`, `percent`), `precision` 0 to 8, `step` (the editor's spinner, default 1), `separators` (`local`, `comma-period`, `period-comma`, `space-comma`, `space-period`), `showThousands`, `abbreviation` (`none`, `thousand`, `million`, `billion`; not for percent), `allowNegative`, `default`; currency: `symbol`, `symbolPosition` (`before`, `after`); percent: `showBar`, `points` (values 0 to 100 instead of fractions) |
 | `duration` | `durationFormat` (`h:mm`, `h:mm:ss`, `h:mm:ss.S`, `h:mm:ss.SS`, `h:mm:ss.SSS`); values are seconds, typed as `1:30` or `1h 30m` |
+| `timeOfDay` | `timeFormat` (`12hour`, `24hour`), `showSeconds`, `default`; values are `'HH:MM'` (24 hour), `'HH:MM:SS'` with seconds |
 | `rating` | `max` 1 to 10, `icon` (`star`, `heart`, `thumbsUp`, `flag`, `dot`), `color` |
 | `formula` | `formula`, `result` (`auto`, `number`, `currency`, `percent`, `date`) and that format's options |
 | `createdTime`, `lastModifiedTime` | the date options; last modified also `watch` (`all`, `specific`) and `watchFields` |
@@ -293,6 +298,78 @@ existing row a value when the field is created.
 URL, email and phone cells become links only for the schemes they mean
 (`http(s):`, `mailto:`, `tel:`). A value such as `javascript:alert(1)` stays
 text.
+
+## Checklists, colors and times of day
+
+<div data-docs-demo="715-base-checklist-color-time" data-height="620"></div>
+
+```ts
+const columns = [
+  { field: 'session', header: 'Session', fieldType: 'text' },
+  { field: 'prep', header: 'Prep', fieldType: 'checklist' },
+  { field: 'track', header: 'Track', fieldType: 'color' },
+  { field: 'starts', header: 'Starts', fieldType: 'timeOfDay', fieldProps: { timeFormat: '12hour' } },
+]
+
+const row = {
+  session: 'Opening keynote',
+  prep: [
+    { id: 's1', text: 'Slides final', done: true },
+    { id: 's2', text: 'Mic check', done: false },
+  ],
+  track: '#2d7ff9',
+  starts: '09:00',
+}
+```
+
+A **checklist** holds to-do items in order, each `{ id, text, done }`. The
+cell shows `1/2` and a bar, green once every item is done. A click on them
+(or Enter, a double-click, a typed key, which starts a new item) opens a
+panel over the cell; a click beside them only selects the cell. In the panel, tick
+an item, rename it in place, drag it by its handle or move it with Alt+Up
+and Alt+Down, delete it, and add one in the box at the bottom (Enter adds
+and stays there). Ctrl+Enter, Tab, Done or a click outside saves; Escape
+leaves the cell as it was. It sorts by the share done, and groups into Not
+started, In progress and Done, with empty checklists last. Those groups have
+no "+", and Insert record above or below leaves the new record's checklist
+empty: a copy would duplicate someone's to-dos. A column of your own groups
+by what its value amounts to with `groupValue: (value) => key`.
+
+As text a checklist is one item per line, `[x] Done item` or `[ ] Open item`.
+That is what a type change to long text, an export and a lookup write, and
+a paste, a CSV import or a type change from text read: a line with no mark
+is an open item, and `- [x]` (a Markdown task list) works too. A copy
+(Ctrl+C) puts the items on one line, `[x] Slides final [ ] Mic check`,
+because a paste splits rows at line breaks; the field reads several marks
+on one line as several items.
+
+A **color** is stored lower case as `'#rrggbb'`. The cell shows a swatch and
+the code. The editor offers the 40 option colors (Arrow keys walk them) and
+a box for a code. A paste or the box reads `#rgb`, `#rrggbb`, `2d7ff9`
+(without `#` when the code has a digit), `rgb(45, 127, 249)` and these CSS
+names: black, white, gray, grey, silver, red, maroon, orange, yellow, olive,
+lime, green, teal, cyan, aqua, blue, navy, purple, magenta, fuchsia, pink,
+brown, gold, indigo, violet. Anything else (another name, `hsl()`, a color
+with alpha) is refused: a paste keeps the old value and the editor says so.
+Colors sort around the color wheel from red, grays last, and filter as text.
+
+A **time of day** has no date. It is stored as `'HH:MM'` on a 24-hour clock
+(`'HH:MM:SS'` when the field shows seconds) rather than seconds since
+midnight: it reads the same in JSON, a CSV and a SQL `time` column, sorts in
+time order as text, and cannot be mistaken for a `duration`, which is
+seconds. `timeFormat` only changes what the cell shows (`2:05 PM` or
+`14:05`). Typed or pasted, it reads `14:05`, `9:30 am`, `9.30 p.m.`, `2pm`,
+`0930`, `noon` and `midnight`; without `showSeconds` the seconds are
+dropped. In the editor Up and Down move by 15 minutes (Shift: an hour). A
+filter compares to the minute ("is 9:30" holds 9:30:15) unless its value
+names seconds.
+
+A CSV import gives a column of times (`9:00 am`, `22:30`) a time of day
+field, a column of `#` codes a color field, and a column whose every value
+starts with `[x]` or `[ ]` a checklist. Changing a duration to a time of day
+reads its seconds as the time since midnight; a date with a time gives its
+local time. In SQL (`baseToSql`) a checklist is `jsonb` and a time of day
+`time`.
 
 ## Attachments
 

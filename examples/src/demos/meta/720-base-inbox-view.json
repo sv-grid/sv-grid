@@ -1,0 +1,31 @@
+{
+  "description": "An inbox view in an SvGrid Base, in Svelte 5. Records on the left, newest first by a date field, the picked one on the right to read and edit. A record a teammate changed in the database is unread, bold with a dot, until it is picked; Mark all read clears the rest, and j and k step through the list.",
+  "keywords": [
+    "svelte inbox view",
+    "support ticket inbox svelte",
+    "unread records table svelte",
+    "svelte master detail list"
+  ],
+  "faq": [
+    {
+      "question": "What makes a record unread?",
+      "answer": "A change made elsewhere and read from the database: another user, a script or an agent. The base marks the record until someone here opens it, in the inbox or anywhere else, and names who made the change from the record's last modified by field."
+    },
+    {
+      "question": "How is the inbox ordered?",
+      "answer": "Newest first by the date field the view names (inboxDateField), records without a date last. Without one it keeps the view's sort. The view's filter applies either way."
+    },
+    {
+      "question": "Can I edit a record from the inbox?",
+      "answer": "Yes. The fields on the right open the same editors as the grid's cells, and a change goes through the grid's edit path, so undo and validation work. Expand opens the full record with its comments."
+    },
+    {
+      "question": "What happens on a narrow screen?",
+      "answer": "Below 640px of its own width the inbox shows the list, and picking a record shows it with a Back button."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

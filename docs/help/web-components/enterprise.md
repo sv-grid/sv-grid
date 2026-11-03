@@ -15,6 +15,10 @@ element: [`<sv-sheet>`](sv-sheet.md), from `@svgrid/enterprise/wc`, with
 React and Vue wrappers beside it. It needs no `<sv-grid>` and no Svelte in
 the host.
 
+SvGrid Base is one too: [`<sv-base>`](sv-base.md), from
+`@svgrid/enterprise/wc/base`, takes the tables as a property and reports every
+change as a `tableschange` event.
+
 ## The api handle
 
 Everything here needs the grid's imperative api. The element parks it on itself

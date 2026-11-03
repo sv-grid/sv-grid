@@ -1,0 +1,29 @@
+{
+  "description": "Personal views, locked views and protected fields in an SvGrid Base, in Svelte 5. A personal view is listed only for the person it belongs to, under My views. A locked view keeps its filter, sorts, groups, hidden fields and colors as saved, says who locked it, and still lets people edit records. A protected field takes edits only from the people it lists. A Signed in as switch shows each person's views, who may lock them, and who may set Priority.",
+  "keywords": [
+    "svelte personal saved views",
+    "locked view table database",
+    "svelte grid saved views per user",
+    "lock view settings data grid",
+    "svelte field level permissions",
+    "protected field who can edit"
+  ],
+  "faq": [
+    {
+      "question": "How does the base know whose views to show?",
+      "answer": "From the signed-in person set with setCurrentUser. A view with personal set to their id shows for them only; with no one signed in, every view shows."
+    },
+    {
+      "question": "What does a lock stop?",
+      "answer": "Changes to the view's settings: the Hide fields, Filter, Group, Sort, Color and row height buttons are off and nothing is saved into the view. A sort from a column header still works for the moment and the bar shows Reset. Records stay editable."
+    },
+    {
+      "question": "Who can lock and unlock views?",
+      "answer": "Whoever the app allows: pass lockViews={false} to people who may not. In this demo Ana and Ben may, Cleo may not."
+    },
+    {
+      "question": "Does a protected field stop writes to my database?",
+      "answer": "No. The browser follows fieldProps.editors for the person in front of it: the grid, the record view, a board stacked by the field and an import into the table leave the field alone. A base whose records live in a database still needs the server to refuse those writes."
+    }
+  ]
+}

@@ -48,12 +48,232 @@ Field types carry over almost one to one:
 | Autonumber | `autoNumber` |
 | Barcode, button | `barcode`, `button` |
 | Linked record | `link` |
+| AI text | `ai` (the prompt carries over; your app supplies the model) |
 
 Formulas use the same shape: fields by name in braces, `&` to join text,
-and functions such as `IF`, `SWITCH`, `ROUND`, `DATEADD` and
-`DATETIME_DIFF`. Paste each formula into the field editor; one that uses a
-function the base does not have shows `#ERROR` and names it, and you
-rewrite that part.
+and the same functions; [Formula functions](#formula-functions) lists each
+one. Paste each formula into the field editor, or let `baseFromAirtable`
+carry them over; one that uses a function the base does not have shows
+`#ERROR` and names it, and you rewrite that part.
+
+## Open an Airtable base from its API
+
+`baseFromAirtable` turns what Airtable's Web API returns into the tables
+`<SvBase>` takes. Give it the schema (`GET /v0/meta/bases/{baseId}/tables`)
+and, if you want the records too, each table's records (`GET
+/v0/{baseId}/{tableId}`), keyed by table id or name. A personal access
+token with `schema.bases:read` and `data.records:read` reads both.
+
+```ts
+// scripts/airtable-to-base.ts: run once with Node 18 or later
+import { writeFileSync } from 'node:fs'
+import { baseFromAirtable, type AirtableRecord, type AirtableRecords } from '@svgrid/enterprise/base'
+
+const BASE = 'appXXXXXXXXXXXXXX'
+const headers = { Authorization: `Bearer ${process.env.AIRTABLE_TOKEN}` }
+const get = async (path: string) => (await fetch(`https://api.airtable.com/v0/${path}`, { headers })).json()
+
+const schema = await get(`meta/bases/${BASE}/tables`)
+const records: AirtableRecords = {}
+for (const table of schema.tables) {
+  const all: AirtableRecord[] = []
+  let offset = ''
+  do {
+    const page = await get(`${BASE}/${table.id}?pageSize=100${offset ? `&offset=${offset}` : ''}`)
+    all.push(...page.records)
+    offset = page.offset ?? ''
+  } while (offset)
+  records[table.id] = all
+}
+
+const { tables, users, report } = baseFromAirtable(schema, records)
+for (const r of report) console.log(`${r.table} / ${r.name}: ${r.message}`)
+writeFileSync('src/lib/airtable-base.json', JSON.stringify({ tables, users }, null, 2))
+```
+
+```svelte
+<script lang="ts">
+  import { SvBase, enableBase, setFieldUsers, type BaseTable } from '@svgrid/enterprise/base'
+  import base from '$lib/airtable-base.json'
+
+  enableBase()
+  setFieldUsers(base.users)
+  let tables = $state.raw(base.tables as BaseTable[])
+</script>
+
+<SvBase bind:tables editable sortable columnAdder fieldMenu />
+```
+
+What it does:
+
+- Every field type in the table above becomes its Base type, with its
+  options: select choices keep their colors, numbers their precision and
+  currency symbol, dates their format, ratings their icon and maximum.
+- Each field gets a row key made from its name (`Due date` is `due_date`).
+  Table, record and view ids stay Airtable's, so a link field's record ids
+  still point at the right records, and each link names the field that
+  links back in the other table.
+- A formula's `{fldXXX}` references become `{Field name}`, and its result
+  type sets how the cell shows a number, an amount, a percent or a date.
+  `CREATED_TIME()`, `LAST_MODIFIED_TIME()` and `LAST_MODIFIED_TIME({Field})`
+  read a Created time or Last modified time field. The import uses the
+  table's own when it has a fitting one and adds one when it has not (a
+  Last modified time field that watches the named fields, for the last
+  form), and the report lists what it added. An added Created time field
+  holds each record's `createdTime`; an added Last modified time field is
+  empty until the next edit, since the API does not return those times.
+- Collaborators become user ids (the Airtable `usrXXX` id, or what your
+  `userId` option returns), and `users` lists them for `setFieldUsers`.
+  Attachments keep their URL, name, type, size and thumbnail.
+- An AI text field becomes an [AI field](./base/ai-agents.md#ai-fields) with
+  the same prompt, its field ids written as `{Field name}`. The generated
+  values come over as stored text; new ones come from the provider your app
+  registers with `setAIProvider`.
+- Grid, Kanban, calendar, gallery and form views carry over, and a
+  timeline becomes a Gantt view.
+
+`report` lists what did not carry over as it was, one entry per field or
+view, with a `kind`:
+
+| `kind` | Means |
+| --- | --- |
+| `field` | A field type Base does not have (a sync source). It arrives as a text field with each value as text. |
+| `formula` | A formula calls a function Base does not have, or does not compile. Its cells show `#ERROR` until you rewrite that part. |
+| `view` | A view type Base does not have (a list, an interface page), or a Kanban or calendar the table has no field for. It is left out. |
+| `link` | A link to a table you left out with the `tables` option. |
+| `setting` | Something the schema does not say, which the import chose: the field a board stacks by, the dates a calendar uses, a rollup's aggregation, what a button opens, and that an AI field generates new values with the AI provider your app sets. |
+
+The schema has no rollup aggregation: a rollup with a number result is a
+`SUM` and the rest an `ARRAYJOIN` until you change it in the field editor.
+The tables live in the page until you store them; `baseToSql(tables)`
+writes the SQL that creates them, with their records, in Postgres, and
+[step 3](#3-open-the-database-as-a-base) opens that database as a base.
+
+<div data-docs-demo="707-base-airtable-import" data-height="680"></div>
+
+## Formula functions
+
+Every function in Airtable's formula field reference, and what a Base
+formula does with it. The table is checked against `FORMULA_FUNCTIONS`
+by a test, so it says what the formula language in this release does.
+
+Try any of them in a formula field below; the second tab is this table.
+
+<div data-docs-demo="708-base-formula-compat" data-height="640"></div>
+
+**Text**
+
+| Function | SvGrid Base | Notes |
+| --- | --- | --- |
+| `CONCATENATE` | Supported | |
+| `LEFT` | Supported | |
+| `RIGHT` | Supported | |
+| `MID` | Supported | The count may be left out for the rest of the text. |
+| `LEN` | Supported | |
+| `FIND` | Supported | Case matters; 0 when the text is not there. |
+| `SEARCH` | Supported | Case matters; empty when the text is not there. |
+| `SUBSTITUTE` | Supported | |
+| `REPLACE` | Supported | |
+| `TRIM` | Supported | |
+| `UPPER` | Supported | |
+| `LOWER` | Supported | |
+| `REPT` | Supported with a difference | At most 1,000 repeats. |
+| `T` | Supported | |
+| `ENCODE_URL_COMPONENT` | Supported | |
+| `REGEX_MATCH` | Supported with a difference | JavaScript regular expressions, not RE2. A leading (?i) works; other inline flags do not. |
+| `REGEX_EXTRACT` | Supported with a difference | JavaScript regular expressions, not RE2. Empty when nothing matches. |
+| `REGEX_REPLACE` | Supported with a difference | JavaScript regular expressions, not RE2. Replaces every match; the new text names a group by its number after a dollar sign, as JavaScript's replace does. |
+
+**Logical**
+
+| Function | SvGrid Base | Notes |
+| --- | --- | --- |
+| `IF` | Supported | |
+| `SWITCH` | Supported with a difference | Compares as text, so 1 matches "1". |
+| `AND` | Supported | |
+| `OR` | Supported | |
+| `NOT` | Supported | |
+| `XOR` | Supported | |
+| `TRUE` | Supported | With or without the parentheses. |
+| `FALSE` | Supported | With or without the parentheses. |
+| `BLANK` | Supported | |
+| `ERROR` | Supported | The cell shows #ERROR. |
+| `ISERROR` | Supported with a difference | Division by zero is empty in Base, not an error, so ISERROR(1 / 0) is false. |
+
+**Numeric**
+
+| Function | SvGrid Base | Notes |
+| --- | --- | --- |
+| `ABS` | Supported | |
+| `AVERAGE` | Supported | |
+| `CEILING` | Supported | |
+| `COUNT` | Supported | |
+| `COUNTA` | Supported | |
+| `COUNTALL` | Supported | |
+| `EVEN` | Supported | |
+| `EXP` | Supported | |
+| `FLOOR` | Supported | |
+| `INT` | Supported | |
+| `LOG` | Supported | Base 10 unless a base is given. |
+| `MAX` | Supported | |
+| `MIN` | Supported | |
+| `MOD` | Supported | |
+| `ODD` | Supported | |
+| `POWER` | Supported | |
+| `ROUND` | Supported | Halves round toward positive: ROUND(-2.5) is -2. |
+| `ROUNDDOWN` | Supported | Toward zero. |
+| `ROUNDUP` | Supported | Away from zero. |
+| `SQRT` | Supported | |
+| `SUM` | Supported | |
+| `VALUE` | Supported | Skips characters that are not part of a number: VALUE("1,200.50 USD") is 1200.5. |
+
+**Date**
+
+| Function | SvGrid Base | Notes |
+| --- | --- | --- |
+| `DATEADD` | Supported with a difference | The units Airtable names, except that "M" is minutes here: write "months". |
+| `DATESTR` | Supported | |
+| `DATETIME_DIFF` | Supported with a difference | Units as in DATEADD: "M" is minutes, write "months". |
+| `DATETIME_FORMAT` | Supported with a difference | moment.js tokens (YYYY, MMMM, Do, HH, A, Z, L, LL and the rest); week-of-year tokens are not read. |
+| `DATETIME_PARSE` | Supported with a difference | Reads the tokens DATETIME_FORMAT writes, with the separators as written. Text without a zone is local time. |
+| `DAY` | Supported | |
+| `HOUR` | Supported | |
+| `IS_AFTER` | Supported | |
+| `IS_BEFORE` | Supported | |
+| `IS_SAME` | Supported | |
+| `MINUTE` | Supported | |
+| `MONTH` | Supported | |
+| `NOW` | Supported | |
+| `SECOND` | Supported | |
+| `SET_LOCALE` | Supported with a difference | Changes the month and weekday names DATETIME_FORMAT writes; ordinals (Do) stay English. |
+| `SET_TIMEZONE` | Supported with a difference | Changes what DATETIME_FORMAT writes. An unknown zone leaves the cell empty. |
+| `TIMESTR` | Supported | |
+| `TONOW` | Supported with a difference | Calendar days from the date to today, signed. |
+| `FROMNOW` | Supported with a difference | Calendar days from today to the date, signed. |
+| `TODAY` | Supported | |
+| `WEEKDAY` | Supported | 0 for Sunday; "Monday" as the second argument makes Monday 0. |
+| `WEEKNUM` | Supported | Weeks start on Sunday, or on Monday with "Monday". |
+| `WORKDAY` | Supported | Holidays as text ("2026-12-25, 2026-12-26") or a list of dates. |
+| `WORKDAY_DIFF` | Supported | Both days count. Holidays as in WORKDAY. |
+| `YEAR` | Supported | |
+
+**Array**
+
+| Function | SvGrid Base | Notes |
+| --- | --- | --- |
+| `ARRAYCOMPACT` | Supported | |
+| `ARRAYFLATTEN` | Supported | |
+| `ARRAYJOIN` | Supported | |
+| `ARRAYUNIQUE` | Supported | |
+| `ARRAYSLICE` | Supported | |
+
+**Record**
+
+| Function | SvGrid Base | Notes |
+| --- | --- | --- |
+| `RECORD_ID` | Supported | The record's id; after baseFromAirtable, the Airtable record id. |
+| `CREATED_TIME` | Not supported | A Base record keeps that time in a Created time field. baseFromAirtable rewrites CREATED_TIME() to read the table's, and adds one when the table has none. |
+| `LAST_MODIFIED_TIME` | Not supported | A Base record keeps that time in a Last modified time field. baseFromAirtable rewrites LAST_MODIFIED_TIME() to read one that watches every field, and LAST_MODIFIED_TIME({Field}) one that watches that field, and adds it when the table has none. |
 
 ## 1. Export each table
 

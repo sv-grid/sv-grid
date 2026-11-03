@@ -754,6 +754,12 @@ export type BoardConfig<TFeatures extends TableFeatures = TableFeatures, TData e
   /** Whether a blocked (`flagField`) card is locked from moving. Defaults to `true`. */
   flagBlocksMoves?: boolean;
   /**
+   * Whether cards move between lanes and within them (drag, keyboard). `false`
+   * locks every card in place, for a reader who may not change the lane field.
+   * Defaults to `true`.
+   */
+  moveCards?: boolean;
+  /**
    * Field holding a created/started date (Date | ISO string); shown as a
    * relative **age** badge (e.g. `3d`).
    */

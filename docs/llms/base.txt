@@ -12,6 +12,7 @@
 - [Computed fields with formulas](https://svgrid.com/docs/help/base/formulas/): A formula field works out its value from the other fields of the same record: a stock value from quantity and unit cost, a status from a reorder level, a date 90 days after the last count.
 - [Views for every team](https://svgrid.com/docs/help/base/views/): One table of records, many ways to look at it. Product reads the roadmap grouped by quarter, engineering works off a status board, the leads check a timeline, and anyone in the company files a...
 - [Collect records with forms](https://svgrid.com/docs/help/base/forms/): A form view asks for some of a table's fields and adds a record when it is sent. Use it for records other people start: a bug report, an expense, a job application.
+- [Undo, the trash and importing files](https://svgrid.com/docs/help/base/undo-trash-import/): Three things people reach for in their first week with a base: Ctrl+Z after a slip, getting back a record someone deleted yesterday, and pulling in the spreadsheet they kept until now.
 - [People, comments and files](https://svgrid.com/docs/help/base/collaboration/): A tracker one person fills in needs a status column and little else. Once a team uses it, people want to see who a task is assigned to, who changed the status and when, a thread of comments on the...
 - [Build your own field type](https://svgrid.com/docs/help/base/custom-field-type/): A field type decides what a column holds and how it behaves: what the cell shows, which editor opens, how pasted text is read, what the footer can sum.
 - [Automations](https://svgrid.com/docs/help/base/automations/): An automation does something on its own when something happens to a record: a task set to Done ticks its Done box, a new request goes to Todo, a blocked task tells its owner, a button starts the...
@@ -22,3 +23,7 @@
 - [Let an AI agent work in your base](https://svgrid.com/docs/help/base/ai-agents/): An agent can do the first pass on a table your team works in: categorize the new records, set a priority, draft a reply. The hard part is not the edit.
 - [Review what an agent changed](https://svgrid.com/docs/help/base/review-queue/): An agent can be Claude Code with an MCP server, a worker that calls a model, or a script on a schedule.
 - [Field types](https://svgrid.com/docs/help/fields/): A column can say what it is - a rating, a URL, a single select with colored options, a list of files - with fieldType, and set that type's properties with fieldProps.
+
+### Web components
+
+- [<sv-base>: SvGrid Base as a custom element](https://svgrid.com/docs/help/web-components/sv-base/): SvGrid Base, tables with typed fields, linked records, views, forms and automations, as one custom element for a page or a host with no Svelte in its build: React, Vue, Angular, or a plain...

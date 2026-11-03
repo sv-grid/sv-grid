@@ -1,11 +1,11 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-11-01T12:55:10.728Z",
+  "generatedAt": "2026-11-03T08:11:32.417Z",
   "counts": {
-    "pages": 477,
-    "enterprise": 107,
-    "withDemo": 347
+    "pages": 479,
+    "enterprise": 109,
+    "withDemo": 349
   },
   "pillars": [
     {
@@ -72,7 +72,8 @@
       "title": "SvGrid Base",
       "blurb": "A table database: fields, views, forms and records.",
       "sections": [
-        "help/base"
+        "help/base",
+        "help/web-components"
       ]
     },
     {
@@ -492,6 +493,7 @@
         "help/base/formulas.md",
         "help/base/views.md",
         "help/base/forms.md",
+        "help/base/undo-trash-import.md",
         "help/base/collaboration.md",
         "help/base/custom-field-type.md",
         "help/base/automations.md",
@@ -519,6 +521,7 @@
             "help/base/formulas.md",
             "help/base/views.md",
             "help/base/forms.md",
+            "help/base/undo-trash-import.md",
             "help/base/collaboration.md",
             "help/base/custom-field-type.md"
           ]
@@ -638,6 +641,7 @@
         "help/web-components/quick-start.md",
         "help/web-components/sv-grid.md",
         "help/web-components/sv-chart.md",
+        "help/web-components/sv-base.md",
         "help/web-components/shadow-dom.md",
         "help/web-components/react.md",
         "help/web-components/vue.md",
@@ -655,6 +659,7 @@
             "help/web-components/sv-grid.md",
             "help/web-components/sv-chart.md",
             "help/web-components/sv-sheet.md",
+            "help/web-components/sv-base.md",
             "help/web-components/shadow-dom.md"
           ]
         },
@@ -2137,10 +2142,11 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "AI agents",
-      "words": 1482,
-      "lastUpdated": "2026-10-17",
+      "words": 2520,
+      "lastUpdated": "2026-11-03",
       "demoIds": [
-        "700-base-ai-triage"
+        "700-base-ai-triage",
+        "716-base-ai-field"
       ],
       "tutorialIds": [
         "mk-ai-agent-base"
@@ -2170,10 +2176,13 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Build it out",
-      "words": 4896,
-      "lastUpdated": "2026-10-17",
+      "words": 6136,
+      "lastUpdated": "2026-11-03",
       "demoIds": [
-        "514-base-hiring-tracker"
+        "514-base-hiring-tracker",
+        "712-base-mentions",
+        "710-base-personal-locked-views",
+        "717-base-read-only-share"
       ]
     },
     {
@@ -2214,10 +2223,11 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Build it out",
-      "words": 4205,
-      "lastUpdated": "2026-10-14",
+      "words": 4958,
+      "lastUpdated": "2026-11-03",
       "demoIds": [
-        "514-base-hiring-tracker"
+        "514-base-hiring-tracker",
+        "711-base-form-logic"
       ]
     },
     {
@@ -2229,10 +2239,11 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Build it out",
-      "words": 5362,
-      "lastUpdated": "2026-10-14",
+      "words": 5503,
+      "lastUpdated": "2026-11-03",
       "demoIds": [
-        "515-base-inventory"
+        "515-base-inventory",
+        "708-base-formula-compat"
       ]
     },
     {
@@ -2367,6 +2378,23 @@
       ]
     },
     {
+      "path": "help/base/undo-trash-import.md",
+      "url": "/docs/help/base/undo-trash-import/",
+      "title": "Undo, the trash and importing files",
+      "summary": "Three things people reach for in their first week with a base: Ctrl+Z after a slip, getting back a record someone deleted yesterday, and pulling in the spreadsheet they kept until now. All three work on <SvBase tables> with no setup; this page says what each one does and how an app keeps it.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "Build it out",
+      "words": 968,
+      "lastUpdated": "2026-11-02",
+      "demoIds": [
+        "705-base-undo-redo",
+        "706-base-trash",
+        "709-base-import-csv-excel"
+      ]
+    },
+    {
       "path": "help/base/views.md",
       "url": "/docs/help/base/views/",
       "title": "Views for every team",
@@ -2375,10 +2403,16 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Build it out",
-      "words": 4234,
-      "lastUpdated": "2026-10-14",
+      "words": 6222,
+      "lastUpdated": "2026-11-03",
       "demoIds": [
-        "513-base-product-roadmap"
+        "513-base-product-roadmap",
+        "721-base-dashboard",
+        "719-base-list-view",
+        "720-base-inbox-view",
+        "710-base-personal-locked-views",
+        "713-base-phone-layout",
+        "718-base-search-all-tables"
       ]
     },
     {
@@ -3452,10 +3486,11 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Reference",
-      "words": 5169,
-      "lastUpdated": "2026-10-14",
+      "words": 5918,
+      "lastUpdated": "2026-11-03",
       "demoIds": [
-        "504-project-tracker"
+        "504-project-tracker",
+        "715-base-checklist-color-time"
       ]
     },
     {
@@ -4090,9 +4125,12 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1527,
-      "lastUpdated": "2026-10-14",
-      "demoIds": []
+      "words": 3329,
+      "lastUpdated": "2026-11-03",
+      "demoIds": [
+        "707-base-airtable-import",
+        "708-base-formula-compat"
+      ]
     },
     {
       "path": "help/migrating-from-baserow.md",
@@ -7585,8 +7623,8 @@
       "pillar": "grid",
       "tier": "enterprise",
       "group": "Reference",
-      "words": 770,
-      "lastUpdated": "2026-10-07",
+      "words": 792,
+      "lastUpdated": "2026-11-03",
       "demoIds": []
     },
     {
@@ -7667,6 +7705,20 @@
       ]
     },
     {
+      "path": "help/web-components/sv-base.md",
+      "url": "/docs/help/web-components/sv-base/",
+      "title": "<sv-base>: SvGrid Base as a custom element",
+      "summary": "SvGrid Base, tables with typed fields, linked records, views, forms and automations, as one custom element for a page or a host with no Svelte in its build: React, Vue, Angular, or a plain <script> tag. It is part of @svgrid/enterprise (Suite edition): without a key it runs and shows the pack's watermark and notice, as every entry does.",
+      "seoTitle": "Table Database Web Component Built in Svelte: sv-base | SvGrid",
+      "section": "help/web-components",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "Start here",
+      "words": 1149,
+      "lastUpdated": "2026-11-02",
+      "demoIds": []
+    },
+    {
       "path": "help/web-components/sv-chart.md",
       "url": "/docs/help/web-components/sv-chart/",
       "title": "<sv-chart> reference",
@@ -7709,8 +7761,8 @@
       "pillar": "sheet",
       "tier": "enterprise",
       "group": "Start here",
-      "words": 1176,
-      "lastUpdated": "2026-10-25",
+      "words": 1266,
+      "lastUpdated": "2026-11-03",
       "demoIds": []
     },
     {

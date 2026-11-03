@@ -21,7 +21,7 @@ const KNOWN_CONSOLE_ERRORS = new Set([])
 // the cdn builds); plain Node is not their audience.
 const BROWSER_ONLY = {
   grid: ['./cdn', './cdn/svelte-external'],
-  enterprise: ['./wc', './wc/react', './wc/vue', './cdn/svelte-external'],
+  enterprise: ['./wc', './wc/react', './wc/vue', './wc/base', './wc/base/react', './wc/base/vue', './cdn/svelte-external'],
 }
 
 /** devDependencies of the published sveltekit template, read from the tarball. */

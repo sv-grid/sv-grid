@@ -272,17 +272,22 @@ so a button can open its own record.
 
 ## 5. Keep comments in your backend
 
-Without a store, comments live in memory and are gone on reload. A comment is
+Without a store, comments live in memory and are gone on reload. In
+`<SvBase tables>` they are kept by table id and record id for the whole
+page, so two bases that show the same table, or a base mounted again, show
+the same comments. Give unrelated bases on one page different table ids.
+With one table (`data` and `columns`) they are kept per grid. A comment is
 a `RecordComment`, and a store is two functions:
 
 ```ts {nocheck}
-export type RecordComment = { id: string; rowId: string; tableId?: string; text: string; at: number; by?: string }
+export type RecordComment = { id: string; rowId: string; tableId?: string; text: string; at: number; by?: string; mentions?: string[] }
 
 export type RecordCommentContext = { tableId?: string; api: unknown }
 
 export type RecordCommentStore = {
   list: (rowId: string, api: unknown, context: RecordCommentContext) => ReadonlyArray<RecordComment>
   add: (rowId: string, comment: RecordComment, api: unknown, context: RecordCommentContext) => void
+  onMention?: (event: MentionEvent) => void
 }
 ```
 
@@ -403,6 +408,57 @@ list, or return their name from your own data.
 
 Comments other people add show once the cache changes. To see them while the
 base is open, call `put` from your realtime channel or a poll.
+
+### Mentions
+
+Typing `@` in the comment box lists the people from `setFieldUsers`, narrowed
+by the letters after it (the start of any word of a name, or of an email).
+Up and Down move through the list, Enter or Tab picks, Escape closes the
+list and leaves the record open. An `@` inside a word, as in an email
+address, does not open it.
+
+A mention is kept in the comment's `text` as a token, and its id in
+`mentions`:
+
+```ts {nocheck}
+{ text: 'Numbers match. @[Ana Ruiz](u1) can you get legal to sign off?', mentions: ['u1'] }
+```
+
+The record view draws the token as a chip with the person's avatar and their
+name from the people list today, so renaming someone renames their mentions.
+A person no longer in the list shows with the name written in the token. The
+rest of the text is drawn as text, never as HTML. `mentionText(text)` turns
+the tokens back into `@Ana Ruiz` for an email or a chat message, and
+`mentionIds(text)` reads the ids, for a server that does not trust the
+`mentions` the browser sent.
+
+To send notifications, give the store an `onMention` hook, or call
+`setMentionHandler` (it works with the in-memory default too). Each runs once
+per comment that mentions someone, after `add`:
+
+```ts
+import { mentionText, setMentionHandler, type MentionEvent } from '@svgrid/enterprise/base'
+
+setMentionHandler((e: MentionEvent) => {
+  // e.comment, e.mentioned (FieldUser[]), e.rowId, e.tableId, e.record, e.api
+  const to = e.mentioned.filter((p) => p.id !== e.comment.by && p.email).map((p) => p.email)
+  if (!to.length) return
+  void fetch('/api/notify', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ to, record: e.record?.task, text: mentionText(e.comment.text) }),
+  })
+})
+```
+
+`mentioned` lists each person once, in the order they first appear,
+including the author when they mention themselves. Someone not in
+`setFieldUsers` comes with the name written in the token. A hook that throws
+is logged, and the comment stays. When your comments endpoint already saves
+`mentions`, sending from the server, where the author is known, is the safer
+place for the email.
+
+<div data-docs-demo="712-base-mentions" data-height="640"></div>
 
 ## 6. Upload files
 
@@ -570,6 +626,122 @@ only the edited column: send the stamps along, or have the server write
 `updated_at` and `updated_by` from its own clock and session, which a
 browser cannot fake. With `onTablesChange` or a table `source` ([Keep a base
 in a database](./data.md)) the stamps travel with the rest of the row.
+
+## Protected fields
+
+A protected field takes edits from the people it lists. Everyone else sees
+it read-only, with a lock after its name that says who can edit it:
+
+```ts
+const columns = [
+  { field: 'priority', header: 'Priority', fieldType: 'singleSelect', fieldProps: { options: PRIORITY, editors: ['u1', 'u2'] } },
+  { field: 'approved', header: 'Approved', fieldType: 'checkbox', fieldProps: { editors: [] } },
+]
+```
+
+`editors` holds user ids, matched against `setCurrentUser`. An empty list
+means nobody can edit the values, and with nobody signed in a protected
+field is read-only. In the base, Edit field > Who can edit its values sets
+the list: "Only these people" starts with the person setting it, so they do
+not lock themselves out. `protectFields={false}` on `<SvBase>` takes that
+choice away from someone your app does not let change it.
+
+What the protection covers, for the person in front of the page:
+
+- typing, pasting, the fill handle, Delete, and the record view;
+- a board stacked by the field (its cards do not move) and a calendar or
+  timeline whose dates it holds (its events do not drag);
+- an import into the table, which does not offer the field as a target.
+
+A field's name, type and options stay editable: protection is about the
+values. A new record still takes its group's value, so "+" on a group still
+adds a record to it, and a form fills the fields its author put on it.
+
+With roles of your own, pass a check in place of the lists. It decides for
+every field of every base on the page; `defaultCanEditField` is the
+`editors` check, to fall back on:
+
+```svelte
+<script lang="ts">
+  import { SvBase, defaultCanEditField, type CanEditField } from '@svgrid/enterprise/base'
+  let { tables, role } = $props()
+  // Admins edit everything; everyone else follows each field's editors.
+  const canEditField: CanEditField = (field, user) => role === 'admin' || defaultCanEditField(field, user)
+</script>
+
+<SvBase bind:tables {canEditField} protectFields={role === 'admin'} editable />
+```
+
+The browser enforces this. A base whose records live in a database still
+needs the server to refuse a write to a protected field, as it would any
+write the person is not allowed.
+
+<div data-docs-demo="710-base-personal-locked-views" data-height="620"></div>
+
+## Share a base read-only
+
+For people who may look but not change anything, such as a client opening a
+share link your app serves, pass `readOnly`:
+
+```svelte
+<SvBase {tables} readOnly sortable expandRows fieldMenu />
+```
+
+What it closes:
+
+- cells and the record view: no typing, pasting, fill handle, Delete or
+  checkbox clicks, and buttons do not run automations;
+- the record menu keeps Expand record and Copy; the field menu keeps Filter,
+  Group, Hide and Color rows by this field;
+- no "+ Add row", no "+" column, no "+" on a group, and the selection bar
+  drops Edit fields and Delete;
+- a board's cards do not move and its lanes add none; a calendar's or
+  timeline's events do not drag, and a day picked adds no record;
+- the tab bar has no table menu, no renaming, no Add table, no import, no
+  trash, no undo, and no Download as SQL; it shows a "View only" badge;
+- no Automations button, and scheduled automations do not run in the page;
+- comments are read, and the box to write one is gone;
+- form views are not shared.
+
+Viewers still switch tables and views, search, filter, sort, group, and open
+records with their activity. What they change in a view (a sort, a filter,
+a new view) stays in the page while it is open, also across table switches,
+and never reaches `onTablesChange` or a table's `source`.
+
+A share on the same page as the editing base (a preview, or the demo below)
+shows the comments written in the editor, with their counts on rows and
+cards: comments are kept by table id and record id, not by base. The
+changes in a record's activity and the unseen marks stay with the base that
+noted them. On a separate page, the share sees the comments your
+`setRecordComments` store returns; in-page comments do not travel between
+browsers.
+
+An object picks what the share shows. Every list is optional:
+
+```svelte
+<SvBase
+  {tables}
+  readOnly={{
+    tables: ['projects', 'clients'],
+    views: ['all', 'board'],
+    hideFields: ['budget', 'clients.notes'],
+  }}
+/>
+```
+
+`tables` and `views` are ids; a table none of whose listed views exists
+shows its first view. `hideFields` takes a column id, which hides it in
+every table, or `tableId.columnId`. The primary field always shows. A hidden
+field takes along every field that would show what it holds: the formulas
+that read it, a rollup or lookup of it in another table, and the lookups,
+rollups and counts of a link to a table the share leaves out.
+
+Hiding is for display. A page handed the whole base still holds the hidden
+values in memory, so for anything secret build the shared copy on the server
+with `sharedTables(tables, share)`, which also takes the hidden fields'
+values out of the records, and send only that.
+
+<div data-docs-demo="717-base-read-only-share" data-height="620"></div>
 
 ## The activity log
 

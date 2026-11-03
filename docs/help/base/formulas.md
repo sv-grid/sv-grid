@@ -478,8 +478,8 @@ level 5, Last counted `2026-09-05`, Status `Low`.
 | `COUNT(...)` | How many arguments are numbers | `COUNT(1, "2", 3)` is 2 |
 | `COUNTA(...)` | How many are not empty | `COUNTA(1, "", "x")` is 2 |
 | `ROUND(x, digits)` | Rounds; negative digits round to tens, hundreds | `ROUND(1234.5, -2)` is 1200 |
-| `ROUNDUP(x, digits)` | Rounds up | `ROUNDUP(2.41, 1)` is 2.5 |
-| `ROUNDDOWN(x, digits)` | Rounds down | `ROUNDDOWN(2.49, 1)` is 2.4 |
+| `ROUNDUP(x, digits)` | Rounds away from zero | `ROUNDUP(2.41, 1)` is 2.5, `ROUNDUP(-2.41, 1)` is -2.5 |
+| `ROUNDDOWN(x, digits)` | Rounds toward zero | `ROUNDDOWN(2.49, 1)` is 2.4, `ROUNDDOWN(-2.49, 1)` is -2.4 |
 | `INT(x)` | Rounds down to a whole number | `INT(-2.5)` is -3 |
 | `ABS(x)` | Drops the sign | `ABS(-3)` is 3 |
 | `MOD(x, d)` | Remainder, with the sign of `x` | `MOD(7, 3)` is 1, `MOD(-7, 3)` is -1 |
@@ -499,6 +499,24 @@ level 5, Last counted `2026-09-05`, Status `Low`.
 | `DATETIME_DIFF(a, b, unit)` | `a` minus `b` in whole units (default seconds) | `DATETIME_DIFF("2026-10-14", {Last counted}, "days")` is 39, with `"months"` it is 1 |
 | `IS_BEFORE(a, b)`, `IS_AFTER(a, b)` | Compare two dates; false when either is empty | `IS_BEFORE({Last counted}, "2026-10-01")` is true |
 | `DATESTR(d)` | The date as `YYYY-MM-DD` text | `DATESTR(DATEADD({Last counted}, 90, "days"))` is `2026-12-04` |
+
+**More functions**
+
+These work as they do in the formula language of the hosted table
+databases most teams come from. What each one does, and where Base differs
+(regular expressions are JavaScript's, for one), is in the
+[formula functions table](../migrating-from-airtable.md#formula-functions).
+
+| Group | Functions |
+|---|---|
+| Text | `SEARCH`, `REPLACE`, `ENCODE_URL_COMPONENT`, `REGEX_MATCH`, `REGEX_EXTRACT`, `REGEX_REPLACE`; `SUBSTITUTE` takes which match to replace as a fourth argument |
+| Logic | `TRUE()`, `FALSE()`, `ERROR()`, `ISERROR(v)` |
+| Numbers | `EVEN`, `ODD`, `EXP`, `LOG`, `COUNTALL` |
+| Lists | `ARRAYCOMPACT`, `ARRAYFLATTEN`, `ARRAYUNIQUE`, `ARRAYSLICE` |
+| Dates | `HOUR`, `MINUTE`, `SECOND`, `WEEKNUM`, `IS_SAME`, `TIMESTR`, `DATETIME_FORMAT`, `DATETIME_PARSE`, `SET_LOCALE`, `SET_TIMEZONE`, `TONOW`, `FROMNOW`, `WORKDAY`, `WORKDAY_DIFF`; `WEEKDAY` takes the first day of the week, and `"quarters"` is a unit |
+| Record | `RECORD_ID()` |
+
+<div data-docs-demo="708-base-formula-compat" data-height="640"></div>
 
 ## Format the result
 

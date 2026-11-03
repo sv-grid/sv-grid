@@ -16,7 +16,13 @@ export default defineConfig({
         'process.env.NODE_ENV': JSON.stringify('development'),
       },
     }),
-    svelte(),
+    svelte({
+      // <sv-base> compiles as a custom element (demo 714 mounts it from its
+      // source); every other component compiles as the ordinary one it is.
+      dynamicCompileOptions({ filename }) {
+        if (filename.endsWith('sv-base-element.svelte')) return { customElement: true }
+      },
+    }),
   ],
   resolve: {
     alias: {
@@ -52,6 +58,8 @@ export default defineConfig({
       '@svgrid/enterprise/fields': path.resolve(repoRoot, 'packages/enterprise/src/fields/index.ts'),
       '@svgrid/enterprise/base': path.resolve(repoRoot, 'packages/enterprise/src/base/index.ts'),
       '@svgrid/enterprise/review': path.resolve(repoRoot, 'packages/enterprise/src/review/index.ts'),
+      // The <sv-base> custom element (demo 714).
+      '@svgrid/enterprise/wc/base': path.resolve(repoRoot, 'packages/enterprise/src/wc/base.ts'),
       // What runs inside a Web Worker (demo 500's orders.worker.ts).
       '@svgrid/enterprise/worker': path.resolve(repoRoot, 'packages/enterprise/src/worker/index.ts'),
       // Private: visual designer components (only used by git-ignored demos).

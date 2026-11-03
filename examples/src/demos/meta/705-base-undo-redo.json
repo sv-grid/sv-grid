@@ -1,0 +1,27 @@
+{
+  "description": "Undo and redo in an SvGrid Base, in Svelte 5. Ctrl+Z undoes cell edits, records added or deleted and fields added, changed or deleted, in the order they were made, and Ctrl+Shift+Z or Ctrl+Y redoes them. A deleted record comes back in its place with its links, and the tab bar's arrows say what the next undo will do.",
+  "keywords": [
+    "svelte table undo redo",
+    "undo deleted record svelte",
+    "svelte database grid ctrl z",
+    "undo record delete table app"
+  ],
+  "faq": [
+    {
+      "question": "What can be undone?",
+      "answer": "Cell edits, pastes and fills, records added or deleted, records imported from a file, and fields added, changed or deleted. View settings such as a filter or a sort are not part of the history; a view keeps them as you leave them."
+    },
+    {
+      "question": "Does undoing a delete bring back the links?",
+      "answer": "Yes. Deleting a task removes it from its project's list of tasks; undo puts the task back where it was and the project lists it again, because the step restores the records of every table the delete touched."
+    },
+    {
+      "question": "What happens to the history when I switch tables?",
+      "answer": "Each table keeps its own history while another table is shown. Go back to the table and Ctrl+Z carries on from where you left it."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

@@ -603,6 +603,19 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    */
   sortComparator?: (a: unknown, b: unknown, desc: boolean) => number
   /**
+   * The order of the groups when grouping by this column: compares two group
+   * values. Without it, or while the view sorts by this column, groups come
+   * in the order their first rows have after sorting, so a sort on another
+   * column, or a new row, can move a whole group.
+   */
+  groupOrder?: (a: unknown, b: unknown) => number
+  /**
+   * The value rows are grouped by, in place of the cell's own: a list or an
+   * object cell (a checklist, say) groups by what it amounts to ("Done",
+   * "In progress"). Group rows and `groupOrder` see this value.
+   */
+  groupValue?: (value: unknown) => unknown
+  /**
    * Aggregate this column's values into the group row when grouping is
    * active. `'sum' | 'avg' | 'min' | 'max' | 'count' | 'countDistinct' |
    * 'extent' | 'first'`, or a custom `(values, rows) => unknown`. The result
@@ -1421,8 +1434,9 @@ export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<
       // a mixed bucket must not hand its children a fixed value.
       type Bucket = { rows: Array<Row<TData>>; raw: unknown; mixed: boolean }
       const buckets = new Map<string, Bucket>()
+      const def = columns.find((c) => c.id === groupKey)?.columnDef
       for (const row of input) {
-        const value = row.getCellValueByColumnId(groupKey)
+        const value = def?.groupValue ? def.groupValue(row.getCellValueByColumnId(groupKey)) : row.getCellValueByColumnId(groupKey)
         const key = String(value ?? '')
         const bucket = buckets.get(key)
         if (bucket) {
@@ -1435,7 +1449,10 @@ export function createGroupedRowModel<TData extends RowData>(): RowModelFactory<
 
       const groupRows: Array<Row<TData>> = []
       let index = 0
-      buckets.forEach((bucket, key) => {
+      const ordered = [...buckets]
+      const order = def?.groupOrder
+      if (order && !table.getState().sorting?.some((s: { id: string }) => s.id === groupKey)) ordered.sort((a, b) => order(a[1].raw, b[1].raw))
+      ordered.forEach(([key, bucket]) => {
         const children = bucket.rows
         const id = `${idPrefix}_${groupKey}_${key}`
         const subRows = buildGroups(

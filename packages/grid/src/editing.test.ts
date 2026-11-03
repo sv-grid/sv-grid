@@ -180,6 +180,20 @@ describe('isCellEditable', () => {
     expect(ed.isCellEditable(ctx.allColumns[0])).toBe(true)
   })
 
+  it('editable={false} on the grid locks every column; unset leaves the columns to say', () => {
+    const { ctx, ed } = editingFor({ columns: [{ id: 'a', field: 'a', editable: true }], data: [{ a: 1 }] })
+    expect(ed.isCellEditable(ctx.allColumns[0], ctx.allRows[0])).toBe(true)
+    ctx.props.editable = false
+    expect(ed.isCellEditable(ctx.allColumns[0], ctx.allRows[0])).toBe(false)
+    expect(ed.isCellEditableAt(0, 0)).toBe(false)
+    delete ctx.props.editable
+    ctx.props.enableInlineEditing = false
+    expect(ed.isCellEditable(ctx.allColumns[0])).toBe(false)
+    // The shortcut wins over the fine-grained prop, as editingEnabled reads them.
+    ctx.props.editable = true
+    expect(ed.isCellEditable(ctx.allColumns[0])).toBe(true)
+  })
+
   it('biases to not-editable when the predicate throws', () => {
     const { ctx, ed } = editingFor({
       columns: [

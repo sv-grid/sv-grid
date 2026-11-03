@@ -633,13 +633,13 @@ function homeCrawlBody(faq) {
   let html = '<main class="prerender-home" data-prerender="1">'
   html += '<h1>SvGrid - the Svelte data grid. Headless-first. Render-ready.</h1>'
   html += '<p>SvGrid is a Svelte data grid: a headless engine you can compose plus a full-featured render component you can drop in, written for Svelte 5 runes from the first line rather than a React grid wrapped in a Svelte shim. Call it a Svelte datagrid, a Svelte grid or a Svelte table; it is one component, <code>&lt;SvGrid&gt;</code>, from the npm package <code>@svgrid/grid</code>.</p>'
-  html += '<p>Sorting, Excel-style filtering, grouping, virtualization, inline editing and accessibility ship free under the MIT License, with 500+ production-quality examples. The paid <code>@svgrid/enterprise</code> pack adds the Kanban board, ' + (isReleased('gantt') ? 'Scheduler, Gantt and Spreadsheet' : 'Scheduler and Spreadsheet') + ' views of the same grid, the Server-Side Row Model, Excel / PDF export, import, print, pivot tables, SvGrid Base and SvGrid Studio.</p>'
+  html += '<p>Sorting, Excel-style filtering, grouping, virtualization, inline editing and accessibility ship free under the MIT License, with 550+ production-quality examples. The paid <code>@svgrid/enterprise</code> pack adds the Kanban board, ' + (isReleased('gantt') ? 'Scheduler, Gantt and Spreadsheet' : 'Scheduler and Spreadsheet') + ' views of the same grid, the Server-Side Row Model, Excel / PDF export, import, print, pivot tables, SvGrid Base and SvGrid Studio.</p>'
   html += `<h2>What the free Svelte data grid includes</h2><ul>${li(free)}</ul>`
   html += `<h2>What @svgrid/enterprise adds</h2><ul>${li(enterprise)}</ul>`
   html += `<h2>Two packages</h2><p><code>npm install @svgrid/grid</code> is the full data grid under the MIT License, including commercial use, with no license key and no row-count cap. <code>npm install @svgrid/enterprise</code> plugs into it: prices start at $299 per developer (Indie, for freelancers and companies under $1M yearly revenue), Enterprise is $599 per developer for the enterprise grid and Enterprise Suite $999 per developer with the Spreadsheet, SvGrid Base and SvGrid Studio on top, both for unlimited apps, as a perpetual license with one year of updates and support. A 30-day free Enterprise trial includes email support. <a href="${BASE}pricing/">Pricing and the full feature matrix</a>.</p>`
   html += `<h2>How SvGrid compares</h2><ul>${cmp.map(([s, l]) => `<li><a href="${BASE}compare/${s}/">SvGrid vs ${escapeAttr(l)}</a></li>`).join('')}</ul>`
   html += `<h2>Guides</h2><ul>${HOME_GUIDES.map((g) => `<li><a href="${BASE}blog/${g.slug}/">${escapeAttr(g.title)}</a></li>`).join('')}</ul>`
-  html += `<p><a href="${BASE}docs/getting-started/">Get started</a> &middot; <a href="${BASE}demos/">Browse 500+ demos</a> &middot; <a href="${BASE}docs/">Documentation</a> &middot; <a href="${BASE}compare/">All comparisons</a> &middot; <a href="${BASE}blog/">Blog</a> &middot; <a href="${BASE}pricing/">Pricing</a></p>`
+  html += `<p><a href="${BASE}docs/getting-started/">Get started</a> &middot; <a href="${BASE}demos/">Browse 550+ demos</a> &middot; <a href="${BASE}docs/">Documentation</a> &middot; <a href="${BASE}compare/">All comparisons</a> &middot; <a href="${BASE}blog/">Blog</a> &middot; <a href="${BASE}pricing/">Pricing</a></p>`
   if (faq.length) html += `<h2>Svelte data grid FAQs</h2>${faq.map((f) => `<h3>${escapeAttr(f.question)}</h3><p>${escapeAttr(f.answer)}</p>`).join('')}`
   return html + '</main>'
 }
@@ -1620,7 +1620,7 @@ async function main() {
   for (const d of demos) demosByCategory.set(d.category, [...(demosByCategory.get(d.category) ?? []), d])
   for (const [cat, list] of demosByCategory) {
     demosMd.push(`## ${cat}`, '')
-    // A short blurb: the list has to fit one fetch (about 100 KB) at 500+ demos.
+    // A short blurb: the list has to fit one fetch (about 100 KB) at 550+ demos.
     for (const d of list) demosMd.push(`- [${d.title}](${CANON}/demos/${d.id}.md)${d.pro ? ' (Enterprise)' : ''}: ${shortBlurb(d.blurb)}`)
     demosMd.push('')
   }

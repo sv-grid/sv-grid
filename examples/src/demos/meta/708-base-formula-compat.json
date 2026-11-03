@@ -1,0 +1,23 @@
+{
+  "description": "The SvGrid Base formula language, in Svelte 5: a Result field over an orders table recomputes for every record as you type a formula, and a formula that does not compile says why. The second tab lists each function of the common table-database formula reference as Supported, Supported with a difference or Not supported, read from the formula engine so it cannot drift.",
+  "keywords": [
+    "svelte formula field",
+    "table database formula functions",
+    "formula playground svelte grid",
+    "computed column formula svelte"
+  ],
+  "faq": [
+    {
+      "question": "Which functions are there?",
+      "answer": "Text, logical, numeric, date, list and record functions, among them WORKDAY_DIFF, DATETIME_FORMAT with SET_TIMEZONE, REGEX_REPLACE, ARRAYSLICE, WEEKNUM and RECORD_ID. The functions tab lists every one with its status."
+    },
+    {
+      "question": "What does a formula that does not work show?",
+      "answer": "Its cells show #ERROR, and the line under the formula box names the problem: a function the engine does not have, a field it cannot find, or a syntax error."
+    },
+    {
+      "question": "Can the list go out of date?",
+      "answer": "No. It is built from the engine's list of functions, and a test fails if the migration guide's table disagrees with it."
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "description": "Checklist, color and time of day fields in an SvGrid Base, in Svelte 5. A checklist cell shows how many items are done and opens an editor to tick, add, rename, reorder and delete them; a color cell shows a swatch and hex code; a time of day is stored as HH:MM and typed as 9:30 am, 14:05 or 2pm.",
+  "keywords": [
+    "svelte checklist field",
+    "svelte table color picker cell",
+    "svelte time of day field",
+    "database table checklist column",
+    "svelte grid time picker 12 hour 24 hour"
+  ],
+  "faq": [
+    {
+      "question": "How is a checklist stored?",
+      "answer": "As an array of items, each { id, text, done }, in the order they show. A copy writes them as text, \"[x] Done item [ ] Open item\", and a paste or a CSV import reads that back. It sorts by the share of items done and filters by is complete, is not complete, % done or an item's text."
+    },
+    {
+      "question": "Which colors can be pasted into a color field?",
+      "answer": "#rgb, #rrggbb, rgb(r, g, b) and common CSS names such as red, navy or teal. The value is stored as lower case #rrggbb. Text that is not one of those (a name not on the list, hsl(), a color with alpha) leaves the cell as it was."
+    },
+    {
+      "question": "Why is a time of day stored as text and not as seconds?",
+      "answer": "HH:MM on a 24-hour clock reads the same in JSON, a CSV and a SQL time column, sorts in time order as plain text, and cannot be mistaken for a duration, which the base stores as seconds. The field's 12 or 24 hour setting only changes what the cell shows."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

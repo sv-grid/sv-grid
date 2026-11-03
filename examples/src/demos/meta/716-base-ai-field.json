@@ -1,0 +1,31 @@
+{
+  "description": "AI fields in an SvGrid Base, in Svelte 5. A prompt names the record's fields ({Name}, {Audience}), a model writes the value for each record, and the value is stored in the record, so it sorts, filters and exports like typed text. A spark in each cell generates one record, the column menu generates all of them a few at a time, and a field with auto on is written again when a field its prompt names changes.",
+  "keywords": [
+    "svelte ai column",
+    "ai generated field table",
+    "svelte table llm prompt per row",
+    "ai field database grid"
+  ],
+  "faq": [
+    {
+      "question": "Which model does it call?",
+      "answer": "The one your app registers with setAIProvider from @svgrid/grid: a function that takes the request (the prompt, a signal to cancel, a token hint) and returns the model's text. The demo registers a stand-in that writes from templates, so it runs without a key. Keep a real key on your server and call it from the provider with fetch."
+    },
+    {
+      "question": "Is the value computed on every render?",
+      "answer": "No. The answer is written into the record through the grid's edit path, the same way a typed edit is. It stays until someone generates it again or edits it by hand, and Ctrl+Z undoes it."
+    },
+    {
+      "question": "When does a value change on its own?",
+      "answer": "Only with auto on, and only when a field the prompt names changes in that record. With auto off the value changes from the cell's button, the column menu or generateAIField in code."
+    },
+    {
+      "question": "Can it pick from a list instead of writing text?",
+      "answer": "Yes. Set output to singleSelect and give the field options: the model is asked to pick one, and an answer that is not one of them shows as an error in the cell instead of being stored. output: 'number' stores a number."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is. The AI provider functions are free and come from @svgrid/grid."
+    }
+  ]
+}

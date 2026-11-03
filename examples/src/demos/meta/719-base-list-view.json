@@ -1,0 +1,27 @@
+{
+  "description": "A list view in an SvGrid Base, in Svelte 5. Each record is one entry: its name in bold over the fields the view picks, drawn as their cells draw them. The list follows the view's filter, sort and groups, a group header folds its records, and a click or Enter opens the record. Readable on a phone.",
+  "keywords": [
+    "svelte list view database",
+    "svelte grouped list records",
+    "mobile friendly table list svelte",
+    "svelte record list keyboard navigation"
+  ],
+  "faq": [
+    {
+      "question": "Where do the list's filter, sort and groups come from?",
+      "answer": "From the view, as in a grid view. The grid stays mounted under the list, hidden, and the list reads its rows, so the Filter, Group and Sort buttons in the view bar change the list at once."
+    },
+    {
+      "question": "How do I choose the fields under each record's name?",
+      "answer": "Customize list in the view bar turns fields on and off. The choice is kept in the view as listFields; without one the list shows the next three fields the grid shows."
+    },
+    {
+      "question": "Can it be used with the keyboard?",
+      "answer": "Yes. The list is one tab stop. Up and Down move between records and group headers, Home and End jump, Enter opens the record, and Left and Right fold and unfold a group."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

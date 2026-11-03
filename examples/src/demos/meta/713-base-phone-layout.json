@@ -1,0 +1,23 @@
+{
+  "description": "An SvGrid Base on a phone, in Svelte 5. Below 600px of its own width a grid view shows each record as a card with its name and the next four fields, in the view's filter and sort; a tap opens the record and + adds one. The view bar keeps its icons, and on a phone screen the opened record fills it. Switch between phone, tablet and desktop width.",
+  "keywords": [
+    "svelte mobile data table",
+    "responsive table database svelte",
+    "svelte grid card layout phone",
+    "mobile table database app svelte"
+  ],
+  "faq": [
+    {
+      "question": "What decides when the phone layout starts?",
+      "answer": "The base's own width, not the window's: under 600px by default. Set phoneLayout to another number of pixels, true to always use it, or false to keep the grid."
+    },
+    {
+      "question": "What do the cards show?",
+      "answer": "The record's primary field as the title, then the next four fields the view shows, in the view's order. Hide or move fields in the view and the cards follow."
+    },
+    {
+      "question": "Do Kanban and calendar views change on a phone?",
+      "answer": "No. They are already made of cards and scroll as they do on a wider screen. Only grid views switch to the card list."
+    }
+  ]
+}

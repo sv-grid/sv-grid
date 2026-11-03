@@ -321,7 +321,145 @@ All the views so far, in one list:
 let views = $state<FieldView[]>([roadmap, board, timeline, effort, now, mine, gallery, request])
 ```
 
-## 9. Keep the views
+## 9. A dashboard
+
+```ts
+const OPEN: FieldFilter = { kind: 'fieldFilter', conjunction: 'and', conditions: [{ column: 'status', kind: 'select', op: 'isNot', value: 'Shipped' }] }
+const SHIPPED: FieldFilter = { kind: 'fieldFilter', conjunction: 'and', conditions: [{ column: 'status', kind: 'select', op: 'is', value: 'Shipped' }] }
+
+const overview: FieldView = {
+  id: 'overview',
+  name: 'Overview',
+  type: 'dashboard',
+  dashboard: [
+    { id: 'open', kind: 'number', title: 'Open features', filter: OPEN },
+    { id: 'days', kind: 'number', title: 'Days of work left', aggregation: 'sum', field: 'effort', filter: OPEN, caption: 'Team capacity 40 days' },
+    { id: 'shipped', kind: 'progress', title: 'Shipped', filter: SHIPPED },
+    { id: 'status', kind: 'chart', chart: { kind: 'bar', x: 'status' } },
+    { id: 'wanted', kind: 'list', title: 'Most wanted', sortBy: 'votes', sortDesc: true, limit: 3 },
+  ],
+}
+```
+
+A dashboard is a grid of tiles. Each tile reads the records of one table,
+keeps the ones its `filter` matches (the same `FieldFilter` as a view's
+filter), and shows one of four things:
+
+- **`'number'`** counts the records, or with `aggregation: 'sum' | 'avg' |
+  'min' | 'max'` and a number `field`, adds them up. The number is written the
+  way the field writes it, so a currency field shows "$42,000". Here "Open
+  features" reads 3 and "Days of work left" reads 30. `caption` is a line
+  under the number.
+- **`'chart'`** takes a chart view's `chart` setting (`kind`, `x`, `y`,
+  `aggregation`) and groups the tile's records the same way.
+- **`'list'`** shows the first `limit` records (5 by default) sorted by
+  `sortBy`, with that field's value beside each name ("Single sign-on with
+  SAML 182"); `detail` shows another field instead. A click opens the record.
+- **`'progress'`** shows how many of all the table's records match the filter:
+  "25%, 1 of 4 records" for Shipped.
+
+`size` is `'1x1'`, `'2x1'` or `'2x2'` (columns by rows). A number or progress
+tile is `'1x1'` by default, a chart or list `'2x2'`. Below about 450px the
+tiles stack in one column. A tile without `title` is named after what it
+shows ("Total Effort (days)", "Status is Shipped").
+
+With several tables (`<SvBase bind:tables>`), a tile's `table` names any
+table of the base, so a dashboard on Deals can count Accounts and list the
+Activities due this week. A tile without `table` reads the table the view is
+on. Its filter and fields are that table's.
+
+A number or progress tile is a button: a click, or Enter, lists the records
+it counts ("Open the 3 records") in a dialog, each with its name and a few
+of its fields. On a chart, a click on a bar or a slice lists the records in
+it: the records the tile's filter keeps that fall in that bucket. A click on a record in the dialog opens it, in its
+own table's tab when the tile reads another table. While the dashboard is
+being edited, the tiles open nothing.
+
+"Edit dashboard" at the top of the view adds a tile, and on each tile sets its
+size, moves it (drag it, or the arrows), edits it in a dialog (kind, table,
+value, filter, title, size) or removes it. Every change is saved in the view's
+`dashboard` at once and reaches `onViewsChange` and `onTablesChange`. A locked
+view has no "Edit dashboard". The view bar shows only the view switcher on a
+dashboard.
+
+<div data-docs-demo="721-base-dashboard" data-height="680"></div>
+
+## 10. A list for the phone
+
+```ts
+const list: FieldView = {
+  id: 'list',
+  name: 'Feature list',
+  type: 'list',
+  listFields: ['status', 'teams', 'votes'],
+  state: { sorting: [{ id: 'quarter', desc: false }, { id: 'votes', desc: true }], grouping: ['quarter'], hiddenColumns: [], advancedFilter: null },
+}
+```
+
+A list shows one record per entry: the primary field in bold, and under it
+the fields in `listFields` (column ids, in order), each drawn as its cell
+draws it, so Status is a colored pill and Teams are tags. An empty value is
+left out. Without `listFields` the list shows the next three fields the grid
+shows. Long names stay readable at phone width, where a grid would cut them.
+
+The list keeps the view's filter, sorts and groups. Here it is grouped by
+Quarter: a header per quarter with the field's name, its value and the
+number of records, "Quarter Q4 2026 3", and a click on the header folds the
+group. Within each quarter the most voted feature comes first. Grouped by
+more fields (`grouping: ['quarter', 'status']`), each quarter holds a header
+per status, indented under it, with its own count and its own fold.
+
+A click on a record, or Enter, opens it. The list is one tab stop: Up and
+Down move between records and group headers at every level, Home and End
+jump, Left and Right fold and unfold a group, and Left on a record or a
+folded group moves to the group it is in. A record someone else changed and nobody here
+opened yet has a dot before its name.
+
+The view bar has Hide fields, Filter, Group, Sort and "Customize list", which
+turns the fields under the name on and off and saves them in `listFields`.
+
+<div data-docs-demo="719-base-list-view" data-height="620"></div>
+
+## 11. An inbox of changes
+
+```ts
+const inbox: FieldView = {
+  id: 'inbox',
+  name: 'Inbox',
+  type: 'inbox',
+  inboxDateField: 'start',
+  listFields: ['status', 'lead'],
+}
+```
+
+An inbox shows the records on the left and the picked one on the right: its
+fields, each one editable in place with the editor its cell uses, and its
+latest changes, "Cleo Park changed Status: Planned → In progress". "Expand"
+opens the full record with its comments.
+
+The list is newest first by `inboxDateField` (a date field's column id), so
+"Audit log export", which starts on January 11, is on top.
+Records without a date go last. Without `inboxDateField` the inbox keeps the
+view's sort. The view's filter applies either way.
+
+A record someone else changed and nobody here has opened is unread: its name
+is bold and it has a dot. The changes come from a table with a `source` that
+hears of writes made elsewhere ([Changes made
+elsewhere](./data.md#changes-made-elsewhere)). Picking a record marks it read,
+as opening it in any view does, and "Mark all read" marks the rest. The count
+at the top says "2 unread" or "All read".
+
+Down or j picks the next record and Up or k the previous one; Enter opens the
+full record. Narrower than 640px the inbox shows the list, and a picked record
+fills it with a Back button (Escape goes back too).
+
+The view bar has Hide fields, Filter, Sort and "Customize inbox": the date
+field it lists by and the fields under each name. A field hidden in the view
+leaves the record on the right too.
+
+<div data-docs-demo="720-base-inbox-view" data-height="620"></div>
+
+## 12. Keep the views
 
 `onViewsChange` fires with the whole list when a view is created, renamed,
 duplicated or deleted, and about 400ms after the shown view's settings stop
@@ -424,6 +562,105 @@ With several tables (`<SvBase bind:tables>`), each table keeps its own
 `views`, and `onTablesChange` hands back the whole list of tables, views
 included.
 
+## Personal and locked views
+
+Once several people share a table, two more keys on a view matter:
+
+```ts
+const views: FieldView[] = [
+  // Only Ana sees it, under "My views" in the views menu.
+  { id: 'ana-open', name: 'My open tasks', type: 'grid', personal: 'u1', state: { /* ... */ } },
+  // Everyone sees it; nobody changes its settings until someone unlocks it.
+  { id: 'report', name: 'Leadership report', type: 'grid', locked: true, lockedBy: 'u2', state: { /* ... */ } },
+]
+```
+
+- **`personal: userId`** lists the view only for that person, read from
+  `setCurrentUser`. With nobody signed in every view is listed. "Create" in
+  the views menu has a "Personal view: only I see it" box once someone is
+  signed in.
+- **`locked: true`** keeps the view's filter, sorts, groups, hidden fields,
+  colors and row height as saved. Its settings buttons are off, nothing is
+  saved into it, and the bar shows "Locked" with who locked it. A sort from a
+  column header still works for the moment; the bar then says "Locked, not
+  saved" with a Reset. Records stay editable. A locked view cannot be
+  deleted, and a copy of it starts unlocked.
+
+The lock button in the views menu locks the view as the grid shows it now,
+or unlocks it. `lockViews={false}` on `SvBase` removes it for people who may
+not lock views. Both keys come back through `onViewsChange` and
+`onTablesChange`, so the app stores a personal view with its owner the same
+way as the others.
+
+<div data-docs-demo="710-base-personal-locked-views" data-height="620"></div>
+
+## On a phone
+
+When a table is narrower than 600px (its own width, not the window's), a
+grid view shows each record as a card: the primary field, then the next four
+fields the view shows, in the view's filter and sort. A tap opens the
+record, "+" adds one, and on a phone screen the opened record fills it. The
+view bar keeps its icons and the tab bar its tabs. Kanban, calendar, gallery
+and form views stay as they are.
+
+`phoneLayout` on `SvBase` moves the breakpoint (`phoneLayout={480}`), turns
+the cards on at every width (`true`) or keeps the grid (`false`).
+
+<div data-docs-demo="713-base-phone-layout" data-height="720"></div>
+
+## Search across tables
+
+The view bar's search finds records in the view on screen. The box at the
+end of the tab bar searches every table of the base. With the focus in the
+base, Ctrl+K puts the cursor in it, and so does "/" outside the grid and any
+text box. Neither is taken from the rest of the page.
+
+It reads a field the way its cell shows it: a single select by its option's
+label, a person by name, a date as the field writes it, a link by the names
+of the records it links to, a formula or lookup by its result. Numbers,
+currency, percents, durations, ratings, checkboxes, buttons, rollups and
+counts are not searched. Case and accents do not count: "tomas" finds
+"Tomás".
+
+Every word of the query has to be in the record, in one field or another.
+The results are grouped by table, five records each with "N more in Deals"
+under them, each with its name, the field the words were found in and the
+words marked. Records rank by:
+
+1. the whole query in one field, before words spread over several;
+2. the primary field, before the others;
+3. a field that is the query, then one that starts with it, then one with a
+   word that starts with it, then one that holds it anywhere.
+
+Tables are listed by their best record. Up and Down move through the list,
+Enter or a click shows the record's table and opens the record, and Escape
+closes the list, then clears the box. `search={false}` on `SvBase` leaves the
+box out. A shared base (`readOnly`) keeps it, over the tables and fields the
+share shows.
+
+The same search runs without the box, for a command palette of your own or
+on a server:
+
+```ts
+import { searchBase } from '@svgrid/enterprise/base'
+
+const groups = searchBase(tables, 'northwind proposal', { limit: 10 })
+for (const g of groups) {
+  console.log(g.name, g.total)
+  for (const hit of g.hits) console.log(hit.rowId, hit.title, `${hit.fieldName}: ${hit.text}`, hit.marks)
+}
+```
+
+Each hit has the table and record ids, the record's name (`title`), the
+field that matched (`field`, `fieldName`, `primary`), its text cut around
+the match when it is long, and `marks`, the `[start, end)` spans of the
+words in that text. `field: (table, column) => boolean` in the options picks
+the fields to search. To open a hit in `SvBase`, show its table
+(`bind:activeTable`) and call `openRecord({ api, rowId })` once that table's
+grid has called `onApiReady`; the box does this for you.
+
+<div data-docs-demo="718-base-search-all-tables" data-height="620"></div>
+
 ## View types and the keys they read
 
 | Type | Keys | View bar buttons |
@@ -434,7 +671,11 @@ included.
 | `'gantt'` | `dateField`, `endField`, `progressField`, `dependencyField`, `zoom`, `color` | Hide fields, Filter, Sort, Color, Customize timeline |
 | `'gallery'` | `coverField`: an attachment field | Hide fields, Filter, Sort |
 | `'chart'` | `chart`: `kind`, `x`, `y`, `aggregation` | Filter, Customize chart |
-| `'form'` | `formFields`, `formRequired`, `formTitle`, `formDescription`, `formSubmitLabel` | none |
+| `'list'` | `listFields`: the fields under each name | Hide fields, Filter, Group, Sort, Customize list |
+| `'inbox'` | `inboxDateField`: a date field, newest first; `listFields` | Hide fields, Filter, Sort, Customize inbox |
+| `'form'` | `formFields`, `formRequired`, `formTitle`, `formDescription`, `formSubmitLabel`, `formConditions`, `formPrefill` | none |
+| `'dashboard'` | `dashboard`: the tiles, in order | none |
+| any type | `personal`, `locked`, `lockedBy` | off while `locked` |
 
 Every type also keeps `state` (filter, sorts, groups, hidden fields, column
 order, widths, pinning) and switches with the grid's own state, so a filter
@@ -470,8 +711,9 @@ what each record waits for, drawn as arrows.
 - **Row height**: Short 34, Medium 56, Tall 88, Extra tall 128.
   `rowHeights` on `SvBase` or `SvBaseViewBar` sets the list.
 - **Search**: in a grid view, the grid's find bar (Ctrl+F) that marks every
-  match. In a board, calendar or gallery, a "Find a record" box that narrows
-  the records. Switching views clears it.
+  match. In a board, calendar, gallery, list or inbox, a "Find a record" box
+  that narrows the records. Switching views clears it.
+- **Search all tables**: the box in the tab bar (below).
 
 A button with something set says so and is tinted. With `fieldMenu` on, each
 column's menu adds "Filter by this field" and "Group by this field", which
@@ -597,7 +839,7 @@ when a form view is active.
   differ only when a column sets an `id`.
 - **Summaries belong to the field, not the view.** Picking "Average" in one
   view changes every view's footer and group headers.
-- **Save views only after they load.** See the `loaded` check in step 9.
+- **Save views only after they load.** See the `loaded` check in step 12.
 
 ## Next
 

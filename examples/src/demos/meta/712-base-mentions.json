@@ -1,0 +1,23 @@
+{
+  "description": "@mentions in the comments of an SvGrid Base, in Svelte 5. Typing @ in a record's comment box lists the base's people, narrowed as you type, and a mention is drawn as a chip with the person's current name. The comment store's onMention hook runs once per comment that mentions someone; this content review base uses it to fill an inbox per person, with a Signed in as switch.",
+  "keywords": [
+    "svelte mention comments",
+    "at mention autocomplete svelte",
+    "record comments notifications svelte",
+    "table database comments mentions"
+  ],
+  "faq": [
+    {
+      "question": "How is a mention stored?",
+      "answer": "In the comment text as @[Name](userId), with the ids also in the comment's mentions list. Rendering looks the id up again, so a renamed person shows with their new name."
+    },
+    {
+      "question": "How does the app send a notification?",
+      "answer": "Through onMention on the comment store (setRecordComments) or setMentionHandler. It gets the comment, the people mentioned, the record, its id, the table id and the grid api once per comment, so the app can send an email or a chat message."
+    },
+    {
+      "question": "Can a comment inject HTML?",
+      "answer": "No. Everything but the mention tokens is rendered as plain text."
+    }
+  ]
+}

@@ -194,3 +194,63 @@ describe('keepGroups - the grouping kept across an expand', () => {
     expect(next.find((r) => r.id.endsWith('EU'))!.leafCount).toBe(1)
   })
 })
+
+describe('createGroupedRowModel - groupOrder', () => {
+  const RANK = ['New', 'Triaged', 'Done']
+  const rank = (a: unknown, b: unknown) => RANK.indexOf(String(a)) - RANK.indexOf(String(b))
+  const data: Data[] = [
+    { status: 'Done', n: 1 },
+    { status: 'New', n: 2 },
+    { status: 'Triaged', n: 3 },
+    { status: 'New', n: 4 },
+  ]
+  function groupsOf(order: ((a: unknown, b: unknown) => number) | undefined, sorting: Array<{ id: string; desc: boolean }> = []) {
+    const grid = createSvGridCore({
+      _features: tableFeatures({ columnGroupingFeature }),
+      _rowModels: { coreRowModel: createCoreRowModel(), groupedRowModel: createGroupedRowModel() },
+      columns: [{ field: 'status', groupOrder: order }, { field: 'n' }] as unknown as Array<ColumnDef<ReturnType<typeof tableFeatures>, Data>>,
+      data,
+      state: { grouping: ['status'], sorting },
+      onGroupingChange: () => {},
+    })
+    return grid.getRowModel().rows.map((r) => String(r.id).split('_').pop())
+  }
+
+  it('without it, groups come in the order of their first rows', () => {
+    expect(groupsOf(undefined)).toEqual(['Done', 'New', 'Triaged'])
+  })
+
+  it('orders the groups by it, and keeps each group\'s rows in their order', () => {
+    expect(groupsOf(rank)).toEqual(['New', 'Triaged', 'Done'])
+  })
+
+  it('a sort on the grouped column decides instead', () => {
+    expect(groupsOf(rank, [{ id: 'status', desc: true }])).toEqual(['Done', 'New', 'Triaged'])
+  })
+})
+
+describe('createGroupedRowModel - groupValue', () => {
+  it('groups by the value it gives, which group rows and groupOrder see', () => {
+    const lists: Data[] = [
+      { items: [{ done: true }, { done: true }] },
+      { items: [{ done: false }] },
+      { items: [] },
+      { items: [{ done: true }, { done: false }] },
+    ]
+    const state = (v: unknown) => {
+      const a = v as Array<{ done: boolean }>
+      return !a.length ? '' : a.every((x) => x.done) ? 'Done' : a.some((x) => x.done) ? 'In progress' : 'Not started'
+    }
+    const RANK = ['Not started', 'In progress', 'Done', '']
+    const grid = createSvGridCore({
+      _features: tableFeatures({ columnGroupingFeature }),
+      _rowModels: { coreRowModel: createCoreRowModel(), groupedRowModel: createGroupedRowModel() },
+      columns: [{ field: 'items', groupValue: state, groupOrder: (a: unknown, b: unknown) => RANK.indexOf(String(a)) - RANK.indexOf(String(b)) }] as unknown as Array<ColumnDef<ReturnType<typeof tableFeatures>, Data>>,
+      data: lists,
+      state: { grouping: ['items'] },
+      onGroupingChange: () => {},
+    })
+    const groups = grid.getRowModel().rows
+    expect(groups.map((g) => [String(g.id).split('_').pop(), g.leafCount])).toEqual([['Not started', 1], ['In progress', 1], ['Done', 1], ['', 1]])
+  })
+})

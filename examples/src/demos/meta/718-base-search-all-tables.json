@@ -1,0 +1,27 @@
+{
+  "description": "Search every table of an SvGrid Base at once, in Svelte 5. The box in the tab bar matches records by what their cells show, a select's label, a person's name, a date as written, a linked record's name, groups the results by table with the words marked, and opens the one you pick in its own table. Ctrl+K focuses it; searchBase runs the same search without the box.",
+  "keywords": [
+    "svelte search all tables",
+    "global search database svelte",
+    "svelte grid search across tables",
+    "ctrl k record search svelte"
+  ],
+  "faq": [
+    {
+      "question": "Which fields does it search?",
+      "answer": "Every field whose cell shows text: text, long text, selects by their labels, people by name, dates as the field writes them, emails, URLs, phone numbers, files by name, formulas and lookups, and links by the names of the records they link to. Numbers, checkboxes, ratings and buttons are left out."
+    },
+    {
+      "question": "How are the results ranked?",
+      "answer": "Every word of the query has to be in the record. The whole query in one field comes before words spread over several fields, a match in the primary field before one in another field, and a field that starts with the query before one that only contains it. Tables are listed by their best match, five records each with a count of the rest."
+    },
+    {
+      "question": "Can I use the search without the box?",
+      "answer": "Yes. searchBase(tables, query) returns the matches grouped by table, with the record id, its name, the field that matched and where the words are, so an app can build its own command palette or run the search on its server."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

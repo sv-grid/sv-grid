@@ -1,0 +1,23 @@
+{
+  "description": "Moving a base into SvGrid Base, in Svelte 5, from the JSON a hosted table-database service's Web API returns: the schema and the records. baseFromAirtable maps each field type to its Base type with its options, keeps links both ways, turns collaborators into people and field-id references in formulas into field names, and reports what did not carry over.",
+  "keywords": [
+    "migrate table database to svelte",
+    "import base schema json svelte",
+    "move spreadsheet database into own app",
+    "self hosted table database svelte"
+  ],
+  "faq": [
+    {
+      "question": "Where does the JSON come from?",
+      "answer": "From two Web API calls a script makes once: the base's schema (its tables, fields and views) and each table's records. The migration guide has the script; it needs a token that can read the schema and the records."
+    },
+    {
+      "question": "What does not carry over?",
+      "answer": "Field types Base does not have arrive as text, formulas that call a missing function show #ERROR, view types Base does not have are left out, and settings the schema does not include (the field a board stacks by, a rollup's aggregation) are chosen and listed in the report."
+    },
+    {
+      "question": "Where do the tables go after the import?",
+      "answer": "Into the page as BaseTable objects. Store them as JSON, or write them to Postgres with baseToSql and open the database as a base."
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "description": "A support request form built on SvGrid Base, in Svelte 5, whose fields follow the answers: Company size for a business account, App version for a bug, Invoice number for billing, What is blocked when the request blocks work. A hidden field is not required and not sent. Prefilled links fill answers from the URL with prefill_ parameters, and hide_ keeps a filled field out of sight.",
+  "keywords": [
+    "svelte conditional form fields",
+    "prefill form from url svelte",
+    "svelte form show field when",
+    "form builder conditional logic svelte"
+  ],
+  "faq": [
+    {
+      "question": "How is a field's condition written?",
+      "answer": "As a filter over the other answers, the same kind the view bar's Filter builds: column id to a FieldFilter, passed as conditions on SvBaseForm or formConditions on a form view. A condition can read a field that has its own condition."
+    },
+    {
+      "question": "What happens to a value typed into a field that then hides?",
+      "answer": "It is cleared and not sent, and the field is not required while hidden. Pick Bug, type a version, switch to Billing and submit: the record has no version."
+    },
+    {
+      "question": "How does a prefilled link look?",
+      "answer": "The form's page URL with prefill_<Field name>=value for each answer (a field's name or id, any case; several values of a multiple select separated by commas) and hide_<Field name>=true to hide one the link filled. formPrefillLink builds it, and prefill reads it from the page URL or from a string."
+    }
+  ]
+}

@@ -243,6 +243,134 @@ activity shows it under your name, after the agent's. Press **Approve** on
 the rest: the automation sets Review to Approved and the ticket leaves the
 view.
 
+## AI fields
+
+The agent above works from outside the base. An AI field works from inside
+it: a field whose value a model writes for each record, from a prompt that
+names the record's other fields.
+
+<div data-docs-demo="716-base-ai-field" data-height="620"></div>
+
+The answer is stored in the record, like a typed value. It sorts, filters,
+exports and shows in footers without calling the model again, and anyone
+allowed to edit the field can change it by hand.
+
+```ts
+import { setAIProvider } from '@svgrid/grid'
+import type { BaseTable } from '@svgrid/enterprise/base'
+
+// Once, at startup: a function from the request to the model's text.
+// The key stays on your server; /api/ai calls the model with it.
+setAIProvider(async ({ prompt, maxOutputTokens, signal }) => {
+  const res = await fetch('/api/ai', { method: 'POST', body: JSON.stringify({ prompt, maxOutputTokens }), signal })
+  return (await res.json()).text
+})
+
+export const products: BaseTable = {
+  id: 'products',
+  name: 'Products',
+  primaryField: 'name',
+  data: [{ id: 'p1', name: 'Ridge 40 pack', audience: 'Hikers', feature: 'A frame that carries 15 kg' }],
+  columns: [
+    { field: 'name', header: 'Name', fieldType: 'text' },
+    { field: 'audience', header: 'Audience', fieldType: 'singleSelect', fieldProps: { options: [{ value: 'Hikers' }, { value: 'Climbers' }] } },
+    { field: 'feature', header: 'Key feature', fieldType: 'text' },
+    {
+      field: 'pitch',
+      header: 'Pitch',
+      fieldType: 'ai',
+      fieldProps: { prompt: 'Write a one-line pitch for {Name}, aimed at {Audience}, that mentions {Key feature}.' },
+    },
+  ],
+}
+```
+
+`setAIProvider`, `getAIProvider` and `mockAIProvider` are the free AI helpers
+of `@svgrid/grid`; the field uses whatever provider the app registered. The
+provider gets the prompt with each `{Field name}` replaced by the value as
+its cell shows it (a select's label, a person's name, a formatted date), and
+an instruction to answer with JSON, `{"value": ...}`.
+
+| `fieldProps` | Default | What it does |
+| --- | --- | --- |
+| `prompt` | `''` | The instruction, with `{Field name}` (a header or a field key) for the record's values. The field editor shows an unknown name or the field's own name as an error, as it does for a formula, and will not save it. Renaming a field renames it in the prompt. |
+| `output` | `'text'` | `'text'` stores text (edited as long text). `'singleSelect'` asks the model to pick one of `options` and refuses any other answer. `'number'` stores a number, shown with `precision` decimal places. |
+| `auto` | `true` | Generate again when a field the prompt names is edited in that record, in the page where the edit is made (see [Changes from the database](#changes-from-the-database)). Off, the value changes only when someone asks. A record whose named fields are all empty is skipped. |
+| `options` | `[]` | The options of a `'singleSelect'` output, as a select field's. |
+
+How it behaves:
+
+- Each cell has a button that generates that record. With `fieldMenu`, the
+  column menu has **Generate for N empty records** and
+  **Generate for all N records**, and **Stop generating** while some wait.
+- Requests run three at a time over the page; `setAIFieldConcurrency(n)`
+  changes that. A waiting or running cell shows a spinner. A failed one
+  shows the error message (the model's error, or an answer that is not one
+  of the options) until it is generated again or edited.
+- Values are written through the grid's edit path, as a typed edit is:
+  Ctrl+Z undoes one, `onCellValueChange` hears it, last modified fields are
+  stamped and another AI field whose prompt names this one follows. The
+  active cell and the selection stay where the person left them, and a
+  value that arrives while someone is editing a cell waits for that edit to
+  end.
+- A protected field is generated only for the people allowed to edit it;
+  for others the button is not shown and a call from code fails with a
+  message, before any request is made.
+- Without a provider, an empty cell says "No AI provider" and the button's
+  title says to call `setAIProvider()`.
+- A grid taken off the page (the component unmounted) drops its waiting
+  requests and aborts the running ones through the request's `signal`.
+
+From code:
+
+```ts
+import { cancelAIField, generateAIField } from '@svgrid/enterprise/base'
+
+declare const api: unknown // from <SvBase onApiReady>
+
+// 'empty' (the default), 'all', or a list of record ids.
+const { written, failed } = await generateAIField(api, 'pitch', 'all')
+cancelAIField(api, 'pitch')
+```
+
+### Changes from the database
+
+An `auto` generation starts in the page where the edit was made. On a table
+with a `source`, that page writes the new value to the database like any
+other edit, and every other page with the base open receives it through
+`realtime` as a change of its own. Those pages never call the model for it:
+with ten people looking at a table, one edit costs one request.
+
+A change made outside any `<SvBase>` (a server job, a script, a database
+console, an agent) has no page that generated it, so its records keep their
+old value. To generate them, call `regenerateAIFields` from `onRemoteChange`
+in one page:
+
+```ts
+import { regenerateAIFields, type BaseRemoteChange } from '@svgrid/enterprise/base'
+
+declare const api: unknown // from <SvBase onApiReady>
+
+// <SvBase {tables} {onApiReady} onRemoteChange={generateForImports} />
+function generateForImports(changes: BaseRemoteChange[]) {
+  // Rows the nightly import wrote. Edits from other pages were generated there.
+  void regenerateAIFields(api, changes.filter((c) => c.record.updated_by === 'import'))
+}
+```
+
+It applies the rule an edit in the grid follows: for an update, each `auto`
+field whose prompt names a field that moved, unless the change wrote that
+AI field itself; for an insert, the record's empty AI fields. Deletes,
+fields with `auto` off and records of a table the grid does not show are
+skipped. The values are written through the grid, so they reach the
+database and the other pages, and the page does not hear its own write.
+
+Call it in one page only, or for changes a filter picks out (an author, a
+service account). If every open page calls it for every change, each one
+asks the model and writes, and the last answer wins. The other choice is to
+generate on the server: your job calls the model and writes the value with
+the record.
+
 ## Next
 
 - [Review what an agent changed](./review-queue.md): the same review on any

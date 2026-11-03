@@ -52,7 +52,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - AI helpers ship free in `@svgrid/grid` and work with any model: `setAIProvider`, `aiFilter`, `aiSmartFill`, `aiSummarize`, `aiClassify`, `aiFindAnomalies`.
 - For coding assistants: an MCP server (`npx -y @svgrid/mcp`, MIT) serves the version-pinned API and demo sources; an Agent Skill installs with `npx skills add sv-grid/sv-grid`.
 - Paid add-on, not needed for anything above: `@svgrid/enterprise` adds Excel / PDF export, import, print, pivot tables, the Server-Side Row Model, alert rules and the Kanban board, Scheduler, Gantt and Spreadsheet views. Prices start at $299 per developer: https://svgrid.com/pricing/ . A 30-day trial (one download with both packages and the demos to run offline, plus email support for the 30 days) starts from that page; without it, the package runs in full with a watermark until a key is set.
-- 546 live demos, each with its source: https://svgrid.com/demos/ . Source code: https://github.com/sv-grid/sv-grid
+- 563 live demos, each with its source: https://svgrid.com/demos/ . Source code: https://github.com/sv-grid/sv-grid
 
 ## Start here
 
@@ -68,9 +68,9 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 ## Machine-readable copies
 
 - Every docs page has a plain-markdown copy at its URL with the trailing slash replaced by `.md`, e.g. https://svgrid.com/docs/getting-started/1-install.md
-- This index by product, each part on its own and sized for one fetch: [SvGrid](https://svgrid.com/llms/grid.txt) (49 KB), [SvGrid UI](https://svgrid.com/llms/ui.txt) (28 KB), [SvGrid Enterprise](https://svgrid.com/llms/enterprise.txt) (10 KB), [SvGrid Spreadsheet](https://svgrid.com/llms/sheet.txt) (3 KB), [SvGrid Base](https://svgrid.com/llms/base.txt) (4 KB), [SvGrid Studio](https://svgrid.com/llms/studio.txt) (11 KB), [Comparisons: which Svelte table library to use](https://svgrid.com/llms/compare.txt) (7 KB)
+- This index by product, each part on its own and sized for one fetch: [SvGrid](https://svgrid.com/llms/grid.txt) (49 KB), [SvGrid UI](https://svgrid.com/llms/ui.txt) (28 KB), [SvGrid Enterprise](https://svgrid.com/llms/enterprise.txt) (10 KB), [SvGrid Spreadsheet](https://svgrid.com/llms/sheet.txt) (3 KB), [SvGrid Base](https://svgrid.com/llms/base.txt) (5 KB), [SvGrid Studio](https://svgrid.com/llms/studio.txt) (11 KB), [Comparisons: which Svelte table library to use](https://svgrid.com/llms/compare.txt) (7 KB)
 - [llms-small.txt](https://svgrid.com/llms-small.txt) (169 KB): not an index. The brief above plus the FULL TEXT of the getting-started path and the pages asked about most before choosing a grid.
-- [llms-full.txt](https://svgrid.com/llms-full.txt) (5.0 MB): the full text of every docs page, the comparison pages and the API reference, in reading order. Too large for one fetch; read the parts above, or one page as .md.
+- [llms-full.txt](https://svgrid.com/llms-full.txt) (5.1 MB): the full text of every docs page, the comparison pages and the API reference, in reading order. Too large for one fetch; read the parts above, or one page as .md.
 - [docs.json](https://svgrid.com/docs.json): the route manifest with section, tier and demo links per page.
 - [demos.md](https://svgrid.com/demos.md): every live demo by category. Each has a markdown copy with its full source at /demos/<id>.md, e.g. https://svgrid.com/demos/01-quick-start.md
 - [API reference as JSON](https://svgrid.com/api.json): look up any function, type, option or api method of @svgrid/grid and @svgrid/enterprise by name. Every export by module, with the member names of each type (options objects, props, SvGridApi). https://svgrid.com/api/<name lowercased>.json has a symbol's doc and signature, e.g. https://svgrid.com/api/createsvgrid.json; a member name (getRowPosition, onCellClick) has a file naming its type. `<SvGrid>` props, each with its signature: https://svgrid.com/api/svgrid.json
@@ -592,6 +592,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - [Computed fields with formulas](https://svgrid.com/docs/help/base/formulas/): A formula field works out its value from the other fields of the same record: a stock value from quantity and unit cost, a status from a reorder level, a date 90 days after the last count.
 - [Views for every team](https://svgrid.com/docs/help/base/views/): One table of records, many ways to look at it. Product reads the roadmap grouped by quarter, engineering works off a status board, the leads check a timeline, and anyone in the company files a...
 - [Collect records with forms](https://svgrid.com/docs/help/base/forms/): A form view asks for some of a table's fields and adds a record when it is sent. Use it for records other people start: a bug report, an expense, a job application.
+- [Undo, the trash and importing files](https://svgrid.com/docs/help/base/undo-trash-import/): Three things people reach for in their first week with a base: Ctrl+Z after a slip, getting back a record someone deleted yesterday, and pulling in the spreadsheet they kept until now.
 - [People, comments and files](https://svgrid.com/docs/help/base/collaboration/): A tracker one person fills in needs a status column and little else. Once a team uses it, people want to see who a task is assigned to, who changed the status and when, a thread of comments on the...
 - [Build your own field type](https://svgrid.com/docs/help/base/custom-field-type/): A field type decides what a column holds and how it behaves: what the cell shows, which editor opens, how pasted text is read, what the footer can sum.
 - [Automations](https://svgrid.com/docs/help/base/automations/): An automation does something on its own when something happens to a record: a task set to Done ticks its Done box, a new request goes to Todo, a blocked task tells its owner, a button starts the...
@@ -602,6 +603,10 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - [Let an AI agent work in your base](https://svgrid.com/docs/help/base/ai-agents/): An agent can do the first pass on a table your team works in: categorize the new records, set a priority, draft a reply. The hard part is not the edit.
 - [Review what an agent changed](https://svgrid.com/docs/help/base/review-queue/): An agent can be Claude Code with an MCP server, a worker that calls a model, or a script on a schedule.
 - [Field types](https://svgrid.com/docs/help/fields/): A column can say what it is - a rating, a URL, a single select with colored options, a list of files - with fieldType, and set that type's properties with fieldProps.
+
+### Web components
+
+- [<sv-base>: SvGrid Base as a custom element](https://svgrid.com/docs/help/web-components/sv-base/): SvGrid Base, tables with typed fields, linked records, views, forms and automations, as one custom element for a page or a host with no Svelte in its build: React, Vue, Angular, or a plain...
 
 ## SvGrid Studio
 

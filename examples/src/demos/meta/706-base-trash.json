@@ -1,0 +1,23 @@
+{
+  "description": "A trash for an SvGrid Base, in Svelte 5. Deleted records, fields and tables are kept with who deleted them and when, and Restore puts each back: a record in its place with its links, a field with its values, a table as a tab. The trash is plain data bound with bind:trash, so the app stores it, and items older than trashDays are dropped.",
+  "keywords": [
+    "svelte table trash restore",
+    "restore deleted records svelte",
+    "soft delete data grid svelte",
+    "recycle bin table database ui"
+  ],
+  "faq": [
+    {
+      "question": "Where is the trash kept?",
+      "answer": "In the trash prop, an array of plain items. Bind it, or listen to onTrashChange, and store it next to the tables. Nothing is sent anywhere by the base itself."
+    },
+    {
+      "question": "How long do items stay?",
+      "answer": "30 days by default. Set trashDays to change it, or 0 to keep items until the trash is emptied. Older items are dropped when the base opens."
+    },
+    {
+      "question": "Can every item be restored?",
+      "answer": "A record whose table was deleted waits until the table is restored, and the dialog says so. A record or field that is already back cannot be restored twice; the Restore button is off and its title says why."
+    }
+  ]
+}

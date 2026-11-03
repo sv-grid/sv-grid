@@ -1,0 +1,23 @@
+{
+  "description": "SvGrid Base as the <sv-base> custom element, for React, Vue, Angular or a plain HTML page. Plain DOM code creates the element, assigns tables, users and currentUser as properties and listens to tableschange, which carries the whole list after every edit; the log shows each event. The code block is the same page written with a script tag and no build step.",
+  "keywords": [
+    "table database web component",
+    "table database custom element",
+    "svgrid base web component",
+    "embed table database react vue"
+  ],
+  "faq": [
+    {
+      "question": "Which properties and events does <sv-base> have?",
+      "answer": "Properties: tables (or data, columns and views for one table), users, currentUser and options for any other SvBase prop. Attributes: height, editable, sortable, show-row-numbers, column-adder, field-menu, expand-rows, active-table and license-key, among others. Events: tableschange with the whole list, ready with the grid api, viewschange and remotechange."
+    },
+    {
+      "question": "Does it use a shadow root?",
+      "answer": "No. Like <sv-sheet>, it renders in the light DOM, so its menus, dialogs and toasts can open over the page and the --sg-* theme tokens reach it from the page's CSS."
+    },
+    {
+      "question": "How is it licensed?",
+      "answer": "It is part of SvGrid Base, in the Suite edition of @svgrid/enterprise. Set the license-key attribute or the licenseKey property; without a key it runs with a watermark."
+    }
+  ]
+}

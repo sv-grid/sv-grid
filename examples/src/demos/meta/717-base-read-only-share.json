@@ -1,0 +1,27 @@
+{
+  "description": "A read-only share of an SvGrid Base, in Svelte 5. The readOnly prop shows the same tables to people who may look but not change anything: no cell, record, card or calendar edits, no adding or deleting, no import, trash or undo, comments without the box to write one. Viewers still switch tables and views, search, filter, sort and open records, and their view changes stay in the page.",
+  "keywords": [
+    "svelte table read only share link",
+    "read only database view svelte",
+    "share base view only",
+    "svelte grid hide fields share"
+  ],
+  "faq": [
+    {
+      "question": "What does readOnly turn off?",
+      "answer": "Editing cells and records, dragging cards and calendar events, adding and deleting records, fields and tables, the field editor, import, the trash, undo and redo, automations and writing comments. Form views are not shared, and the selection bar loses Edit fields and Delete."
+    },
+    {
+      "question": "Do a viewer's sorts and filters get saved?",
+      "answer": "No. A view a viewer changes keeps the change while the page is open, and switching tables keeps it too, but nothing reaches onTablesChange or a table's database source."
+    },
+    {
+      "question": "Can a share show only some tables, views or fields?",
+      "answer": "Yes: readOnly={{ tables, views, hideFields }} takes lists of ids. A hidden field takes along the fields that would show it, such as a formula or a rollup that reads it. Hiding is for display, so a share of secret data should be a copy the server builds without it."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

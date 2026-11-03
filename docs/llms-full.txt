@@ -52,11 +52,11 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 - AI helpers ship free in `@svgrid/grid` and work with any model: `setAIProvider`, `aiFilter`, `aiSmartFill`, `aiSummarize`, `aiClassify`, `aiFindAnomalies`.
 - For coding assistants: an MCP server (`npx -y @svgrid/mcp`, MIT) serves the version-pinned API and demo sources; an Agent Skill installs with `npx skills add sv-grid/sv-grid`.
 - Paid add-on, not needed for anything above: `@svgrid/enterprise` adds Excel / PDF export, import, print, pivot tables, the Server-Side Row Model, alert rules and the Kanban board, Scheduler, Gantt and Spreadsheet views. Prices start at $299 per developer: https://svgrid.com/pricing/ . A 30-day trial (one download with both packages and the demos to run offline, plus email support for the 30 days) starts from that page; without it, the package runs in full with a watermark until a key is set.
-- 546 live demos, each with its source: https://svgrid.com/demos/ . Source code: https://github.com/sv-grid/sv-grid
+- 563 live demos, each with its source: https://svgrid.com/demos/ . Source code: https://github.com/sv-grid/sv-grid
 
 ## About this file
 
-The full SvGrid documentation, generated 2026-11-01 from 477 pages, 21 comparison pages, plus 83 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
+The full SvGrid documentation, generated 2026-11-03 from 479 pages, 21 comparison pages, plus 83 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
 
 <!-- =================================================================
      /docs/getting-started/  (community)
@@ -11736,12 +11736,232 @@ Field types carry over almost one to one:
 | Autonumber | `autoNumber` |
 | Barcode, button | `barcode`, `button` |
 | Linked record | `link` |
+| AI text | `ai` (the prompt carries over; your app supplies the model) |
 
 Formulas use the same shape: fields by name in braces, `&` to join text,
-and functions such as `IF`, `SWITCH`, `ROUND`, `DATEADD` and
-`DATETIME_DIFF`. Paste each formula into the field editor; one that uses a
-function the base does not have shows `#ERROR` and names it, and you
-rewrite that part.
+and the same functions; [Formula functions](#formula-functions) lists each
+one. Paste each formula into the field editor, or let `baseFromAirtable`
+carry them over; one that uses a function the base does not have shows
+`#ERROR` and names it, and you rewrite that part.
+
+## Open an Airtable base from its API
+
+`baseFromAirtable` turns what Airtable's Web API returns into the tables
+`<SvBase>` takes. Give it the schema (`GET /v0/meta/bases/{baseId}/tables`)
+and, if you want the records too, each table's records (`GET
+/v0/{baseId}/{tableId}`), keyed by table id or name. A personal access
+token with `schema.bases:read` and `data.records:read` reads both.
+
+```ts
+// scripts/airtable-to-base.ts: run once with Node 18 or later
+import { writeFileSync } from 'node:fs'
+import { baseFromAirtable, type AirtableRecord, type AirtableRecords } from '@svgrid/enterprise/base'
+
+const BASE = 'appXXXXXXXXXXXXXX'
+const headers = { Authorization: `Bearer ${process.env.AIRTABLE_TOKEN}` }
+const get = async (path: string) => (await fetch(`https://api.airtable.com/v0/${path}`, { headers })).json()
+
+const schema = await get(`meta/bases/${BASE}/tables`)
+const records: AirtableRecords = {}
+for (const table of schema.tables) {
+  const all: AirtableRecord[] = []
+  let offset = ''
+  do {
+    const page = await get(`${BASE}/${table.id}?pageSize=100${offset ? `&offset=${offset}` : ''}`)
+    all.push(...page.records)
+    offset = page.offset ?? ''
+  } while (offset)
+  records[table.id] = all
+}
+
+const { tables, users, report } = baseFromAirtable(schema, records)
+for (const r of report) console.log(`${r.table} / ${r.name}: ${r.message}`)
+writeFileSync('src/lib/airtable-base.json', JSON.stringify({ tables, users }, null, 2))
+```
+
+```svelte
+<script lang="ts">
+  import { SvBase, enableBase, setFieldUsers, type BaseTable } from '@svgrid/enterprise/base'
+  import base from '$lib/airtable-base.json'
+
+  enableBase()
+  setFieldUsers(base.users)
+  let tables = $state.raw(base.tables as BaseTable[])
+</script>
+
+<SvBase bind:tables editable sortable columnAdder fieldMenu />
+```
+
+What it does:
+
+- Every field type in the table above becomes its Base type, with its
+  options: select choices keep their colors, numbers their precision and
+  currency symbol, dates their format, ratings their icon and maximum.
+- Each field gets a row key made from its name (`Due date` is `due_date`).
+  Table, record and view ids stay Airtable's, so a link field's record ids
+  still point at the right records, and each link names the field that
+  links back in the other table.
+- A formula's `{fldXXX}` references become `{Field name}`, and its result
+  type sets how the cell shows a number, an amount, a percent or a date.
+  `CREATED_TIME()`, `LAST_MODIFIED_TIME()` and `LAST_MODIFIED_TIME({Field})`
+  read a Created time or Last modified time field. The import uses the
+  table's own when it has a fitting one and adds one when it has not (a
+  Last modified time field that watches the named fields, for the last
+  form), and the report lists what it added. An added Created time field
+  holds each record's `createdTime`; an added Last modified time field is
+  empty until the next edit, since the API does not return those times.
+- Collaborators become user ids (the Airtable `usrXXX` id, or what your
+  `userId` option returns), and `users` lists them for `setFieldUsers`.
+  Attachments keep their URL, name, type, size and thumbnail.
+- An AI text field becomes an [AI field](./base/ai-agents.md#ai-fields) with
+  the same prompt, its field ids written as `{Field name}`. The generated
+  values come over as stored text; new ones come from the provider your app
+  registers with `setAIProvider`.
+- Grid, Kanban, calendar, gallery and form views carry over, and a
+  timeline becomes a Gantt view.
+
+`report` lists what did not carry over as it was, one entry per field or
+view, with a `kind`:
+
+| `kind` | Means |
+| --- | --- |
+| `field` | A field type Base does not have (a sync source). It arrives as a text field with each value as text. |
+| `formula` | A formula calls a function Base does not have, or does not compile. Its cells show `#ERROR` until you rewrite that part. |
+| `view` | A view type Base does not have (a list, an interface page), or a Kanban or calendar the table has no field for. It is left out. |
+| `link` | A link to a table you left out with the `tables` option. |
+| `setting` | Something the schema does not say, which the import chose: the field a board stacks by, the dates a calendar uses, a rollup's aggregation, what a button opens, and that an AI field generates new values with the AI provider your app sets. |
+
+The schema has no rollup aggregation: a rollup with a number result is a
+`SUM` and the rest an `ARRAYJOIN` until you change it in the field editor.
+The tables live in the page until you store them; `baseToSql(tables)`
+writes the SQL that creates them, with their records, in Postgres, and
+[step 3](#3-open-the-database-as-a-base) opens that database as a base.
+
+<div data-docs-demo="707-base-airtable-import" data-height="680"></div>
+
+## Formula functions
+
+Every function in Airtable's formula field reference, and what a Base
+formula does with it. The table is checked against `FORMULA_FUNCTIONS`
+by a test, so it says what the formula language in this release does.
+
+Try any of them in a formula field below; the second tab is this table.
+
+<div data-docs-demo="708-base-formula-compat" data-height="640"></div>
+
+**Text**
+
+| Function | SvGrid Base | Notes |
+| --- | --- | --- |
+| `CONCATENATE` | Supported | |
+| `LEFT` | Supported | |
+| `RIGHT` | Supported | |
+| `MID` | Supported | The count may be left out for the rest of the text. |
+| `LEN` | Supported | |
+| `FIND` | Supported | Case matters; 0 when the text is not there. |
+| `SEARCH` | Supported | Case matters; empty when the text is not there. |
+| `SUBSTITUTE` | Supported | |
+| `REPLACE` | Supported | |
+| `TRIM` | Supported | |
+| `UPPER` | Supported | |
+| `LOWER` | Supported | |
+| `REPT` | Supported with a difference | At most 1,000 repeats. |
+| `T` | Supported | |
+| `ENCODE_URL_COMPONENT` | Supported | |
+| `REGEX_MATCH` | Supported with a difference | JavaScript regular expressions, not RE2. A leading (?i) works; other inline flags do not. |
+| `REGEX_EXTRACT` | Supported with a difference | JavaScript regular expressions, not RE2. Empty when nothing matches. |
+| `REGEX_REPLACE` | Supported with a difference | JavaScript regular expressions, not RE2. Replaces every match; the new text names a group by its number after a dollar sign, as JavaScript's replace does. |
+
+**Logical**
+
+| Function | SvGrid Base | Notes |
+| --- | --- | --- |
+| `IF` | Supported | |
+| `SWITCH` | Supported with a difference | Compares as text, so 1 matches "1". |
+| `AND` | Supported | |
+| `OR` | Supported | |
+| `NOT` | Supported | |
+| `XOR` | Supported | |
+| `TRUE` | Supported | With or without the parentheses. |
+| `FALSE` | Supported | With or without the parentheses. |
+| `BLANK` | Supported | |
+| `ERROR` | Supported | The cell shows #ERROR. |
+| `ISERROR` | Supported with a difference | Division by zero is empty in Base, not an error, so ISERROR(1 / 0) is false. |
+
+**Numeric**
+
+| Function | SvGrid Base | Notes |
+| --- | --- | --- |
+| `ABS` | Supported | |
+| `AVERAGE` | Supported | |
+| `CEILING` | Supported | |
+| `COUNT` | Supported | |
+| `COUNTA` | Supported | |
+| `COUNTALL` | Supported | |
+| `EVEN` | Supported | |
+| `EXP` | Supported | |
+| `FLOOR` | Supported | |
+| `INT` | Supported | |
+| `LOG` | Supported | Base 10 unless a base is given. |
+| `MAX` | Supported | |
+| `MIN` | Supported | |
+| `MOD` | Supported | |
+| `ODD` | Supported | |
+| `POWER` | Supported | |
+| `ROUND` | Supported | Halves round toward positive: ROUND(-2.5) is -2. |
+| `ROUNDDOWN` | Supported | Toward zero. |
+| `ROUNDUP` | Supported | Away from zero. |
+| `SQRT` | Supported | |
+| `SUM` | Supported | |
+| `VALUE` | Supported | Skips characters that are not part of a number: VALUE("1,200.50 USD") is 1200.5. |
+
+**Date**
+
+| Function | SvGrid Base | Notes |
+| --- | --- | --- |
+| `DATEADD` | Supported with a difference | The units Airtable names, except that "M" is minutes here: write "months". |
+| `DATESTR` | Supported | |
+| `DATETIME_DIFF` | Supported with a difference | Units as in DATEADD: "M" is minutes, write "months". |
+| `DATETIME_FORMAT` | Supported with a difference | moment.js tokens (YYYY, MMMM, Do, HH, A, Z, L, LL and the rest); week-of-year tokens are not read. |
+| `DATETIME_PARSE` | Supported with a difference | Reads the tokens DATETIME_FORMAT writes, with the separators as written. Text without a zone is local time. |
+| `DAY` | Supported | |
+| `HOUR` | Supported | |
+| `IS_AFTER` | Supported | |
+| `IS_BEFORE` | Supported | |
+| `IS_SAME` | Supported | |
+| `MINUTE` | Supported | |
+| `MONTH` | Supported | |
+| `NOW` | Supported | |
+| `SECOND` | Supported | |
+| `SET_LOCALE` | Supported with a difference | Changes the month and weekday names DATETIME_FORMAT writes; ordinals (Do) stay English. |
+| `SET_TIMEZONE` | Supported with a difference | Changes what DATETIME_FORMAT writes. An unknown zone leaves the cell empty. |
+| `TIMESTR` | Supported | |
+| `TONOW` | Supported with a difference | Calendar days from the date to today, signed. |
+| `FROMNOW` | Supported with a difference | Calendar days from today to the date, signed. |
+| `TODAY` | Supported | |
+| `WEEKDAY` | Supported | 0 for Sunday; "Monday" as the second argument makes Monday 0. |
+| `WEEKNUM` | Supported | Weeks start on Sunday, or on Monday with "Monday". |
+| `WORKDAY` | Supported | Holidays as text ("2026-12-25, 2026-12-26") or a list of dates. |
+| `WORKDAY_DIFF` | Supported | Both days count. Holidays as in WORKDAY. |
+| `YEAR` | Supported | |
+
+**Array**
+
+| Function | SvGrid Base | Notes |
+| --- | --- | --- |
+| `ARRAYCOMPACT` | Supported | |
+| `ARRAYFLATTEN` | Supported | |
+| `ARRAYJOIN` | Supported | |
+| `ARRAYUNIQUE` | Supported | |
+| `ARRAYSLICE` | Supported | |
+
+**Record**
+
+| Function | SvGrid Base | Notes |
+| --- | --- | --- |
+| `RECORD_ID` | Supported | The record's id; after baseFromAirtable, the Airtable record id. |
+| `CREATED_TIME` | Not supported | A Base record keeps that time in a Created time field. baseFromAirtable rewrites CREATED_TIME() to read the table's, and adds one when the table has none. |
+| `LAST_MODIFIED_TIME` | Not supported | A Base record keeps that time in a Last modified time field. baseFromAirtable rewrites LAST_MODIFIED_TIME() to read one that watches every field, and LAST_MODIFIED_TIME({Field}) one that watches that field, and adds it when the table has none. |
 
 ## 1. Export each table
 
@@ -44753,6 +44973,10 @@ The whole spreadsheet shell, ribbon and formula engine included, is its own
 element: [`<sv-sheet>`](sv-sheet.md), from `@svgrid/enterprise/wc`, with
 React and Vue wrappers beside it. It needs no `<sv-grid>` and no Svelte in
 the host.
+
+SvGrid Base is one too: [`<sv-base>`](sv-base.md), from
+`@svgrid/enterprise/wc/base`, takes the tables as a property and reports every
+change as a `tableschange` event.
 
 ## The api handle
 
@@ -86136,6 +86360,19 @@ A page that uses them names it in an import map:
 <script type="importmap">{ "imports": { "jszip": "https://cdn.jsdelivr.net/npm/jszip@3/+esm" } }</script>
 ```
 
+## The license key
+
+```html
+<sv-sheet license-key="YOUR-LICENSE-KEY"></sv-sheet>
+```
+
+The file carries its own copy of the pack, so `setLicenseKey()` imported from
+`@svgrid/enterprise/license` sets the key of a different copy and the element
+keeps its watermark. Pass the key to the element instead. The attribute is read
+before the first render, so the watermark never shows; a key assigned later as
+a property (`sheet.licenseKey = key`) takes the watermark and the notice down.
+`licenseKey` is the one element prop `<SvSheet>` itself does not have.
+
 ## Attributes vs properties
 
 The [same rule as the grid element](sv-grid.md#attributes-vs-properties):
@@ -86205,7 +86442,7 @@ its methods, through the ref.
 
 <!-- BEGIN generated reference - packages/enterprise/scripts/generate-sheet-surface.mjs -->
 
-### Attributes (11)
+### Attributes (12)
 
 Primitives, so they work in plain HTML as well as through a property.
 
@@ -86222,6 +86459,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `show-formula-bar` | `showFormulaBar` | `boolean` |
 | `show-tabs` | `showTabs` | `boolean` |
 | `show-status-bar` | `showStatusBar` | `boolean` |
+| `license-key` | `licenseKey` | `string` |
 
 ### Properties only (9)
 
@@ -91392,8 +91630,8 @@ level 5, Last counted `2026-09-05`, Status `Low`.
 | `COUNT(...)` | How many arguments are numbers | `COUNT(1, "2", 3)` is 2 |
 | `COUNTA(...)` | How many are not empty | `COUNTA(1, "", "x")` is 2 |
 | `ROUND(x, digits)` | Rounds; negative digits round to tens, hundreds | `ROUND(1234.5, -2)` is 1200 |
-| `ROUNDUP(x, digits)` | Rounds up | `ROUNDUP(2.41, 1)` is 2.5 |
-| `ROUNDDOWN(x, digits)` | Rounds down | `ROUNDDOWN(2.49, 1)` is 2.4 |
+| `ROUNDUP(x, digits)` | Rounds away from zero | `ROUNDUP(2.41, 1)` is 2.5, `ROUNDUP(-2.41, 1)` is -2.5 |
+| `ROUNDDOWN(x, digits)` | Rounds toward zero | `ROUNDDOWN(2.49, 1)` is 2.4, `ROUNDDOWN(-2.49, 1)` is -2.4 |
 | `INT(x)` | Rounds down to a whole number | `INT(-2.5)` is -3 |
 | `ABS(x)` | Drops the sign | `ABS(-3)` is 3 |
 | `MOD(x, d)` | Remainder, with the sign of `x` | `MOD(7, 3)` is 1, `MOD(-7, 3)` is -1 |
@@ -91413,6 +91651,24 @@ level 5, Last counted `2026-09-05`, Status `Low`.
 | `DATETIME_DIFF(a, b, unit)` | `a` minus `b` in whole units (default seconds) | `DATETIME_DIFF("2026-10-14", {Last counted}, "days")` is 39, with `"months"` it is 1 |
 | `IS_BEFORE(a, b)`, `IS_AFTER(a, b)` | Compare two dates; false when either is empty | `IS_BEFORE({Last counted}, "2026-10-01")` is true |
 | `DATESTR(d)` | The date as `YYYY-MM-DD` text | `DATESTR(DATEADD({Last counted}, 90, "days"))` is `2026-12-04` |
+
+**More functions**
+
+These work as they do in the formula language of the hosted table
+databases most teams come from. What each one does, and where Base differs
+(regular expressions are JavaScript's, for one), is in the
+[formula functions table](../migrating-from-airtable.md#formula-functions).
+
+| Group | Functions |
+|---|---|
+| Text | `SEARCH`, `REPLACE`, `ENCODE_URL_COMPONENT`, `REGEX_MATCH`, `REGEX_EXTRACT`, `REGEX_REPLACE`; `SUBSTITUTE` takes which match to replace as a fourth argument |
+| Logic | `TRUE()`, `FALSE()`, `ERROR()`, `ISERROR(v)` |
+| Numbers | `EVEN`, `ODD`, `EXP`, `LOG`, `COUNTALL` |
+| Lists | `ARRAYCOMPACT`, `ARRAYFLATTEN`, `ARRAYUNIQUE`, `ARRAYSLICE` |
+| Dates | `HOUR`, `MINUTE`, `SECOND`, `WEEKNUM`, `IS_SAME`, `TIMESTR`, `DATETIME_FORMAT`, `DATETIME_PARSE`, `SET_LOCALE`, `SET_TIMEZONE`, `TONOW`, `FROMNOW`, `WORKDAY`, `WORKDAY_DIFF`; `WEEKDAY` takes the first day of the week, and `"quarters"` is a unit |
+| Record | `RECORD_ID()` |
+
+<div data-docs-demo="708-base-formula-compat" data-height="640"></div>
 
 ## Format the result
 
@@ -91969,7 +92225,145 @@ All the views so far, in one list:
 let views = $state<FieldView[]>([roadmap, board, timeline, effort, now, mine, gallery, request])
 ```
 
-## 9. Keep the views
+## 9. A dashboard
+
+```ts
+const OPEN: FieldFilter = { kind: 'fieldFilter', conjunction: 'and', conditions: [{ column: 'status', kind: 'select', op: 'isNot', value: 'Shipped' }] }
+const SHIPPED: FieldFilter = { kind: 'fieldFilter', conjunction: 'and', conditions: [{ column: 'status', kind: 'select', op: 'is', value: 'Shipped' }] }
+
+const overview: FieldView = {
+  id: 'overview',
+  name: 'Overview',
+  type: 'dashboard',
+  dashboard: [
+    { id: 'open', kind: 'number', title: 'Open features', filter: OPEN },
+    { id: 'days', kind: 'number', title: 'Days of work left', aggregation: 'sum', field: 'effort', filter: OPEN, caption: 'Team capacity 40 days' },
+    { id: 'shipped', kind: 'progress', title: 'Shipped', filter: SHIPPED },
+    { id: 'status', kind: 'chart', chart: { kind: 'bar', x: 'status' } },
+    { id: 'wanted', kind: 'list', title: 'Most wanted', sortBy: 'votes', sortDesc: true, limit: 3 },
+  ],
+}
+```
+
+A dashboard is a grid of tiles. Each tile reads the records of one table,
+keeps the ones its `filter` matches (the same `FieldFilter` as a view's
+filter), and shows one of four things:
+
+- **`'number'`** counts the records, or with `aggregation: 'sum' | 'avg' |
+  'min' | 'max'` and a number `field`, adds them up. The number is written the
+  way the field writes it, so a currency field shows "$42,000". Here "Open
+  features" reads 3 and "Days of work left" reads 30. `caption` is a line
+  under the number.
+- **`'chart'`** takes a chart view's `chart` setting (`kind`, `x`, `y`,
+  `aggregation`) and groups the tile's records the same way.
+- **`'list'`** shows the first `limit` records (5 by default) sorted by
+  `sortBy`, with that field's value beside each name ("Single sign-on with
+  SAML 182"); `detail` shows another field instead. A click opens the record.
+- **`'progress'`** shows how many of all the table's records match the filter:
+  "25%, 1 of 4 records" for Shipped.
+
+`size` is `'1x1'`, `'2x1'` or `'2x2'` (columns by rows). A number or progress
+tile is `'1x1'` by default, a chart or list `'2x2'`. Below about 450px the
+tiles stack in one column. A tile without `title` is named after what it
+shows ("Total Effort (days)", "Status is Shipped").
+
+With several tables (`<SvBase bind:tables>`), a tile's `table` names any
+table of the base, so a dashboard on Deals can count Accounts and list the
+Activities due this week. A tile without `table` reads the table the view is
+on. Its filter and fields are that table's.
+
+A number or progress tile is a button: a click, or Enter, lists the records
+it counts ("Open the 3 records") in a dialog, each with its name and a few
+of its fields. On a chart, a click on a bar or a slice lists the records in
+it: the records the tile's filter keeps that fall in that bucket. A click on a record in the dialog opens it, in its
+own table's tab when the tile reads another table. While the dashboard is
+being edited, the tiles open nothing.
+
+"Edit dashboard" at the top of the view adds a tile, and on each tile sets its
+size, moves it (drag it, or the arrows), edits it in a dialog (kind, table,
+value, filter, title, size) or removes it. Every change is saved in the view's
+`dashboard` at once and reaches `onViewsChange` and `onTablesChange`. A locked
+view has no "Edit dashboard". The view bar shows only the view switcher on a
+dashboard.
+
+<div data-docs-demo="721-base-dashboard" data-height="680"></div>
+
+## 10. A list for the phone
+
+```ts
+const list: FieldView = {
+  id: 'list',
+  name: 'Feature list',
+  type: 'list',
+  listFields: ['status', 'teams', 'votes'],
+  state: { sorting: [{ id: 'quarter', desc: false }, { id: 'votes', desc: true }], grouping: ['quarter'], hiddenColumns: [], advancedFilter: null },
+}
+```
+
+A list shows one record per entry: the primary field in bold, and under it
+the fields in `listFields` (column ids, in order), each drawn as its cell
+draws it, so Status is a colored pill and Teams are tags. An empty value is
+left out. Without `listFields` the list shows the next three fields the grid
+shows. Long names stay readable at phone width, where a grid would cut them.
+
+The list keeps the view's filter, sorts and groups. Here it is grouped by
+Quarter: a header per quarter with the field's name, its value and the
+number of records, "Quarter Q4 2026 3", and a click on the header folds the
+group. Within each quarter the most voted feature comes first. Grouped by
+more fields (`grouping: ['quarter', 'status']`), each quarter holds a header
+per status, indented under it, with its own count and its own fold.
+
+A click on a record, or Enter, opens it. The list is one tab stop: Up and
+Down move between records and group headers at every level, Home and End
+jump, Left and Right fold and unfold a group, and Left on a record or a
+folded group moves to the group it is in. A record someone else changed and nobody here
+opened yet has a dot before its name.
+
+The view bar has Hide fields, Filter, Group, Sort and "Customize list", which
+turns the fields under the name on and off and saves them in `listFields`.
+
+<div data-docs-demo="719-base-list-view" data-height="620"></div>
+
+## 11. An inbox of changes
+
+```ts
+const inbox: FieldView = {
+  id: 'inbox',
+  name: 'Inbox',
+  type: 'inbox',
+  inboxDateField: 'start',
+  listFields: ['status', 'lead'],
+}
+```
+
+An inbox shows the records on the left and the picked one on the right: its
+fields, each one editable in place with the editor its cell uses, and its
+latest changes, "Cleo Park changed Status: Planned → In progress". "Expand"
+opens the full record with its comments.
+
+The list is newest first by `inboxDateField` (a date field's column id), so
+"Audit log export", which starts on January 11, is on top.
+Records without a date go last. Without `inboxDateField` the inbox keeps the
+view's sort. The view's filter applies either way.
+
+A record someone else changed and nobody here has opened is unread: its name
+is bold and it has a dot. The changes come from a table with a `source` that
+hears of writes made elsewhere ([Changes made
+elsewhere](./data.md#changes-made-elsewhere)). Picking a record marks it read,
+as opening it in any view does, and "Mark all read" marks the rest. The count
+at the top says "2 unread" or "All read".
+
+Down or j picks the next record and Up or k the previous one; Enter opens the
+full record. Narrower than 640px the inbox shows the list, and a picked record
+fills it with a Back button (Escape goes back too).
+
+The view bar has Hide fields, Filter, Sort and "Customize inbox": the date
+field it lists by and the fields under each name. A field hidden in the view
+leaves the record on the right too.
+
+<div data-docs-demo="720-base-inbox-view" data-height="620"></div>
+
+## 12. Keep the views
 
 `onViewsChange` fires with the whole list when a view is created, renamed,
 duplicated or deleted, and about 400ms after the shown view's settings stop
@@ -92072,6 +92466,105 @@ With several tables (`<SvBase bind:tables>`), each table keeps its own
 `views`, and `onTablesChange` hands back the whole list of tables, views
 included.
 
+## Personal and locked views
+
+Once several people share a table, two more keys on a view matter:
+
+```ts
+const views: FieldView[] = [
+  // Only Ana sees it, under "My views" in the views menu.
+  { id: 'ana-open', name: 'My open tasks', type: 'grid', personal: 'u1', state: { /* ... */ } },
+  // Everyone sees it; nobody changes its settings until someone unlocks it.
+  { id: 'report', name: 'Leadership report', type: 'grid', locked: true, lockedBy: 'u2', state: { /* ... */ } },
+]
+```
+
+- **`personal: userId`** lists the view only for that person, read from
+  `setCurrentUser`. With nobody signed in every view is listed. "Create" in
+  the views menu has a "Personal view: only I see it" box once someone is
+  signed in.
+- **`locked: true`** keeps the view's filter, sorts, groups, hidden fields,
+  colors and row height as saved. Its settings buttons are off, nothing is
+  saved into it, and the bar shows "Locked" with who locked it. A sort from a
+  column header still works for the moment; the bar then says "Locked, not
+  saved" with a Reset. Records stay editable. A locked view cannot be
+  deleted, and a copy of it starts unlocked.
+
+The lock button in the views menu locks the view as the grid shows it now,
+or unlocks it. `lockViews={false}` on `SvBase` removes it for people who may
+not lock views. Both keys come back through `onViewsChange` and
+`onTablesChange`, so the app stores a personal view with its owner the same
+way as the others.
+
+<div data-docs-demo="710-base-personal-locked-views" data-height="620"></div>
+
+## On a phone
+
+When a table is narrower than 600px (its own width, not the window's), a
+grid view shows each record as a card: the primary field, then the next four
+fields the view shows, in the view's filter and sort. A tap opens the
+record, "+" adds one, and on a phone screen the opened record fills it. The
+view bar keeps its icons and the tab bar its tabs. Kanban, calendar, gallery
+and form views stay as they are.
+
+`phoneLayout` on `SvBase` moves the breakpoint (`phoneLayout={480}`), turns
+the cards on at every width (`true`) or keeps the grid (`false`).
+
+<div data-docs-demo="713-base-phone-layout" data-height="720"></div>
+
+## Search across tables
+
+The view bar's search finds records in the view on screen. The box at the
+end of the tab bar searches every table of the base. With the focus in the
+base, Ctrl+K puts the cursor in it, and so does "/" outside the grid and any
+text box. Neither is taken from the rest of the page.
+
+It reads a field the way its cell shows it: a single select by its option's
+label, a person by name, a date as the field writes it, a link by the names
+of the records it links to, a formula or lookup by its result. Numbers,
+currency, percents, durations, ratings, checkboxes, buttons, rollups and
+counts are not searched. Case and accents do not count: "tomas" finds
+"Tomás".
+
+Every word of the query has to be in the record, in one field or another.
+The results are grouped by table, five records each with "N more in Deals"
+under them, each with its name, the field the words were found in and the
+words marked. Records rank by:
+
+1. the whole query in one field, before words spread over several;
+2. the primary field, before the others;
+3. a field that is the query, then one that starts with it, then one with a
+   word that starts with it, then one that holds it anywhere.
+
+Tables are listed by their best record. Up and Down move through the list,
+Enter or a click shows the record's table and opens the record, and Escape
+closes the list, then clears the box. `search={false}` on `SvBase` leaves the
+box out. A shared base (`readOnly`) keeps it, over the tables and fields the
+share shows.
+
+The same search runs without the box, for a command palette of your own or
+on a server:
+
+```ts
+import { searchBase } from '@svgrid/enterprise/base'
+
+const groups = searchBase(tables, 'northwind proposal', { limit: 10 })
+for (const g of groups) {
+  console.log(g.name, g.total)
+  for (const hit of g.hits) console.log(hit.rowId, hit.title, `${hit.fieldName}: ${hit.text}`, hit.marks)
+}
+```
+
+Each hit has the table and record ids, the record's name (`title`), the
+field that matched (`field`, `fieldName`, `primary`), its text cut around
+the match when it is long, and `marks`, the `[start, end)` spans of the
+words in that text. `field: (table, column) => boolean` in the options picks
+the fields to search. To open a hit in `SvBase`, show its table
+(`bind:activeTable`) and call `openRecord({ api, rowId })` once that table's
+grid has called `onApiReady`; the box does this for you.
+
+<div data-docs-demo="718-base-search-all-tables" data-height="620"></div>
+
 ## View types and the keys they read
 
 | Type | Keys | View bar buttons |
@@ -92082,7 +92575,11 @@ included.
 | `'gantt'` | `dateField`, `endField`, `progressField`, `dependencyField`, `zoom`, `color` | Hide fields, Filter, Sort, Color, Customize timeline |
 | `'gallery'` | `coverField`: an attachment field | Hide fields, Filter, Sort |
 | `'chart'` | `chart`: `kind`, `x`, `y`, `aggregation` | Filter, Customize chart |
-| `'form'` | `formFields`, `formRequired`, `formTitle`, `formDescription`, `formSubmitLabel` | none |
+| `'list'` | `listFields`: the fields under each name | Hide fields, Filter, Group, Sort, Customize list |
+| `'inbox'` | `inboxDateField`: a date field, newest first; `listFields` | Hide fields, Filter, Sort, Customize inbox |
+| `'form'` | `formFields`, `formRequired`, `formTitle`, `formDescription`, `formSubmitLabel`, `formConditions`, `formPrefill` | none |
+| `'dashboard'` | `dashboard`: the tiles, in order | none |
+| any type | `personal`, `locked`, `lockedBy` | off while `locked` |
 
 Every type also keeps `state` (filter, sorts, groups, hidden fields, column
 order, widths, pinning) and switches with the grid's own state, so a filter
@@ -92118,8 +92615,9 @@ what each record waits for, drawn as arrows.
 - **Row height**: Short 34, Medium 56, Tall 88, Extra tall 128.
   `rowHeights` on `SvBase` or `SvBaseViewBar` sets the list.
 - **Search**: in a grid view, the grid's find bar (Ctrl+F) that marks every
-  match. In a board, calendar or gallery, a "Find a record" box that narrows
-  the records. Switching views clears it.
+  match. In a board, calendar, gallery, list or inbox, a "Find a record" box
+  that narrows the records. Switching views clears it.
+- **Search all tables**: the box in the tab bar (below).
 
 A button with something set says so and is tinted. With `fieldMenu` on, each
 column's menu adds "Filter by this field" and "Group by this field", which
@@ -92245,7 +92743,7 @@ when a form view is active.
   differ only when a column sets an `id`.
 - **Summaries belong to the field, not the view.** Picking "Average" in one
   view changes every view's footer and group headers.
-- **Save views only after they load.** See the `loaded` check in step 9.
+- **Save views only after they load.** See the `loaded` check in step 12.
 
 ## Next
 
@@ -92778,6 +93276,115 @@ automations with `runOn: 'server'` run on the server. If it has not seen
 the record yet, it reads the table again first, and that reading also runs
 the table's "A record is created" server automations for the new record.
 
+## Show a field only for some answers
+
+<div data-docs-demo="711-base-form-logic" data-height="720"></div>
+
+In the demo, pick Bug as the Topic and App version appears; switch to
+Billing and it gives way to Invoice number. The buttons on the right open
+the form from prefilled links.
+
+A field can wait for an answer before it shows. `conditions` maps a column id
+to a [view bar filter](./views.md) over the other answers, the same
+`FieldFilter` the Filter button saves. On a form view the key is
+`formConditions`:
+
+```ts
+import type { FieldFilter } from '@svgrid/enterprise/base'
+
+const is = (column: string, value: string): FieldFilter => ({
+  kind: 'fieldFilter',
+  conjunction: 'and',
+  conditions: [{ column, kind: 'select', op: 'is', value }],
+})
+
+const apply = {
+  id: 'apply',
+  name: 'Apply',
+  type: 'form',
+  formFields: ['name', 'email', 'employment', 'company', 'reason', 'otherReason'],
+  formRequired: ['name', 'email', 'company', 'otherReason'],
+  formConditions: {
+    company: is('employment', 'Employed'),
+    otherReason: is('reason', 'Other'),
+  },
+}
+```
+
+With `SvBaseForm` it is `conditions={{ company: is('employment', 'Employed') }}`.
+
+The form checks the conditions each time an answer changes. While a
+field's condition does not hold:
+
+- the field is not drawn, and Tab skips it;
+- it is not required and not checked, so `formRequired` can name it;
+- what was typed in it is cleared, and a field whose condition reads it
+  hides too;
+- the record does not get it, not even its `fieldProps.default`.
+
+When the field shows again it starts with the value a new record gets. A
+condition reads the answers by column id; a field the form does not ask
+for is read as the new record would have it.
+
+## Fill the form from a link
+
+`prefill` fills fields from a link, the convention people already paste
+into emails: `?prefill_<Field name>=value`. The name is the field's
+`header` or its column id, URL-encoded. `hide_<Field name>=true` keeps a
+filled field out of sight and still sends it:
+
+```
+https://example.com/apply?prefill_Role=Product%20designer&prefill_Source=Referral&hide_Role=true
+```
+
+On a form view, `formPrefill: true` reads the page's own URL. On a page,
+pass it to `SvBaseForm`:
+
+```svelte
+<SvBaseForm {api} fields={APPLY_FIELDS} prefill />
+<SvBaseForm {api} fields={APPLY_FIELDS} prefill={page.url.searchParams} />
+<SvBaseForm {api} fields={APPLY_FIELDS} prefill={{ Role: 'r2', Source: 'Referral' }} />
+```
+
+`prefill` takes `true` (the page's URL, nothing during a server render), a
+URL or query string, `URLSearchParams`, or values by field name or column
+id. When it changes to other answers, the form starts a new record.
+
+Each value is read the way a pasted cell is:
+
+| Field type | `prefill_` value |
+|---|---|
+| text, email, URL, phone | As written |
+| number, currency, percent | The number as typed, `1,200` included; text that is no number is dropped |
+| checkbox | `true`, `1`, `yes`, `on` check it; anything else unchecks it |
+| date | `2026-11-02` |
+| single select | An option's value or label, any case |
+| multiple select | Values or labels, comma-separated |
+| user | A person's id, name or email |
+| link | Record ids or names, comma-separated |
+
+An option the select does not have, a person nobody is, or a record that
+does not exist is dropped: a link never adds an option. Files and computed
+fields cannot be filled. A link's value goes over the field's default.
+`hide_` works only on a field the link filled; if a hidden value fails a
+check on Submit, the field shows with its message.
+
+`formPrefillLink` builds such a link from values by column id:
+
+```ts
+import { formPrefillLink } from '@svgrid/enterprise/base'
+
+formPrefillLink('https://example.com/apply', { role: ['r2'], source: 'Referral' }, candidateColumns, { hide: ['role'] })
+// https://example.com/apply?prefill_Role=r2&prefill_Source=Referral&hide_Role=true
+```
+
+With the columns, each parameter carries the field's `header`. A list is
+joined with commas, a `Date` written as `YYYY-MM-DD`, and the base URL's own
+query and `#hash` are kept.
+
+The link is typed by whoever sends it. Check every value on the server as in
+[step 7](#7-check-it-again-on-the-server).
+
 ## SvBaseForm props
 
 | Prop | Type | Default | What it does |
@@ -92789,6 +93396,8 @@ the table's "A record is created" server automations for the new record.
 | `description` | `string` | `''` | The line under the heading. |
 | `submitLabel` | `string` | `'Submit'` | The button's text. |
 | `defaults` | `() => Record<string, unknown>` | | Values each record from this form starts with. The grid's `rowAdder.defaults()` wins over them. Called once per record. `<SvBase tables>` passes one that gives an `id`. |
+| `conditions` | `Record<string, FieldFilter>` | | Column id -> when that field shows. A hidden field is not required, not checked and not sent ([Show a field only for some answers](#show-a-field-only-for-some-answers)). |
+| `prefill` | `boolean \| string \| URLSearchParams \| Record<string, unknown>` (`FormPrefill`) | | Answers to start with: `true` reads the page's URL, a string or `URLSearchParams` is read for `prefill_` and `hide_`, an object gives values by field name or column id ([Fill the form from a link](#fill-the-form-from-a-link)). |
 | `onSubmit` | `(row: Record<string, unknown>) => void \| Promise<unknown>` | | Called after the row was appended to the grid and the grid's `onRowAdd` ran. A Promise keeps the button disabled until it settles: resolved shows "Thank you", rejected takes the row back out of the grid, keeps the fields and shows the error's message. |
 
 ## Form view keys
@@ -92802,6 +93411,8 @@ the table's "A record is created" server automations for the new record.
 | `formDescription` | The line under it |
 | `formRequired` | Column ids that must have a value, as `required` on `SvBaseForm` |
 | `formSubmitLabel` | The button's text (default `'Submit'`) |
+| `formConditions` | Column id -> when that field shows, as `conditions` on `SvBaseForm` |
+| `formPrefill` | `true` fills fields from the page's URL, as `prefill` on `SvBaseForm` |
 
 A record the view sends reaches `onRowAdd`, `onTablesChange` and the
 `formSubmitted` automations, which get the view's `id`.
@@ -92869,6 +93480,148 @@ message goes away when that field gets a new value.
   list on each role.
 - [Field types](../fields.md#declare-columns-by-type): every type's
   `fieldProps`, including `default` and `defaultToday`.
+
+<!-- =================================================================
+     /docs/help/base/undo-trash-import/  (enterprise)
+     ================================================================== -->
+
+# Undo, the trash and importing files
+
+Three things people reach for in their first week with a base: Ctrl+Z after
+a slip, getting back a record someone deleted yesterday, and pulling in the
+spreadsheet they kept until now. All three work on `<SvBase tables>` with no
+setup; this page says what each one does and how an app keeps it.
+
+> SvGrid Base is part of the **Suite edition** of `@svgrid/enterprise`. Without a key it runs with a watermark.
+
+## Undo and redo
+
+Ctrl+Z (Cmd+Z on a Mac) undoes what was done to the shown table, in the
+order it was done. Ctrl+Shift+Z or Ctrl+Y redoes it. The keys work anywhere
+in the base, and also with nothing focused on the page (after a dialog
+closes, or a click beside the base): then the base used last takes them. A
+key typed in a field of your own page stays yours. One history holds:
+
+- cell edits, pastes and fills (the grid's own history);
+- records added, deleted or imported from a file;
+- fields added, changed (a new type, new options) or deleted.
+
+Undoing a deleted record puts it back at the place it had, and the links the
+delete cleared come back too: delete a task and its project stops listing
+it; undo, and the project lists it again. The step restores the records of
+every table the change touched.
+
+The Undo and Redo buttons at the end of the tab bar say what the next press
+does ("Undo delete 2 records"). `undoRedo={false}` hides them; the keys still
+work. Each table keeps its history while another table is shown, so going
+back to a table carries on where you left it. View settings (a filter, a
+sort) are not part of the history: a view keeps them as you leave it.
+
+<div data-docs-demo="705-base-undo-redo" data-height="620"></div>
+
+## The trash
+
+A deleted record, field or table goes to the trash. The trash button at the
+end of the tab bar shows how many items it holds and opens a list, newest
+first, with who deleted each one (`setCurrentUser`) and when. Restore puts an
+item back:
+
+- a record in its table, at the place it had, with its links;
+- a field with its values (the values stay in the records while the field is
+  in the trash);
+- a table as a tab, with the fields of other tables that linked to it made
+  again from its side.
+
+The notice that appears after a delete has a Restore button too. A record
+whose table is in the trash waits until the table is restored; the dialog
+says so.
+
+The trash is plain data. Bind it and store it next to the tables:
+
+```svelte
+<script lang="ts">
+  import { SvBase, enableBase, type BaseTable, type BaseTrashItem } from '@svgrid/enterprise/base'
+
+  enableBase()
+  let tables = $state.raw<BaseTable[]>(loadTables())
+  let trash = $state<BaseTrashItem[]>(loadTrash())
+</script>
+
+<SvBase bind:tables bind:trash trashDays={30} editable onTablesChange={saveTables} onTrashChange={saveTrash} />
+```
+
+Items older than `trashDays` (30 by default, 0 for no limit) are dropped when
+the base opens. `restoreItems(tables, items)` puts items back in code, for an
+admin screen that restores from a stored trash.
+
+| `BaseTrashItem.kind` | Also holds |
+|---|---|
+| `'record'` | `table` (id), `row`, `index` |
+| `'field'` | `table` (id), `column`, `index` |
+| `'table'` | `table` (the whole `BaseTable`), `index` |
+
+Every item has `id`, `deletedAt` (ISO time) and, when someone is signed in,
+`deletedBy` (a user id).
+
+<div data-docs-demo="706-base-trash" data-height="620"></div>
+
+## Import a CSV or Excel file
+
+The tab bar's menus import a CSV, TSV, Excel (.xlsx) or JSON file. The file
+is read in the page; nothing is uploaded.
+
+- **As a new table** (the list of tables, "Import a file as a table"): each
+  column becomes a field, the first one naming the records. The type comes
+  from the column's values and the dialog shows each guess to change before
+  the import.
+- **Into the shown table** (the table's menu, "Import records from a file"):
+  each column goes to the field it names, matched by name or id in any case.
+  A column that matches nothing is skipped unless you point it at a field. A
+  value a select does not have becomes a new option.
+
+| Values in the column | Field type |
+|---|---|
+| `$1,200`, `€80.50` | Number as currency, with the symbol |
+| `25%` | Number as percent (0 to 100) |
+| `yes` / `no`, `true` / `false`, `x` | Checkbox |
+| `42`, `3.75` | Number (integer or decimal) |
+| `ana@example.com` | Email |
+| `https://...` | URL |
+| `2026-11-02`, `02/11/2026` | Date (with the time when there is one) |
+| `+1 415 555 0100` | Phone |
+| A few short values, repeated | Single select, a color per value |
+| `Design, Copy`, items repeated | Multiple select |
+| Long text or line breaks | Long text |
+| Anything else | Single line text |
+
+An import into a table is one undo step. An app that already has a file (a
+drop zone of its own, a download) opens the same dialog with it:
+
+```svelte
+<script lang="ts">
+  let base = $state<ReturnType<typeof SvBase> | null>(null)
+</script>
+
+<SvBase bind:this={base} bind:tables editable />
+<button onclick={() => base?.openImport('append', file)}>Import</button>
+```
+
+`openImport('new', file)` makes a new table from it. In code, without the
+dialog, `tableFromMatrix(rows, tables, name)` builds a table from a header row
+and rows of text, and `recordsFromMatrix(rows, table, matchColumns(header,
+table))` turns them into records of an existing table. `fileImport={false}`
+removes the menu items.
+
+<div data-docs-demo="709-base-import-csv-excel" data-height="620"></div>
+
+## Next
+
+- [Views for every team](./views.md): personal and locked views, and the
+  layout on a phone.
+- [Collaboration](./collaboration.md): who is signed in, comments and
+  @mentions.
+- [Keep a base in a database](./data.md): a restored or imported record is
+  written back like any other change.
 
 <!-- =================================================================
      /docs/help/base/collaboration/  (enterprise)
@@ -93148,17 +93901,22 @@ so a button can open its own record.
 
 ## 5. Keep comments in your backend
 
-Without a store, comments live in memory and are gone on reload. A comment is
+Without a store, comments live in memory and are gone on reload. In
+`<SvBase tables>` they are kept by table id and record id for the whole
+page, so two bases that show the same table, or a base mounted again, show
+the same comments. Give unrelated bases on one page different table ids.
+With one table (`data` and `columns`) they are kept per grid. A comment is
 a `RecordComment`, and a store is two functions:
 
 ```ts {nocheck}
-export type RecordComment = { id: string; rowId: string; tableId?: string; text: string; at: number; by?: string }
+export type RecordComment = { id: string; rowId: string; tableId?: string; text: string; at: number; by?: string; mentions?: string[] }
 
 export type RecordCommentContext = { tableId?: string; api: unknown }
 
 export type RecordCommentStore = {
   list: (rowId: string, api: unknown, context: RecordCommentContext) => ReadonlyArray<RecordComment>
   add: (rowId: string, comment: RecordComment, api: unknown, context: RecordCommentContext) => void
+  onMention?: (event: MentionEvent) => void
 }
 ```
 
@@ -93279,6 +94037,57 @@ list, or return their name from your own data.
 
 Comments other people add show once the cache changes. To see them while the
 base is open, call `put` from your realtime channel or a poll.
+
+### Mentions
+
+Typing `@` in the comment box lists the people from `setFieldUsers`, narrowed
+by the letters after it (the start of any word of a name, or of an email).
+Up and Down move through the list, Enter or Tab picks, Escape closes the
+list and leaves the record open. An `@` inside a word, as in an email
+address, does not open it.
+
+A mention is kept in the comment's `text` as a token, and its id in
+`mentions`:
+
+```ts {nocheck}
+{ text: 'Numbers match. @[Ana Ruiz](u1) can you get legal to sign off?', mentions: ['u1'] }
+```
+
+The record view draws the token as a chip with the person's avatar and their
+name from the people list today, so renaming someone renames their mentions.
+A person no longer in the list shows with the name written in the token. The
+rest of the text is drawn as text, never as HTML. `mentionText(text)` turns
+the tokens back into `@Ana Ruiz` for an email or a chat message, and
+`mentionIds(text)` reads the ids, for a server that does not trust the
+`mentions` the browser sent.
+
+To send notifications, give the store an `onMention` hook, or call
+`setMentionHandler` (it works with the in-memory default too). Each runs once
+per comment that mentions someone, after `add`:
+
+```ts
+import { mentionText, setMentionHandler, type MentionEvent } from '@svgrid/enterprise/base'
+
+setMentionHandler((e: MentionEvent) => {
+  // e.comment, e.mentioned (FieldUser[]), e.rowId, e.tableId, e.record, e.api
+  const to = e.mentioned.filter((p) => p.id !== e.comment.by && p.email).map((p) => p.email)
+  if (!to.length) return
+  void fetch('/api/notify', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ to, record: e.record?.task, text: mentionText(e.comment.text) }),
+  })
+})
+```
+
+`mentioned` lists each person once, in the order they first appear,
+including the author when they mention themselves. Someone not in
+`setFieldUsers` comes with the name written in the token. A hook that throws
+is logged, and the comment stays. When your comments endpoint already saves
+`mentions`, sending from the server, where the author is known, is the safer
+place for the email.
+
+<div data-docs-demo="712-base-mentions" data-height="640"></div>
 
 ## 6. Upload files
 
@@ -93446,6 +94255,122 @@ only the edited column: send the stamps along, or have the server write
 `updated_at` and `updated_by` from its own clock and session, which a
 browser cannot fake. With `onTablesChange` or a table `source` ([Keep a base
 in a database](./data.md)) the stamps travel with the rest of the row.
+
+## Protected fields
+
+A protected field takes edits from the people it lists. Everyone else sees
+it read-only, with a lock after its name that says who can edit it:
+
+```ts
+const columns = [
+  { field: 'priority', header: 'Priority', fieldType: 'singleSelect', fieldProps: { options: PRIORITY, editors: ['u1', 'u2'] } },
+  { field: 'approved', header: 'Approved', fieldType: 'checkbox', fieldProps: { editors: [] } },
+]
+```
+
+`editors` holds user ids, matched against `setCurrentUser`. An empty list
+means nobody can edit the values, and with nobody signed in a protected
+field is read-only. In the base, Edit field > Who can edit its values sets
+the list: "Only these people" starts with the person setting it, so they do
+not lock themselves out. `protectFields={false}` on `<SvBase>` takes that
+choice away from someone your app does not let change it.
+
+What the protection covers, for the person in front of the page:
+
+- typing, pasting, the fill handle, Delete, and the record view;
+- a board stacked by the field (its cards do not move) and a calendar or
+  timeline whose dates it holds (its events do not drag);
+- an import into the table, which does not offer the field as a target.
+
+A field's name, type and options stay editable: protection is about the
+values. A new record still takes its group's value, so "+" on a group still
+adds a record to it, and a form fills the fields its author put on it.
+
+With roles of your own, pass a check in place of the lists. It decides for
+every field of every base on the page; `defaultCanEditField` is the
+`editors` check, to fall back on:
+
+```svelte
+<script lang="ts">
+  import { SvBase, defaultCanEditField, type CanEditField } from '@svgrid/enterprise/base'
+  let { tables, role } = $props()
+  // Admins edit everything; everyone else follows each field's editors.
+  const canEditField: CanEditField = (field, user) => role === 'admin' || defaultCanEditField(field, user)
+</script>
+
+<SvBase bind:tables {canEditField} protectFields={role === 'admin'} editable />
+```
+
+The browser enforces this. A base whose records live in a database still
+needs the server to refuse a write to a protected field, as it would any
+write the person is not allowed.
+
+<div data-docs-demo="710-base-personal-locked-views" data-height="620"></div>
+
+## Share a base read-only
+
+For people who may look but not change anything, such as a client opening a
+share link your app serves, pass `readOnly`:
+
+```svelte
+<SvBase {tables} readOnly sortable expandRows fieldMenu />
+```
+
+What it closes:
+
+- cells and the record view: no typing, pasting, fill handle, Delete or
+  checkbox clicks, and buttons do not run automations;
+- the record menu keeps Expand record and Copy; the field menu keeps Filter,
+  Group, Hide and Color rows by this field;
+- no "+ Add row", no "+" column, no "+" on a group, and the selection bar
+  drops Edit fields and Delete;
+- a board's cards do not move and its lanes add none; a calendar's or
+  timeline's events do not drag, and a day picked adds no record;
+- the tab bar has no table menu, no renaming, no Add table, no import, no
+  trash, no undo, and no Download as SQL; it shows a "View only" badge;
+- no Automations button, and scheduled automations do not run in the page;
+- comments are read, and the box to write one is gone;
+- form views are not shared.
+
+Viewers still switch tables and views, search, filter, sort, group, and open
+records with their activity. What they change in a view (a sort, a filter,
+a new view) stays in the page while it is open, also across table switches,
+and never reaches `onTablesChange` or a table's `source`.
+
+A share on the same page as the editing base (a preview, or the demo below)
+shows the comments written in the editor, with their counts on rows and
+cards: comments are kept by table id and record id, not by base. The
+changes in a record's activity and the unseen marks stay with the base that
+noted them. On a separate page, the share sees the comments your
+`setRecordComments` store returns; in-page comments do not travel between
+browsers.
+
+An object picks what the share shows. Every list is optional:
+
+```svelte
+<SvBase
+  {tables}
+  readOnly={{
+    tables: ['projects', 'clients'],
+    views: ['all', 'board'],
+    hideFields: ['budget', 'clients.notes'],
+  }}
+/>
+```
+
+`tables` and `views` are ids; a table none of whose listed views exists
+shows its first view. `hideFields` takes a column id, which hides it in
+every table, or `tableId.columnId`. The primary field always shows. A hidden
+field takes along every field that would show what it holds: the formulas
+that read it, a rollup or lookup of it in another table, and the lookups,
+rollups and counts of a link to a table the share leaves out.
+
+Hiding is for display. A page handed the whole base still holds the hidden
+values in memory, so for anything secret build the shared copy on the server
+with `sharedTables(tables, share)`, which also takes the hidden fields'
+values out of the records, and send only that.
+
+<div data-docs-demo="717-base-read-only-share" data-height="620"></div>
 
 ## The activity log
 
@@ -95888,6 +96813,134 @@ activity shows it under your name, after the agent's. Press **Approve** on
 the rest: the automation sets Review to Approved and the ticket leaves the
 view.
 
+## AI fields
+
+The agent above works from outside the base. An AI field works from inside
+it: a field whose value a model writes for each record, from a prompt that
+names the record's other fields.
+
+<div data-docs-demo="716-base-ai-field" data-height="620"></div>
+
+The answer is stored in the record, like a typed value. It sorts, filters,
+exports and shows in footers without calling the model again, and anyone
+allowed to edit the field can change it by hand.
+
+```ts
+import { setAIProvider } from '@svgrid/grid'
+import type { BaseTable } from '@svgrid/enterprise/base'
+
+// Once, at startup: a function from the request to the model's text.
+// The key stays on your server; /api/ai calls the model with it.
+setAIProvider(async ({ prompt, maxOutputTokens, signal }) => {
+  const res = await fetch('/api/ai', { method: 'POST', body: JSON.stringify({ prompt, maxOutputTokens }), signal })
+  return (await res.json()).text
+})
+
+export const products: BaseTable = {
+  id: 'products',
+  name: 'Products',
+  primaryField: 'name',
+  data: [{ id: 'p1', name: 'Ridge 40 pack', audience: 'Hikers', feature: 'A frame that carries 15 kg' }],
+  columns: [
+    { field: 'name', header: 'Name', fieldType: 'text' },
+    { field: 'audience', header: 'Audience', fieldType: 'singleSelect', fieldProps: { options: [{ value: 'Hikers' }, { value: 'Climbers' }] } },
+    { field: 'feature', header: 'Key feature', fieldType: 'text' },
+    {
+      field: 'pitch',
+      header: 'Pitch',
+      fieldType: 'ai',
+      fieldProps: { prompt: 'Write a one-line pitch for {Name}, aimed at {Audience}, that mentions {Key feature}.' },
+    },
+  ],
+}
+```
+
+`setAIProvider`, `getAIProvider` and `mockAIProvider` are the free AI helpers
+of `@svgrid/grid`; the field uses whatever provider the app registered. The
+provider gets the prompt with each `{Field name}` replaced by the value as
+its cell shows it (a select's label, a person's name, a formatted date), and
+an instruction to answer with JSON, `{"value": ...}`.
+
+| `fieldProps` | Default | What it does |
+| --- | --- | --- |
+| `prompt` | `''` | The instruction, with `{Field name}` (a header or a field key) for the record's values. The field editor shows an unknown name or the field's own name as an error, as it does for a formula, and will not save it. Renaming a field renames it in the prompt. |
+| `output` | `'text'` | `'text'` stores text (edited as long text). `'singleSelect'` asks the model to pick one of `options` and refuses any other answer. `'number'` stores a number, shown with `precision` decimal places. |
+| `auto` | `true` | Generate again when a field the prompt names is edited in that record, in the page where the edit is made (see [Changes from the database](#changes-from-the-database)). Off, the value changes only when someone asks. A record whose named fields are all empty is skipped. |
+| `options` | `[]` | The options of a `'singleSelect'` output, as a select field's. |
+
+How it behaves:
+
+- Each cell has a button that generates that record. With `fieldMenu`, the
+  column menu has **Generate for N empty records** and
+  **Generate for all N records**, and **Stop generating** while some wait.
+- Requests run three at a time over the page; `setAIFieldConcurrency(n)`
+  changes that. A waiting or running cell shows a spinner. A failed one
+  shows the error message (the model's error, or an answer that is not one
+  of the options) until it is generated again or edited.
+- Values are written through the grid's edit path, as a typed edit is:
+  Ctrl+Z undoes one, `onCellValueChange` hears it, last modified fields are
+  stamped and another AI field whose prompt names this one follows. The
+  active cell and the selection stay where the person left them, and a
+  value that arrives while someone is editing a cell waits for that edit to
+  end.
+- A protected field is generated only for the people allowed to edit it;
+  for others the button is not shown and a call from code fails with a
+  message, before any request is made.
+- Without a provider, an empty cell says "No AI provider" and the button's
+  title says to call `setAIProvider()`.
+- A grid taken off the page (the component unmounted) drops its waiting
+  requests and aborts the running ones through the request's `signal`.
+
+From code:
+
+```ts
+import { cancelAIField, generateAIField } from '@svgrid/enterprise/base'
+
+declare const api: unknown // from <SvBase onApiReady>
+
+// 'empty' (the default), 'all', or a list of record ids.
+const { written, failed } = await generateAIField(api, 'pitch', 'all')
+cancelAIField(api, 'pitch')
+```
+
+### Changes from the database
+
+An `auto` generation starts in the page where the edit was made. On a table
+with a `source`, that page writes the new value to the database like any
+other edit, and every other page with the base open receives it through
+`realtime` as a change of its own. Those pages never call the model for it:
+with ten people looking at a table, one edit costs one request.
+
+A change made outside any `<SvBase>` (a server job, a script, a database
+console, an agent) has no page that generated it, so its records keep their
+old value. To generate them, call `regenerateAIFields` from `onRemoteChange`
+in one page:
+
+```ts
+import { regenerateAIFields, type BaseRemoteChange } from '@svgrid/enterprise/base'
+
+declare const api: unknown // from <SvBase onApiReady>
+
+// <SvBase {tables} {onApiReady} onRemoteChange={generateForImports} />
+function generateForImports(changes: BaseRemoteChange[]) {
+  // Rows the nightly import wrote. Edits from other pages were generated there.
+  void regenerateAIFields(api, changes.filter((c) => c.record.updated_by === 'import'))
+}
+```
+
+It applies the rule an edit in the grid follows: for an update, each `auto`
+field whose prompt names a field that moved, unless the change wrote that
+AI field itself; for an insert, the record's empty AI fields. Deletes,
+fields with `auto` off and records of a table the grid does not show are
+skipped. The values are written through the grid, so they reach the
+database and the other pages, and the page does not hear its own write.
+
+Call it in one page only, or for changes a filter picks out (an author, a
+service account). If every open page calls it for every change, each one
+asks the model and writes, and the last answer wins. The other choice is to
+generate on the server: your job calls the model and writes the value with
+the record.
+
 ## Next
 
 - [Review what an agent changed](./review-queue.md): the same review on any
@@ -96216,7 +97269,9 @@ keeps it.
 
 | Field type | Operators |
 |---|---|
-| Text, long text, URL, email, phone, barcode, formula, lookup | contains, does not contain, is, is not, is empty, is not empty |
+| Text, long text, URL, email, phone, barcode, color, formula, lookup | contains, does not contain, is, is not, is empty, is not empty |
+| Checklist | is complete, is not complete, % done ≥, % done <, has an item containing, is empty, is not empty |
+| Time of day | is, is before, is after, is at or before, is at or after, is empty, is not empty |
 | Number, currency, percent, rating, duration, autonumber, count, rollup | =, ≠, <, >, ≤, ≥, is empty, is not empty |
 | Single select, user | is, is not, is any of, is none of, is empty, is not empty |
 | Multiple select, multiple users | has any of, has all of, is exactly, has none of, is empty, is not empty |
@@ -96352,9 +97407,12 @@ A property the column sets itself wins over its type:
 | `date` | `dateFormat` (`local`, `friendly`, `us`, `european`, `iso`), `time`, `timeFormat` (`12hour`, `24hour`), `gmt` (one time zone for everyone), `showTimeZone`, `defaultToday` |
 | `phone`, `email`, `url` | none |
 | `barcode` | none |
+| `checklist` | none; values are `{ id, text, done }[]` |
+| `color` | `default`; values are `'#rrggbb'` |
 | `button` | `label`, `color`, `url` (`{Field name}` filled from the row), or `onClick` set in code |
 | `number` | `format` (`integer`, `decimal`, `currency`, `percent`), `precision` 0 to 8, `step` (the editor's spinner, default 1), `separators` (`local`, `comma-period`, `period-comma`, `space-comma`, `space-period`), `showThousands`, `abbreviation` (`none`, `thousand`, `million`, `billion`; not for percent), `allowNegative`, `default`; currency: `symbol`, `symbolPosition` (`before`, `after`); percent: `showBar`, `points` (values 0 to 100 instead of fractions) |
 | `duration` | `durationFormat` (`h:mm`, `h:mm:ss`, `h:mm:ss.S`, `h:mm:ss.SS`, `h:mm:ss.SSS`); values are seconds, typed as `1:30` or `1h 30m` |
+| `timeOfDay` | `timeFormat` (`12hour`, `24hour`), `showSeconds`, `default`; values are `'HH:MM'` (24 hour), `'HH:MM:SS'` with seconds |
 | `rating` | `max` 1 to 10, `icon` (`star`, `heart`, `thumbsUp`, `flag`, `dot`), `color` |
 | `formula` | `formula`, `result` (`auto`, `number`, `currency`, `percent`, `date`) and that format's options |
 | `createdTime`, `lastModifiedTime` | the date options; last modified also `watch` (`all`, `specific`) and `watchFields` |
@@ -96405,6 +97463,78 @@ existing row a value when the field is created.
 URL, email and phone cells become links only for the schemes they mean
 (`http(s):`, `mailto:`, `tel:`). A value such as `javascript:alert(1)` stays
 text.
+
+## Checklists, colors and times of day
+
+<div data-docs-demo="715-base-checklist-color-time" data-height="620"></div>
+
+```ts
+const columns = [
+  { field: 'session', header: 'Session', fieldType: 'text' },
+  { field: 'prep', header: 'Prep', fieldType: 'checklist' },
+  { field: 'track', header: 'Track', fieldType: 'color' },
+  { field: 'starts', header: 'Starts', fieldType: 'timeOfDay', fieldProps: { timeFormat: '12hour' } },
+]
+
+const row = {
+  session: 'Opening keynote',
+  prep: [
+    { id: 's1', text: 'Slides final', done: true },
+    { id: 's2', text: 'Mic check', done: false },
+  ],
+  track: '#2d7ff9',
+  starts: '09:00',
+}
+```
+
+A **checklist** holds to-do items in order, each `{ id, text, done }`. The
+cell shows `1/2` and a bar, green once every item is done. A click on them
+(or Enter, a double-click, a typed key, which starts a new item) opens a
+panel over the cell; a click beside them only selects the cell. In the panel, tick
+an item, rename it in place, drag it by its handle or move it with Alt+Up
+and Alt+Down, delete it, and add one in the box at the bottom (Enter adds
+and stays there). Ctrl+Enter, Tab, Done or a click outside saves; Escape
+leaves the cell as it was. It sorts by the share done, and groups into Not
+started, In progress and Done, with empty checklists last. Those groups have
+no "+", and Insert record above or below leaves the new record's checklist
+empty: a copy would duplicate someone's to-dos. A column of your own groups
+by what its value amounts to with `groupValue: (value) => key`.
+
+As text a checklist is one item per line, `[x] Done item` or `[ ] Open item`.
+That is what a type change to long text, an export and a lookup write, and
+a paste, a CSV import or a type change from text read: a line with no mark
+is an open item, and `- [x]` (a Markdown task list) works too. A copy
+(Ctrl+C) puts the items on one line, `[x] Slides final [ ] Mic check`,
+because a paste splits rows at line breaks; the field reads several marks
+on one line as several items.
+
+A **color** is stored lower case as `'#rrggbb'`. The cell shows a swatch and
+the code. The editor offers the 40 option colors (Arrow keys walk them) and
+a box for a code. A paste or the box reads `#rgb`, `#rrggbb`, `2d7ff9`
+(without `#` when the code has a digit), `rgb(45, 127, 249)` and these CSS
+names: black, white, gray, grey, silver, red, maroon, orange, yellow, olive,
+lime, green, teal, cyan, aqua, blue, navy, purple, magenta, fuchsia, pink,
+brown, gold, indigo, violet. Anything else (another name, `hsl()`, a color
+with alpha) is refused: a paste keeps the old value and the editor says so.
+Colors sort around the color wheel from red, grays last, and filter as text.
+
+A **time of day** has no date. It is stored as `'HH:MM'` on a 24-hour clock
+(`'HH:MM:SS'` when the field shows seconds) rather than seconds since
+midnight: it reads the same in JSON, a CSV and a SQL `time` column, sorts in
+time order as text, and cannot be mistaken for a `duration`, which is
+seconds. `timeFormat` only changes what the cell shows (`2:05 PM` or
+`14:05`). Typed or pasted, it reads `14:05`, `9:30 am`, `9.30 p.m.`, `2pm`,
+`0930`, `noon` and `midnight`; without `showSeconds` the seconds are
+dropped. In the editor Up and Down move by 15 minutes (Shift: an hour). A
+filter compares to the minute ("is 9:30" holds 9:30:15) unless its value
+names seconds.
+
+A CSV import gives a column of times (`9:00 am`, `22:30`) a time of day
+field, a column of `#` codes a color field, and a column whose every value
+starts with `[x]` or `[ ]` a checklist. Changing a duration to a time of day
+reads its seconds as the time since midnight; a date with a time gives its
+local time. In SQL (`baseToSql`) a checklist is `jsonb` and a time of day
+`time`.
 
 ## Attachments
 
@@ -96781,6 +97911,182 @@ registerFieldType({
 - [Cell components](./cells/cell-components.md)
 - [Conditional formatting](./cells/conditional-formatting.md)
 - [Column menu](./columns/column-menu.md)
+
+<!-- =================================================================
+     /docs/help/web-components/sv-base/  (enterprise)
+     ================================================================== -->
+
+# `<sv-base>`: SvGrid Base as a custom element
+
+[SvGrid Base](../base/start.md), tables with typed fields, linked records,
+views, forms and automations, as one custom element for a page or a host with
+no Svelte in its build: React, Vue, Angular, or a plain `<script>` tag. It is
+part of `@svgrid/enterprise` (Suite edition): without a key it runs and shows
+the pack's watermark and notice, as every entry does.
+
+The element wraps `<SvBase>` and calls `enableBase()` itself.
+
+## Loading it
+
+```html
+<script type="module" src="https://cdn.jsdelivr.net/npm/@svgrid/enterprise/dist/wc/sv-base-element.js"></script>
+
+<sv-base id="base" height="480" editable sortable show-row-numbers column-adder field-menu></sv-base>
+<script type="module">
+  const base = document.getElementById('base')
+  base.users = [{ id: 'u1', name: 'Ana Ruiz' }, { id: 'u2', name: 'Ben Okafor' }]
+  base.currentUser = base.users[0]
+  base.tables = [
+    {
+      id: 'tasks', name: 'Tasks', primaryField: 'title',
+      columns: [
+        { field: 'title', header: 'Task', fieldType: 'text' },
+        { field: 'owner', header: 'Owner', fieldType: 'user' },
+        { field: 'due', header: 'Due', fieldType: 'date' },
+      ],
+      data: [{ id: 't1', title: 'Draft the launch post', owner: 'u1', due: '2026-11-04' }],
+    },
+  ]
+  base.addEventListener('tableschange', (e) => save(e.detail))   // the whole list, after every change
+</script>
+```
+
+From npm, `import '@svgrid/enterprise/wc/base'` registers the element. The
+tables take the same shape as `<SvBase tables>`: see
+[the field types](../fields.md) and [linked records](../base/linked-records.md).
+
+Registering is guarded: a page that loads the file twice (the CDN copy beside
+an npm build, or one file under two URLs) keeps the first definition instead
+of throwing on the second.
+
+## The license key
+
+```html
+<sv-base license-key="YOUR-LICENSE-KEY"></sv-base>
+```
+
+The file carries its own copy of the pack, so `setLicenseKey()` imported from
+`@svgrid/enterprise/license` sets the key of a different copy and the element
+keeps its watermark. Pass the key to the element instead. The attribute is read
+before the first render, so the watermark never shows; a key assigned later as
+a property (`base.licenseKey = key`) takes the watermark and the notice down.
+
+## Attributes vs properties
+
+The [same rule as the grid element](sv-grid.md#attributes-vs-properties):
+primitives are attributes, arrays and objects are properties.
+
+| Attribute | Property | Type |
+| --- | --- | --- |
+| `height` | `height` | pixels (`480`) or a CSS length (`100%`). Default 560. |
+| `container-height` | `containerHeight` | the same as `height`, under `<SvBase>`'s name |
+| `active-table` | `activeTable` | the id of the table shown first |
+| `active-view` | `activeView` | the id of the view shown first (one table) |
+| `primary-field` | `primaryField` | the field that names a record (one table) |
+| `editable` | `editable` | `boolean` |
+| `sortable` | `sortable` | `boolean` |
+| `show-row-numbers` | `showRowNumbers` | `boolean` |
+| `column-adder` | `columnAdder` | `boolean`: the "+" that adds a field |
+| `field-menu` | `fieldMenu` | `boolean`: the header menu that edits, hides and deletes a field |
+| `expand-rows` | `expandRows` | `boolean`: the button on each row that opens the record |
+| `row-height` | `rowHeight` | `number` |
+| `license-key` | `licenseKey` | `string` |
+
+| Property only | Type |
+| --- | --- |
+| `tables` | `BaseTable[]`: several tables, shown as tabs |
+| `data`, `columns`, `views` | one table, without tabs |
+| `viewTypes` | the view types the view bar offers |
+| `users` | the people user fields choose from (`setFieldUsers`) |
+| `currentUser` | who is signed in: what "created by" and "last modified by" write (`setCurrentUser`) |
+| `options` | any other `<SvBase>` or `<SvGrid>` prop, passed through as is |
+
+A boolean attribute is on when present, whatever its value: `editable="false"`
+is editable. Remove the attribute, or set the property to `false`.
+
+`users` and `currentUser` are one list for the page, as they are in a Svelte
+app: two elements that set different lists share the last one set.
+
+## Events
+
+| Event | `detail` |
+| --- | --- |
+| `tableschange` | the whole `tables` list, after an edit, a record added or deleted, a field, a view, an automation or a table changed |
+| `viewschange` | the views of the one table (without `tables`; with it, a view change is a `tableschange`) |
+| `remotechange` | changes made in the database by someone else, for tables with a realtime `source` |
+| `ready` | `{ api }`, when the shown table's grid mounts. It fires again when another tab is opened. |
+
+`ready` parks the api on the element (`base.api`) and `tableschange` parks the
+list (`base.tables`), so code that runs later reads them without having caught
+the event.
+
+**Assigning `tables` loads it.** The element is upgraded the moment its file
+loads, which on a plain page is before the script that sets its properties, so
+the first `base.tables = [...]` arrives after an empty mount and is shown in its
+place. A later assignment of a new list replaces what is on screen, edits
+included, which is what reloading from a server wants. Handing back the list
+`tableschange` gave you, or `base.tables` itself, is not a reload.
+
+With `data` and `columns` instead of `tables`, the grid writes edits into the
+row objects of `data` and no `tableschange` fires; use `tables` with one table
+when the app needs to hear about every edit.
+
+## React and Vue
+
+Both wrappers register the element on import and hand every prop over as a DOM
+property, so `tables` arrives as the array it is, also in React 18, which
+would otherwise write it to an attribute as a string. Events become `onX`
+callbacks in React and `@x` listeners in Vue.
+
+```tsx
+import { useRef } from 'react'
+import { SvBase, type SvBaseHandle } from '@svgrid/enterprise/wc/base/react'
+
+export function Projects({ tables, save }) {
+  const base = useRef<SvBaseHandle>(null)
+  return (
+    <SvBase ref={base} tables={tables} editable height={560}
+      onTableschange={(next) => save(next)} />
+  )
+}
+```
+
+```vue
+<script setup>
+import { SvBase } from '@svgrid/enterprise/wc/base/vue'
+defineProps(['tables'])
+const emit = defineEmits(['save'])
+</script>
+
+<template>
+  <SvBase :tables="tables" editable :height="560" @tableschange="(next) => emit('save', next)" />
+</template>
+```
+
+The ref's `element` is the `<sv-base>` itself, and `element.api` is the shown
+grid's api.
+
+## Styling
+
+`<sv-base>` renders in the light DOM, like `<sv-grid>` and `<sv-sheet>`, so the
+`--sg-*` theme tokens set on the page or on the element reach it, and its dialogs, menus and toasts portal to `document.body`. The element
+draws the toaster that automation notices and save errors show in; with several
+`<sv-base>` elements on a page, only the first one draws it.
+
+## What it does not carry
+
+Svelte snippets cannot cross the custom-element boundary, so `<SvBase>` props
+that take one (a custom cell, a custom header) are not reachable. Custom field
+types registered with `registerFieldType` are registered in the element's own
+copy of the pack, which the page cannot import, so only the built-in field
+types are available.
+
+## See also
+
+- [Demo 714](https://svgrid.com/demos/714-base-web-component/), the element
+  driven from plain DOM code with an event log.
+- [SvGrid Base](../base/start.md), the component behind the element.
+- [`<sv-sheet>`](sv-sheet.md), the spreadsheet as an element.
 
 <!-- =================================================================
      /docs/enterprise/studio/  (enterprise)

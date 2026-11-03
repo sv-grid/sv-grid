@@ -45,6 +45,19 @@ A page that uses them names it in an import map:
 <script type="importmap">{ "imports": { "jszip": "https://cdn.jsdelivr.net/npm/jszip@3/+esm" } }</script>
 ```
 
+## The license key
+
+```html
+<sv-sheet license-key="YOUR-LICENSE-KEY"></sv-sheet>
+```
+
+The file carries its own copy of the pack, so `setLicenseKey()` imported from
+`@svgrid/enterprise/license` sets the key of a different copy and the element
+keeps its watermark. Pass the key to the element instead. The attribute is read
+before the first render, so the watermark never shows; a key assigned later as
+a property (`sheet.licenseKey = key`) takes the watermark and the notice down.
+`licenseKey` is the one element prop `<SvSheet>` itself does not have.
+
 ## Attributes vs properties
 
 The [same rule as the grid element](sv-grid.md#attributes-vs-properties):
@@ -114,7 +127,7 @@ its methods, through the ref.
 
 <!-- BEGIN generated reference - packages/enterprise/scripts/generate-sheet-surface.mjs -->
 
-### Attributes (11)
+### Attributes (12)
 
 Primitives, so they work in plain HTML as well as through a property.
 
@@ -131,6 +144,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `show-formula-bar` | `showFormulaBar` | `boolean` |
 | `show-tabs` | `showTabs` | `boolean` |
 | `show-status-bar` | `showStatusBar` | `boolean` |
+| `license-key` | `licenseKey` | `string` |
 
 ### Properties only (9)
 

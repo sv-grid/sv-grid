@@ -1,0 +1,27 @@
+{
+  "description": "A dashboard view in an SvGrid Base, in Svelte 5. Tiles sum up every table of the base: a number (a count, or a field's sum, average, smallest or largest) with an optional caption, a chart grouped by a field, the top records by a sort, and how many records match a filter. Each tile has its own table and filter, and the tiles are saved on the view.",
+  "keywords": [
+    "svelte dashboard view",
+    "svelte table database dashboard",
+    "kpi tiles from table data svelte",
+    "svelte crm dashboard"
+  ],
+  "faq": [
+    {
+      "question": "Can one dashboard read several tables?",
+      "answer": "Yes. A dashboard view lives on one table, but each tile picks the table it reads. The demo's tiles read Deals, Accounts and Activities from a dashboard on Deals."
+    },
+    {
+      "question": "What can a tile show?",
+      "answer": "A number (the records counted, or a number field's sum, average, smallest or largest, written in the field's own format), a chart (bar, line, pie or donut, grouped by a field and counted or summed), a list of the first records by a sort, or a progress bar of the records that match a filter out of all of them."
+    },
+    {
+      "question": "Where are the tiles saved?",
+      "answer": "On the view, as its dashboard setting. They change with the rest of the tables and come back through onTablesChange or bind:tables, like any other view setting."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

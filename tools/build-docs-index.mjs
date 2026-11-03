@@ -170,6 +170,7 @@ const PAGE_PILLAR = {
   'help/cells/workbooks':           'sheet',
   'help/cells/tables':              'sheet',
   'help/web-components/sv-sheet':   'sheet',
+  'help/web-components/sv-base':    'base',
 }
 /**
  * When each page last changed, for docs.json `lastUpdated`. A file's mtime is
@@ -272,7 +273,7 @@ const PAGE_GROUPS = {
   // reference routed in from help/ (SECTION_OVERRIDE in doc-meta.mjs).
   'help/base': [
     { label: 'Start here', pages: ['quick-start', 'start', 'templates'] },
-    { label: 'Build it out', pages: ['linked-records', 'formulas', 'views', 'forms', 'collaboration', 'custom-field-type'] },
+    { label: 'Build it out', pages: ['linked-records', 'formulas', 'views', 'forms', 'undo-trash-import', 'collaboration', 'custom-field-type'] },
     { label: 'Automate', pages: ['automations'] },
     { label: 'Connect your data', pages: ['data', 'supabase', 'postgres', 'rest-api'] },
     { label: 'AI agents', pages: ['ai-agents', 'review-queue'] },
@@ -315,7 +316,7 @@ const PAGE_GROUPS = {
   // `limitations` reads as a conclusion rather than an opening.
   'help/web-components': [
     { label: '', pages: ['help/web-components.md'] },
-    { label: 'Start here', pages: ['frameworks', 'quick-start', 'sv-grid', 'sv-chart', 'sv-sheet', 'shadow-dom'] },
+    { label: 'Start here', pages: ['frameworks', 'quick-start', 'sv-grid', 'sv-chart', 'sv-sheet', 'sv-base', 'shadow-dom'] },
     { label: 'Frameworks', pages: ['react', 'vue', 'angular'] },
     { label: 'Reference', pages: ['typescript', 'enterprise', 'limitations'] },
   ],

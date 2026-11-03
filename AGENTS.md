@@ -54,7 +54,7 @@ packages/grid-wc/         @svgrid/grid-wc       - <sv-grid> web component
 packages/svgrid-ui/       @svgrid/ui            - UI component CLI
 packages/create-sv-grid/  @svgrid/create        - grid scaffolder
 packages/create-studio/   @svgrid/create-studio - Studio app scaffolder
-examples/                                       - 500+ live demos
+examples/                                       - 550+ live demos
 website/                                        - svgrid.com source (PRIVATE submodule)
 docs/                                           - markdown docs
 ```

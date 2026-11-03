@@ -1,0 +1,23 @@
+{
+  "description": "Import a CSV, TSV, Excel or JSON file into an SvGrid Base, in Svelte 5. As a new table, each column gets a field type guessed from its values and shown for you to change; into an existing table, each column goes to the field it names and new select values become options. The file is read in the browser and the import is one undo step.",
+  "keywords": [
+    "svelte import csv into table",
+    "import excel xlsx svelte grid",
+    "csv to database table ui",
+    "svelte csv field type detection"
+  ],
+  "faq": [
+    {
+      "question": "How are field types chosen for a new table?",
+      "answer": "From the values in each column: amounts with a currency sign make a currency field, yes and no a checkbox, ISO or slashed dates a date, addresses with @ an email, and a column that repeats a few short values a single select with a color per value. The dialog lists each guess and you can pick another type before importing."
+    },
+    {
+      "question": "How are columns matched when adding records to a table?",
+      "answer": "By name, ignoring case, spaces and punctuation, against each field's name and id. A column that matches nothing is skipped; you can point it at a field by hand. Computed fields such as formulas and lookups are not offered."
+    },
+    {
+      "question": "Can an app import a file it already has?",
+      "answer": "Yes. Call openImport(mode, file) on the component through bind:this; the dialog opens with the file read. The two buttons in this demo do exactly that with sample files."
+    }
+  ]
+}

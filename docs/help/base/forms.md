@@ -512,6 +512,115 @@ automations with `runOn: 'server'` run on the server. If it has not seen
 the record yet, it reads the table again first, and that reading also runs
 the table's "A record is created" server automations for the new record.
 
+## Show a field only for some answers
+
+<div data-docs-demo="711-base-form-logic" data-height="720"></div>
+
+In the demo, pick Bug as the Topic and App version appears; switch to
+Billing and it gives way to Invoice number. The buttons on the right open
+the form from prefilled links.
+
+A field can wait for an answer before it shows. `conditions` maps a column id
+to a [view bar filter](./views.md) over the other answers, the same
+`FieldFilter` the Filter button saves. On a form view the key is
+`formConditions`:
+
+```ts
+import type { FieldFilter } from '@svgrid/enterprise/base'
+
+const is = (column: string, value: string): FieldFilter => ({
+  kind: 'fieldFilter',
+  conjunction: 'and',
+  conditions: [{ column, kind: 'select', op: 'is', value }],
+})
+
+const apply = {
+  id: 'apply',
+  name: 'Apply',
+  type: 'form',
+  formFields: ['name', 'email', 'employment', 'company', 'reason', 'otherReason'],
+  formRequired: ['name', 'email', 'company', 'otherReason'],
+  formConditions: {
+    company: is('employment', 'Employed'),
+    otherReason: is('reason', 'Other'),
+  },
+}
+```
+
+With `SvBaseForm` it is `conditions={{ company: is('employment', 'Employed') }}`.
+
+The form checks the conditions each time an answer changes. While a
+field's condition does not hold:
+
+- the field is not drawn, and Tab skips it;
+- it is not required and not checked, so `formRequired` can name it;
+- what was typed in it is cleared, and a field whose condition reads it
+  hides too;
+- the record does not get it, not even its `fieldProps.default`.
+
+When the field shows again it starts with the value a new record gets. A
+condition reads the answers by column id; a field the form does not ask
+for is read as the new record would have it.
+
+## Fill the form from a link
+
+`prefill` fills fields from a link, the convention people already paste
+into emails: `?prefill_<Field name>=value`. The name is the field's
+`header` or its column id, URL-encoded. `hide_<Field name>=true` keeps a
+filled field out of sight and still sends it:
+
+```
+https://example.com/apply?prefill_Role=Product%20designer&prefill_Source=Referral&hide_Role=true
+```
+
+On a form view, `formPrefill: true` reads the page's own URL. On a page,
+pass it to `SvBaseForm`:
+
+```svelte
+<SvBaseForm {api} fields={APPLY_FIELDS} prefill />
+<SvBaseForm {api} fields={APPLY_FIELDS} prefill={page.url.searchParams} />
+<SvBaseForm {api} fields={APPLY_FIELDS} prefill={{ Role: 'r2', Source: 'Referral' }} />
+```
+
+`prefill` takes `true` (the page's URL, nothing during a server render), a
+URL or query string, `URLSearchParams`, or values by field name or column
+id. When it changes to other answers, the form starts a new record.
+
+Each value is read the way a pasted cell is:
+
+| Field type | `prefill_` value |
+|---|---|
+| text, email, URL, phone | As written |
+| number, currency, percent | The number as typed, `1,200` included; text that is no number is dropped |
+| checkbox | `true`, `1`, `yes`, `on` check it; anything else unchecks it |
+| date | `2026-11-02` |
+| single select | An option's value or label, any case |
+| multiple select | Values or labels, comma-separated |
+| user | A person's id, name or email |
+| link | Record ids or names, comma-separated |
+
+An option the select does not have, a person nobody is, or a record that
+does not exist is dropped: a link never adds an option. Files and computed
+fields cannot be filled. A link's value goes over the field's default.
+`hide_` works only on a field the link filled; if a hidden value fails a
+check on Submit, the field shows with its message.
+
+`formPrefillLink` builds such a link from values by column id:
+
+```ts
+import { formPrefillLink } from '@svgrid/enterprise/base'
+
+formPrefillLink('https://example.com/apply', { role: ['r2'], source: 'Referral' }, candidateColumns, { hide: ['role'] })
+// https://example.com/apply?prefill_Role=r2&prefill_Source=Referral&hide_Role=true
+```
+
+With the columns, each parameter carries the field's `header`. A list is
+joined with commas, a `Date` written as `YYYY-MM-DD`, and the base URL's own
+query and `#hash` are kept.
+
+The link is typed by whoever sends it. Check every value on the server as in
+[step 7](#7-check-it-again-on-the-server).
+
 ## SvBaseForm props
 
 | Prop | Type | Default | What it does |
@@ -523,6 +632,8 @@ the table's "A record is created" server automations for the new record.
 | `description` | `string` | `''` | The line under the heading. |
 | `submitLabel` | `string` | `'Submit'` | The button's text. |
 | `defaults` | `() => Record<string, unknown>` | | Values each record from this form starts with. The grid's `rowAdder.defaults()` wins over them. Called once per record. `<SvBase tables>` passes one that gives an `id`. |
+| `conditions` | `Record<string, FieldFilter>` | | Column id -> when that field shows. A hidden field is not required, not checked and not sent ([Show a field only for some answers](#show-a-field-only-for-some-answers)). |
+| `prefill` | `boolean \| string \| URLSearchParams \| Record<string, unknown>` (`FormPrefill`) | | Answers to start with: `true` reads the page's URL, a string or `URLSearchParams` is read for `prefill_` and `hide_`, an object gives values by field name or column id ([Fill the form from a link](#fill-the-form-from-a-link)). |
 | `onSubmit` | `(row: Record<string, unknown>) => void \| Promise<unknown>` | | Called after the row was appended to the grid and the grid's `onRowAdd` ran. A Promise keeps the button disabled until it settles: resolved shows "Thank you", rejected takes the row back out of the grid, keeps the fields and shows the error's message. |
 
 ## Form view keys
@@ -536,6 +647,8 @@ the table's "A record is created" server automations for the new record.
 | `formDescription` | The line under it |
 | `formRequired` | Column ids that must have a value, as `required` on `SvBaseForm` |
 | `formSubmitLabel` | The button's text (default `'Submit'`) |
+| `formConditions` | Column id -> when that field shows, as `conditions` on `SvBaseForm` |
+| `formPrefill` | `true` fills fields from the page's URL, as `prefill` on `SvBaseForm` |
 
 A record the view sends reaches `onRowAdd`, `onTablesChange` and the
 `formSubmitted` automations, which get the view's `id`.

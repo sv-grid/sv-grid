@@ -54,7 +54,10 @@ export function createEditing<
    */
   function isCellEditable(column: Column<TData>, row?: Row<TData>): boolean {
     const editable = column.columnDef.editable;
-    if (editable === false) return false;
+    // `editable={false}` on the grid wins over every column, for paste,
+    // Delete, the fill handle and moves too (not only typing). Unset keeps
+    // the columns' say, as before.
+    if (editable === false || (ctx.props.editable ?? ctx.props.enableInlineEditing) === false) return false;
     if (row) {
       // A server-side group row is a key with aggregates under the leaf
       // columns, and a placeholder row has no data yet: neither takes an
