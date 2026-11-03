@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-11-03T08:11:32.417Z",
+  "generatedAt": "2026-11-03T11:28:04.681Z",
   "counts": {
     "pages": 479,
     "enterprise": 109,
@@ -2387,7 +2387,7 @@
       "tier": "enterprise",
       "group": "Build it out",
       "words": 968,
-      "lastUpdated": "2026-11-02",
+      "lastUpdated": "2026-11-03",
       "demoIds": [
         "705-base-undo-redo",
         "706-base-trash",
@@ -2424,7 +2424,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 4891,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": [
         "06-large-dataset"
       ],
@@ -2476,7 +2476,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 774,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": []
     },
     {
@@ -3195,7 +3195,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 4311,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": [
         "139-migration-from-ag-grid",
         "186-headless-table"
@@ -4112,7 +4112,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 3404,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": [
         "139-migration-from-ag-grid"
       ]
@@ -4153,7 +4153,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 837,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": []
     },
     {
@@ -4165,7 +4165,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1314,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": []
     },
     {
@@ -4177,7 +4177,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 762,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": []
     },
     {
@@ -4189,7 +4189,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2130,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": [
         "208-freeze-panes",
         "207-blank-sheet"
@@ -4204,7 +4204,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 946,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": []
     },
     {
@@ -4216,7 +4216,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 871,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": []
     },
     {
@@ -4228,7 +4228,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1641,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": [
         "148-server-row-model",
         "467-server-row-model-1m"
@@ -4256,7 +4256,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 939,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": []
     },
     {
@@ -4268,7 +4268,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 816,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": []
     },
     {
@@ -4280,7 +4280,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1790,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": []
     },
     {
@@ -4293,7 +4293,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1088,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": [
         "77-smart-chart"
       ]
@@ -4307,7 +4307,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1630,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": [
         "07-grouping-aggregation",
         "181-master-detail-grid"
@@ -4324,7 +4324,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1905,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": [
         "186-headless-table"
       ]
@@ -4338,7 +4338,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 841,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": []
     },
     {
@@ -4350,7 +4350,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 832,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": []
     },
     {
@@ -4362,7 +4362,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1610,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": [
         "148-server-row-model",
         "186-headless-table"
@@ -4378,7 +4378,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1053,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": []
     },
     {
@@ -4390,7 +4390,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 987,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": []
     },
     {
@@ -5512,7 +5512,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2407,
-      "lastUpdated": "2026-11-01",
+      "lastUpdated": "2026-11-03",
       "demoIds": []
     },
     {
@@ -7715,7 +7715,7 @@
       "tier": "enterprise",
       "group": "Start here",
       "words": 1149,
-      "lastUpdated": "2026-11-02",
+      "lastUpdated": "2026-11-03",
       "demoIds": []
     },
     {
