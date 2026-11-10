@@ -12,7 +12,7 @@ typed anywhere else on this page. An earlier version of this page typed its
 numbers and sat a month behind the measurement.
 
 <!-- size:start -->
-Re-measured **3 Nov 2026** at `@svgrid/grid` 3.0.32 with the script that ships in the repo (`pnpm size:json`):
+Re-measured **10 Nov 2026** at `@svgrid/grid` 3.0.33 with the script that ships in the repo (`pnpm size:json`):
 
 | Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |
 | --- | ---: | ---: | ---: |

@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-11-10T02:01:56.574Z",
+  "generatedAt": "2026-11-10T02:38:54.906Z",
   "counts": {
     "pages": 480,
     "enterprise": 109,
@@ -2437,7 +2437,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 4891,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": [
         "06-large-dataset"
       ],
@@ -2489,7 +2489,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 774,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": []
     },
     {
@@ -3208,7 +3208,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 4311,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": [
         "139-migration-from-ag-grid",
         "186-headless-table"
@@ -4125,7 +4125,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 3404,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": [
         "139-migration-from-ag-grid"
       ]
@@ -4166,7 +4166,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 837,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": []
     },
     {
@@ -4178,7 +4178,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1314,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": []
     },
     {
@@ -4190,7 +4190,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 762,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": []
     },
     {
@@ -4202,7 +4202,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2130,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": [
         "208-freeze-panes",
         "207-blank-sheet"
@@ -4217,7 +4217,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 946,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": []
     },
     {
@@ -4229,7 +4229,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 871,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": []
     },
     {
@@ -4241,7 +4241,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1641,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": [
         "148-server-row-model",
         "467-server-row-model-1m"
@@ -4269,7 +4269,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 939,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": []
     },
     {
@@ -4281,7 +4281,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 816,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": []
     },
     {
@@ -4293,7 +4293,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1790,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": []
     },
     {
@@ -4306,7 +4306,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1088,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": [
         "77-smart-chart"
       ]
@@ -4320,7 +4320,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1630,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": [
         "07-grouping-aggregation",
         "181-master-detail-grid"
@@ -4337,7 +4337,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1905,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": [
         "186-headless-table"
       ]
@@ -4351,7 +4351,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 841,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": []
     },
     {
@@ -4363,7 +4363,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 832,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": []
     },
     {
@@ -4375,7 +4375,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1610,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": [
         "148-server-row-model",
         "186-headless-table"
@@ -4391,7 +4391,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1053,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": []
     },
     {
@@ -4403,7 +4403,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 987,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": []
     },
     {
@@ -5525,7 +5525,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2407,
-      "lastUpdated": "2026-11-03",
+      "lastUpdated": "2026-11-10",
       "demoIds": []
     },
     {
