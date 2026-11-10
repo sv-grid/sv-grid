@@ -150,7 +150,7 @@ Password reset emails print to the server console until you set
 ## Page weight
 
 Measured with `node scripts/route-size.mjs` after `npm run build`
-(`@svgrid/grid` 3.0.32): the gzipped JS and CSS each route loads, and the
+(`@svgrid/grid` 3.0.33): the gzipped JS and CSS each route loads, and the
 difference from the landing page.
 
 | Route | gzip | vs `/` |
@@ -164,7 +164,7 @@ difference from the landing page.
 | `/projects` | 158.0 KB | +128.9 KB |
 | `/admin/users` | 156.3 KB | +127.3 KB |
 | `/admin/audit` | 138.4 KB | +109.3 KB |
-| `/admin/subscriptions` | 136.8 KB | +107.7 KB |
+| `/admin/subscriptions` | 136.8 KB | +107.8 KB |
 
 Pages without a grid load only the UI components they use. The grid's
 export, chart, menu and editor code stay in separate chunks that load when

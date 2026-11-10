@@ -91,7 +91,7 @@ testing with `stripe listen`.
 ## Page weight
 
 Measured with the starter's `node scripts/route-size.mjs` after
-`npm run build`, with `@svgrid/grid` 3.0.32: gzipped JS and CSS per route.
+`npm run build`, with `@svgrid/grid` 3.0.33: gzipped JS and CSS per route.
 
 | Route | gzip | vs the landing page |
 | --- | --- | --- |

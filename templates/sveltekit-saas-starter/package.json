@@ -47,7 +47,7 @@
 	},
 	"dependencies": {
 		"@electric-sql/pglite": "^0.5.16",
-		"@svgrid/grid": "^3.0.32",
+		"@svgrid/grid": "^3.0.33",
 		"stripe": "^23.1.0"
 	}
 }
