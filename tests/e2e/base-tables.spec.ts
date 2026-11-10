@@ -37,6 +37,21 @@ test.describe('SvGrid Base tables (real browser)', () => {
     expect(errors).toEqual([])
   })
 
+  test('resizes a column by dragging its header edge', async ({ page }) => {
+    // The grid's `columnResize` is off by default; a base turns it on.
+    await open(page)
+    const header = page.locator('[data-svgrid-header-col="account"]')
+    const before = (await header.boundingBox())!.width
+    const handle = header.locator('.sv-grid-resize-handle')
+    await expect(handle).toHaveCount(1)
+    const box = (await handle.boundingBox())!
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(box.x + box.width / 2 + 80, box.y + box.height / 2, { steps: 8 })
+    await page.mouse.up()
+    await expect.poll(async () => (await header.boundingBox())!.width).toBeGreaterThan(before + 60)
+  })
+
   test('shows the tables as tabs and switches between them', async ({ page }) => {
     await open(page)
     await expect(page.locator('.sv-btabs [role="tab"]')).toHaveText(['Deals', 'Accounts', 'Contacts'])

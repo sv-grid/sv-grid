@@ -2092,8 +2092,8 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * it off for layouts you control, and for columns that must keep their size:
    * a row-number gutter, a checkbox column, an icon column.
    *
-   * It is grid-wide rather than per-column: there is no `resizable: false` on a
-   * single column definition. `api.autosizeColumn()`, `fitColumns` and
+   * It turns resizing on for the whole grid; a column opts out with
+   * `resizable: false` on its definition. `api.autosizeColumn()`, `fitColumns` and
    * programmatic width changes work either way - this only governs the drag
    * handle.
    *

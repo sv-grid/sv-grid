@@ -246,8 +246,8 @@
     return hit ? `${hit.rowIndex}:${hit.columnId}` : "";
   });
   const headerHeight = $derived(ctrl.headerHeight);
-  // Column resizing has always been unconditional; `columnResize={false}` is
-  // the opt-out, so the default has to stay on when the prop is absent.
+  // Opt-in: no resize handles unless `columnResize` is true (see its docs in
+  // SvGrid.types.ts). A column opts out with `resizable: false`.
   const columnResizeEnabled = $derived(opt.columnResize === true);
   const selectionColumnWidth = $derived(ctrl.selectionColumnWidth);
   const rowNumberColumnWidth = $derived(ctrl.rowNumberColumnWidth);
