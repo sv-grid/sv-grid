@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:24ecedd9-2222-48af-a52a-855e83d864bf",
+  "serialNumber": "urn:uuid:6c04179b-5c72-4f73-a594-eefd130cde14",
   "version": 1,
   "metadata": {
     "tools": {
@@ -16,10 +16,10 @@
     },
     "component": {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/ui@3.0.3",
+      "bom-ref": "pkg:npm/%40svgrid/ui@3.0.4",
       "name": "@svgrid/ui",
-      "version": "3.0.3",
-      "purl": "pkg:npm/%40svgrid/ui@3.0.3",
+      "version": "3.0.4",
+      "purl": "pkg:npm/%40svgrid/ui@3.0.4",
       "scope": "required",
       "licenses": [
         {
@@ -34,7 +34,7 @@
   "components": [],
   "dependencies": [
     {
-      "ref": "pkg:npm/%40svgrid/ui@3.0.3",
+      "ref": "pkg:npm/%40svgrid/ui@3.0.4",
       "dependsOn": []
     }
   ]

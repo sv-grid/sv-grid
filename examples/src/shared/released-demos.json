@@ -1,5 +1,5 @@
 {
-  "release": "grid-v3.0.33",
+  "release": "grid-v3.0.34",
   "date": "2026-11-10",
   "ids": [
     "00-trading-desk",
@@ -539,6 +539,8 @@
     "72-graphql-adapter",
     "720-base-inbox-view",
     "721-base-dashboard",
+    "722-base-rich-text",
+    "723-base-million-orders",
     "73-chartjs-sync",
     "74-theme-integrations",
     "75-ai-smart-paste",

@@ -12,14 +12,14 @@ typed anywhere else on this page. An earlier version of this page typed its
 numbers and sat a month behind the measurement.
 
 <!-- size:start -->
-Re-measured **10 Nov 2026** at `@svgrid/grid` 3.0.33 with the script that ships in the repo (`pnpm size:json`):
+Re-measured **10 Nov 2026** at `@svgrid/grid` 3.0.34 with the script that ships in the repo (`pnpm size:json`):
 
 | Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |
 | --- | ---: | ---: | ---: |
 | Headless core (`createSvGrid`) | **3.2 KB** | - | - |
-| Headless subpath (`@svgrid/grid/core`) | **10.1 KB** | - | - |
-| Full render component (`<SvGrid>`) | **99.9 KB** | **11.3 KB** | **198.9 KB** |
-| Standalone chart (`<SvChart>`) | **71.9 KB** | - | **15.0 KB** |
+| Headless subpath (`@svgrid/grid/core`) | **10.2 KB** | - | - |
+| Full render component (`<SvGrid>`) | **99.6 KB** | **11.4 KB** | **206.3 KB** |
+| Standalone chart (`<SvChart>`) | **71.9 KB** | - | **16.0 KB** |
 <!-- size:end -->
 
 The two headless rows measure different things on purpose. `createSvGrid` is

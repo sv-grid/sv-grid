@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:eeaa7d12-8221-43a4-acd3-9d0ce0a89dd3",
+  "serialNumber": "urn:uuid:7fde87bb-d2c2-42a2-a49a-fcf1bb331087",
   "version": 1,
   "metadata": {
     "tools": {
@@ -16,10 +16,10 @@
     },
     "component": {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/create@3.0.10",
+      "bom-ref": "pkg:npm/%40svgrid/create@3.0.11",
       "name": "@svgrid/create",
-      "version": "3.0.10",
-      "purl": "pkg:npm/%40svgrid/create@3.0.10",
+      "version": "3.0.11",
+      "purl": "pkg:npm/%40svgrid/create@3.0.11",
       "scope": "required",
       "licenses": [
         {
@@ -34,23 +34,23 @@
   "components": [
     {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/grid@3.0.33",
+      "bom-ref": "pkg:npm/%40svgrid/grid@3.0.34",
       "name": "@svgrid/grid",
-      "version": "3.0.33",
-      "purl": "pkg:npm/%40svgrid/grid@3.0.33",
+      "version": "3.0.34",
+      "purl": "pkg:npm/%40svgrid/grid@3.0.34",
       "scope": "required",
       "description": "Runtime dependency (declared range: workspace:^)"
     }
   ],
   "dependencies": [
     {
-      "ref": "pkg:npm/%40svgrid/create@3.0.10",
+      "ref": "pkg:npm/%40svgrid/create@3.0.11",
       "dependsOn": [
-        "pkg:npm/%40svgrid/grid@3.0.33"
+        "pkg:npm/%40svgrid/grid@3.0.34"
       ]
     },
     {
-      "ref": "pkg:npm/%40svgrid/grid@3.0.33",
+      "ref": "pkg:npm/%40svgrid/grid@3.0.34",
       "dependsOn": []
     }
   ]
