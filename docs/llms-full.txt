@@ -2612,8 +2612,11 @@ it. Nothing to install, no keys to fetch. Sign in as `admin@example.com` /
 `starter-admin-1` (admin, Pro plan) or `user@example.com` / `starter-user-1`
 (user, Free plan).
 
-The source is in the repository at
-[`templates/sveltekit-saas-starter`](https://github.com/sv-grid/sv-grid/tree/main/templates/sveltekit-saas-starter).
+It is also a GitHub template:
+[sv-grid/sveltekit-saas-starter](https://github.com/sv-grid/sveltekit-saas-starter).
+Press "Use this template" there to start a repository of your own with the
+same files and a CI workflow that type-checks the app and runs its Playwright
+tests on Node 22 and 24.
 
 ## The stack
 
