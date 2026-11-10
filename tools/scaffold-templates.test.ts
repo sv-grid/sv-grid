@@ -43,7 +43,7 @@ function shellOf(app: string) {
 }
 
 // Keep in step with TEMPLATES in packages/create-sv-grid/index.mjs.
-const templates = ['minimal', 'sveltekit', 'base', 'pivot-dashboard', 'admin-dashboard', 'headless']
+const templates = ['minimal', 'sveltekit', 'base', 'pivot-dashboard', 'admin-dashboard', 'saas', 'headless']
 // The subset that renders <SvGrid> and therefore has a --sg-* palette to write
 // a theme into. `headless` ships the engine and no CSS, so it is deliberately
 // never asked and never told which preset to use.
@@ -189,6 +189,28 @@ describe('create-sv-grid templates', { timeout: 30_000 }, () => {
     const peopleServer = read('src', 'routes', 'people', '+page.server.ts')
     expect(peopleServer).toContain("locals.user?.role !== 'admin'")
     expect(peopleServer).toContain('error(403')
+  })
+
+  // The saas source in templates/ has been run in the monorepo: its .env holds
+  // a real BETTER_AUTH_SECRET and .data a database. Neither may ship.
+  it('saas ships no local secret, database or build output', () => {
+    const app = scaffold('saas')
+    for (const leftover of ['.env', '.data', 'build', '.svelte-kit', 'node_modules', 'test-results']) {
+      expect(existsSync(join(app, leftover)), leftover).toBe(false)
+    }
+    expect(readFileSync(join(app, '.env.example'), 'utf8')).toMatch(/^BETTER_AUTH_SECRET=""$/m)
+    // Its own rules for assistants stay, with the grid section added once.
+    const agents = readFileSync(join(app, 'AGENTS.md'), 'utf8')
+    expect(agents).toContain('requireUser(locals)')
+    expect(agents.match(/## Tables and data grids/g)).toHaveLength(1)
+  })
+
+  it('saas checks access in its actions, not only in a layout', () => {
+    const app = scaffold('saas')
+    const read = (...p: string[]) => readFileSync(join(app, ...p), 'utf8')
+    expect(read('src', 'routes', '(app)', 'projects', '+page.server.ts')).toContain('requireUser(locals)')
+    expect(read('src', 'routes', '(app)', 'admin', 'audit', 'rows', '+server.ts')).toContain('requireAdmin(locals)')
+    expect(read('src', 'routes', '(app)', 'projects', '+page.server.ts')).toContain('projectLimitReached')
   })
 
   it('pivot-dashboard keeps its drill logic pure and its facts on the server', () => {

@@ -45,9 +45,10 @@ pnpm create @svgrid my-app -t minimal
 | `minimal` | Vite + Svelte 5 + SvGrid | Dropping a grid into something quickly |
 | `sveltekit` | SvelteKit, server load + form actions | Learning how a grid fits SvelteKit, or starting one |
 | `admin-dashboard` | SvelteKit + Tailwind + SvGrid, deploy to Vercel | A real dashboard / internal tool |
+| `saas` | SvelteKit 3, Better Auth, Stripe, Drizzle + Postgres (embedded PGlite until you set `DATABASE_URL`) | A SaaS: sign-in, roles, billing, admin screens for users, subscriptions and an audit log |
 | `headless` | Vite + Svelte 5 + `@svgrid/grid/core`, a hand-written `<table>` | Your own renderer and your own CSS |
 
-The first three render `<SvGrid>`. `headless` uses the engine underneath it -
+All but `headless` render `<SvGrid>`. `headless` uses the engine underneath it -
 `createSvGrid` computes the rows, you emit the markup - so it ships no grid CSS
 and nothing styles itself.
 
@@ -55,8 +56,8 @@ and nothing styles itself.
 
 | Flag | Description |
 | --- | --- |
-| `--template`, `-t` | `minimal`, `sveltekit`, `admin-dashboard`, or `headless` |
-| `--theme <id>` | One of `@svgrid/grid`'s 20 built-in presets - shadcn, Tailwind, Material, Excel, Fluent, and more (default: `ember`, the theme the demos use). Ignored by `headless` |
+| `--template`, `-t` | `minimal`, `sveltekit`, `admin-dashboard`, `saas`, or `headless` |
+| `--theme <id>` | One of `@svgrid/grid`'s 20 built-in presets - shadcn, Tailwind, Material, Excel, Fluent, and more (default: `ember`, the theme the demos use). Ignored by `headless` and `saas` |
 | `--dark` / `--light` | Pin the starting mode. `minimal` and `sveltekit` follow the visitor's OS when neither is given |
 | `--force`, `-f` | Scaffold into a non-empty directory |
 | `--help`, `-h` | Show usage |
@@ -85,6 +86,8 @@ npm run dev
 
 All templates use the free MIT `@svgrid/grid` core. Add
 [`@svgrid/enterprise`](https://svgrid.com/pricing/) for Excel/PDF export, import,
-print, pivot, and AI helpers.
+print and pivot.
+
+The `saas` template's own README covers Stripe, deployment and the database.
 
 SvGrid(TM) is a trademark of jQWidgets Ltd. This package is MIT-licensed.

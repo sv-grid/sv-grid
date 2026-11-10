@@ -1,4 +1,6 @@
-# admin-dashboard is generated from ../../templates/sveltekit-admin-dashboard
-# by sync-templates.mjs (runs on prepack). Don't commit the duplicate.
+# admin-dashboard and saas are generated from ../../templates/sveltekit-admin-dashboard
+# and ../../templates/sveltekit-saas-starter by sync-templates.mjs (runs on
+# prepack). Don't commit the duplicates.
 templates/admin-dashboard
+templates/saas
 node_modules

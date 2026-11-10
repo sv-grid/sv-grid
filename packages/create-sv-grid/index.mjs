@@ -5,6 +5,7 @@
 //   pnpm create @svgrid                     # interactive
 //   npm  create @svgrid@latest my-app -- --template admin-dashboard
 //   npm  create @svgrid@latest my-app -- -t minimal
+//   npm  create @svgrid@latest my-saas -- -t saas
 //
 // Zero runtime dependencies - Node built-ins only. Copies a bundled template,
 // renames `_`-prefixed dotfiles, and rewrites the project name.
@@ -43,6 +44,14 @@ const TEMPLATES = {
     // When running from the monorepo before `prepack` has synced the bundled
     // copy, fall back to the canonical source.
     fallback: join(__dirname, '..', '..', 'templates', 'sveltekit-admin-dashboard'),
+  },
+  saas: {
+    label: 'SaaS starter - SvelteKit 3, Better Auth, Stripe, Drizzle + Postgres, admin grids',
+    bundled: join(__dirname, 'templates', 'saas'),
+    fallback: join(__dirname, '..', '..', 'templates', 'sveltekit-saas-starter'),
+    // Its palette lives in src/routes/layout.css next to its own Tailwind
+    // tokens, light and dark; there are no theme markers to write a preset to.
+    theme: false,
   },
   headless: {
     label: 'Headless     - createSvGrid engine, your own <table> and CSS',
@@ -107,7 +116,7 @@ ${Object.entries(TEMPLATES)
 
 ${color('bold', 'Options')}
   --theme <id>       One of: ${THEME_IDS.join(', ')} (default: ember).
-                     Ignored by headless, which ships no stylesheet to theme.
+                     Ignored by headless (no stylesheet) and saas (its own palette).
   --dark / --light   Pin the starting mode. Left out, minimal and sveltekit
                      follow the visitor's OS; admin-dashboard starts dark.
   --data <where>     base only: ${Object.keys(BASE_DATA).join(', ')} (default: browser).
@@ -119,6 +128,7 @@ ${color('bold', 'Examples')}
   npm  create @svgrid@latest
   npm  create @svgrid@latest my-app -- --template admin-dashboard
   npm  create @svgrid@latest my-app -- -t admin-dashboard --theme material --light
+  npm  create @svgrid@latest my-saas -- -t saas
   pnpm create @svgrid my-app -t minimal
   npm  create @svgrid@latest my-base -- -t base --data postgres --sample sales-crm
 `)
@@ -485,7 +495,9 @@ async function copyTemplate(srcDir, destDir) {
   // Match only on the path RELATIVE to the template root. The absolute `src`
   // includes the install location (e.g. `.../node_modules/@svgrid/create/...`),
   // so testing it directly would match `node_modules` and skip the whole copy.
-  const skip = /(^|[\\/])(node_modules|\.svelte-kit|\.vercel|build|dist)([\\/]|$)/
+  // `.env` and `.data` matter for the monorepo fallback: a starter that has run
+  // there holds a real secret in .env and a local database in .data.
+  const skip = /(^|[\\/])(node_modules|\.svelte-kit|\.vercel|build|dist|\.data|\.env|test-results|playwright-report)([\\/]|$)/
   await cp(srcDir, destDir, {
     recursive: true,
     filter: (src) => !skip.test(src.slice(srcDir.length)),
@@ -639,6 +651,10 @@ async function main() {
     stdout.write(`  cp .env.example .env     ${color('dim', '# set PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_ANON_KEY')}\n`)
   }
   stdout.write(`  npm run dev\n\n`)
+  if (template === 'saas') {
+    stdout.write(`${color('dim', 'The first run creates .env and a local database with sample data. Sign in as')}\n`)
+    stdout.write(`  admin@example.com / starter-admin-1   ${color('dim', 'or')}   user@example.com / starter-user-1\n\n`)
+  }
   stdout.write(`${color('dim', 'Docs:')} https://svgrid.com/docs   ${color('dim', 'Pro:')} https://svgrid.com/pricing\n\n`)
 }
 

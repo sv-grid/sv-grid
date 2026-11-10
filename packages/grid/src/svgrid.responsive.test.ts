@@ -60,6 +60,28 @@ describe('SvGrid responsive mode', () => {
     })
   })
 
+  it('fitColumns shares the width of hideBelow columns among the shown ones', () => {
+    // 800 px is above the 640 breakpoint (fit stays on) but below c's 1000,
+    // so c is hidden and a + b must fill the row exactly as they would with
+    // no c at all. Counting c in the fit left a blank strip the width of c
+    // at the right edge.
+    withWidth(800, () => {
+      const a = { field: 'a', header: 'A', width: 200 }
+      const b = { field: 'b', header: 'B', width: 200 }
+      const c = { field: 'c', header: 'C', width: 200, hideBelow: 1000 }
+      const props = { data, responsive: true, fitColumns: true, showRowSelection: false, containerHeight: 300 }
+      const widths = (target: HTMLElement) =>
+        ['a', 'b'].map((id) => parseFloat((target.querySelector(`td[data-col-id="${id}"]`) as HTMLElement).style.width))
+      const withC = render({ ...props, columns: [a, b, c] })
+      const withoutC = render({ ...props, columns: [a, b] })
+      try {
+        expect(withC.target.querySelector('[data-col-id="c"]')).toBeNull()
+        expect(widths(withC.target)).toEqual(widths(withoutC.target))
+        expect(widths(withC.target)[0]).toBeGreaterThan(300)
+      } finally { withC.destroy(); withoutC.destroy() }
+    })
+  })
+
   it('does nothing without the responsive prop', () => {
     withWidth(400, () => {
       const { target, destroy } = render({ data, columns, initialColumnPinning: { left: ['a'] }, containerHeight: 300 })

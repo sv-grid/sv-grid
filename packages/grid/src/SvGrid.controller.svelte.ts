@@ -4584,7 +4584,17 @@ export function createSvGridController<
     if (!props.fitColumns || isNarrowResponsive) return null;
     // Exclude columns hidden by a collapsed group too (#57) - otherwise their
     // widths stay in the fit distribution and leave a blank gap at the edge.
-    const cols = grid.getAllColumns().filter((c) => !hiddenColumns[c.id] && !hiddenByGroupCollapse[c.id] && !collapsedColumns[c.id]);
+    // Same for `hideBelow` columns the responsive mode has dropped.
+    const responsiveOn = !!props.responsive;
+    const cols = grid
+      .getAllColumns()
+      .filter(
+        (c) =>
+          !hiddenColumns[c.id] &&
+          !hiddenByGroupCollapse[c.id] &&
+          !collapsedColumns[c.id] &&
+          !(responsiveOn && isHiddenByResponsive(c)),
+      );
     if (!cols.length) return null;
     // Reserve the custom vertical scrollbar's width when it's visible. It
     // overlays the right 16px of the viewport (absolute, z-index 40) and

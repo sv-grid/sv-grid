@@ -31,6 +31,9 @@ npm create @svgrid@latest my-admin -- --template admin-dashboard
 # Pivot cube + linked chart + drill-through (needs @svgrid/enterprise)
 npm create @svgrid@latest my-cube -- --template pivot-dashboard
 
+# Sign-in, roles, Stripe billing and admin grids on SvelteKit 3
+npm create @svgrid@latest my-saas -- --template saas
+
 # The engine only - your own markup and CSS
 npm create @svgrid@latest my-table -- --template headless
 ```
@@ -51,18 +54,20 @@ npm run dev
 | `sveltekit` | SvelteKit + `@svgrid/grid`: server `load`, URL-driven sort, form-action edits, cookie sessions with role gating | Server-rendered pages; the app from the [SvelteKit guide](./sveltekit.md) |
 | `admin-dashboard` | SvelteKit + Tailwind + `@svgrid/grid`, deploy to Vercel | A real dashboard / internal tool |
 | `pivot-dashboard` | SvelteKit + `@svgrid/enterprise`: a pivot cube, a linked chart and a drill-through rail over one fact table | Reporting screens where a number has to be traceable to its rows |
+| `saas` | SvelteKit 3 + Better Auth + Stripe + Drizzle on Postgres (embedded PGlite until you set `DATABASE_URL`) | A SaaS that needs sign-in, roles, billing and admin screens; see [SaaS starter](./saas-starter.md) |
 | `headless` | Vite + Svelte 5 + `@svgrid/grid/core`: the engine driving a hand-written `<table>` | Your own renderer and your own CSS |
 
-The four `<SvGrid>` templates start on the Ember theme, the same one the demos
+The `<SvGrid>` templates start on the Ember theme, the same one the demos
 and svgrid.com use, unless you pass `--theme <id>`. `headless` loads no grid
-stylesheet at all, so it has no theme to pick.
+stylesheet at all, so it has no theme to pick. `saas` keeps its own light and
+dark palette in `src/routes/layout.css` and ignores `--theme`.
 
 ### Options
 
 | Flag | Alias | Description |
 | --- | --- | --- |
-| `--template <name>` | `-t` | `minimal`, `sveltekit`, `pivot-dashboard`, `admin-dashboard`, or `headless` |
-| `--theme <id>` | | One of the 20 presets (default `ember`). Ignored by `headless` |
+| `--template <name>` | `-t` | `minimal`, `sveltekit`, `pivot-dashboard`, `admin-dashboard`, `saas`, or `headless` |
+| `--theme <id>` | | One of the 20 presets (default `ember`). Ignored by `headless` and `saas` |
 | `--dark` / `--light` | | Pin the starting mode. Left out, `minimal` and `sveltekit` follow the visitor's OS and `admin-dashboard` starts dark |
 | `--force` | `-f` | Scaffold into a non-empty directory |
 | `--help` | `-h` | Show usage |
@@ -101,6 +106,15 @@ If you're deploying the template straight from this monorepo's
 subfolder, set the Vercel **Root Directory** to
 `templates/sveltekit-admin-dashboard`. Scaffolding a standalone copy
 first (above) avoids that step.
+
+## The SaaS starter
+
+`saas` is a whole SvelteKit 3 app rather than a page: Better Auth sign-in with
+roles and bans, Stripe Checkout and the customer portal behind a signed
+webhook, a plan limit enforced on the server, and admin grids for users,
+subscriptions and a 100,000-row audit log. It runs with no setup on an
+embedded Postgres. [SaaS starter](./saas-starter.md) covers what is in it and
+how it is built.
 
 ## The pivot dashboard starter
 
@@ -194,7 +208,7 @@ sorting and filtering come from SvGrid and every pixel is yours.
 ### Do the starters require a Enterprise license?
 
 No. Every template uses the free MIT `@svgrid/grid` core. Enterprise
-features (export, import, print, pivot, AI) are an optional add-on that
+features (export, import, print, pivot) are an optional add-on that
 runs in evaluation without a key.
 
 ## See also

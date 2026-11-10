@@ -387,6 +387,9 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **`fitColumns` with `responsive` fills the row when a `hideBelow` column is hidden.** The fit still
+  counted the hidden column's width, so the shown columns stopped short and left a blank strip that
+  wide at the right edge.
 - **Grouping five million rows ran out of memory.** Every group row carried
   ten closures and a Map of its ancestors' values, and a million rows grouped
   five deep make about a million group rows. Group rows now share their
@@ -1000,6 +1003,12 @@ For machine-readable releases, fetch
 
 #### Added
 
+- **`npm create @svgrid@latest my-app -- --template saas`.** A SvelteKit 3 SaaS starter: Better Auth
+  sign-in with roles and bans, Stripe Checkout, the customer portal and a signed webhook, a plan limit
+  checked in the action, and admin grids for users, subscriptions and a 100,000-row audit log. Runs on
+  an embedded Postgres (PGlite) with sample data until `DATABASE_URL` is set. MIT, `@svgrid/grid` only.
+  Source in `templates/sveltekit-saas-starter`; guide at
+  [SaaS starter](./getting-started/saas-starter.md).
 - **Every chart gallery demo switches between Chart and Grid.** A segmented
   control first in each demo's toolbar flips every pane to a sortable grid
   of the rows the chart was drawn from, and back, the way the board demos

@@ -1,0 +1,63 @@
+@import 'tailwindcss';
+
+/*
+ * One palette for the whole app. The grid and the @svgrid/grid UI components
+ * read these --sg-* tokens; the page chrome below reads them too, through the
+ * Tailwind theme. Rebrand by changing this block.
+ */
+:root {
+	--sg-bg: #ffffff;
+	--sg-fg: #1c1917;
+	--sg-muted: #78716c;
+	--sg-muted-bg: #f5f5f4;
+	--sg-border: #e7e5e4;
+	--sg-header-bg: #fafaf9;
+	--sg-row-hover-bg: #f5f5f4;
+	--sg-input-bg: #ffffff;
+	--sg-input-border: #d6d3d1;
+	--sg-accent: #ff3e00;
+	--sg-on-accent: #ffffff;
+	--sg-focus-ring: #ff3e00;
+	--sg-danger: #dc2626;
+	--sg-success: #16a34a;
+	--sg-warning: #d97706;
+	--sg-radius: 6px;
+	--page-bg: #fafaf9;
+	color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--sg-bg: #1c1917;
+		--sg-fg: #f5f5f4;
+		--sg-muted: #a8a29e;
+		--sg-muted-bg: #292524;
+		--sg-border: #3a3633;
+		--sg-header-bg: #231f1d;
+		--sg-row-hover-bg: #292524;
+		--sg-input-bg: #1c1917;
+		--sg-input-border: #57534e;
+		--sg-danger: #f87171;
+		--sg-success: #4ade80;
+		--sg-warning: #fbbf24;
+		--page-bg: #0c0a09;
+		color-scheme: dark;
+	}
+}
+
+@theme inline {
+	--color-surface: var(--sg-bg);
+	--color-page: var(--page-bg);
+	--color-ink: var(--sg-fg);
+	--color-muted: var(--sg-muted);
+	--color-subtle: var(--sg-muted-bg);
+	--color-line: var(--sg-border);
+	--color-accent: var(--sg-accent);
+	--color-danger: var(--sg-danger);
+}
+
+body {
+	background: var(--page-bg);
+	color: var(--sg-fg);
+	font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}

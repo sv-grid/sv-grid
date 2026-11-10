@@ -1,9 +1,9 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-11-03T12:50:08.507Z",
+  "generatedAt": "2026-11-10T02:01:56.574Z",
   "counts": {
-    "pages": 479,
+    "pages": 480,
     "enterprise": 109,
     "withDemo": 349
   },
@@ -110,6 +110,7 @@
         "getting-started/5-theme-and-density.md",
         "getting-started/6-going-to-production.md",
         "getting-started/course.md",
+        "getting-started/saas-starter.md",
         "getting-started/starters.md",
         "getting-started/sveltekit.md"
       ]
@@ -1064,8 +1065,8 @@
       "section": "",
       "pillar": "grid",
       "tier": "community",
-      "words": 13031,
-      "lastUpdated": "2026-10-31",
+      "words": 13139,
+      "lastUpdated": "2026-11-10",
       "demoIds": []
     },
     {
@@ -1944,6 +1945,18 @@
       "demoIds": []
     },
     {
+      "path": "getting-started/saas-starter.md",
+      "url": "/docs/getting-started/saas-starter/",
+      "title": "SvelteKit SaaS starter",
+      "summary": "A SvelteKit 3 app with sign-in, roles, Stripe billing and an admin area, where every data screen is an SvGrid grid. It is MIT licensed and uses only the free @svgrid/grid package. Scaffold it, rename the sample project table to what your product stores, and start on your own features.",
+      "section": "getting-started",
+      "pillar": "grid",
+      "tier": "community",
+      "words": 873,
+      "lastUpdated": "2026-11-10",
+      "demoIds": []
+    },
+    {
       "path": "getting-started/starters.md",
       "url": "/docs/getting-started/starters/",
       "title": "Starters & scaffolding",
@@ -1951,8 +1964,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 1324,
-      "lastUpdated": "2026-10-26",
+      "words": 1462,
+      "lastUpdated": "2026-11-10",
       "demoIds": []
     },
     {

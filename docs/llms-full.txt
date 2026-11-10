@@ -56,7 +56,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## About this file
 
-The full SvGrid documentation, generated 2026-11-03 from 479 pages, 21 comparison pages, plus 83 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
+The full SvGrid documentation, generated 2026-11-10 from 480 pages, 21 comparison pages, plus 83 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
 
 <!-- =================================================================
      /docs/getting-started/  (community)
@@ -2589,6 +2589,135 @@ once shipped where it had not.
   ship, which is where lesson ten ends.
 
 <!-- =================================================================
+     /docs/getting-started/saas-starter/  (community)
+     ================================================================== -->
+
+# SvelteKit SaaS starter
+
+A SvelteKit 3 app with sign-in, roles, Stripe billing and an admin area, where
+every data screen is an SvGrid grid. It is MIT licensed and uses only the free
+`@svgrid/grid` package. Scaffold it, rename the sample `project` table to what
+your product stores, and start on your own features.
+
+```bash
+npm create @svgrid@latest my-app -- --template saas
+cd my-app
+npm install
+npm run dev
+```
+
+The first `npm run dev` writes a `.env` with a random auth secret, creates an
+embedded Postgres ([PGlite](https://pglite.dev)) in `.data/pglite`, and seeds
+it. Nothing to install, no keys to fetch. Sign in as `admin@example.com` /
+`starter-admin-1` (admin, Pro plan) or `user@example.com` / `starter-user-1`
+(user, Free plan).
+
+The source is in the repository at
+[`templates/sveltekit-saas-starter`](https://github.com/sv-grid/sv-grid/tree/main/templates/sveltekit-saas-starter).
+
+## The stack
+
+| Part | Choice |
+| --- | --- |
+| Framework | SvelteKit 3, Svelte 5 runes, adapter-node |
+| Auth | [Better Auth](https://www.better-auth.com): email and password, GitHub OAuth when its keys are set, the admin plugin for roles and bans |
+| Database | Drizzle on Postgres; PGlite until you set `DATABASE_URL` |
+| Billing | Stripe Checkout, the customer portal, a signed webhook |
+| UI | `@svgrid/grid` for the grids and the form, card and alert components; Tailwind 4 for layout |
+| Email | Resend, or the server console when no key is set |
+
+## The screens
+
+| Screen | Grid pattern it shows |
+| --- | --- |
+| Dashboard | A read-only grid with `responsive` and `hideBelow` for phones |
+| Projects | Edit in the grid: one form action per cell, the same validation in the grid (`validate` + `rejectInvalid`) and on the server, rollback with `api.setCellValue` when the server refuses, CSV export |
+| Admin: users | Server-side sort, search and paging kept in the URL (`externalSort`), a role column edited with a list editor, ban and unban for the selected rows |
+| Admin: subscriptions | Status filters in the URL, revenue totals, Stripe rows |
+| Admin: audit log | 100,000 seeded rows through `createServerDataSource` in infinite mode; sort, column filters and search run in SQL |
+
+Projects is the screen to copy for your own data. A person's projects are a
+few hundred rows at most, so they load whole and the grid sorts and filters in
+the browser. The admin screens can grow without limit, so they send the
+grid's sort and filter model to the server. `src/lib/server/grid-query.ts`
+turns that model into Drizzle conditions over a whitelist of columns, with
+bound parameters and escaped `LIKE` patterns.
+
+## Access checks belong in every action
+
+A SvelteKit layout `load` runs for page requests. It does not run for form
+actions or `+server.ts` endpoints. The starter's `(app)` layout sends
+signed-out visitors to the login page, and that alone would leave every
+action open to a POST from anyone. So each action and endpoint starts with a
+guard:
+
+```ts
+// src/lib/server/guards.ts
+export function requireUser(locals: App.Locals) {
+	if (!locals.user) error(401, 'Sign in first');
+	return locals.user;
+}
+
+export function requireAdmin(locals: App.Locals) {
+	const user = requireUser(locals);
+	if (user.role !== 'admin') error(403, 'Admins only');
+	return user;
+}
+```
+
+The same rule covers the grid's server endpoints: the audit log's
+`rows/+server.ts`, which `createServerDataSource` calls, starts with
+`requireAdmin(locals)`.
+
+## Billing
+
+Billing stays off until `STRIPE_SECRET_KEY` and `STRIPE_PRICE_PRO` are set;
+the billing page says what to add. The plan limit (15 projects on Free) is
+enforced either way, in the action that creates a project.
+
+The webhook at `/api/stripe/webhook` verifies the signature on the raw body,
+then reads the subscription back from Stripe and stores that. An event that
+arrives late or twice still stores the current state. When a customer returns
+from Checkout the billing page reads the session too, so the new plan shows
+without waiting for the webhook. The starter's README has the steps for local
+testing with `stripe listen`.
+
+## Page weight
+
+Measured with the starter's `node scripts/route-size.mjs` after
+`npm run build`, with `@svgrid/grid` 3.0.32: gzipped JS and CSS per route.
+
+| Route | gzip | vs the landing page |
+| --- | --- | --- |
+| `/` | 30.0 KB | |
+| `/billing` | 39.1 KB | +10.0 KB |
+| `/login` | 57.6 KB | +28.5 KB |
+| `/dashboard` | 135.0 KB | +106.0 KB |
+| `/projects` | 158.0 KB | +128.9 KB |
+| `/admin/users` | 156.3 KB | +127.3 KB |
+| `/admin/audit` | 138.4 KB | +109.3 KB |
+
+Pages without a grid load only the components they use. The grid's export,
+chart, menu and editor code load when used.
+
+## Deploying
+
+`npm run build` makes a Node server (`node build`). Set `ORIGIN`,
+`BETTER_AUTH_SECRET`, `DATABASE_URL` and the Stripe keys on the host, and run
+`npm run db:migrate` against the production database. adapter-node 6 takes
+the origin from `paths.origin` at build time; without it, it assumes `https`
+and reads the `Host` header, which is right behind a TLS proxy. PGlite is for
+development; use a server Postgres in production.
+
+## See also
+
+- [Starters and scaffolding](./starters.md): every `npm create @svgrid` template.
+- [SvGrid with SvelteKit](./sveltekit.md): the load, URL sort and form-action
+  patterns the starter is built from.
+- [Server infinite scroll](../help/server/server-infinite-scroll.md) for the
+  pattern behind the audit log.
+
+<!-- =================================================================
      /docs/getting-started/starters/  (community)
      ================================================================== -->
 
@@ -2625,6 +2754,9 @@ npm create @svgrid@latest my-admin -- --template admin-dashboard
 # Pivot cube + linked chart + drill-through (needs @svgrid/enterprise)
 npm create @svgrid@latest my-cube -- --template pivot-dashboard
 
+# Sign-in, roles, Stripe billing and admin grids on SvelteKit 3
+npm create @svgrid@latest my-saas -- --template saas
+
 # The engine only - your own markup and CSS
 npm create @svgrid@latest my-table -- --template headless
 ```
@@ -2645,18 +2777,20 @@ npm run dev
 | `sveltekit` | SvelteKit + `@svgrid/grid`: server `load`, URL-driven sort, form-action edits, cookie sessions with role gating | Server-rendered pages; the app from the [SvelteKit guide](./sveltekit.md) |
 | `admin-dashboard` | SvelteKit + Tailwind + `@svgrid/grid`, deploy to Vercel | A real dashboard / internal tool |
 | `pivot-dashboard` | SvelteKit + `@svgrid/enterprise`: a pivot cube, a linked chart and a drill-through rail over one fact table | Reporting screens where a number has to be traceable to its rows |
+| `saas` | SvelteKit 3 + Better Auth + Stripe + Drizzle on Postgres (embedded PGlite until you set `DATABASE_URL`) | A SaaS that needs sign-in, roles, billing and admin screens; see [SaaS starter](./saas-starter.md) |
 | `headless` | Vite + Svelte 5 + `@svgrid/grid/core`: the engine driving a hand-written `<table>` | Your own renderer and your own CSS |
 
-The four `<SvGrid>` templates start on the Ember theme, the same one the demos
+The `<SvGrid>` templates start on the Ember theme, the same one the demos
 and svgrid.com use, unless you pass `--theme <id>`. `headless` loads no grid
-stylesheet at all, so it has no theme to pick.
+stylesheet at all, so it has no theme to pick. `saas` keeps its own light and
+dark palette in `src/routes/layout.css` and ignores `--theme`.
 
 ### Options
 
 | Flag | Alias | Description |
 | --- | --- | --- |
-| `--template <name>` | `-t` | `minimal`, `sveltekit`, `pivot-dashboard`, `admin-dashboard`, or `headless` |
-| `--theme <id>` | | One of the 20 presets (default `ember`). Ignored by `headless` |
+| `--template <name>` | `-t` | `minimal`, `sveltekit`, `pivot-dashboard`, `admin-dashboard`, `saas`, or `headless` |
+| `--theme <id>` | | One of the 20 presets (default `ember`). Ignored by `headless` and `saas` |
 | `--dark` / `--light` | | Pin the starting mode. Left out, `minimal` and `sveltekit` follow the visitor's OS and `admin-dashboard` starts dark |
 | `--force` | `-f` | Scaffold into a non-empty directory |
 | `--help` | `-h` | Show usage |
@@ -2695,6 +2829,15 @@ If you're deploying the template straight from this monorepo's
 subfolder, set the Vercel **Root Directory** to
 `templates/sveltekit-admin-dashboard`. Scaffolding a standalone copy
 first (above) avoids that step.
+
+## The SaaS starter
+
+`saas` is a whole SvelteKit 3 app rather than a page: Better Auth sign-in with
+roles and bans, Stripe Checkout and the customer portal behind a signed
+webhook, a plan limit enforced on the server, and admin grids for users,
+subscriptions and a 100,000-row audit log. It runs with no setup on an
+embedded Postgres. [SaaS starter](./saas-starter.md) covers what is in it and
+how it is built.
 
 ## The pivot dashboard starter
 
@@ -2788,7 +2931,7 @@ sorting and filtering come from SvGrid and every pixel is yours.
 ### Do the starters require a Enterprise license?
 
 No. Every template uses the free MIT `@svgrid/grid` core. Enterprise
-features (export, import, print, pivot, AI) are an optional add-on that
+features (export, import, print, pivot) are an optional add-on that
 runs in evaluation without a key.
 
 ## See also
@@ -125931,6 +126074,9 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **`fitColumns` with `responsive` fills the row when a `hideBelow` column is hidden.** The fit still
+  counted the hidden column's width, so the shown columns stopped short and left a blank strip that
+  wide at the right edge.
 - **Grouping five million rows ran out of memory.** Every group row carried
   ten closures and a Map of its ancestors' values, and a million rows grouped
   five deep make about a million group rows. Group rows now share their
@@ -126544,6 +126690,12 @@ For machine-readable releases, fetch
 
 #### Added
 
+- **`npm create @svgrid@latest my-app -- --template saas`.** A SvelteKit 3 SaaS starter: Better Auth
+  sign-in with roles and bans, Stripe Checkout, the customer portal and a signed webhook, a plan limit
+  checked in the action, and admin grids for users, subscriptions and a 100,000-row audit log. Runs on
+  an embedded Postgres (PGlite) with sample data until `DATABASE_URL` is set. MIT, `@svgrid/grid` only.
+  Source in `templates/sveltekit-saas-starter`; guide at
+  [SaaS starter](./getting-started/saas-starter.md).
 - **Every chart gallery demo switches between Chart and Grid.** A segmented
   control first in each demo's toolbar flips every pane to a sortable grid
   of the rows the chart was drawn from, and back, the way the board demos

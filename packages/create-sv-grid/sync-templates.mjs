@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-// Copies the canonical, forkable starter from the monorepo
-// (templates/sveltekit-admin-dashboard) into this package's bundled
-// templates/admin-dashboard so the published `@svgrid/create` is
+// Copies the canonical, forkable starters from the monorepo (templates/) into
+// this package's bundled templates/ so the published `@svgrid/create` is
 // self-contained. Runs automatically on `prepack` (before publish).
 //
 // Dotfiles and package.json are stored `_`-prefixed inside the package because
@@ -14,8 +13,18 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const SRC = join(__dirname, '..', '..', 'templates', 'sveltekit-admin-dashboard')
-const DEST = join(__dirname, 'templates', 'admin-dashboard')
+// [folder in the monorepo's templates/, name in this package's templates/]
+const SOURCES = [
+  ['sveltekit-admin-dashboard', 'admin-dashboard'],
+  ['sveltekit-saas-starter', 'saas'],
+]
+
+// Never shipped: installs, build output, and what a local run leaves behind.
+// `.env` holds a real secret once `npm run dev` has run, and `.data` is the
+// local database; `.env.example` is the one that ships. Tested against the
+// path relative to the source root, so a checkout under `.../build/...`
+// doesn't skip everything.
+const SKIP = /(^|[\\/])(node_modules|\.svelte-kit|\.vercel|build|dist|\.data|\.env|test-results|playwright-report)([\\/]|$)/
 
 // Names that must be `_`-prefixed in the package so npm ships them intact.
 const RENAME_ON_COPY = new Map([
@@ -36,21 +45,22 @@ async function renameDotfiles(dir) {
   }
 }
 
-async function main() {
-  if (!existsSync(SRC)) {
-    console.error(`[sync-templates] source not found: ${SRC}`)
+async function sync(from, name) {
+  const src = join(__dirname, '..', '..', 'templates', from)
+  const dest = join(__dirname, 'templates', name)
+  if (!existsSync(src)) {
+    console.error(`[sync-templates] source not found: ${src}`)
     process.exit(1)
   }
-  await rm(DEST, { recursive: true, force: true })
-  await mkdir(DEST, { recursive: true })
-  // Skip build artifacts / installed deps from the source tree.
-  await cp(SRC, DEST, {
-    recursive: true,
-    filter: (src) =>
-      !/[\\/](node_modules|\.svelte-kit|\.vercel|build|dist)([\\/]|$)/.test(src),
-  })
-  await renameDotfiles(DEST)
-  console.log(`[sync-templates] admin-dashboard synced -> ${DEST}`)
+  await rm(dest, { recursive: true, force: true })
+  await mkdir(dest, { recursive: true })
+  await cp(src, dest, { recursive: true, filter: (p) => !SKIP.test(p.slice(src.length)) })
+  await renameDotfiles(dest)
+  console.log(`[sync-templates] ${name} synced -> ${dest}`)
+}
+
+async function main() {
+  for (const [from, name] of SOURCES) await sync(from, name)
 }
 
 main().catch((err) => {
