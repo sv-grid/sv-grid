@@ -79,10 +79,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/svelte@5.55.9",
+      "bom-ref": "pkg:npm/svelte@5.57.3",
       "name": "svelte",
-      "version": "5.55.9",
-      "purl": "pkg:npm/svelte@5.55.9",
+      "version": "5.57.3",
+      "purl": "pkg:npm/svelte@5.57.3",
       "scope": "required",
       "description": "Peer dependency (declared range: ^5.0.0)"
     },
@@ -129,7 +129,7 @@
         "pkg:npm/pdfmake@0.2.23",
         "pkg:npm/react@19.2.8",
         "pkg:npm/react-dom@19.2.8",
-        "pkg:npm/svelte@5.55.9",
+        "pkg:npm/svelte@5.57.3",
         "pkg:npm/vue@3.5.42",
         "vendored:smart-ui-export@26.0.8"
       ]
@@ -155,7 +155,7 @@
       "dependsOn": []
     },
     {
-      "ref": "pkg:npm/svelte@5.55.9",
+      "ref": "pkg:npm/svelte@5.57.3",
       "dependsOn": []
     },
     {

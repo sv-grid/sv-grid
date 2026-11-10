@@ -34,12 +34,12 @@
   "components": [
     {
       "type": "library",
-      "bom-ref": "pkg:npm/svelte@5.55.9",
+      "bom-ref": "pkg:npm/svelte@5.57.3",
       "name": "svelte",
-      "version": "5.55.9",
-      "purl": "pkg:npm/svelte@5.55.9",
+      "version": "5.57.3",
+      "purl": "pkg:npm/svelte@5.57.3",
       "scope": "required",
-      "description": "Runtime dependency (declared range: ^5.55.5)"
+      "description": "Runtime dependency (declared range: ^5.57.3)"
     },
     {
       "type": "library",
@@ -55,12 +55,12 @@
     {
       "ref": "pkg:npm/%40svgrid/mcp@3.0.43",
       "dependsOn": [
-        "pkg:npm/svelte@5.55.9",
+        "pkg:npm/svelte@5.57.3",
         "pkg:npm/%40svgrid/enterprise@3.1.37"
       ]
     },
     {
-      "ref": "pkg:npm/svelte@5.55.9",
+      "ref": "pkg:npm/svelte@5.57.3",
       "dependsOn": []
     },
     {
