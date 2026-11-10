@@ -408,6 +408,59 @@ describe('SvGrid built-in charting', () => {
     }
   })
 
+  it('the Export menu takes arrow keys, keeps focus, and its PDF item says why for a title the PDF font cannot draw', async () => {
+    const made = vi.fn(() => 'blob:x')
+    const had = URL.createObjectURL
+    URL.createObjectURL = made as never
+    // A gauge: one number, so no table of values for CSV either.
+    for (const [title, type] of [['Выручка', 'bar'], ['Café €', 'gauge']] as const) {
+      const buildSpec = () => (type === 'bar' ? { type, title, categories: ['A', 'B'], series: [{ label: 'x', values: [1, 2] }] } : { type, title, categories: [], series: [{ label: 'x', values: [3] }] })
+      const { target, destroy } = await mountGrid({ charting: { defaultOpen: true, buildSpec } })
+      try {
+        await tick()
+        const btn = target.querySelector<HTMLButtonElement>('[aria-label="Export chart"]')!
+        btn.focus()
+        btn.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+        await tick()
+        const items = () => [...target.querySelectorAll<HTMLButtonElement>('.sv-grid-chart-export-menu [role="menuitem"]')]
+        const named = (text: string) => items().find((b) => b.textContent === text)!
+        // Focus goes in, and the arrows move it.
+        expect(document.activeElement).toBe(items()[0])
+        items()[0]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }))
+        expect(document.activeElement).toBe(items()[1])
+        const pdf = () => items()[2]!
+        if (title === 'Выручка') {
+          await vi.waitFor(() => expect(pdf().textContent).toBe('No PDF: its font cannot draw "Выручка". Download PNG or SVG.'))
+          expect(pdf().getAttribute('aria-disabled')).toBe('true')
+          // Pressed anyway: the menu stays with its reason, and no file is made.
+          pdf().dispatchEvent(new MouseEvent('click', { bubbles: true }))
+          await tick()
+          expect(target.querySelector('.sv-grid-chart-export-menu')).not.toBeNull()
+          expect(made).not.toHaveBeenCalled()
+        } else {
+          await tick()
+          expect(pdf().textContent).toBe('PDF document')
+          expect(pdf().hasAttribute('aria-disabled')).toBe(false)
+          const csv = named('CSV data')
+          expect([csv.getAttribute('aria-disabled'), csv.title, csv.disabled]).toEqual(['true', 'This chart has no table of values to save as CSV.', false])
+          csv.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+          await tick()
+          expect(made).not.toHaveBeenCalled()
+        }
+        // An item chosen: the menu goes, and focus is back on Export, not on the page.
+        Object.defineProperty(navigator, 'clipboard', { value: { writeText: async () => {} }, configurable: true })
+        named('Describe chart').dispatchEvent(new MouseEvent('click', { bubbles: true }))
+        await tick()
+        await tick()
+        expect(target.querySelector('.sv-grid-chart-export-menu')).toBeNull()
+        expect(document.activeElement).toBe(btn)
+      } finally {
+        destroy()
+      }
+    }
+    URL.createObjectURL = had
+  })
+
   it('serializes chart data to CSV and shows an Export menu (PNG/SVG/PDF/CSV/Copy/Print/Describe)', async () => {
     const { api, target, destroy } = await mountGrid({ charting: { defaultOpen: true } })
     try {

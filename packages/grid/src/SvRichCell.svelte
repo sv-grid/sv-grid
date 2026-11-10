@@ -22,7 +22,7 @@
    * attribute. Set `clamp={0}` in a master/detail panel or a tall row where the
    * whole value should show.
    */
-  import { sanitizeHtml, renderMarkdown, htmlToText } from './sanitize-html'
+  import { sanitizeHtml, renderMarkdown, htmlToText, asTrustedHtml } from './sanitize-html'
 
   type Props = {
     /** The cell value: an HTML string, or Markdown when `format="markdown"`. */
@@ -53,7 +53,7 @@
   title={text || undefined}
 >
   <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-  {@html html}
+  {@html asTrustedHtml(html)}
 </div>
 
 <style>

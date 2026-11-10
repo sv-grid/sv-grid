@@ -16,6 +16,8 @@ import {
   timelineAxis,
   timelineGeom,
   timelineRows,
+  wallMinutes,
+  atWallMinute,
   type EventSpec,
   type ResolvedEvent,
   type RecurrenceException,
@@ -559,4 +561,135 @@ describe('timeline model', () => {
     expect(rows[0]!.resource).toBeNull()
     expect(rows[0]!.items).toHaveLength(1)
   })
+})
+
+// A day the clocks change has 23 or 25 hours. The time grid labels its rows by
+// the wall clock (8am is the ninth row on every day), so events must be placed
+// by the wall clock too: counting real minutes since midnight drew every event
+// of a fall-back day an hour late, and of a spring-forward day an hour early.
+describe('on a day the clocks change', () => {
+  function inZone<T>(tz: string, fn: () => T): T {
+    const prev = process.env.TZ
+    process.env.TZ = tz
+    try {
+      return fn()
+    } finally {
+      if (prev === undefined) delete process.env.TZ
+      else process.env.TZ = prev
+    }
+  }
+  const ev = (id: string, start: Date, end: Date): ResolvedEvent =>
+    ({ key: id, rowKey: id, row: {}, title: id, start, end, allDay: false, recurring: false })
+  const pctOfMin = (min: number, from = 0, to = 24) => ((min - from * 60) / ((to - from) * 60)) * 100
+
+  // [zone, year, month, day, hours in that day]
+  const days: Array<[string, number, number, number, number]> = [
+    ['America/New_York', 2026, 11, 1, 25],
+    ['America/New_York', 2026, 3, 8, 23],
+    ['Europe/Helsinki', 2026, 10, 25, 25],
+    ['Europe/Helsinki', 2026, 3, 29, 23],
+  ]
+
+  for (const [tz, y, m, d, hours] of days) {
+    it(`${tz} ${y}-${m}-${d} (${hours} hours): events sit at their wall-clock rows`, () => {
+      inZone(tz, () => {
+        expect((at(y, m, d + 1).getTime() - at(y, m, d).getTime()) / 3_600_000).toBe(hours)
+        const evs = [
+          ev('a', at(y, m, d, 8), at(y, m, d, 8, 45)),
+          ev('b', at(y, m, d, 19), at(y, m, d, 20)),
+          ev('late', at(y, m, d, 23), at(y, m, d + 1)),
+        ]
+        const all = layoutDayEvents(evs, at(y, m, d)).events
+        const a = all.find((p) => p.event.key === 'a')!
+        expect(a.topPct).toBeCloseTo(pctOfMin(8 * 60))
+        expect(a.heightPct).toBeCloseTo(pctOfMin(45))
+        // An event that ends at midnight fills the last row, not past it.
+        const late = all.find((p) => p.event.key === 'late')!
+        expect(late.topPct).toBeCloseTo(pctOfMin(23 * 60))
+        expect(late.topPct + late.heightPct).toBeCloseTo(100)
+        // A 7am-8pm band: the 7pm event is inside it and sits on its 7pm row.
+        const band = layoutDayEvents(evs, at(y, m, d), { dayStartHour: 7, dayEndHour: 20 }).events
+        const b = band.find((p) => p.event.key === 'b')
+        expect(b).toBeDefined()
+        expect(b!.topPct).toBeCloseTo(pctOfMin(19 * 60, 7, 20))
+        expect(b!.heightPct).toBeCloseTo((60 / (13 * 60)) * 100)
+      })
+    })
+
+    it(`${tz} ${y}-${m}-${d}: an event across the change runs from its start row to its end row`, () => {
+      inZone(tz, () => {
+        // 0:30 to 5:00 by the clock, whatever the real length.
+        const p = layoutDayEvents([ev('x', at(y, m, d, 0, 30), at(y, m, d, 5))], at(y, m, d)).events[0]!
+        expect(p.topPct).toBeCloseTo(pctOfMin(30))
+        expect(p.heightPct).toBeCloseTo(pctOfMin(270))
+      })
+    })
+
+    it(`${tz} ${y}-${m}-${d}: the day before and the day after are untouched`, () => {
+      inZone(tz, () => {
+        for (const dd of [d - 1, d + 1]) {
+          const p = layoutDayEvents([ev('a', at(y, m, dd, 8), at(y, m, dd, 9))], at(y, m, dd)).events[0]!
+          expect(p.topPct).toBeCloseTo(pctOfMin(8 * 60))
+          expect(p.heightPct).toBeCloseTo(pctOfMin(60))
+        }
+      })
+    })
+  }
+
+  it('wallMinutes and atWallMinute count the clock, not real minutes', () => {
+    inZone('America/New_York', () => {
+      const day = at(2026, 11, 1)
+      expect(wallMinutes(at(2026, 11, 1, 9), day)).toBe(540)
+      expect(wallMinutes(at(2026, 11, 2), day)).toBe(1440)
+      expect(wallMinutes(at(2026, 10, 31, 23), day)).toBe(-60)
+      expect(atWallMinute(day, 540).getHours()).toBe(9)
+      expect(atWallMinute(day, 1440).getTime()).toBe(at(2026, 11, 2).getTime())
+      const spring = at(2026, 3, 8)
+      expect(atWallMinute(spring, 8 * 60 + 15).getHours()).toBe(8)
+      expect(atWallMinute(spring, 8 * 60 + 15).getMinutes()).toBe(15)
+      expect(wallMinutes(at(2026, 3, 8, 8, 15), spring)).toBe(495)
+    })
+  })
+
+  it('month bars: a week that starts on a 23-hour Sunday keeps Monday in its own column', () => {
+    inZone('America/New_York', () => {
+      // Sunday-first week of Mar 8 2026; Mar 8 has 23 hours.
+      const segs = monthWeekSegments(
+        [ev('mon', at(2026, 3, 9, 10), at(2026, 3, 9, 11)), ev('sat', at(2026, 3, 14, 10), at(2026, 3, 14, 11))],
+        at(2026, 3, 8),
+      ).segments
+      expect(segs.find((s) => s.event.key === 'mon')).toMatchObject({ startCol: 1, endCol: 1 })
+      expect(segs.find((s) => s.event.key === 'sat')).toMatchObject({ startCol: 6, endCol: 6 })
+    })
+    inZone('Europe/Helsinki', () => {
+      // Twin: a Sunday-first week whose Sunday is a 25-hour day.
+      const segs = monthWeekSegments([ev('sat', at(2026, 10, 31, 10), at(2026, 10, 31, 11))], at(2026, 10, 25)).segments
+      expect(segs[0]).toMatchObject({ startCol: 6, endCol: 6 })
+    })
+  })
+
+  for (const [tz, y, m, d, hours] of days) {
+    it(`timeline day ${tz} ${y}-${m}-${d}: one tick per real hour, each labelled by its clock`, () => {
+      inZone(tz, () => {
+        const ax = timelineAxis('timelineDay', at(y, m, d), at(y, m, d + 1))
+        expect(ax.ticks).toHaveLength(hours)
+        expect(ax.end.getTime()).toBe(at(y, m, d + 1).getTime())
+        // Ticks tile the axis with no gap or overlap.
+        for (let i = 1; i < ax.ticks.length; i++) {
+          expect(ax.ticks[i]!.start.getTime()).toBe(ax.ticks[i - 1]!.end.getTime())
+        }
+        // The 8am tick starts at 8am, and an 8am event sits on it.
+        const t8 = ax.ticks.find((t) => t.start.getHours() === 8 && t.start.getMinutes() === 0)!
+        expect(t8.label).toBe('8 AM')
+        const g = timelineGeom(at(y, m, d, 8), at(y, m, d, 9), ax.start, ax.totalMs)!
+        expect(g.leftPct).toBeCloseTo(t8.leftPct)
+        expect(g.widthPct).toBeCloseTo(t8.widthPct)
+        // A 7am-8pm band ends at 8pm by the clock.
+        const band = timelineAxis('timelineDay', at(y, m, d), at(y, m, d + 1), { dayStartHour: 7, dayEndHour: 20 })
+        expect(band.start.getHours()).toBe(7)
+        expect(band.end.getHours()).toBe(20)
+        expect(band.ticks).toHaveLength(13)
+      })
+    })
+  }
 })

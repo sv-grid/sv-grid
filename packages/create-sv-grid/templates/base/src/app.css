@@ -12,4 +12,5 @@
 /* svgrid-theme:end */
 
 * { box-sizing: border-box; }
-body { margin: 0; }
+/* On body, not only on the layout: dialogs, menus and popovers move to <body> and read their font there. */
+body { margin: 0; font-family: var(--sg-font, system-ui, sans-serif); }

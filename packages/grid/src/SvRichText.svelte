@@ -15,11 +15,16 @@
    * common commands). Uses `document.execCommand` - the pragmatic, widely-working
    * approach for a component-kit editor. Bindable `value` (HTML string).
    *
+   * A `value` from outside goes through `sanitizeHtml` before it reaches the DOM,
+   * and what the editor hands back goes through it too: a stored string may be
+   * someone else's, and `innerHTML` would run what it holds.
+   *
    * ```svelte
    * <SvRichText bind:value={html} placeholder="Write something…" />
    * ```
    */
   import { nextEditorId, resolveMessages } from './editor-contract'
+  import { sanitizeHtml, asTrustedHtml } from './sanitize-html'
 
   const DEFAULT_TOOLS: RichTextTool[] = [
     'bold', 'italic', 'underline', 'strike', '|',
@@ -89,18 +94,18 @@
   // Push external value into the DOM only when it differs and we're not typing
   // (writing innerHTML while focused would collapse the caret).
   $effect(() => {
-    const v = value ?? ''
+    const v = sanitizeHtml(value)
     // A contenteditable owns its own DOM: letting Svelte re-render the body
     // would wipe the caret mid-typing, so the value is pushed in by hand and
     // only while the editor is unfocused.
     // eslint-disable-next-line svelte/no-dom-manipulating
-    if (editorEl && !focused && editorEl.innerHTML !== v) editorEl.innerHTML = v
+    if (editorEl && !focused && editorEl.innerHTML !== v) editorEl.innerHTML = asTrustedHtml(v)
     if (editorEl) empty = editorEl.textContent!.trim().length === 0
   })
 
   function sync() {
     if (!editorEl) return
-    const html = editorEl.innerHTML
+    const html = sanitizeHtml(editorEl.innerHTML)
     empty = editorEl.textContent!.trim().length === 0
     value = html
     onChange?.(html)
@@ -208,4 +213,7 @@
   .sv-rt__body :global(pre) { margin: 0.4em 0; padding: 10px 12px; border-radius: 8px; background: var(--sg-row-hover-bg, #f1f5f9); font: 12.5px/1.6 ui-monospace, monospace; overflow-x: auto; }
   .sv-rt__body :global(a) { color: var(--_accent); }
   .sv-rt__body :global(ul), .sv-rt__body :global(ol) { margin: 0.4em 0; padding-inline-start: 24px; }
+  /* Said outright: a CSS reset (Tailwind's preflight) removes list markers, and a list without them reads as plain lines. */
+  .sv-rt__body :global(ul) { list-style: disc; }
+  .sv-rt__body :global(ol) { list-style: decimal; }
 </style>

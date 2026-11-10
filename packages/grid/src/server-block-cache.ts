@@ -469,6 +469,17 @@ export function createBlockCache<TData>(options: BlockCacheOptions<TData>): Bloc
     return out
   }
 
+  /** Give up a block's read: its slot is free again, or `loading` never ends. */
+  function stop(block: Block<TData> | undefined): void {
+    const c = block?.controller
+    if (c && !c.signal.aborted) {
+      c.abort()
+      inFlight -= 1
+      // A block waiting for the slot takes it, once the caller is done moving blocks.
+      queueMicrotask(pump)
+    }
+  }
+
   function abortAll(): void {
     for (const block of blocks.values()) block.controller?.abort()
     inFlight = 0
@@ -549,7 +560,7 @@ export function createBlockCache<TData>(options: BlockCacheOptions<TData>): Bloc
       // Keep the count and the scroll position: drop the DATA, re-request the
       // same blocks. The user sees skeletons where they were, not a jump home.
       for (const [index, block] of [...blocks]) {
-        block.controller?.abort()
+        stop(block)
         blocks.delete(index)
         ensureBlock(index)
       }
@@ -582,7 +593,7 @@ export function createBlockCache<TData>(options: BlockCacheOptions<TData>): Bloc
       const blockCount = Math.ceil(rows.length / blockSize)
       for (let i = 0; i < blockCount; i += 1) {
         const index = firstBlock + i
-        blocks.get(index)?.controller?.abort() // ours now, whatever was in flight
+        stop(blocks.get(index)) // ours now, whatever was in flight
         blocks.set(index, {
           status: 'loaded',
           rows: rows.slice(i * blockSize, (i + 1) * blockSize),
@@ -712,7 +723,7 @@ export function createBlockCache<TData>(options: BlockCacheOptions<TData>): Bloc
   function dropLoadedFrom(fromBlock: number): void {
     for (const [index, block] of [...blocks]) {
       if (index < fromBlock) continue
-      block.controller?.abort()
+      stop(block)
       blocks.delete(index)
     }
     rowsCache = windowedCache = null

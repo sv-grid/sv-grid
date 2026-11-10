@@ -43,7 +43,6 @@ Every example below runs against this setup:
     { id: 'o2', symbol: 'MSFT', qty: 80,  price: 418.9, updatedAt: Date.now() },
     { id: 'o3', symbol: 'NVDA', qty: 45,  price: 902.1, updatedAt: Date.now() },
   ])
-  const data = rows
 
   const columns: ColumnDef<typeof features, Order>[] = [
     { field: 'symbol', header: 'Symbol', width: 110 },
@@ -53,7 +52,7 @@ Every example below runs against this setup:
 </script>
 ```
 
-```svelte {runnable}
+```svelte {norun}
 <script lang="ts">
   let rows = $state<Order[]>([])
 
@@ -81,10 +80,13 @@ will close the editor. Pause your refresh while
 ## Pattern 2: cell flash on change
 
 Same swap, but each cell snippet tracks its previous value and renders
-a brief highlight when it differs.
+a brief highlight when it differs. The interval stands in for the
+server: it moves one price a second.
 
 ```svelte {runnable}
 <script lang="ts">
+  import { renderSnippet } from '@svgrid/grid'
+
   // Track per-row, per-field last-seen values.
   let lastSeen = new Map<string, Record<string, unknown>>()
   function diff(rowId: string, current: Record<string, unknown>): Record<string, boolean> {
@@ -94,6 +96,22 @@ a brief highlight when it differs.
     lastSeen.set(rowId, { ...current })
     return changed
   }
+
+  const tickerColumns: ColumnDef<typeof features, Order>[] = [
+    { field: 'symbol', header: 'Symbol', width: 110 },
+    { field: 'qty',    header: 'Qty',    width: 90 },
+    { field: 'price',  header: 'Price',  width: 120, cell: (ctx) => renderSnippet(PriceCell, { row: ctx.row.original }) },
+  ]
+
+  $effect(() => {
+    const id = setInterval(() => {
+      const i = Math.floor(Math.random() * rows.length)
+      rows = rows.map((r, j) =>
+        j === i ? { ...r, price: Math.round(r.price * (98 + Math.random() * 4)) / 100, updatedAt: Date.now() } : r,
+      )
+    }, 1_000)
+    return () => clearInterval(id)
+  })
 </script>
 
 {#snippet PriceCell(props: { row: Order })}
@@ -102,16 +120,18 @@ a brief highlight when it differs.
     {fmtMoney(props.row.price)}
   </span>
 {/snippet}
-```
 
-```css
-.flash {
-  animation: flash-bg 800ms ease-out;
-}
-@keyframes flash-bg {
-  from { background: rgba(250, 204, 21, 0.4); }
-  to   { background: transparent; }
-}
+<SvGrid data={rows} columns={tickerColumns} {features} />
+
+<style>
+  :global(.flash) {
+    animation: flash-bg 800ms ease-out;
+  }
+  @keyframes -global-flash-bg {
+    from { background: rgba(250, 204, 21, 0.4); }
+    to   { background: transparent; }
+  }
+</style>
 ```
 
 **Use when:** user wants to spot changes. The stock-ticker pattern.
@@ -126,7 +146,7 @@ The grown-up pattern for higher-rate updates. The server pushes
 individual row patches; you maintain an in-memory map and reassign the
 array when needed.
 
-```svelte {runnable}
+```svelte {norun}
 <script lang="ts">
   type OrderId = string
   let rowsMap = $state(new Map<OrderId, Order>())

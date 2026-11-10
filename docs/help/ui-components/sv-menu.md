@@ -76,7 +76,7 @@ import { SvMenu } from '@svgrid/grid'
 | `separator` | `boolean`         | Render a divider instead of an item.                      |
 | `icon`      | `Snippet`         | Leading icon.                                             |
 | `shortcut`  | `string`          | Right-aligned hint, e.g. a keyboard shortcut.            |
-| `disabled`  | `boolean`         | Dim and skip the item.                                   |
+| `disabled`  | `boolean`         | Dim the item; arrows reach it, choosing it does nothing. |
 | `children`  | `MenuItem[]`      | Nested submenu items (renders a flyout).                 |
 | `onSelect`  | `() => void`      | Per-item callback fired when the item is chosen.        |
 

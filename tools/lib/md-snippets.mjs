@@ -17,8 +17,12 @@
  *   skipImport   - wrap in a try/catch dummy export rather than top-level
  *   expect-error - block MUST fail to type-check
  *   runnable     - extract to a real component and render it in the page
+ *   norun        - still type-checked, but never rendered in the page and never
+ *                  promoted to runnable: the block needs what a docs page lacks
+ *                  (a SvelteKit load, an /api server, a WebSocket, props from a
+ *                  parent), so it would draw an empty or broken frame
  */
-export const KNOWN_FLAGS = new Set(['nocheck', 'skipImport', 'expect-error', 'runnable'])
+export const KNOWN_FLAGS = new Set(['nocheck', 'skipImport', 'expect-error', 'runnable', 'norun'])
 
 /**
  * Every fenced block in `src`, in document order.

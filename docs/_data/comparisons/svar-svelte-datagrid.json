@@ -1,7 +1,7 @@
 {
   "slug": "svar-svelte-datagrid",
   "competitor": "SVAR Svelte DataGrid",
-  "npm": "wx-svelte-grid",
+  "npm": "@svar-ui/svelte-grid",
   "url": "https://svar.dev/svelte/datagrid/",
   "aliases": [
     "svar",
@@ -10,6 +10,7 @@
     "svar grid",
     "svar svelte datagrid",
     "svar svelte grid",
+    "@svar-ui/svelte-grid",
     "wx-svelte-grid",
     "svar alternative"
   ],
@@ -24,11 +25,11 @@
   "verified": "2026-09-12",
   "seoTitle": "SvGrid vs SVAR Svelte DataGrid - Two MIT Svelte 5 Grids",
   "seoDescription": "SVAR Svelte DataGrid and SvGrid are both MIT and Svelte-5-native. Where they differ: grouping, master/detail, range editing, charts, a headless core.",
-  "tagline": "SVAR Svelte DataGrid (wx-svelte-grid) is a Svelte-native, MIT-licensed data grid from XB Software, the team behind Webix, with React and Vue versions of the same grid.",
+  "tagline": "SVAR Svelte DataGrid (@svar-ui/svelte-grid, formerly wx-svelte-grid) is a Svelte-native, MIT-licensed data grid from XB Software, the team behind Webix, with React and Vue versions of the same grid.",
   "oneLineVerdict": "SVAR is the closest genuinely Svelte-native rival: both grids are MIT and both target Svelte 5. SvGrid has the wider capability surface (grouping with aggregation, master/detail, Excel-style range editing with a fill handle, integrated charts, a headless core, in-grid AI helpers and an MCP server); SVAR is the smaller grid with print in the free package, React and Vue versions, and the Webix team behind it.",
   "alternativeIntro": "The closest comparison on this list, since both are Svelte-native and both are MIT, so licensing does not decide it. The differences are depth and direction: SvGrid ships a larger feature surface, a UI component suite, in-grid AI helpers and an MCP server, while SVAR spans Svelte, React and Vue and keeps a smaller core. The At a glance table above has both measured bundle sizes; if a compact MIT grid with sorting, filtering, editing, tree data and CSV export is all you need, SVAR is a perfectly good answer.",
   "intro": [
-    "SVAR DataGrid (npm: wx-svelte-grid) is part of the SVAR suite from XB Software, the makers of Webix, and is one of the few grids built for Svelte rather than wrapped from another framework. Its docs list in-cell editing, header and advanced filtering, single and multi-column sorting, tree data, virtual scrolling for rows and columns, columns pinned to the left, column and row spans in the header and footer, auto-sized rows, undo and redo, a context menu, row reordering, CSV export, a print API and a REST data provider, all under MIT.",
+    "SVAR DataGrid (npm: @svar-ui/svelte-grid; the older wx-svelte-grid package is deprecated and points to it) is part of the SVAR suite from XB Software, the makers of Webix, and is one of the few grids built for Svelte rather than wrapped from another framework. Its docs list in-cell editing, header and advanced filtering, single and multi-column sorting, tree data, virtual scrolling for rows and columns, columns pinned to the left, column and row spans in the header and footer, auto-sized rows, undo and redo, a context menu, row reordering, CSV export, a print API and a REST data provider, all under MIT.",
     "SvGrid overlaps on the Svelte-native angle and reaches further: row grouping with aggregation, master/detail, Excel-style cell-range selection with clipboard and a fill handle, pinned rows and left and right column pinning, integrated charts, a server-side row model, a headless engine, in-grid AI helpers and the @svgrid/mcp server, all in the MIT package. Excel, PDF and print output, import, pivot tables and the Kanban and Scheduler views of the grid live in the paid @svgrid/enterprise pack, whereas SVAR keeps its grid entirely free and sells PRO editions of its Gantt, Calendar and Kanban instead."
   ],
   "similarities": [

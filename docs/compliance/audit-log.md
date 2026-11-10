@@ -131,6 +131,23 @@ window.addEventListener('beforeunload', flush)
 The `beforeunload` flush is the trick: even if the user closes the
 tab mid-session, the buffer ships.
 
+## Soft delete, restore and purge
+
+With `softDelete` on a table, a delete is a mark and the row stays. `createKitHandlers` tells
+the `audit` hook three different things, so a log can answer "was it erased?":
+
+| `action` | Means | Entries |
+|---|---|---|
+| `delete` | The record was marked. It is still in the table and can be restored. | One per record. |
+| `restore` | The mark was cleared. Nothing else about the record changed. | One per record that came back. |
+| `purge` | The row was deleted for real (Delete forever, Empty trash, a trash item past its age). | One per record that went. |
+
+`restore` and `purge` are logged only for records that really changed: an id of another
+tenant, a record not marked, or one already gone is left out. Delete hooks (`beforeDelete`, `afterDelete`) run for the mark, and again
+with `purge: true` for the real delete. `beforeRestore` and `afterRestore` run for a restore.
+
+An undo of a delete in the page is a `restore`. After a `purge`, no undo brings the record back.
+
 ## What an auditor wants to see
 
 When demonstrating the audit trail to an external auditor, the four

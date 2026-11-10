@@ -128,7 +128,19 @@ npx @svgrid/studio add customers --db mssql \
 ```
 
 The generated route uses the `mssql` package with `@p1` placeholders (bound as
-`p1`, `p2`, ...) and reads its connection from `process.env.DATABASE_URL`.
+`p1`, `p2`, ...) and reads its connection from `process.env.DATABASE_URL`, in the form
+above: the driver does not read an `mssql://` URL. Tested on SQL Server 2022.
+
+The SQL it writes uses `OFFSET ... FETCH` for paging, and a write reads its row back
+because T-SQL has no `RETURNING`. A key the server makes comes back through
+`OUTPUT INSERTED ... INTO` a table variable, so a table with triggers works. A record
+brought back with an identity key is written under `IDENTITY_INSERT`, which needs
+`ALTER` on the table. Blocks stay under the limit of 2,100 parameters, so a large
+bulk write takes more statements than on Postgres.
+
+In SvGrid Base a formula, lookup or rollup is worked out in the page on SQL Server: a
+view that filters or sorts on one reads the records into the page first. SQL Server
+has no JSON or array column, so a multiple select or a JSON value is text there.
 
 ---
 

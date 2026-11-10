@@ -40,6 +40,10 @@ sees in the grid comes from four places:
   }} />
 ```
 
+The column menu, filter panel, comment editor and find bar take their words the
+same way (`GridMenuMessages`; `menuPinLeft`, `filterValue`, `findClose` and so
+on). The calendar has `scheduler.text`.
+
 The charts the grid draws have a map of their own (`localeText`, see
 [chart localization](charts/accessibility.md#localization)), and so does
 the spreadsheet shell (`SheetMessages`, passed as `<SvSheet localization>`;

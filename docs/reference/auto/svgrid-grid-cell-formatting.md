@@ -27,6 +27,24 @@ export function getNumberFormatter(
 ): Intl.NumberFormat
 ```
 
+### `function dateFormatOptions`
+
+The Intl options a date / datetime `format` formats `value` with: the
+pattern's preset, then the column's own options, else a numeric default.
+
+Without `timeZone` when `value` is a bare calendar date. parseDateValue reads
+'2026-10-07' as local midnight, so a `timeZone` moved it: `timeZone: 'UTC'`,
+the usual fix back when such strings were read as UTC, showed October 6th
+east of UTC. A calendar date has no zone; the day in the string is the day
+shown.
+
+```ts
+export function dateFormatOptions(
+  format: { type: 'date' | 'datetime'; pattern?: string; options?: Intl.DateTimeFormatOptions },
+  value: unknown,
+): Intl.DateTimeFormatOptions
+```
+
 ### `function parseDateValue`
 
 A cell value as a Date, or null when it is not one. Accepts a Date, epoch ms,

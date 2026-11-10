@@ -1,5 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createClipboard } from './clipboard'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createClipboard, loadRangeCommit } from './clipboard'
+
+// The drag commits load with the drag; here they are loaded up front so a commit runs at once.
+beforeAll(() => loadRangeCommit())
 
 // ---------------------------------------------------------------------------
 // Fake controller `ctx` builder. The clipboard handlers operate entirely
@@ -506,6 +509,22 @@ describe('onFillPointerUp / applyFillPattern', () => {
     expect(numeric.internalData[3].a).toBe(4)
   })
 
+  it('tells processCellForFill every source and which target this is', () => {
+    const ctx = makeCtx({
+      columns: [{ id: 'a', field: 'a', editable: true, editorType: 'number' }],
+      data: [{ a: 1 }, { a: 2 }, { a: 0 }, { a: 0 }, { a: 0 }],
+    })
+    const seen: Array<{ sources: ReadonlyArray<unknown>; index: number }> = []
+    ctx.props.processCellForFill = ({ sources, index }: { sources: ReadonlyArray<unknown>; index: number }) => {
+      seen.push({ sources, index })
+      return undefined
+    }
+    ctx.fillDrag = { sourceMinRow: 0, sourceMaxRow: 1, sourceMinCol: 0, sourceMaxCol: 0, targetRow: 4, targetCol: 0 }
+    createClipboard(ctx).onFillPointerUp()
+    expect(seen.map((s) => s.index)).toEqual([0, 1, 2])
+    expect(seen[0]!.sources).toEqual([1, 2])
+  })
+
   it('skips a collapsed row the consumer does not count, and moves the series over the rows that show', () => {
     // A filtered row in a spreadsheet: not written, not a step of the
     // number series, and the formula's delta is the real row distance.
@@ -961,6 +980,89 @@ describe('copySelectionToClipboard', () => {
   })
 })
 
+describe('writes over rows that move as they land', () => {
+  /** A view sorted by `a`: every new list of rows is ordered again at once, as the real row model does. */
+  function sortedCtx(data: Array<Record<string, unknown>>, extra: Record<string, unknown> = {}) {
+    const ctx = makeCtx({
+      columns: [{ id: 'a', field: 'a', editable: true, editorType: 'number' }, { id: 'b', field: 'b', editable: true, editorType: 'text' }],
+      data,
+    })
+    const order = (rows: Array<Record<string, unknown>>) =>
+      rows.map((original, i) => ({ id: String(original.id ?? i), original, getCanExpand: () => false, getCellValueByColumnId: (c: string) => original[c] })).sort((x, y) => Number(x.original.a) - Number(y.original.a))
+    let backing = data
+    Object.defineProperty(ctx, 'internalData', {
+      get: () => backing,
+      set: (next: Array<Record<string, unknown>>) => {
+        backing = next
+        ctx._rows = order(next)
+      },
+    })
+    ctx._rows = order(data)
+    Object.assign(ctx.props, extra)
+    return ctx
+  }
+  const seed = () => [{ id: 'x', a: 1, b: 'x' }, { id: 'y', a: 2, b: 'y' }, { id: 'z', a: 3, b: 'z' }]
+  const byId = (ctx: any) => Object.fromEntries(ctx.internalData.map((r: Record<string, unknown>) => [r.id, r]))
+
+  it('writeCellsRaw finds every row before the first value lands', () => {
+    const ctx = sortedCtx(seed())
+    const seen: unknown[] = []
+    ctx.props.onCellValueChange = (e: { columnId: string; row: Record<string, unknown> }) => seen.push([e.columnId, e.row.id, e.row.a, e.row.b])
+    // Rows 0 and 1 as shown: x and y. The first value sends x to the bottom.
+    createClipboard(ctx).writeCellsRaw([
+      { rowIndex: 0, columnId: 'a', value: 9 },
+      { rowIndex: 1, columnId: 'a', value: 8 },
+      { rowIndex: 0, columnId: 'b', value: 'moved' },
+    ])
+    const rows = byId(ctx)
+    expect([rows.x.a, rows.x.b, rows.y.a, rows.y.b, rows.z.a]).toEqual([9, 'moved', 8, 'y', 3])
+    // One event a cell, each with the row as it ended up.
+    expect(seen).toEqual([['a', 'x', 9, 'moved'], ['a', 'y', 8, 'y'], ['b', 'x', 9, 'moved']])
+  })
+
+  it('a fill down the sorted column writes the rows the drag covered', () => {
+    const ctx = sortedCtx(seed())
+    ctx.isCellEditableAt = () => true
+    ctx.fillDrag = { sourceMinRow: 0, sourceMaxRow: 0, sourceMinCol: 0, sourceMaxCol: 0, targetRow: 1, targetCol: 0 }
+    const cb = createClipboard(ctx)
+    return loadRangeCommit().then(() => {
+      cb.applyFillPattern(true)
+      const rows = byId(ctx)
+      expect([rows.x.a, rows.y.a, rows.z.a]).toEqual([1, 2, 3])
+      ctx.fillDrag = { sourceMinRow: 0, sourceMaxRow: 0, sourceMinCol: 1, sourceMaxCol: 1, targetRow: 2, targetCol: 1 }
+      cb.applyFillPattern(false)
+      expect(ctx.internalData.map((r: Record<string, unknown>) => r.b)).toEqual(['x', 'x', 'x'])
+    })
+  })
+
+  it('with holdRowsOnWrite a clear changes the rows where they stand, so a second one finds the same record', () => {
+    const ctx = sortedCtx(seed(), { holdRowsOnWrite: true })
+    const row = ctx.internalData[0]
+    const list = ctx.internalData
+    ctx.selectionRange = { anchor: { rowIndex: 0, colIndex: 0 }, focus: { rowIndex: 0, colIndex: 0 } }
+    const cb = createClipboard(ctx)
+    cb.clearSelectedCells()
+    expect(ctx.internalData).toBe(list)
+    expect(row.a).toBe(null)
+    expect(ctx.editedCellValues['x:a'] === null || Object.values(ctx.editedCellValues).includes(null)).toBe(true)
+    // Nothing moved: the same record, already empty, and no second step for Ctrl+Z to spend.
+    expect(ctx.allRows[0].original).toBe(row)
+    cb.clearSelectedCells()
+    expect(ctx.history).toHaveLength(1)
+    expect(ctx.internalData[1].a).toBe(2)
+  })
+
+  it('a cell already empty is no step, and Delete still counts as handled', () => {
+    const ctx = makeCtx({ columns: [{ id: 'a', field: 'a', editable: true, editorType: 'text' }], data: [{ a: '' }, { a: null }] })
+    ctx.selectionRange = { anchor: { rowIndex: 0, colIndex: 0 }, focus: { rowIndex: 1, colIndex: 0 } }
+    const change = vi.fn()
+    ctx.props.onCellValueChange = change
+    expect(createClipboard(ctx).clearSelectedCells()).toBe(true)
+    expect(change).not.toHaveBeenCalled()
+    expect(ctx.history).toHaveLength(0)
+  })
+})
+
 describe('clearSelectedCells', () => {
   it('returns false when there is no anchor or active cell', () => {
     const ctx = makeCtx()
@@ -1168,5 +1270,71 @@ describe('cutSelectionToClipboard', () => {
     await cb.cutSelectionToClipboard()
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('hello')
     expect(ctx.internalData[0].a).toBe('')
+  })
+
+  // A cut never clears what it did not copy. jsdom has no execCommand, so the
+  // textarea fallback fails too, as it does in a page that lost focus.
+  const oneCell = () => {
+    const ctx = makeCtx({
+      columns: [{ id: 'a', field: 'a', editable: true, editorType: 'text' }],
+      data: [{ a: 'hello' }, { a: 'world' }],
+    })
+    ctx.selectionRange = { anchor: { rowIndex: 0, colIndex: 0 }, focus: { rowIndex: 0, colIndex: 0 } }
+    return ctx
+  }
+
+  it('clears nothing when the clipboard refuses the text', async () => {
+    ;(navigator.clipboard.writeText as any).mockRejectedValue(new Error('Document is not focused.'))
+    const ctx = oneCell()
+    await createClipboard(ctx).cutSelectionToClipboard()
+    expect(ctx.internalData.map((d: any) => d.a)).toEqual(['hello', 'world'])
+    expect(ctx.history).toHaveLength(0)
+  })
+
+  it('clears only once the text is on the clipboard', async () => {
+    let land!: () => void
+    ;(navigator.clipboard.writeText as any).mockReturnValue(new Promise<void>((r) => (land = r)))
+    const ctx = oneCell()
+    const cut = createClipboard(ctx).cutSelectionToClipboard()
+    await new Promise((r) => setTimeout(r))
+    expect(ctx.internalData[0].a).toBe('hello')
+    land()
+    await cut
+    expect(ctx.internalData[0].a).toBe('')
+  })
+
+  it('clears nothing when the selection moved while the text was written', async () => {
+    let land!: () => void
+    ;(navigator.clipboard.writeText as any).mockReturnValue(new Promise<void>((r) => (land = r)))
+    const ctx = oneCell()
+    const cut = createClipboard(ctx).cutSelectionToClipboard()
+    ctx.selectionRange = { anchor: { rowIndex: 1, colIndex: 0 }, focus: { rowIndex: 1, colIndex: 0 } }
+    land()
+    await cut
+    expect(ctx.internalData.map((d: any) => d.a)).toEqual(['hello', 'world'])
+  })
+
+  it('with HTML on the clipboard too: clears when the write lands, and not when every way is refused', async () => {
+    const write = vi.fn().mockResolvedValue(undefined)
+    ;(navigator.clipboard as any).write = write
+    ;(globalThis as any).ClipboardItem = class {
+      constructor(public items: Record<string, Blob>) {}
+    }
+    try {
+      const ctx = oneCell()
+      ctx.props = { clipboardHtml: () => '<table><tr><td>hello</td></tr></table>' }
+      await createClipboard(ctx).cutSelectionToClipboard()
+      expect(write).toHaveBeenCalledTimes(1)
+      expect(ctx.internalData[0].a).toBe('')
+
+      write.mockRejectedValue(new Error('refused'))
+      ;(navigator.clipboard.writeText as any).mockRejectedValue(new Error('refused'))
+      const kept = oneCell()
+      kept.props = { clipboardHtml: () => '<table><tr><td>hello</td></tr></table>' }
+      await createClipboard(kept).cutSelectionToClipboard()
+      expect(kept.internalData[0].a).toBe('hello')
+    } finally {
+      delete (globalThis as any).ClipboardItem
+    }
   })
 })

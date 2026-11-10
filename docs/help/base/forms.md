@@ -121,7 +121,14 @@ field from inside an editor.
 
 ![The demo's Apply form view: Candidate filled in as Ana Ruiz, Email as ana@ with a red border and "Not a valid email address" under it after Submit, Role set to Product designer, Resume and Notes still empty.](/docs-media/base-forms.png)
 
-For a form view, the view bar keeps the view menu and, when the base runs
+Whoever may change views can do all of this without code: "Customize form" in
+the view bar opens a dialog with the title, the line under it, the button's text
+and every field a person can fill in, each with a switch to ask for it, arrows
+to move it and a box to require it. Each change shows in the form behind the
+dialog and is kept in the view as `formTitle`, `formDescription`,
+`formSubmitLabel`, `formFields` and `formRequired`.
+
+For a form view, the view bar keeps the view menu, "Customize form" and, when the base runs
 automations, the Automations button. Hide fields, Filter, Sort, the record
 count and search are gone.
 
@@ -136,6 +143,10 @@ view's `name`.
 ## 3. See what a sent form adds
 
 ![What happens when a form is sent: the fields start with the defaults and each value goes through valueParser; Submit checks required fields, the email, URL and phone formats and the column's validate; the record gets its defaults and an id and is appended to the grid, then onRowAdd runs; onSubmit settles into Thank you or the error, and in a base it runs the "A form is sent" automations.](/docs-media/base-forms.svg)
+
+A form with nothing in any field does not send: it says "Fill in at least one
+field before you send this." and adds no record. A field filled by a default or
+a link counts.
 
 Press Submit and the form runs its checks first
 ([What the form checks](#what-the-form-checks)). When they pass, it builds
@@ -175,7 +186,8 @@ A sent record holds values in the shapes the cells use:
 | Field type | Value |
 |---|---|
 | `text`, `longText`, `email`, `url`, `phone` | A string, as typed |
-| `number` | A number, rounded to the field's precision |
+| `richText` | An HTML string, sanitized (`null` when the editor was left empty) |
+| `number` | A number, as typed (an integer field: a whole number). Past 15 significant digits, text holding every digit |
 | `date` without time | `'2026-11-02'` |
 | `singleSelect` | The option's `value` |
 | `link` | An array of record ids, also with `multiple: false`: `['r2']` |
@@ -395,8 +407,10 @@ with no record id yet.
 
 ## 7. Check it again on the server
 
-The form's checks help a person filling it in. Anyone can post to `/apply`
-without it, so the endpoint checks every field again with the same
+The form's checks help a person filling it in, and `formRequired` is one of them:
+nothing on a server knows of it. A table served by `createBaseEndpoint` is checked
+only if you pass `validate` or `hooks` ([how](./quick-start.md#add-it-to-an-app-you-have)).
+Anyone can post to `/apply` without the form, so the endpoint checks every field again with the same
 `linkHref` the form uses for email, URL and phone, keeps only the fields a
 candidate may set, and sets the team's fields itself:
 
@@ -499,8 +513,9 @@ export const candidateAutomations: BaseAutomation[] = [
 ]
 ```
 
-Put them on the table (`automations: candidateAutomations`) and add one
-`<SvToaster />` from `@svgrid/grid` for the notice. In the base, a form view
+Put them on the table (`automations: candidateAutomations`). A form on its own
+needs one `<SvToaster />` from `@svgrid/grid` for the notice; inside a base it
+shows without one. In the base, a form view
 sends its record to the table's automations with the view's `id`. They need
 `<SvBase tables>`: with `data` and `columns` a form still adds records, but
 no automation runs.
@@ -618,8 +633,45 @@ With the columns, each parameter carries the field's `header`. A list is
 joined with commas, a `Date` written as `YYYY-MM-DD`, and the base URL's own
 query and `#hash` are kept.
 
-The link is typed by whoever sends it. Check every value on the server as in
-[step 7](#7-check-it-again-on-the-server).
+The link is typed by whoever sends it. On a public form, say which fields a
+link may fill: `prefillFields` on `SvBaseForm`, or a list for `formPrefill`
+on a form view. A `prefill_` or `hide_` for any other field is ignored, so a
+link cannot set the Source or the Owner you meant to fill yourself:
+
+```ts
+import type { FieldView } from '@svgrid/enterprise/base'
+
+const apply: FieldView = {
+  id: 'apply',
+  name: 'Apply',
+  type: 'form',
+  formFields: ['name', 'email', 'role', 'source'],
+  // A link may pick the role and say where the candidate came from, nothing else.
+  formPrefill: ['Role', 'source'],
+  formFooter: 'We keep your answers for 12 months. Write to jobs@example.com to have them removed.',
+}
+```
+
+Check every value on the server as in
+[step 7](#7-check-it-again-on-the-server) all the same.
+
+## A footer under the button
+
+`formFooter` on a form view is a line of plain text under the submit button:
+who reads the answers, how long they are kept. For more than a line (a logo,
+links to your terms), give `<SvBase>` a `formFooter` snippet; it gets the
+form view, so one snippet can serve every form:
+
+```svelte
+<SvBase bind:tables editable>
+  {#snippet formFooter(view)}
+    <p>By sending {view.name.toLowerCase()} you agree to our <a href="/terms">terms</a>.</p>
+  {/snippet}
+</SvBase>
+```
+
+On a page of your own, `SvBaseForm` takes the same as `footerText` and a
+`footer` snippet.
 
 ## SvBaseForm props
 
@@ -634,6 +686,9 @@ The link is typed by whoever sends it. Check every value on the server as in
 | `defaults` | `() => Record<string, unknown>` | | Values each record from this form starts with. The grid's `rowAdder.defaults()` wins over them. Called once per record. `<SvBase tables>` passes one that gives an `id`. |
 | `conditions` | `Record<string, FieldFilter>` | | Column id -> when that field shows. A hidden field is not required, not checked and not sent ([Show a field only for some answers](#show-a-field-only-for-some-answers)). |
 | `prefill` | `boolean \| string \| URLSearchParams \| Record<string, unknown>` (`FormPrefill`) | | Answers to start with: `true` reads the page's URL, a string or `URLSearchParams` is read for `prefill_` and `hide_`, an object gives values by field name or column id ([Fill the form from a link](#fill-the-form-from-a-link)). |
+| `prefillFields` | `ReadonlyArray<string>` | every field asked for | The fields `prefill` may fill or hide, by field name or column id. |
+| `footerText` | `string` | | A line under the submit button. |
+| `footer` | `Snippet` | | What goes under the submit button, after `footerText`. |
 | `onSubmit` | `(row: Record<string, unknown>) => void \| Promise<unknown>` | | Called after the row was appended to the grid and the grid's `onRowAdd` ran. A Promise keeps the button disabled until it settles: resolved shows "Thank you", rejected takes the row back out of the grid, keeps the fields and shows the error's message. |
 
 ## Form view keys
@@ -648,10 +703,32 @@ The link is typed by whoever sends it. Check every value on the server as in
 | `formRequired` | Column ids that must have a value, as `required` on `SvBaseForm` |
 | `formSubmitLabel` | The button's text (default `'Submit'`) |
 | `formConditions` | Column id -> when that field shows, as `conditions` on `SvBaseForm` |
-| `formPrefill` | `true` fills fields from the page's URL, as `prefill` on `SvBaseForm` |
+| `formPrefill` | `true` fills fields from the page's URL, as `prefill` on `SvBaseForm`; a list of field names or column ids lets the link fill only those |
+| `formFooter` | A line of plain text under the submit button |
 
 A record the view sends reaches `onRowAdd`, `onTablesChange` and the
 `formSubmitted` automations, which get the view's `id`.
+
+## What a screen reader and a browser get
+
+A field that takes typed text (text, long text, number, email, URL, phone) is a
+real `<input>` or `<textarea>` with a `<label>` from the start, and a checkbox a
+real checkbox. A required field has `aria-required`. Fields with a picker (a
+select, a date, a file, a link) are a labelled button until opened, and their
+name says when they are required.
+
+A field in error gets `aria-invalid` and its message through `aria-describedby`.
+A submit that fails says how many fields need attention, and focus goes to the
+first of them.
+
+Email, phone and URL fields carry their `autocomplete` purpose, so a browser can
+fill them in. A text field gets one from an English name (Name, First name, Last
+name, Company, Address, City, Zip, Country). For any other name or language, set
+it on the field:
+
+```ts
+{ field: 'nombre', header: 'Nombre', fieldType: 'text', fieldProps: { autocomplete: 'name' } }
+```
 
 ## What the form checks
 
@@ -661,8 +738,8 @@ A record the view sends reaches `onRowAdd`, `onTablesChange` and the
 - **Number and duration**: the editor refuses text that is not a number
   ("Not a number") and a negative where `allowNegative: false` ("Negative
   numbers are not allowed"), and keeps the box open. A click outside the
-  box while it shows the error drops what was typed. A value is rounded to
-  the field's precision.
+  box while it shows the error drops what was typed. A value is stored as
+  typed; precision is how it shows, and only an integer field rounds.
 - **Attachment**: `maxFiles`, `maxSize` and `accept`, file by file, before
   uploading. A file added by URL is checked against `maxFiles` and `accept`
   (by the name's extension); its size is not known, so `maxSize` does not

@@ -6,6 +6,7 @@ import {
   type TableFeatures,
 } from "./index";
 import "./sv-grid-scrollbar";
+import { pushHistory } from "./history";
 
 export function createColumns<
   TFeatures extends TableFeatures = TableFeatures,
@@ -55,6 +56,16 @@ export function createColumns<
     emitColumnOrder();
   }
 
+  /** A move the user made is one undo step, as a resize is. The api's setter records none. */
+  function moveColumnsByUser(ids: ReadonlyArray<string>) {
+    const before = [...(ctx.userColumnOrder ?? [])];
+    setColumnOrderInternal(ids);
+    pushHistory(ctx, [{
+      rowId: "", columnId: "", field: "columnOrder", before: undefined, after: undefined,
+      custom: { undo: () => setColumnOrderInternal(before), redo: () => setColumnOrderInternal(ids) },
+    }]);
+  }
+
   /** Drop `dragId` before / after `targetId` in the user order. We
    *  rebuild a clean order out of the currently-displayed columns so
    *  hidden columns are unaffected and pin groups stay logically
@@ -69,7 +80,7 @@ export function createColumns<
     if (idx < 0) return;
     if (side === "after") idx++;
     without.splice(idx, 0, dragId);
-    setColumnOrderInternal(without);
+    moveColumnsByUser(without);
   }
 
   function onColumnHeaderDragStart(e: DragEvent, columnId: string) {
@@ -257,6 +268,7 @@ export function createColumns<
     getCurrentColumnOrder,
     emitColumnOrder,
     setColumnOrderInternal,
+    moveColumnsByUser,
     applyColumnDrop,
     onColumnHeaderDragStart,
     onColumnHeaderDragOver,

@@ -402,6 +402,34 @@ Three things to try, in this order:
 </figure>
 <!-- /tutorial:learn-9-sveltekit -->
 
+## On SvelteKit 3
+
+`npx sv create` makes a SvelteKit 3 app. The scaffolds from `npm create @svgrid` pin
+SvelteKit 2 (`^2.63`), and the Studio scaffold `^2.15`. Most pages here show SvelteKit
+2 code. A few names differ:
+
+| SvelteKit 2 | SvelteKit 3 |
+| --- | --- |
+| `import x from '$lib/x'` | `import x from '#lib/x.ts'` |
+| `import { env } from '$env/dynamic/private'` or `$env/static/private` | Declare it in `src/env.ts`, then `import { DATABASE_URL } from '$app/env/private'` |
+| `$env/static/public` | `public: true` in `src/env.ts`, then `$app/env/public` |
+| `import { dev } from '$app/environment'` | `import { dev } from '$app/env'` |
+| `import type { Handle } from '@sveltejs/kit'` | `import type { Handle } from '@sveltejs/kit/hooks'` |
+| `goto(url, { keepFocus: true, noScroll: true })` | `goto(url, { reset: false })` |
+| `new URL(page.url)` | `new URL(page.url.href)` (`page.url` is read-only) |
+
+```ts
+// src/env.ts
+import { defineEnvVars } from '@sveltejs/kit/env'
+
+export const variables = defineEnvVars({ DATABASE_URL: {} })
+```
+
+To keep `$lib` on SvelteKit 3, add `alias: { '$lib': 'src/lib' }` to the `sveltekit()`
+options in `vite.config.ts`. Without one of these, a page that imports `$lib` fails
+with `module_removed_lib`, and a variable that is not declared is `undefined`, which
+a database driver may read as "connect to localhost".
+
 ## See also
 
 - [Going to production](./6-going-to-production.md) - CSP, SSR, accessibility

@@ -66,6 +66,107 @@ export function getFocusable(container: HTMLElement): HTMLElement[] {
   })
 }
 
+/**
+ * A region whose controls come and go: a dialog, a menu, a panel, a page of
+ * tiles. When the control holding focus is removed or disabled, focus falls to
+ * the body, the next Tab starts over at the top of the page and a typed key
+ * goes nowhere. Here it moves instead to the control that now stands in that
+ * place (the one after it, or the last), then to `fallback`, then the region
+ * itself. A control that is only moved, as a reordered tile is, keeps it.
+ *
+ * Decided after the current task, so an editor or a dialog placing focus itself
+ * goes first, and focus someone took elsewhere stays there. On touch it never
+ * lands in a text box: that would bring up the on-screen keyboard unasked.
+ * Works as a Svelte action, `use:keepFocus`.
+ */
+export function keepFocus(container: HTMLElement, fallback?: () => HTMLElement | null | undefined) {
+  let held: HTMLElement | null = null
+  let place = 0
+  let changed = false
+  let touch = false
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const later = () => {
+    clearTimeout(timer)
+    timer = setTimeout(settle, 0)
+  }
+  function settle() {
+    const now = document.activeElement
+    const gone = !held?.isConnected || held.matches(':disabled')
+    const fell = !now || now === document.body || (now === held && gone)
+    const moved = changed
+    changed = false
+    if (!held || !fell) {
+      if (!container.contains(now)) held = null
+      return
+    }
+    // Nothing here changed: it was a click on the page, and focus goes with it.
+    if (!moved) {
+      held = null
+      return
+    }
+    if (!gone) return held.focus()
+    const list = getFocusable(container)
+    const next = list[Math.min(place, list.length - 1)]
+    const target = next && !(touch && next.matches('input, textarea, [contenteditable]')) ? next : (fallback?.() ?? container)
+    if (target === container && !container.hasAttribute('tabindex')) container.setAttribute('tabindex', '-1')
+    // A list that draws only what is in sight drops the focused card as it scrolls: no pulling it back.
+    target.focus({ preventScroll: true })
+  }
+  const onIn = (e: FocusEvent) => {
+    held = e.target as HTMLElement
+    place = Math.max(0, getFocusable(container).indexOf(held))
+  }
+  const onDown = (e: PointerEvent) => {
+    touch = e.pointerType === 'touch'
+  }
+  const watch = new MutationObserver((records) => {
+    if (!held) return
+    if (records.some((r) => r.type === 'childList' || r.target === held)) changed = true
+    later()
+  })
+  container.addEventListener('focusin', onIn)
+  container.addEventListener('focusout', later)
+  container.addEventListener('pointerdown', onDown, true)
+  watch.observe(container, { subtree: true, childList: true, attributes: true, attributeFilter: ['disabled'] })
+  return {
+    destroy() {
+      clearTimeout(timer)
+      watch.disconnect()
+      container.removeEventListener('focusin', onIn)
+      container.removeEventListener('focusout', later)
+      container.removeEventListener('pointerdown', onDown, true)
+    },
+  }
+}
+
+/** Where focus can go when an element cannot take it back: the element and what holds it, nearest first, each with what stood after it. */
+export type FocusPath = Array<{ el: HTMLElement; next?: HTMLElement | null }>
+
+export function focusPath(el: Element | null): FocusPath {
+  const path: FocusPath = []
+  for (let at = el as HTMLElement | null; at && at !== document.body; at = at.parentElement ?? ((at.getRootNode() as ShadowRoot).host as HTMLElement | undefined) ?? null) {
+    path.push({ el: at, next: at.nextElementSibling as HTMLElement | null })
+  }
+  return path
+}
+
+/**
+ * Focus `path`'s element, or the nearest thing that takes focus: a control that
+ * left the page, or turned disabled or hidden, does not, and focus would fall
+ * to the body. What held it does (the grid, for a button in a row or a header);
+ * with nothing there that can (a wall of cards), what stood after it (the next
+ * card), or the first control of what is left.
+ */
+export function focusNearest(path: FocusPath): void {
+  const take = (el?: HTMLElement) => {
+    if (!el?.isConnected) return false
+    el.focus({ preventScroll: true })
+    return (el.getRootNode() as Document).activeElement === el
+  }
+  const inside = (el?: HTMLElement | null) => !!el && take(el.matches(FOCUSABLE_SELECTOR) ? el : getFocusable(el)[0])
+  void (path.some(({ el }) => el.matches(FOCUSABLE_SELECTOR) && take(el)) || path.some(({ el, next }) => inside(el.isConnected ? el : next)))
+}
+
 export type FocusTrapOptions = {
   /** Where focus goes on activate: the first focusable (default), the container
    *  itself, a specific element, or a getter resolved at activate time. */
@@ -86,7 +187,9 @@ export function createFocusTrap(
 ): FocusTrap {
   const { initialFocus = 'first', returnFocus = true } = options
   let previouslyFocused: HTMLElement | null = null
+  let path: FocusPath = []
   let active = false
+  let kept: ReturnType<typeof keepFocus> | null = null
 
   function resolveInitial(): HTMLElement | null {
     const f = initialFocus
@@ -118,15 +221,27 @@ export function createFocusTrap(
     // Guarantee the container is a focus fallback even without focusable children.
     if (!container.hasAttribute('tabindex')) container.setAttribute('tabindex', '-1')
     document.addEventListener('keydown', onKeydown, true)
+    kept = keepFocus(container)
     // Focus on the next microtask so a just-opened panel is in the DOM first.
-    queueMicrotask(() => { if (active) resolveInitial()?.focus() })
+    queueMicrotask(() => {
+      if (!active) return
+      // Opened from a menu: the item left the page, and the menu has just given
+      // focus back to what opened it. That is where this one goes back to.
+      if (!previouslyFocused?.isConnected || previouslyFocused === document.body) previouslyFocused = document.activeElement as HTMLElement | null
+      path = focusPath(previouslyFocused)
+      resolveInitial()?.focus()
+    })
   }
 
   function release() {
     if (!active) return
     active = false
+    kept?.destroy()
     document.removeEventListener('keydown', onKeydown, true)
-    if (returnFocus) previouslyFocused?.focus?.()
+    if (returnFocus) {
+      previouslyFocused?.focus?.()
+      focusNearest(path)
+    }
     previouslyFocused = null
   }
 

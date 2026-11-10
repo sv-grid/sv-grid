@@ -15,6 +15,7 @@ import {
 } from "./SvGrid.helpers";
 import { splitInTokens, joinInTokens } from "./filtering/excel-filters";
 import { customFilterIsActive } from "./custom-filter";
+import { isGroupRow } from "./cell-values";
 
 export function createMenus<
   TFeatures extends TableFeatures = TableFeatures,
@@ -351,7 +352,30 @@ export function createMenus<
     ctx.contextMenuFor = { rowIndex, colIndex, columnId, rowId, row };
   }
 
+  /**
+   * The Menu key, Shift+F10, or a `contextmenu` a screen reader sends to the
+   * focused root: the same menu, under the active cell.
+   */
+  function openActiveCellMenu(event: Event) {
+    const { rowIndex, colIndex } = ctx.grid.getState().activeCell ?? { rowIndex: 0, colIndex: 0 };
+    const column = ctx.allColumns[colIndex];
+    const row = ctx.allRows[rowIndex];
+    // A group header is no record: a right-click on one opens nothing either.
+    if (!column || !row || isGroupRow(row)) return;
+    ctx.scrollActiveCellIntoView(rowIndex, colIndex);
+    const box = (ctx.scrollContainer as HTMLElement | null)
+      ?.querySelector(`td[data-svgrid-row="${rowIndex}"][data-svgrid-col="${colIndex}"]`)
+      ?.getBoundingClientRect();
+    openContextMenu(
+      { preventDefault: () => event.preventDefault(), clientX: box?.left ?? 0, clientY: box?.bottom ?? 0 } as MouseEvent,
+      rowIndex,
+      colIndex,
+      column.id,
+    );
+  }
+
   return {
+    openActiveCellMenu,
     updateFilterRow,
     updateFilterOperator,
     updateFilterMenuValue,

@@ -606,6 +606,42 @@ describe('createMenus - context menu open/close', () => {
   })
 })
 
+describe('createMenus - the context menu from the keyboard', () => {
+  function atCell(overrides: any = {}) {
+    const box = document.createElement('div')
+    box.innerHTML = '<table><tr><td data-svgrid-row="1" data-svgrid-col="0"></td></tr></table>'
+    box.querySelector('td')!.getBoundingClientRect = () => ({ left: 120, bottom: 80 }) as DOMRect
+    return makeCtx({
+      ...overrides,
+      props: { contextMenu: true },
+      allRows: [{ id: 'r0', original: { a: 1 } }, { id: 'r1', original: { a: 2 } }],
+      allColumns: [{ id: 'a' }],
+      scrollContainer: box,
+      scrollActiveCellIntoView: vi.fn(),
+      isCellInSelectedRange: () => true,
+      gridState: { activeCell: { rowIndex: 1, colIndex: 0 } },
+    })
+  }
+
+  it('opens under the active cell, for its row', () => {
+    const ctx = atCell()
+    const event = new KeyboardEvent('keydown', { key: 'ContextMenu', cancelable: true })
+    createMenus(ctx).openActiveCellMenu(event)
+    expect(ctx.scrollActiveCellIntoView).toHaveBeenCalledWith(1, 0)
+    expect(ctx.contextMenuFor).toMatchObject({ rowIndex: 1, colIndex: 0, columnId: 'a', rowId: 'r1' })
+    expect(ctx.contextMenuPos.y).toBe(80)
+    expect(event.defaultPrevented).toBe(true)
+  })
+
+  it('opens nothing on a group row, as a right-click does not', () => {
+    const ctx = atCell()
+    ctx.allRows[1].getCanExpand = () => true
+    ctx.allRows[1].depth = 0
+    createMenus(ctx).openActiveCellMenu(new KeyboardEvent('keydown', { key: 'ContextMenu' }))
+    expect(ctx.contextMenuFor).toBeNull()
+  })
+})
+
 describe('createMenus - contextMenuItems', () => {
   it('returns [] with no target', () => {
     const ctx = makeCtx({ contextMenuFor: null })

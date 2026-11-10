@@ -10,6 +10,10 @@ via `bind:value` and reflects the active formatting state (bold/italic and list
 buttons light up with the caret). It uses `document.execCommand`, the pragmatic
 approach for a component-kit editor. All color comes from the `--sg-*` tokens.
 
+`value` goes through `sanitizeHtml` on its way in and out, so a stored string
+cannot run a script: event attributes, `javascript:` links and any style but a
+text alignment are removed.
+
 Related: [Inputs overview](inputs.md) · [SvForm](sv-form.md) · [Navigation & rich overview](navigation.md)
 
 ## Installation

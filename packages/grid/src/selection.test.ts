@@ -57,6 +57,8 @@ function makeCtx(overrides: any = {}) {
     rowVirtualizationEnabled: false,
     rowScrollScalingActive: false,
     renderedColumnItems: [],
+    pinnedOffsets: { left: {}, right: {}, start: 0, end: 0 },
+    systemColumnsWidth: 0,
     columnVirtualizer: null,
     theadEl: null,
     headerHeight: 0,
@@ -763,6 +765,20 @@ describe('createSelection - onCellClick', () => {
     expect(ctx.onCellDoubleClick).toHaveBeenCalledWith(0, 0)
   })
 
+  it('the cell seeded on mount was never chosen: a first click on it does not open it', () => {
+    const ctx = clickCtx({ editingEnabled: true, userHasActivatedCell: false, activeCell: { rowIndex: 0, colIndex: 0 } })
+    const sel = createSelection(ctx)
+    sel.onCellPointerDown(0, 0, { button: 0, shiftKey: false } as any)
+    expect(ctx.activeAtPointerDown).toEqual({ rowIndex: 0, colIndex: 0 })
+    sel.onCellClick(0, 0)
+    expect(ctx.onCellDoubleClick).not.toHaveBeenCalled()
+
+    // Now it has been chosen: the second click opens it.
+    sel.onCellPointerDown(0, 0, { button: 0, shiftKey: false } as any)
+    sel.onCellClick(0, 0)
+    expect(ctx.onCellDoubleClick).toHaveBeenCalledWith(0, 0)
+  })
+
   it('leaves the cell alone on a second click when editOnSecondClick is off', () => {
     // A sheet: clicking the active cell again is a click, not an edit.
     const ctx = clickCtx({
@@ -907,8 +923,9 @@ describe('createSelection - scrollActiveCellIntoView', () => {
     })
     const sel = createSelection(ctx)
     sel.scrollActiveCellIntoView(0, 0)
-    // nextTop = max(500 - 10, 0) = 490
-    expect(container.scrollTop).toBe(490)
+    // A scroll offset is measured under the sticky header: subtracting it left
+    // the last rows below the view after Ctrl+End.
+    expect(container.scrollTop).toBe(500)
   })
 
   it('virtualized: computes scrollTop manually when the row is offscreen', () => {
@@ -1006,6 +1023,89 @@ describe('createSelection - scrollActiveCellIntoView', () => {
     sel.scrollActiveCellIntoView(0, 2)
     // cellEnd (420) - clientWidth (100) = 320
     expect(container.scrollLeft).toBe(320)
+  })
+
+  it('non-virtualized: stops a cell above a sticky footer', () => {
+    const container = document.createElement('div')
+    Object.defineProperty(container, 'clientHeight', { value: 200, configurable: true })
+    Object.defineProperty(container, 'clientWidth', { value: 500, configurable: true })
+    container.getBoundingClientRect = () => ({ top: 0, left: 0, bottom: 200, right: 500 } as DOMRect)
+    const td = document.createElement('td')
+    td.setAttribute('data-svgrid-row', '0')
+    td.setAttribute('data-svgrid-col', '0')
+    td.getBoundingClientRect = () => ({ top: 150, bottom: 190, left: 0, right: 140 } as DOMRect)
+    const foot = document.createElement('tfoot')
+    Object.defineProperty(foot, 'offsetHeight', { value: 40 })
+    container.append(td, foot)
+    const ctx = makeCtx({
+      scrollContainer: container,
+      rowVirtualizationEnabled: false,
+      allRows: [makeDataRow('r0')],
+      allColumns: [makeColumn('c0')],
+      headerHeight: 30,
+      theadEl: { offsetHeight: 30 },
+      renderedColumnItems: [{ index: 0, start: 0, size: 140 }],
+    })
+    createSelection(ctx).scrollActiveCellIntoView(0, 0)
+    // Its bottom (190) is below the 160 the footer leaves.
+    expect(container.scrollTop).toBe(30)
+    expect(container.style.scrollPaddingBottom).toBe('40px')
+  })
+
+  function pinnedBox(scrollLeft: number, dir = 'ltr') {
+    const container = document.createElement('div')
+    container.dir = dir
+    document.body.appendChild(container)
+    Object.defineProperty(container, 'clientWidth', { value: 400, configurable: true })
+    Object.defineProperty(container, 'clientHeight', { value: 100, configurable: true })
+    let left = scrollLeft
+    Object.defineProperty(container, 'scrollLeft', { get: () => left, set: (v) => (left = v), configurable: true })
+    return container
+  }
+  const pinnedCtx = (container: HTMLElement) =>
+    makeCtx({
+      scrollContainer: container,
+      rowVirtualizationEnabled: false,
+      allRows: [makeDataRow('r0')],
+      allColumns: [makeColumn('p'), makeColumn('c1'), makeColumn('c2'), makeColumn('c3'), makeColumn('z')],
+      renderedColumnItems: [
+        { index: 0, start: 0, size: 150 },
+        { index: 1, start: 150, size: 140 },
+        { index: 2, start: 290, size: 140 },
+        { index: 3, start: 430, size: 140 },
+        { index: 4, start: 570, size: 100 },
+      ],
+      theadEl: { offsetHeight: 0 },
+      systemColumnsWidth: 50,
+      // Row numbers (50) and a 150 px pin at the start, a 100 px pin at the end.
+      pinnedOffsets: { left: { p: 50 }, right: { z: 0 }, start: 200, end: 100 },
+    })
+
+  it('stops a cell clear of the columns pinned at the start, not under them', () => {
+    // In the view by scrollLeft alone (100), but under the 200 the pins cover.
+    const container = pinnedBox(100)
+    createSelection(pinnedCtx(container)).scrollActiveCellIntoView(0, 1)
+    // The cell starts at 50 + 150 = 200, and the pins cover 200 of the view.
+    expect(container.scrollLeft).toBe(0)
+  })
+
+  it('stops a cell clear of the columns pinned at the end', () => {
+    const container = pinnedBox(0)
+    createSelection(pinnedCtx(container)).scrollActiveCellIntoView(0, 3)
+    // Its end is 50 + 570 = 620; the view keeps 400 - 100 of width for it.
+    expect(container.scrollLeft).toBe(320)
+  })
+
+  it('leaves the view alone for a pinned cell', () => {
+    const container = pinnedBox(300)
+    createSelection(pinnedCtx(container)).scrollActiveCellIntoView(0, 0)
+    expect(container.scrollLeft).toBe(300)
+  })
+
+  it('counts scrollLeft down from 0 under rtl', () => {
+    const container = pinnedBox(0, 'rtl')
+    createSelection(pinnedCtx(container)).scrollActiveCellIntoView(0, 3)
+    expect(container.scrollLeft).toBe(-320)
   })
 })
 

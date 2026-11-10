@@ -83,7 +83,10 @@ test.describe('SvGrid Base tables (real browser)', () => {
 
     // From a contact, open its account where it lives.
     await tab(page, 'Contacts').click()
-    await row(page, 'Priya Raman').locator('.sv-flr-chip', { hasText: 'Contoso' }).click()
+    // The first click selects the cell, as on any cell; on a selected cell a chip opens its record.
+    const chip = row(page, 'Priya Raman').locator('.sv-flr-chip', { hasText: 'Contoso' })
+    await chip.click()
+    await chip.click()
     await page.getByRole('button', { name: 'Open in Accounts' }).click()
     await expect(selectedTab(page)).toHaveText('Accounts')
     await expect(page.locator('.sv-modal').last()).toContainText('Contoso')

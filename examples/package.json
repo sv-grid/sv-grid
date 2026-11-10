@@ -20,7 +20,7 @@
     "jszip": "^3.10.1",
     "pdfmake": "^0.2.10",
     "postcss": "^8.5.26",
-    "svelte": "^5.55.5",
+    "svelte": "^5.57.3",
     "svelte-check": "^4.4.6",
     "tailwindcss": "^4.2.4",
     "typescript": "6.0.3",
@@ -28,11 +28,11 @@
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.4",
-    "@tanstack/svelte-table": "^9.2.4",
-    "ag-grid-community": "^36.1.0",
+    "@svar-ui/svelte-grid": "^2.7.6",
+    "@tanstack/svelte-table": "^9.3.1",
+    "ag-grid-community": "^36.3.0",
     "chart.js": "^4.5.1",
     "hyperformula": "^3.3.0",
-    "smart-webcomponents": "^26.0.0",
-    "wx-svelte-grid": "^2.7.0"
+    "smart-webcomponents": "^26.0.0"
   }
 }

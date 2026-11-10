@@ -47,9 +47,14 @@
     return box.clientWidth - rightWidth - SCROLL_ROOM
   }
 
+  // The edges count from the start of the row, which is the right under rtl.
+  const rtl = () => !!ctrl.scrollContainer && getComputedStyle(ctrl.scrollContainer).direction === 'rtl'
+
   function xIn(e: PointerEvent): number {
     const box = ctrl.scrollContainer as HTMLElement | null
-    return box ? e.clientX - box.getBoundingClientRect().left : e.clientX
+    if (!box) return e.clientX
+    const r = box.getBoundingClientRect()
+    return rtl() ? r.right - e.clientX : e.clientX - r.left
   }
 
   function apply(next: number) {
@@ -68,9 +73,27 @@
     ctrl.columnPinning = { left, right: [...ctrl.columnPinning.right] }
   }
 
+  // A failed block's Retry spans the row, so it can sit under the divider.
+  const retryUnder = (e: PointerEvent) =>
+    document.elementsFromPoint?.(e.clientX, e.clientY).find((el) => !el.closest('.sv-pin-split'))?.closest<HTMLElement>('.sv-grid-placeholder-row button')
+  /** Over that Retry the divider lets the pointer through to it, its cursor and hover too, until the pointer leaves it. */
+  let through = $state(false)
+  function letThrough(button: HTMLElement) {
+    through = true
+    const off = (ev: PointerEvent) => {
+      if (button.isConnected && button.contains(ev.target as Node)) return
+      through = false
+      window.removeEventListener('pointermove', off, true)
+    }
+    window.addEventListener('pointermove', off, true)
+  }
+
   function ondown(e: PointerEvent) {
     if (e.button !== 0) return
     e.preventDefault()
+    // A press with no move first (touch): the press is the Retry's.
+    const under = retryUnder(e)
+    if (under) return under.click()
     e.stopPropagation()
     // Edges are measured from the start of the columns, so show them there.
     const box = ctrl.scrollContainer as HTMLElement | null
@@ -93,7 +116,11 @@
   })
 
   function onmove(e: PointerEvent) {
-    if (!drag) return
+    if (!drag) {
+      const under = retryUnder(e)
+      if (under && !through) letThrough(under)
+      return
+    }
     const x = xIn(e)
     drag = { x, count: Math.max(minCount, pinCountAt(edges, x, cols.length - 1, limit())) }
   }
@@ -107,8 +134,9 @@
 
   function onkeydown(e: KeyboardEvent) {
     let next = count
-    if (e.key === 'ArrowRight') next = count + 1
-    else if (e.key === 'ArrowLeft') next = count - 1
+    const more = rtl() ? 'ArrowLeft' : 'ArrowRight'
+    if (e.key === more) next = count + 1
+    else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') next = count - 1
     else if (e.key === 'Home') next = minCount
     else return
     e.preventDefault()
@@ -117,6 +145,42 @@
     if (next > count && (edges[next] ?? Infinity) > limit()) return
     apply(next)
   }
+
+  // A failed block's band, its words and Retry, is not crossed by the line: the line is masked out
+  // where a band is, read from the rows on screen after a scroll or a change of rows.
+  let line = $state<HTMLElement | null>(null)
+  let mask = $state('')
+  $effect(() => {
+    const box = ctrl.scrollContainer as HTMLElement | null
+    const at = line
+    if (!box || !at) return
+    let frame = 0
+    const measure = () => {
+      frame = 0
+      const bands = box.querySelectorAll('.sv-grid-placeholder-failed')
+      if (!bands.length) return void (mask = '')
+      const top = at.getBoundingClientRect().top
+      const head = top + (ctrl.headerHeight ?? 0)
+      let stops = ''
+      for (const b of bands) {
+        const r = b.getBoundingClientRect()
+        const from = Math.max(r.top, head) - top
+        const to = r.bottom - top
+        if (to > from) stops += `,#000 ${from}px,#0000 ${from}px ${to}px,#000 ${to}px`
+      }
+      mask = stops && `linear-gradient(#000${stops})`
+    }
+    const soon = () => (frame ||= requestAnimationFrame(measure))
+    const rows = new MutationObserver(soon)
+    rows.observe(box, { childList: true, subtree: true, attributeFilter: ['class'] })
+    box.addEventListener('scroll', soon, { passive: true })
+    soon()
+    return () => {
+      cancelAnimationFrame(frame)
+      rows.disconnect()
+      box.removeEventListener('scroll', soon)
+    }
+  })
 
   const shownCount = $derived(drag ? drag.count : count)
   const lineX = $derived(drag ? (edges[drag.count] ?? edge) : edge)
@@ -132,13 +196,14 @@
 {#if !ctrl.isNarrowResponsive && cols.length > 1}
   <div class="sv-pin-split" class:is-dragging={!!drag} class:is-editing={!!ctrl.editingCell} style:--x={`${lineX}px`} style:bottom={`${bottom}px`}>
     {#if drag}
-      <div class="sv-pin-split-ghost" style:left={`${drag.x}px`} aria-hidden="true"></div>
+      <div class="sv-pin-split-ghost" style:inset-inline-start={`${drag.x}px`} aria-hidden="true"></div>
       <div class="sv-pin-split-tip" aria-hidden="true">{label}</div>
     {/if}
-    <div class="sv-pin-split-line" aria-hidden="true"></div>
+    <div class="sv-pin-split-line" bind:this={line} style:mask-image={mask || undefined} aria-hidden="true"></div>
     <div
       class="sv-pin-split-hit"
       style:top={`${ctrl.headerHeight ?? 0}px`}
+      style:pointer-events={through ? 'none' : undefined}
       role="separator"
       aria-orientation="vertical"
       aria-label={messages.pinSplitterLabel}
@@ -160,28 +225,36 @@
 
 <style>
   /* Above the sticky header and pinned cells (up to 42), under the scrollbars (900). */
-  .sv-pin-split { position: absolute; top: 0; left: 0; width: 0; z-index: 50; pointer-events: none; }
+  .sv-pin-split { position: absolute; top: 0; inset-inline-start: 0; width: 0; z-index: 50; pointer-events: none; }
   /* An open editor's panel can cross the line. */
   .sv-pin-split.is-editing { display: none; }
   .sv-pin-split-line {
-    position: absolute; top: 0; bottom: 0; left: calc(var(--x) - 1px); width: 2px;
+    position: absolute; top: 0; bottom: 0; inset-inline-start: calc(var(--x) - 1px); width: 2px;
     background: color-mix(in srgb, var(--sg-fg, #0f172a) 18%, transparent); transition: background-color 0.12s;
   }
   .sv-pin-split-hit {
-    position: absolute; bottom: 0; left: max(0px, calc(var(--x) - 4px)); width: 8px;
+    position: absolute; bottom: 0; inset-inline-start: max(0px, calc(var(--x) - 4px)); width: 8px;
     cursor: col-resize; pointer-events: auto; outline: none; touch-action: none;
   }
   .sv-pin-split:has(.sv-pin-split-hit:hover) .sv-pin-split-line,
   .sv-pin-split:has(.sv-pin-split-hit:focus-visible) .sv-pin-split-line,
   .sv-pin-split.is-dragging .sv-pin-split-line { background: var(--sg-accent, #2563eb); }
-  .sv-pin-split.is-dragging .sv-pin-split-line { width: 3px; left: calc(var(--x) - 1.5px); }
+  .sv-pin-split.is-dragging .sv-pin-split-line { width: 3px; inset-inline-start: calc(var(--x) - 1.5px); }
   /* The pointer's own line while the divider snaps between column edges. */
   .sv-pin-split-ghost {
     position: absolute; top: 0; bottom: 0; width: 0;
-    border-left: 2px dashed color-mix(in srgb, var(--sg-accent, #2563eb) 50%, transparent);
+    border-inline-start: 2px dashed color-mix(in srgb, var(--sg-accent, #2563eb) 50%, transparent);
   }
   .sv-pin-split-tip {
-    position: absolute; top: 6px; left: calc(var(--x) + 8px); padding: 3px 8px; border-radius: 6px;
+    position: absolute; top: 6px; inset-inline-start: calc(var(--x) + 8px); padding: 3px 8px; border-radius: 6px;
     background: var(--sg-fg, #0f172a); color: var(--sg-bg, #fff); font-size: 12px; white-space: nowrap;
+  }
+  /* Contrast themes keep a fill's alpha, so the faint line vanished on Canvas. System colours instead. */
+  @media (forced-colors: active) {
+    .sv-pin-split-line, .sv-pin-split-ghost { forced-color-adjust: none; background: CanvasText; border-color: Highlight; }
+    .sv-pin-split:has(.sv-pin-split-hit:hover) .sv-pin-split-line,
+    .sv-pin-split:has(.sv-pin-split-hit:focus-visible) .sv-pin-split-line,
+    .sv-pin-split.is-dragging .sv-pin-split-line { background: Highlight; }
+    .sv-pin-split-tip { border: 1px solid CanvasText; }
   }
 </style>

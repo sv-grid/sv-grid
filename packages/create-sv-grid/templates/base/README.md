@@ -11,12 +11,15 @@ database.
 ## Make it yours
 
 - **Tables**: `db/schema.sql` holds the tables the app started with. Add a
-  table or a column to the database and reload: the base reads it.
+  table or a column to the database and reload the page: the base reads it.
+  The Postgres setup reads the tables once per server process, in
+  `src/routes/api/base/+server.ts`: restart the dev server first, or call
+  `refresh()` on what `createBaseEndpoint` returns after a migration.
   `db/templates/` has the other templates; copy one over `db/schema.sql` to
   start from it instead.
 - **"Add table" in the app is not saved to the database.** The new tab
   lasts until the page reloads. To keep a table, create it in the database
-  and reload.
+  and reload, as above.
 - **What SQL has no type for** (a select's colors, formulas, views,
   automations) is kept in `svgrid:` comments on the tables and columns.
   Dropping them loses only that: the base still opens from the columns.

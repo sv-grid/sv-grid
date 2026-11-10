@@ -80,6 +80,10 @@ export function collect({ candidates = false } = {}) {
       // `nocheck` marks prose pseudocode - it does not type-check, so it will
       // not compile either.
       if (fence.flags.has('nocheck')) continue
+      // `norun` type-checks fine but needs a server, a SvelteKit load or props
+      // from a parent. Skipping it here also keeps --promote from flagging it
+      // runnable again, since promotion only asks svelte-check.
+      if (fence.flags.has('norun')) continue
       // `<svelte:options customElement>` only means anything when compiled as a
       // custom element, which the docs bundle is not - Vite warns and the
       // example would not behave as written.

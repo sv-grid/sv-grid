@@ -1115,6 +1115,54 @@ describe('paste reads text through the column valueParser', () => {
   })
 })
 
+describe('a paste over a group header', () => {
+  it('the line goes on the next record, and none is lost', async () => {
+    Object.defineProperty(navigator, 'clipboard', { value: { readText: vi.fn().mockResolvedValue('one\ntwo') }, configurable: true })
+    const { ctx, ed } = editingFor({
+      columns: [{ id: 'a', field: 'a', editable: true, editorType: 'text' }],
+      data: [{ a: 'a0' }, { a: 'header' }, { a: 'a2' }],
+      groupRows: new Set([1]),
+    })
+    ctx.setActiveCell(0, 0)
+    ctx.selectionRange = { anchor: { rowIndex: 0, colIndex: 0 }, focus: { rowIndex: 0, colIndex: 0 } }
+    await ed.pasteFromClipboard()
+    expect(ctx.internalData.map((r: { a: string }) => r.a)).toEqual(['one', 'header', 'two'])
+  })
+})
+
+describe('a paste past the last row', () => {
+  const ready = (text: string, at: number) => {
+    Object.defineProperty(navigator, 'clipboard', { value: { readText: vi.fn().mockResolvedValue(text) }, configurable: true })
+    const { ctx, ed } = editingFor({
+      columns: [{ id: 'a', field: 'a', editable: true, editorType: 'text' }, { id: 'b', field: 'b', editable: true, editorType: 'text' }],
+      data: [{ a: 'a0', b: 'b0' }, { a: 'a1', b: 'b1' }],
+    })
+    ctx.setActiveCell(at, 1)
+    ctx.selectionRange = { anchor: { rowIndex: at, colIndex: 1 }, focus: { rowIndex: at, colIndex: 1 } }
+    return { ctx, ed }
+  }
+
+  it('hands over the lines it has no row for, after the rows it wrote', async () => {
+    const { ctx, ed } = ready('one\ntwo\tx\nthree', 1)
+    const seen: string[] = []
+    ctx.props.onCellValueChange = (e: { newValue: unknown }) => seen.push(`cell ${e.newValue}`)
+    ctx.props.onPasteOverflow = (e: { rows: string[][]; startCol: number }) => seen.push(`rows ${JSON.stringify(e)}`)
+    await ed.pasteFromClipboard()
+    expect(seen).toEqual(['cell one', 'rows {"rows":[["two","x"],["three"]],"startCol":1}'])
+  })
+
+  it('says nothing when the lines fit, and a paste of nothing new past the end still tells', async () => {
+    const fits = ready('one\ntwo', 0)
+    fits.ctx.props.onPasteOverflow = vi.fn()
+    await fits.ed.pasteFromClipboard()
+    expect(fits.ctx.props.onPasteOverflow).not.toHaveBeenCalled()
+    const same = ready('b1\nnew', 1)
+    same.ctx.props.onPasteOverflow = vi.fn()
+    await same.ed.pasteFromClipboard()
+    expect(same.ctx.props.onPasteOverflow).toHaveBeenCalledWith({ rows: [['new']], startCol: 1 })
+  })
+})
+
 describe('applyPastedText reports and records what it wrote', () => {
   function pasteReady(text: string) {
     Object.defineProperty(navigator, 'clipboard', {
@@ -1132,6 +1180,27 @@ describe('applyPastedText reports and records what it wrote', () => {
     ctx.selectionRange = { anchor: { rowIndex: 1, colIndex: 0 }, focus: { rowIndex: 1, colIndex: 0 } }
     return { ctx, ed }
   }
+
+  it('a consumer splits the text with parseClipboardText, and the hook is told each cell\'s place', async () => {
+    const { ctx, ed } = pasteReady('"one\nline"\tb\nc\td')
+    ctx.props.parseClipboardText = () => [['one\nline', 'b'], ['c', 'd']]
+    const cells: Array<[number, number]> = []
+    ctx.props.processCellFromClipboard = (p: { text: string; cell: [number, number] }) => {
+      cells.push(p.cell)
+      return p.text
+    }
+    await ed.pasteFromClipboard()
+    expect(ctx.internalData[1]).toEqual({ a: 'one\nline', b: 'b' })
+    expect(ctx.internalData[2]).toEqual({ a: 'c', b: 'd' })
+    expect(cells).toEqual([[0, 0], [0, 1], [1, 0], [1, 1]])
+  })
+
+  it('with no parseClipboardText a line is a row and a tab a cell, the last line break ending the text', async () => {
+    const { ctx, ed } = pasteReady('x\ty\r\n"z\n')
+    await ed.pasteFromClipboard()
+    expect(ctx.internalData[1]).toEqual({ a: 'x', b: 'y' })
+    expect(ctx.internalData[2]).toEqual({ a: '"z', b: '' })
+  })
 
   it('fires onCellValueChange for every cell a block paste changed', async () => {
     // A formula engine behind the grid only sees a value through this hook;

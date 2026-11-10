@@ -37,10 +37,10 @@ export type ThemePalette = {
   pinnedShadow?: string
   /**
    * Text on an accent-filled control, when the preset decides it rather than
-   * the WCAG 2 pick in `onAccent`. Ember sets white: on its saturated orange,
-   * WCAG 2's formula prefers near-black (5.01 vs 3.53:1) while APCA, the
-   * perceptual model behind the WCAG 3 draft, reads white as far stronger
-   * (Lc 66.6 vs 41.4), and so does the eye. An accent override recomputes it.
+   * the pick in `onAccent`. It is held to 4.5:1 like any other text
+   * (`contrast.test.ts`), with one named exception: Ember sets white as a
+   * deliberate brand choice, below AA on its orange. An accent override
+   * recomputes it.
    */
   onAccent?: string
   /* Semantic status colors. The UI kit reads these for destructive buttons,
@@ -97,11 +97,14 @@ export const themePresets: ThemePreset[] = [
   // right on top of the selection color).
   { id: 'ember', name: 'Ember', radius: 6, font: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
     headerType: { weight: '500' },
-    light: { bg: '#ffffff', fg: '#1c1917', muted: '#78716c', border: '#e7e5e4', headerBg: '#fafaf9', headerFg: '#78716c', accent: '#ff3e00', rowAlt: '#ffffff', rowHover: '#f5f5f4', selectionBg: '#ffece3',
+    light: { bg: '#ffffff', fg: '#1c1917', muted: '#736c67', border: '#e7e5e4', headerBg: '#fafaf9', headerFg: '#736c67', accent: '#ff3e00', rowAlt: '#ffffff', rowHover: '#f5f5f4', selectionBg: '#ffece3',
+      // White on the orange is a deliberate brand choice. It is 3.53:1, below AA: the
+      // exemption is named in contrast.test.ts and stated under 1.4.3 in the ACR.
       onAccent: '#ffffff',
       bgSubtle: '#fafaf9',
       pinnedBg: '#fafaf9', pinnedHeaderBg: '#f5f5f4', pinnedDivider: '#e7e5e4', pinnedBorder: '#e7e5e4', pinnedShadow: 'rgba(28, 25, 23, 0.10)' },
     dark: { bg: '#0c0a09', fg: '#fafaf9', muted: '#a8a29e', border: '#292524', headerBg: '#1c1917', headerFg: '#a8a29e', accent: '#ff5a1f', rowAlt: '#0c0a09', rowHover: '#1c1917', selectionBg: '#3a2318',
+      // The same choice, 3.12:1 on the brighter orange.
       onAccent: '#ffffff',
       bgSubtle: '#1c1917',
       pinnedBg: '#151312', pinnedHeaderBg: '#1c1917', pinnedDivider: '#292524', pinnedBorder: '#292524', pinnedShadow: 'rgba(0, 0, 0, 0.50)' } },

@@ -17,7 +17,8 @@ import {
   toValueArray,
 } from "./SvGrid.helpers";
 import {
-  createDataIndexLookup,
+  rowsToWrite,
+  landWrites,
   getColumnBaseValue,
   isGroupRow,
 } from "./cell-values";
@@ -265,7 +266,7 @@ export function createEditing<
     // Notify the consumer AFTER the row has been updated so any callback-
     // driven recompute (cascade totals, server save, undo stack) sees the
     // post-write state. `rowIndex` matches the position in `props.data`.
-    if (rowData && column) getGridExtension()?.cellEdited?.(ctx, { row: rowData, columnId: column.id });
+    if (rowData && column) getGridExtension()?.cellEdited?.(ctx, { row: rowData, columnId: column.id, rowId: editing.rowId });
     if (ctx.props.onCellValueChange && rowData && column) {
       const rowIndex = ctx.internalData.indexOf(rowData as TData);
       ctx.props.onCellValueChange({
@@ -375,6 +376,11 @@ export function createEditing<
     const raw = editing.value;
     const active = ctx.activeCell;
     const range = ctx.activeRangeRect();
+    if (range && getGridExtension()?.rangeAction?.(ctx, { kind: "entry", value: raw })) {
+      ctx.editingCell = null;
+      ctx.gridRootEl?.focus({ preventScroll: true });
+      return;
+    }
     runHistoryGroup(ctx, () => {
       commitEditingCell();
       if (!active || !range) return;
@@ -400,6 +406,8 @@ export function createEditing<
 
   function onEditorKeyDown(event: KeyboardEvent) {
     event.stopPropagation();
+    // Keys of an IME composition (229 is Safari's, on the Enter that ends one).
+    if (event.isComposing || event.keyCode === 229) return;
     // Registered commands get the key first here too, with `editing: true`, so
     // a handler can claim a combination that only means something mid-edit
     // (Alt+Enter for a newline, F4 to cycle a reference between relative and
@@ -624,8 +632,9 @@ export function createEditing<
     const startCol = Math.min(anchor.colIndex, focus.colIndex);
     const endRow   = Math.max(anchor.rowIndex, focus.rowIndex);
     const endCol   = Math.max(anchor.colIndex, focus.colIndex);
-    const lines = text.replace(/\r\n/g, "\n").split("\n");
-    if (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
+    const parse = ctx.props.parseClipboardText as ((text: string) => string[][]) | undefined;
+    const lines = parse ? parse(text) : text.replace(/\r\n/g, "\n").split("\n").map((l) => l.split("\t"));
+    if (!parse && lines[lines.length - 1]?.join() === "") lines.pop();
     if (!lines.length) return;
 
     // Excel/Sheets behaviour: when the clipboard holds a single cell and
@@ -634,17 +643,16 @@ export function createEditing<
     // corner and let the clipboard determine the span (the original
     // behaviour).
     const clipboardIsSingleCell =
-      lines.length === 1 && (lines[0]?.split("\t").length ?? 0) === 1;
+      lines.length === 1 && lines[0]?.length === 1;
     const selectionIsRange = startRow !== endRow || startCol !== endCol;
     const fillRange = clipboardIsSingleCell && selectionIsRange;
 
     const rowSpan = fillRange ? endRow - startRow + 1 : lines.length;
     const colSpan = fillRange
       ? endCol - startCol + 1
-      : Math.max(...lines.map((l) => l.split("\t").length));
+      : lines.reduce((widest, l) => Math.max(widest, l.length), 0);
 
-    const next = ctx.internalData.slice() as Array<TData>;
-    const dataIndexOf = createDataIndexLookup(next);
+    const { next, dataIndexOf } = rowsToWrite<TData>(ctx);
     // Every cell the paste changes: one grouped history entry for the lot,
     // so Ctrl+Z takes the whole paste back, and one onCellValueChange each,
     // so a consumer keeping its own model behind the grid (a formula engine)
@@ -654,9 +662,16 @@ export function createEditing<
       row: TData; rowId: string; rowIndex: number; columnId: string; field: string;
       before: unknown; after: unknown;
     }> = [];
+    // Where the lines stop having a row to land on.
+    let lastLine = lines.length;
+    let nextRow = startRow;
     for (let i = 0; i < rowSpan; i += 1) {
-      const targetRowIndex = startRow + i;
+      // A group's header is no row of the block: the line goes on the next record, not nowhere.
+      while (!fillRange && ctx.allRows[nextRow] && isGroupRow(ctx.allRows[nextRow])) nextRow += 1;
+      const targetRowIndex = nextRow;
+      nextRow += 1;
       const row = ctx.allRows[targetRowIndex];
+      if (!row && i < lastLine) lastLine = i;
       if (!row || isGroupRow(row)) continue;
       // Map the visible row back to its slot in the data array by identity -
       // `row.id` is only the index under the default getRowId.
@@ -666,7 +681,7 @@ export function createEditing<
       if (!originalRow) continue;
       const sourceCells = fillRange
         ? null
-        : lines[i]?.split("\t") ?? [];
+        : lines[i] ?? [];
       const updated: Record<string, unknown> = {
         ...(originalRow as Record<string, unknown>),
       };
@@ -685,7 +700,7 @@ export function createEditing<
         const before = updated[column.columnDef.field];
         const editorType = (column.columnDef.editorType ??
           "text") as CellEditorType;
-        const raw = fillRange ? lines[0]! : sourceCells?.[j] ?? "";
+        const raw = fillRange ? lines[0]![0]! : sourceCells?.[j] ?? "";
         const coerced = parseEditorValue(editorType, raw, {
           dateOnly: column.columnDef.cellDataType === "dateString",
         });
@@ -708,6 +723,7 @@ export function createEditing<
             row: originalRow as TData,
             rowIndex: targetRowIndex,
             columnId: column.id as string,
+            cell: fillRange ? [0, 0] : [i, j],
           });
           if (decided === undefined) continue;
           updated[column.columnDef.field] = decided;
@@ -721,23 +737,28 @@ export function createEditing<
       next[dataIndex] = updated as TData;
       changed.push(...rowChanges);
     }
-    if (!changed.length) return;
-    ctx.internalData = next;
-    ctx.grid.store.setState((prev: any) => ({ ...prev }));
-    pushHistory(
-      ctx,
-      changed.map((c) => ({
-        rowId: c.rowId, columnId: c.columnId, field: c.field, before: c.before, after: c.after,
-      })),
-      nextGroupId(),
-    );
-    if (ctx.props.onCellValueChange) {
-      for (const c of changed) {
-        ctx.props.onCellValueChange({
-          rowIndex: c.rowIndex, columnId: c.columnId, oldValue: c.before, newValue: c.after, row: c.row,
-        });
+    // The lines past the last row: there is no row for them to land on.
+    const beyond = fillRange ? [] : lines.slice(lastLine);
+    if (changed.length) {
+      for (const c of changed) getGridExtension()?.cellEdited?.(ctx, { row: c.row, columnId: c.columnId, rowId: c.rowId });
+      const rows = landWrites(ctx, next, changed.map((c) => ({ at: c.rowIndex, rowId: c.rowId, columnId: c.columnId, value: c.after })));
+      ctx.grid.store.setState((prev: any) => ({ ...prev }));
+      pushHistory(
+        ctx,
+        changed.map((c) => ({
+          rowId: c.rowId, columnId: c.columnId, field: c.field, before: c.before, after: c.after,
+        })),
+        nextGroupId(),
+      );
+      if (ctx.props.onCellValueChange) {
+        for (const c of changed) {
+          ctx.props.onCellValueChange({
+            rowIndex: c.rowIndex, columnId: c.columnId, oldValue: c.before, newValue: c.after, row: rows[c.rowIndex] as TData,
+          });
+        }
       }
     }
+    if (beyond.length) ctx.props.onPasteOverflow?.({ rows: beyond, startCol });
   }
 
   /** Programmatically begin editing a cell (mirrors a double-click). */

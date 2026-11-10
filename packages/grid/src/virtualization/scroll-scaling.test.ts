@@ -122,6 +122,49 @@ describe('resolveMaxDomHeight - picks the smaller, real scrollable cap', () => {
   })
 })
 
+describe('createRowScrollScaling - near the ends', () => {
+  // A million 30px rows under the height that still paints straight.
+  const trueTotal = 30_000_000
+  const s = createRowScrollScaling(trueTotal, 16_000_000, VIEWPORT)
+  const domMax = s.domTotal - VIEWPORT
+  const logicalMax = trueTotal - VIEWPORT
+
+  it('a pixel is a pixel at the top: the rows around the view stay inside the spacer', () => {
+    for (const d of [1, 30, 300, 3000]) {
+      expect(s.domToLogical(d)).toBe(d)
+      expect(s.logicalToDom(d)).toBe(d)
+    }
+  })
+
+  it('a pixel is a pixel at the end: the list ends where the scrollbar does', () => {
+    for (const d of [1, 30, 300, 3000]) {
+      expect(s.domToLogical(domMax - d)).toBeCloseTo(logicalMax - d, 3)
+      expect(s.logicalToDom(logicalMax - d)).toBeCloseTo(domMax - d, 3)
+    }
+  })
+
+  it('has no jump where the ends meet the middle', () => {
+    let last = s.domToLogical(0)
+    const ratio = logicalMax / domMax
+    for (let d = 8000; d <= 8400; d += 1) {
+      const now = s.domToLogical(d)
+      expect(now - s.domToLogical(d - 1)).toBeLessThan(ratio + 0.1)
+      last = now
+    }
+    expect(last).toBeGreaterThan(8000)
+  })
+
+  it('goes back and forth in the middle', () => {
+    for (const d of [100_000, 8_000_000, 15_000_000]) expect(s.logicalToDom(s.domToLogical(d))).toBeCloseTo(d, 3)
+  })
+
+  it('keeps the ends inside a small range', () => {
+    const small = createRowScrollScaling(1_000_000, 100_000, VIEWPORT)
+    expect(small.domToLogical(small.domTotal - VIEWPORT)).toBeCloseTo(1_000_000 - VIEWPORT, 3)
+    expect(small.domToLogical(50_000)).toBeGreaterThan(50_000)
+  })
+})
+
 describe('createRowScrollScaling - edge cases', () => {
   it('handles an empty grid without dividing by zero', () => {
     const s = createRowScrollScaling(0, 17_895_697, VIEWPORT)
@@ -144,5 +187,39 @@ describe('createRowScrollScaling - edge cases', () => {
     expect(s.domTotal).toBe(33_554_400)
     const domMax = s.domTotal - VIEWPORT
     expect(s.domToLogical(domMax)).toBeCloseTo(trueTotal - VIEWPORT, 0)
+  })
+})
+
+describe('scaling across the seam', () => {
+  it('Z1 monotonic, inverse, and the ends meet, either side of the seam', () => {
+    const bad: string[] = []
+    let seed = 7
+    const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff
+    for (let c = 0; c < 400; c += 1) {
+      const max = 100_000 + Math.floor(rnd() * 33_000_000)
+      const viewport = 100 + Math.floor(rnd() * 2000)
+      const offsets = [-1, 0, 1, 2, 30, viewport, 8192, 16_384, 20_000, Math.floor(max * 0.5), max * 3]
+      const total = max + offsets[c % offsets.length]!
+      const s = createRowScrollScaling(total, max, viewport)
+      const domMax = s.domTotal - viewport
+      const logMax = total - viewport
+      if (s.domToLogical(0) !== 0 || Math.abs(s.domToLogical(domMax) - logMax) > 1e-6) bad.push(`ends ${total}/${max}/${viewport}`)
+      let last = -1
+      for (let i = 0; i <= 2000; i += 1) {
+        const d = (domMax * i) / 2000
+        const l = s.domToLogical(d)
+        if (l + 1e-6 < last) { bad.push(`down at ${d} ${total}/${max}/${viewport}`); break }
+        last = l
+        if (Math.abs(s.logicalToDom(l) - d) > 1e-3) { bad.push(`inverse at ${d}: ${s.logicalToDom(l)} ${total}/${max}/${viewport}`); break }
+      }
+    }
+    expect(bad).toEqual([])
+  })
+  it('Z2 the seam itself: one row across the cap keeps every row reachable', () => {
+    const s = createRowScrollScaling(1_000_030, 1_000_000, 500)
+    const row = 30
+    const reach = new Set<number>()
+    for (let d = 0; d <= s.domTotal - 500; d += 1) reach.add(Math.floor(s.domToLogical(d) / row))
+    expect(reach.size).toBe(Math.floor((1_000_030 - 500) / row) + 1)
   })
 })

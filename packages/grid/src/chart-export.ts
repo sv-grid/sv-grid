@@ -100,13 +100,16 @@ export function chartToSvgString(
   return new XMLSerializer().serializeToString(clone)
 }
 
-function triggerDownload(blobUrl: string, filename: string) {
+/** Hand a file to the browser to save: every chart download goes through this one. */
+export function saveBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
-  a.href = blobUrl
+  a.href = url
   a.download = filename
   document.body.appendChild(a)
   a.click()
   a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 /** Download the chart as an `.svg` file. */
@@ -115,10 +118,7 @@ export function downloadChartSvg(
   filename = 'chart.svg',
   options: ChartExportOptions = {},
 ): void {
-  const svg = chartToSvgString(source, options)
-  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
-  triggerDownload(url, filename)
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  saveBlob(new Blob([chartToSvgString(source, options)], { type: 'image/svg+xml' }), filename)
 }
 
 /** Rasterize the chart to a PNG `Blob`. */
@@ -164,10 +164,7 @@ export async function downloadChartPng(
   filename = 'chart.png',
   options: ChartExportOptions = {},
 ): Promise<void> {
-  const blob = await chartToPngBlob(source, options)
-  const url = URL.createObjectURL(blob)
-  triggerDownload(url, filename)
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  saveBlob(await chartToPngBlob(source, options), filename)
 }
 
 const csvCell = (v: unknown): string => {
@@ -277,8 +274,6 @@ export function chartCsvExportable(spec: ChartSpec): boolean {
 export function downloadChartCsv(spec: ChartSpec, filename = 'chart.csv'): boolean {
   const csv = chartSpecToCsv(spec)
   if (!csv) return false
-  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
-  triggerDownload(url, filename)
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  saveBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), filename)
   return true
 }

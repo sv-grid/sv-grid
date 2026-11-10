@@ -104,21 +104,36 @@ retry / undo / view-details flows:
 ### Form validation summary
 
 Show a single danger alert above a form when submission fails, listing the
-fields that need attention:
+fields that need attention. Press Save with the fields empty:
 
 ```svelte {runnable}
 <script lang="ts">
-  import { SvAlert } from '@svgrid/grid'
+  import { SvAlert, SvButton } from '@svgrid/grid'
+  let name = $state('')
+  let email = $state('')
   let errors = $state<string[]>([])
+
+  function submit(e: SubmitEvent) {
+    e.preventDefault()
+    errors = [
+      ...(name.trim() ? [] : ['Name is required']),
+      ...(/^\S+@\S+\.\S+$/.test(email) ? [] : ['Email must look like name@example.com']),
+    ]
+  }
 </script>
 
-{#if errors.length}
-  <SvAlert variant="danger" title="Please fix {errors.length} field(s)">
-    <ul style="margin:4px 0 0; padding-inline-start:18px;">
-      {#each errors as e (e)}<li>{e}</li>{/each}
-    </ul>
-  </SvAlert>
-{/if}
+<form onsubmit={submit} style="display:grid; gap:10px; max-width:360px;">
+  {#if errors.length}
+    <SvAlert variant="danger" title="Please fix {errors.length} field(s)">
+      <ul style="margin:4px 0 0; padding-inline-start:18px;">
+        {#each errors as e (e)}<li>{e}</li>{/each}
+      </ul>
+    </SvAlert>
+  {/if}
+  <label style="display:grid; gap:4px;">Name <input bind:value={name} /></label>
+  <label style="display:grid; gap:4px;">Email <input bind:value={email} /></label>
+  <SvButton type="submit">Save</SvButton>
+</form>
 ```
 
 The `danger` variant sets `role="alert"`, so the summary is announced the moment

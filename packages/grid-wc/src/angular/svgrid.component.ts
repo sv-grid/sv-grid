@@ -18,8 +18,8 @@ import {
 } from '@angular/core'
 import '@svgrid/grid-wc'
 
-const PROP_NAMES: string[] = ["data","columns","board","gallery","scheduler","gantt","chart","pivot","pivotMode","contextMenu","selectionBar","rowAdder","rowColor","columnAdder","fieldMenu","expandRows","pinSplitter","primaryField","features","sortable","filterable","editable","treeData","groupable","groupBy","expanded","groupFooters","grandTotalRow","groupDisplayMode","autoGroupColumnHeader","autoGroupColumnWidth","pageable","loading","loadingOverlay","loadingSkeletonRows","error","emptyMessage","localization","showGlobalFilter","showColumnFilters","filterMode","showGroupingControls","showRowSelection","showPagination","pageSize","pageSizeOptions","paginationPosition","externalPagination","rowCount","pageIndex","virtualization","rowHeight","autoRowHeight","rowResize","headerHeight","overscan","containerHeight","columnVirtualization","columnOverscan","columnWidth","initialColumnPinning","fitColumns","columnResize","responsive","showFilterMenu","showFilterRow","enableCellSelection","moveCells","enableRowHover","copyHeadersToClipboard","processCellForFill","processCellForClipboard","includeCollapsedRows","clipboardHtml","processCellFromClipboard","enableInlineEditing","editOnSecondClick","fullRowEditing","enableRowSummaries","summary","statusBar","toolPanel","charting","columnMenuTabs","toolPanelDefaultOpen","toolPanelDefaultTab","selectionMode","showRowNumbers","zebraRows","rowNumberWidth","externalSort","initialSorting","initialAdvancedFilter","externalFilter","getRowId","rowClass","notes","editableComments","conditionalFormats","conditionalStatScope","rowPlaceholder","rowModel","pivotResultColumns","rowSelectionModel","isDetailRow","detailRowHeight","showDetailToggle","isDetailOpen","hasDetail","serverGroup","serverFilterValues","pinnedTopRows","frozenRows","stickyGroupRows","mergedCells","rowLayout","pinnedBottomRows","enableColumnReorder","columnOrder","inferColumnTypes","rowDragManaged","rowDragGroup","alignedGridGroup","filterLocale"]
-const EVENT_NAMES: string[] = ["pivotmodechange","rowadd","columnadd","columnchange","columnremove","rowsdelete","rowcolorchange","expandedchange","paginationchange","columnresize","rowresize","pasteclipboard","apiready","rowselectionchange","cellselectionchange","sortingchange","advancedfilterchange","filterschange","notechange","cellvaluechange","activecellchange","cellclick","rowclick","celldoubleclick","rowdoubleclick","scrollbottomreached","visiblerangechange","retryrow","detailtoggle","columnorderchange","columnvisibilitychange","columnpinningchange","rowdragend","rowdrop","selectionchange"]
+const PROP_NAMES: string[] = ["data","columns","board","gallery","scheduler","gantt","chart","pivot","pivotMode","contextMenu","selectionBar","rowAdder","rowColor","columnAdder","fieldMenu","expandRows","pinSplitter","primaryField","features","sortable","filterable","editable","treeData","groupable","groupBy","expanded","groupFooters","grandTotalRow","groupDisplayMode","autoGroupColumnHeader","autoGroupColumnWidth","pageable","loading","loadingOverlay","loadingSkeletonRows","error","emptyMessage","gridLabel","localization","showGlobalFilter","showColumnFilters","filterMode","showGroupingControls","showRowSelection","showPagination","pageSize","pageSizeOptions","paginationPosition","externalPagination","rowCount","pageIndex","virtualization","rowHeight","autoRowHeight","rowResize","headerHeight","overscan","containerHeight","columnVirtualization","columnOverscan","columnWidth","initialColumnPinning","fitColumns","columnResize","responsive","showFilterMenu","showFilterRow","enableCellSelection","moveCells","enableRowHover","copyHeadersToClipboard","processCellForFill","processCellForClipboard","includeCollapsedRows","clipboardHtml","holdRowsOnWrite","parseClipboardText","processCellFromClipboard","enableInlineEditing","editOnSecondClick","fullRowEditing","enableRowSummaries","summary","statusBar","toolPanel","charting","columnMenuTabs","toolPanelDefaultOpen","toolPanelDefaultTab","selectionMode","showRowNumbers","zebraRows","rowNumberWidth","externalSort","initialSorting","initialAdvancedFilter","externalFilter","getRowId","rowClass","notes","editableComments","conditionalFormats","conditionalStatScope","rowPlaceholder","rowModel","pivotResultColumns","rowSelectionModel","isDetailRow","detailRowHeight","showDetailToggle","isDetailOpen","hasDetail","serverGroup","serverFilterValues","pinnedTopRows","frozenRows","stickyGroupRows","mergedCells","rowLayout","pinnedBottomRows","enableColumnReorder","columnOrder","inferColumnTypes","rowDragManaged","rowDragGroup","alignedGridGroup","filterLocale"]
+const EVENT_NAMES: string[] = ["pivotmodechange","rowadd","columnadd","columnchange","columnremove","rowsdelete","rowcolorchange","expandedchange","paginationchange","columnresize","rowresize","pasteclipboard","pasteoverflow","apiready","rowselectionchange","cellselectionchange","sortingchange","advancedfilterchange","filterschange","notechange","cellvaluechange","activecellchange","cellclick","rowclick","celldoubleclick","rowdoubleclick","scrollbottomreached","visiblerangechange","retryrow","detailtoggle","columnorderchange","columnvisibilitychange","columnpinningchange","rowdragend","rowdrop","selectionchange"]
 
 /**
  * SvGrid as an Angular component.
@@ -81,6 +81,7 @@ export class SvGridComponent implements OnInit, OnChanges, OnDestroy {
   @Input() loadingSkeletonRows?: number
   @Input() error?: string | null
   @Input() emptyMessage?: string
+  @Input() gridLabel?: string
   @Input() localization?: unknown
   @Input() showGlobalFilter?: boolean
   @Input() showColumnFilters?: boolean
@@ -118,6 +119,8 @@ export class SvGridComponent implements OnInit, OnChanges, OnDestroy {
   @Input() processCellForClipboard?: unknown
   @Input() includeCollapsedRows?: unknown
   @Input() clipboardHtml?: unknown
+  @Input() holdRowsOnWrite?: boolean
+  @Input() parseClipboardText?: readonly unknown[]
   @Input() processCellFromClipboard?: unknown
   @Input() enableInlineEditing?: boolean
   @Input() editOnSecondClick?: boolean
@@ -181,6 +184,7 @@ export class SvGridComponent implements OnInit, OnChanges, OnDestroy {
   @Output() columnresize = new EventEmitter<unknown>()
   @Output() rowresize = new EventEmitter<unknown>()
   @Output() pasteclipboard = new EventEmitter<unknown>()
+  @Output() pasteoverflow = new EventEmitter<unknown>()
   @Output() apiready = new EventEmitter<unknown>()
   @Output() rowselectionchange = new EventEmitter<unknown>()
   @Output() cellselectionchange = new EventEmitter<unknown>()

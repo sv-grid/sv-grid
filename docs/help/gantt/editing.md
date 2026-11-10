@@ -205,9 +205,22 @@ Bars are focusable, so the whole plan is reachable without a mouse.
 | `Left` / `Right` | Move a working day (Right from Friday lands on Monday). With `Shift`, a week. With `Alt`, stretch the finish instead. |
 | `+` / `-` | Step progress by 5. |
 | `Enter` | Open the drawer. |
+| `Shift+F10` / Menu key | Open the bar's menu, with focus in it. `Escape` goes back to the bar. |
 | `Delete` | `onTaskDelete`. |
 | `Escape` | Cancel the drag in progress, restoring the bar. |
 | `Ctrl/Cmd+Z`, `Ctrl/Cmd+Shift+Z` (or `Ctrl+Y`) | Undo / redo, with `history`. |
+
+A bar reached by `Tab` scrolls clear of the task table and the scale. Moves,
+progress and a stretched finish are said through the live region. On the
+splitter, `Left` and `Right` change the width of the task table.
+
+With `pickUpToMove: true` an arrow alone writes nothing, as in the scheduler:
+`Space` picks the bar up, `Left` and `Right` carry it, `Space` or `Enter` puts
+it down in one write and one undo step, and `Escape` or `Tab` puts it back. SvGrid
+Base turns this on.
+
+The view's words are English. `text` on the config replaces any of them, for a
+page in another language; the keys are `GANTT_TEXT` in `SvGridGantt.svelte`.
 
 ## Undo and redo
 

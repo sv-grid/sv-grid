@@ -284,8 +284,11 @@ format. Average value is a formula over that rollup and the count:
 `$1,540.00`. A supplier with no items divides by zero and shows an empty
 cell.
 
-Read the link field itself and you get record ids: `{Supplier}` is `s1`, not
-the name. Use a lookup of the linked table's primary field for the name.
+Read the link field itself and you get what its cell shows: `{Supplier}` is
+`Lumen & Co`, and a link to several records is a list of their names, as a
+lookup is. A person field reads the same way: `{Owner}` is `Ana Ruiz`, not the
+id the record stores. An id nothing answers for, such as a person no longer in
+`setFieldUsers`, reads as the id.
 [Tables and links](../fields.md#tables-and-links) has the rest of the link,
 lookup and rollup setup.
 
@@ -338,8 +341,9 @@ A lookup can group a chart too, one group per linked value.
 In the view bar's filter, a formula field follows its `result`. `number`,
 `currency` and `percent` get `=`, `<`, `>=` and the other number operators;
 `date` gets is before, is within and the other date operators. With
-`result: 'auto'` the column's `cellDataType` decides (`'number'` or
-`'date'`), and without one the field gets the text operators (contains,
+`result: 'auto'` the operators follow what the formula gives (`{Amount} * 2` is
+a number, `DATEADD` a date), or the column's `cellDataType` when it has one, and
+otherwise the field gets the text operators (contains,
 does not contain, is, is not, is empty, is not empty). A condition written
 in code names its kind itself:
 `{ column: 'value', kind: 'number', op: 'gte', value: 1000 }`.

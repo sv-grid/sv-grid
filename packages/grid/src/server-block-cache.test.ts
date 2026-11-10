@@ -376,6 +376,48 @@ describe('createBlockCache', () => {
     cache.dispose()
   })
 
+  it('a refresh while a block is in flight frees its slot: loading ends and later blocks load', async () => {
+    const server = scriptedFetch()
+    const states: boolean[] = []
+    const cache = createBlockCache<Row>({
+      blockSize: 100,
+      maxConcurrentRequests: 1,
+      fetch: server.fetch,
+      onChange: (s) => states.push(s.loading),
+      schedule: sync,
+    })
+
+    cache.setViewport(0, 50)
+    await server.flush()
+    // A slow read, then a write's refresh before it answers, then another.
+    cache.refresh()
+    cache.refresh()
+    await server.flush()
+    expect(cache.getCacheState()[0]!.status).toBe('loaded')
+    expect(states[states.length - 1]).toBe(false)
+    // The one slot is free: a block scrolled to is read.
+    cache.setViewport(300, 350)
+    await server.flush()
+    expect(cache.getCacheState().find((b) => b.blockIndex === 3)?.status).toBe('loaded')
+    cache.dispose()
+  })
+
+  it('a block waiting for the slot is read when an edit gives up the read that held it', async () => {
+    const server = scriptedFetch()
+    const cache = createBlockCache<Row>({ blockSize: 100, maxConcurrentRequests: 1, fetch: server.fetch, onChange: () => {}, schedule: sync })
+    cache.setViewport(500, 520)
+    await server.flush()
+    // Block 0 reads; block 2 waits for the one slot.
+    cache.setViewport(0, 10)
+    cache.setViewport(200, 210)
+    expect(server.openCount()).toBe(1)
+    // An insert at the top gives up block 0's read: block 2 takes the slot.
+    cache.insert(0, [{ id: -1 }])
+    await settle()
+    expect(server.startsRequested()).toContain(200)
+    cache.dispose()
+  })
+
   it('aborts the requests it abandons', async () => {
     const server = scriptedFetch()
     const cache = createBlockCache<Row>({

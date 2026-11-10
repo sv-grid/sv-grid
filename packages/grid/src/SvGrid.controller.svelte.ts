@@ -150,6 +150,12 @@ import { untrack, type Snippet } from "svelte";
  * ~17.9M, Chrome/Safari ~33.5M) so it is always safe, if coarser than needed.
  */
 const MAX_DOM_SCROLL_HEIGHT_FALLBACK = 8_000_000;
+/**
+ * The tallest a list is drawn, whatever the browser would scroll. Paint runs on
+ * 32-bit floats, which past 2^24 px lose whole pixels: rows draw in pairs, with
+ * text out of line. This leaves room under that for a header and what follows.
+ */
+const MAX_DOM_PAINT_HEIGHT = 16_000_000;
 
 /** Columns the column window moves by during a horizontal scroll. */
 const COLUMN_WINDOW_STEP = 3;
@@ -284,10 +290,9 @@ function getMaxDomScrollHeight(): number {
     const layoutCap = probe.offsetHeight;
     const scrollCap = wrap.scrollHeight;
     document.body.removeChild(wrap);
-    detectedMaxDomHeight = resolveMaxDomHeight(
-      layoutCap,
-      scrollCap,
-      MAX_DOM_SCROLL_HEIGHT_FALLBACK,
+    detectedMaxDomHeight = Math.min(
+      resolveMaxDomHeight(layoutCap, scrollCap, MAX_DOM_SCROLL_HEIGHT_FALLBACK),
+      MAX_DOM_PAINT_HEIGHT,
     );
   } catch {
     detectedMaxDomHeight = MAX_DOM_SCROLL_HEIGHT_FALLBACK;
@@ -973,6 +978,11 @@ export function createSvGridController<
   // object and a field write still reaches its cell through the proxy.
   // Windowed data (a server row model's rows) is already a fresh array per
   // change and copying it would read every one of its `length` entries.
+  // The array and length last copied: any `setOption` re-runs this, and a new copy
+  // for the same rows would drop what the imperative API did to them.
+  let copiedFrom: unknown;
+  let copiedLength = -1;
+  let copied: ReadonlyArray<TData> = EMPTY_DATA;
   const syncedData = $derived.by(() => {
     const next = props.data ?? EMPTY_DATA;
     // Reading `length` is what subscribes this to a `$state` array's own
@@ -983,9 +993,12 @@ export function createSvGridController<
     const length = next.length;
     if (length === 0) return EMPTY_DATA;
     if (isWindowedData(next)) return next;
+    if (next === copiedFrom && length === copiedLength) return copied;
+    copiedFrom = next;
+    copiedLength = length;
     // Untracked: the copy reads every index of a `$state` array, and an index
     // write alone (same array, same length) never re-synced before either.
-    return untrack(() => next.slice());
+    return (copied = untrack(() => next.slice()));
   });
   // The imperative API (add / remove / move rows, paste, undo) replaces the
   // rows without a round-trip through the consumer. Its array stands until the
@@ -1083,16 +1096,28 @@ export function createSvGridController<
   // in before `createSvGrid` first reads `_rowModels`.
   // svelte-ignore state_referenced_locally
   const externalSortEnabled = props.externalSort === true;
-  // Same one-shot capture for external filtering. Server-side mode means
-  // the wrapper records filter state but does not actually filter rows.
-  // svelte-ignore state_referenced_locally
-  const externalFilterEnabled = props.externalFilter === true;
+  // External filtering is read live, as is external sorting once a row model
+  // is in place: a `rowModel` that arrives after mount (one loaded on demand)
+  // says it filters and sorts on the server, and the local passes over its
+  // placeholder rows - a million of them - would cost seconds for nothing.
+  // Server-side mode means the wrapper records filter state but does not
+  // actually filter rows.
+  const externalFilterOn = () => props.externalFilter === true;
   // Server-side pagination: the footer reads rowCount/pageIndex from props and
   // emits onPaginationChange instead of slicing locally. Controlled by the
   // consumer. Reactive (unlike sort/filter) so pageIndex/rowCount can change.
   const externalPaginationEnabled = $derived(props.externalPagination === true);
   const passthroughSortedRowModel = ({ rows }: { rows: Array<Row<TData>> }) =>
     rows;
+  // A row model that groups on the server (it has group accessors) hands over
+  // its group rows already: grouping them again here would bucket one page.
+  // The grouping state stays, for whatever shows it (a view bar, a chip).
+  const sortUnlessServer =
+    (stage: RowModelFactory<TData>): RowModelFactory<TData> =>
+    (args) => (rawProps.rowModel && props.externalSort === true ? args.rows : stage(args));
+  const serverGroupsPass =
+    (stage: RowModelFactory<TData>): RowModelFactory<TData> =>
+    (args) => (props.serverGroup ? args.rows : stage(args));
   // Client tree data. Structural like external sort, so captured once at mount -
   // the row-model pipeline is read before any later prop change could apply.
   // svelte-ignore state_referenced_locally
@@ -1117,7 +1142,7 @@ export function createSvGridController<
     // controls ordering (e.g. tree data that must preserve hierarchy).
     sortedRowModel: externalSortEnabled
       ? passthroughSortedRowModel
-      : createSortedRowModel<TData>(sortFns),
+      : sortUnlessServer(createSortedRowModel<TData>(sortFns)),
     // Tree nesting replaces grouping when `treeData` is set - a row cannot
     // be both a hierarchy node and bucketed under a group banner.
     groupedRowModel: treeDataConfig
@@ -1125,7 +1150,7 @@ export function createSvGridController<
           parentField: treeDataConfig.parentField,
           idField: treeDataConfig.idField,
         })
-      : keepGroups(createGroupedRowModel<TData>()),
+      : serverGroupsPass(keepGroups(createGroupedRowModel<TData>())),
     expandedRowModel: createExpandedRowModel<TData>(),
   };
 
@@ -1236,10 +1261,13 @@ export function createSvGridController<
   // prop -> state -> callback -> prop loop can form).
   let lastSeededExpanded = JSON.stringify(props.expanded ?? {});
   $effect(() => {
-    const incoming = JSON.stringify(props.expanded ?? {});
+    // Not given: the open groups are the grid's own, and any other prop changing must not fold them.
+    const given = props.expanded;
+    if (!given) return;
+    const incoming = JSON.stringify(given);
     if (incoming === lastSeededExpanded) return;
     lastSeededExpanded = incoming;
-    grid.setExpanded(() => ({ ...(props.expanded ?? {}) }));
+    grid.setExpanded(() => ({ ...given }));
   });
   $effect(() => {
     let previous = grid.getState().expanded ?? {};
@@ -1633,7 +1661,7 @@ export function createSvGridController<
       right[id] = rightAcc;
       rightAcc += getColumnWidth(id);
     }
-    return { left, right };
+    return { left, right, start: leftAcc, end: rightAcc };
   });
 
 
@@ -1936,7 +1964,7 @@ export function createSvGridController<
     // themselves (server-side data sources). Skip every local filter pass
     // so the data isn't double-filtered against the visible page.
     advancedKeep = null;
-    if (externalFilterEnabled) return rawRows;
+    if (externalFilterOn()) return rawRows;
 
     let rows = rawRows;
     if (globalFilter.trim()) {
@@ -2374,11 +2402,21 @@ export function createSvGridController<
   // reveals. `a11y/grid-announcements.ts` documents what is deliberately left
   // unsaid, and why saying it would make the grid talk over itself.
 
+  /**
+   * Records among `rows`: a group's header is none, and a closed group holds its
+   * own. `keep`, the advanced filter: a closed group's `leafCount` was counted
+   * before it, so the number would change as a group opens and closes.
+   */
+  function recordCount(rows: ReadonlyArray<any>, keep?: ((row: any) => boolean) | null): number {
+    if (!groupingColumns.length) return rows.length;
+    const kept = (r: any): number => (r.subRows ?? []).reduce((n: number, s: any) => n + (isGroupRow(s) ? kept(s) : keep!(s) ? 1 : 0), 0);
+    return rows.reduce((n, r) => n + (!isGroupRow(r) ? 1 : r.getIsExpanded?.() ? 0 : keep ? kept(r) : (r.leafCount ?? 0)), 0);
+  }
   /** Data rows before any local filtering - the denominator in "12 of 250". */
   const unfilteredRowTotal = $derived.by(function unfilteredRowTotal_d() {
     dataStateVersion;
     void internalData;
-    return grid.getRowModel().rows.length;
+    return recordCount(grid.getRowModel().rows);
   });
 
   /** Whether any of the five filter surfaces is currently narrowing the rows. */
@@ -2393,33 +2431,43 @@ export function createSvGridController<
 
   let filtersWereActive = false;
   let filterAnnounceTimer: ReturnType<typeof setTimeout> | undefined;
+  let filterSaid = "";
+  let filterToSay: string | null = null;
 
   $effect(() => {
     // In external-filter mode the server decides what matched, so the local
     // counts describe only the page in hand. Announcing them would misreport
     // the result set, which is worse than staying silent.
-    if (externalFilterEnabled) return;
+    if (externalFilterOn()) return;
 
-    const visible = paginatedRowTotal;
+    const visible = groupingColumns.length ? recordCount(allRowsBeforePagination, advancedKeep) : paginatedRowTotal;
     const total = unfilteredRowTotal;
     const active = anyFilterActive;
     const messages = gridMessages;
+    // Opening a group re-runs this, and nothing about the filter has changed.
+    const said = JSON.stringify([visible, total, globalFilter, advancedFilter, filterRowValues, filterMenuValues, customFilterValues, valueFilters]);
 
     untrack(() => {
-      const message = filterAnnouncement(
+      // (The clean-up below has just stopped what was waiting to be said.)
+      const message = said === filterSaid ? filterToSay : filterAnnouncement(
         visible,
         total,
         active,
         filtersWereActive,
         messages,
       );
+      filterSaid = said;
       filtersWereActive = active;
+      filterToSay = message;
       if (!message) return;
       // Typing in the global filter re-runs this per keystroke. A polite region
       // queues rather than replaces, so without a debounce the user hears the
       // count for every prefix they typed before the one they care about.
       clearTimeout(filterAnnounceTimer);
-      filterAnnounceTimer = setTimeout(() => announce(message), 400);
+      filterAnnounceTimer = setTimeout(() => {
+        filterToSay = null;
+        announce(message);
+      }, 400);
     });
 
     return () => clearTimeout(filterAnnounceTimer);
@@ -3250,6 +3298,7 @@ export function createSvGridController<
     count: 0,
     estimateSize: 36,
     overscan: 8,
+    overscanLead: true,
     viewportHeight: 520,
     scrollOffset: 0,
   });
@@ -3416,7 +3465,8 @@ export function createSvGridController<
     createRowScrollScaling(
       virtualRowTotalSize,
       getMaxDomScrollHeight(),
-      viewportHeight,
+      // The rows' own view: the sticky header takes its height off the container's.
+      viewportHeight - headerHeight,
     ),
   );
   const rowDomTotalSize = $derived(rowScrollScaling.domTotal);
@@ -3541,13 +3591,16 @@ export function createSvGridController<
     if (typeof row.getCanExpand === "function" && row.getCanExpand()) return { group: true, level: row.depth ?? 0 };
     return { group: false, level: row.depth ?? 0 };
   }
-  /** The first row whose bottom edge is under the header, in row-index space. */
-  const firstRowUnderHeader = $derived.by(function firstRowUnderHeader_d() {
+  /**
+   * The first row whose bottom edge is under the header, in row-index space;
+   * `whole`: the first row whose top edge is, so all of it is on screen.
+   */
+  function firstRowFrom(whole: boolean): number {
     if (allRows.length === 0) return -1;
     if (rowVirtualizationEnabled) {
       virtualizer.version;
       const offset = virtualizer.getState().scrollOffset;
-      const hit = virtualRows.find((it) => it.end > offset);
+      const hit = virtualRows.find((it) => (whole ? it.start >= offset : it.end > offset));
       return hit ? hit.index : -1;
     }
     rowResizeVersion;
@@ -3555,12 +3608,14 @@ export function createSvGridController<
     const top = scrollMetrics.scrollTop;
     let acc = 0;
     let i = 0;
-    while (i < allRows.length - 1 && acc + rowSizePxOf(i) <= top) {
+    while (i < allRows.length - 1 && (whole ? acc < top : acc + rowSizePxOf(i) <= top)) {
       acc += rowSizePxOf(i);
       i += 1;
     }
     return i;
-  });
+  }
+  const firstRowUnderHeader = $derived.by(() => firstRowFrom(false));
+  const firstWholeRow = $derived.by(() => firstRowFrom(true));
   const stickyGroupRows = $derived.by(function stickyGroupRows_d(): StickyGroupRow[] {
     if (!props.stickyGroupRows) return NO_STICKY;
     const first = firstRowUnderHeader;
@@ -5185,6 +5240,7 @@ export function createSvGridController<
     get columnVirtualizerVersion() { return columnVirtualizerVersion; },
     set columnVirtualizerVersion(v) { columnVirtualizerVersion = v as never; },
     get gridStateVersion() { return gridStateVersion; },
+    get dataStateVersion() { return dataStateVersion; },
     set gridStateVersion(v) { gridStateVersion = v as never; },
     get selectionColumnWidth() { return selectionColumnWidth; },
     get detailToggleColumnWidth() { return detailToggleColumnWidth; },
@@ -5262,8 +5318,8 @@ export function createSvGridController<
     get declaredHiddenColumns() { return declaredHiddenColumns; },
     get toggleColumnGroup() { return toggleColumnGroup; },
     get isColumnGroupCollapsed() { return isColumnGroupCollapsed; },
-    get externalSortEnabled() { return externalSortEnabled; },
-    get externalFilterEnabled() { return externalFilterEnabled; },
+    get externalSortEnabled() { return externalSortEnabled || (!!rawProps.rowModel && props.externalSort === true); },
+    get externalFilterEnabled() { return externalFilterOn(); },
     get passthroughSortedRowModel() { return passthroughSortedRowModel; },
     get resolveEffectiveFeatures() { return resolveEffectiveFeatures; },
     get grid() { return grid; },
@@ -5302,6 +5358,7 @@ export function createSvGridController<
     get getCurrentColumnOrder() { return getCurrentColumnOrder; },
     get emitColumnOrder() { return emitColumnOrder; },
     get setColumnOrderInternal() { return setColumnOrderInternal; },
+    get moveColumnsByUser() { return moveColumnsByUser; },
     get applyColumnDrop() { return applyColumnDrop; },
     get onColumnHeaderDragStart() { return onColumnHeaderDragStart; },
     get onColumnHeaderDragOver() { return onColumnHeaderDragOver; },
@@ -5593,6 +5650,7 @@ export function createSvGridController<
     get rowVirtualizationEnabled() { return rowVirtualizationEnabled; },
     get columnVirtualizationEnabled() { return columnVirtualizationEnabled; },
     get virtualRows() { return virtualRows; },
+    get firstWholeRow() { return firstWholeRow; },
     get autoRowHeightOn() { return autoRowHeightOn; },
     /** Svelte action: measure this row and report its natural height. */
     get measureRowHeight() { return measureRowHeight; },
@@ -5724,12 +5782,14 @@ export function createSvGridController<
     },
     get readCellRaw() { return readCellRaw; },
     get writeCellRaw() { return writeCellRaw; },
+    get writeCellsRaw() { return writeCellsRaw; },
     get applyFillPattern() { return applyFillPattern; },
     get clearSelectedCellValues() { return clearSelectedCellValues; },
     get startFillDrag() { return startFillDrag; },
     get onFillPointerMove() { return onFillPointerMove; },
     get onFillPointerUp() { return onFillPointerUp; },
     get fillDownToNeighbour() { return fillDownToNeighbour; },
+    get fillHandlePressedTwice() { return fillHandlePressedTwice; },
     get isOnMoveGrabStrip() { return isOnMoveGrabStrip; },
     get startMoveDrag() { return startMoveDrag; },
     get onMovePointerMove() { return onMovePointerMove; },
@@ -5772,6 +5832,7 @@ export function createSvGridController<
     get goToPage() { return goToPage; },
     get setPageSize() { return setPageSize; },
     get openContextMenu() { return openContextMenu; },
+    get openActiveCellMenu() { return openActiveCellMenu; },
     get updateFilterRow() { return updateFilterRow; },
     get updateFilterOperator() { return updateFilterOperator; },
     get updateFilterMenuValue() { return updateFilterMenuValue; },
@@ -5827,11 +5888,11 @@ export function createSvGridController<
   // needs). Plain assignment during init - no effect, so SSR gets it too.
   summarize = computeSummaries;
 
-  const { updateFilterRow, updateFilterOperator, updateFilterMenuValue, updateFilterMenuValueTo, addFilterToken, removeFilterToken, toggleFilterToken, toggleCheckboxWithKeyboard, isColumnFiltered, setCustomFilter, closeMenus, openInSuggest, closeInSuggest, openColumnMenu, openFilterMenu, openOperatorMenu, setFilterTokens, clearColumnFilter, changePage, goToPage, setPageSize, openContextMenu } = createMenus<TFeatures, TData>(ctx);
+  const { updateFilterRow, updateFilterOperator, updateFilterMenuValue, updateFilterMenuValueTo, addFilterToken, removeFilterToken, toggleFilterToken, toggleCheckboxWithKeyboard, isColumnFiltered, setCustomFilter, closeMenus, openInSuggest, closeInSuggest, openColumnMenu, openFilterMenu, openOperatorMenu, setFilterTokens, clearColumnFilter, changePage, goToPage, setPageSize, openContextMenu, openActiveCellMenu } = createMenus<TFeatures, TData>(ctx);
   const { cellConditionalFormat, computeRowClass, computeCellClass, computeCellTooltip, computeCellValidity, computeCellNote, getColumnEditorOptions, areEditorOptionsLoading, formatListCellValue, formatCellValue, formatPinnedValue, computePinnedCellClass } = createCellRender<TFeatures, TData>(ctx);
   const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, commitAndMoveByTab, commitAndMoveByEnter, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste, armPasteFallback } = createEditing<TFeatures, TData>(ctx);
   const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, activeRangeRect, cellSelectionState, getSelectionRects, isInFillPreview, dragPreviewRect, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
-  const { cellPinStyle, isColumnPinned, getCurrentColumnOrder, emitColumnOrder, setColumnOrderInternal, applyColumnDrop, onColumnHeaderDragStart, onColumnHeaderDragOver, onColumnHeaderDragLeave, onColumnHeaderDrop, onColumnHeaderDragEnd, pinColumnLeft, pinColumnRight, unpinColumn, toggleColumnVisibleInPanel, moveColumnInPanel, toggleGroupInPanel, getColumnBaseWidth, getColumnWidth, measureText, autosizeColumn, autosizeAllColumns, resetColumns } = createColumns<TFeatures, TData>(ctx);
+  const { cellPinStyle, isColumnPinned, getCurrentColumnOrder, emitColumnOrder, setColumnOrderInternal, moveColumnsByUser, applyColumnDrop, onColumnHeaderDragStart, onColumnHeaderDragOver, onColumnHeaderDragLeave, onColumnHeaderDrop, onColumnHeaderDragEnd, pinColumnLeft, pinColumnRight, unpinColumn, toggleColumnVisibleInPanel, moveColumnInPanel, toggleGroupInPanel, getColumnBaseWidth, getColumnWidth, measureText, autosizeColumn, autosizeAllColumns, resetColumns } = createColumns<TFeatures, TData>(ctx);
   // Managed row dragging loads with the first `rowDragManaged`, not with the
   // grid: SvGrid.svelte attaches these handlers only when the prop is on, they
   // do nothing until the module lands (a frame on a warm cache), and a grid
@@ -5865,7 +5926,7 @@ export function createSvGridController<
   });
   const broadcastAlignedScroll = (left: number) => aligned?.broadcastScroll(left);
   const { buildApi } = createGridApi<TFeatures, TData>(ctx);
-  const { readCellRaw, writeCellRaw, applyFillPattern, clearSelectedCellValues, startFillDrag, onFillPointerMove, onFillPointerUp, fillDownToNeighbour, isOnMoveGrabStrip, startMoveDrag, onMovePointerMove, onMovePointerUp, applyMoveRange, moveDestRect, trackEdgeScroll, stopEdgeScroll, toggleBooleanCell, copySelectionToClipboard, clearSelectedCells, cutSelectionToClipboard } = createClipboard(ctx);
+  const { readCellRaw, writeCellRaw, writeCellsRaw, applyFillPattern, clearSelectedCellValues, startFillDrag, onFillPointerMove, onFillPointerUp, fillDownToNeighbour, fillHandlePressedTwice, isOnMoveGrabStrip, startMoveDrag, onMovePointerMove, onMovePointerUp, applyMoveRange, moveDestRect, trackEdgeScroll, stopEdgeScroll, toggleBooleanCell, copySelectionToClipboard, clearSelectedCells, cutSelectionToClipboard } = createClipboard(ctx);
 
   // Dev-time configuration checks. Silent misconfiguration was the grid's
   // biggest usability gap - a misspelled `field` rendered a column of blank

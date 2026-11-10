@@ -32,7 +32,7 @@ const heapOver = (r, at) =>
 const PUBLISHABLE = {
   svgrid: { id: 'svgrid', label: 'SvGrid', npm: '@svgrid/grid' },
   aggrid: { id: 'aggrid', label: 'AG Grid Community', npm: 'ag-grid-community' },
-  svar: { id: 'svar', label: 'SVAR Svelte DataGrid', npm: 'wx-svelte-grid' },
+  svar: { id: 'svar', label: 'SVAR Svelte DataGrid', npm: '@svar-ui/svelte-grid' },
   tanstack: { id: 'tanstack', label: 'TanStack Table, minimal DOM', npm: '@tanstack/svelte-table' },
 }
 const NAME_TO_KEY = {

@@ -180,6 +180,8 @@ The Enterprise options, on `GanttProConfig`:
 
 | Option | Purpose | Page |
 | --- | --- | --- |
+| `pickUpToMove` | Keyboard moves as in the scheduler: Space picks a bar up, Space puts it down in one write. | [Keyboard](./editing.md#keyboard) |
+| `text` | The view's words, for a page in another language. | [Keyboard](./editing.md#keyboard) |
 | `criticalPath` / `onCriticalPathChange` | Ring the chain with no slack, and report its task ids. | [The critical path](./critical-path.md#the-critical-path) |
 | `baselineStartField` / `baselineEndField` | The agreed dates, drawn as a ghost bar under each task. | [Baselines](./critical-path.md#baselines) |
 | `constraintField` / `constraintDateField` | Pin a task's dates; the cascade stops at the constraint. | [Constraints](./critical-path.md#constraints) |

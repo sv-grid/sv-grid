@@ -719,7 +719,7 @@
    the custom scrollbars are siblings of this container, so their layout is
    unaffected. */
 .sv-grid-container.sv-grid-has-vscroll.sv-grid-has-hscroll {
-  padding-right: 16px;
+  padding-inline-end: 16px;
 }
 .sv-grid-column[data-align="center"] .sv-grid-header-sort {
   justify-content: center;
@@ -1067,6 +1067,9 @@
      and friends use this to avoid scrolling a row underneath the
      sticky header - critical for Excel-style keyboard nav. */
   scroll-padding-top: calc(var(--sg-thead-h, 36px) + var(--sg-frozen-h, 0px));
+  /* The same for the pinned columns, so a header control reached by Tab
+     scrolls clear of them. */
+  scroll-padding-inline: var(--sg-pin-start, 0) var(--sg-pin-end, 0);
 }
 
 .sv-grid-container.sv-grid-container-custom-scrollbars {
@@ -1503,6 +1506,12 @@ select.sv-grid-fr-editor {
   .sv-grid-cell-editing {
     outline: 2px solid Highlight;
     outline-offset: -2px;
+  }
+  /* The mixed dash is a fill, which the theme removes: the header box of a
+     part-selected grid read as empty. Draw it in the button's text colour. */
+  .sv-grid-checkbox[aria-checked="mixed"]::after {
+    forced-color-adjust: none;
+    background: ButtonText;
   }
 }
 /* Only the EDITING cell escapes its own box and outranks the pinned-column
@@ -2384,9 +2393,9 @@ select.sv-grid-fr-editor {
   /* Collapse to zero width when invisible so a non-hovered column
      has no dead space at the right; the funnel (when an active
      filter is on) can then sit flush against the right edge.
-     Hover / focus / open expand it back to 22px. */
+     Hover / focus / open expand it back to 24px. */
   width: 0;
-  height: 22px;
+  height: 24px;
   padding: 0;
   border: 0;
   border-radius: 4px;
@@ -2406,9 +2415,19 @@ select.sv-grid-fr-editor {
 .sv-grid-column:hover .sv-grid-col-menu-btn,
 .sv-grid-col-menu-btn.is-open,
 .sv-grid-col-menu-btn:focus-visible {
-  width: 22px;
+  width: 24px;
   opacity: 1;
   pointer-events: auto;
+}
+
+/* No hover on a touch screen: the menu is there without one, and a tap on it
+   is not a tap on the header, which sorts. */
+@media (hover: none) {
+  .sv-grid-col-menu-btn:not(.sv-grid-col-filter-btn) {
+    width: 24px;
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 /* The funnel filter button is a sibling .sv-grid-col-menu-btn that
@@ -2831,12 +2850,14 @@ select.sv-grid-fr-editor {
 }
 
 .sv-grid-menu-item:disabled,
+.sv-grid-menu-item[aria-disabled="true"],
 .sv-grid-menu-btn:disabled {
   opacity: 0.4;
   cursor: default;
 }
 
-.sv-grid-menu-item:disabled:hover {
+.sv-grid-menu-item:disabled:hover,
+.sv-grid-menu-item[aria-disabled="true"]:hover {
   background: transparent;
 }
 
@@ -3637,8 +3658,10 @@ select.sv-grid-fr-editor {
   font: inherit; font-size: 12.5px; text-align: left; padding: 6px 10px; border: 0;
   border-radius: calc(var(--sg-radius, 6px) - 2px); background: transparent; color: var(--sg-fg, #0f172a); cursor: pointer; white-space: nowrap;
 }
-.sv-grid-chart-export-menu button:hover:not(:disabled) { background: var(--sg-hover-bg, color-mix(in srgb, var(--sg-accent, #2563eb) 10%, transparent)); }
-.sv-grid-chart-export-menu button:disabled { opacity: 0.45; cursor: default; }
+.sv-grid-chart-export-menu button:hover:not(:disabled, [aria-disabled="true"]) { background: var(--sg-hover-bg, color-mix(in srgb, var(--sg-accent, #2563eb) 10%, transparent)); }
+.sv-grid-chart-export-menu button:disabled, .sv-grid-chart-export-menu button.is-off { opacity: 0.45; cursor: default; }
+/* An item that is off but keeps focus (ARIA menu pattern). One that says why in its own words wraps. */
+.sv-grid-chart-export-menu button[aria-disabled="true"] { cursor: default; white-space: normal; max-width: 260px; }
 /* Saved charts: name the active tab, apply or remove a saved one */
 .sv-grid-chart-saved-menu { min-width: 220px; gap: 4px; }
 .sv-grid-chart-saved-row { display: flex; gap: 4px; padding: 2px; }

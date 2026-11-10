@@ -69,6 +69,13 @@
     'Hiring for curiosity',
     'A short history of the spreadsheet',
   ]
+  // Rich text: what the editors need, formatted, with a link where there is one.
+  const BRIEFS = [
+    '<p><strong>Audience:</strong> team leads.</p><ul><li>One concrete practice</li><li>The numbers behind it</li></ul>',
+    '<p><strong>Audience:</strong> new sign-ups. Keep it under <em>800 words</em>.</p><ol><li>The problem</li><li>What changed</li><li>How to try it</li></ol>',
+    '<p>Interview two customers, then pick <strong>one</strong> story. Notes go in the <a href="https://example.com/research">research folder</a>.</p>',
+    '<p><strong>Angle:</strong> what we got wrong first, and the fix.</p><ul><li>Screenshots from the old flow</li><li>A quote from support</li></ul>',
+  ]
   const day = (n: number) => new Date(Date.UTC(2026, 9, 1 + n)).toISOString().slice(0, 10)
   let nextId = TITLES.length + 1
   const CAMPAIGNS = [
@@ -85,7 +92,7 @@
     publish: day((i * 5) % 34),
     cover: [{ id: `cover-${i}`, name: `cover-${i + 1}.svg`, type: 'image/svg+xml', url: editorialArt(i + 1) }],
     words: 600 + ((i * 377) % 1900),
-    brief: 'Audience: team leads. Angle: one concrete practice and the numbers behind it.',
+    brief: BRIEFS[i % BRIEFS.length]!,
     link: i % 4 === 0 ? `https://example.com/blog/post-${i + 1}` : '',
     campaign: [`k${(i % 3) + 1}`],
   }))
@@ -108,7 +115,7 @@
     { field: 'publish', header: 'Publish date', width: 160, fieldType: 'date', fieldProps: { dateFormat: 'friendly' } },
     { field: 'cover', header: 'Cover', width: 120, fieldType: 'attachment' },
     { field: 'words', header: 'Words', width: 100, fieldType: 'number', fieldProps: { format: 'integer', summary: 'sum' } },
-    { field: 'brief', header: 'Brief', width: 260, fieldType: 'longText' },
+    { field: 'brief', header: 'Brief', width: 300, fieldType: 'richText' },
     { field: 'link', header: 'Link', width: 220, fieldType: 'url' },
   ]
 

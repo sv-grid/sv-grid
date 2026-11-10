@@ -11,6 +11,8 @@ import type {
 } from "./index";
 import { formatNumericWithConfig } from "./cell-formatting";
 import { columnDataType, isDateDataType } from "./column-types";
+import { getCellKey } from "./SvGrid.helpers";
+import { windowedSourceOf } from "./windowed-brand";
 
 export function getColumnBaseValue<TData extends RowData>(row: Row<TData>, column: Column<TData>) {
   const def = column.columnDef;
@@ -47,6 +49,50 @@ export function createDataIndexLookup<TData extends RowData>(
     const hit = byRef.get(row?.original);
     return hit === undefined ? -1 : hit;
   };
+}
+
+/**
+ * A copy of the rows for a bulk writer (paste, clear, a fill), and each row's slot
+ * in it. Rows held by a row model change where they stand (`landWrites`), so of a
+ * windowed list only what is loaded is copied: all of it is a million reads
+ * through a Proxy, on every paste.
+ */
+export function rowsToWrite<TData extends RowData>(ctx: any): { next: Array<TData>; dataIndexOf: (row: Row<TData>) => number } {
+  const source = ctx.props.holdRowsOnWrite ? windowedSourceOf<TData>(ctx.internalData) : null;
+  if (!source?.loaded) {
+    const next = ctx.internalData.slice() as Array<TData>;
+    return { next, dataIndexOf: createDataIndexLookup(next) };
+  }
+  const next: Array<TData> = [];
+  for (const i of source.loaded()) next[i] = source.at(i) as TData;
+  // Against the source: a writer replaces a row in `next`, and a second column of it is still that row.
+  return { next, dataIndexOf: (row) => (source.at(row.index) === row.original ? row.index : -1) };
+}
+
+/**
+ * The rows a bulk writer built (paste, clear, a fill), into the grid. Handed over
+ * as a new list they sort and filter again at once. With `holdRowsOnWrite` they
+ * change where they stand, as a typed edit does, and the consumer says when the
+ * view orders them. Returns the list the written rows are in now.
+ */
+export function landWrites<TData extends RowData>(
+  ctx: any,
+  next: Array<TData>,
+  writes: ReadonlyArray<{ at: number; rowId: string; columnId: string; value: unknown }>,
+): ReadonlyArray<TData> {
+  if (!ctx.props.holdRowsOnWrite) {
+    ctx.internalData = next;
+    return next;
+  }
+  const rows = ctx.internalData as Array<TData>;
+  const edits = { ...ctx.editedCellValues };
+  for (const w of writes) {
+    Object.assign(rows[w.at] as object, next[w.at]);
+    edits[getCellKey(w.rowId, w.columnId)] = w.value;
+  }
+  ctx.editedCellValues = edits;
+  ctx.grid.store.setState((prev: unknown) => ({ ...(prev as object) }));
+  return rows;
 }
 
 export function isGroupRow<TData extends RowData>(row: Row<TData>) {

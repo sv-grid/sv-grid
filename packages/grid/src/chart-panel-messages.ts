@@ -28,7 +28,11 @@ export type GridChartPanelMessages = {
   chartExportPng: string
   chartExportSvg: string
   chartExportPdf: string
+  /** The PDF item, off, for a title the PDF's font cannot draw. `{text}` is that title. */
+  chartExportPdfCannotDraw: string
   chartExportCsv: string
+  /** Said by the CSV item, off, for a chart with no table of values (a gauge, a treemap). */
+  chartExportCsvNone: string
   chartExportCopy: string
   chartExportPrint: string
   chartExportDescribe: string
@@ -289,7 +293,9 @@ export const defaultChartPanelMessages: GridChartPanelMessages = {
   chartExportPng: 'PNG image',
   chartExportSvg: 'SVG vector',
   chartExportPdf: 'PDF document',
+  chartExportPdfCannotDraw: 'No PDF: its font cannot draw "{text}". Download PNG or SVG.',
   chartExportCsv: 'CSV data',
+  chartExportCsvNone: 'This chart has no table of values to save as CSV.',
   chartExportCopy: 'Copy to clipboard',
   chartExportPrint: 'Print',
   chartExportDescribe: 'Describe chart',

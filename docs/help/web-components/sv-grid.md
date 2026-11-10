@@ -35,7 +35,7 @@ attribute is the extra convenience, offered only where it can work.
 
 <!-- BEGIN generated reference - packages/grid-wc/scripts/generate-surface.mjs -->
 
-### Attributes (84)
+### Attributes (86)
 
 Primitives, so they work in plain HTML as well as through a property.
 
@@ -65,6 +65,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `loading-skeleton-rows` | `loadingSkeletonRows` | `number` |
 | `error` | `error` | `string \| null` |
 | `empty-message` | `emptyMessage` | `string` |
+| `grid-label` | `gridLabel` | `string` |
 | `show-global-filter` | `showGlobalFilter` | `boolean` |
 | `show-column-filters` | `showColumnFilters` | `boolean` |
 | `filter-mode` | `filterMode` | `"row" \| "menu" \| "global" \| "none"` |
@@ -95,6 +96,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `move-cells` | `moveCells` | `boolean` |
 | `enable-row-hover` | `enableRowHover` | `boolean` |
 | `copy-headers-to-clipboard` | `copyHeadersToClipboard` | `boolean` |
+| `hold-rows-on-write` | `holdRowsOnWrite` | `boolean` |
 | `enable-inline-editing` | `enableInlineEditing` | `boolean` |
 | `edit-on-second-click` | `editOnSecondClick` | `boolean` |
 | `full-row-editing` | `fullRowEditing` | `boolean` |
@@ -126,7 +128,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `aligned-grid-group` | `alignedGridGroup` | `string` |
 | `filter-locale` | `filterLocale` | `string \| ReadonlyArray<string>` |
 
-### Properties only (40)
+### Properties only (41)
 
 Arrays, objects and functions. An HTML attribute is a string, so these can
 only be assigned in script: `el.columns = [...]`.
@@ -153,6 +155,7 @@ only be assigned in script: `el.columns = [...]`.
 | `processCellForClipboard` | `(params: { ... }) => unknown` |
 | `includeCollapsedRows` | `(rowIndex: number) => boolean` |
 | `clipboardHtml` | `(params: { rects: ReadonlyArray<{ ... }>; text: string; }) => string \| null \| undefined` |
+| `parseClipboardText` | `(text: string) => string[][]` |
 | `processCellFromClipboard` | `(params: { ... }) => unknown` |
 | `initialSorting` | `Array<{ id: string; desc: boolean }>` |
 | `initialAdvancedFilter` | `GridPredicateExpr \| null` |
@@ -174,7 +177,7 @@ only be assigned in script: `el.columns = [...]`.
 | `pinnedBottomRows` | `ReadonlyArray<TData>` |
 | `columnOrder` | `ReadonlyArray<string>` |
 
-### Events (34)
+### Events (35)
 
 `detail` is the callback's argument. The one callback that takes two carries
 an object keyed by its parameter names.
@@ -193,6 +196,7 @@ an object keyed by its parameter names.
 | `columnresize` | `onColumnResize` | `event` |
 | `rowresize` | `onRowResize` | `event` |
 | `pasteclipboard` | `onPasteClipboard` | `payload` |
+| `pasteoverflow` | `onPasteOverflow` | `e` |
 | `apiready` | `onApiReady` | `api` |
 | `rowselectionchange` | `onRowSelectionChange` | `{ selection, rows }` |
 | `cellselectionchange` | `onCellSelectionChange` | `ranges` |

@@ -10,7 +10,7 @@
    *
    * The Features views: the roadmap grouped by quarter (each group showing
    * its count, total effort in days and votes), the status board, a timeline
-   * calendar from start to target date, the "Now" view filtered to work in
+   * of bars from start to target date, the "Now" view filtered to work in
    * progress, and the form anyone can use to request a feature.
    */
   import { SvBase, enableBase, type BaseTable } from '@svgrid/enterprise/base'
@@ -157,7 +157,7 @@
       views: [
         { id: 'roadmap', name: 'Roadmap by quarter', type: 'grid', color: { mode: 'field', field: 'status' }, state: { grouping: ['quarter'], sorting: [{ id: 'quarter', desc: false }, { id: 'impact', desc: true }] } },
         { id: 'board', name: 'Status board', type: 'kanban', stackBy: 'status' },
-        { id: 'timeline', name: 'Timeline', type: 'calendar', dateField: 'start', endField: 'target', color: { mode: 'field', field: 'status' } },
+        { id: 'timeline', name: 'Timeline', type: 'gantt', dateField: 'start', endField: 'target', color: { mode: 'field', field: 'status' } },
         { id: 'effort', name: 'Effort by team', type: 'chart', chart: { kind: 'barH', x: 'teams', y: 'effort' } },
         {
           id: 'now',

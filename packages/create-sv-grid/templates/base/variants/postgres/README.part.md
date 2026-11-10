@@ -11,4 +11,9 @@ npm run dev
 ```
 
 Skip `npm run db:setup` to use tables you already have: the base shows every
-table it finds.
+table of the schemas on the database's search path (`public` unless you set one).
+With no tables yet the page says so; run `npm run db:setup` and reload.
+
+The dev server answers anyone on your machine. A build answers no one until you
+set `authorize` in `src/routes/api/base/+server.ts` to say who may read and
+write.

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { sanitizeHtml, renderMarkdown, htmlToText } from './sanitize-html'
 
 /**
@@ -178,5 +178,38 @@ describe('sanitizeHtml - SSR path (no DOMParser)', () => {
 
   it('removes unknown tags entirely', () => {
     expect(withoutDom('<marquee>text</marquee>')).toBe('text')
+  })
+})
+
+describe('Trusted Types', () => {
+  it('makes one policy, svgrid, and gives every HTML sink its TrustedHTML', async () => {
+    vi.resetModules()
+    class Trusted {
+      constructor(readonly html: string) {}
+      toString() { return this.html }
+    }
+    const made: string[] = []
+    const g = globalThis as { trustedTypes?: unknown }
+    g.trustedTypes = {
+      createPolicy: (name: string, rules: { createHTML(s: string): string }) => {
+        made.push(name)
+        return { createHTML: (s: string) => new Trusted(rules.createHTML(s)) }
+      },
+    }
+    const parse = vi.spyOn(DOMParser.prototype, 'parseFromString')
+    try {
+      const m = await import('./sanitize-html')
+      const out = m.trustedHtml('<p onclick="x()">Hi <script>bad()</script></p>') as unknown
+      expect(out).toBeInstanceOf(Trusted)
+      expect(String(out)).toBe('<p>Hi </p>')
+      m.sanitizeHtml('<b>x</b>')
+      expect(parse.mock.calls.length).toBeGreaterThan(0)
+      expect(parse.mock.calls.every(([input]) => (input as unknown) instanceof Trusted)).toBe(true)
+      expect(made).toEqual(['svgrid'])
+    } finally {
+      delete g.trustedTypes
+      parse.mockRestore()
+      vi.resetModules()
+    }
   })
 })

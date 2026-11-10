@@ -26,12 +26,6 @@ export type RowScrollScaling = {
   logicalToDom(logical: number): number
 }
 
-function clamp01(value: number): number {
-  if (value <= 0) return 0
-  if (value >= 1) return 1
-  return value
-}
-
 /** Below this a reading is junk (0 from jsdom, a sub-cap layout quirk, etc). */
 const MAX_DOM_HEIGHT_SANITY_FLOOR = 100_000
 /** At/above this the browser didn't clamp (returned ~the 1e9 we asked for). */
@@ -91,31 +85,35 @@ export function resolveMaxDomHeight(
  *    the very last row is always reachable.
  *  - `logicalToDom` is the inverse of `domToLogical` across the range.
  *  - Both maps are monotonic non-decreasing and clamp out-of-range inputs.
+ *  - Near both ends a pixel is a pixel: scaled up to the very ends, the rows
+ *    drawn around the view would run past the top or the end of the spacer,
+ *    and the list and its scrollbar would stop agreeing.
  */
 export function createRowScrollScaling(
   trueTotal: number,
   maxDomHeight: number,
   viewport: number,
 ): RowScrollScaling {
-  const safeMax = Math.max(maxDomHeight, 1)
-  const domTotal = Math.min(Math.max(trueTotal, 0), safeMax)
-  const active = trueTotal > safeMax
-  // Scrollable ranges (content minus one viewport). Guard against zero so the
-  // ratios below never divide by zero on tiny / empty grids.
-  const domRange = Math.max(domTotal - viewport, 1)
-  const logicalRange = Math.max(trueTotal - viewport, 0)
+  const active = trueTotal > maxDomHeight
+  const domTotal = active ? maxDomHeight : trueTotal
+  // Scrollable ranges (content minus one viewport). The maps read them only
+  // when scaling, so never for a tiny or empty grid.
+  const domRange = domTotal - viewport
+  const logicalRange = trueTotal - viewport
+  // More than the overscan and a view of the tallest rows; a third of the range at most.
+  const edge = Math.min(8192, domRange / 3)
+  // Straight across the middle; the ends keep their distance to the end.
+  const map = (value: number, from: number, to: number): number => {
+    const v = Math.min(Math.max(value, 0), from)
+    if (v <= edge) return v
+    if (v >= from - edge) return to - from + v
+    return edge + ((v - edge) * (to - 2 * edge)) / (from - 2 * edge)
+  }
 
   return {
     active,
     domTotal,
-    domToLogical(domTop: number): number {
-      if (!active) return domTop
-      return clamp01(domTop / domRange) * logicalRange
-    },
-    logicalToDom(logical: number): number {
-      if (!active) return logical
-      const lr = Math.max(logicalRange, 1)
-      return clamp01(logical / lr) * Math.max(domTotal - viewport, 0)
-    },
+    domToLogical: (domTop) => (active ? map(domTop, domRange, logicalRange) : domTop),
+    logicalToDom: (logical) => (active ? map(logical, logicalRange, domRange) : logical),
   }
 }

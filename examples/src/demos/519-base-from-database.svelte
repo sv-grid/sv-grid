@@ -21,7 +21,7 @@
    *  - a Kanban board by the first select and a calendar by the first date.
    * Every edit goes back to the database as SQL.
    *
-   * In an app, `execute` runs on your server: `createBaseEndpoint({ execute })`
+   * In an app, `execute` runs on your server: `createBaseEndpoint({ execute, tables, authorize })`
    * in a SvelteKit route and `baseFromEndpoint('/api/base')` in the page.
    */
   import { PGlite } from '@electric-sql/pglite'

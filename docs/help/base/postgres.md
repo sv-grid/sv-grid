@@ -51,13 +51,27 @@ is its key here. (With `serial` or `uuid` keys the database makes, set
 
 ## 2. Install
 
+Start from a SvelteKit app. `npx sv create tracker` makes one on SvelteKit 3, and
+the code on this page is written for that. An app on SvelteKit 2, such as one
+from `npm create @svgrid`, takes [a few small changes](#on-sveltekit-2).
+
 ```bash
 npm i @svgrid/grid @svgrid/enterprise pg
+npm i -D @types/pg
 ```
 
 ```bash
 # .env
 DATABASE_URL=postgres://user:password@localhost:5432/tracker
+```
+
+SvelteKit 3 hands an app only the variables it declares:
+
+```ts
+// src/env.ts
+import { defineEnvVars } from '@sveltejs/kit/env'
+
+export const variables = defineEnvVars({ DATABASE_URL: {} })
 ```
 
 ## 3. One endpoint per table
@@ -70,7 +84,7 @@ both from a table name and its columns:
 // src/lib/server/tables.ts
 import pg from 'pg'
 import { createKitHandlers, createSqlDataSource, type EntitySchema } from '@svgrid/enterprise'
-import { DATABASE_URL } from '$env/static/private'
+import { DATABASE_URL } from '$app/env/private'
 
 const pool = new pg.Pool({ connectionString: DATABASE_URL })
 
@@ -102,16 +116,20 @@ export function tableEndpoint(table: string) {
     dialect: { placeholders: '$', ilike: true },
     execute: async (sql, params) => (await pool.query(sql, params)).rows,
   })
-  return createKitHandlers({ schema, source })
+  return createKitHandlers({ schema, source, authorize: ({ event }) => !!event.locals?.user })
 }
 ```
+
+On a table with `softDelete`, a `transaction` and `linkedFrom` make Delete forever one server
+step. [Delete forever is one step](./undo-trash-import.md#delete-forever-is-one-step) has one
+for each driver.
 
 Then a route that serves any of the four tables:
 
 ```ts
 // src/routes/api/[table]/+server.ts
 import { error } from '@sveltejs/kit'
-import { tableEndpoint } from '$lib/server/tables'
+import { tableEndpoint } from '#lib/server/tables.ts'
 
 const TABLES = new Set(['projects', 'tags', 'tasks', 'task_tags'])
 
@@ -121,6 +139,39 @@ export async function POST(event: { params: { table: string }; request: Request;
 }
 ```
 
+`authorize` above reads `event.locals.user`, and that is yours to fill in: without
+it every call is a `403` and the page says you have no permission. Your sign-in
+sets it in `src/hooks.server.ts`. Until you have one, this signs everyone in on
+your machine and nobody in a production build:
+
+```ts
+// src/hooks.server.ts
+import type { Handle } from '@sveltejs/kit/hooks'
+import { dev } from '$app/env'
+
+export const handle: Handle = ({ event, resolve }) => {
+  if (dev) event.locals.user = { id: 'me' }
+  return resolve(event)
+}
+```
+
+```ts
+// src/app.d.ts
+declare global {
+  namespace App {
+    interface Locals {
+      user?: { id: string }
+    }
+  }
+}
+
+export {}
+```
+
+The base asks this endpoint for dates, bigints and decimals as Postgres writes
+them, so a date shows the same day whatever zone the server or the browser is in
+([what a cell holds](./data.md#what-a-cell-holds)).
+
 Every statement uses parameters (`$1`, `$2`), so no value the base sends is
 ever part of the SQL text. Using Drizzle? Pass `execute` the same `pg.Pool`
 you gave `drizzle()`.
@@ -129,6 +180,47 @@ Who may do what belongs here too: `createKitHandlers` takes `authorize`
 (return `false` to refuse an operation), `scope` (each person sees only
 their rows) and `audit` (log every write). See
 [access control](../../enterprise/studio/access-control.md).
+
+The schema is the whitelist. A column that is not on it is not read, not
+returned from a write and cannot be set, whatever a client sends. So leave
+`password_hash` off `SCHEMAS` and it stays on the server. A field marked
+`readonly: true` is read but only your server sets it: the handlers drop it from
+what a client sends, and a `before*` hook can still write it.
+
+What the database says stays in the server log, because a driver's words name
+tables, columns and values. A refusal reaches the page as a `409` with a code it
+turns into plain words:
+
+| The database refused | The person reads | `code` |
+|---|---|---|
+| A unique constraint | Another record already has this value. | `duplicate` |
+| `NOT NULL` | This field needs a value. | `required` |
+| A foreign key, on a write: the record it names is not there | The record Site id points to is not there. (names the field when the database says which) | `link-missing` |
+| A foreign key, on a delete: other records name this one | Other records depend on it. | `linked` |
+| A `CHECK`, a value too long or of the wrong type | The database does not accept this value. | `not-accepted` |
+| Its permissions | You do not have permission to do this. | `no-permission` |
+
+Anything else is a `500` with `code: 'request-failed'`, and the page says "Not saved: The
+server answered with an error. Whoever runs it can see why in its log." A trigger's
+`RAISE EXCEPTION` is one of these: its text stays in the log too. "It may not have been
+stored" is said only of a write that got no answer at all. A source in the page's own
+process (`baseFromDatabase`, your own `execute`) reads what it throws the same way: the
+notice says what its code means and never the driver's message, which is in the status
+line's tooltip. To say something of your own, throw an `Error` with `expose: true` from `execute` or a hook: its message
+goes to the client with a `400`. Only do that with text you wrote.
+
+```ts
+execute: async (sql, params) => {
+  try {
+    return (await pool.query(sql, params)).rows
+  } catch (e) {
+    if ((e as { constraint?: string }).constraint === 'not_blocked') {
+      throw Object.assign(new Error('Blocked is set by the planning team.'), { expose: true })
+    }
+    throw e
+  }
+},
+```
 
 ## 4. The tables in the browser
 
@@ -204,13 +296,15 @@ What each change runs:
 
 | In the base | In the database |
 |---|---|
-| Set a task's Status | `UPDATE "tasks" SET "status" = $1 WHERE "id" = $2 RETURNING *` |
-| Pick a Project for a task | `UPDATE "tasks" SET "project_id" = $1 WHERE "id" = $2 RETURNING *` |
+| Set a task's Status | `UPDATE "tasks" SET "status" = $1 WHERE "id" = $2 RETURNING "id", "name", ...` |
+| Pick a Project for a task | `UPDATE "tasks" SET "project_id" = $1 WHERE "id" = $2 RETURNING "id", "name", ...` |
 | Add a task to a project from the Projects tab | the same `UPDATE` on the task |
-| Add a tag to a task | `INSERT INTO "task_tags" ("task_id", "tag_id") VALUES ($1, $2) RETURNING *` |
+| Add a tag to a task | `INSERT INTO "task_tags" ("task_id", "tag_id") VALUES ($1, $2) RETURNING "id", "task_id", "tag_id"` |
 | Remove a tag | `DELETE FROM "task_tags" WHERE "id" = $1` |
-| "+ Add task" | `INSERT INTO "tasks" (...) VALUES (...) RETURNING *` |
+| "+ Add task" | `INSERT INTO "tasks" (...) VALUES (...) RETURNING "id", "name", ...` |
 | Delete a task | `DELETE FROM "tasks" WHERE "id" = $1` |
+
+`RETURNING` lists the schema's columns and no others.
 
 The Count field and the Tasks fields of Projects and Tags are worked out in
 the page and never written.
@@ -222,7 +316,7 @@ the page and never written.
 <script lang="ts">
   import { SvToaster } from '@svgrid/grid'
   import { SvBase, enableBase } from '@svgrid/enterprise/base'
-  import { trackerTables } from '$lib/tracker'
+  import { trackerTables } from '#lib/tracker.ts'
 
   enableBase()
   let tables = $state.raw(trackerTables())
@@ -243,9 +337,21 @@ alter table tasks add constraint not_blocked check (status <> 'Blocked') not val
 ```
 
 and set a task to Blocked. The `UPDATE` fails, the cell goes back to what
-the database holds, and the base says why:
+the database holds, and the base says why in plain words. The table in
+[step 3](#3-one-endpoint-per-table) lists them, and shows how to send your own:
 
-![A refused write: the database rejects the status, the cell goes back to Todo, and the tab bar and a notice give the database's message.](/docs-media/base-refused-write.png)
+![A refused write: the database rejects the status, the cell goes back to Todo, and the tab bar says the database does not accept this value.](/docs-media/base-refused-write.png)
+
+## On SvelteKit 2
+
+The scaffolds from `npm create @svgrid` pin SvelteKit 2, where a few names differ:
+
+| On this page | On SvelteKit 2 |
+|---|---|
+| `#lib/server/tables.ts` | `$lib/server/tables` |
+| `src/env.ts` and `$app/env/private` | no `src/env.ts`, and `$env/static/private` |
+| `$app/env` | `$app/environment` |
+| `import type { Handle } from '@sveltejs/kit/hooks'` | `import type { Handle } from '@sveltejs/kit'` |
 
 ## 7. Changes made by others
 
@@ -255,22 +361,35 @@ change, your server forwards it to the browser over server-sent events or a
 WebSocket, and the client calls `onChange`:
 
 ```ts
-import { baseSource } from '@svgrid/enterprise/base'
+import { baseSource, createBaseFeed } from '@svgrid/enterprise/base'
 import { createKitDataSource } from '@svgrid/enterprise'
+
+// One stream for every table: your endpoint sends { "table": "tasks" } when a table changes.
+const feed = createBaseFeed((apply) => {
+  const events = new EventSource('/api/changes')
+  events.onmessage = (e) => apply(JSON.parse(e.data).table)
+  return () => events.close()
+})
 
 const tasksSource = baseSource(createKitDataSource({ endpoint: '/api/tasks' }), {
   links: { project: { column: 'project_id' } },
-  realtime: (onChange) => {
-    // Your endpoint that streams a line whenever the tasks table changes.
-    const events = new EventSource('/api/changes?table=tasks')
-    events.onmessage = () => onChange()
-    return () => events.close()
-  },
+  realtime: feed('tasks'),
+})
+const projectsSource = baseSource(createKitDataSource({ endpoint: '/api/projects' }), {
+  realtime: feed('projects'),
 })
 ```
 
+Keep it to one stream for the base, not one per table. A browser opens at most six
+connections to one host over HTTP/1.1, and each open stream holds one: with a stream per
+table on six tables, no write reaches the server.
+
 Without `realtime`, people see each other's changes when they open the base
 again.
+
+The feed has to cover what `tasks` does not hold. A link to many through a junction table
+changes that table, not this one: when the junction changes, call `apply('tasks')`. See
+[What a feed has to cover](./data.md#what-a-feed-has-to-cover).
 
 ## Next
 

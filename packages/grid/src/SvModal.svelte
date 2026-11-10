@@ -1,3 +1,11 @@
+<script module lang="ts">
+  let closeWord = $state('Close')
+  /** What the header's x is called, for every modal on the page. A translated app sets it once. */
+  export function setModalCloseLabel(label: string): void {
+    closeWord = label
+  }
+</script>
+
 <script lang="ts">
   /**
    * SvModal - an accessible modal dialog: backdrop, focus trap, Escape / backdrop
@@ -34,6 +42,8 @@
     closeOnEsc?: boolean
     /** Hide the header close (x) button. */
     hideClose?: boolean
+    /** The id of what the dialog says, read with its title as it opens: a question whose answer needs it. */
+    describedBy?: string
     /**
      * The element to focus when the dialog opens. Defaults to the first
      * focusable control in the body or footer - never the header Close (x),
@@ -56,6 +66,7 @@
     closeOnBackdrop = true,
     closeOnEsc = true,
     hideClose = false,
+    describedBy,
     initialFocus,
     children,
     footer,
@@ -145,6 +156,7 @@
       class="sv-modal sv-modal--{size}"
       class:is-resized={!!box}
       {...overlay.dialogProps({ labelledBy: title ? titleId : undefined })}
+      aria-describedby={describedBy}
       style:transform={`translate(calc(-50% + ${drag.x}px), calc(-50% + ${drag.y}px))`}
       style:width={box ? `${box.w}px` : width ? `${width}px` : undefined}
       style:height={box ? `${box.h}px` : undefined}
@@ -161,7 +173,7 @@
         >
           <h2 class="sv-modal__title" id={titleId}>{title ?? ''}</h2>
           {#if !hideClose}
-            <button type="button" class="sv-modal__x" aria-label="Close" onclick={close}>&times;</button>
+            <button type="button" class="sv-modal__x" aria-label={closeWord} onclick={close}>&times;</button>
           {/if}
         </div>
       {/if}

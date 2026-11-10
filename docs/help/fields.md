@@ -235,9 +235,10 @@ A property the column sets itself wins over its type:
 | --- | --- |
 | `text` | `default` |
 | `longText` | `richText` (**bold**, *italic*, `code`, [links](https://svgrid.com), "- " lists; drawn as elements, never as HTML) |
+| `richText` | `toolbar` (`standard`, `full`); values are HTML, sanitized when stored and again when drawn |
 | `attachment` | `accept`, `maxFiles`, `maxSize`, `upload` |
 | `checkbox` | `icon` (`check`, `x`, `star`, `heart`, `thumbsUp`, `flag`, `dot`), `color`, `default` |
-| `singleSelect`, `multiSelect` | `options` (`{ value, label?, color? }[]`, 40 colors in the editor, sort A to Z), `default` |
+| `singleSelect`, `multiSelect` | `options` (`{ id?, value, label?, color? }[]`, 40 colors in the editor, sort A to Z), `default` |
 | `user` | `multiple`, `default`; the people come from `setFieldUsers` |
 | `date` | `dateFormat` (`local`, `friendly`, `us`, `european`, `iso`), `time`, `timeFormat` (`12hour`, `24hour`), `gmt` (one time zone for everyone), `showTimeZone`, `defaultToday` |
 | `phone`, `email`, `url` | none |
@@ -249,6 +250,8 @@ A property the column sets itself wins over its type:
 | `duration` | `durationFormat` (`h:mm`, `h:mm:ss`, `h:mm:ss.S`, `h:mm:ss.SS`, `h:mm:ss.SSS`); values are seconds, typed as `1:30` or `1h 30m` |
 | `timeOfDay` | `timeFormat` (`12hour`, `24hour`), `showSeconds`, `default`; values are `'HH:MM'` (24 hour), `'HH:MM:SS'` with seconds |
 | `rating` | `max` 1 to 10, `icon` (`star`, `heart`, `thumbsUp`, `flag`, `dot`), `color` |
+| `vote` | `icon` (`up`, `thumb`, `heart`), `color`; values are the voters' user ids. A click on the selected cell (or Enter, Space) adds the signed-in person's vote or takes it back; it sorts by the count and filters as people |
+| `sparkline` | `chart` (`line`, `area`, `bar`), `color`, `showLast`; values are numbers, typed or pasted as `3, 7, 4, 9`, sorted by the last |
 | `formula` | `formula`, `result` (`auto`, `number`, `currency`, `percent`, `date`) and that format's options |
 | `createdTime`, `lastModifiedTime` | the date options; last modified also `watch` (`all`, `specific`) and `watchFields` |
 | `createdBy`, `lastModifiedBy` | last modified by: `watch`, `watchFields`; the user comes from `setCurrentUser` |
@@ -264,8 +267,11 @@ after) or the percent sign right beside it, and a spinner at the cell's
 edge: its arrows, or Up and Down, add or take away `step` (Shift: ten
 times). It reads what people type the way the field writes it: its own
 separators, a pasted symbol or percent sign, `2.5k`, `3M`, `(120)` for -120.
-Enter commits and moves a row down, Tab a column across. On commit the
-value is rounded to the field's precision; text that is not a number, or a
+Enter commits and moves a row down, Tab a column across. The value is stored
+as typed: precision is how the field shows it, and only an `integer` field
+rounds, to whole numbers. A number with more than 15 significant digits stays
+exact as text, in the cell, the box and the write. A box left as it opened
+stores nothing. Text that is not a number, or a
 negative where the field allows none, keeps the box open and says why under
 the cell. Pasting `$1,200.50` into the cell is read the same way. Columns
 with the older `currency` and `percent` field types keep working and open in
@@ -273,21 +279,71 @@ the field editor as a number in that format.
 
 Long text opens a panel over the cell with room for paragraphs: Enter
 starts a new line, Ctrl+Enter (Cmd+Enter), Tab or a click outside saves,
-Escape leaves the cell as it was. With rich text on, the panel names the
-markup the cell draws.
+Escape leaves the cell as it was. With its Markdown option (`richText`) on,
+the panel names the markup the cell draws.
+
+Rich text opens the same kind of panel with a formatting toolbar over the
+text: bold, italic, underline, strikethrough, bullet and numbered lists, links
+and clear formatting. The `full` toolbar adds headings, quotes, code blocks,
+undo and redo. Ctrl+B, Ctrl+I and Ctrl+U format the selection and Ctrl+K adds
+a link; the keys that save and cancel are the long text's. A key typed on the
+cell goes on at the end of the text instead of replacing it. The value is HTML.
+It is sanitized when it is stored and again before a cell draws it: scripts,
+styles, event attributes and `javascript:` links are removed. In a grid row
+the paragraphs and list items run on one line, a taller row height shows them
+as lines, and the expanded record and the form show all of it. A link in a
+cell opens in a new tab. Search, the filter, sorting, a copy, a lookup and a
+formula read the words without the markup, so `LEN({Notes})` counts letters.
+Converting a long text to rich text makes each line a paragraph and renders its
+Markdown; converting back keeps one line per paragraph and list item.
+
+<div data-docs-demo="722-base-rich-text" data-height="620"></div>
+
+```ts
+import type { GridColumns } from '@svgrid/grid'
+
+type Post = { title: string; brief: string | null }
+
+const columns: GridColumns<Post> = [
+  { field: 'title', header: 'Title', fieldType: 'text' },
+  { field: 'brief', header: 'Brief', fieldType: 'richText', fieldProps: { toolbar: 'full' } },
+]
+```
 
 A duration uses the same editor in its own format: `2:00` in the box,
 `1:30` or `1h 30m` typed, a minute a step (a second when the format shows
 seconds). A date opens with the date written as its cells write it
-(`October 24, 2026` for friendly), and a date without time is stored as the
-calendar date (`'2026-10-24'`), never moved across a day by a time zone.
+(`October 24, 2026` for friendly) and a calendar, with a time tab when the
+field has a time. It reads `12/24/2026`, `12/24/26`, `12/24` (this year),
+`2026-12-23`, `Dec 22, 2026` and `22 December 2026`, each with a time after it
+if the field has one. Which of `3/4` is the day follows the field's date
+format, then the viewer's locale; a number that cannot be a month settles it.
+Text that is no date says so under the cell and keeps the box open. A date
+without time is stored as the calendar date (`'2026-10-24'`), never moved
+across a day by a time zone.
+
+In a base, Enter on a selected cell opens its editor (inside a selected block
+it walks the block), a key typed on a date or a link cell starts editing, as it
+does on text, and Space or Enter on a checkbox cell ticks it.
+
+Records keep an option's name. Rename an option in the field editor and every
+record that holds it takes the new name, on a board its cards stay in the lane,
+and what names the option follows: a view's filter and condition colors, form
+logic, dashboard tiles, automations and the field's default. Remove an option and
+the editor says how many records hold it, next to Save; saving clears it from
+them, and their cards go to the Uncategorized lane. Ctrl+Z puts it all back. On a
+table in a database a rename is a write to each record that holds it, a block at
+a time, and the tab bar says how far it has got. The option's `id` is how a save
+tells a rename from a remove and an add; the editor gives one to any option
+that has none.
 
 A select cell opens a panel over itself: the chosen options as pills (each
 with a remove button), a search box and the options. Typing filters them; a
 value that is not an option yet is offered as "Add option", which adds it to
 the field (with a color, through `onColumnChange`) and picks it. A multiple
 select stays open to pick more; Backspace in the empty search box removes the
-last choice. A user field opens the same panel with the people from
+last choice. On a single select, Delete or Backspace in the empty search box
+empties the cell, as Delete on the closed cell does. A user field opens the same panel with the people from
 `setFieldUsers`, each with the avatar and name its cells show.
 
 A `default` (or a type's own new-row value: today, the next autonumber, the
@@ -297,7 +353,9 @@ existing row a value when the field is created.
 
 URL, email and phone cells become links only for the schemes they mean
 (`http(s):`, `mailto:`, `tel:`). A value such as `javascript:alert(1)` stays
-text.
+text. A cell takes any text, and one that is not an address shows as plain text
+with no link; a form refuses it. Give the column a `validate` to hold cells to
+the same rule.
 
 ## Checklists, colors and times of day
 
@@ -322,10 +380,24 @@ const row = {
 }
 ```
 
+In a grid a click on a checkbox's box, a star, a vote or a button acts at once, and
+selects the cell too. A click on the rest of the cell only selects it, so a click to
+select never changes a record. A double-click on a button runs it once.
+
+On anything else the first click selects the cell and never leaves the page. A click
+on the cell already selected then acts: it follows a link (`url`, `email`, `phone`, a
+link in rich text), opens a linked record from its chip, and opens the panel of a
+checklist or attachment. Ctrl or Cmd click follows a link at once, and a double-click
+edits the cell. A finger's tap follows the same rules: it selects a link cell, and the
+next tap follows the link. A card, a form and an open record have no cell to select,
+so a click acts there at once. In a plain grid a
+checkbox column that wants a click to select first sets `toggleOnSecondClick`; a
+field's column has it.
+
 A **checklist** holds to-do items in order, each `{ id, text, done }`. The
 cell shows `1/2` and a bar, green once every item is done. A click on them
-(or Enter, a double-click, a typed key, which starts a new item) opens a
-panel over the cell; a click beside them only selects the cell. In the panel, tick
+in the selected cell (or Enter, a double-click, a typed key, which starts a new
+item) opens a panel over the cell; the first click only selects it. In the panel, tick
 an item, rename it in place, drag it by its handle or move it with Alt+Up
 and Alt+Down, delete it, and add one in the box at the bottom (Enter adds
 and stays there). Ctrl+Enter, Tab, Done or a click outside saves; Escape
@@ -339,9 +411,8 @@ As text a checklist is one item per line, `[x] Done item` or `[ ] Open item`.
 That is what a type change to long text, an export and a lookup write, and
 a paste, a CSV import or a type change from text read: a line with no mark
 is an open item, and `- [x]` (a Markdown task list) works too. A copy
-(Ctrl+C) puts the items on one line, `[x] Slides final [ ] Mic check`,
-because a paste splits rows at line breaks; the field reads several marks
-on one line as several items.
+(Ctrl+C) puts the items on one line, `[x] Slides final [ ] Mic check`; the
+field reads several marks on one line as several items.
 
 A **color** is stored lower case as `'#rrggbb'`. The cell shows a swatch and
 the code. The editor offers the 40 option colors (Arrow keys walk them) and
@@ -388,10 +459,13 @@ Images show as thumbnails, other files as chips, as many as the column width
 holds and then "+N". Enter or a double click opens the dialog: add files with
 the picker, by dropping them, by pasting them or by URL; remove, reorder (drag,
 or Alt+Left / Alt+Right) and preview (images and PDFs inline). Files dropped on
-the cell itself are added without the dialog. Export writes the file names. A
+the cell itself are added without the dialog. A view downloaded from a base
+writes the file names. A
 copy in `<SvBase>` writes their URLs, and pasting text adds one attachment per
 http(s) URL in it, so a copied cell pastes as the same files. In a base, people
-and links copy as names too, and a pasted name finds its person or record.
+and links copy as names too, and a pasted name finds its person or record. How
+every field copies, pastes and fills is in
+[Copy, paste and fill in a base](#copy-paste-and-fill-in-a-base).
 
 Uploading is yours to decide. Set one uploader for the app, or one per column
 in `fieldProps.upload`; it gets the file, the row and an abort signal, reports
@@ -445,7 +519,7 @@ const columns = [
 ]
 ```
 
-A link cell shows one chip per linked record. A click on a chip opens that
+A link cell shows one chip per linked record. The first click selects the cell, as on any cell; a click on a chip of the selected cell opens that
 record (its fields, read-only: the table is the app's), and resting the
 pointer on one previews it. A table with a `create` function lets the link
 picker add a record: a search that names no record offers "+ Create" for it,
@@ -716,6 +790,47 @@ function onFieldChange(e: { columns: Record<string, unknown>[]; data?: Row[] }) 
 // <SvGrid {columns} data={rows} columnAdder fieldMenu
 //   onColumnAdd={onFieldChange} onColumnChange={onFieldChange} onColumnRemove={onFieldChange} />
 ```
+
+## Copy, paste and fill in a base
+
+Ctrl+C writes what a cell shows, and a paste reads that text back, so a sheet
+gets `$1,200.00`, `50%`, `1:30` and `October 9, 2026`, not the stored number
+or code behind them. People, links and options copy by name, attachments by URL.
+
+A paste of a copy made on the same page brings back the value the cell stored,
+not only what its text says: 12.5% shown as `13%` stays 12.5%, rich text keeps
+its bold, and a person stays that person when two people share a name. It does
+so in a field of the same type that shows the value as the same text. Text from
+anywhere else is read as written.
+
+A cell holding a line break or a tab is quoted on the clipboard, as Excel writes
+one, with an inner quote doubled, and a paste reads it as one cell. Excel's and
+Google Sheets' own quoted text reads the same way. A word that only has quote
+marks around it (`"hello"`) stays as it is.
+
+Text a field cannot read leaves the cell as it was, and the page says so once for
+the whole paste.
+
+The fill handle and Ctrl+D work by the same rule in every field:
+
+- One source cell copies. Text, numbers and dates included: `Call 2` stays
+  `Call 2`, and a date repeats.
+- Two or more source cells continue a series in a number or date field, in any
+  format: 10, 20 goes on 30, 40, and dates a week apart go on weekly. A run with
+  uneven steps follows its trend in a number field and repeats in a date field.
+  Every other field repeats the source cells, durations and times of day
+  included.
+- A value the field cannot hold is not written: the cell keeps its value and the
+  page says so. A series running below zero stops at a field that refuses
+  negatives; an integer field rounds.
+- Filling sideways crosses fields, so the value goes as a copy and paste would: as
+  the first field shows it, read by the field it lands in.
+
+Ctrl+D copies the top row of the selection down it. With one row selected it
+copies the row above into it. Both are one undo step.
+
+Computed fields (formula, lookup, rollup, count, autonumber, the created and
+modified stamps, buttons) copy as they show and take no paste or fill.
 
 ## Your own field type
 

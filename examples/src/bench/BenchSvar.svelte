@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * The SVAR Svelte DataGrid (wx-svelte-grid) side of the comparison harness.
+   * The SVAR Svelte DataGrid (@svar-ui/svelte-grid) side of the comparison harness.
    *
    * Same rules as BenchSvGrid.svelte: default theme, the harness's row height
    * and column width, sorting and filtering through the public API
@@ -8,12 +8,14 @@
    * on. SVAR virtualizes rows and columns by default, so no flag is needed.
    */
   import { flushSync } from 'svelte'
-  import { Grid, Willow } from 'wx-svelte-grid'
+  import { Grid, Willow } from '@svar-ui/svelte-grid'
+  import RichSvarCell from './RichSvarCell.svelte'
+  import { RICH_WIDTH, type RichKind } from './rich'
 
   type Row = Record<string, unknown>
   type Props = {
     rows: Row[]
-    columns: Array<{ field: string; header: string; type: 'text' | 'number' }>
+    columns: Array<{ field: string; header: string; type: 'text' | 'number'; kind?: RichKind }>
     rowHeight: number
     handle: {
       setSort?: (field: string, desc: boolean) => void
@@ -41,7 +43,11 @@
     if (lastSort) api?.exec('sort-rows', { key: lastSort.field, order: lastSort.desc ? 'desc' : 'asc' })
   }
 
-  const cols = columns.map((c) => ({ id: c.field, header: c.header, width: 140, sort: true }))
+  // The rich-cells scenario (rich.ts): a column with a `kind` gets SVAR's
+  // cell component API.
+  const anyRich = columns.some((c) => c.kind)
+  const width = anyRich ? RICH_WIDTH : 140
+  const cols = columns.map((c) => ({ id: c.field, header: c.header, width, sort: true, ...(c.kind ? { cell: RichSvarCell, kind: c.kind } : {}) }))
 
   type SvarApi = { exec: (action: string, params: Record<string, unknown>) => void }
   let api: SvarApi | null = null
@@ -66,6 +72,6 @@
 
 <div bind:this={rootEl} style="height:100%">
   <Willow>
-    <Grid data={data} columns={cols} sizes={{ rowHeight, columnWidth: 140 }} {init} />
+    <Grid data={data} columns={cols} sizes={{ rowHeight, columnWidth: width }} {init} />
   </Willow>
 </div>

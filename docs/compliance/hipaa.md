@@ -1,11 +1,13 @@
 # HIPAA posture
 
-sv-grid is **HIPAA-neutral**: the library does not transmit, store,
+`@svgrid/grid` is **HIPAA-neutral**: it does not transmit, store,
 or process PHI on its own. If your app is HIPAA-compliant before
-adding sv-grid, adding sv-grid does not break that compliance.
+adding it, adding it does not break that compliance.
 
 This page documents the four configuration choices that matter for
-healthcare deployments.
+healthcare deployments, and then [what SvGrid Base adds](#svgrid-base).
+Base, in `@svgrid/enterprise`, is not neutral in that way: it reads and
+writes your database and can send records to other systems.
 
 > **Live example:** [demo 41 (Healthcare EMR - inpatient board)](https://svgrid.com/demos/41-healthcare-emr/)
 > shows a role-based ICU census - the same patterns this page describes.
@@ -104,7 +106,32 @@ See [audit log integration](./audit-log.md) for the full pattern,
 including a CryptoSign-the-row trick that makes the audit log
 tamper-evident.
 
-## What the library does NOT do
+## SvGrid Base
+
+Base holds records in your database and runs inside your app, so PHI in it falls
+under your own safeguards. What to decide before PHI goes in:
+
+- **Webhooks.** A webhook action sends record fields to its URL, and an automation
+  can run in the browser or on your server. Any receiver of PHI needs a BAA with
+  you. Review the automations of a table as you would an integration.
+- **Email.** An email action goes through your `sendEmail`. Email is rarely a place
+  for PHI, and an automation can name any field.
+- **AI fields.** They send the fields their prompt names to your `AIProvider`. Section 3
+  applies to them as it does to the helpers.
+- **Attachments.** A preview fetches the attachment's URL from the reader's browser.
+  Keep files on your own storage, behind your own access checks. The library stores
+  and scans nothing.
+- **Soft delete.** A delete on a `softDelete` table keeps the row, PHI included, until
+  it is purged. See [erasure in SvGrid Base](./gdpr.md#erasure-in-svgrid-base).
+- **Access.** `authorize` and `scope` on `createBaseEndpoint` are the server's checks.
+  The page's permissions only shape the page. See [server handlers](../help/security.md#server-handlers).
+- **Audit.** The `audit` hook records writes, restores and purges. See
+  [audit log](./audit-log.md). It does not record reads: log those on your route if your
+  policy needs it.
+- **Logs.** The handlers log a failure's code and names without the values a driver
+  quoted. What your own `execute` logs is yours.
+
+## What `@svgrid/grid` does NOT do
 
 - It does not transmit row data anywhere on its own.
 - It does not store row data on disk.
@@ -112,7 +139,8 @@ tamper-evident.
 - It does not log to the console at runtime in production builds.
 
 You can confirm with DevTools: `<SvGrid>` produces zero network
-requests of its own.
+requests of its own. `@svgrid/enterprise` sends no telemetry either, and its
+license check is offline, but Base makes the calls listed above.
 
 ## Browser-level mitigations to know about
 

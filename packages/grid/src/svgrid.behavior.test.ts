@@ -16,6 +16,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount, unmount } from 'svelte'
 import SvGrid from './SvGrid.svelte'
+import CustomHeader from './custom-header.test.svelte'
 import {
   columnFilteringFeature,
   columnGroupingFeature,
@@ -29,6 +30,7 @@ import {
   rowPaginationFeature,
   rowSelectionFeature,
   rowSortingFeature,
+  renderComponent,
   sortFns,
   tableFeatures,
 } from './index'
@@ -295,6 +297,60 @@ describe('SvGrid - row selection', () => {
       const checkboxes = target.querySelectorAll('.sv-grid-checkbox')
       // At least the header + one per row.
       expect(checkboxes.length).toBeGreaterThan(0)
+    } finally {
+      destroy()
+    }
+  })
+})
+
+describe('SvGrid - custom header', () => {
+  // The custom-header wrapper is role="button", so a closest() lookup from its
+  // own text found the wrapper and treated the label as an interactive child:
+  // a sortable column with a `header:` renderer only sorted when the click
+  // missed the label. The docs' custom-header example showed it.
+  it('a click on the label sorts; a click on its own button does not', async () => {
+    const onMenu = vi.fn()
+    // The first column: jsdom has no layout, so only the leading headers draw.
+    const columns = personColumns.map((c) =>
+      c.field === 'name' ? { ...c, header: () => renderComponent(CustomHeader, { label: 'Name', onMenu }) } : c,
+    )
+    const { target, destroy } = await mountGrid({ columns })
+    try {
+      await tick()
+      const th = () => target.querySelector('[data-svgrid-header-col="name"]')!
+      th().querySelector<HTMLElement>('.probe-header-btn')!.click()
+      await tick()
+      expect(onMenu).toHaveBeenCalledOnce()
+      expect(th().getAttribute('aria-sort')).toBe('none')
+
+      th().querySelector<HTMLElement>('.probe-header-label')!.click()
+      await tick()
+      expect(th().getAttribute('aria-sort')).toBe('ascending')
+    } finally {
+      destroy()
+    }
+  })
+
+  // The callback reads ctx.column.getIsSorted(), table state Svelte does not
+  // track, so it ran once and a header showing its sort state stayed blank.
+  it('runs the header callback again when the column sort changes', async () => {
+    const columns = personColumns.map((c) =>
+      c.field === 'name'
+        ? { ...c, header: (ctx: { column: { getIsSorted(): false | 'asc' | 'desc' } }) => renderComponent(CustomHeader, { label: 'Name', sorted: ctx.column.getIsSorted() }) }
+        : c,
+    )
+    const { target, destroy } = await mountGrid({ columns })
+    try {
+      await tick()
+      const sortText = () => target.querySelector('[data-svgrid-header-col="name"] .probe-header-sort')!.textContent
+      expect(sortText()).toBe('')
+      const label = () => target.querySelector<HTMLElement>('[data-svgrid-header-col="name"] .probe-header-label')!
+      label().click()
+      await tick()
+      expect(sortText()).toBe('asc')
+      label().click()
+      await tick()
+      expect(sortText()).toBe('desc')
     } finally {
       destroy()
     }

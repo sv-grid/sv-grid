@@ -287,6 +287,8 @@ class SvGridScrollbarElement extends ScrollbarBase {
     const btn = document.createElement('button')
     btn.type = 'button'
     btn.className = `arrow arrow-${side}`
+    // For the mouse: the keyboard scrolls with the grid, and a stop here would sit between the grid and the next control.
+    btn.tabIndex = -1
     btn.setAttribute(
       'aria-label',
       side === 'start' ? 'Scroll back' : 'Scroll forward',

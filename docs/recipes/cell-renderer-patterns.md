@@ -64,8 +64,15 @@ runs through `Intl.NumberFormat` cached per locale.
 <script lang="ts">
   import { renderSnippet, type ColumnDef } from '@svgrid/grid'
 
-  type Sale = { amount: number; up: boolean }
+  type Sale = { region: string; amount: number; up: boolean }
+  const sales: Sale[] = [
+    { region: 'North', amount: 48200, up: true },
+    { region: 'South', amount: 31750, up: false },
+    { region: 'East',  amount: 56900, up: true },
+    { region: 'West',  amount: 22400, up: false },
+  ]
   const columns: ColumnDef<typeof features, Sale>[] = [
+    { field: 'region', header: 'Region' },
     {
       field: 'amount', header: 'Amount', align: 'right',
       cell: (ctx) => renderSnippet(Pill, { sale: ctx.row.original }),
@@ -79,7 +86,10 @@ runs through `Intl.NumberFormat` cached per locale.
   </span>
 {/snippet}
 
+<SvGrid data={sales} {columns} {features} />
+
 <style>
+  :global(.pill)      { padding: 2px 8px; border-radius: 999px; }
   :global(.pill.up)   { background: rgba(34,197,94,0.18);  color: #15803d; }
   :global(.pill.down) { background: rgba(239,68,68,0.18);  color: #b91c1c; }
 </style>
@@ -109,7 +119,7 @@ grid's body, not the consumer's component subtree.
 </script>
 ```
 
-```svelte {runnable}
+```svelte {norun}
 <!-- BadgeCell.svelte -->
 <script lang="ts">
   let { label, tone }: { label: string; tone: 'good' | 'bad' } = $props()

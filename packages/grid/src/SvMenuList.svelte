@@ -127,9 +127,9 @@
     font: inherit; font-size: 13px; color: var(--sg-fg, #0f172a); text-align: start;
     transition: background 0.1s;
   }
-  .sv-menu__item.is-active:not([disabled]), .sv-menu__item:hover:not([disabled]) { background: var(--sg-row-hover-bg, #f1f5f9); }
+  .sv-menu__item.is-active:not([aria-disabled="true"]), .sv-menu__item:hover:not([aria-disabled="true"]) { background: var(--sg-row-hover-bg, #f1f5f9); }
   .sv-menu__item:focus-visible { outline: 2px solid var(--sg-focus-ring, var(--sg-accent, #2563eb)); outline-offset: -2px; }
-  .sv-menu__item[disabled] { opacity: 0.45; cursor: default; }
+  .sv-menu__item[aria-disabled="true"] { opacity: 0.45; cursor: default; }
   .sv-menu__icon { display: inline-flex; width: 16px; flex: none; color: var(--sg-muted, #64748b); }
   .sv-menu__icon:empty { width: 0; }
   .sv-menu__label { flex: 1; white-space: nowrap; }

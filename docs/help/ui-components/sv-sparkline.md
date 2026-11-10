@@ -106,10 +106,19 @@ as you push new points - a lightweight live monitor:
 ```svelte {runnable}
 <script lang="ts">
   import { SvSparkline } from '@svgrid/grid'
-  let series = $state<number[]>([])
+  let series = $state<number[]>([42, 48, 45, 51, 47])
   function push(v: number) {
     series = [...series, v].slice(-40) // keep the last 40 readings
   }
+
+  // A stand-in for the real feed: one reading a second.
+  $effect(() => {
+    const id = setInterval(() => {
+      const last = series[series.length - 1] ?? 50
+      push(Math.min(100, Math.max(0, last + (Math.random() - 0.5) * 16)))
+    }, 1_000)
+    return () => clearInterval(id)
+  })
 </script>
 
 <SvSparkline data={series} type="line" width={160} min={0} max={100} ariaLabel="CPU load" />

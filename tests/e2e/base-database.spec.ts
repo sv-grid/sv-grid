@@ -42,7 +42,7 @@ test.describe('SvGrid Base on a database (real browser)', () => {
     await page.locator('.pgbase-run button').click()
     await expect(page.locator('.pgbase-result')).toHaveText('Done')
     await setStatus(page, page, 'Card retries', 'Blocked')
-    await expect(page.locator('.sv-btabs-status')).toContainText('not_blocked')
+    await expect(page.locator('.sv-btabs-status')).toContainText('does not accept this value')
     await expect(statusOf(page, 'Card retries')).toHaveText('Todo')
   })
 

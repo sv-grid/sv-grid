@@ -47,6 +47,9 @@ shows a short note where the cards would be.
 | `cardSize` | `'small'` (180px), `'medium'` (240px, default), `'large'` (320px) or a width in pixels. The wall fits as many columns as the width holds. |
 | `emptyText` | What the wall says when no row is shown (default "No records"). |
 | `searchable`, `searchPlaceholder` | The search box above the cards (on by default); it is the grid's quick filter. |
+| `cardMenu` | `(row) => MenuItem[]`: what a card can do. A right-click, a long press in a base, the Menu key or Shift+F10 opens it, and each card shows a button for it. |
+| `isSelected` | `(row) => boolean`: a selected card has an outline, and its title says so to a screen reader. |
+| `text` | The gallery's own words, for a translation: `records`, `cardActions`, `selected`, `untitled`. |
 | `cellGrid` | `(width) => grid`: what a field type's cell on a card gets as its grid. A base's gallery view sets it to the grid itself at the card's width, with editing off; without it a cell gets an object with `getColumnWidth` only. |
 
 A value is written the way the table cell writes it: through the column's

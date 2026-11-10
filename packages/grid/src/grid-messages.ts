@@ -15,16 +15,27 @@
  */
 import { resolveMessages } from './editor-contract'
 import type { GridChartPanelMessages } from './chart-panel-messages'
+import type { GridMenuMessages } from './grid-menu-messages'
 
 /**
  * Every string `localization.text` accepts: the grid chrome's own
- * ({@link GridChromeMessages}) and the chart panel's
- * ({@link GridChartPanelMessages}).
+ * ({@link GridChromeMessages}), the chart panel's
+ * ({@link GridChartPanelMessages}) and the menus' and find bar's
+ * ({@link GridMenuMessages}).
  */
-export type GridMessages = GridChromeMessages & GridChartPanelMessages
+export type GridMessages = GridChromeMessages & GridChartPanelMessages & GridMenuMessages
 
 /** Every localizable chrome string, grouped by area in the comments. */
 export type GridChromeMessages = {
+  // Names a screen reader reads. `{column}` is the column's header.
+  rowNumber: string
+  selectRow: string
+  selectAllRows: string
+  columnMenu: string
+  filterColumn: string
+  resizeColumn: string
+  resizeWidth: string
+  grouped: string
   // Empty / loading state
   noRows: string
   /** The empty state when a filter is what emptied the grid. */
@@ -120,6 +131,8 @@ export type GridChromeMessages = {
   bulkEditApply: string
   bulkEditCancel: string
   bulkEditNoFields: string
+  /** `{field}` is the field's name. */
+  bulkEditUnreadable: string
   chartRange: string
   // Rows whose data has not arrived (server-side / infinite loading)
   rowLoadFailed: string
@@ -144,6 +157,14 @@ export type GridChromeMessages = {
 
 /** English defaults - the literal strings the grid shipped before localization. */
 export const defaultGridMessages: GridChromeMessages = {
+  rowNumber: 'Row number',
+  selectRow: 'Select row',
+  selectAllRows: 'Select all rows',
+  columnMenu: '{column} column menu',
+  filterColumn: 'Filter {column}',
+  resizeColumn: 'Resize {column}',
+  resizeWidth: '{width} pixels',
+  grouped: 'Grouped',
   noRows: 'No rows to display.',
   noRowsFiltered: 'No rows match the current filters.',
   clearFilters: 'Clear filters',
@@ -206,6 +227,7 @@ export const defaultGridMessages: GridChromeMessages = {
   bulkEditApply: 'Apply to {count} items',
   bulkEditCancel: 'Cancel',
   bulkEditNoFields: 'No editable fields on this grid.',
+  bulkEditUnreadable: '{field} cannot hold this value. Nothing was changed.',
   opContains: 'Contains',
   opNotContains: 'Not contains',
   opEquals: 'Equals',

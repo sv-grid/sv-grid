@@ -37,6 +37,8 @@ async function open(page: Page, dir: 'ltr' | 'rtl' = 'ltr') {
   await page.goto(`${GALLERY}/#/485-sheet-charts-objects`)
   await page.locator('.sv-sheet td[data-svgrid-row]').first().waitFor({ timeout: 60_000 })
   await page.waitForTimeout(800)
+  // The evaluation card lies over the cells a short window leaves.
+  await page.evaluate(() => document.querySelectorAll('[data-svgrid-enterprise-upgrade]').forEach((n) => n.remove()))
 }
 
 /**

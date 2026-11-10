@@ -1,0 +1,28 @@
+{
+  "description": "A million records in SvGrid Base, in Svelte 5. An orders table of 1,000,000 records and every view reads all of it from the server: a view filter for big EU orders, orders grouped by status, a Kanban board with the true size of each lane, a calendar, a Gantt, a gallery, a list, an inbox, a chart and a dashboard. The server runs the view's filter, sort, groups and totals; edits, new orders and deletes go to it by id.",
+  "keywords": [
+    "svelte million rows grid",
+    "airtable alternative large tables",
+    "svelte server side row model database",
+    "no-code database million records",
+    "svelte grid server filtering grouping"
+  ],
+  "faq": [
+    {
+      "question": "How does a base hold a million records?",
+      "answer": "It does not hold them. A table on baseSource(ds, { serverRows: true }) has every view read it a part at a time: a grid a block of rows as they come on screen, a Kanban lane its cards, a calendar the dates on screen, a chart or a dashboard the totals the server adds up. The page holds what is in sight."
+    },
+    {
+      "question": "Who runs the view's filter, sort and groups?",
+      "answer": "The server. Each request carries the view's filter as filterModel.expression, with the sort and the groups. queryRecords from @svgrid/enterprise/base/compute answers it over records a Node server holds, and fieldFilterToSql turns the filter into a SQL WHERE clause for Postgres, MySQL or SQLite."
+    },
+    {
+      "question": "Do edits work on rows the page never loaded in full?",
+      "answer": "Yes. An edit, a new record and a delete go to the data source by id, so a change to the 900,000th order is one UPDATE. The page's copy of the first records follows, and nothing else is written."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

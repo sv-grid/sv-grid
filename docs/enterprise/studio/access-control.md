@@ -98,7 +98,10 @@ export const handle = async ({ event, resolve }) => {
 ## The `authorize` hook (hand-written apps too)
 
 RBAC is built on a hook you can use without Studio. `createKitHandlers` accepts
-an `authorize` callback run before every op; return `false` (or throw) to reject:
+an `authorize` callback run before every op; return `false` (or throw) to reject.
+A thrown message stays in the server log and the client reads `forbidden`, because a
+session store's error can name a connection string. To tell the client why, throw an
+`Error` with `expose: true`:
 
 ```ts
 import { createKitHandlers } from '@svgrid/enterprise'
@@ -117,6 +120,32 @@ export const { POST } = createKitHandlers({
 `action` is `'read' | 'create' | 'update' | 'delete'`, and `event` carries the
 SvelteKit `locals` so you can read the session. It runs **before** the data
 source is touched, so an unauthorized request never reaches your database.
+
+Before `authorize`, the route refuses what a page on another site could send with the
+signed-in person's cookies: a `POST` that is not `application/json` is a `415`, and one
+whose `Origin` is another site's is a `403`. `createKitDataSource` sends the right header.
+A test or a script that calls `handle` must send `content-type: application/json`, and a
+page on another host goes in `origins: ['https://app.example.com']`.
+
+`scope` holds a tenant to its rows, and knows nothing of other tables: a foreign key a
+client sends can name another tenant's record. Refuse that in `checkWrite`, which gets
+the rows as they go to the source, after the hooks. `createBaseEndpoint` does this for you.
+
+A soft delete table adds requests a guard written against `message.op` or `message.id` will
+not expect. They reach `authorize` like this:
+
+| Request | `action` | `message` |
+|---|---|---|
+| Restore from the trash, undo of a delete | `update` | `{ kind: 'mutate', op: 'restore', ids }`, no `id` |
+| Delete forever, Empty trash | `delete` | `{ kind: 'mutate', op: 'purge', ids }`, no `id` |
+| Delete forever run from the page, before and after it stops | `delete` | `{ kind: 'mutate', op: 'claim', ids }` or `op: 'release'`, no `id` |
+| Reading the trash | `delete` | `{ kind: 'trash', limit }` or `{ kind: 'trash', ids }` |
+| The highest autonumber | `read` | `{ kind: 'highest', field }` |
+
+A rule on `action` covers them. A rule that reads `message.id` needs `message.ids` here, and
+one that allows `delete` but must stop a real delete checks `message.op === 'purge'`. Reading
+the trash is asked as a `delete` because marked rows are for those who may delete. `scope`
+applies to all of them: another tenant's id is skipped, not an error.
 
 ## Layering with Row-Level Security
 
@@ -145,7 +174,7 @@ isolation, so the generated API route also:
 
 | Operation | What the route does |
 | --- | --- |
-| read | merges the tenant predicate into the query, written **last** so a client-supplied `tenantId` filter cannot widen it |
+| read | merges the tenant predicate into the query, written **last** so a client-supplied `tenantId` filter cannot widen it; that filter still applies with the tenant (AND), so asking for another tenant's id finds no rows |
 | create | stamps the tenant onto the row, overriding whatever was sent, and **after** any business-rule hook |
 | update / delete | re-reads the target row under the scope first and returns `403` if it isn't yours - otherwise guessing an id would reach across tenants |
 | update (patch) | re-stamps the tenant, so a patch cannot hand a row to someone else |
@@ -188,6 +217,12 @@ export const { POST } = createKitHandlers({
 ```
 
 Return `null` to skip scoping for a caller (a super-admin), or throw to reject.
+`null` is the only way to skip it. Returning nothing, or a rule whose `value` is
+empty, blank or not a single value, is a `403` on every read and write, so
+`value: locals.user.tenant ?? ''` refuses a person with no organisation instead of
+showing them everyone. `0` is a value. Through `createBaseEndpoint`, `scope` takes the
+table and returns this resolver, `null` for a table every tenant shares, and anything
+else closes the table.
 
 ## See also
 

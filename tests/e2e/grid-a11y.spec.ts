@@ -82,6 +82,49 @@ test.describe('grid accessibility in a browser', () => {
     expect(outline.width).toBeGreaterThanOrEqual(2)
   })
 
+  // A contrast theme removes fills. The mixed dash of a part-selected header
+  // box is a fill, so the box read as empty; its tick is a border and stayed.
+  for (const scheme of ['light', 'dark'] as const) {
+    test(`forced colors (${scheme}): a ticked row box and a mixed header box keep their mark`, async ({ page }) => {
+      await page.emulateMedia({ forcedColors: 'active', colorScheme: scheme })
+      await page.goto(DEMO)
+      const rows = page.locator('.sv-grid-table tbody .sv-grid-checkbox')
+      await rows.nth(1).waitFor()
+      await rows.nth(0).dispatchEvent('click')
+      const head = page.locator('.sv-grid-table thead .sv-grid-checkbox').first()
+      await expect(head).toHaveAttribute('aria-checked', 'mixed')
+      const mark = (el: Element) => {
+        const box = getComputedStyle(el)
+        const after = getComputedStyle(el, '::after')
+        return { canvas: box.backgroundColor, fill: after.backgroundColor, tick: after.borderRightColor, tickWidth: after.borderRightWidth }
+      }
+      const mixed = await head.evaluate(mark)
+      expect(mixed.fill).not.toBe(mixed.canvas)
+      const ticked = await rows.nth(0).evaluate(mark)
+      expect(ticked.tick).not.toBe(ticked.canvas)
+      expect(parseFloat(ticked.tickWidth)).toBeGreaterThan(0)
+    })
+  }
+
+  // The theme keeps a fill's alpha: the pinned-column divider stayed 18% and vanished on Canvas.
+  for (const scheme of ['light', 'dark'] as const) {
+    test(`forced colors (${scheme}): the pinned-column divider is drawn in the theme's text color`, async ({ page }) => {
+      await page.emulateMedia({ forcedColors: 'active', colorScheme: scheme })
+      await page.goto('/sv-grid/#/demos/510-column-pin-splitter')
+      const line = page.locator('.sv-pin-split-line').first()
+      await line.waitFor({ state: 'attached', timeout: 60_000 })
+      const seen = await line.evaluate((el) => {
+        const probe = document.createElement('span')
+        probe.style.color = 'CanvasText'
+        document.body.appendChild(probe)
+        const text = getComputedStyle(probe).color
+        probe.remove()
+        return { line: getComputedStyle(el).backgroundColor, text }
+      })
+      expect(seen.line).toBe(seen.text)
+    })
+  }
+
   test('axe finds no WCAG 2.2 A/AA violations in the grid', async ({ page }) => {
     await focusGrid(page)
     const results = await new AxeBuilder({ page })

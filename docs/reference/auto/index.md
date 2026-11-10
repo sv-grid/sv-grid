@@ -51,7 +51,7 @@ see [the main reference index](../index.md).
 - [`@svgrid/grid/chart-pivot.ts`](./svgrid-grid-chart-pivot.md) - 6 exports
 - [`@svgrid/grid/chart-table.ts`](./svgrid-grid-chart-table.md) - 3 exports
 - [`@svgrid/grid/grid-icons.ts`](./svgrid-grid-grid-icons.md) - 4 exports
-- [`@svgrid/grid/cell-formatting.ts`](./svgrid-grid-cell-formatting.md) - 5 exports
+- [`@svgrid/grid/cell-formatting.ts`](./svgrid-grid-cell-formatting.md) - 6 exports
 - [`@svgrid/grid/positioning.ts`](./svgrid-grid-positioning.md) - 10 exports
 - [`@svgrid/grid/toast-store.svelte.ts`](./svgrid-grid-toast-store.svelte.md) - 14 exports
 - [`@svgrid/grid/spreadsheet.ts`](./svgrid-grid-spreadsheet.md) - 7 exports

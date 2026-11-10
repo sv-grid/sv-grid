@@ -38,6 +38,7 @@
     type CellEditorContext,
     type CellEditorRegistration,
   } from "./editor-registry";
+  import { tick } from "svelte";
   import type { SvGridController } from "./SvGrid.controller.svelte";
 
   let {
@@ -72,7 +73,19 @@
   const fullRowEdit = $derived(ctrl.fullRowEdit);
   const getColumnEditorOptions = $derived(ctrl.getColumnEditorOptions);
   const areEditorOptionsLoading = $derived(ctrl.areEditorOptionsLoading);
-  const saveEditingCell = $derived(ctrl.saveEditingCell);
+  /**
+   * Save, and keep the keyboard in the grid. An editor that commits while it
+   * holds focus (a pick in a select, Escape on a multi select) unmounts with
+   * that focus, which drops it on the body: arrows then go nowhere. A commit
+   * from a blur finds the body already and leaves the focus where it went.
+   */
+  function saveEditingCell() {
+    const held = document.activeElement !== document.body;
+    ctrl.saveEditingCell();
+    if (held) void tick().then(() => {
+      if (document.activeElement === document.body) ctrl.gridRootEl?.focus({ preventScroll: true });
+    });
+  }
   const updateEditingCellValue = $derived(ctrl.updateEditingCellValue);
   const onEditorKeyDown = $derived(ctrl.onEditorKeyDown);
   const focusOnMount = $derived(ctrl.focusOnMount);
@@ -102,6 +115,7 @@
   }
 
   function fullRowKeydown(e: KeyboardEvent) {
+    if (e.isComposing) return;
     if (e.key === "Enter") {
       e.preventDefault();
       ctrl.commitFullRowEdit();
@@ -206,6 +220,7 @@
               : ctrl.editingCell;
           }}
           onCommit={() => saveEditingCell()}
+          onTab={(back) => ctrl.commitAndMoveByTab(back)}
           onCancel={() => {
             ctrl.editingCell = null;
             ctrl.gridRootEl?.focus({ preventScroll: true });
@@ -434,6 +449,7 @@
               : ctrl.editingCell;
           }}
           onCommit={() => saveEditingCell()}
+          onTab={(back) => ctrl.commitAndMoveByTab(back)}
           onCancel={() => {
             ctrl.editingCell = null;
             ctrl.gridRootEl?.focus({ preventScroll: true });
@@ -544,6 +560,7 @@
               : ctrl.editingCell;
           }}
           onCommit={() => saveEditingCell()}
+          onTab={(back) => ctrl.commitAndMoveByTab(back)}
           onCancel={() => {
             ctrl.editingCell = null;
             ctrl.gridRootEl?.focus({ preventScroll: true });
@@ -569,6 +586,7 @@
               : ctrl.editingCell;
           }}
           onCommit={() => saveEditingCell()}
+          onTab={(back) => ctrl.commitAndMoveByTab(back)}
           onCancel={() => {
             ctrl.editingCell = null;
             ctrl.gridRootEl?.focus({ preventScroll: true });

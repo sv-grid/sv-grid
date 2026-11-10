@@ -241,3 +241,43 @@ describe('virtualizer: overscanMin', () => {
     expect(v.getVirtualItems()[0]!.start).toBe(v.getVirtualItems()[0]!.index * 20)
   })
 })
+
+describe('virtualizer: overscanLead', () => {
+  // 1,000 items of 10px in a 100px viewport, created at offset 1,000 (items 100-110 visible).
+  const make = () =>
+    createVirtualizer({ count: 1000, estimateSize: 10, viewportHeight: 100, overscan: 8, overscanLead: true, scrollOffset: 1000 })
+  const range = (v: ReturnType<typeof make>) => [v.getVirtualItems()[0]!.index, v.getVirtualItems().at(-1)!.index]
+
+  it('keeps the symmetric window for a scroll the overscan covers', () => {
+    const v = make()
+    v.setScrollOffset(1050)
+    expect(range(v)).toEqual([105 - 8, 115 + 8])
+  })
+
+  it('moves the window ahead of a fast scroll and keeps its length and slots', () => {
+    const v = make()
+    v.setScrollOffset(1050)
+    const keys = new Map(v.getVirtualItems().map((i) => [i.index, i.key]))
+    // 100 px in one update: 10 items plus one, 3 more than the overscan, move to the front.
+    v.setScrollOffset(1150)
+    expect(range(v)).toEqual([115 - 5, 125 + 11])
+    expect(v.getVirtualItems().length).toBe(keys.size)
+    for (const item of v.getVirtualItems()) if (keys.has(item.index)) expect(item.key).toBe(keys.get(item.index))
+  })
+
+  it('leaves two items behind at most and follows a turn', () => {
+    const v = make()
+    v.setScrollOffset(1500)
+    expect(range(v)).toEqual([150 - 2, 160 + 14])
+    v.setScrollOffset(1000)
+    expect(range(v)).toEqual([100 - 14, 110 + 2])
+    v.setScrollOffset(990)
+    expect(range(v)).toEqual([99 - 8, 109 + 8])
+  })
+
+  it('is off by default', () => {
+    const v = createVirtualizer({ count: 1000, estimateSize: 10, viewportHeight: 100, overscan: 8, scrollOffset: 1000 })
+    v.setScrollOffset(1500)
+    expect(range(v)).toEqual([150 - 8, 160 + 8])
+  })
+})

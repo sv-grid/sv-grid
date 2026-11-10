@@ -135,8 +135,10 @@ the scheduler applies each as an overlay and `onEventMove` /
 ```
 
 Drag A. Mensah from Dr Smith's column into Dr Okafor's: `e.toResource`
-says where it landed. A focused event moves a slot with the up and down
-arrows and a day with left and right; Enter opens its editor.
+says where it landed. Space picks a focused event up; it then moves a slot
+with the up and down arrows and a day with left and right, and Space puts
+it down. Past the edge of the view the view goes with it, and Escape brings
+both back with nothing written. Enter opens its editor.
 
 ## Each provider's hours, and no double-booking
 

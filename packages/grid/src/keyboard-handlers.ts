@@ -21,6 +21,9 @@ export function createKeyboard<
   TData extends RowData = RowData,
 >(ctx: any) {
   function onGridKeyDown(event: KeyboardEvent) {
+    // A key that belongs to an IME composition is not the grid's: Enter that
+    // ends one must not move or commit.
+    if (event.isComposing || event.keyCode === 229) return;
     // Only the grid root drives navigation - keys on header buttons, menus,
     // or the cell editor are handled by those controls themselves.
     //
@@ -115,13 +118,28 @@ export function createKeyboard<
       cellId: null,
     };
 
-    if (event.key === "F2") {
+    if (event.key === "F2" && !event.shiftKey) {
       event.preventDefault();
       ctx.onCellDoubleClick(current.rowIndex, current.colIndex);
       return;
     }
 
-    const intent = getKeyboardIntent(event);
+    // The context menu's keys, which a right-click on a <td> never hears:
+    // the keyboard's `contextmenu` goes to the focused root.
+    if (event.key === "ContextMenu" || (event.key === "F10" && event.shiftKey)) {
+      ctx.openActiveCellMenu(event);
+      return;
+    }
+
+    let intent = getKeyboardIntent(event);
+    // Columns run right to left under rtl, and the arrow keys go where they
+    // point. Read per press: the direction belongs to the page, not the grid.
+    if (
+      (intent === "moveLeft" || intent === "moveRight") &&
+      getComputedStyle(event.currentTarget as Element).direction === "rtl"
+    ) {
+      intent = intent === "moveLeft" ? "moveRight" : "moveLeft";
+    }
     if (intent === "noop") {
       // A printable character on the active cell starts editing seeded with it.
       if (
@@ -147,18 +165,31 @@ export function createKeyboard<
     // expands a collapsed group row, ArrowLeft collapses an expanded one,
     // instead of moving the active cell (treegrid-style). Leaves fall through
     // to normal navigation.
-    // Client tree data gets the same ArrowRight/ArrowLeft contract, driven off
-    // the row model rather than consumer callbacks.
-    if (ctx.props.treeData && (intent === "moveRight" || intent === "moveLeft")) {
+    // Client tree data and a grouped grid get the same ArrowRight/ArrowLeft
+    // contract, driven off the row model rather than consumer callbacks. A
+    // group's row has one cell to walk, so its Enter and Space are the toggle,
+    // Right on an open group goes in and Left on a closed one goes to its parent.
+    const grouped = ctx.grid.getState().grouping?.length > 0;
+    if ((ctx.props.treeData || grouped) && !event.shiftKey) {
       const row = ctx.allRows[current.rowIndex];
       if (row?.getCanExpand?.()) {
         const expanded = row.getIsExpanded?.() ?? false;
-        if (intent === "moveRight" && !expanded) {
+        if (
+          (intent === "moveRight" && !expanded) ||
+          (intent === "moveLeft" && expanded) ||
+          (grouped && !event.ctrlKey && !event.metaKey && (event.key === "Enter" || event.key === " "))
+        ) {
           row.toggleExpanded?.();
           return;
         }
-        if (intent === "moveLeft" && expanded) {
-          row.toggleExpanded?.();
+        if (grouped && intent === "moveRight") intent = "moveDown";
+        else if (grouped && intent === "moveLeft") {
+          let up = current.rowIndex;
+          while (--up >= 0 && (ctx.allRows[up].depth ?? 0) >= (row.depth ?? 0));
+          if (up < 0) return;
+          ctx.setActiveCell(up, current.colIndex);
+          ctx.scrollActiveCellIntoView(up, current.colIndex);
+          ctx.setSelection(up, current.colIndex);
           return;
         }
       }

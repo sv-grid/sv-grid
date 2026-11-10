@@ -18,7 +18,7 @@
     type SchedulerEventResizeEvent,
     type SchedulerEventCommitEvent,
   } from '@svgrid/grid'
-  import { enableSchedulerView, setLicenseKey } from '@svgrid/enterprise'
+  import { enableSchedulerView, setLicenseKey, type SchedulerProConfig } from '@svgrid/enterprise'
 
   // The scheduler / calendar VIEW ships in @svgrid/enterprise. Register it once.
   enableSchedulerView()
@@ -119,6 +119,12 @@
   function onEventAdd(start: Date, end: Date, _resourceId?: string, allDay = false) {
     rows = [...rows, makeEvent(start, end, allDay)]
   }
+  // Duplicate on an event's menu: a copy of it (title, kind, owner) right after it.
+  const duplicate: Pick<SchedulerProConfig<any, Meeting>, 'onEventDuplicate'> = {
+    onEventDuplicate: (source, start, end, _resourceId, allDay = false) => {
+      rows = [...rows, { ...source, id: ++seq, start: iso(start), end: iso(end), allDay, repeat: null }]
+    },
+  }
   // The drawer's Delete button (shown because onEventDelete is set) fires this.
   function onEventDelete(row: Meeting) {
     rows = rows.filter((r) => r !== row)
@@ -181,6 +187,7 @@
           onEventCommit,
           onEventAdd,
           onEventDelete,
+          ...duplicate,
         }}
       />
     {:else}

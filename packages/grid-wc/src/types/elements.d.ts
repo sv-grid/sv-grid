@@ -86,6 +86,8 @@ export interface SvGridElement extends HTMLElement {
   error: string | null
   /** attribute `empty-message` */
   emptyMessage: string
+  /** attribute `grid-label` */
+  gridLabel: string
   /** property only - an attribute cannot hold this */
   localization: unknown
   /** attribute `show-global-filter` */
@@ -160,6 +162,10 @@ export interface SvGridElement extends HTMLElement {
   includeCollapsedRows: unknown
   /** property only - an attribute cannot hold this */
   clipboardHtml: unknown
+  /** attribute `hold-rows-on-write` */
+  holdRowsOnWrite: boolean
+  /** property only - an attribute cannot hold this */
+  parseClipboardText: readonly unknown[]
   /** property only - an attribute cannot hold this */
   processCellFromClipboard: unknown
   /** attribute `enable-inline-editing` */
@@ -284,6 +290,7 @@ declare global {
     columnresize: CustomEvent<unknown>
     rowresize: CustomEvent<unknown>
     pasteclipboard: CustomEvent<unknown>
+    pasteoverflow: CustomEvent<unknown>
     apiready: CustomEvent<unknown>
     rowselectionchange: CustomEvent<unknown>
     cellselectionchange: CustomEvent<unknown>

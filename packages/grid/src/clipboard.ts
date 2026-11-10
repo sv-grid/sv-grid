@@ -8,23 +8,30 @@ import {
   type TableFeatures,
 } from "./index";
 import "./sv-grid-scrollbar";
-import { buildFillPattern } from "./fill-patterns";
 import {
   getCellKey,
 } from "./SvGrid.helpers";
 import {
-  createDataIndexLookup,
+  rowsToWrite,
   getColumnBaseValue,
   isGroupRow,
+  landWrites,
   toolPanelHeaderLabel,
 } from "./cell-values";
 import { pushHistory, nextGroupId, runHistoryGroup, type HistoryStep } from "./history";
 import { getGridExtension } from "./grid-extension.svelte";
 
+// What a drag writes when it ends (a fill, a range move) is the largest part
+// of this file and runs only after a drag: it loads when the drag starts, so
+// it is here by the release. A grid nobody drags on never fetches it.
+let rangeCommit: typeof import("./range-commit") | undefined;
+export const loadRangeCommit = () => import("./range-commit").then((m) => (rangeCommit = m));
+
 export function createClipboard<
   TFeatures extends TableFeatures = TableFeatures,
   TData extends RowData = RowData,
 >(ctx: any) {
+  const claimed = (kind: "copy" | "cut" | "clear") => getGridExtension()?.rangeAction?.(ctx, { kind });
   /**
    * `rowIndex` here is a DISPLAY index - a position in `allRows`, the space the
    * selection rectangle, the fill drag and `isCellEditableAt` all work in.
@@ -53,234 +60,73 @@ export function createClipboard<
    *  edit lifecycle. Fires `onCellValueChange` per write so consumers
    *  can react (formula recompute, autosave, etc.). */
   function writeCellRaw(rowIndex: number, columnId: string, value: unknown) {
-    const row = rowDataAt(rowIndex);
-    const column = ctx.findColumnById(columnId);
-    if (!row || !column?.columnDef.field) return;
-    const field = column.columnDef.field;
-    const oldValue = row[field];
-    if (oldValue === value) return;
-    // The slot in `data` backing this displayed row. Also read BEFORE swapping
-    // internalData: afterwards the recomputed `allRows` references the new row
-    // object, so an `original`-based lookup would miss and drop the edit out of
-    // `editedCellValues` (which getCellDisplayValue consults first).
-    const dataIndex = ctx.internalData.indexOf(row as TData);
-    if (dataIndex < 0) return;
-    const rowId = ctx.allRows[rowIndex]?.id;
-    const next = ctx.internalData.slice() as Array<TData>;
-    next[dataIndex] = { ...row, [field]: value } as TData;
-    getGridExtension()?.cellEdited?.(ctx, { row: next[dataIndex], columnId });
-    ctx.internalData = next;
-    if (rowId) {
-      const key = getCellKey(rowId, columnId);
-      ctx.editedCellValues = { ...ctx.editedCellValues, [key]: value };
-    }
-    ctx.props.onCellValueChange?.({
-      // The position in `props.data`, matching what the inline editor reports.
-      rowIndex: dataIndex,
-      columnId,
-      oldValue,
-      newValue: value,
-      row: next[dataIndex] as TData,
-    });
+    writeCellsRaw([{ rowIndex, columnId, value }]);
   }
 
-  /** Apply the pattern fill on pointerup. Each NEW row (or column) is
-   *  filled from a pattern derived from the matching column (or row) of
-   *  the source. Handles all four drag directions. */
   /**
-   * Write one filled cell and remember it, so the drag undoes as a unit.
-   * `writeCellRaw` keeps no history of its own; the fill used to call it in
-   * a loop and push nothing, which left Ctrl+Z blind to a whole drag.
+   * Several cells in one write. `rowIndex` is a position in the rows as they
+   * stand when this is called: every row is found before the first value lands,
+   * because the rows are handed over once, at the end, and a sorted or filtered
+   * view orders them again at that moment. A loop of `writeCellRaw` over
+   * positions wrote its later cells to whatever had moved into those places.
+   *
+   * Later cells of the same row build on earlier ones; `onCellValueChange` fires
+   * per cell once they have all landed, each with the row as it ended up.
    */
-  function writeFilled(steps: HistoryStep[], rowIndex: number, columnId: string, value: unknown) {
-    const row = ctx.allRows[rowIndex];
-    const column = ctx.findColumnById(columnId);
-    const field = column?.columnDef.field;
-    if (!row || field == null) return;
-    const before = readCellRaw(rowIndex, columnId);
-    writeCellRaw(rowIndex, columnId, value);
-    if (before !== value) steps.push({ rowId: row.id, columnId, field, before, after: value });
+  function writeCellsRaw(cells: ReadonlyArray<{ rowIndex: number; columnId: string; value: unknown }>) {
+    // The slot in `data` backing each displayed row, read BEFORE internalData
+    // swaps: afterwards `allRows` references the new row objects.
+    const { next, dataIndexOf } = rowsToWrite<TData>(ctx);
+    const writes: Array<{ at: number; rowId: string; columnId: string; value: unknown; oldValue: unknown }> = [];
+    for (const { rowIndex, columnId, value } of cells) {
+      const shown = ctx.allRows[rowIndex];
+      const field = ctx.findColumnById(columnId)?.columnDef.field;
+      if (!shown || !field) continue;
+      const at = dataIndexOf(shown);
+      const row = next[at] as Record<string, unknown> | undefined;
+      if (!row || row[field] === value) continue;
+      writes.push({ at, rowId: shown.id, columnId, value, oldValue: row[field] });
+      next[at] = { ...row, [field]: value } as TData;
+    }
+    if (!writes.length) return;
+    for (const w of writes) getGridExtension()?.cellEdited?.(ctx, { row: next[w.at], columnId: w.columnId, rowId: w.rowId });
+    const rows = landWrites(ctx, next, writes);
+    const edits = { ...ctx.editedCellValues };
+    for (const w of writes) if (w.rowId) edits[getCellKey(w.rowId, w.columnId)] = w.value;
+    ctx.editedCellValues = edits;
+    for (const w of writes) {
+      ctx.props.onCellValueChange?.({
+        // The position in `props.data`, matching what the inline editor reports.
+        rowIndex: w.at,
+        columnId: w.columnId,
+        oldValue: w.oldValue,
+        newValue: w.value,
+        row: rows[w.at] as TData,
+      });
+    }
   }
 
+  /** Run one of the drag commits, at once when range-commit.ts is here, else when it lands. */
+  function commit(run: (c: ReturnType<typeof import("./range-commit").createRangeCommit>) => void) {
+    const go = (m: typeof import("./range-commit")) =>
+      run(m.createRangeCommit(ctx, readCellRaw, writeCellsRaw, moveDestRect, stopEdgeScroll));
+    if (rangeCommit) go(rangeCommit);
+    else void loadRangeCommit().then(go);
+  }
   function applyFillPattern(toggled = false) {
-    const steps: HistoryStep[] = [];
-    runHistoryGroup(ctx, () => applyFillCells(steps, toggled));
-    if (steps.length) pushHistory(ctx, steps, nextGroupId());
+    commit((c) => c.applyFillPattern(toggled));
   }
-
-  /**
-   * The value for the i-th filled cell: the consumer's, when its hook has
-   * one for the source cell the target cycles back to, else the pattern's.
-   * `sourceStart` is the row (or column) of the first source value and
-   * `targetStart` that of the first target; `step` is -1 filling upward.
-   */
-  function filledValue(
-    sources: unknown[],
-    pattern: unknown[],
-    i: number,
-    sourceStart: number,
-    at: number,
-    step: 1 | -1,
-    axis: "rows" | "cols",
-    rowIndex: number,
-    columnId: string,
-  ): unknown {
-    const hook = ctx.props.processCellForFill;
-    if (hook && sources.length) {
-      const k = i % sources.length;
-      // The real distance to the cell being filled, which is not i when a
-      // row the fill skips lies between: a formula moves by the rows it
-      // actually travelled.
-      const distance = at - (sourceStart + step * k);
-      const delta = axis === "rows" ? { rows: distance, cols: 0 } : { rows: 0, cols: distance };
-      const decided = hook({ value: sources[k], delta, rowIndex, columnId });
-      if (decided !== undefined) return decided;
-    }
-    return pattern[i];
-  }
-
-  /**
-   * Double-click on the fill handle: fill down as far as the column beside
-   * the selection has data, the way Excel's does. The column to the left
-   * decides; when it is blank below the selection (or there is none) the
-   * one to the right does. Nothing to follow, nothing filled.
-   */
   function fillDownToNeighbour() {
-    const anchor = ctx.selectionRange.anchor ?? ctx.grid.getState().activeCell;
-    if (!anchor) return;
-    const focus = ctx.selectionRange.focus ?? anchor;
-    const minRow = Math.min(anchor.rowIndex, focus.rowIndex);
-    const maxRow = Math.max(anchor.rowIndex, focus.rowIndex);
-    const minCol = Math.min(anchor.colIndex, focus.colIndex);
-    const maxCol = Math.max(anchor.colIndex, focus.colIndex);
-    const filled = (r: number, c: number) => {
-      const col = ctx.allColumns[c];
-      if (!col) return false;
-      const v = readCellRaw(r, col.id);
-      return v != null && v !== "";
-    };
-    const extent = (c: number): number => {
-      let r = maxRow;
-      while (r + 1 < ctx.allRows.length && filled(r + 1, c)) r += 1;
-      return r;
-    };
-    let target = minCol > 0 ? extent(minCol - 1) : maxRow;
-    if (target === maxRow) target = extent(maxCol + 1);
-    if (target <= maxRow) return;
-    ctx.fillDrag = {
-      sourceMinRow: minRow, sourceMaxRow: maxRow, sourceMinCol: minCol, sourceMaxCol: maxCol,
-      targetRow: target, targetCol: maxCol,
-    };
-    applyFillPattern();
+    commit((c) => c.fillDownToNeighbour());
   }
-
-  /** The fill's values the other way round from the pattern's default. */
-  function toggledPattern(sources: unknown[], count: number): unknown[] {
-    if (sources.length === 1 && typeof sources[0] === 'number' && Number.isFinite(sources[0])) {
-      return Array.from({ length: count }, (_, i) => (sources[0] as number) + i + 1);
-    }
-    return Array.from({ length: count }, (_, i) => sources[i % sources.length]);
-  }
-
-  function applyFillCells(steps: HistoryStep[], toggled = false) {
-    const pattern = (sources: unknown[], count: number) => (toggled ? toggledPattern(sources, count) : buildFillPattern(sources, count));
-    const includeCollapsed = ctx.props.includeCollapsedRows as ((rowIndex: number) => boolean) | undefined;
-    const skipsRow = (r: number) => ctx.isRowCollapsed?.(r) === true && !(includeCollapsed?.(r) ?? false);
-    const d = ctx.fillDrag;
-    if (!d) return;
-    // Clear fillDrag FIRST so a thrown error doesn't leave the grid
-    // stuck tracking the pointer.
-    ctx.fillDrag = null;
-    stopEdgeScroll();
-    const newMinRow = Math.min(d.sourceMinRow, d.targetRow);
-    const newMaxRow = Math.max(d.sourceMaxRow, d.targetRow);
-    const newMinCol = Math.min(d.sourceMinCol, d.targetCol);
-    const newMaxCol = Math.max(d.sourceMaxCol, d.targetCol);
-
-    const verticalExtension =
-      newMaxRow > d.sourceMaxRow || newMinRow < d.sourceMinRow;
-    const horizontalExtension =
-      newMaxCol > d.sourceMaxCol || newMinCol < d.sourceMinCol;
-
-    if (verticalExtension) {
-      // For each column in the source range, build a pattern from the
-      // column's source values and apply to the new rows (above or below).
-      for (let c = d.sourceMinCol; c <= d.sourceMaxCol; c += 1) {
-        const column = ctx.allColumns[c];
-        if (!column?.columnDef.field) continue;
-        if (column.columnDef.editable === false) continue;
-        const sourceColValues: unknown[] = [];
-        for (let r = d.sourceMinRow; r <= d.sourceMaxRow; r += 1) {
-          sourceColValues.push(readCellRaw(r, column.id));
-        }
-        // A collapsed row the consumer does not count (a filtered row in a
-        // spreadsheet) is neither written nor a step of the series: the
-        // pattern runs over the rows that are there, as Excel's does.
-        if (newMaxRow > d.sourceMaxRow) {
-          const targets: number[] = [];
-          for (let r = d.sourceMaxRow + 1; r <= newMaxRow; r += 1) if (!skipsRow(r)) targets.push(r);
-          const fills = pattern(sourceColValues, targets.length);
-          targets.forEach((targetRow, i) => {
-            if (ctx.isCellEditableAt(targetRow, c))
-              writeFilled(steps, targetRow, column.id,
-                filledValue(sourceColValues, fills, i, d.sourceMinRow, targetRow, 1, "rows", targetRow, column.id));
-          });
-        }
-        if (newMinRow < d.sourceMinRow) {
-          // Filling upward - reverse-extrapolate.
-          const reversed = sourceColValues.slice().reverse();
-          const targets: number[] = [];
-          for (let r = d.sourceMinRow - 1; r >= newMinRow; r -= 1) if (!skipsRow(r)) targets.push(r);
-          const fills = pattern(reversed, targets.length);
-          targets.forEach((targetRow, i) => {
-            if (ctx.isCellEditableAt(targetRow, c))
-              writeFilled(steps, targetRow, column.id,
-                filledValue(reversed, fills, i, d.sourceMaxRow, targetRow, -1, "rows", targetRow, column.id));
-          });
-        }
-      }
-    } else if (horizontalExtension) {
-      // For each row in source range, build pattern from the row's source
-      // values across columns and apply to new columns.
-      for (let r = d.sourceMinRow; r <= d.sourceMaxRow; r += 1) {
-        const sourceRowValues: unknown[] = [];
-        for (let c = d.sourceMinCol; c <= d.sourceMaxCol; c += 1) {
-          const col = ctx.allColumns[c];
-          if (!col) continue;
-          sourceRowValues.push(readCellRaw(r, col.id));
-        }
-        if (newMaxCol > d.sourceMaxCol) {
-          const targetCols = newMaxCol - d.sourceMaxCol;
-          const fills = pattern(sourceRowValues, targetCols);
-          for (let i = 0; i < targetCols; i += 1) {
-            const targetCol = d.sourceMaxCol + 1 + i;
-            const col = ctx.allColumns[targetCol];
-            if (col && ctx.isCellEditableAt(r, targetCol))
-              writeFilled(steps, r, col.id,
-                filledValue(sourceRowValues, fills, i, d.sourceMinCol, targetCol, 1, "cols", r, col.id));
-          }
-        }
-        if (newMinCol < d.sourceMinCol) {
-          const reversed = sourceRowValues.slice().reverse();
-          const targetCols = d.sourceMinCol - newMinCol;
-          const fills = pattern(reversed, targetCols);
-          for (let i = 0; i < targetCols; i += 1) {
-            const targetCol = d.sourceMinCol - 1 - i;
-            const col = ctx.allColumns[targetCol];
-            if (col && ctx.isCellEditableAt(r, targetCol))
-              writeFilled(steps, r, col.id,
-                filledValue(reversed, fills, i, d.sourceMaxCol, targetCol, -1, "cols", r, col.id));
-          }
-        }
-      }
-    }
-
-    // Extend the selection to the new range so the user can immediately
-    // see what got filled.
-    ctx.selectionRange = {
-      anchor: { rowIndex: newMinRow, colIndex: newMinCol },
-      focus: { rowIndex: newMaxRow, colIndex: newMaxCol },
-    };
+  // Two presses on the handle mean "fill down".
+  let handlePressedAt = -Infinity;
+  let handlePressedTwice = false;
+  // Where the last press on a cell landed: every one passes through startMoveDrag.
+  let cellPressX = -Infinity;
+  let cellPressY = -Infinity;
+  function applyMoveRange() {
+    commit((c) => c.applyMoveRange());
   }
 
   /** Clear the underlying value of every cell in the current selection
@@ -288,6 +134,7 @@ export function createClipboard<
    *  Mirrors Excel's `Delete` key - values go to `null`, formatting and
    *  the row identity stay intact. */
   function clearSelectedCellValues() {
+    if (claimed("clear")) return;
     const anchor = ctx.selectionRange.anchor;
     const focus = ctx.selectionRange.focus;
     if (anchor && focus) {
@@ -295,16 +142,18 @@ export function createClipboard<
       const maxRow = Math.max(anchor.rowIndex, focus.rowIndex);
       const minCol = Math.min(anchor.colIndex, focus.colIndex);
       const maxCol = Math.max(anchor.colIndex, focus.colIndex);
+      const cells: Array<{ rowIndex: number; columnId: string; value: unknown }> = [];
       for (let r = minRow; r <= maxRow; r += 1) {
         if (ctx.isRowCollapsed?.(r)) continue;
         for (let c = minCol; c <= maxCol; c += 1) {
           const col = ctx.allColumns[c];
           if (col && ctx.collapsedColumns?.[col.id]) continue;
           if (col?.columnDef.field && ctx.isCellEditableAt(r, c)) {
-            writeCellRaw(r, col.id, null);
+            cells.push({ rowIndex: r, columnId: col.id, value: null });
           }
         }
       }
+      writeCellsRaw(cells);
       return;
     }
     const a = ctx.grid.getState().activeCell;
@@ -323,8 +172,20 @@ export function createClipboard<
     rowIndex: number,
     colIndex: number,
   ) {
+    // A double-click on a cell draws the handle under its first press, and its
+    // second lands on the handle. That press is the cell's: it goes on to it.
+    // Only one in the same spot: a click in the cell and a quick reach for the
+    // handle is a fill.
+    const shown = Number((event.currentTarget as HTMLElement | null)?.dataset?.shownAt ?? -Infinity);
+    if (event.timeStamp - shown < 400 && Math.abs(event.clientX - cellPressX) < 5 && Math.abs(event.clientY - cellPressY) < 5) {
+      handlePressedTwice = false;
+      return;
+    }
     event.stopPropagation();
     event.preventDefault();
+    handlePressedTwice = event.timeStamp - handlePressedAt < 600;
+    handlePressedAt = event.timeStamp;
+    void loadRangeCommit();
     const anchor = ctx.selectionRange.anchor;
     const focus = ctx.selectionRange.focus;
     if (anchor && focus) {
@@ -463,10 +324,8 @@ export function createClipboard<
   function onFillPointerMove(event: PointerEvent) {
     if (!ctx.fillDrag) return;
     trackEdgeScroll(event);
-    const hit = cellAtPoint(event.clientX, event.clientY);
-    if (!hit) return;
-    if (hit.row === ctx.fillDrag.targetRow && hit.col === ctx.fillDrag.targetCol) return;
-    ctx.fillDrag = { ...ctx.fillDrag, targetRow: hit.row, targetCol: hit.col };
+    // The edge scroll's re-target, which points the fill at the cell under the pointer.
+    retargetDrag(event.clientX, event.clientY);
   }
 
   /**
@@ -525,6 +384,8 @@ export function createClipboard<
     colIndex: number,
   ): boolean {
     if (event.button !== 0) return false;
+    cellPressX = event.clientX;
+    cellPressY = event.clientY;
     // Mouse and pen only, the same policy drag-select uses (issue #23) and for
     // a worse reason: this path DOES preventDefault, so a finger that happened
     // to land within 4px of a selection border would start a move and kill the
@@ -550,6 +411,7 @@ export function createClipboard<
     // move.
     event.preventDefault();
     ctx.gridRootEl?.focus({ preventScroll: true });
+    void loadRangeCommit();
     ctx.moveDrag = {
       ...rect,
       grabRow: rowIndex,
@@ -641,115 +503,6 @@ export function createClipboard<
   }
 
   /**
-   * Commit a range move (or copy). Refuses the whole operation rather than
-   * applying the part that fits: a move that silently skipped a read-only or
-   * grouped destination cell would leave the range split across two places
-   * with no way to tell which half landed.
-   */
-  function applyMoveRange() {
-    const d = ctx.moveDrag;
-    if (!d) return;
-    // Clear the drag FIRST so a thrown error can't leave the grid tracking
-    // the pointer forever, exactly as applyFillPattern does.
-    ctx.moveDrag = null;
-    stopEdgeScroll();
-    const dest = moveDestRect(d);
-    if (!dest) return;
-
-    const height = d.sourceMaxRow - d.sourceMinRow + 1;
-    const width = d.sourceMaxCol - d.sourceMinCol + 1;
-
-    // Every column the move touches must be field-backed on BOTH sides: a
-    // computed / accessor column has nowhere to write the value back to.
-    for (let c = 0; c < width; c += 1) {
-      if (!ctx.allColumns[d.sourceMinCol + c]?.columnDef.field) return;
-      if (!ctx.allColumns[dest.minCol + c]?.columnDef.field) return;
-    }
-    // Destination must be writable, and so must the source when the values
-    // are leaving it. Group rows fail this through isCellEditableAt.
-    for (let r = 0; r < height; r += 1) {
-      for (let c = 0; c < width; c += 1) {
-        if (!ctx.isCellEditableAt(dest.minRow + r, dest.minCol + c)) return;
-        if (
-          !d.copy &&
-          !ctx.isCellEditableAt(d.sourceMinRow + r, d.sourceMinCol + c)
-        )
-          return;
-      }
-    }
-
-    // Snapshot the source before touching anything - source and destination
-    // overlap on any short drag, so reading lazily would move already-moved
-    // values a second time.
-    const values: unknown[][] = [];
-    for (let r = 0; r < height; r += 1) {
-      const rowValues: unknown[] = [];
-      for (let c = 0; c < width; c += 1) {
-        const column = ctx.allColumns[d.sourceMinCol + c];
-        rowValues.push(readCellRaw(d.sourceMinRow + r, column.id));
-      }
-      values.push(rowValues);
-    }
-
-    const steps: Array<{
-      rowId: string;
-      columnId: string;
-      field: string;
-      before: unknown;
-      after: unknown;
-    }> = [];
-    const write = (rowIndex: number, colIndex: number, value: unknown) => {
-      const column = ctx.allColumns[colIndex];
-      if (!column?.columnDef.field) return;
-      const before = readCellRaw(rowIndex, column.id);
-      if (before === value) return;
-      // Resolve the row id BEFORE the write: writeCellRaw swaps in a fresh
-      // row object, so an `original`-based lookup afterwards would miss.
-      const rowId = ctx.allRows[rowIndex]?.id;
-      writeCellRaw(rowIndex, column.id, value);
-      if (rowId) {
-        steps.push({
-          rowId,
-          columnId: column.id,
-          field: column.columnDef.field as string,
-          before,
-          after: value,
-        });
-      }
-    };
-
-    // Clear the whole source first, then write the destination. With the
-    // values already snapshotted this is correct even when the rectangles
-    // overlap: the destination write always lands after the clear.
-    if (!d.copy) {
-      for (let r = 0; r < height; r += 1) {
-        for (let c = 0; c < width; c += 1) {
-          write(d.sourceMinRow + r, d.sourceMinCol + c, null);
-        }
-      }
-    }
-    for (let r = 0; r < height; r += 1) {
-      for (let c = 0; c < width; c += 1) {
-        write(dest.minRow + r, dest.minCol + c, values[r]![c]);
-      }
-    }
-
-    // The whole move is ONE undo entry. It used to be one step per changed
-    // cell, so walking a 15x20 move back took 300 presses of Ctrl+Z and blew
-    // past UNDO_LIMIT, evicting every step behind it.
-    pushHistory(ctx, steps, nextGroupId());
-
-    // Follow the values: the range stays selected where it landed, so a
-    // second drag can chain off the first the way it does in a spreadsheet.
-    ctx.selectionRanges = [];
-    ctx.selectionRange = {
-      anchor: { rowIndex: dest.minRow, colIndex: dest.minCol },
-      focus: { rowIndex: dest.maxRow, colIndex: dest.maxCol },
-    };
-    ctx.setActiveCell(dest.minRow, dest.minCol);
-  }
-
-  /**
    * Click or Space on a checkbox cell. This is an edit like any other, so it
    * takes the same steps as committing the inline editor: write the row, one
    * undo step, then `onCellValueChange`. It used to write `row.original` and
@@ -781,7 +534,7 @@ export function createClipboard<
         [key]: nextValue,
       };
       ctx.grid.store.setState((prev: any) => ({ ...prev }));
-      getGridExtension()?.cellEdited?.(ctx, { row: rowData, columnId: column.id });
+      getGridExtension()?.cellEdited?.(ctx, { row: rowData, columnId: column.id, rowId: row.id });
       // The display can disagree with the row when an edit overlay is set;
       // flipping it back to what the row already holds changes no data.
       if (oldValue === nextValue) return;
@@ -805,13 +558,18 @@ export function createClipboard<
    * nothing. There we fall back to a temporary <textarea> + execCommand('copy'),
    * which still works in an insecure context. This MUST be called synchronously
    * from the user gesture (the keydown handler) so execCommand is allowed.
+   * Resolves true once the text is on the clipboard: a cut waits for that.
    */
-  function writeClipboardText(text: string) {
+  async function writeClipboardText(text: string): Promise<boolean> {
     if (navigator.clipboard?.writeText) {
-      void navigator.clipboard.writeText(text).catch(() => legacyCopyText(text));
-      return;
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        // Refused: the textarea copy below may still take it.
+      }
     }
-    legacyCopyText(text);
+    return legacyCopyText(text);
   }
 
   /**
@@ -822,7 +580,7 @@ export function createClipboard<
    * the browser refuses that does the async `ClipboardItem` write run, and
    * text alone after that.
    */
-  function writeClipboard(text: string, html: string) {
+  async function writeClipboard(text: string, html: string): Promise<boolean> {
     if (typeof document !== "undefined") {
       let armed = true;
       const onCopy = (event: ClipboardEvent) => {
@@ -835,17 +593,21 @@ export function createClipboard<
       document.addEventListener("copy", onCopy, { once: true, capture: true });
       const ok = legacyCopyText(text);
       document.removeEventListener("copy", onCopy, { capture: true });
-      if (ok && !armed) return;
+      if (ok && !armed) return true;
     }
     if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
       const item = new ClipboardItem({
         "text/plain": new Blob([text], { type: "text/plain" }),
         "text/html": new Blob([html], { type: "text/html" }),
       });
-      void navigator.clipboard.write([item]).catch(() => writeClipboardText(text));
-      return;
+      try {
+        await navigator.clipboard.write([item]);
+        return true;
+      } catch {
+        // Refused: text alone, below.
+      }
     }
-    writeClipboardText(text);
+    return writeClipboardText(text);
   }
 
   function legacyCopyText(text: string): boolean {
@@ -875,6 +637,7 @@ export function createClipboard<
   }
 
   function copySelectionToClipboard() {
+    if (claimed("copy")) return;
     // Copy every selected rectangle. Each range becomes a TSV block; multiple
     // ranges are stacked and separated by a blank line (Sheets-style).
     const rects = ctx.getSelectionRects() as Array<{
@@ -943,17 +706,17 @@ export function createClipboard<
       | ((params: { rects: typeof rects; text: string }) => string | null | undefined)
       | undefined;
     const html = toHtml?.({ rects, text });
-    if (html) writeClipboard(text, html);
-    else writeClipboardText(text);
+    return html ? writeClipboard(text, html) : writeClipboardText(text);
   }
 
   /**
    * Clear every editable cell in the current selection range. Used by
    * Ctrl/Cmd+X (after a copy) and by the Delete / Backspace keys.
-   * Returns true if anything was changed - the caller uses that to
-   * decide whether to call `preventDefault()` and refresh the store.
+   * Returns true if the range held a cell it may clear, empty or not - the
+   * caller uses that to decide whether to call `preventDefault()`.
    */
   function clearSelectedCells(): boolean {
+    if (claimed("clear")) return true;
     const anchor = ctx.selectionRange.anchor ?? ctx.grid.getState().activeCell;
     if (!anchor) return false;
     const focus = ctx.selectionRange.focus ?? anchor;
@@ -962,7 +725,7 @@ export function createClipboard<
     const endRow   = Math.max(anchor.rowIndex, focus.rowIndex);
     const endCol   = Math.max(anchor.colIndex, focus.colIndex);
 
-    const next = ctx.internalData.slice() as Array<TData>;
+    const { next, dataIndexOf } = rowsToWrite<TData>(ctx);
     let mutated = false;
     const changes: Array<{
       rowIndex: number
@@ -975,7 +738,7 @@ export function createClipboard<
     // one Ctrl+Z. Clearing used to record nothing at all: the values were
     // gone and undo skipped straight past them to whatever came before.
     const steps: HistoryStep[] = [];
-    const dataIndexOf = createDataIndexLookup(next);
+    let clearable = false;
     for (let r = startRow; r <= endRow; r += 1) {
       const row = ctx.allRows[r];
       if (!row || isGroupRow(row)) continue;
@@ -1006,6 +769,9 @@ export function createClipboard<
         // A number goes to null, not through the parser: `Number("")` is 0,
         // so a cleared Revenue cell used to read "$0" instead of empty.
         const cleared = editorType === "number" ? null : parseEditorValue(editorType, "");
+        clearable = true;
+        // Already empty: no write, and no step for Ctrl+Z to spend on nothing.
+        if ((oldValue ?? "") === (cleared ?? "") || (Array.isArray(oldValue) && !oldValue.length)) continue;
         updated[field] = cleared;
         rowChanged = true;
         steps.push({ rowId: row.id, columnId: column.id, field, before: oldValue, after: cleared });
@@ -1023,38 +789,41 @@ export function createClipboard<
       }
     }
     if (mutated) {
-      ctx.internalData = next;
+      changes.forEach((ch, i) => getGridExtension()?.cellEdited?.(ctx, { row: ch.row, columnId: ch.columnId, rowId: steps[i]!.rowId }));
+      const rows = landWrites(ctx, next, changes.map((ch, i) => ({ at: ch.rowIndex, rowId: steps[i]!.rowId, columnId: ch.columnId, value: ch.newValue })));
       ctx.grid.store.setState((prev: any) => ({ ...prev }));
       pushHistory(ctx, steps, nextGroupId());
       // Fire onCellValueChange per cleared cell - same as paste's writeCellRaw -
       // so consumers (formula engines, autosave) recompute. Clear IS a value
       // change; without this, a HyperFormula-backed grid wouldn't re-evaluate.
       if (ctx.props.onCellValueChange) {
-        for (const ch of changes) ctx.props.onCellValueChange(ch);
+        for (const ch of changes) ctx.props.onCellValueChange({ ...ch, row: rows[ch.rowIndex] as TData });
       }
     }
-    return mutated;
+    return clearable;
   }
 
   async function cutSelectionToClipboard(): Promise<void> {
-    // Cut = copy + clear. Wait for the copy to land on the clipboard so
-    // a slow writeText can't race the clear and leave the user with no
-    // way to undo via paste.
-    copySelectionToClipboard();
-    // Best-effort flush; clipboard.writeText is fire-and-forget but we
-    // already kicked it off above. The clear is synchronous.
-    clearSelectedCells();
+    if (claimed("cut")) return;
+    // Cut = copy + clear, and the clear waits for the copy. A clipboard that
+    // refused the text (a page without focus, a denied permission) clears
+    // nothing, and neither does a selection that moved while it was written:
+    // a cut never clears what it did not copy.
+    const at = ctx.selectionRange;
+    if ((await copySelectionToClipboard()) && ctx.selectionRange === at) clearSelectedCells();
   }
 
   return {
     readCellRaw,
     writeCellRaw,
+    writeCellsRaw,
     applyFillPattern,
     clearSelectedCellValues,
     startFillDrag,
     onFillPointerMove,
     onFillPointerUp,
     fillDownToNeighbour,
+    fillHandlePressedTwice: () => handlePressedTwice,
     isOnMoveGrabStrip,
     startMoveDrag,
     onMovePointerMove,

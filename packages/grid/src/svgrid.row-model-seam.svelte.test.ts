@@ -124,6 +124,20 @@ describe('rowPlaceholder', () => {
     destroy()
   })
 
+  it('keeps the row number on a loading row, in the same width as the rows around it', async () => {
+    const { target, destroy } = await mountGrid({
+      showRowNumbers: true,
+      rowPlaceholder: (row: Row) => (row.id === 2 ? 'loading' : null),
+    })
+    await tick()
+
+    const cell = target.querySelector<HTMLElement>('.sv-grid-placeholder-row .sv-grid-row-number-cell')!
+    expect(cell.textContent).toBe('3')
+    const real = target.querySelector<HTMLElement>('.sv-grid-row:not(.sv-grid-placeholder-row) .sv-grid-row-number-cell')!
+    expect(cell.style.width).toBe(real.style.width)
+    destroy()
+  })
+
   it('draws one full-width message with a Retry button for a failed row', async () => {
     const retried: Array<{ row: Row; index: number }> = []
     const { target, destroy } = await mountGrid({
@@ -165,6 +179,29 @@ describe('rowPlaceholder', () => {
     expect(failed[1]!.textContent!.trim()).toBe('')
     // Every row of the run keeps its own slot: the scrollbar does not move.
     expect(target.querySelectorAll('tbody .sv-grid-row').length).toBe(7)
+    destroy()
+  })
+
+  it('a run that started above the screen says so on the first row wholly under the header', async () => {
+    // Scrolled into a failed block: the message and Retry are where the person looks,
+    // not on a row above the screen, nor on one half under the header.
+    const { target, destroy } = await mountGrid(
+      { rowPlaceholder: () => 'failed', onRetryRow: () => {}, rowHeight: 30 },
+      rowsOf(40),
+    )
+    await tick()
+    const said = () => [...target.querySelectorAll('.sv-grid-placeholder-failed')].findIndex((r) => !r.classList.contains('sv-grid-placeholder-failed-cont'))
+    expect(said()).toBe(0)
+    const box = target.querySelector<HTMLElement>('.sv-grid-container')!
+    Object.defineProperty(box, 'scrollTop', { configurable: true, get: () => 75 })
+    box.dispatchEvent(new Event('scroll'))
+    for (let i = 0; i < 4; i += 1) await new Promise((r) => requestAnimationFrame(() => r(null)))
+    await tick()
+    // Row 2 spans 60 to 90 and sits half under the header: row 3 says it.
+    const runs = [...target.querySelectorAll('.sv-grid-placeholder-failed')].filter((r) => !r.classList.contains('sv-grid-placeholder-failed-cont'))
+    expect(runs).toHaveLength(2)
+    expect(said()).toBe(0)
+    expect([...target.querySelectorAll('.sv-grid-placeholder-failed')].indexOf(runs[1]!)).toBe(3)
     destroy()
   })
 

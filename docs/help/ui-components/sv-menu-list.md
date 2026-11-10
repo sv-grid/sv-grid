@@ -63,7 +63,7 @@ import { SvMenuList } from '@svgrid/grid'
 | `separator` | `boolean`         | Render a divider instead of an item.                      |
 | `icon`      | `Snippet`         | Leading icon.                                             |
 | `shortcut`  | `string`          | Right-aligned hint, e.g. a keyboard shortcut.            |
-| `disabled`  | `boolean`         | Dim and skip the item during roving focus.              |
+| `disabled`  | `boolean`         | Dim the item; it keeps focus and does nothing.          |
 | `children`  | `MenuItem[]`      | Nested submenu items (renders a flyout).                 |
 | `onSelect`  | `() => void`      | Per-item callback fired when the item is chosen.        |
 
@@ -128,7 +128,8 @@ to the parent only from within a nested list.
 ## Accessibility
 
 - The list is `role="menu"` with a single tab stop and roving `tabindex`;
-  separators are `role="separator"` and disabled items are skipped.
+  separators are `role="separator"`. A disabled item is `aria-disabled`: the arrow
+  keys still reach it, so a screen reader hears it, and choosing it does nothing.
 - Keyboard: Up/Down move, Home/End jump, Enter or Space activate, Escape closes,
   ArrowRight opens a submenu, and ArrowLeft (in a submenu) returns to the parent.
 - Type-ahead: printable keys jump to the next item whose label starts with the

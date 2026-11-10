@@ -27,10 +27,12 @@ type Frame = { present: boolean; overflowing: boolean; measured: boolean }
 /** Sample the grid's measured-vs-overflowing state on every animation frame. */
 const SAMPLER = `
   window.__frames = []
-  const t0 = performance.now()
+  // From the first grid, not the page load: a dev server can take longer than the window to show one.
+  let t0 = null
   function tick() {
     const c = document.querySelector('.sv-grid-container')
     if (c) {
+      t0 ??= performance.now()
       window.__frames.push({
         present: true,
         // Real vertical overflow means the scrollbar (and gutter) BELONG on
@@ -39,7 +41,7 @@ const SAMPLER = `
         measured: c.classList.contains('sv-grid-has-vscroll'),
       })
     }
-    if (performance.now() - t0 < 4000) requestAnimationFrame(tick)
+    if (t0 === null || performance.now() - t0 < 4000) requestAnimationFrame(tick)
   }
   requestAnimationFrame(tick)
 `

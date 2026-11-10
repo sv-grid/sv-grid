@@ -186,7 +186,7 @@ describe('SvGrid wrapper - between filter operator', () => {
 
 describe('SvGrid wrapper - multi-cell paste + cut + delete', () => {
   it('fills the selection range when the clipboard payload is 1x1', () => {
-    expect(source).toMatch(/clipboardIsSingleCell\s*=\s*\n?\s*lines\.length === 1 && \(lines\[0\]\?\.split\("\\t"\)\.length \?\? 0\) === 1/)
+    expect(source).toMatch(/clipboardIsSingleCell\s*=\s*\n?\s*lines\.length === 1 && lines\[0\]\?\.length === 1/)
     expect(source).toMatch(/selectionIsRange = startRow !== endRow \|\| startCol !== endCol/)
     expect(source).toMatch(/fillRange = clipboardIsSingleCell && selectionIsRange/)
   })
@@ -205,13 +205,13 @@ describe('SvGrid wrapper - multi-cell paste + cut + delete', () => {
     expect(source).toMatch(/lower === "x"/)
     expect(source).toMatch(/void (?:ctx\.)?cutSelectionToClipboard\(\)/)
     expect(source).toMatch(/async function cutSelectionToClipboard/)
-    // Confirm both calls live inside the cutSelectionToClipboard body
-    // (copy first, then clear). A comment between them is fine.
+    // Confirm both calls live inside the cutSelectionToClipboard body: the
+    // copy is awaited first and the clear is gated on it having landed (a cut
+    // never clears what it did not copy; behaviour is in clipboard.test.ts).
     const body = source.match(
       /async function cutSelectionToClipboard\(\)[^{]*\{([\s\S]*?)^\s\s\}/m,
     )?.[1] ?? ''
-    expect(body).toContain('copySelectionToClipboard();')
-    expect(body).toContain('clearSelectedCells();')
+    expect(body).toMatch(/if \(\(await copySelectionToClipboard\(\)\)[^)]*\) clearSelectedCells\(\);/)
     expect(body.indexOf('copySelectionToClipboard()')).toBeLessThan(
       body.indexOf('clearSelectedCells()'),
     )

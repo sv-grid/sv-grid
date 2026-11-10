@@ -4,7 +4,7 @@
     "type": "commercial",
     "url": "https://svgrid.com/pricing"
   },
-  "version": "3.0.46",
+  "version": "3.0.43",
   "description": "SvGrid as a framework-agnostic web component (<sv-grid> custom element, plus <sv-grid-shadow> for an open shadow root and <sv-chart> for the standalone chart). Drop into React, Vue, Angular, or plain HTML - no build step required.",
   "type": "module",
   "license": "MIT",
@@ -122,7 +122,7 @@
     "ng-packagr": "^22.1.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "svelte": "^5.55.5",
+    "svelte": "^5.57.3",
     "tslib": "^2.8.1",
     "vite": "^8.2.1",
     "vue": "^3.5.42",

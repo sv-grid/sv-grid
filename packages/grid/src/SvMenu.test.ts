@@ -80,6 +80,29 @@ describe('SvMenu', () => {
     } finally { destroy() }
   })
 
+  it('an item that is off takes the arrow keys, says it is off, and Enter or a click does nothing', () => {
+    let chosen: MenuItem | undefined
+    const { target, destroy } = mountMenu({ items, onSelect: (i: MenuItem) => (chosen = i) })
+    try {
+      target.querySelector<HTMLElement>('.trigger')!.click()
+      flushSync()
+      const btns = () => [...menu()!.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')]
+      const cut = btns().find((b) => b.textContent?.includes('Cut'))!
+      cut.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }))
+      flushSync()
+      const del = btns().find((b) => b.textContent?.includes('Delete'))!
+      expect(del.tabIndex).toBe(0)
+      expect(del.getAttribute('aria-disabled')).toBe('true')
+      // Focusable: not the disabled attribute, which takes a button out of focus.
+      expect(del.disabled).toBe(false)
+      del.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+      del.click()
+      flushSync()
+      expect(chosen).toBeUndefined()
+      expect(menu()).not.toBeNull()
+    } finally { destroy() }
+  })
+
   it('opens a submenu on pointer-enter of a parent item', () => {
     const { target, destroy } = mountMenu({ items })
     try {

@@ -578,6 +578,15 @@ export type GalleryConfig<TFeatures extends TableFeatures = TableFeatures, TData
   card?: Snippet<[TData]>;
   /** A card was clicked, or opened with Enter. */
   onCardClick?: (row: TData) => void;
+  /**
+   * What a card can do: a right-click, a long press, the Menu key or Shift+F10
+   * opens this menu, and each card shows a button for it.
+   */
+  cardMenu?: (row: TData) => ReadonlyArray<MenuItem>;
+  /** Whether a card is selected: it says so, in shape and in words. */
+  isSelected?: (row: TData) => boolean;
+  /** The gallery's own words, for a translation. */
+  text?: { records?: string; cardActions?: string; selected?: string; untitled?: string };
   /** A search box above the cards. Default true. */
   searchable?: boolean;
   /** Placeholder for the search box. */
@@ -589,9 +598,29 @@ export type GalleryConfig<TFeatures extends TableFeatures = TableFeatures, TData
    * Default: an object with `getColumnWidth` only.
    */
   cellGrid?: (width: number) => unknown;
+  /**
+   * The records of a table too big to hold, read from a server: how many
+   * there are (null until known) and those of a range (each a record, or a
+   * placeholder until it arrives). Only the cards in sight are drawn.
+   */
+  server?: {
+    readonly total: number | null;
+    slice(start: number, end: number): ReadonlyArray<unknown>;
+    readonly version: number;
+  };
 };
 
 export type BoardConfig<TFeatures extends TableFeatures = TableFeatures, TData extends RowData = RowData> = {
+  /**
+   * The board's own words, by key, over its English ones: `board`, `addCard`,
+   * `addCardTo` (`{lane}`), `cardTitle`, `noCards`, `cardActions`, `clearFilters`,
+   * `blocked`, `age`, `comments`, `writeComment`, `deleteComment`, `addSubtask`,
+   * `rename`, `cancel`, `save`, and what a keyboard move says: `grabbed`, `dropped`,
+   * `movedTo`, `movedUp`, `movedDown`, `movedPosition`, `cancelled`, `wipLimit`,
+   * `cannotMove`, `cardBlocked`, `selected`, `deselected` (`{card}`, `{lane}`,
+   * `{position}`, `{total}`, `{limit}`, `{count}`).
+   */
+  text?: Partial<Record<string, string>>;
   /** Field whose value buckets each row into a lane. */
   groupBy: keyof TData & string;
   /**
@@ -607,6 +636,17 @@ export type BoardConfig<TFeatures extends TableFeatures = TableFeatures, TData e
    * the board is display-only.
    */
   onCardMove?: (event: BoardCardMoveEvent<TData>) => void;
+  /**
+   * The app writes every move to its rows, so a card's lane is what the row
+   * says and the board keeps no overlay of its own: an undo or an edit made
+   * elsewhere shows at once, and a move the app refuses leaves the card put.
+   */
+  controlled?: boolean;
+  /**
+   * With `lanes`: the lane a card goes to when its value names no lane, so a
+   * value from elsewhere (an import, a database) does not take it off the board.
+   */
+  otherLane?: string;
   /**
    * Add-card affordance. A `+` in the lane header (or, with `composer`, a
    * type-a-title box at the bottom of the lane) fires this with the lane id
@@ -799,6 +839,23 @@ export type BoardConfig<TFeatures extends TableFeatures = TableFeatures, TData e
    * `cardHeight` to match your cards.
    */
   virtualized?: boolean;
+  /**
+   * The lanes of a table too big to hold, read from a server: a lane's true
+   * size, the cards of a range of it (each a record, or a placeholder until it
+   * arrives), and the cards read so far. With it, `data` holds what has been
+   * read, a lane keeps the server's order, and a move only fires `onCardMove`.
+   */
+  server?: {
+    total(laneId: string): number;
+    slice(laneId: string, start: number, end: number): ReadonlyArray<unknown>;
+    rows(laneId: string): ReadonlyArray<unknown>;
+    readonly version: number;
+  };
+  /**
+   * A card dropped elsewhere in its own lane, between `before` and `after`
+   * (either missing at an end of the lane). Return whether the order was kept.
+   */
+  onCardReorder?: (e: { row: TData; laneId: string; before?: TData; after?: TData }) => boolean;
   /** Estimated card height in px used by `virtualized` windowing (default 76). */
   cardHeight?: number;
   /**
@@ -937,6 +994,27 @@ export type SchedulerConfig<
   TFeatures extends TableFeatures = TableFeatures,
   TData extends RowData = RowData,
 > = {
+  /**
+   * The calendar's own words, by key, over its English ones: `today`,
+   * `previous`, `next`, the view names (`month`, `week`, `day`, `agenda`,
+   * `timelineDay`...), `allDay`, `more` (`{count}`), `noEvents`, `eventsColumn`,
+   * `edit`, `duplicate`, `delete`, and what moving an event by keyboard says:
+   * `moveGrabbed` (`{title}`), `moveDone` (`{title}`, `{place}`), `moveCancelled`,
+   * `moveBlocked`. Dates follow the browser's locale.
+   */
+  text?: Partial<Record<string, string>>;
+  /**
+   * The events of a table too big to hold, read from a server for the dates
+   * on screen: `setRange` is told what those are. While `dense`, `data` holds
+   * each day's first events and `dayTotal` how many the day has; the calendar
+   * shows the rest as "+N more", and `openDay` lists them.
+   */
+  server?: {
+    setRange(start: Date, end: Date): void;
+    dayTotal(day: Date): number | null;
+    readonly dense: boolean;
+    openDay(day: Date): void;
+  };
   /** Field holding each event's start (`Date` | epoch-ms | ISO string). Required. */
   startField: keyof TData & string;
   /** Field holding the end. Omit to use `defaultDurationMin` from the start. */
@@ -1071,6 +1149,12 @@ export type SchedulerConfig<
    * callbacks with the reversed values, so your data follows.
    */
   history?: boolean;
+  /**
+   * The app writes every move and resize to its rows: when `data` changes the
+   * rows win over what the calendar drew, so an undo or an edit made elsewhere
+   * shows at once.
+   */
+  controlled?: boolean;
   /**
    * Show the current-time indicator - a line across today's column(s) in the
    * Week / Day time-grid and the Day timeline, tracking the local time. On by
@@ -1304,6 +1388,20 @@ export type GanttConfig<
   TFeatures extends TableFeatures = TableFeatures,
   TData extends RowData = RowData,
 > = {
+  /**
+   * The tasks of a table too big to hold, read from a server by start date.
+   * `data` holds the rows near the view: `total` is how many rows there are,
+   * `places` the row of each one held, `want` reads a range of rows, and
+   * `span` the dates the whole plan covers, for the axis.
+   */
+  server?: {
+    readonly total: number | null;
+    readonly version: number;
+    readonly span: { start: Date; end: Date } | null;
+    want(first: number, last: number): void;
+    places(): Map<string, number>;
+    rowOf(day: Date): Promise<number>;
+  };
   /** Field holding each task's start (`Date` | epoch-ms | ISO string). Required. */
   startField: keyof TData & string;
   /** Field holding the end. Omit to use `durationField`, else the task is a milestone. */
@@ -1438,6 +1536,11 @@ export type GanttConfig<
    * values, so your data follows.
    */
   history?: boolean;
+  /**
+   * The app writes every edit to its rows: when `data` changes the rows win
+   * over what the chart drew, so an undo or an edit made elsewhere shows at once.
+   */
+  controlled?: boolean;
   /** Fired when a bar is dragged to new dates. */
   onTaskMove?: (event: GanttTaskMoveEvent<TData>) => void;
   /** Fired when a bar's edge is dragged. */
@@ -1871,6 +1974,8 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    * prefer `localization.text.noRows` when you are translating the whole grid.
    */
   emptyMessage?: string;
+  /** The grid's accessible name: what a screen reader calls it. */
+  gridLabel?: string;
   /**
    * The single place to localize the grid. One object with two fields:
    *
@@ -2189,6 +2294,10 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
     delta: { rows: number; cols: number };
     rowIndex: number;
     columnId: string;
+    /** Every source value, the one next to the first target last. */
+    sources: ReadonlyArray<unknown>;
+    /** Which target this is, counted from the sources: 0 is the first. */
+    index: number;
   }) => unknown;
   processCellForClipboard?: (params: {
     value: unknown;
@@ -2240,6 +2349,26 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
     source: "event" | "async";
   }) => boolean | void;
   /**
+   * A paste, a clear or a fill changes rows where they stand, as a typed edit
+   * does, instead of handing the grid a new list that sorts and filters them
+   * again at once. For an app that orders the view itself once the person moves
+   * on (`api.setOption` or new `data`): the rows do not move under the cursor,
+   * so a second Delete or paste lands on the same records.
+   */
+  holdRowsOnWrite?: boolean;
+  /**
+   * A paste that runs past the last row: the lines there is no row for, split
+   * into cells, and the column index the first cell of each belongs to. Without
+   * it they are dropped. Runs inside the paste's undo step.
+   */
+  onPasteOverflow?: (e: { rows: string[][]; startCol: number }) => void;
+  /**
+   * Split pasted text into rows of cells, for a consumer whose copy quotes a
+   * cell (a line break inside it, as Excel writes one). Left out, every line
+   * is a row and every tab a new cell.
+   */
+  parseClipboardText?: (text: string) => string[][];
+  /**
    * Transform each cell on its way IN from the clipboard, before the grid
    * coerces it for the column's editor. Symmetric with
    * `processCellForClipboard`: the pair is what lets a round trip survive.
@@ -2259,6 +2388,8 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
     row: TData;
     rowIndex: number;
     columnId: string;
+    /** Row and column of this cell in the pasted block, from 0. */
+    cell: [row: number, col: number];
   }) => unknown;
   /**
    * Inline cell editing: F2 or double-click opens an editor in the active cell,

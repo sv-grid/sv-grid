@@ -20,7 +20,8 @@
     "vite": "^8.0.16"
   },
   "dependencies": {
-    "@svgrid/grid": "^3.0.11",
-    "@svgrid/enterprise": "^3.1.16"
+    "@svgrid/grid": "^3.0.32",
+    "@svgrid/enterprise": "^3.1.35",
+    "jszip": "^3.10.1"
   }
 }

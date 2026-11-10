@@ -78,6 +78,8 @@ export type ChartMessages = {
   downloadSvg: string
   pdf: string
   downloadPdf: string
+  /** The PDF item when a title holds letters its font has not: `{text}` is that title. */
+  pdfCannotDraw: string
   downloadCsv: string
   print: string
   printTitle: string
@@ -148,6 +150,7 @@ export const defaultChartMessages: ChartMessages = {
   downloadSvg: 'Download SVG',
   pdf: 'PDF',
   downloadPdf: 'Download PDF',
+  pdfCannotDraw: 'No PDF: its font cannot draw "{text}". Download PNG or SVG.',
   downloadCsv: 'Download CSV',
   print: 'Print',
   printTitle: 'Print the chart',

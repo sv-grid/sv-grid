@@ -17,6 +17,7 @@ describe('escapeFormulaCell', () => {
     ["-2+3+cmd|' /C calc'!A0", "'-2+3+cmd|' /C calc'!A0"],
     ['\t=1+1', "'\t=1+1"],
     ['\r=1+1', "'\r=1+1"],
+    ['\n=1+1', "'\n=1+1"],
     ['-', "'-"],
     ['- not a number', "'- not a number"],
   ])('neutralises %j', (input, out) => {

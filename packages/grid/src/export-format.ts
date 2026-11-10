@@ -305,7 +305,7 @@ export type CsvOptions = {
   /** Prepend a UTF-8 BOM so Excel detects UTF-8. Default true for csv/tsv. */
   bom?: boolean
   /**
-   * Prefix a text cell that starts with `=`, `+`, `-`, `@`, a tab or a carriage
+   * Prefix a text cell that starts with `=`, `+`, `-`, `@`, a tab, a line feed or a carriage
    * return with `'`, so a spreadsheet opening the file shows it as text instead
    * of running it as a formula (CSV / formula injection). Plain signed numbers
    * such as `-12.50` are left alone. Default true.
@@ -343,7 +343,8 @@ function csvCell(value: unknown, delimiter: string, escapeFormulas: boolean): st
         ? toLocalIsoString(value)
         : String(value)
   if (s === '') return s
-  if (escapeFormulas && typeof value === 'string') s = escapeFormulaCell(s)
+  // A number is safe as it stands. A list is not: `=1+1,b` starts a formula too.
+  if (escapeFormulas && typeof value !== 'number') s = escapeFormulaCell(s)
   if (s.includes(delimiter) || s.includes('"') || s.includes('\n') || s.includes('\r')) {
     return `"${s.replace(/"/g, '""')}"`
   }

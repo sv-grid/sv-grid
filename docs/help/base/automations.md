@@ -34,7 +34,7 @@ record you pick, as if its trigger had happened.
 
 | Trigger | Runs |
 |---|---|
-| A record is created | When a record is added: "+ Add row", a form, a board lane, a calendar day, another automation |
+| A record is created | When a record is added: "+ Add row", a form, a board lane, a calendar day, another automation. A record brought back by Restore or an undo of a delete is not created, and no rule runs for it |
 | A record changes | When a record is edited; pick fields to run only when one of them changes. A link made from the other table counts: adding a guest to an event from Guests changes the event's Guests field |
 | A record matches a condition | When a record starts to match the condition. It does not run again while the record keeps matching |
 | A form is sent | When a form view sends a record; pick the form, or any form of the table |
@@ -42,7 +42,7 @@ record you pick, as if its trigger had happened.
 | At a scheduled time | Every day at 9, every Monday, every hour, or a cron expression: once for each record that matches the condition then, or once with no record |
 
 A paste or a fill that changes several cells of one record is one change to
-it.
+it. An undo or a redo is no change: it runs no automation.
 
 ## Do
 
@@ -57,7 +57,19 @@ it.
 | Your own actions | Anything the app adds with `registerAutomationAction` |
 
 A webhook's URL, headers and body name fields in braces, and secrets as
-`{secret:NAME}`; leave the body empty to send the record as JSON:
+`{secret:NAME}`; leave the body empty to send the record as JSON. A secret is
+named only by the automation: what a record holds is data, so `{secret:NAME}`
+typed into a field goes out as that text.
+
+From the server a webhook does not call private or local addresses (`localhost`,
+`10.x`, `192.168.x`, `169.254.169.254`, a name that resolves to one, an IPv6 form
+that wraps one) and does not follow redirects. On Node it connects to the
+addresses it checked, so a name cannot answer one way for the check and another
+for the call; a name that does not resolve is not sent. A `fetch` of your own
+passed to `createAutomationServer` gets the check but not that pin, and neither
+does a runtime with no sockets of its own. For a webhook on your own network, set
+`allowInternalWebhooks: true` on `createAutomationServer`.
+
 
 ![A server automation that calls a webhook: POST to https://chat.example.com/hooks/{secret:CHAT_HOOK} with the body {"text": "{Task} is blocked. Assignee: {Assignee}"}.](/docs-media/base-automation-webhook.png)
 
@@ -78,6 +90,18 @@ Values are written as the field shows them:
 
 Every run is listed under Runs, newest first, with what each action did and
 the record it ran on. A failed action stops the run there and says why.
+
+Edit fields on more than 10,000 records asks first, and that question says how many
+runs the change can start in the page and how long they will likely take: at the rate
+runs went in this tab, or, before any did, from how long the server takes to answer. Untick
+"Also run automations" to make the change without them. The choice holds for that change
+only. An automation that runs on the server is not counted and cannot be skipped from here.
+
+Runs in the page go one at a time, in the tab, after the change is saved. From 20 runs on, the top
+bar says how far they are and about how long is left, with a Stop button. Stop drops the runs
+not started and says how many, and those do not run later. Runs left when the tab closes do
+not happen either, so the browser asks before it closes. For a change of hundreds of thousands of records,
+run the automation on the server (`runOn: 'server'`).
 
 ![Runs: Task blocked on Paste URLs as attachments showed a notice; Done closes the task on Lightbox preview set Done to checked and Progress to 100%, then showed a notice; Start a task on Docs page set Status to In progress and Start to today.](/docs-media/base-automation-runs.png)
 
@@ -135,7 +159,7 @@ export const taskAutomations: BaseAutomation[] = [
 
 Automations edited in the dialog reach `onTablesChange` with the rest of the
 table. Automations need `<SvBase tables>`; one table is a list of one.
-Notices need one `<SvToaster />` in the app.
+Notices show as a base's other notices do: see [Notices](./quick-start.md#notices).
 
 ## Your own actions
 
@@ -184,7 +208,10 @@ run stops and says so, so two automations that answer each other cannot loop.
 ![Automations on the server: the base writes through your endpoint to the database; the automation server hears each change through the endpoint's audit hook or a database webhook, writes back through the same sources, and calls webhooks and sends email with secrets that stay on the server.](/docs-media/base-automation-server.svg)
 
 `createAutomationServer` runs the automations set to "The server". It reads
-the same tables, with the same automations, through sources of its own.
+the same tables, with the same automations, through sources of its own. It remembers
+the last 10,000 records of a table it heard deleted: on a table with no `softDelete` an
+undo writes the record again, and only that memory tells it from a new one, so such an
+undo after a server restart reads as a creation.
 Keep the tables in one module both sides import, each side handing in its
 own way to reach the data:
 
@@ -227,6 +254,9 @@ export function trackerTables(source: (table: string) => ServerDataSource<Record
 
 The server side, in a SvelteKit app:
 
+The code on this page is for SvelteKit 2. On SvelteKit 3,
+[these names differ](../../getting-started/sveltekit.md#on-sveltekit-3).
+
 ```ts
 // src/lib/server/automations.ts
 import pg from 'pg'
@@ -260,8 +290,9 @@ export const automations = createAutomationServer({
       execute: async (sql, params) => (await pool.query(sql, params)).rows,
     }),
   ),
-  // {secret:SLACK_HOOK} in a webhook reads SLACK_HOOK from the environment.
-  secrets: (name) => env[name],
+  // {secret:SLACK_HOOK} in a webhook reads this. List what automations may use:
+  // whoever writes an automation can send any secret named here to any URL.
+  secrets: { SLACK_HOOK: env.SLACK_HOOK },
   sendEmail: (m) => mailer.send({ from: 'tracker@example.com', ...m }),
   onRun: (run) => {
     if (run.status !== 'ok') console.error('automation failed', run)
@@ -274,7 +305,18 @@ Then tell it about changes, in whichever way fits your app:
 - **Through your endpoint.** Pass its `audit` hook to `createKitHandlers`:
   every create, update and delete through the endpoint reaches it, with the
   record as stored. It compares with what it read last, so it needs a server
-  that stays up between requests.
+  that stays up between requests. A server that has just started reads its
+  tables before the first write reaches the database: the hook has a `before`
+  that `createKitHandlers` waits for. So each record of a pasted block is
+  judged by what it held, and a record the write left as it was runs nothing.
+  Columns the row carries that no field names, such as a tenant, are not
+  compared.
+
+  To keep an audit hook of your own, pass it as the second argument,
+  `automations.audit('tasks', (entry) => log(entry))`. It is called first with
+  each entry. A hook that wraps this one loses `before`; then the server reads
+  its tables after the first write, and each record of that request goes by
+  the fields the write named.
 
   ```ts
   // src/routes/api/[table]/+server.ts

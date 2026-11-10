@@ -60,6 +60,7 @@ export type MenuItemProps = {
   'aria-haspopup': 'menu' | undefined
   'aria-expanded': boolean | undefined
   'aria-disabled': true | undefined
+  /** Always undefined: an item that is off keeps focus, and `aria-disabled` says it is off. */
   disabled: boolean | undefined
   onkeydown: (event: KeyboardEvent) => void
   onpointerenter: () => void
@@ -92,11 +93,13 @@ export function createMenu(config: MenuConfig) {
     return -1
   }
 
-  // Real (non-separator, non-disabled) item indices, for roving focus.
+  // Item indices for roving focus: every item but a separator. An item that is
+  // off stays in the arrow-key order (the ARIA menu pattern), so a screen reader
+  // hears it and that it is off; choosing it does nothing.
   const focusables = $derived(
     enabledIndices(items().length, (i) => {
       const it = items()[i]
-      return !it || it.separator === true || it.disabled === true
+      return !it || it.separator === true
     }),
   )
 
@@ -141,6 +144,8 @@ export function createMenu(config: MenuConfig) {
   }
 
   function onItemKeydown(e: KeyboardEvent, i: number) {
+    // Focus can arrive from outside the core (menuFocus): the key says where it is.
+    active = i
     const item = items()[i]
     // Open this item's submenu (ArrowRight, or ArrowLeft under rtl).
     const openThis = () => {
@@ -211,7 +216,7 @@ export function createMenu(config: MenuConfig) {
         'aria-haspopup': hasKids ? 'menu' : undefined,
         'aria-expanded': hasKids ? openSub === i : undefined,
         'aria-disabled': it?.disabled ? true : undefined,
-        disabled: it?.disabled,
+        disabled: undefined,
         onkeydown: (e: KeyboardEvent) => onItemKeydown(e, i),
         onpointerenter: () => hover(i),
         onclick: () => { if (it) choose(it) },

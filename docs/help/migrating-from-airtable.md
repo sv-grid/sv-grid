@@ -10,7 +10,7 @@ renders the views inside your app, and every edit goes back to your tables.
 > rebuild its automations.
 
 <!-- facts:start airtable -->
-> **Facts, checked 14 Oct 2026.** `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the 30 days to 10 Sep 2026. Airtable pricing, as its site states it: Airtable Free has no cost. airtable.com/pricing lists Team at $20 per seat per month billed annually ($24 monthly) and Business at $45 per seat per month billed annually ($54 monthly); Enterprise Scale pricing is custom. Read-only collaborators are not charged on Team or Business (https://airtable.com/pricing, read 14 Oct 2026). SvGrid: SvGrid Base ships in Enterprise Suite of @svgrid/enterprise, $999 per developer per year, unlimited apps and end users; the grid it runs on is MIT. Side by side, with sources: [SvGrid vs Airtable](https://svgrid.com/compare/airtable/).
+> **Facts, checked 9 Nov 2026.** `@svgrid/grid` 3.0.32, MIT, last published 3 Nov 2026, 44,600 npm downloads in the 30 days to 8 Nov 2026. Airtable pricing, as its site states it: Airtable Free has no cost. airtable.com/pricing lists Team at $20 per seat per month billed annually ($24 monthly) and Business at $45 per seat per month billed annually ($54 monthly); Enterprise Scale pricing is custom. Read-only collaborators are not charged on Team or Business (https://airtable.com/pricing, read 14 Oct 2026). SvGrid: SvGrid Base ships in Enterprise Suite of @svgrid/enterprise, $999 per developer per year, unlimited apps and end users; the grid it runs on is MIT. Side by side, with sources: [SvGrid vs Airtable](https://svgrid.com/compare/airtable/).
 <!-- facts:end -->
 
 ## What maps to what
@@ -359,7 +359,12 @@ import { createBaseEndpoint } from '@svgrid/enterprise/base'
 // Your database driver: run parameterized SQL, return the rows.
 declare function query(sql: string, params: unknown[]): Promise<Record<string, unknown>[]>
 
-export const { GET, POST } = createBaseEndpoint({ execute: query })
+export const { GET, POST } = createBaseEndpoint({
+  execute: query,
+  tables: ['tasks', 'projects'],
+  // Who may read and write: see the quick start.
+  authorize: () => ({ event }) => !!event.locals?.user,
+})
 ```
 
 ```svelte
@@ -430,11 +435,15 @@ Comments go through `setRecordComments` to wherever you keep them.
   database it reads.
 - Interfaces, Omni and the AI credits. The pages around the base are your
   own Svelte pages.
-- Native mobile apps, and the list and inbox views.
-- The permissions screen, sharing links and the long revision history.
-  Access rules live in your server or database; the record shows the
-  changes made in the session, and the endpoint's `audit` hook can log
-  every write.
+- Native mobile apps. A phone gets the base's own phone layout in the
+  browser.
+- A permissions screen. Roles live in your app: `permissions` makes the
+  base offer each person only what their role allows (see
+  [Permissions](./base/permissions.md)), and your server or row level
+  security refuses the rest.
+- A revision history the base keeps for you. `setRecordHistory` shows the
+  history your audit log keeps, for as long as it keeps it, and the
+  endpoint's `audit` hook can log every write.
 
 SvGrid Base is part of the Suite edition of `@svgrid/enterprise` ($999 per
 developer). It runs without a key during an evaluation, with a watermark.

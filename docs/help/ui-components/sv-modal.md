@@ -133,6 +133,9 @@ focusable element receives focus on open, so lead with the field the user edits.
 
 ## Accessibility
 
+The x in the header is named "Close". A translated app sets that once for every
+modal on the page with `setModalCloseLabel('Schließen')`.
+
 - The dialog is `role="dialog"` with `aria-modal="true"`, and `title` supplies
   its `aria-labelledby`.
 - Focus is trapped inside while open and page scroll is locked; both release on

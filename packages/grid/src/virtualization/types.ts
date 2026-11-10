@@ -34,9 +34,16 @@ export type VirtualizerOptions = {
    * moves the window on every item boundary, always with `overscan`.
    */
   overscanMin?: number
+  /**
+   * Move the window ahead of a scroll that moves more than `overscan` items
+   * per update: up to `overscan - 2` items go from behind the scroll to in
+   * front of it, and the window keeps its length. A slower scroll keeps the
+   * window as it is.
+   */
+  overscanLead?: boolean
   viewportHeight: number
   scrollOffset?: number
-  /** Internal: the sign of the last scroll movement (-1, 0, 1). */
+  /** Internal: the last scroll movement in px; its sign is the direction. */
   scrollDirection?: number
 }
 

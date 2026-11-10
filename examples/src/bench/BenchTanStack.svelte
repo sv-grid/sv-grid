@@ -30,11 +30,12 @@
     createFilteredRowModel,
     filterFn_includesString,
   } from '@tanstack/svelte-table'
+  import { avatarOf, fmtDate, tagList, STARS_ON, STARS_OFF, RICH_WIDTH, type RichKind } from './rich'
 
   type Row = Record<string, unknown>
   type Props = {
     rows: Row[]
-    columns: Array<{ field: string; header: string; type: 'text' | 'number' }>
+    columns: Array<{ field: string; header: string; type: 'text' | 'number'; kind?: RichKind }>
     rowHeight: number
     handle: {
       setSort?: (field: string, desc: boolean) => void
@@ -94,6 +95,11 @@
   const end = $derived(Math.min(model.length, Math.ceil((scrollTop + viewport) / rowHeight) + OVERSCAN))
   const visible = $derived(model.slice(start, end))
   const fields = columns.map((c) => c.field)
+  // The rich-cells scenario (rich.ts): the same markup as the other grids,
+  // written straight into the row template, which is what an app on a
+  // headless table does.
+  const kinds: Record<string, RichKind | undefined> = Object.fromEntries(columns.map((c) => [c.field, c.kind]))
+  const W = columns.some((c) => c.kind) ? RICH_WIDTH : 140
 
   handle.setSort = (field, desc) => {
     table.setSorting([{ id: field, desc }])
@@ -114,11 +120,11 @@
   style="height:100%;overflow:auto;position:relative"
 >
   <div style="height:{(model.length + 1) * rowHeight}px;position:relative">
-    <table style="position:absolute;top:{start * rowHeight}px;left:0;table-layout:fixed;border-collapse:collapse;width:{fields.length * 140}px">
+    <table style="position:absolute;top:{start * rowHeight}px;left:0;table-layout:fixed;border-collapse:collapse;width:{fields.length * W}px">
       <thead>
         <tr style="height:{rowHeight}px;position:sticky;top:0;background:#fff">
           {#each columns as c (c.field)}
-            <th style="width:140px;text-align:left;padding:0 8px;overflow:hidden;white-space:nowrap">{c.header}</th>
+            <th style="width:{W}px;text-align:left;padding:0 8px;overflow:hidden;white-space:nowrap">{c.header}</th>
           {/each}
         </tr>
       </thead>
@@ -126,7 +132,7 @@
         {#each visible as row (row.id)}
           <tr class="tt-row" style="height:{rowHeight}px">
             {#each fields as f (f)}
-              <td data-col-id={f} style="width:140px;padding:0 8px;overflow:hidden;white-space:nowrap">{row.original[f]}</td>
+              <td data-col-id={f} style="width:{W}px;padding:0 8px;overflow:hidden;white-space:nowrap">{#if kinds[f]}{@render rich(kinds[f], row.original[f])}{:else}{row.original[f]}{/if}</td>
             {/each}
           </tr>
         {/each}
@@ -134,3 +140,17 @@
     </table>
   </div>
 </div>
+
+{#snippet rich(kind: RichKind | undefined, value: unknown)}
+  {#if kind === 'avatar'}
+    {@const a = avatarOf(value)}
+    <span class="rc-avatar" style="background:{a.color}">{a.initials}</span><span class="rc-name">{value}</span>
+  {:else if kind === 'badge'}<span class="rc-badge rc-{value}">{value}</span>
+  {:else if kind === 'progress'}<span class="rc-progress"><span class="rc-bar" style="width:{value}%"></span></span><span class="rc-pct">{value}%</span>
+  {:else if kind === 'rating'}<span class="rc-stars">{STARS_ON[Number(value) | 0]}<span class="rc-off">{STARS_OFF[Number(value) | 0]}</span></span>
+  {:else if kind === 'check'}<input type="checkbox" class="rc-check" disabled checked={!!value} />
+  {:else if kind === 'date'}<time class="rc-date" datetime={String(value)}>{fmtDate(value)}</time>
+  {:else if kind === 'link'}<a class="rc-link" href="https://{value}/">{value}</a>
+  {:else}{#each tagList(value) as t, i (i)}<span class="rc-tag">{t}</span>{/each}
+  {/if}
+{/snippet}

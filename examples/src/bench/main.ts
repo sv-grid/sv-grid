@@ -10,6 +10,7 @@
 // alongside that is explicitly unsupported and would skew the mount number.
 import { loadAdapters } from './adapters'
 import { makeRows, makeWideRows, runAll, runWide, wideColumns, WIDE_JUMPS, WIDE_SCROLL_FRAMES, type GridResult, type WideResult } from './run'
+import { mountScenario, runScroll, unmountScenario } from './scroll-run'
 
 const params = new URLSearchParams(location.search)
 // suite=wide runs the many-columns suite (runWide) instead of the main one.
@@ -137,7 +138,7 @@ async function run() {
 runBtn.addEventListener('click', () => void run())
 // The adapters and data builders too, so a profiling script can mount one grid
 // on the production build, where modules cannot be imported by path.
-;(window as unknown as { __gridBench?: unknown }).__gridBench = { run, runAll, runWide, host, DEFAULTS, SUITE, loadAdapters, makeRows, makeWideRows, wideColumns }
+;(window as unknown as { __gridBench?: unknown }).__gridBench = { run, runAll, runWide, host, DEFAULTS, SUITE, loadAdapters, makeRows, makeWideRows, wideColumns, runScroll, mountScenario, unmountScenario }
 
 document.getElementById('config')!.textContent =
   SUITE === 'wide'

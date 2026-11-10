@@ -36,10 +36,27 @@ export function makeWindowedArray<T>(
 ): T[] {
   const source: WindowedSource<T> = { length, at, loaded }
   const target: T[] = []
+  // How an edit finds its row. Only a loaded entry can be it, and a walk of
+  // every index through this Proxy held the page for seconds on each edit.
+  const findIndex = (test: (row: T, index: number) => unknown) => loaded!().find((i) => test(at(i) as T, i)) ?? -1
+  const lookups = new Map<PropertyKey, unknown>(
+    loaded
+      ? [
+          ['findIndex', findIndex],
+          ['find', (test: (row: T, index: number) => unknown) => {
+            const i = findIndex(test)
+            return i < 0 ? undefined : at(i)
+          }],
+          ['some', (test: (row: T, index: number) => unknown) => findIndex(test) >= 0],
+          ['indexOf', (row: T) => findIndex((r) => r === row)],
+        ]
+      : [],
+  )
   return new Proxy(target, {
     get(t, key, receiver) {
       if (key === WINDOWED) return source
       if (key === 'length') return length
+      if (lookups.has(key)) return lookups.get(key)
       if (isIndexKey(key)) {
         const i = Number(key)
         return i < length ? at(i) : undefined

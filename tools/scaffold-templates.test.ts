@@ -34,10 +34,11 @@ function scaffold(template: string, args: string[] = []) {
   return join(dir, 'app')
 }
 
-/** The `<html>` shell, wherever this template keeps it. */
+/** The `<html>` shell, wherever this template keeps it, with the script that settles its theme. */
 function shellOf(app: string) {
+  const init = join(app, 'static', 'theme-init.js')
   for (const candidate of [join(app, 'src', 'app.html'), join(app, 'index.html')]) {
-    if (existsSync(candidate)) return readFileSync(candidate, 'utf8')
+    if (existsSync(candidate)) return readFileSync(candidate, 'utf8') + (existsSync(init) ? readFileSync(init, 'utf8') : '')
   }
   throw new Error('no HTML shell found in ' + app)
 }
@@ -114,6 +115,15 @@ describe('create-sv-grid templates', { timeout: 30_000 }, () => {
     },
   )
 
+  // SvelteKit's CSP hashes cover only what it renders, so no script may sit in app.html itself.
+  it.each(['sveltekit', 'base', 'pivot-dashboard', 'admin-dashboard'])('%s has no inline script in its shell', (template) => {
+    const app = scaffold(template)
+    const html = readFileSync(join(app, 'src', 'app.html'), 'utf8')
+    expect(html).not.toMatch(/<script>/)
+    expect(html).toContain('%sveltekit.assets%/theme-init.js')
+    expect(existsSync(join(app, 'static', 'theme-init.js'))).toBe(true)
+  })
+
   // base: where the data lives decides the files; the tables come from a sample.
   it.each([
     ['browser', ['src/lib/db.ts'], '@electric-sql/pglite'],
@@ -126,10 +136,26 @@ describe('create-sv-grid templates', { timeout: 30_000 }, () => {
     const pkg = JSON.parse(readFileSync(join(app, 'package.json'), 'utf8'))
     expect(pkg.dependencies[dep as string]).toBeTruthy()
     expect(pkg.dependencies['@svgrid/enterprise']).toBeTruthy()
+    // "Download this view as Excel" zips its file with jszip, an optional peer of the enterprise package.
+    expect(pkg.dependencies.jszip).toBeTruthy()
     expect(readFileSync(join(app, 'db', 'schema.sql'), 'utf8')).toContain('create table "deals"')
     const readme = readFileSync(join(app, 'README.md'), 'utf8')
     expect(readme).toContain('## Your data')
     expect(readme).not.toContain('svgrid-base-data')
+  })
+
+  // A root page with `ssr = false` and a layout without it: SvelteKit's production server answers
+  // every unknown URL with a 500. On the layout it is a 404.
+  it.each(['browser', 'postgres', 'supabase'])('base with --data %s renders in the browser from its layout, so an unknown URL is a 404', (data) => {
+    const app = scaffold('base', ['--data', data, '--sample', 'none'])
+    expect(readFileSync(join(app, 'src', 'routes', '+layout.ts'), 'utf8')).toMatch(/^export const ssr = false$/m)
+    expect(existsSync(join(app, 'src', 'routes', '+page.ts'))).toBe(false)
+  })
+
+  // Dialogs, menus and popovers move to <body>: a font set on the layout only leaves them in the browser's serif.
+  it.each(['base', 'sveltekit', 'pivot-dashboard'])('%s sets the font on body', (template) => {
+    const css = readFileSync(join(scaffold(template), 'src', 'app.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+    expect(css).toMatch(/body\s*\{[^}]*font-family:\s*var\(--sg-font/)
   })
 
   it('base starts from an empty schema with --sample none', () => {

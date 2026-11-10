@@ -2,10 +2,10 @@
 :root {
   --sg-bg: #ffffff;
   --sg-fg: #1c1917;
-  --sg-muted: #78716c;
+  --sg-muted: #736c67;
   --sg-border: #e7e5e4;
   --sg-header-bg: #fafaf9;
-  --sg-header-fg: #78716c;
+  --sg-header-fg: #736c67;
   --sg-header-weight: 500;
   --sg-bg-subtle: #fafaf9;
   --sg-row-alt-bg: #ffffff;
@@ -35,10 +35,10 @@
   --sg-invalid-fg: #dc2626;
   --sg-scrollbar-bg: #fafaf9;
   --sg-scrollbar-border: #e7e5e4;
-  --sg-scrollbar-thumb: #78716c;
+  --sg-scrollbar-thumb: #736c67;
   --sg-scrollbar-thumb-hover: #1c1917;
   --sg-scrollbar-thumb-active: #1c1917;
-  --sg-scrollbar-arrow: #78716c;
+  --sg-scrollbar-arrow: #736c67;
   --sg-scrollbar-arrow-hover: #1c1917;
   --sg-scrollbar-arrow-hover-bg: #f5f5f4;
   --sg-scrollbar-arrow-active: #1c1917;

@@ -24,6 +24,10 @@ function makeCtx(overrides: Partial<AnyCtx> = {}): AnyCtx {
     toolPanelColumns: allColumns.map((c) => ({ id: c.id })),
     props: {},
     userColumnOrder: undefined,
+    history: [],
+    historyPtr: -1,
+    historyVersion: 0,
+    UNDO_LIMIT: 200,
     pinnedOffsets: { left: {}, right: {} },
     columnPinning: { left: [], right: [] },
     hiddenColumns: {},
@@ -114,6 +118,29 @@ describe('getCurrentColumnOrder / emitColumnOrder / setColumnOrderInternal', () 
     h.setColumnOrderInternal(['d', 'c', 'b', 'a'])
     expect(ctx.userColumnOrder).toEqual(['d', 'c', 'b', 'a'])
     expect(onColumnOrderChange).toHaveBeenCalledWith(['a', 'b', 'c', 'd'])
+  })
+})
+
+describe('moveColumnsByUser', () => {
+  it('is one undo step that puts the order back, and redo moves it again', () => {
+    const ctx = makeCtx({ userColumnOrder: ['a', 'b', 'c', 'd'] })
+    const h = createColumns(ctx)
+    h.moveColumnsByUser(['b', 'a', 'c', 'd'])
+    expect(ctx.history).toHaveLength(1)
+    expect(ctx.history[0].field).toBe('columnOrder')
+    ctx.history[0].custom.undo()
+    expect(ctx.userColumnOrder).toEqual(['a', 'b', 'c', 'd'])
+    ctx.history[0].custom.redo()
+    expect(ctx.userColumnOrder).toEqual(['b', 'a', 'c', 'd'])
+  })
+
+  it('a header drop is one too; the setter the api uses records nothing', () => {
+    const ctx = makeCtx()
+    const h = createColumns(ctx)
+    h.setColumnOrderInternal(['b', 'a', 'c', 'd'])
+    expect(ctx.history).toHaveLength(0)
+    h.applyColumnDrop('a', 'c', 'before')
+    expect(ctx.history).toHaveLength(1)
   })
 })
 

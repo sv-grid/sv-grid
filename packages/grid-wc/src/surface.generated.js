@@ -234,6 +234,12 @@ export const ELEMENT_PROPS = [
     "ts": "string"
   },
   {
+    "name": "gridLabel",
+    "type": "String",
+    "attribute": "grid-label",
+    "ts": "string"
+  },
+  {
     "name": "localization",
     "type": "Object",
     "attribute": null,
@@ -435,7 +441,7 @@ export const ELEMENT_PROPS = [
     "name": "processCellForFill",
     "type": "Object",
     "attribute": null,
-    "ts": "(params: { value: unknown; delta: { rows: number; cols: number }; rowIndex: number; columnId: string; }) => unknown"
+    "ts": "(params: { value: unknown; delta: { rows: number; cols: number }; rowIndex: number; columnId: string; sources: ReadonlyArray<unknown>; index: number; }) => unknown"
   },
   {
     "name": "processCellForClipboard",
@@ -456,10 +462,22 @@ export const ELEMENT_PROPS = [
     "ts": "(params: { rects: ReadonlyArray<{ minRow: number; maxRow: number; minCol: number; maxCol: number }>; text: string; }) => string | null | undefined"
   },
   {
+    "name": "holdRowsOnWrite",
+    "type": "Boolean",
+    "attribute": "hold-rows-on-write",
+    "ts": "boolean"
+  },
+  {
+    "name": "parseClipboardText",
+    "type": "Array",
+    "attribute": null,
+    "ts": "(text: string) => string[][]"
+  },
+  {
     "name": "processCellFromClipboard",
     "type": "Object",
     "attribute": null,
-    "ts": "(params: { text: string; parsedValue: unknown; row: TData; rowIndex: number; columnId: string; }) => unknown"
+    "ts": "(params: { text: string; parsedValue: unknown; row: TData; rowIndex: number; columnId: string; cell: [row: number, col: number]; }) => unknown"
   },
   {
     "name": "enableInlineEditing",
@@ -853,6 +871,14 @@ export const ELEMENT_EVENTS = [
       "payload"
     ],
     "detail": "{ text: string; html: string | null; source: \"event\" | \"async\"; }"
+  },
+  {
+    "callback": "onPasteOverflow",
+    "event": "pasteoverflow",
+    "params": [
+      "e"
+    ],
+    "detail": "{ rows: string[][]; startCol: number }"
   },
   {
     "callback": "onApiReady",

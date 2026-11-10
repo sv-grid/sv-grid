@@ -853,6 +853,55 @@ describe('SvGridChart wave 3: zoom API, sync, menu, keyboard, selection, drilldo
     document.querySelector('.sv-grid-chart-menu')?.remove()
   })
 
+  it('the PDF item says why when the title has letters the PDF font cannot draw, and runs nothing', async () => {
+    for (const [title, pdf] of [['Продажи', 'No PDF: its font cannot draw "Продажи". Download PNG or SVG.'], ['Café €', 'Download PDF']] as const) {
+      const el = render({ ...ts, title }, { contextMenu: true })
+      el.querySelector('.sv-grid-chart-svg')!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 50, clientY: 50, cancelable: true }))
+      await vi.waitFor(() => { expect(document.querySelector('.sv-grid-chart-menu')).toBeTruthy() })
+      // The PDF chunk comes beside the menu, and its item changes when it is there.
+      const item = () => [...document.querySelectorAll<HTMLButtonElement>('.sv-grid-chart-menu [role="menuitem"]')].find((n) => /PDF/.test(n.textContent ?? ''))!
+      await vi.waitFor(() => expect(item().textContent?.trim()).toBe(pdf), { timeout: 5000 })
+      // Off by aria-disabled, not the disabled attribute: the arrow keys still reach it, so it is
+      // heard with its reason (ARIA menu pattern), and a click on it does nothing.
+      expect(item().getAttribute('aria-disabled')).toBe(pdf !== 'Download PDF' ? 'true' : null)
+      expect(item().disabled).toBe(false)
+      if (pdf !== 'Download PDF') {
+        item().click()
+        await Promise.resolve()
+        expect(document.querySelector('.sv-grid-chart-menu')).toBeTruthy()
+        expect(item().textContent?.trim()).toBe(pdf)
+      }
+      document.querySelector('.sv-grid-chart-menu')?.remove()
+      unmount(app!); app = null
+    }
+  })
+
+  it('the toolbar PDF button is marked off, with why, once pointed at or focused, and a press says why on the button', async () => {
+    const made = vi.fn(() => 'blob:x')
+    const had = URL.createObjectURL
+    URL.createObjectURL = made as never
+    try {
+      for (const [title, reach] of [['Продажи', 'pointerenter'], ['Выручка', 'focus'], ['Café €', 'pointerenter']] as const) {
+        const why = `No PDF: its font cannot draw "${title}". Download PNG or SVG.`
+        const off = title !== 'Café €'
+        const el = render({ ...ts, title }, { toolbar: true })
+        const pdf = [...el.querySelectorAll<HTMLButtonElement>('.sv-grid-chart-tool')].find((b) => b.textContent?.trim() === 'PDF')!
+        pdf.dispatchEvent(new Event(reach))
+        await vi.waitFor(() => expect(pdf.getAttribute('title')).toBe(off ? why : 'Download PDF'), { timeout: 5000 })
+        expect(pdf.getAttribute('aria-disabled')).toBe(String(off))
+        if (off) {
+          pdf.click()
+          await vi.waitFor(() => expect(pdf.textContent?.trim()).toBe(why))
+          expect(el.querySelector('.sv-grid-chart-live')!.textContent).toBe(why)
+          expect(made).not.toHaveBeenCalled()
+        }
+        unmount(app!); app = null
+      }
+    } finally {
+      URL.createObjectURL = had
+    }
+  })
+
   it('Shift+F10 on a focused category opens the menu built for that point', async () => {
     const seen: unknown[] = []
     const el = render(ts, { contextMenu: (t: unknown) => { seen.push(t); return [{ label: 'Custom', onSelect: () => {} }] } })

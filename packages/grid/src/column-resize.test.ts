@@ -116,6 +116,41 @@ describe('columnResize - handle injection', () => {
     a.destroy()
   })
 
+  it('decorates a header that scrolls in, and leaves body changes alone', async () => {
+    const { host, ths } = buildHeaders([{ id: 'a' }])
+    track(host)
+    const tbody = document.createElement('tbody')
+    host.querySelector('table')!.appendChild(tbody)
+    const label = vi.fn((id: string) => id)
+    const a = columnResize(host, { ...widthStore(), label })
+    const tick = () => new Promise((r) => setTimeout(r, 0))
+    // The handles it added are header changes too; let that settle first.
+    await tick()
+    // A scroll rewrites body rows: no header is read again.
+    label.mockClear()
+    const tr = document.createElement('tr')
+    tr.appendChild(document.createElement('td'))
+    tbody.appendChild(tr)
+    tr.firstChild!.appendChild(document.createElement('span'))
+    await tick()
+    expect(label).not.toHaveBeenCalled()
+    // A column window that moves adds a header: it gets its handle.
+    const th = document.createElement('th')
+    th.className = 'sv-grid-column'
+    th.dataset.svgridHeaderCol = 'b'
+    ths[0]!.parentElement!.appendChild(th)
+    await tick()
+    expect(handleOf(th)).not.toBeNull()
+    // A whole new header (the table drawn again) is decorated too.
+    const thead = host.querySelector('thead')!
+    const again = thead.cloneNode(true) as HTMLElement
+    again.querySelectorAll(`.${HANDLE}`).forEach((h) => h.remove())
+    thead.replaceWith(again)
+    await tick()
+    expect(again.querySelectorAll(`.${HANDLE}`)).toHaveLength(2)
+    a.destroy()
+  })
+
   it('injects nothing when created disabled', () => {
     const { host, ths } = buildHeaders([{ id: 'a' }])
     track(host)

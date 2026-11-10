@@ -1,7 +1,7 @@
 {
   "/": {
-    "hash": "b32f3e7ac56a",
-    "date": "2026-10-25"
+    "hash": "f5872069d24c",
+    "date": "2026-11-02"
   },
   "/about/": {
     "hash": "79398a92c875",
@@ -20,8 +20,8 @@
     "date": "2026-10-18"
   },
   "/blog/": {
-    "hash": "10779ad314a7",
-    "date": "2026-10-25"
+    "hash": "9a6b483159b7",
+    "date": "2026-11-02"
   },
   "/blog/accessibility-from-the-ground-up/": {
     "hash": "6b93132ad60f",
@@ -128,8 +128,8 @@
     "date": "2026-09-03"
   },
   "/blog/category/performance/": {
-    "hash": "9e00353db2b9",
-    "date": "2026-09-20"
+    "hash": "530d24646ca6",
+    "date": "2026-11-02"
   },
   "/blog/category/tutorials/": {
     "hash": "a2e9cf5ea29e",
@@ -672,144 +672,144 @@
     "date": "2026-09-12"
   },
   "/blog/tag/accessibility/": {
-    "hash": "77683ee461f8",
-    "date": "2026-10-25"
+    "hash": "12ab2005f3da",
+    "date": "2026-11-02"
   },
   "/blog/tag/aggregation/": {
-    "hash": "684e7b67da82",
-    "date": "2026-10-25"
+    "hash": "15f3c90f96cc",
+    "date": "2026-11-02"
   },
   "/blog/tag/ai/": {
-    "hash": "3aeef66e5975",
-    "date": "2026-10-25"
+    "hash": "add505621518",
+    "date": "2026-11-02"
   },
   "/blog/tag/alternatives/": {
-    "hash": "af613e19e60a",
-    "date": "2026-10-25"
+    "hash": "37fa3c264be5",
+    "date": "2026-11-02"
   },
   "/blog/tag/architecture/": {
-    "hash": "bfc991ec9080",
-    "date": "2026-10-25"
+    "hash": "07954df1fccf",
+    "date": "2026-11-02"
   },
   "/blog/tag/cell-editor/": {
-    "hash": "903f6909f9af",
-    "date": "2026-10-25"
+    "hash": "24aa46257b08",
+    "date": "2026-11-02"
   },
   "/blog/tag/cells/": {
-    "hash": "74a21fdf4732",
-    "date": "2026-10-25"
+    "hash": "b67590bbbfd2",
+    "date": "2026-11-02"
   },
   "/blog/tag/clipboard/": {
-    "hash": "80babb230d91",
-    "date": "2026-10-25"
+    "hash": "aa0a6deb5f39",
+    "date": "2026-11-02"
   },
   "/blog/tag/columns/": {
-    "hash": "3e83c02eaccd",
-    "date": "2026-10-25"
+    "hash": "628b2d6e977b",
+    "date": "2026-11-02"
   },
   "/blog/tag/csv/": {
-    "hash": "3daf775d6b84",
-    "date": "2026-10-25"
+    "hash": "66809a26f590",
+    "date": "2026-11-02"
   },
   "/blog/tag/custom-cells/": {
-    "hash": "cade400cc6ce",
-    "date": "2026-10-25"
+    "hash": "1174f8c4360e",
+    "date": "2026-11-02"
   },
   "/blog/tag/dark-mode/": {
-    "hash": "aaaa45785b17",
-    "date": "2026-10-25"
+    "hash": "2a3dbbd10eeb",
+    "date": "2026-11-02"
   },
   "/blog/tag/design-system/": {
-    "hash": "06bc10080d73",
-    "date": "2026-10-25"
+    "hash": "fa53e9efb49e",
+    "date": "2026-11-02"
   },
   "/blog/tag/editing/": {
-    "hash": "6f000a795f16",
-    "date": "2026-10-25"
+    "hash": "a4e681a84cb2",
+    "date": "2026-11-02"
   },
   "/blog/tag/export/": {
-    "hash": "bf9c83a10e75",
-    "date": "2026-10-25"
+    "hash": "e30182f31c26",
+    "date": "2026-11-02"
   },
   "/blog/tag/formatting/": {
-    "hash": "fe07e935e5cc",
-    "date": "2026-10-25"
+    "hash": "af4ec71799c2",
+    "date": "2026-11-02"
   },
   "/blog/tag/grouping/": {
-    "hash": "aedceb757345",
-    "date": "2026-10-25"
+    "hash": "afad703a23ea",
+    "date": "2026-11-02"
   },
   "/blog/tag/headless/": {
-    "hash": "d7d91026b078",
-    "date": "2026-10-25"
+    "hash": "1ed238b2f8b8",
+    "date": "2026-11-02"
   },
   "/blog/tag/master-detail/": {
-    "hash": "11a4615ffe63",
-    "date": "2026-10-25"
+    "hash": "5291882726da",
+    "date": "2026-11-02"
   },
   "/blog/tag/mcp/": {
-    "hash": "3e9ac694ce3b",
-    "date": "2026-10-25"
+    "hash": "5912eb57904b",
+    "date": "2026-11-02"
   },
   "/blog/tag/migration/": {
-    "hash": "2112cf0aba25",
-    "date": "2026-10-25"
+    "hash": "306c5649ba16",
+    "date": "2026-11-02"
   },
   "/blog/tag/performance/": {
-    "hash": "8f5417b4464e",
-    "date": "2026-10-25"
+    "hash": "c68c342f4521",
+    "date": "2026-11-02"
   },
   "/blog/tag/reactivity/": {
-    "hash": "a08ecc4b441a",
-    "date": "2026-10-25"
+    "hash": "2873c6f799fb",
+    "date": "2026-11-02"
   },
   "/blog/tag/realtime/": {
-    "hash": "0ff2f4e15269",
-    "date": "2026-10-25"
+    "hash": "f989e9089e04",
+    "date": "2026-11-02"
   },
   "/blog/tag/rows/": {
-    "hash": "f1ed7f522b7e",
-    "date": "2026-10-25"
+    "hash": "097bcdaa9287",
+    "date": "2026-11-02"
   },
   "/blog/tag/runes/": {
-    "hash": "8562cc9ceb8d",
-    "date": "2026-10-25"
+    "hash": "0aee8229d25b",
+    "date": "2026-11-02"
   },
   "/blog/tag/selection/": {
-    "hash": "7f3f012f450f",
-    "date": "2026-10-25"
+    "hash": "33e4389d6010",
+    "date": "2026-11-02"
   },
   "/blog/tag/server-side/": {
-    "hash": "0f78c3535dfc",
-    "date": "2026-10-25"
+    "hash": "16daaa5ea72d",
+    "date": "2026-11-02"
   },
   "/blog/tag/snippets/": {
-    "hash": "7cf1e16530dd",
-    "date": "2026-10-25"
+    "hash": "d5522bafb2ef",
+    "date": "2026-11-02"
   },
   "/blog/tag/svelte-5/": {
-    "hash": "4dc1616afca8",
-    "date": "2026-10-25"
+    "hash": "10a1aaba7dcb",
+    "date": "2026-11-02"
   },
   "/blog/tag/sveltekit/": {
-    "hash": "eee3d1d7fa3e",
-    "date": "2026-10-25"
+    "hash": "de3d8640c459",
+    "date": "2026-11-02"
   },
   "/blog/tag/testing/": {
-    "hash": "8cc9c36f75b3",
-    "date": "2026-10-25"
+    "hash": "013f87325028",
+    "date": "2026-11-02"
   },
   "/blog/tag/theming/": {
-    "hash": "e27d5a8da3e8",
-    "date": "2026-10-25"
+    "hash": "693580f0a24f",
+    "date": "2026-11-02"
   },
   "/blog/tag/tutorial/": {
-    "hash": "87aadc9d02ec",
-    "date": "2026-10-25"
+    "hash": "f0cea868afa2",
+    "date": "2026-11-02"
   },
   "/blog/tag/virtualization/": {
-    "hash": "0053edf9ead8",
-    "date": "2026-10-25"
+    "hash": "7d428cfd4ef8",
+    "date": "2026-11-02"
   },
   "/blog/testing-svgrid-with-playwright/": {
     "hash": "e951b608334c",
@@ -834,6 +834,10 @@
   "/blog/theming-svgrid-with-tailwind/": {
     "hash": "5106bf03f6d3",
     "date": "2026-10-16"
+  },
+  "/blog/throttle-live-updates-animation-frames/": {
+    "hash": "2805c4b2e45d",
+    "date": "2026-07-02"
   },
   "/blog/tree-data-hierarchies/": {
     "hash": "e1e9420c8161",
@@ -880,8 +884,8 @@
     "date": "2026-10-14"
   },
   "/compare/ag-grid/": {
-    "hash": "c30356e26adf",
-    "date": "2026-10-26"
+    "hash": "24ed8efb704e",
+    "date": "2026-11-02"
   },
   "/compare/airtable/": {
     "hash": "58d55a986787",
@@ -896,12 +900,12 @@
     "date": "2026-10-08"
   },
   "/compare/glide-data-grid/": {
-    "hash": "6556d9914329",
-    "date": "2026-10-26"
+    "hash": "fb7962387d00",
+    "date": "2026-11-02"
   },
   "/compare/gridjs/": {
-    "hash": "8156f11c2eb7",
-    "date": "2026-10-26"
+    "hash": "175907206f2b",
+    "date": "2026-11-02"
   },
   "/compare/handsontable/": {
     "hash": "0229137e63bb",
@@ -916,8 +920,8 @@
     "date": "2026-10-08"
   },
   "/compare/mui-x-datagrid/": {
-    "hash": "71cca4ad065a",
-    "date": "2026-10-26"
+    "hash": "8d8e289dfefd",
+    "date": "2026-11-02"
   },
   "/compare/nocodb/": {
     "hash": "559bfeb8ffb1",
@@ -928,20 +932,20 @@
     "date": "2026-10-08"
   },
   "/compare/react-data-grid/": {
-    "hash": "c2b5217e764d",
-    "date": "2026-10-26"
+    "hash": "0d90f91346e2",
+    "date": "2026-11-02"
   },
   "/compare/smart-grid/": {
     "hash": "47c47babc6de",
     "date": "2026-10-08"
   },
   "/compare/svar-svelte-datagrid/": {
-    "hash": "d9012677fd03",
-    "date": "2026-10-26"
+    "hash": "4bc8b171864b",
+    "date": "2026-11-02"
   },
   "/compare/svelte-headless-table/": {
-    "hash": "5aec6e4422a5",
-    "date": "2026-10-26"
+    "hash": "8e18323121bd",
+    "date": "2026-11-02"
   },
   "/compare/svelte-ui-kit-tables/": {
     "hash": "d178a20d7367",
@@ -952,24 +956,24 @@
     "date": "2026-10-08"
   },
   "/compare/tabulator/": {
-    "hash": "4c3b8842e9fb",
-    "date": "2026-10-26"
+    "hash": "741fba959506",
+    "date": "2026-11-02"
   },
   "/compare/tanstack-table/": {
-    "hash": "e7cb9ec08d37",
-    "date": "2026-10-26"
+    "hash": "aff3791c9a51",
+    "date": "2026-11-02"
   },
   "/compare/vincjo-datatables/": {
-    "hash": "4459d7c0bf49",
-    "date": "2026-10-26"
+    "hash": "71e0b00bc00d",
+    "date": "2026-11-02"
   },
   "/contact/": {
     "hash": "733ecdf58b59",
     "date": "2026-09-03"
   },
   "/demos/": {
-    "hash": "04b11a946065",
-    "date": "2026-10-26"
+    "hash": "9ab6bf47e45f",
+    "date": "2026-11-02"
   },
   "/demos/00-trading-desk/": {
     "hash": "fe9219a6025a",
@@ -1104,8 +1108,8 @@
     "date": "2026-10-14"
   },
   "/demos/120-test-systems-monitor/": {
-    "hash": "7002c8a84ec8",
-    "date": "2026-09-15"
+    "hash": "dc36f06f73a9",
+    "date": "2026-11-02"
   },
   "/demos/121-pivot-conditional-cells/": {
     "hash": "5c0c3aee8c7c",
@@ -1148,8 +1152,8 @@
     "date": "2026-10-06"
   },
   "/demos/14-industrial/": {
-    "hash": "49ff9b3d83a6",
-    "date": "2026-10-14"
+    "hash": "79be7dfb9a12",
+    "date": "2026-11-02"
   },
   "/demos/140-sparkline-cells/": {
     "hash": "56c5c6fe1816",
@@ -1172,8 +1176,8 @@
     "date": "2026-10-25"
   },
   "/demos/145-transaction-api/": {
-    "hash": "3348103d3780",
-    "date": "2026-10-25"
+    "hash": "136c9d599dc4",
+    "date": "2026-11-02"
   },
   "/demos/146-tool-panel/": {
     "hash": "5a9def79a321",
@@ -1200,8 +1204,8 @@
     "date": "2026-09-18"
   },
   "/demos/151-time-series-chart/": {
-    "hash": "ddd2fa035b28",
-    "date": "2026-10-14"
+    "hash": "e060bdf864d6",
+    "date": "2026-11-02"
   },
   "/demos/152-chart-wizard/": {
     "hash": "439697bdf340",
@@ -1380,8 +1384,8 @@
     "date": "2026-09-20"
   },
   "/demos/193-studio-live-sql/": {
-    "hash": "692ed71b186d",
-    "date": "2026-10-25"
+    "hash": "476cce2b6c0b",
+    "date": "2026-11-02"
   },
   "/demos/194-studio-supabase/": {
     "hash": "751f7bd941e7",
@@ -1408,8 +1412,8 @@
     "date": "2026-10-25"
   },
   "/demos/20-industrial-dashboard/": {
-    "hash": "6fbb3567f269",
-    "date": "2026-09-21"
+    "hash": "e8bfdadddfae",
+    "date": "2026-11-02"
   },
   "/demos/200-studio-dashboard/": {
     "hash": "6478e4fd56fd",
@@ -1484,16 +1488,16 @@
     "date": "2026-10-14"
   },
   "/demos/250-calendar/": {
-    "hash": "adfc20b41e62",
-    "date": "2026-10-14"
+    "hash": "ef0c66f8a833",
+    "date": "2026-11-02"
   },
   "/demos/251-timepicker/": {
-    "hash": "a9348e81a8e6",
-    "date": "2026-10-14"
+    "hash": "abc36eea315b",
+    "date": "2026-11-02"
   },
   "/demos/252-datetimepicker/": {
-    "hash": "6692f39e6795",
-    "date": "2026-10-14"
+    "hash": "1b4f51a2b516",
+    "date": "2026-11-02"
   },
   "/demos/253-buttons-toggles/": {
     "hash": "d7fdb8f0b92b",
@@ -1512,24 +1516,24 @@
     "date": "2026-10-25"
   },
   "/demos/257-tabs-tree-form/": {
-    "hash": "18f1bab5ac63",
-    "date": "2026-09-20"
+    "hash": "cf72ebe7e215",
+    "date": "2026-11-02"
   },
   "/demos/258-calendar-range/": {
-    "hash": "4c319de977b1",
-    "date": "2026-10-14"
+    "hash": "736912cfa61c",
+    "date": "2026-11-02"
   },
   "/demos/259-datetimepicker-forms/": {
-    "hash": "30314b27f44d",
-    "date": "2026-09-15"
+    "hash": "30c0d4be7f89",
+    "date": "2026-11-02"
   },
   "/demos/26-list-chips-editors/": {
     "hash": "aca41f7e1aab",
     "date": "2026-10-25"
   },
   "/demos/260-calendar-birthday/": {
-    "hash": "8c6ae15c6b7f",
-    "date": "2026-10-14"
+    "hash": "5a06cc7cc730",
+    "date": "2026-11-02"
   },
   "/demos/260-headless-editors/": {
     "hash": "28feb00e334c",
@@ -1604,12 +1608,12 @@
     "date": "2026-10-08"
   },
   "/demos/277-headless-timepicker/": {
-    "hash": "807247907934",
-    "date": "2026-10-14"
+    "hash": "ef62349126ca",
+    "date": "2026-11-02"
   },
   "/demos/278-headless-datetimepicker/": {
-    "hash": "453a49ea2ff0",
-    "date": "2026-10-14"
+    "hash": "f482169a146b",
+    "date": "2026-11-02"
   },
   "/demos/279-headless-tabs/": {
     "hash": "40c51c937ed3",
@@ -1632,8 +1636,8 @@
     "date": "2026-10-08"
   },
   "/demos/283-daterange-input/": {
-    "hash": "0c07cea838b1",
-    "date": "2026-10-25"
+    "hash": "3c616c3e087c",
+    "date": "2026-11-02"
   },
   "/demos/284-button-group/": {
     "hash": "00e2cc9872f7",
@@ -1768,20 +1772,20 @@
     "date": "2026-09-10"
   },
   "/demos/322-form/": {
-    "hash": "f0a970084fc2",
-    "date": "2026-09-20"
+    "hash": "718f7a211bfc",
+    "date": "2026-11-02"
   },
   "/demos/323-form-dynamic/": {
-    "hash": "896f38731d20",
-    "date": "2026-09-20"
+    "hash": "5e0497b7aa3b",
+    "date": "2026-11-02"
   },
   "/demos/323-list-virtualization/": {
     "hash": "2a1b7f110d38",
     "date": "2026-10-25"
   },
   "/demos/324-form-wizard/": {
-    "hash": "8e6366ace16b",
-    "date": "2026-09-20"
+    "hash": "55503a0f1066",
+    "date": "2026-11-02"
   },
   "/demos/324-tree-scale/": {
     "hash": "4e40584f2b8e",
@@ -1832,8 +1836,8 @@
     "date": "2026-10-25"
   },
   "/demos/334-checkout-form/": {
-    "hash": "7ac4bf61842f",
-    "date": "2026-10-25"
+    "hash": "3641230bcbf5",
+    "date": "2026-11-02"
   },
   "/demos/334-input-editors/": {
     "hash": "3c61f62b27f1",
@@ -1860,8 +1864,8 @@
     "date": "2026-09-10"
   },
   "/demos/338-event-calendar/": {
-    "hash": "55fea0f71136",
-    "date": "2026-10-26"
+    "hash": "b02348ac8220",
+    "date": "2026-11-02"
   },
   "/demos/338-pglite-northwind/": {
     "hash": "f27c05649f40",
@@ -1960,8 +1964,8 @@
     "date": "2026-10-25"
   },
   "/demos/358-charting-by-date/": {
-    "hash": "6936ff51eaf2",
-    "date": "2026-10-25"
+    "hash": "c23eef9234f8",
+    "date": "2026-11-02"
   },
   "/demos/359-pivot-chart/": {
     "hash": "cf0108a1a712",
@@ -2048,12 +2052,12 @@
     "date": "2026-10-06"
   },
   "/demos/387-scheduler-financial/": {
-    "hash": "57b4ed061e17",
-    "date": "2026-10-06"
+    "hash": "60bb71689f53",
+    "date": "2026-11-02"
   },
   "/demos/388-scheduler-hr/": {
-    "hash": "76f1dfa75340",
-    "date": "2026-10-06"
+    "hash": "e58c639aa88f",
+    "date": "2026-11-02"
   },
   "/demos/389-scheduler-dependencies/": {
     "hash": "0b91fc5f427c",
@@ -2084,20 +2088,20 @@
     "date": "2026-10-06"
   },
   "/demos/395-scheduler-booking-rules/": {
-    "hash": "ff37fbb09585",
-    "date": "2026-10-14"
+    "hash": "4dece8fb4f10",
+    "date": "2026-11-02"
   },
   "/demos/396-scheduler-bookable-slots/": {
-    "hash": "80376b36ca2a",
-    "date": "2026-10-14"
+    "hash": "cf64551866e9",
+    "date": "2026-11-02"
   },
   "/demos/397-scheduler-multi-calendar/": {
     "hash": "56d6b74065b0",
     "date": "2026-10-06"
   },
   "/demos/398-scheduler-find-a-time/": {
-    "hash": "f25bd890fe6a",
-    "date": "2026-10-14"
+    "hash": "cf497856c476",
+    "date": "2026-11-02"
   },
   "/demos/399-alert-rules-engine/": {
     "hash": "3adb7c90fba1",
@@ -2128,16 +2132,16 @@
     "date": "2026-10-06"
   },
   "/demos/404-form-rich-fields/": {
-    "hash": "3f0e75ddcba5",
-    "date": "2026-09-20"
+    "hash": "80085b97e189",
+    "date": "2026-11-02"
   },
   "/demos/405-form-cascading/": {
-    "hash": "26dce1f5ca26",
-    "date": "2026-09-20"
+    "hash": "ec6f69cc1e38",
+    "date": "2026-11-02"
   },
   "/demos/406-chart-context-menu/": {
-    "hash": "2e1f337d9a7e",
-    "date": "2026-09-20"
+    "hash": "984f284ec5eb",
+    "date": "2026-11-02"
   },
   "/demos/407-grid-chart-view/": {
     "hash": "1cf9b58fab46",
@@ -2164,8 +2168,8 @@
     "date": "2026-09-20"
   },
   "/demos/42-logistics-fleet/": {
-    "hash": "6045e2901d1a",
-    "date": "2026-10-25"
+    "hash": "f9efbcddb48e",
+    "date": "2026-11-02"
   },
   "/demos/420-block-login/": {
     "hash": "563b40881c89",
@@ -2296,8 +2300,8 @@
     "date": "2026-09-18"
   },
   "/demos/45-gantt-chart/": {
-    "hash": "09f1b2593666",
-    "date": "2026-09-19"
+    "hash": "151fa404b7f6",
+    "date": "2026-11-02"
   },
   "/demos/450-chart-gauge-bullet/": {
     "hash": "a0817a9a85b4",
@@ -2403,9 +2407,41 @@
     "hash": "b6e01bd529ad",
     "date": "2026-10-06"
   },
+  "/demos/474-gantt-intro/": {
+    "hash": "532526e4c07d",
+    "date": "2026-10-06"
+  },
+  "/demos/475-gantt-editing/": {
+    "hash": "8890a53a88fe",
+    "date": "2026-10-06"
+  },
+  "/demos/476-gantt-critical-path/": {
+    "hash": "544ee6783201",
+    "date": "2026-10-06"
+  },
+  "/demos/477-gantt-resources/": {
+    "hash": "ebabeafcad1f",
+    "date": "2026-10-06"
+  },
+  "/demos/478-gantt-four-views/": {
+    "hash": "51db527e3e7b",
+    "date": "2026-10-06"
+  },
+  "/demos/479-gantt-roadmap/": {
+    "hash": "22fa9f028ea3",
+    "date": "2026-10-06"
+  },
   "/demos/48-crm-sales-pipeline/": {
     "hash": "cb8122f75269",
     "date": "2026-09-15"
+  },
+  "/demos/480-gantt-program/": {
+    "hash": "57c795a11190",
+    "date": "2026-10-06"
+  },
+  "/demos/481-gantt-portfolio-console/": {
+    "hash": "a7391d2b5f1d",
+    "date": "2026-10-06"
   },
   "/demos/482-server-crud/": {
     "hash": "01aa745ea39f",
@@ -2464,8 +2500,8 @@
     "date": "2026-10-25"
   },
   "/demos/495-market-blotter-100k/": {
-    "hash": "cd222bdcd59a",
-    "date": "2026-09-21"
+    "hash": "b174bfb89920",
+    "date": "2026-11-02"
   },
   "/demos/496-server-grouping-model/": {
     "hash": "a00332d69ce9",
@@ -2500,8 +2536,8 @@
     "date": "2026-10-25"
   },
   "/demos/503-big-data/": {
-    "hash": "55429f41bb0c",
-    "date": "2026-10-10"
+    "hash": "6f9fefe7f88c",
+    "date": "2026-11-02"
   },
   "/demos/504-project-tracker/": {
     "hash": "ff3fe705197a",
@@ -2516,8 +2552,8 @@
     "date": "2026-10-13"
   },
   "/demos/507-gallery-listings/": {
-    "hash": "884b5b1ee2da",
-    "date": "2026-10-13"
+    "hash": "33be622ff689",
+    "date": "2026-11-02"
   },
   "/demos/508-gallery-field-types/": {
     "hash": "9d33c03041d6",
@@ -2560,8 +2596,8 @@
     "date": "2026-10-14"
   },
   "/demos/517-base-supabase/": {
-    "hash": "c3e11d723e03",
-    "date": "2026-10-13"
+    "hash": "844236077116",
+    "date": "2026-11-02"
   },
   "/demos/518-base-rest-api/": {
     "hash": "6a25438b7d5c",
@@ -2644,12 +2680,12 @@
     "date": "2026-10-14"
   },
   "/demos/540-block-form-layouts-stacked/": {
-    "hash": "468750ed29d2",
-    "date": "2026-10-16"
+    "hash": "9f99734e4f56",
+    "date": "2026-11-02"
   },
   "/demos/541-block-form-layouts-two-column/": {
-    "hash": "ccbbc0659ba9",
-    "date": "2026-10-16"
+    "hash": "15c8f0ec247d",
+    "date": "2026-11-02"
   },
   "/demos/542-block-form-layouts-settings/": {
     "hash": "fe4345d1f3c0",
@@ -2856,8 +2892,8 @@
     "date": "2026-10-16"
   },
   "/demos/610-block-contact-centered/": {
-    "hash": "0bd5d1f18ecb",
-    "date": "2026-10-16"
+    "hash": "f9fd819124d5",
+    "date": "2026-11-02"
   },
   "/demos/612-block-contact-cards/": {
     "hash": "d653a26e206c",
@@ -3012,16 +3048,16 @@
     "date": "2026-10-25"
   },
   "/demos/71-submit-validation/": {
-    "hash": "b5afaf967d07",
-    "date": "2026-10-14"
+    "hash": "37f65ebf65e3",
+    "date": "2026-11-02"
   },
   "/demos/72-graphql-adapter/": {
     "hash": "6e5b7fec256c",
     "date": "2026-09-20"
   },
   "/demos/73-chartjs-sync/": {
-    "hash": "9b255e65070f",
-    "date": "2026-09-21"
+    "hash": "de5985757654",
+    "date": "2026-11-02"
   },
   "/demos/74-theme-integrations/": {
     "hash": "3376bab298d4",
@@ -3124,12 +3160,12 @@
     "date": "2026-09-10"
   },
   "/docs/": {
-    "hash": "adee612e40ec",
-    "date": "2026-10-26"
+    "hash": "2fe6da04b020",
+    "date": "2026-11-02"
   },
   "/docs/changelog/": {
-    "hash": "33c99833d266",
-    "date": "2026-10-25"
+    "hash": "5e14f0bcef49",
+    "date": "2026-11-02"
   },
   "/docs/compliance/audit-log/": {
     "hash": "4112e64dd134",
@@ -3156,8 +3192,8 @@
     "date": "2026-10-25"
   },
   "/docs/enterprise/evaluation/": {
-    "hash": "6bb3d0b66e81",
-    "date": "2026-10-14"
+    "hash": "4e2603812ad7",
+    "date": "2026-11-02"
   },
   "/docs/enterprise/getting-started/": {
     "hash": "7ced4bf1b1f4",
@@ -3292,8 +3328,8 @@
     "date": "2026-07-22"
   },
   "/docs/enterprise/studio/realtime/": {
-    "hash": "9a68db5d42cb",
-    "date": "2026-09-20"
+    "hash": "7be40111cfdd",
+    "date": "2026-11-02"
   },
   "/docs/enterprise/studio/relations/": {
     "hash": "0ae3b1b13d47",
@@ -3392,8 +3428,8 @@
     "date": "2026-10-25"
   },
   "/docs/getting-started/starters/": {
-    "hash": "7ffe00b51b67",
-    "date": "2026-10-06"
+    "hash": "8fba449911e1",
+    "date": "2026-11-02"
   },
   "/docs/getting-started/sveltekit/": {
     "hash": "06aee5ca8ca8",
@@ -3407,13 +3443,17 @@
     "hash": "7a200ed3a3f9",
     "date": "2026-10-14"
   },
+  "/docs/help/ai-app-builders/": {
+    "hash": "5e5f18c9ae54",
+    "date": "2026-10-26"
+  },
   "/docs/help/ai-smart-paste/": {
     "hash": "11b285646055",
     "date": "2026-09-03"
   },
   "/docs/help/ai-toolkit/": {
-    "hash": "d243ff1f552f",
-    "date": "2026-10-25"
+    "hash": "ab9be677d71c",
+    "date": "2026-11-02"
   },
   "/docs/help/ai/": {
     "hash": "2a2e1a1e3714",
@@ -3424,8 +3464,8 @@
     "date": "2026-10-14"
   },
   "/docs/help/alerts/start/": {
-    "hash": "a5442fd61805",
-    "date": "2026-09-22"
+    "hash": "7fd68b9fa1d7",
+    "date": "2026-11-02"
   },
   "/docs/help/api-stability/": {
     "hash": "377349196194",
@@ -3500,7 +3540,11 @@
     "date": "2026-10-14"
   },
   "/docs/help/benchmarks/": {
-    "hash": "be39e00ad6f1",
+    "hash": "a08396977870",
+    "date": "2026-11-02"
+  },
+  "/docs/help/bolt-new/": {
+    "hash": "de8ba92e9a07",
     "date": "2026-10-26"
   },
   "/docs/help/browser-support/": {
@@ -3508,8 +3552,8 @@
     "date": "2026-09-11"
   },
   "/docs/help/bundle-size/": {
-    "hash": "2c8dc819fb04",
-    "date": "2026-10-26"
+    "hash": "9438af74a8c7",
+    "date": "2026-11-02"
   },
   "/docs/help/cells/cell-components/": {
     "hash": "0c2e40cf44ac",
@@ -3628,8 +3672,8 @@
     "date": "2026-09-18"
   },
   "/docs/help/collaboration/": {
-    "hash": "0ee84f96db58",
-    "date": "2026-09-20"
+    "hash": "055693c6dcce",
+    "date": "2026-11-02"
   },
   "/docs/help/columns-hierarchy/": {
     "hash": "ac11b51efa27",
@@ -3688,12 +3732,12 @@
     "date": "2026-09-03"
   },
   "/docs/help/comparison/": {
-    "hash": "162a3598cb34",
-    "date": "2026-10-26"
+    "hash": "118406b71862",
+    "date": "2026-11-02"
   },
   "/docs/help/conditional-form-schema/": {
-    "hash": "f5e745ac37f1",
-    "date": "2026-09-20"
+    "hash": "0a79049e3b25",
+    "date": "2026-11-02"
   },
   "/docs/help/editing/edit-components/": {
     "hash": "03e3ec1320e8",
@@ -3720,8 +3764,8 @@
     "date": "2026-09-29"
   },
   "/docs/help/editing/saving-values/": {
-    "hash": "568e00e6f4db",
-    "date": "2026-09-03"
+    "hash": "01adce2a52e0",
+    "date": "2026-11-02"
   },
   "/docs/help/editing/start-stop-editing/": {
     "hash": "bd35a6b6ad3d",
@@ -3740,12 +3784,12 @@
     "date": "2026-10-08"
   },
   "/docs/help/events/": {
-    "hash": "454e154cd988",
-    "date": "2026-10-26"
+    "hash": "ff8a0a785bc3",
+    "date": "2026-11-02"
   },
   "/docs/help/export/": {
-    "hash": "b058728b5a67",
-    "date": "2026-10-25"
+    "hash": "171553277ca8",
+    "date": "2026-11-02"
   },
   "/docs/help/export/import-spreadsheet/": {
     "hash": "d3d6a7da2fe7",
@@ -3780,8 +3824,8 @@
     "date": "2026-10-25"
   },
   "/docs/help/filtering/date-filter/": {
-    "hash": "bfbf22daba2f",
-    "date": "2026-10-25"
+    "hash": "bba35d4da8ed",
+    "date": "2026-11-02"
   },
   "/docs/help/filtering/filter-api/": {
     "hash": "15c61eb032f8",
@@ -3810,6 +3854,50 @@
   "/docs/help/filtering/text-filter/": {
     "hash": "aa700b3e7dc8",
     "date": "2026-09-10"
+  },
+  "/docs/help/gantt/": {
+    "hash": "c5fcca7ac89a",
+    "date": "2026-09-21"
+  },
+  "/docs/help/gantt/api/": {
+    "hash": "8ae8a79f0d53",
+    "date": "2026-09-20"
+  },
+  "/docs/help/gantt/axis-and-working-time/": {
+    "hash": "e6a508c997c4",
+    "date": "2026-09-20"
+  },
+  "/docs/help/gantt/critical-path/": {
+    "hash": "9d70359431dc",
+    "date": "2026-09-20"
+  },
+  "/docs/help/gantt/customizing/": {
+    "hash": "705df65fb043",
+    "date": "2026-09-20"
+  },
+  "/docs/help/gantt/dependencies/": {
+    "hash": "0e4948650940",
+    "date": "2026-09-20"
+  },
+  "/docs/help/gantt/editing/": {
+    "hash": "86e4c0231bf2",
+    "date": "2026-09-20"
+  },
+  "/docs/help/gantt/resources/": {
+    "hash": "b0e19afe0df9",
+    "date": "2026-09-20"
+  },
+  "/docs/help/gantt/start/": {
+    "hash": "5335ddbdf9b1",
+    "date": "2026-09-20"
+  },
+  "/docs/help/gantt/views/": {
+    "hash": "ef79bfa449f7",
+    "date": "2026-09-20"
+  },
+  "/docs/help/gantt/work-breakdown/": {
+    "hash": "cbc967021042",
+    "date": "2026-09-20"
   },
   "/docs/help/glossary/": {
     "hash": "d15f12f5666e",
@@ -3868,16 +3956,20 @@
     "date": "2026-09-22"
   },
   "/docs/help/llm-grounding/": {
-    "hash": "aa3482a0cbae",
-    "date": "2026-10-14"
+    "hash": "27dfacd826d5",
+    "date": "2026-11-02"
+  },
+  "/docs/help/lovable/": {
+    "hash": "e8b258d22da1",
+    "date": "2026-10-26"
   },
   "/docs/help/mcp-server/": {
-    "hash": "14fcb8d7b7ee",
-    "date": "2026-10-25"
+    "hash": "4be334ef004d",
+    "date": "2026-11-02"
   },
   "/docs/help/migrating-from-ag-grid/": {
-    "hash": "516b3baf1e70",
-    "date": "2026-10-26"
+    "hash": "a10a32a468eb",
+    "date": "2026-11-02"
   },
   "/docs/help/migrating-from-airtable/": {
     "hash": "715382a5e54e",
@@ -3888,80 +3980,80 @@
     "date": "2026-10-14"
   },
   "/docs/help/migrating-from-devextreme/": {
-    "hash": "d2fc27abf464",
-    "date": "2026-10-26"
+    "hash": "83b98829a0ec",
+    "date": "2026-11-02"
   },
   "/docs/help/migrating-from-glide/": {
-    "hash": "df9e2097dfc9",
-    "date": "2026-10-26"
+    "hash": "a42db8d772fe",
+    "date": "2026-11-02"
   },
   "/docs/help/migrating-from-gridjs/": {
-    "hash": "33ceb9691ca3",
-    "date": "2026-10-26"
+    "hash": "aee3292d2ecc",
+    "date": "2026-11-02"
   },
   "/docs/help/migrating-from-handsontable/": {
-    "hash": "5e02d696a551",
-    "date": "2026-10-26"
+    "hash": "92110f96e6a1",
+    "date": "2026-11-02"
   },
   "/docs/help/migrating-from-jqxgrid/": {
-    "hash": "9789694baa32",
-    "date": "2026-10-26"
+    "hash": "c6a40c2cdf53",
+    "date": "2026-11-02"
   },
   "/docs/help/migrating-from-kendo-grid/": {
-    "hash": "cb8a619bac20",
-    "date": "2026-10-26"
+    "hash": "bf1b4c80f32c",
+    "date": "2026-11-02"
   },
   "/docs/help/migrating-from-mui-x/": {
-    "hash": "cb4e4309b6c8",
-    "date": "2026-10-26"
+    "hash": "3346816579d4",
+    "date": "2026-11-02"
   },
   "/docs/help/migrating-from-nocodb/": {
     "hash": "ab06460fc6a8",
     "date": "2026-10-14"
   },
   "/docs/help/migrating-from-primevue-datatable/": {
-    "hash": "4e77613def6c",
-    "date": "2026-10-26"
+    "hash": "61660d1c2b51",
+    "date": "2026-11-02"
   },
   "/docs/help/migrating-from-react-data-grid/": {
-    "hash": "0b1382e052b7",
-    "date": "2026-10-26"
+    "hash": "0e0f57f93432",
+    "date": "2026-11-02"
   },
   "/docs/help/migrating-from-shadcn-data-table/": {
-    "hash": "046583b0be10",
-    "date": "2026-10-26"
+    "hash": "3cb1859ac73f",
+    "date": "2026-11-02"
   },
   "/docs/help/migrating-from-smart-grid/": {
-    "hash": "1493afbdacf5",
-    "date": "2026-10-26"
+    "hash": "cd048921e4a5",
+    "date": "2026-11-02"
   },
   "/docs/help/migrating-from-svar-svelte-datagrid/": {
-    "hash": "be766a3c335d",
-    "date": "2026-10-26"
+    "hash": "70d9ef714e0a",
+    "date": "2026-11-02"
   },
   "/docs/help/migrating-from-svelte-headless-table/": {
-    "hash": "fa5dc0c70e4d",
-    "date": "2026-10-26"
+    "hash": "af4e8d0e64c9",
+    "date": "2026-11-02"
   },
   "/docs/help/migrating-from-syncfusion/": {
-    "hash": "308dfdb3b096",
-    "date": "2026-10-26"
+    "hash": "15cc3c1971d0",
+    "date": "2026-11-02"
   },
   "/docs/help/migrating-from-tabulator/": {
-    "hash": "305f99d27477",
-    "date": "2026-10-26"
+    "hash": "901412d179c6",
+    "date": "2026-11-02"
   },
   "/docs/help/migrating-from-tanstack-table/": {
-    "hash": "f0f1a6e8ab4f",
-    "date": "2026-10-26"
+    "hash": "faa028951ba9",
+    "date": "2026-11-02"
   },
   "/docs/help/migrating-from-ui-kit-tables/": {
-    "hash": "97a33c767104",
-    "date": "2026-10-26"
+    "hash": "880460027bfb",
+    "date": "2026-11-02"
   },
   "/docs/help/migrating-from-vincjo-datatables/": {
-    "hash": "7f0463927eb9",
-    "date": "2026-10-26"
+    "hash": "864dab8565f3",
+    "date": "2026-11-02"
   },
   "/docs/help/missing-features/": {
     "hash": "bbbd9300b199",
@@ -4011,13 +4103,9 @@
     "hash": "82b38086ffdc",
     "date": "2026-10-14"
   },
-  "/docs/help/rows/gantt/": {
-    "hash": "a3a4f22c105d",
-    "date": "2026-09-19"
-  },
   "/docs/help/rows/kanban-board/": {
-    "hash": "d00d936e1e02",
-    "date": "2026-10-25"
+    "hash": "a9f83b3eec55",
+    "date": "2026-11-02"
   },
   "/docs/help/rows/master-detail/": {
     "hash": "a90379684c21",
@@ -4204,8 +4292,8 @@
     "date": "2026-10-25"
   },
   "/docs/help/svelte-5-upgrade-data-tables/": {
-    "hash": "d920deec837f",
-    "date": "2026-10-26"
+    "hash": "ea4195c72694",
+    "date": "2026-11-02"
   },
   "/docs/help/tailwind/": {
     "hash": "e394063574ee",
@@ -4292,8 +4380,8 @@
     "date": "2026-10-16"
   },
   "/docs/help/ui-blocks/form-layouts/": {
-    "hash": "f06f0c927741",
-    "date": "2026-10-16"
+    "hash": "5c037cad7bb1",
+    "date": "2026-11-02"
   },
   "/docs/help/ui-blocks/hero/": {
     "hash": "e597e6df249b",
@@ -4372,8 +4460,8 @@
     "date": "2026-10-16"
   },
   "/docs/help/ui-components/date-time/": {
-    "hash": "8ef7bab8533d",
-    "date": "2026-10-14"
+    "hash": "f8a4f5571765",
+    "date": "2026-11-02"
   },
   "/docs/help/ui-components/feedback/": {
     "hash": "4a7f8372196f",
@@ -4764,8 +4852,8 @@
     "date": "2026-06-16"
   },
   "/docs/help/web-components/": {
-    "hash": "6e105c7b5f8c",
-    "date": "2026-10-14"
+    "hash": "cdf182f67c33",
+    "date": "2026-11-02"
   },
   "/docs/help/web-components/angular/": {
     "hash": "9588ca622375",
@@ -4776,8 +4864,8 @@
     "date": "2026-10-08"
   },
   "/docs/help/web-components/frameworks/": {
-    "hash": "76efa362b5fd",
-    "date": "2026-10-25"
+    "hash": "2103efe269ee",
+    "date": "2026-11-02"
   },
   "/docs/help/web-components/limitations/": {
     "hash": "8b0c26a09095",
@@ -4788,20 +4876,20 @@
     "date": "2026-09-05"
   },
   "/docs/help/web-components/react/": {
-    "hash": "70f01fa8e975",
-    "date": "2026-10-25"
+    "hash": "981de3436dda",
+    "date": "2026-11-02"
   },
   "/docs/help/web-components/shadow-dom/": {
-    "hash": "b50f03ee806d",
-    "date": "2026-10-14"
+    "hash": "29ed96475fb7",
+    "date": "2026-11-02"
   },
   "/docs/help/web-components/sv-chart/": {
     "hash": "b3ac7854b3fc",
     "date": "2026-09-18"
   },
   "/docs/help/web-components/sv-grid/": {
-    "hash": "4a19f5236b6c",
-    "date": "2026-10-14"
+    "hash": "8f7535473d3b",
+    "date": "2026-11-02"
   },
   "/docs/help/web-components/sv-sheet/": {
     "hash": "14c34b2cabbf",
@@ -4832,8 +4920,8 @@
     "date": "2026-09-20"
   },
   "/docs/recipes/between-date-filter/": {
-    "hash": "c66670d2a10b",
-    "date": "2026-09-10"
+    "hash": "f95ed1d980db",
+    "date": "2026-11-02"
   },
   "/docs/recipes/build-a-feature-plugin/": {
     "hash": "1663a04049cf",
@@ -4876,8 +4964,8 @@
     "date": "2026-08-28"
   },
   "/docs/recipes/form-library-bridge/": {
-    "hash": "b9bb1b91b1c2",
-    "date": "2026-10-16"
+    "hash": "6e7738b76c97",
+    "date": "2026-11-02"
   },
   "/docs/recipes/grid-state-inspector/": {
     "hash": "bd44332aa71b",
@@ -4944,16 +5032,16 @@
     "date": "2026-09-03"
   },
   "/docs/recipes/smart-paste/": {
-    "hash": "6bd2275984ee",
-    "date": "2026-09-20"
+    "hash": "fe871280a9a7",
+    "date": "2026-11-02"
   },
   "/docs/recipes/sparkline-cells/": {
     "hash": "ac4041d00abb",
     "date": "2026-09-29"
   },
   "/docs/recipes/submit-time-validation/": {
-    "hash": "84ade926e90c",
-    "date": "2026-10-14"
+    "hash": "47f149c0000a",
+    "date": "2026-11-02"
   },
   "/docs/recipes/testing-your-grid/": {
     "hash": "477360296f95",
@@ -5000,8 +5088,8 @@
     "date": "2026-10-18"
   },
   "/pricing/": {
-    "hash": "207d53d0f116",
-    "date": "2026-10-18"
+    "hash": "9432c894e2bc",
+    "date": "2026-11-02"
   },
   "/privacy/": {
     "hash": "3c3d71a53421",
@@ -5020,8 +5108,8 @@
     "date": "2026-10-25"
   },
   "/svelte/": {
-    "hash": "39cd775a57dc",
-    "date": "2026-10-08"
+    "hash": "09ef6d82cc2a",
+    "date": "2026-11-02"
   },
   "/svelte/admin-dashboard/": {
     "hash": "e6ac1e4c525f",
@@ -5052,12 +5140,12 @@
     "date": "2026-10-08"
   },
   "/svelte/gantt-chart/": {
-    "hash": "935155f91355",
-    "date": "2026-10-08"
+    "hash": "3b8344fc09e6",
+    "date": "2026-11-02"
   },
   "/svelte/headless-table/": {
-    "hash": "e761f261b947",
-    "date": "2026-10-26"
+    "hash": "048fae1cd065",
+    "date": "2026-11-02"
   },
   "/svelte/kanban-board/": {
     "hash": "9dff8a3eebda",

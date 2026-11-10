@@ -84,6 +84,14 @@ if (CHECK) {
 }
 
 const registry = { ...ledger.registry }
+// A full run drops packages no comparison names any more (a renamed package
+// such as SVAR's old wx-svelte-grid). Left in, their old figures stay in
+// factTokens() and a page quoting them would still pass as measured.
+if (!ONLY) {
+  for (const name of Object.keys(registry)) {
+    if (!packages.includes(name)) { delete registry[name]; console.log(`dropped ${name}: no comparison names it`) }
+  }
+}
 const targets = ONLY ? packages.filter((p) => p === ONLY) : packages
 if (ONLY && !targets.length) {
   console.error(`--only ${ONLY}: no comparison names that package`)

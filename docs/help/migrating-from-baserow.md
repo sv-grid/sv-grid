@@ -10,7 +10,7 @@ change is written back to those tables.
 > its automations.
 
 <!-- facts:start baserow -->
-> **Facts, checked 14 Oct 2026.** `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the 30 days to 10 Sep 2026. Baserow pricing, as its site states it: Baserow's self-hosted open-source edition is free with unlimited rows. baserow.io/pricing lists Premium at $10 per user per month billed yearly ($12 monthly), Advanced at $18 per user per month billed yearly ($22 monthly) and Enterprise on request, at the same prices on cloud and self-hosted; cloud Free is $0 with 3,000 rows per workspace (https://baserow.io/pricing, read 14 Oct 2026). SvGrid: SvGrid Base ships in Enterprise Suite of @svgrid/enterprise, $999 per developer per year, unlimited apps and end users; the grid it runs on is MIT. Side by side, with sources: [SvGrid vs Baserow](https://svgrid.com/compare/baserow/).
+> **Facts, checked 9 Nov 2026.** `@svgrid/grid` 3.0.32, MIT, last published 3 Nov 2026, 44,600 npm downloads in the 30 days to 8 Nov 2026. Baserow pricing, as its site states it: Baserow's self-hosted open-source edition is free with unlimited rows. baserow.io/pricing lists Premium at $10 per user per month billed yearly ($12 monthly), Advanced at $18 per user per month billed yearly ($22 monthly) and Enterprise on request, at the same prices on cloud and self-hosted; cloud Free is $0 with 3,000 rows per workspace (https://baserow.io/pricing, read 14 Oct 2026). SvGrid: SvGrid Base ships in Enterprise Suite of @svgrid/enterprise, $999 per developer per year, unlimited apps and end users; the grid it runs on is MIT. Side by side, with sources: [SvGrid vs Baserow](https://svgrid.com/compare/baserow/).
 <!-- facts:end -->
 
 ## Two starting points
@@ -84,7 +84,12 @@ import { createBaseEndpoint } from '@svgrid/enterprise/base'
 // Your database driver: run parameterized SQL, return the rows.
 declare function query(sql: string, params: unknown[]): Promise<Record<string, unknown>[]>
 
-export const { GET, POST } = createBaseEndpoint({ execute: query })
+export const { GET, POST } = createBaseEndpoint({
+  execute: query,
+  tables: ['tasks', 'projects'],
+  // Who may read and write: see the quick start.
+  authorize: () => ({ event }) => !!event.locals?.user,
+})
 ```
 
 ```svelte

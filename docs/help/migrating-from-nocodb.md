@@ -9,7 +9,7 @@ inside your own app, on your own database, and writes every change back.
 > rebuild workflows.
 
 <!-- facts:start nocodb -->
-> **Facts, checked 14 Oct 2026.** `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the 30 days to 10 Sep 2026. NocoDB pricing, as its site states it: NocoDB self-hosted Community is $0 under the Sustainable Use License. nocodb.com/pricing lists cloud Plus at $12 per seat per month billed annually ($15 monthly), Business at $24 per seat per month billed annually ($30 monthly), Scale at $45 per seat per month billed annually with 3 minimum seats, and Enterprise on request; self-hosted Business and Scale are priced the same per seat (https://nocodb.com/pricing, read 14 Oct 2026). SvGrid: SvGrid Base ships in Enterprise Suite of @svgrid/enterprise, $999 per developer per year, unlimited apps and end users; the grid it runs on is MIT. Side by side, with sources: [SvGrid vs NocoDB](https://svgrid.com/compare/nocodb/).
+> **Facts, checked 9 Nov 2026.** `@svgrid/grid` 3.0.32, MIT, last published 3 Nov 2026, 44,600 npm downloads in the 30 days to 8 Nov 2026. NocoDB pricing, as its site states it: NocoDB self-hosted Community is $0 under the Sustainable Use License. nocodb.com/pricing lists cloud Plus at $12 per seat per month billed annually ($15 monthly), Business at $24 per seat per month billed annually ($30 monthly), Scale at $45 per seat per month billed annually with 3 minimum seats, and Enterprise on request; self-hosted Business and Scale are priced the same per seat (https://nocodb.com/pricing, read 14 Oct 2026). SvGrid: SvGrid Base ships in Enterprise Suite of @svgrid/enterprise, $999 per developer per year, unlimited apps and end users; the grid it runs on is MIT. Side by side, with sources: [SvGrid vs NocoDB](https://svgrid.com/compare/nocodb/).
 <!-- facts:end -->
 
 ## Two starting points
@@ -74,7 +74,12 @@ import { createBaseEndpoint } from '@svgrid/enterprise/base'
 // Your database driver: run parameterized SQL, return the rows.
 declare function query(sql: string, params: unknown[]): Promise<Record<string, unknown>[]>
 
-export const { GET, POST } = createBaseEndpoint({ execute: query })
+export const { GET, POST } = createBaseEndpoint({
+  execute: query,
+  tables: ['tasks', 'projects'],
+  // Who may read and write: see the quick start.
+  authorize: () => ({ event }) => !!event.locals?.user,
+})
 ```
 
 For MySQL, pass `dialect: 'mysql'`; `tables` limits the base to the tables

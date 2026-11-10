@@ -77,6 +77,8 @@ primitives are attributes, arrays and objects are properties.
 | `expand-rows` | `expandRows` | `boolean`: the button on each row that opens the record |
 | `row-height` | `rowHeight` | `number` |
 | `license-key` | `licenseKey` | `string` |
+| `read-only` | `readOnly` | `boolean`: look, do not touch (a share link) |
+| `permissions` | `permissions` | JSON: what the signed-in person may do, as [`<SvBase permissions>`](../base/permissions.md) |
 
 | Property only | Type |
 | --- | --- |
@@ -84,11 +86,20 @@ primitives are attributes, arrays and objects are properties.
 | `data`, `columns`, `views` | one table, without tabs |
 | `viewTypes` | the view types the view bar offers |
 | `users` | the people user fields choose from (`setFieldUsers`) |
+| `messages` | the words the base shows, in your language ([A base in your language](../base/languages.md)) |
 | `currentUser` | who is signed in: what "created by" and "last modified by" write (`setCurrentUser`) |
 | `options` | any other `<SvBase>` or `<SvGrid>` prop, passed through as is |
 
 A boolean attribute is on when present, whatever its value: `editable="false"`
 is editable. Remove the attribute, or set the property to `false`.
+
+```html
+<sv-base id="crm" editable expand-rows permissions='{"canDelete": false, "fields": {"deals.cost": "hidden"}}'></sv-base>
+<script type="module">
+  const base = document.getElementById('crm')
+  base.addEventListener('mention', (e) => notify(e.detail.mentioned, e.detail.comment))
+</script>
+```
 
 `users` and `currentUser` are one list for the page, as they are in a Svelte
 app: two elements that set different lists share the last one set.
@@ -101,6 +112,11 @@ app: two elements that set different lists share the last one set.
 | `viewschange` | the views of the one table (without `tables`; with it, a view change is a `tableschange`) |
 | `remotechange` | changes made in the database by someone else, for tables with a realtime `source` |
 | `ready` | `{ api }`, when the shown table's grid mounts. It fires again when another tab is opened. |
+| `cellchange` | `{ table, row, columnId, value, oldValue }`, after a cell of the shown table changed |
+| `recordadd` | `{ table, row }`, after a record was added to the shown table |
+| `recordsdelete` | `{ table, ids, rows }`, after records of the shown table were deleted (they are in the trash) |
+| `trashchange` | the whole trash, to store, after something was deleted, restored or emptied |
+| `mention` | `{ comment, mentioned, rowId, tableId, record }`, when a comment mentions people: send the notifications |
 
 `ready` parks the api on the element (`base.api`) and `tableschange` parks the
 list (`base.tables`), so code that runs later reads them without having caught

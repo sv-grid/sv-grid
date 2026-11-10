@@ -1,0 +1,32 @@
+/* The rich-cells scenario's look (rich.ts), shared by every adapter so each
+   grid draws the same pixels. Plain classes, no grid's own tokens. */
+.rc-avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%; margin-right: 6px;
+  color: #fff; font-size: 10px; font-weight: 600; flex: none; vertical-align: middle;
+}
+.rc-name { vertical-align: middle; }
+.rc-badge {
+  display: inline-block; padding: 1px 8px; border-radius: 999px;
+  font-size: 12px; line-height: 18px; background: #e7e5e4; color: #292524;
+}
+.rc-open { background: #dbeafe; color: #1e40af; }
+.rc-pending { background: #fef3c7; color: #92400e; }
+.rc-shipped { background: #dcfce7; color: #166534; }
+.rc-closed { background: #e7e5e4; color: #44403c; }
+.rc-cancelled { background: #fee2e2; color: #991b1b; }
+.rc-progress {
+  display: inline-block; width: 60px; height: 6px; border-radius: 3px;
+  background: #e7e5e4; overflow: hidden; vertical-align: middle; margin-right: 6px;
+}
+.rc-bar { display: block; height: 100%; background: #2563eb; }
+.rc-pct { font-size: 12px; vertical-align: middle; }
+.rc-stars { color: #f59e0b; letter-spacing: 1px; }
+.rc-off { color: #d6d3d1; }
+.rc-check { margin: 0; vertical-align: middle; }
+.rc-date { font-variant-numeric: tabular-nums; }
+.rc-link { color: #2563eb; text-decoration: none; }
+.rc-tag {
+  display: inline-block; padding: 0 6px; margin-right: 4px; border-radius: 4px;
+  font-size: 11px; line-height: 18px; background: #f5f5f4; border: 1px solid #e7e5e4;
+}

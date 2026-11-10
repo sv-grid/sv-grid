@@ -72,7 +72,9 @@ test.describe('scheduler CRUD (real browser)', () => {
     // switch; the real-world apps embed a dedicated grid instead.
     for (const id of ['363-scheduler-intro', '371-scheduler-timeline', '372-scheduler-selection']) {
       await page.goto(`/sv-grid/#/demos/${id}`)
-      await expect(page.getByRole('button', { name: 'Table', exact: true })).toBeVisible()
+      // A fresh demo route loads the scheduler chunk first; give it the time other
+      // specs give a first load, not the 5 s default meant for in-page changes.
+      await expect(page.getByRole('button', { name: 'Table', exact: true })).toBeVisible({ timeout: 30_000 })
       await page.getByRole('button', { name: 'Table', exact: true }).click()
       // Table view renders the grid header row instead of the calendar.
       await expect(page.locator('.sv-sched')).toHaveCount(0)

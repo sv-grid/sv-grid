@@ -1,5 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createClipboard } from './clipboard'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createClipboard, loadRangeCommit } from './clipboard'
+
+// The drag commits load with the drag; here they are loaded up front so a commit runs at once.
+beforeAll(() => loadRangeCommit())
 
 // ---------------------------------------------------------------------------
 // Excel-style range move / copy (the `moveCells` prop): grab a selection

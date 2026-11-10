@@ -57,9 +57,9 @@ const ENTRIES = {
     entry: `export * from '@tanstack/svelte-table'`,
     label: 'whole package',
   },
-  'wx-svelte-grid': {
+  '@svar-ui/svelte-grid': {
     where: 'examples',
-    entry: `export { Grid } from 'wx-svelte-grid'`,
+    entry: `export { Grid } from '@svar-ui/svelte-grid'`,
     label: 'Grid component',
     svelte: true,
   },
@@ -143,6 +143,13 @@ if (INSTALL) {
 // ---- measure ---------------------------------------------------------------
 const kb = (n) => Number((n / 1024).toFixed(1))
 const bundles = { ...ledger.bundles }
+// A full run drops packages that left ENTRIES (a renamed package keeps its old
+// sizes in factTokens() otherwise).
+if (!ONLY) {
+  for (const name of Object.keys(bundles)) {
+    if (!(name in ENTRIES)) { delete bundles[name]; console.log(`dropped ${name}: not in ENTRIES`) }
+  }
+}
 let failed = 0
 
 for (const pkg of wanted) {
@@ -163,7 +170,7 @@ for (const pkg of wanted) {
   if (!OSS_LICENSES.test(license)) { console.error(`${pkg}: licence "${license}" is not on the open-source allow-list; refusing`); failed += 1; continue }
   // Peers are external: they are what the host app already ships. Svelte is
   // external for any Svelte package whether or not it is declared as a peer
-  // (wx-svelte-grid declares none), because SvGrid is measured that way and
+  // (SVAR's old wx-svelte-grid package declared none), because SvGrid is measured that way and
   // a comparison that counts the Svelte runtime on one side is not one.
   const external = Object.keys(manifest.peerDependencies ?? {})
   const usesSvelte = !!manifest.svelte || 'svelte' in (manifest.dependencies ?? {}) || 'svelte' in (manifest.devDependencies ?? {}) || spec.svelte

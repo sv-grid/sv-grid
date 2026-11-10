@@ -35,6 +35,7 @@ export type BenchRow = {
 
 /** A column as the harness describes it; every adapter maps it to its grid's own column type. */
 export type BenchColumn = { field: string; header: string; type: 'text' | 'number' }
+type RichColumn = BenchColumn & { kind?: import('./rich').RichKind }
 
 /** Any row the harness hands a grid: BenchRow for the main suite, numeric fields for the wide one. */
 export type AnyRow = Record<string, unknown>
@@ -303,6 +304,8 @@ export async function agGridAdapter(): Promise<GridAdapter> {
     async mount(el, rows, columns = COLUMNS) {
       host = el
       cols = columns
+      const richCols = columns.some((c) => (c as RichColumn).kind)
+      const { richHtml, RICH_WIDTH } = richCols ? await import('./rich') : ({} as typeof import('./rich'))
       el.style.height = '100%'
       api = createGrid(el, {
         theme: themeQuartz,
@@ -311,14 +314,20 @@ export async function agGridAdapter(): Promise<GridAdapter> {
         // Needed for applyTransaction updates to find their rows.
         getRowId: (p: { data: BenchRow }) => String(p.data.id),
         // Match sv-grid: both axes virtualized, no extra features enabled.
-        columnDefs: columns.map((c) => ({
-          field: c.field as string,
-          headerName: c.header,
-          sortable: true,
-          filter: true,
-          // Fixed widths so neither grid pays for auto-sizing the other skips.
-          width: 140,
-        })),
+        columnDefs: columns.map((c) => {
+          // The rich-cells scenario (rich.ts): AG Grid's cellRenderer, as a
+          // function returning the shared markup.
+          const kind = (c as RichColumn).kind
+          return {
+            field: c.field as string,
+            headerName: c.header,
+            sortable: true,
+            filter: true,
+            // Fixed widths so neither grid pays for auto-sizing the other skips.
+            width: richCols ? RICH_WIDTH : 140,
+            ...(kind ? { cellRenderer: (p: { value: unknown }) => richHtml(kind, p.value) } : {}),
+          }
+        }),
         animateRows: false,
         suppressColumnVirtualisation: false,
       })
@@ -483,12 +492,12 @@ async function svelteComponentAdapter(opts: {
   }
 }
 
-/** SVAR Svelte DataGrid (wx-svelte-grid), MIT. See BenchSvar.svelte. */
+/** SVAR Svelte DataGrid (@svar-ui/svelte-grid), MIT. See BenchSvar.svelte. */
 export function svarAdapter(): Promise<GridAdapter> {
   return svelteComponentAdapter({
     name: 'SVAR Svelte DataGrid',
     license: 'MIT',
-    pkg: import('../../node_modules/wx-svelte-grid/package.json'),
+    pkg: import('../../node_modules/@svar-ui/svelte-grid/package.json'),
     component: import('./BenchSvar.svelte'),
     rowSelector: '.wx-row',
     // SVAR writes a string column id as ":" + id (setID in @svar-ui/lib-dom).

@@ -70,8 +70,11 @@ from the list, each with their avatar; typing filters them. If the list is
 empty the panel says "No people (setFieldUsers)". Text pasted or filled into
 a user cell is matched against each person's id, name and email, ignoring
 case; a multiple field takes them comma-separated and drops repeats. A name
-that matches nobody stays as typed, so check pasted data. Copying a user cell
-writes the names, so a copy and paste between records keeps the people.
+that matches nobody is left out and the page says so, and with nobody left the
+cell keeps its value. With no list of people set the field takes what it is
+given. Copying a user cell writes the names, so a copy and paste between
+records keeps the people, and a copy in the same page keeps the very person when
+two share a name.
 `fieldProps.default` takes an id for new rows. The field reference has the
 [user field's properties](../fields.md#declare-columns-by-type).
 
@@ -236,7 +239,9 @@ The record shows:
 - Activity on the right: changes and comments, oldest first, with "just now",
   "5 minutes ago", "3 hours ago" or the date. The box under them takes a
   comment; Ctrl+Enter (Cmd+Enter) or Comment sends it. A base without
-  `editable` still takes comments.
+  `editable` still takes comments. Text not sent stays with its record until the
+  page reloads: stepping to the next record leaves it behind, and coming back finds it.
+  Closing the record says so.
 - Previous and next buttons that step through the rows in the view's order,
   and "3 of 12".
 
@@ -287,6 +292,8 @@ export type RecordCommentContext = { tableId?: string; api: unknown }
 export type RecordCommentStore = {
   list: (rowId: string, api: unknown, context: RecordCommentContext) => ReadonlyArray<RecordComment>
   add: (rowId: string, comment: RecordComment, api: unknown, context: RecordCommentContext) => void
+  update?: (rowId: string, comment: RecordComment, api: unknown, context: RecordCommentContext) => void
+  remove?: (rowId: string, commentId: string, api: unknown, context: RecordCommentContext) => void
   onMention?: (event: MentionEvent) => void
 }
 ```
@@ -296,6 +303,10 @@ export type RecordCommentStore = {
 table, so Tasks `1` and Milestones `1` are two records; with one table it is
 undefined. `at` is milliseconds since 1970, `by` the id of the person who was
 signed in. The record view makes `id`, `at` and `by` itself and calls `add`.
+A comment's author sees Edit and Delete under it, with no one signed in that is
+whoever is at the page. An edited comment shows "(edited)" and carries `editedAt`;
+someone newly mentioned in it hears of it once. A store without `update` or
+`remove` offers neither.
 A store written for `list(rowId, api)` and `add(rowId, comment, api)` still
 works.
 
@@ -330,6 +341,7 @@ async function load(table: string) {
   byTable = { ...byTable, [table]: grouped }
 }
 
+// `update` and `remove` are optional: without them a comment stays as it was written.
 const store: RecordCommentStore = {
   list(rowId, _api, { tableId = '' }) {
     if (!asked.has(tableId)) void load(tableId)
@@ -360,8 +372,8 @@ const store: RecordCommentStore = {
 if (browser) setRecordComments(store)
 ```
 
-Import the file once, in the page that shows the base. The failure notice
-needs one `<SvToaster />` from `@svgrid/grid` in the app.
+Import the file once, in the page that shows the base. The failure notice shows
+as a base's other notices do: see [Notices](./quick-start.md#notices).
 `setRecordComments(null)` goes back to memory. For a table with a very large
 discussion, have the endpoint return counts per record and fetch a record's
 comments when it opens.
@@ -417,6 +429,11 @@ Up and Down move through the list, Enter or Tab picks, Escape closes the
 list and leaves the record open. An `@` inside a word, as in an email
 address, does not open it.
 
+Escape in the comment box leaves the box and keeps the text. On a comment
+being changed it is Cancel. While a comment has text not sent, or is being
+changed, Escape does not close the record and says why, a click outside does
+nothing, and the Close button still closes it. An empty box holds nothing open.
+
 A mention is kept in the comment's `text` as a token, and its id in
 `mentions`:
 
@@ -432,8 +449,9 @@ the tokens back into `@Ana Ruiz` for an email or a chat message, and
 `mentionIds(text)` reads the ids, for a server that does not trust the
 `mentions` the browser sent.
 
-To send notifications, give the store an `onMention` hook, or call
-`setMentionHandler` (it works with the in-memory default too). Each runs once
+To send notifications, pass `onMention` to `<SvBase>`, give the store an
+`onMention` hook, or call `setMentionHandler` (they work with the in-memory
+default too). Each runs once
 per comment that mentions someone, after `add`:
 
 ```ts
@@ -596,8 +614,10 @@ cell goes away (scrolled out, or the table switched) are aborted through
 
 Enter on a tile, or a click on its picture, opens the preview: images inline,
 PDFs in an iframe, anything else as its name with a Download link. Left and
-Right step through the files. For the PDF frame your storage has to send
-`application/pdf` and allow the page to frame it.
+Right step through the files. A PDF is framed only when the page could read its
+bytes and they are a PDF, so your storage has to allow the page's origin with CORS
+(`Access-Control-Allow-Origin`). A file it cannot read, or one that is not a PDF
+whatever it calls itself, offers its Download link instead.
 
 ## 7. Track who changed what
 
@@ -748,9 +768,11 @@ values out of the records, and send only that.
 Every edit through the grid is noted for the record: a typed value, a paste,
 a fill, a clear, a checkbox click, a card dragged to another lane, an edit in
 the record view, files added in the dialog or dropped on a cell. Each note
-holds the time, the current user's id, the column and the new value, and the
-record view writes it as "Ana Ruiz changed Status" over the value as the cell
-shows it, or "(cleared)". A field an automation's `updateRecord` sets is
+holds the time, the current user's id, the column, the new value and the one
+before it, and the record view writes it as "Ana Ruiz changed Status" over the
+old value and the new one as the cell shows them, or "(cleared)". Undo and redo
+are noted too, as "You undid a change to Status" and "You redid a change to
+Status", so the log ends on what the record holds. A field an automation's `updateRecord` sets is
 noted under the automation's name: "Automation: Done ticks the box changed
 Done".
 
@@ -761,15 +783,44 @@ Priority", Low → Urgent. Until the record is opened, its changed cells are
 tinted and its row number has a dot. See [Changes made
 elsewhere](./data.md#changes-made-elsewhere).
 
-The log lives in memory and keeps the latest 50 changes of each record. In
-`<SvBase tables>` it is kept by base, table and record id, so it survives
-switching tabs; with one table it is kept per grid. It is not exported, and
-it is gone after a reload. Changes made by your code replacing `tables` or
-`data` are not noted.
+By default the log lives in memory and keeps the latest 50 changes of each
+record, for the 20,000 records of a table changed longest ago last: a bulk edit of a
+million records does not stay in the tab. In `<SvBase tables>` it is kept by base, table and record id, so it
+survives switching tabs; with one table it is kept per grid. Changes made by
+your code replacing `tables` or `data` are not noted.
 
-If the team needs a history that lasts, record it yourself from
-`onCellValueChange` (`columnId`, `oldValue`, `newValue`, `row`) on the
-server, where you know who is signed in.
+### A history that lasts
+
+Your audit log already has every change. `setRecordHistory` lets the record
+view read it, and hands it each change made in the page to keep:
+
+```ts
+import { setRecordHistory, type RecordChange } from '@svgrid/enterprise/base'
+
+setRecordHistory({
+  // Each time a record is opened. A promise is fine: the activity says
+  // "Loading the history..." until it settles.
+  list: async (rowId, { tableId }) => {
+    const res = await fetch(`/api/history/${tableId}/${rowId}`)
+    return (await res.json()) as RecordChange[]
+  },
+  // Each change made in this page, as it is made.
+  add: (rowId, change, { tableId }) => {
+    void fetch(`/api/history/${tableId}/${rowId}`, { method: 'POST', body: JSON.stringify(change) })
+  },
+})
+```
+
+A change is `{ at, by, columnId, value, from? }` (`at` in milliseconds,
+`by` a user id from `setFieldUsers`), plus `automation` for a change an
+automation made and `via` for a proposal someone accepted. The record view
+shows what `list` gave with this session's changes it does not have yet;
+give back the `at` that `add` received, and a change shows once. A change
+made elsewhere and read in through `realtime` is not passed to `add`:
+whoever made it keeps it.
+
+`historyOf(ctrl, rowId)` gives a record's history as the record view shows
+it, for a panel of your own. `setRecordHistory(null)` goes back to memory.
 
 ## The record menu
 

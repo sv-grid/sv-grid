@@ -188,6 +188,24 @@ describe('SvGrid context menu', () => {
     destroy()
   })
 
+  it('an item that is off takes the arrow keys and says so, and its click does nothing', async () => {
+    let ran = 0
+    const items: ContextMenuItem<Row>[] = ['copy', { key: 'off', label: 'Not now', action: () => { ran += 1 }, disabled: () => true }]
+    const { target, destroy } = await mountGrid(items)
+    await tick()
+    const menu = await openContextMenu(target)
+    const off = [...menu.querySelectorAll<HTMLButtonElement>('.sv-grid-menu-item')].find((b) => b.textContent?.trim() === 'Not now')!
+    expect(off.getAttribute('aria-disabled')).toBe('true')
+    expect(off.disabled).toBe(false)
+    ;(document.activeElement as HTMLElement).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }))
+    expect(document.activeElement).toBe(off)
+    off.click()
+    await tick()
+    expect(ran).toBe(0)
+    expect(target.querySelector('.sv-grid-context-menu')).not.toBeNull()
+    destroy()
+  })
+
   // The row and column items used to be covered only by their labels. Each of
   // these clicks the item on the first cell and reads the rendered rows back.
   async function clickItem(target: HTMLElement, label: string) {

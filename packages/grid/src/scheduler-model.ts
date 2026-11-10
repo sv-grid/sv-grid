@@ -355,6 +355,25 @@ export type MonthSegment<TData = unknown> = {
 
 const MS_DAY = 86_400_000
 
+/** Calendar days from `a`'s midnight to `b`'s. Rounded: a day the clocks change
+ *  has 23 or 25 hours, and flooring real days put Monday under Sunday. */
+const daysBetween = (a: Date, b: Date) => Math.round((startOfDay(b).getTime() - startOfDay(a).getTime()) / MS_DAY)
+
+/**
+ * Minutes by the wall clock from local midnight of `day` to `d`: 9:00 is 540 on
+ * every day, also on the 23- and 25-hour days the clocks change on, where real
+ * minutes since midnight are an hour off. Whole days count 1440 each.
+ */
+export function wallMinutes(d: Date, day: Date): number {
+  return daysBetween(day, d) * 1440 + d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60 + d.getMilliseconds() / 60_000
+}
+
+/** The instant `min` wall-clock minutes after local midnight of `day` (1440 is
+ *  the next midnight). A time the clocks skip lands just after the skip. */
+export function atWallMinute(day: Date, min: number): Date {
+  return new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, 0, 0, Math.round(min * 60_000))
+}
+
 /**
  * Lay out one week row of the month grid as continuous spanning bars. `weekStart`
  * is the local-midnight first day of the 7-day row. Returns each overlapping
@@ -367,7 +386,7 @@ export function monthWeekSegments<TData>(
 ): { segments: MonthSegment<TData>[]; laneCount: number } {
   const ws = startOfDay(weekStart)
   const we = addDays(ws, 7)
-  const colOf = (d: Date) => Math.floor((startOfDay(d).getTime() - ws.getTime()) / MS_DAY)
+  const colOf = (d: Date) => daysBetween(ws, d)
 
   const out: MonthSegment<TData>[] = []
   for (const e of events) {
@@ -485,8 +504,9 @@ export function layoutDayEvents<TData>(
   const items: Item[] = []
   for (const e of dayEvents) {
     if (e.allDay) continue
-    const s = Math.max(bandStartMin, (e.start.getTime() - base.getTime()) / MS_MIN)
-    const en = Math.min(bandEndMin, (e.end.getTime() - base.getTime()) / MS_MIN)
+    // By the wall clock, as the hour rows are labelled (see wallMinutes).
+    const s = Math.max(bandStartMin, wallMinutes(e.start, base))
+    const en = Math.min(bandEndMin, wallMinutes(e.end, base))
     if (en <= bandStartMin || s >= bandEndMin) continue
     items.push({ event: e, startMin: s, endMin: Math.max(s + 1, en), col: 0 })
   }
@@ -756,9 +776,9 @@ export function timelineAxis(
   let start = rangeStart
   let end = rangeEnd
   if (view === 'timelineDay') {
-    start = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate(), dayStartHour)
-    end = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate(), 0, 0, 0, 0)
-    end = new Date(end.getTime() + dayEndHour * 3_600_000)
+    // Band edges by the wall clock: 8pm is 8pm on a 23- or 25-hour day too.
+    start = atWallMinute(rangeStart, dayStartHour * 60)
+    end = atWallMinute(rangeStart, dayEndHour * 60)
   }
   const total = Math.max(1, end.getTime() - start.getTime())
   const base = start.getTime()
@@ -775,9 +795,12 @@ export function timelineAxis(
   let majors: TimelineMajor[] = []
 
   if (view === 'timelineDay') {
-    for (let h = dayStartHour; h < dayEndHour; h++) {
-      const s = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate(), h)
-      ticks.push(mk(s, new Date(s.getTime() + 3_600_000), tlHourLabel(h)))
+    // One tick per real hour, named by its clock: the axis is real time, so a
+    // 25-hour day shows 1 AM twice and a 23-hour day has no 2 AM.
+    for (let s = start; s.getTime() < end.getTime(); ) {
+      const e = new Date(Math.min(end.getTime(), s.getTime() + 3_600_000))
+      ticks.push(mk(s, e, tlHourLabel(s.getHours())))
+      s = e
     }
     majors = [
       { label: `${TL_WD[rangeStart.getDay()]}, ${TL_MO[rangeStart.getMonth()]} ${rangeStart.getDate()}`, leftPct: 0, widthPct: 100 },

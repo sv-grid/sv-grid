@@ -95,9 +95,9 @@ and the board agree.
 
 `getRowId` matters here: the move overlay stays pinned to the right row
 across adds, removes and re-sorts by it. The board is keyboard-operable
-as well: Space grabs a focused card, the arrows move it between lanes
-and up and down within one, Escape puts it back, and every step is
-announced.
+as well: Space grabs a focused card, the arrows carry it between lanes
+and up and down within one, Space drops it and `onCardMove` fires, once.
+Escape puts it back with nothing written, and every step is announced.
 
 ## The order, the colours and a limit
 

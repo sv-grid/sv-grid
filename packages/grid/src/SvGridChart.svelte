@@ -15,7 +15,7 @@
   import { interpolateGeometry } from './chart-motion'
   import { drillTree, pathTo } from './chart-hierarchy'
   import type { ChartDataLabelConfig, ChartDrawing, ChartDrawingKind, ChartGeometry, ChartPointRef, TreeNode } from './chart-types'
-  import { downloadChartCsv, chartCsvExportable } from './chart-export'
+  import { downloadChartCsv, chartCsvExportable, saveBlob } from './chart-export'
   import type { MenuItem } from './menu-item'
   import { tick, untrack } from 'svelte'
   import type { ChartZoomWindow } from './chart-types'
@@ -1827,6 +1827,12 @@
   // is never right-clicked never pays for it.
   let menu = $state<{ x: number; y: number; target: ChartContextTarget } | null>(null)
   let MenuComp = $state<typeof import('./SvChartMenu.svelte').default | null>(null)
+  // The PDF chunk comes with the menu: its item says when the PDF's font cannot draw a title.
+  let pdfMod = $state<typeof import('./chart-export-pdf') | null>(null)
+  /** The PDF chunk, fetched once: the menu, the PDF button and print share it. */
+  const pdfLoad = () => pdfMod ?? import('./chart-export-pdf').then((p) => (pdfMod = p))
+  /** A PDF button pressed for a title its font cannot draw: it says why in its own text. */
+  let pdfSaid = $state(false)
   function onContextMenu(e: MouseEvent) {
     if (!contextMenu) return
     e.preventDefault()
@@ -1842,6 +1848,7 @@
         }
       : {}
     const open = () => (menu = { x, y, target })
+    pdfLoad()
     if (MenuComp) open()
     else import('./SvChartMenu.svelte').then((m) => { MenuComp = m.default; open() })
   }
@@ -1858,7 +1865,7 @@
     const items: MenuItem[] = [
       { label: t.downloadPng, onSelect: () => { void downloadImage('png') } },
       { label: t.downloadSvg, onSelect: () => { void downloadImage('svg') } },
-      { label: t.downloadPdf, onSelect: () => { void exportPdf() } },
+      pdfWhy() ? { label: pdfWhy(), disabled: true } : { label: t.downloadPdf, onSelect: () => { void exportPdf() } },
       ...(chartCsvExportable(spec) ? [{ label: t.downloadCsv, onSelect: () => { downloadChartCsv(spec) } }] : []),
       { label: t.copyAsImage, onSelect: () => { void copyAsImage() } },
       { label: t.print, onSelect: () => { void printIt() } },
@@ -1918,16 +1925,6 @@
     }
     return new XMLSerializer().serializeToString(clone)
   }
-  function triggerDownload(blob: Blob, filename: string) {
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    setTimeout(() => URL.revokeObjectURL(url), 1000)
-  }
   async function rasterizeSvg(svgText: string): Promise<Blob | null> {
     return new Promise((resolve) => {
       const rect = svgEl?.getBoundingClientRect()
@@ -1954,23 +1951,29 @@
     if (!text) return
     const stamp = new Date().toISOString().slice(0, 10)
     if (format === 'svg') {
-      triggerDownload(new Blob([text], { type: 'image/svg+xml' }), `chart-${stamp}.svg`)
+      saveBlob(new Blob([text], { type: 'image/svg+xml' }), `chart-${stamp}.svg`)
       return
     }
     const png = await rasterizeSvg(text)
-    if (png) triggerDownload(png, `chart-${stamp}.png`)
+    if (png) saveBlob(png, `chart-${stamp}.png`)
+  }
+  /** Why there is no PDF: a title its font cannot draw. Empty when there is one, or before the PDF chunk has come. */
+  const pdfWhy = () => {
+    const text = pdfMod?.pdfUndrawable(spec.title, spec.subtitle, spec.caption)
+    return text ? msg(t.pdfCannotDraw, { text }) : ''
   }
   /** PDF and print live in their own chunk, fetched on first use. */
   async function exportPdf() {
     if (!chartEl) return
-    const m = await import('./chart-export-pdf')
+    const m = await pdfLoad()
     const stamp = new Date().toISOString().slice(0, 10)
-    await m.downloadChartPdf(chartEl, `chart-${stamp}.pdf`, { title: spec.title, subtitle: spec.subtitle, caption: spec.caption })
+    // A refused title is said, on the button and to assistive technology, never a file of `?` and never nothing.
+    if (pdfWhy()) liveText = pdfWhy(), pdfSaid = true
+    else await m.downloadChartPdf(chartEl, `chart-${stamp}.pdf`, { title: spec.title, subtitle: spec.subtitle, caption: spec.caption })
   }
   async function printIt() {
     if (!chartEl) return
-    const m = await import('./chart-export-pdf')
-    m.printChart(chartEl, { title: spec.title })
+    ;(await pdfLoad()).printChart(chartEl, { title: spec.title })
   }
   async function copyAsImage() {
     const text = serializeSvg()
@@ -2067,7 +2070,8 @@
       {/if}
       <button type="button" class="sv-grid-chart-tool" onclick={() => downloadImage('png')} title={t.downloadPng}>{t.png}</button>
       <button type="button" class="sv-grid-chart-tool" onclick={() => downloadImage('svg')} title={t.downloadSvg}>{t.svg}</button>
-      <button type="button" class="sv-grid-chart-tool" onclick={exportPdf} title={t.downloadPdf}>{t.pdf}</button>
+      <!-- Pointing at it or focusing it fetches the PDF chunk, so the button is marked off, with why, before a press. -->
+      <button type="button" class="sv-grid-chart-tool" onclick={exportPdf} onpointerenter={pdfLoad} onfocus={pdfLoad} aria-disabled={!!pdfWhy()} title={pdfWhy() || t.downloadPdf}>{(pdfSaid && pdfWhy()) || t.pdf}</button>
       <button type="button" class="sv-grid-chart-tool" onclick={printIt} title={t.printTitle}>{t.print}</button>
       <button type="button" class="sv-grid-chart-tool" onclick={copyAsImage} title={t.copyTitle}>
         {copyStatus === 'ok' ? t.copied : t.copy}

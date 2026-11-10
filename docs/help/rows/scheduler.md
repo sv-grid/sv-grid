@@ -148,7 +148,8 @@ Open on a specific date with `initialDate` (defaults to today).
   **current-time line** tracks the local time on today's column (`nowIndicator`,
   on by default); the timeline draws it as a vertical line at "now".
 - **Agenda** - a chronological list grouped by day. Its span is `agendaDays`
-  (default 30).
+  (default 30). An event over several days is listed under its first day with
+  its last day: "12am - Oct 30, 12am", or "Oct 27 - Oct 29" for an all-day one.
 
 ## Colliding (overlapping) events
 
@@ -224,6 +225,19 @@ left or right edge across day columns to change how many days it covers.
 
 A focused event can also be nudged with the keyboard: **arrow left/right** move
 it a day, **arrow up/down** a slot, and **Enter** opens its editor.
+
+Every arrow counts from where the event was picked up: days by the calendar,
+slots by the clock. An event picked up on Saturday at 2:30 am shows 3:30 am on
+the Sunday the clocks skip 2:30, and one more step lands on Monday at 2:30 am.
+The calendar scrolls with the event in hand, so it stays in view.
+
+A move keeps the event's length by the clock, the length it had when picked up.
+On the night the clocks go back, a one-hour event dropped on 1 am ends at 2 am
+(two hours later in real time). On the night they go forward an end the clocks
+skip lands after the skip, as a start does: a one-hour event dropped on 1:30 am
+ends at 3:30 am, one hour later in real time. That event is saved as 1:30 am to
+3:30 am, two hours by the clock, so moved later to a normal day it stays two hours
+long, for example 9:00 am to 11:00 am.
 
 <div data-docs-demo="382-scheduler-app-clinic" data-height="700"></div>
 
@@ -547,7 +561,11 @@ layout; resize handles and drag still work around it.
   with `Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z` (the scheduler re-emits the callbacks
   with the reversed values).
 - **Duplicate** - the event context menu gets a **Duplicate** action (when
-  `onEventAdd` is set) that copies the event right after itself.
+  `onEventDuplicate` or `onEventAdd` is set) that copies the event right after
+  itself. `onEventDuplicate(source, start, end, resourceId, allDay)` gets the
+  event it copies, so the new row can take its title and fields. `onEventAdd`
+  gets only the times, so a handler that makes a new event from them makes a
+  blank one.
 
 ```svelte
 import { toICS, fromICS } from '@svgrid/grid'
@@ -992,6 +1010,7 @@ const windows = commonFree(attendees.map(busyOf), day8, day18, 60)
 | `travelTimeOf` | Travel minutes required between two consecutive bookings on a resource (widens the buffer). |
 | `bookable` / `onSlotPick` | Show open bookable slots of a duration on the Day timeline (`{ durationMin, stepMin? }`); click to book. |
 | `calendars` / `calendarField` | Overlay several colour-coded calendars with a toggleable legend; map events via `calendarField`. |
+| `onEventDuplicate` | Duplicate on an event's menu: `(source, start, end, resourceId, allDay)`, the event it copies and the times right after it. Without it Duplicate calls `onEventAdd` with the times alone. |
 | `freeBusyOf` | External busy intervals to shade on a resource row (for find-a-time). Pair with the `commonFree` export. |
 
 ## More examples

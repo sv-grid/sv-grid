@@ -340,7 +340,7 @@ async function applyTheme(destDir, choice) {
   )
 }
 
-/** sveltekit settles its start mode in an inline script in `src/app.html`,
+/** sveltekit settles its start mode in `static/theme-init.js`, loaded from `src/app.html`,
  *  falling back to the OS preference, exactly as minimal does. Pin it only when
  *  light or dark was actually asked for. The picker in the layout reads the
  *  attribute that script sets, so both halves have to agree. */
@@ -352,12 +352,15 @@ async function applyModeSvelteKit(destDir, choice) {
   if (html != null) {
     await writeFile(
       htmlPath,
-      html
-        .replace(`<html lang="en" data-theme="light">`, `<html lang="en" data-theme="${choice.mode}">`)
-        .replace(
-          `var fallback = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'`,
-          `var fallback = '${choice.mode}'`,
-        ),
+      html.replace(`<html lang="en" data-theme="light">`, `<html lang="en" data-theme="${choice.mode}">`),
+    )
+  }
+  const initPath = join(destDir, 'static', 'theme-init.js')
+  const init = await readFile(initPath, 'utf8').catch(() => null)
+  if (init != null) {
+    await writeFile(
+      initPath,
+      init.replace(`var fallback = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'`, `var fallback = '${choice.mode}'`),
     )
   }
 
@@ -384,10 +387,14 @@ async function applyMode(destDir, choice) {
   if (html != null) {
     await writeFile(
       htmlPath,
-      html
-        .replace(`data-theme="dark"`, `data-theme="light"`)
-        .replace(`t === 'light' ? 'light' : 'dark'`, `t === 'dark' ? 'dark' : 'light'`),
+      html.replace(`data-theme="dark"`, `data-theme="light"`),
     )
+  }
+
+  const initPath = join(destDir, 'static', 'theme-init.js')
+  const init = await readFile(initPath, 'utf8').catch(() => null)
+  if (init != null) {
+    await writeFile(initPath, init.replace(`t === 'light' ? 'light' : 'dark'`, `t === 'dark' ? 'dark' : 'light'`))
   }
 
   const themeTsPath = join(destDir, 'src', 'lib', 'theme.ts')

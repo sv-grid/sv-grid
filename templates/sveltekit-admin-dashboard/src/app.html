@@ -10,12 +10,7 @@
     />
     <!-- Apply the saved theme before first paint (defaults to dark) so there's
          no light-mode flash. The layout keeps this in sync afterwards. -->
-    <script>
-      try {
-        var t = localStorage.getItem('theme')
-        document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark')
-      } catch (e) {}
-    </script>
+    <script src="%sveltekit.assets%/theme-init.js"></script>
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover" class="h-full">

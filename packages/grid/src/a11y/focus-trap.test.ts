@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { createFocusTrap, getFocusable } from './focus-trap'
+import { createFocusTrap, getFocusable, keepFocus } from './focus-trap'
 
 function build(html: string): HTMLElement {
   const host = document.createElement('div')
@@ -10,6 +10,118 @@ function build(html: string): HTMLElement {
 
 afterEach(() => {
   document.body.innerHTML = ''
+})
+
+describe('keepFocus', () => {
+  /** Past the observer and the timer that decide where focus goes. */
+  const settled = () => new Promise((r) => setTimeout(r, 5))
+
+  it('moves to the control now in the place of one that left the page', async () => {
+    const host = build('<button id="a">a</button><button id="b">b</button><button id="c">c</button>')
+    const kept = keepFocus(host)
+    const b = host.querySelector<HTMLElement>('#b')!
+    b.focus()
+    b.remove()
+    await settled()
+    expect(document.activeElement?.id).toBe('c')
+    kept.destroy()
+  })
+
+  it('takes the last control when the one that left was last', async () => {
+    const host = build('<button id="a">a</button><button id="b">b</button>')
+    const kept = keepFocus(host)
+    const b = host.querySelector<HTMLElement>('#b')!
+    b.focus()
+    b.remove()
+    await settled()
+    expect(document.activeElement?.id).toBe('a')
+    kept.destroy()
+  })
+
+  it('moves on from a control that turned disabled', async () => {
+    const host = build('<button id="a">a</button><button id="b">b</button>')
+    const kept = keepFocus(host)
+    const a = host.querySelector<HTMLButtonElement>('#a')!
+    a.focus()
+    a.disabled = true
+    await settled()
+    expect(document.activeElement?.id).toBe('b')
+    kept.destroy()
+  })
+
+  it('gives focus back to a control that was only moved', async () => {
+    const host = build('<button id="a">a</button><button id="b">b</button>')
+    const kept = keepFocus(host)
+    const a = host.querySelector<HTMLElement>('#a')!
+    a.focus()
+    // Svelte's keyed each moves the node: that drops focus without removing it.
+    host.append(a)
+    await settled()
+    expect(document.activeElement?.id).toBe('a')
+    kept.destroy()
+  })
+
+  it('falls back to the region when nothing is left', async () => {
+    const host = build('<button id="a">a</button>')
+    const kept = keepFocus(host)
+    const a = host.querySelector<HTMLElement>('#a')!
+    a.focus()
+    a.remove()
+    await settled()
+    expect(document.activeElement).toBe(host)
+    kept.destroy()
+  })
+
+  it('leaves focus that someone took elsewhere', async () => {
+    const host = build('<button id="a">a</button><button id="b">b</button>')
+    const other = build('<button id="other">x</button>').firstElementChild as HTMLElement
+    const kept = keepFocus(host)
+    const a = host.querySelector<HTMLElement>('#a')!
+    a.focus()
+    a.remove()
+    other.focus()
+    await settled()
+    expect(document.activeElement).toBe(other)
+    kept.destroy()
+  })
+
+  it('a click on the page takes focus with it: a later removal moves nothing', async () => {
+    const host = build('<button id="a">a</button><button id="b">b</button>')
+    const kept = keepFocus(host)
+    const a = host.querySelector<HTMLElement>('#a')!
+    a.focus()
+    a.blur()
+    await settled()
+    a.remove()
+    await settled()
+    expect(document.activeElement).toBe(document.body)
+    kept.destroy()
+  })
+
+  it('on touch it does not open the keyboard: a text box is skipped for the region', async () => {
+    const host = build('<button id="a">a</button><textarea id="t"></textarea>')
+    const kept = keepFocus(host)
+    const a = host.querySelector<HTMLElement>('#a')!
+    a.focus()
+    a.dispatchEvent(Object.assign(new Event('pointerdown', { bubbles: true }), { pointerType: 'touch' }))
+    a.remove()
+    await settled()
+    expect(document.activeElement).toBe(host)
+    kept.destroy()
+  })
+
+  it('a dialog keeps the keyboard when the focused control goes', async () => {
+    const host = build('<button id="a">a</button><button id="b">b</button>')
+    const trap = createFocusTrap(host)
+    trap.activate()
+    await settled()
+    const a = host.querySelector<HTMLElement>('#a')!
+    a.focus()
+    a.remove()
+    await settled()
+    expect(document.activeElement?.id).toBe('b')
+    trap.release()
+  })
 })
 
 describe('getFocusable', () => {
@@ -95,6 +207,64 @@ describe('createFocusTrap', () => {
     expect(document.activeElement?.textContent).toBe('inner')
     trap.release()
     expect(document.activeElement).toBe(outside)
+  })
+
+  it('opened as a menu closes: goes back to what the menu gave focus to, not to the body', async () => {
+    const host = build('<table id="grid" tabindex="0"></table><div id="d"><button>in</button></div>')
+    const trap = createFocusTrap(host.querySelector<HTMLElement>('#d')!)
+    expect(document.activeElement).toBe(document.body)
+    trap.activate()
+    // The menu's item left the page, and its own clean-up runs before the dialog takes focus.
+    host.querySelector<HTMLElement>('#grid')!.focus()
+    await Promise.resolve()
+    expect(document.activeElement?.textContent).toBe('in')
+    trap.release()
+    expect(document.activeElement?.id).toBe('grid')
+  })
+
+  it('an opener that left the page: what held it takes focus', async () => {
+    const host = build('<div id="grid" tabindex="0"><span id="cell"><button id="open">o</button></span></div><div id="d"><button>in</button></div>')
+    host.querySelector<HTMLElement>('#open')!.focus()
+    const trap = createFocusTrap(host.querySelector<HTMLElement>('#d')!)
+    trap.activate()
+    await Promise.resolve()
+    host.querySelector('#cell')!.remove()
+    trap.release()
+    expect(document.activeElement?.id).toBe('grid')
+  })
+
+  it('an opener that cannot take focus any more (disabled, hidden): what held it does', async () => {
+    const host = build('<div id="grid" tabindex="0"><button id="open">o</button></div><div id="d"><button>in</button></div>')
+    const open = host.querySelector<HTMLButtonElement>('#open')!
+    open.focus()
+    const trap = createFocusTrap(host.querySelector<HTMLElement>('#d')!)
+    trap.activate()
+    await Promise.resolve()
+    open.disabled = true
+    trap.release()
+    expect(document.activeElement?.id).toBe('grid')
+  })
+
+  it('a card gone from a wall nothing focusable holds: the next card takes focus', async () => {
+    const host = build('<ul id="wall"><li><button>1</button></li><li id="two"><button id="open">2</button></li><li><button id="next">3</button></li></ul><div id="d"><button>in</button></div>')
+    host.querySelector<HTMLElement>('#open')!.focus()
+    const trap = createFocusTrap(host.querySelector<HTMLElement>('#d')!)
+    trap.activate()
+    await Promise.resolve()
+    host.querySelector('#two')!.remove()
+    trap.release()
+    expect(document.activeElement?.id).toBe('next')
+  })
+
+  it('the last card gone: the first control left in the wall', async () => {
+    const host = build('<ul id="wall"><li><button id="first">1</button></li><li id="two"><button id="open">2</button></li></ul><div id="d"><button>in</button></div>')
+    host.querySelector<HTMLElement>('#open')!.focus()
+    const trap = createFocusTrap(host.querySelector<HTMLElement>('#d')!)
+    trap.activate()
+    await Promise.resolve()
+    host.querySelector('#two')!.remove()
+    trap.release()
+    expect(document.activeElement?.id).toBe('first')
   })
 
   it('calls onEscape when Escape is pressed while active', async () => {

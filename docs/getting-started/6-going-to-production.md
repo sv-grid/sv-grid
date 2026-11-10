@@ -48,7 +48,7 @@ The examples on this page run against these rows:
 </script>
 ```
 
-```svelte {runnable}
+```svelte {norun}
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature,
            columnFilteringFeature } from '@svgrid/grid'
@@ -162,7 +162,7 @@ SvelteKit `+page.server.ts` load, the grid's markup hits the browser
 already filled with data - first paint shows the table, hydration only
 attaches event listeners.
 
-```svelte {runnable}
+```svelte {norun}
 <!-- +page.svelte -->
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature } from '@svgrid/grid'

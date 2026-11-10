@@ -205,12 +205,23 @@ function createState(
   // items behind the movement were just scrolled past, and a horizontal
   // scroll that kept three columns on each side drew ~40% more cells than it
   // needed to (350 vs 275 in the wide benchmark).
-  const behind = Math.min(Math.max(options.overscanBehind ?? full, 0), overscan)
+  let behind = Math.min(Math.max(options.overscanBehind ?? full, 0), overscan)
+  let ahead = overscan
   const direction = options.scrollDirection ?? 0
-  const overscanBefore = direction > 0 ? behind : overscan
-  const overscanAfter = direction < 0 ? behind : overscan
   const { count, viewportHeight, totalSize, scrollOffset, visibleStart, visibleEnd, uniformSize } =
     visibleRange(options, offsets)
+  // overscanLead: a scroll faster than the overscan covers moves the window
+  // ahead, items from behind to the front, so the window keeps its length
+  // (and every row its slot). A scrolled frame the compositor draws before
+  // the rows for it exist then still has rows under it.
+  // (With no items the shift is NaN, and the window is empty either way.)
+  if (options.overscanLead && direction) {
+    const shift = Math.max(Math.min(Math.ceil(Math.abs(direction) / (totalSize / count)) + 1 - ahead, behind - 2), 0)
+    ahead += shift
+    behind -= shift
+  }
+  const overscanBefore = direction > 0 ? behind : ahead
+  const overscanAfter = direction < 0 ? behind : ahead
 
   const startIndex = count === 0 ? 0 : clamp(visibleStart - overscanBefore, 0, count - 1)
   const endIndex = count === 0 ? -1 : clamp(visibleEnd + overscanAfter, 0, count - 1)
@@ -343,7 +354,7 @@ export function createVirtualizer(initial: VirtualizerOptions) {
     setScrollOffset(scrollOffset: number) {
       const previous = options.scrollOffset ?? 0
       if (previous === scrollOffset) return
-      options = { ...options, scrollOffset, scrollDirection: scrollOffset > previous ? 1 : -1 }
+      options = { ...options, scrollOffset, scrollDirection: scrollOffset - previous }
       const step = scrollStep()
       if (step === 'hold') return
       recalc(step === 'move')

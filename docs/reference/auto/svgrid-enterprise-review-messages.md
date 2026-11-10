@@ -24,6 +24,15 @@ export const REVIEW_MESSAGES = {
   acceptRuleGroups: 'Accept rule groups ({count})',
   resolveFirst: 'Resolve the conflicts before accepting everything.',
   onlyRowsWithChanges: 'Only rows with changes',
+  fromSource: 'From',
+  everySource: 'Every source ({count})',
+  oneSource: '{source} ({count})',
+  // Record view
+  recordProposals: '{count} proposed changes',
+  recordProposal: '1 proposed change',
+  proposedBy: 'Proposed by {source}',
+  acceptRecord: 'Accept all',
+  rejectRecord: 'Reject all',
   // Confirm
   confirmAcceptGroup: 'Accept {count} changes: {label}?',
   confirmRejectGroup: 'Reject {count} changes: {label}?',

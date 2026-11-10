@@ -147,8 +147,9 @@ eight types are on offer, a "Find a type" box sits above the list.
 editor type), `oldValue`, `rawInput` (the text as typed or pasted), the
 row as `data` and the `columnId`. It runs on a cell edit, a paste (one
 value pasted over a range included), a full-row edit, an edit in the
-expanded record and a form field. Returning `oldValue` refuses the input
-quietly: paste `n/a` over a number and the number stays. The text editor
+expanded record and a form field. Returning `oldValue` refuses the input:
+paste `n/a` over a number and the number stays, and the page says that
+value did not fit. The text editor
 opens on the stored `+442079460958`, and whatever the user leaves in it
 goes back through the parser.
 
@@ -595,7 +596,8 @@ The built-in Currency and Percent types work this way: both open as Number.
 | Footer summary | Number summaries for `cellDataType: 'number'`, date ones for `'date'` and `'dateString'`, checked, unchecked and percent checked for `'boolean'`, as a checkbox gets; counts for the rest; see [Summaries at the bottom](../fields.md#summaries-at-the-bottom) |
 | View bar filter | By the filled column's `cellDataType`: the number operators for `'number'`, the date ones for `'date'` and `'dateString'`, "is" checked / unchecked for `'boolean'`; otherwise the text operators (contains, does not contain, is, is not, is empty, is not empty) on the stored value |
 | Sort | The stored value; a `sortValue` in `fill` sorts by a number of your own, as a single select sorts by option order |
-| Copy | `String(value)`: an array copies as `a,b`, an object as `[object Object]`, so keep stored values to strings, numbers and arrays of them. In a base, people, links and attachments copy as names and URLs; a custom type does not get that |
+| Copy | What the cell shows when your `valueParser` reads that text back to the same value. Otherwise `String(value)`: an array copies as `a,b`, an object as `[object Object]`, so keep stored values to strings, numbers and arrays of them. A paste of a copy made on the same page into the same type gets the stored value back, whatever the text says |
+| Fill handle | One source cell copies. Two or more repeat: a series is for number and date fields |
 | Paste | `valueParser` with the pasted text as `rawInput`; `rejectInvalid` does not refuse it |
 | Changing a field to your type | Each value as text through your `valueParser`, as a paste with `oldValue: null`; what it refuses or throws on is cleared and counted in the editor's warning. Without a parser, a list becomes its text and a plain value stays |
 | Changing your type to a built-in | The built-in's conversion, reading your value as text (`convertValue`) |

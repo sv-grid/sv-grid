@@ -161,6 +161,25 @@ export interface Review<TData = unknown> {
   groups(): ProposalGroup[]
   /** The pending proposal for one cell, if there is one. */
   pendingFor(rowId: string, field: string): Proposal | undefined
+  /** The pending proposals of one record, in its fields' order of arrival. */
+  pendingIn(rowId: string): Proposal[]
+  /** Accept every pending proposal of one record. One undo step. */
+  acceptRecord(rowId: string): Promise<ReviewOutcome>
+  /** Reject every pending proposal of one record. One undo step. */
+  rejectRecord(rowId: string): ReviewOutcome
+  /**
+   * Who proposed what: each source with its pending, accepted and rejected
+   * counts, in the order they first proposed something.
+   */
+  sources(): Array<ProposalSource & { pending: number; accepted: number; rejected: number }>
+  /** The pending proposals of one source (its id, or its label). */
+  pendingFrom(source: string): Proposal[]
+  /**
+   * Propose undoing everything one source wrote that was accepted, across all
+   * its change sets: its id, its label ("Claude"), or a test of the source.
+   * Null when nothing of it was accepted.
+   */
+  revertSource(source: string | ((s: ProposalSource) => boolean)): ChangeSet | null
   /** Write these proposals: checks each cell still holds `before`, before and after `onCommit`. One undo step. */
   accept(ids: ReadonlyArray<string>): Promise<ReviewOutcome>
   /** Decide against these proposals; nothing is written. One undo step. */
@@ -189,7 +208,7 @@ export interface Review<TData = unknown> {
   merge(json: ReviewJSON): { dropped: number }
   /** Every decided proposal (accepted, rejected or stale), oldest decision first. */
   log(): Proposal[]
-  /** Propose undoing what a set wrote, as a new set to review; null when nothing of it was accepted. */
+  /** Propose undoing what a set wrote, as a new set to review; null when nothing of it was accepted. Same as `revertSource` for one set. */
   revertSet(setId: string): ChangeSet | null
   /** The sets in this review, newest last, without their proposals. */
   sets(): Array<Omit<ChangeSet, 'proposals'> & { count: number }>

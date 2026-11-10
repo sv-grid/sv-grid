@@ -241,13 +241,29 @@ under the viewport, `blockSize` rows at a time, keeps at most
 placeholders before its first block lands, so an expand never opens onto
 nothing.
 
+Reads follow the viewport. A viewport that jumps more than a block reads nothing
+until it has stood still for `leapPauseMs` (default 60, longer on a page too busy
+to move it that often), so a drag of the scrollbar asks only for where it stops.
+A step of less than a block, and a jump from a viewport at rest, read at once. A
+read of a block the viewport has left by more than a block stops, sent or not:
+`request.signal` aborts, its turn goes to the rows on screen, and the block reads
+again if the viewport comes back. A source that ignores the signal still loses
+the answer. Waiting reads go rows on screen first, then newest first.
+
 A sort, a filter or a regroup turns the rows on screen into placeholders
 until the new answer arrives. Against a source that answers quickly, that is
 a frame of skeletons and an extra render for nothing. `keepRowsWhileLoading`
 (milliseconds) keeps the current rows on screen instead, until the new
 answer's first block lands or the time runs out, whichever comes first. A
 failed block ends the wait at once, so its Retry shows. The default, 0, shows
-the placeholders straight away.
+the placeholders straight away. `keepRowsOnRefresh` does the same for
+`refresh()`, which re-reads the blocks in place.
+
+`keepRowsOnRefreshError: true` goes one further for `refresh()`: a loaded
+block whose re-read fails keeps the rows it had instead of turning into a
+failed row with Retry. `onLoadError` is still told, `levelStates()` lists the
+block in `staleBlocks`, and `retryLoads()` reads it again. Turn it on when
+your page says the read failed somewhere else, or the rows go stale in silence.
 
 `levelParams(level, route)` tunes one level: a different `blockSize` or
 `maxBlocksInCache`, `infinite: false` to load a level completely as soon as it
@@ -270,7 +286,9 @@ createServerRowModel(source, {
 
 | Method | Does |
 | ------ | ---- |
-| `refresh({ route, purge })` | Re-fetch a level in place (`route: []` is the root), keeping what is open; `purge: true` drops that subtree's cache first. |
+| `refresh()` | Grouped or tree data: the same as `refresh({ all: true })`. Flat: re-fetch the loaded blocks in place. Before anything has loaded, it loads the top level. |
+| `refresh({ route, purge })` | Re-fetch that one level in place (`route: []` is the root alone), keeping what is open; `purge: true` drops that subtree's cache first. |
+| `refresh({ all: true })` | Re-fetch the top level and the loaded blocks of every open group, in place: after a change made elsewhere, every group shows it, a row whose group changed moves, and the counts follow. A level under a closed group reads again when it is next shown. |
 | `retryLoads()` | Re-fetch every failed block. The grid draws a failed block as a tinted band with one full-width message and a Retry button. |
 | `expandAll({ includeUnloaded })` / `collapseAll()` | Open every loaded group, and with `includeUnloaded` every group that arrives later, until the next collapse. |
 | `isGroupOpenByDefault(route, row)` | Open a group as soon as it arrives. |

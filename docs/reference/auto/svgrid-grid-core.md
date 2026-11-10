@@ -411,6 +411,12 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
   fieldType?: string
   /** Properties of `fieldType` (options, precision, max files, ...). */
   fieldProps?: Record<string, unknown>
+  /**
+   * What the field is for, in a sentence. `@svgrid/enterprise/fields` shows
+   * it under the field in a form, and Edit field edits it; the grid itself
+   * does not draw it.
+   */
+  description?: string
   columns?: Array<ColumnDef<TFeatures, TData>>
   /**
    * Declarative cell spanning (merged cells). Return how many COLUMNS this
@@ -637,6 +643,19 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    * `blanksLast` does that). `sortValue` wins over it.
    */
   sortComparator?: (a: unknown, b: unknown, desc: boolean) => number
+  /**
+   * The order of the groups when grouping by this column: compares two group
+   * values. Without it, or while the view sorts by this column, groups come
+   * in the order their first rows have after sorting, so a sort on another
+   * column, or a new row, can move a whole group.
+   */
+  groupOrder?: (a: unknown, b: unknown) => number
+  /**
+   * The value rows are grouped by, in place of the cell's own: a list or an
+   * object cell (a checklist, say) groups by what it amounts to ("Done",
+   * "In progress"). Group rows and `groupOrder` see this value.
+   */
+  groupValue?: (value: unknown) => unknown
   /**
    * Aggregate this column's values into the group row when grouping is
    * active. `'sum' | 'avg' | 'min' | 'max' | 'count' | 'countDistinct' |
@@ -1104,9 +1123,7 @@ export const BASE_ROW_METHODS = {
   },
   getCellValueByColumnId(this: BaseRowState<RowData>, columnId: string) {
     const idx = this[ROW_CTX].columnIndexById.get(columnId)
-    if (idx === undefined) return undefined
-    if (!this[ROW_VALUES]) this[ROW_VALUES] = baseRowValues(this)
-    return this[ROW_VALUES][idx]
+    return idx === undefined ? undefined : rowValueAt(this, idx)
   },
 }
 ```

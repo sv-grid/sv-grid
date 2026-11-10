@@ -39,7 +39,7 @@ test.describe('SvGrid Base record menu (real browser)', () => {
     await expect(count(page)).toHaveText('10 records')
     await menuOn(page, 'Taxi to the airport')
     await expect(page.locator('.sv-grid-context-menu .sv-grid-menu-item')).toHaveText([
-      'Expand record', 'Comment', 'Insert record above', 'Insert record below', 'Duplicate record', 'Copy', 'Paste', 'Delete record',
+      'Expand record', 'Comment', 'Select record', 'Insert record above', 'Insert record below', 'Duplicate record', 'Copy', 'Paste', 'Delete record',
     ])
     await page.getByRole('menuitem', { name: 'Duplicate record' }).click()
     await expect(count(page)).toHaveText('11 records')

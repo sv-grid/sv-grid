@@ -6,7 +6,7 @@ timeline, and anyone in the company files a request through a form. Each of
 those is a saved view: a name, a type, and the filter, sorts, groups, hidden
 fields, row height and colors it had when someone last left it.
 
-![The Features table feeds six saved views: Roadmap by quarter (a grid grouped by Quarter, sorted by Impact, Lead hidden, row height 56, colored by Status), Now (a grid filtered to active work), Status board (a Kanban stacked by Status), Timeline (a calendar from Start to Target), Effort by team (a bar chart) and Request a feature (a form). onViewsChange hands the whole list to the app, which stores it and loads it back into bind:views.](/docs-media/base-views.svg)
+![The Features table feeds six saved views: Roadmap by quarter (a grid grouped by Quarter, sorted by Impact, Lead hidden, row height 56, colored by Status), Now (a grid filtered to active work), Status board (a Kanban stacked by Status), Timeline (bars from Start to Target), Effort by team (a bar chart) and Request a feature (a form). onViewsChange hands the whole list to the app, which stores it and loads it back into bind:views.](/docs-media/base-views.svg)
 
 <div data-docs-demo="513-base-product-roadmap" data-height="680"></div>
 
@@ -207,6 +207,9 @@ get one lane per option, in option order and color, plus "Uncategorized",
 which shows only while a record has no status. Stack by `lead` instead and
 the lanes are the people from `setFieldUsers`.
 
+Sort the view by a number field and a card dropped elsewhere in its lane takes
+a number between its neighbours', so the order is the table's and lasts.
+
 Drop a card in another lane and the status changes through the grid's edit
 path, so undo, validation and `onCellValueChange` all see it. "+ Add a card"
 adds a record already in that lane, named by the primary field.
@@ -227,17 +230,19 @@ their count; click it to open the record at its comment box.
 const timeline: FieldView = {
   id: 'timeline',
   name: 'Timeline',
-  type: 'calendar',
+  type: 'gantt',
   dateField: 'start',
   endField: 'target',
   color: { mode: 'field', field: 'status' },
 }
 ```
 
-Each feature spans its start to its target date. A date field without a time
-shows as all-day events. Drag an event to move both dates; drag its edge to
-change the target. The calendar's end is exclusive, so the record keeps the
-last day: a feature dragged to cover the 19th to the 21st gets
+Each feature is a bar from its start to its target date, beside a table of
+names and dates. Drag a bar to move both dates; drag its edge to change the
+target. One drag is one Ctrl+Z. `type: 'calendar'` with the same fields shows
+the features on a month instead: a date field without a time shows as all-day
+events. The end of a bar or an event is exclusive, so the record keeps the last
+day: a feature dragged to cover the 19th to the 21st gets
 `target: '2026-10-21'`.
 
 With only `dateField`, events move but cannot be resized. Pick a day (or a
@@ -600,8 +605,20 @@ When a table is narrower than 600px (its own width, not the window's), a
 grid view shows each record as a card: the primary field, then the next four
 fields the view shows, in the view's filter and sort. A tap opens the
 record, "+" adds one, and on a phone screen the opened record fills it. The
-view bar keeps its icons and the tab bar its tabs. Kanban, calendar, gallery
-and form views stay as they are.
+view bar keeps its icons and the tab bar its tabs.
+
+A card keeps what a row can do. A long press, the button on the card, a
+right-click, the Menu key or Shift+F10 opens the record's menu: expand, comment,
+select, insert above or below, duplicate and delete. A record selected this way
+shows on its card, as a ring on its list row, and in the selection bar. Copy and
+paste work on a cell, so they stay with the table. A gallery view and a list view
+have the same menu.
+
+A Kanban lane takes the table's width, the next lane a swipe away and
+snapped into place. A calendar opens in its agenda, the days listed one under
+another, since a month of seven columns has no room for a title; Month, Week
+and Day are a tap away. Gallery cards stand one per row, and a form is one
+column at any width.
 
 `phoneLayout` on `SvBase` moves the breakpoint (`phoneLayout={480}`), turns
 the cards on at every width (`true`) or keeps the grid (`false`).
@@ -687,18 +704,37 @@ filter, sorts or groups and every field shown.
 `viewTypes={['grid', 'kanban', 'calendar']}` on `SvBase` limits what
 "Create" offers.
 
-A Gantt is a calendar with a task table beside the bars. It is offered once
-the app has called `enableGanttView()` from `@svgrid/enterprise`. Its bars
-take the view's colors, `progressField` is a percent field drawn as each
+A timeline (`type: 'gantt'`) is a calendar with a task table beside the bars.
+"Create" offers it as Timeline in every base, and its renderer loads the first
+time one is shown. Its bars take the view's colors, `progressField` is a percent field drawn as each
 bar's fill, and `dependencyField` is a link field to the same table naming
 what each record waits for, drawn as arrows.
+
+A record's dates are its own: a drop on a Sunday stays on the Sunday. By keyboard a
+bar works as a calendar event does: Space picks it up, Left and Right carry it a day
+(Shift, a week), Space puts it down and Escape puts it back. Enter opens the record,
+Shift+F10 opens its menu, and Delete asks first, as a row's menu does.
+
+## When an edit changes where a record belongs
+
+A view's filter, sort and groups apply again after an edit, with one pause. In a
+grid the row you are working in stays where it is while it is the active row, so
+it does not leap away under the cursor; it takes its place when you move to
+another row, click outside the grid, or close its record. The record count follows
+at the same moment. An undo, a paste and a fill apply at once. A board, a calendar,
+a timeline, a gallery and a list show the change as soon as it is made, or when a
+record dialog closes. On a table read a page at a time the database is asked again
+at that moment, once it has the edit.
 
 ## The view bar, panel by panel
 
 - **Views menu** (the view's name): switch, rename, duplicate ("Roadmap by
-  quarter copy") and delete. The last view cannot be deleted.
+  quarter copy") and delete. Delete asks in the view's own row, and nothing moves
+  until the answer. A deleted view goes to the trash and is one step of undo. The
+  last view cannot be deleted.
 - **Hide fields**: a switch per field, a search, hide all and show all, and
-  drag to reorder. The primary field is always shown.
+  drag to reorder. The list keeps its order while you switch fields, and hidden
+  fields sit where they are in the table. The primary field is always shown.
 - **Filter**: "Where [field] [operator] [value]" rows joined by "and" or
   "or", and condition groups. Each change filters at once. A condition still
   missing its value filters nothing.

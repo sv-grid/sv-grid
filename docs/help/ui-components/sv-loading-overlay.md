@@ -34,13 +34,19 @@ import { SvLoadingOverlay } from '@svgrid/grid'
 
 ```svelte {runnable}
 <script lang="ts">
-  import { SvLoadingOverlay } from '@svgrid/grid'
+  import { SvLoadingOverlay, SvButton } from '@svgrid/grid'
   let loading = $state(false)
+
+  function save() {
+    loading = true
+    setTimeout(() => (loading = false), 1500)
+  }
 </script>
 
-<div style="position: relative">
+<div style="position: relative; max-width: 360px; padding: 16px; border: 1px solid var(--sg-border); border-radius: 8px;">
   <SvLoadingOverlay visible={loading} label="Saving…" />
-  <!-- panel content -->
+  <p style="margin: 0 0 12px;">Q3 budget draft, edited 2 minutes ago.</p>
+  <SvButton onclick={save}>Save</SvButton>
 </div>
 ```
 

@@ -195,7 +195,7 @@ export async function load() {
 }
 ```
 
-```svelte {runnable}
+```svelte {norun}
 <!-- +page.svelte -->
 <script lang="ts">
   import { SvGrid, tableFeatures, rowSortingFeature } from '@svgrid/grid'

@@ -251,6 +251,7 @@
   const columnResizeEnabled = $derived(opt.columnResize === true);
   const selectionColumnWidth = $derived(ctrl.selectionColumnWidth);
   const rowNumberColumnWidth = $derived(ctrl.rowNumberColumnWidth);
+  const rowNumberCellStyle = $derived(`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; inset-inline-start: 0;`);
   const detailToggleColumnWidth = $derived(ctrl.detailToggleColumnWidth);
   const detailToggleColumnLeft = $derived(ctrl.detailToggleColumnLeft);
   const showDetailToggleEffective = $derived(ctrl.showDetailToggleEffective);
@@ -339,14 +340,23 @@
   // records depth and expandability, so the accessors just read the row instead
   // of calling back into consumer callbacks.
   const treeData = $derived(opt.treeData);
+  /** When the fill handle appeared: a press on it just after is the cell's (clipboard.ts). */
+  function stampShown(node: HTMLElement) {
+    node.dataset.shownAt = String(performance.now());
+  }
+  /** Open or closed. The engine's state is no rune: the version makes a kept row follow it. */
+  function rowExpanded(row: Row<TData>): boolean {
+    ctrl.dataStateVersion;
+    return row.getIsExpanded?.() ?? false;
+  }
   function sgAriaLevel(row: Row<TData>): number | undefined {
-    if (treeData) return (row.depth ?? 0) + 1;
+    if (treeData || ctrl.groupingColumns.length) return (row.depth ?? 0) + 1;
     return serverGroup ? serverGroup.level(row.original as TData) + 1 : undefined;
   }
   function sgAriaExpanded(row: Row<TData>): boolean | undefined {
-    if (treeData) {
+    if (treeData || ctrl.groupingColumns.length) {
       if (!row.getCanExpand?.()) return undefined;
-      return row.getIsExpanded?.() ?? false;
+      return rowExpanded(row);
     }
     if (!serverGroup || !serverGroup.isGroup(row.original as TData)) return undefined;
     return serverGroup.expanded?.(row.original as TData) ?? false;
@@ -463,11 +473,9 @@
     ctrl.columnVirtualizationEnabled,
   );
   const virtualRows = $derived(ctrl.virtualRows);
-  // The first body row on screen: where a failed run that started above
-  // the window repeats its message.
-  const firstRenderedRowIndex = $derived(
-    rowVirtualizationEnabled ? (virtualRows[0]?.index ?? 0) : 0,
-  );
+  // The first body row wholly on screen, under the header: where a failed run
+  // that started above it repeats its message. The rendered window starts higher.
+  const firstShownRowIndex = $derived(ctrl.firstWholeRow);
   const frozenRowCount = $derived(ctrl.frozenRowCount);
   const frozenRowList = $derived(ctrl.frozenRowList);
   const stickyGroupRows = $derived(ctrl.stickyGroupRows);
@@ -1594,8 +1602,8 @@
       <button
         type="button"
         class="sv-grid-tree-toggle"
-        aria-expanded={row.getIsExpanded?.() ? "true" : "false"}
-        aria-label={row.getIsExpanded?.() ? "Collapse row" : "Expand row"}
+        aria-expanded={rowExpanded(row) ? "true" : "false"}
+        aria-label={rowExpanded(row) ? "Collapse row" : "Expand row"}
         onclick={(event) => {
           event.stopPropagation();
           row.toggleExpanded?.();
@@ -1618,8 +1626,8 @@
     <button
       type="button"
       class="sv-grid-tree-toggle"
-      aria-expanded={row.getIsExpanded?.() ? "true" : "false"}
-      aria-label={row.getIsExpanded?.() ? "Collapse group" : "Expand group"}
+      aria-expanded={rowExpanded(row) ? "true" : "false"}
+      aria-label={rowExpanded(row) ? "Collapse group" : "Expand group"}
       onclick={(event) => {
         event.stopPropagation();
         row.toggleExpanded?.();
@@ -1699,8 +1707,8 @@
       <button
         type="button"
         class="sv-grid-group-toggle"
-        aria-expanded={row.getIsExpanded?.() ? "true" : "false"}
-        aria-label={row.getIsExpanded?.() ? messages.collapseGroup : messages.expandGroup}
+        aria-expanded={rowExpanded(row) ? "true" : "false"}
+        aria-label={rowExpanded(row) ? messages.collapseGroup : messages.expandGroup}
         onclick={(event) => {
           event.stopPropagation();
           row.toggleExpanded?.();
@@ -1771,6 +1779,10 @@
     </tr>
   {/snippet}
 
+  {#snippet rowNumberBody(numberedRow: Row<TData>, numberedIndex: number)}
+    {#if RowHeader}<RowHeader {ctrl} row={numberedRow} rowIndex={numberedIndex} />{:else}<span class="sv-grid-cell-line">{numberedIndex + 1}</span>{/if}
+  {/snippet}
+
   <!-- A row whose data has not arrived.
 
        "loading" keeps the real columns and draws a shimmer bar in each,
@@ -1783,8 +1795,8 @@
 
        A failed block is a run of failed rows, one per row it claimed,
        and one message serves the run: the first failed row on screen
-       carries it (the run's first row, or the top of the window when
-       the run started above it) and the rows under it are a plain
+       carries it (the run's first row, or the first row under the header
+       when the run started above it) and the other rows are a plain
        tinted band. A hundred "Could not load" lines for one block
        was a wall of red. -->
   {#snippet placeholderRowMarkup(
@@ -1825,10 +1837,14 @@
         </td>
       {:else}
         {#if showRowNumbersEffective}
-          <td class="sv-grid-cell sv-grid-rownum-cell"></td>
+          <td
+            class="sv-grid-cell sv-grid-row-number-cell"
+            style={rowNumberCellStyle}
+            >{@render rowNumberBody(phRow, phRowIndex)}</td
+          >
         {/if}
         {#if showRowSelectionEffective}
-          <td class="sv-grid-cell sv-grid-select-cell"></td>
+          <td class="sv-grid-cell sv-grid-selection-cell"></td>
         {/if}
         {#if showDetailToggleEffective}
           <td class="sv-grid-cell sv-grid-detail-toggle-cell"></td>
@@ -1864,7 +1880,8 @@
                   {#if phState}
                     {@const phContinues =
                       phState === "failed" &&
-                      rowIndex > firstRenderedRowIndex &&
+                      rowIndex > 0 &&
+                      rowIndex !== firstShownRowIndex &&
                       ctrl.placeholderStateOf(allRows[rowIndex - 1]!) === "failed"}
                     {@render placeholderRowMarkup(row, rowIndex, phState, rowStyle, phContinues)}
                   {:else if opt.isDetailRow?.(row.original as TData, rowIndex)}
@@ -1879,7 +1896,7 @@
                       class:sv-grid-row-sticky-group={stickyTop !== undefined}
                       style:top={rowIndex < frozenRowCount ? `${frozenRowTop(rowIndex)}px` : stickyTop !== undefined ? `${stickyTop}px` : undefined}
                       aria-level={row.depth + 1}
-                      aria-expanded={row.getIsExpanded?.() ? "true" : "false"}
+                      aria-expanded={rowExpanded(row) ? "true" : "false"}
                       {...getGridRowA11yProps(rowIndex + 1)}
                       class:sv-grid-row-collapsed={ctrl.isRowCollapsed(rowIndex)}
                       style={rowStyle}
@@ -1888,6 +1905,7 @@
                         class="sv-grid-cell sv-grid-group-cell"
                         class:sv-grid-cell-active={activeCell.rowIndex ===
                           rowIndex}
+                        id={activeCell.rowIndex === rowIndex ? activeDescendantId : undefined}
                         colspan={allColumns.length +
                           (showRowNumbersEffective ? 1 : 0) +
                           (showRowSelectionEffective ? 1 : 0) +
@@ -1926,10 +1944,10 @@
                       {#if showRowNumbersEffective}
                         <td
                           class="sv-grid-cell sv-grid-row-number-cell"
-                          style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; inset-inline-start: 0;`}
+                          style={rowNumberCellStyle}
                           title={gridExt?.rowMarkLabel?.(ctrl, row.original, rowIndex) ?? undefined}
                           {...rowDragHandle(rowIndex)}
-                          >{#if RowHeader}<RowHeader {ctrl} {row} {rowIndex} />{:else}<span class="sv-grid-cell-line">{rowIndex + 1}</span>{/if}</td
+                          >{@render rowNumberBody(row, rowIndex)}</td
                         >
                       {/if}
                       {#if showRowSelectionEffective && isSummaryRow(row)}
@@ -1950,7 +1968,7 @@
                               class="sv-grid-checkbox"
                               role="checkbox"
                               aria-checked={isRowSelected(row.id, row.original)}
-                              aria-label="Select row"
+                              aria-label={messages.selectRow}
                               onclick={(event) => {
                                 event.stopPropagation();
                                 toggleRowSelectionById(row.id, row.original);
@@ -1987,11 +2005,7 @@
                         </td>
                       {/if}
                       {#if columnVirtualizationEnabled && columnWindowStart > 0}
-                        <td
-                          class="sv-grid-cell sv-grid-cell-spacer"
-                          aria-hidden="true"
-                          style={`width: ${columnWindowStart}px; min-width: ${columnWindowStart}px; max-width: ${columnWindowStart}px;`}
-                        ></td>
+                        {@render cellGap(columnWindowStart)}
                       {/if}
                       {#each renderedColumns as rendered (rendered.key)}
                         {@const c = bodyCellInfo(row, rowIndex, rendered)}
@@ -2121,6 +2135,7 @@
                             <!-- svelte-ignore a11y_no_static_element_interactions -->
                             <div
                               class="sv-grid-fill-handle"
+                              use:stampShown
                               role="button"
                               aria-label="Fill handle"
                               tabindex={-1}
@@ -2129,6 +2144,7 @@
                               ondblclick={(event) => {
                                 // Not the cell's double-click: this fills
                                 // down as far as the neighbour column goes.
+                                if (!ctrl.fillHandlePressedTwice()) return;
                                 event.stopPropagation();
                                 event.preventDefault();
                                 ctrl.fillDownToNeighbour();
@@ -2165,11 +2181,7 @@
                         {/if}
                       {/each}
                       {#if showRightSpacer}
-                        <td
-                          class="sv-grid-cell sv-grid-cell-spacer"
-                          aria-hidden="true"
-                          style={`width: ${columnWindowRightSpacer}px; min-width: ${columnWindowRightSpacer}px; max-width: ${columnWindowRightSpacer}px;`}
-                        ></td>
+                        {@render cellGap(columnWindowRightSpacer)}
                       {/if}
                     </tr>
                   {/if}
@@ -2227,7 +2239,7 @@
         {#if showRowNumbersEffective}
           <td
             class="sv-grid-cell sv-grid-row-number-cell"
-            style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; left: 0;`}
+            style={rowNumberCellStyle}
             ><span class="sv-grid-cell-line">{rowIndex + 1}</span></td
           >
         {/if}
@@ -2289,7 +2301,7 @@
       {#if showRowNumbersEffective}
         <td
           class="sv-grid-cell sv-grid-row-number-cell"
-          style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; inset-inline-start: 0;`}
+          style={rowNumberCellStyle}
           ><span class="sv-grid-cell-line"
             >{#if where === "top"}{@render icon("pinned-row-top")}{:else}{@render icon("pinned-row-bottom")}{/if}</span
           ></td
@@ -2308,11 +2320,7 @@
         ></td>
       {/if}
       {#if columnVirtualizationEnabled && columnWindowStart > 0}
-        <td
-          class="sv-grid-cell sv-grid-cell-spacer"
-          aria-hidden="true"
-          style={`width: ${columnWindowStart}px; min-width: ${columnWindowStart}px; max-width: ${columnWindowStart}px;`}
-        ></td>
+        {@render cellGap(columnWindowStart)}
       {/if}
       {#each renderedColumns as rendered (rendered.column.id)}
         {@const value = getPinnedCellValue(rowData, rendered.column)}
@@ -2331,11 +2339,7 @@
         >
       {/each}
       {#if showRightSpacer}
-        <td
-          class="sv-grid-cell sv-grid-cell-spacer"
-          aria-hidden="true"
-          style={`width: ${columnWindowRightSpacer}px; min-width: ${columnWindowRightSpacer}px; max-width: ${columnWindowRightSpacer}px;`}
-        ></td>
+        {@render cellGap(columnWindowRightSpacer)}
       {/if}
     </tr>
   {/snippet}
@@ -2372,6 +2376,7 @@
       },
       canResize: (columnId) => ctrl.columnResizable(columnId),
       onAutosize: (columnId) => ctrl.autosizeColumnByUser(columnId),
+      words: { name: messages.resizeColumn, width: messages.resizeWidth },
     }}
   >
     {#if showGlobalFilterEffective}
@@ -2433,7 +2438,7 @@
         typeof opt.containerHeight === "string"
           ? opt.containerHeight
           : `${opt.containerHeight ?? 520}px`
-      }; --sg-thead-h: ${headerHeight}px; --sg-frozen-h: ${frozenBandHeight}px; --sg-pinned-row-h: ${typeof opt.rowHeight === "number" ? opt.rowHeight : 30}px;`}
+      }; --sg-thead-h: ${headerHeight}px; --sg-frozen-h: ${frozenBandHeight}px; --sg-pinned-row-h: ${typeof opt.rowHeight === "number" ? opt.rowHeight : 30}px; --sg-pin-start: ${ctrl.pinnedOffsets.start}px; --sg-pin-end: ${ctrl.pinnedOffsets.end}px;`}
     >
       <div
         class="sv-grid-container sv-grid-container-custom-scrollbars"
@@ -2454,9 +2459,13 @@
             activeDescendantId,
             rowCount: allRows.length,
             colCount: allColumns.length,
-            treegrid: !!opt.serverGroup || !!opt.treeData,
+            treegrid: !!opt.serverGroup || !!opt.treeData || !!groupingColumns.length,
           })}
+          aria-label={opt.gridLabel}
           onkeydown={onGridKeyDown}
+          oncontextmenu={(event) => {
+            if (event.target === event.currentTarget) ctrl.openActiveCellMenu(event);
+          }}
           onpaste={onGridPaste}
           style={`min-width: ${totalColumnWidth + ctrl.systemColumnsWidth}px;`}
         >
@@ -2477,7 +2486,7 @@
                 {#if showRowNumbersEffective}
                   <th
                     class="sv-grid-column sv-grid-row-number-column"
-                    style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; inset-inline-start: 0;`}
+                    style={rowNumberCellStyle}
                     aria-hidden="true"
                   ></th>
                 {/if}
@@ -2496,11 +2505,7 @@
                   ></th>
                 {/if}
                 {#if columnVirtualizationEnabled && columnWindowStart > 0}
-                  <th
-                    class="sv-grid-column sv-grid-column-spacer"
-                    aria-hidden="true"
-                    style={`width: ${columnWindowStart}px; min-width: ${columnWindowStart}px; max-width: ${columnWindowStart}px;`}
-                  ></th>
+                  {@render columnGap(columnWindowStart)}
                 {/if}
                 {#each row.cells as cell (cell.key)}
                   {#if cell.gapBefore}{@render columnGap(cell.gapBefore)}{/if}
@@ -2541,11 +2546,7 @@
                   </th>
                 {/each}
                 {#if showRightSpacer}
-                  <th
-                    class="sv-grid-column sv-grid-column-spacer"
-                    aria-hidden="true"
-                    style={`width: ${columnWindowRightSpacer}px; min-width: ${columnWindowRightSpacer}px; max-width: ${columnWindowRightSpacer}px;`}
-                  ></th>
+                  {@render columnGap(columnWindowRightSpacer)}
                 {/if}
               </tr>
             {/each}
@@ -2560,14 +2561,14 @@
                 {#if showRowNumbersEffective}
                   <th
                     class="sv-grid-column sv-grid-row-number-column"
-                    style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; inset-inline-start: 0;`}
+                    style={rowNumberCellStyle}
                   >
                     <!-- The corner over the row gutter. Its only content is an
                          icon, which is aria-hidden, so the name comes from a
                          visually-hidden span rather than an aria-label: axe's
                          `empty-table-header` asks a th for text a screen
                          reader can read, and a label attribute is not it. -->
-                    <span class="sv-grid-sr-only">Row number</span>
+                    <span class="sv-grid-sr-only">{messages.rowNumber}</span>
                     <span class="sv-grid-row-number-head"
                       >{@render icon("row-number")}</span
                     >
@@ -2587,7 +2588,7 @@
                         : headerSelectionState === "some"
                           ? "mixed"
                           : "false"}
-                      aria-label="Select all rows"
+                      aria-label={messages.selectAllRows}
                       onclick={toggleSelectAllRows}
                       onkeydown={(event) =>
                         toggleCheckboxWithKeyboard(event, toggleSelectAllRows)}
@@ -2602,11 +2603,7 @@
                   ></th>
                 {/if}
                 {#if columnVirtualizationEnabled && columnWindowStart > 0}
-                  <th
-                    class="sv-grid-column sv-grid-column-spacer"
-                    aria-hidden="true"
-                    style={`width: ${columnWindowStart}px; min-width: ${columnWindowStart}px; max-width: ${columnWindowStart}px;`}
-                  ></th>
+                  {@render columnGap(columnWindowStart)}
                 {/if}
                 {#each renderedColumns as rendered (rendered.key)}
                   {@const header = headerGroup.headers[rendered.item.index]}
@@ -2661,9 +2658,13 @@
                       {#if !header.isPlaceholder}
                         <div class="sv-grid-header-cell">
                           {#if typeof header.column.columnDef.header === "function"}
-                            {@const rendered = header.column.columnDef.header(
-                              header.getContext(),
-                            )}
+                            <!-- `sortDirection` goes in as an argument so the
+                                 callback runs again when this column's sort
+                                 changes: it reads ctx.column.getIsSorted(),
+                                 table state Svelte does not track, so a header
+                                 showing its sort state kept the first one. -->
+                            {@const rendered = ((_sort) =>
+                              header.column.columnDef.header(header.getContext()))(sortDirection)}
                             <!-- Custom header (snippet/component): rendered
                                  OUTSIDE the sort button so the consumer's
                                  own interactive elements (menu buttons,
@@ -2679,16 +2680,16 @@
                                 if (!header.column.getCanSort()) return;
                                 // If the click landed on an interactive
                                 // element inside the custom header, let
-                                // that element handle it.
+                                // that element handle it. This wrapper is
+                                // itself role="button", so a match on it
+                                // means plain header content was clicked:
+                                // comparing the target alone missed that,
+                                // and a click on the label never sorted.
                                 const t = event.target as HTMLElement | null;
-                                if (
-                                  t &&
-                                  t.closest(
-                                    'button, a, input, select, textarea, [role="button"], [role="menuitem"]',
-                                  ) &&
-                                  !t.classList.contains("sv-grid-header-custom")
-                                )
-                                  return;
+                                const hit = t?.closest(
+                                  'button, a, input, select, textarea, [role="button"], [role="menuitem"]',
+                                );
+                                if (hit && hit !== event.currentTarget) return;
                                 onHeaderSortClick(event, header.column.id);
                               }}
                               onkeydown={(event) => {
@@ -2767,7 +2768,7 @@
                           {#if isGrouped}
                             <span
                               class="sv-grid-header-icon sv-grid-header-icon-flag"
-                              title="Grouped">{@render icon("group")}</span
+                              title={messages.grouped}>{@render icon("group")}</span
                             >
                           {/if}
                           {#if header.column.getCanFilter()}
@@ -2778,7 +2779,7 @@
                               class:is-active={isColumnFiltered(
                                 header.column.id,
                               )}
-                              aria-label={`Filter ${toolPanelHeaderLabel(header.column)}`}
+                              aria-label={messages.filterColumn.replace("{column}", toolPanelHeaderLabel(header.column))}
                               aria-haspopup="menu"
                               onclick={(event) =>
                                 openFilterMenu(event, header.column.id)}
@@ -2790,7 +2791,7 @@
                             type="button"
                             class="sv-grid-col-menu-btn"
                             class:is-open={columnMenuFor === header.column.id}
-                            aria-label={`${toolPanelHeaderLabel(header.column)} column menu`}
+                            aria-label={messages.columnMenu.replace("{column}", toolPanelHeaderLabel(header.column))}
                             aria-haspopup="menu"
                             onclick={(event) =>
                               openColumnMenu(event, header.column.id)}
@@ -2803,11 +2804,7 @@
                   {/if}
                 {/each}
                 {#if showRightSpacer}
-                  <th
-                    class="sv-grid-column sv-grid-column-spacer"
-                    aria-hidden="true"
-                    style={`width: ${columnWindowRightSpacer}px; min-width: ${columnWindowRightSpacer}px; max-width: ${columnWindowRightSpacer}px;`}
-                  ></th>
+                  {@render columnGap(columnWindowRightSpacer)}
                 {/if}
                 {#if gridExt?.headerEnd}<gridExt.headerEnd {ctrl} />{/if}
               </tr>
@@ -2816,7 +2813,7 @@
                   {#if showRowNumbersEffective}
                     <th
                       class="sv-grid-column sv-grid-row-number-column"
-                      style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; inset-inline-start: 0;`}
+                      style={rowNumberCellStyle}
                     ></th>
                   {/if}
                   {#if showRowSelectionEffective}
@@ -2838,11 +2835,7 @@
                     ></th>
                   {/if}
                   {#if columnVirtualizationEnabled && columnWindowStart > 0}
-                    <th
-                      class="sv-grid-column sv-grid-column-spacer"
-                      aria-hidden="true"
-                      style={`width: ${columnWindowStart}px; min-width: ${columnWindowStart}px; max-width: ${columnWindowStart}px;`}
-                    ></th>
+                    {@render columnGap(columnWindowStart)}
                   {/if}
                   {#each renderedColumns as rendered (rendered.key)}
                     {@const activeOperator =
@@ -3047,11 +3040,7 @@
                     </th>
                   {/each}
                   {#if showRightSpacer}
-                    <th
-                      class="sv-grid-column sv-grid-column-spacer"
-                      aria-hidden="true"
-                      style={`width: ${columnWindowRightSpacer}px; min-width: ${columnWindowRightSpacer}px; max-width: ${columnWindowRightSpacer}px;`}
-                    ></th>
+                    {@render columnGap(columnWindowRightSpacer)}
                   {/if}
                 </tr>
               {/if}
@@ -3177,7 +3166,7 @@
                   <!-- Blank spacer, not a header - see the selection cell below. -->
                   <td
                     class="sv-grid-column sv-grid-summary-column sv-grid-row-number-column"
-                    style={`width: ${rowNumberColumnWidth}px; min-width: ${rowNumberColumnWidth}px; max-width: ${rowNumberColumnWidth}px; inset-inline-start: 0;`}
+                    style={rowNumberCellStyle}
                   ></td>
                 {/if}
                 {#if showRowSelectionEffective}
@@ -3197,11 +3186,7 @@
                   ></td>
                 {/if}
                 {#if columnVirtualizationEnabled && columnWindowStart > 0}
-                  <th
-                    class="sv-grid-column sv-grid-column-spacer"
-                    aria-hidden="true"
-                    style={`width: ${columnWindowStart}px; min-width: ${columnWindowStart}px; max-width: ${columnWindowStart}px;`}
-                  ></th>
+                  {@render columnGap(columnWindowStart)}
                 {/if}
                 {#each renderedColumns as rendered (rendered.key)}
                   {#if rendered.gap > 0}{@render columnGap(rendered.gap)}{/if}
@@ -3215,11 +3200,7 @@
                   </th>
                 {/each}
                 {#if showRightSpacer}
-                  <th
-                    class="sv-grid-column sv-grid-column-spacer"
-                    aria-hidden="true"
-                    style={`width: ${columnWindowRightSpacer}px; min-width: ${columnWindowRightSpacer}px; max-width: ${columnWindowRightSpacer}px;`}
-                  ></th>
+                  {@render columnGap(columnWindowRightSpacer)}
                 {/if}
               </tr>
               {#if gridExt?.footEnd}<gridExt.footEnd {ctrl} />{/if}

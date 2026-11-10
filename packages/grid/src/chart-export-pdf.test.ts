@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { buildChartPdf, printChart } from './chart-export-pdf'
+import { buildChartPdf, ChartPdfTextError, pdfUndrawable, printChart } from './chart-export-pdf'
 
 const ascii = (bytes: Uint8Array) => Array.from(bytes, (b) => String.fromCharCode(b)).join('')
 
@@ -25,6 +25,19 @@ describe('buildChartPdf', () => {
     expect(text.trimEnd().endsWith('%%EOF')).toBe(true)
     // The JPEG bytes are in there verbatim.
     expect(text).toContain(ascii(jpeg.bytes))
+  })
+
+  it('writes Western European text as WinAnsi, and refuses text its font cannot draw, never a `?`', () => {
+    const text = ascii(buildChartPdf(jpeg, { title: 'Café €12 – “Q1”', caption: 'Straße Œuvre' }))
+    // e acute stays 0xE9; the euro sign, en dash and curly quotes take their WinAnsi bytes.
+    expect(text).toContain('(Café \u0080' + '12 \u0096 \u0093Q1\u0094) Tj')
+    expect(text).toContain('(Straße \u008cuvre) Tj')
+    for (const title of ['Продажи', '売上', 'מכירות', 'Sales 🚀']) {
+      expect(() => buildChartPdf(jpeg, { title })).toThrow(ChartPdfTextError)
+      expect(() => buildChartPdf(jpeg, { subtitle: title })).toThrow(title)
+    }
+    expect(pdfUndrawable('Revenue', undefined, 'Продажи')).toBe('Продажи')
+    expect(pdfUndrawable('Café €', '')).toBeNull()
   })
 
   it('has an xref table whose offsets point at each object', () => {
@@ -64,21 +77,22 @@ describe('printChart', () => {
     const host = document.createElement('div')
     host.innerHTML = '<svg class="sv-grid-chart-svg" viewBox="0 0 100 50"><rect class="sv-grid-chart-bar" width="10" height="10" fill="#f00"/></svg>'
     document.body.appendChild(host)
-    const written: string[] = []
-    const fake = {
-      document: { write: (s: string) => written.push(s), close: () => {}, readyState: 'complete' },
-      focus: vi.fn(),
-      print: vi.fn(),
-      addEventListener: vi.fn(),
-    }
+    // A real document, so a write of an HTML string would show: the window is built node by node.
+    const popup = document.implementation.createHTMLDocument('')
+    const write = vi.spyOn(popup, 'write')
+    const fake = { document: popup, focus: vi.fn(), print: vi.fn() }
     vi.spyOn(window, 'open').mockReturnValue(fake as unknown as Window)
     vi.useFakeTimers()
     expect(printChart(host, { title: 'Q1 <sales>' })).toBe(true)
+    // jsdom loads no image: the print waits for its load.
+    popup.querySelector('img')!.dispatchEvent(new Event('load'))
     vi.runAllTimers()
     vi.useRealTimers()
     expect(fake.print).toHaveBeenCalledTimes(1)
-    expect(written.join('')).toContain('<h1>Q1 &lt;sales&gt;</h1>')
-    expect(written.join('')).toContain('sv-grid-chart-bar')
+    expect(write).not.toHaveBeenCalled()
+    expect(popup.title).toBe('Q1 <sales>')
+    expect(popup.querySelector('h1')!.textContent).toBe('Q1 <sales>')
+    expect(decodeURIComponent(popup.querySelector('img')!.getAttribute('src')!)).toContain('sv-grid-chart-bar')
     host.remove()
   })
 

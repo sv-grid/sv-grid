@@ -96,6 +96,118 @@ describe('onGridKeyDown / guards', () => {
   })
 })
 
+describe('onGridKeyDown / the context menu keys', () => {
+  it('the Menu key opens the menu of the active cell', () => {
+    const ctx = makeCtx({ openActiveCellMenu: vi.fn() })
+    const e = rootKeyEvent({ key: 'ContextMenu' })
+    createKeyboard(ctx).onGridKeyDown(e)
+    expect(ctx.openActiveCellMenu).toHaveBeenCalledWith(e)
+  })
+
+  it('Shift+F10 opens it too, and does not start editing as F2 would', () => {
+    const ctx = makeCtx({ openActiveCellMenu: vi.fn() })
+    createKeyboard(ctx).onGridKeyDown(rootKeyEvent({ key: 'F10', shiftKey: true }))
+    expect(ctx.openActiveCellMenu).toHaveBeenCalledTimes(1)
+    expect(ctx.onCellDoubleClick).not.toHaveBeenCalled()
+  })
+
+  it('F10 alone is left to the browser', () => {
+    const ctx = makeCtx({ openActiveCellMenu: vi.fn() })
+    createKeyboard(ctx).onGridKeyDown(rootKeyEvent({ key: 'F10' }))
+    expect(ctx.openActiveCellMenu).not.toHaveBeenCalled()
+  })
+})
+
+describe('onGridKeyDown / a grouped grid', () => {
+  const groupRow = (open: boolean, depth = 0) => ({ depth, getCanExpand: () => true, getIsExpanded: () => open, toggleExpanded: vi.fn() })
+  const leaf = (depth = 1) => ({ depth, getCanExpand: () => false, original: {} })
+  const grouped = (rows: unknown[], rowIndex = 0) =>
+    makeCtx({ allRows: rows, allColumns: [{ id: 'a', columnDef: {} }, { id: 'b', columnDef: {} }], state: { grouping: ['a'], activeCell: { rowIndex, colIndex: 0, cellId: null } } })
+
+  it('Right opens a closed group and Left closes an open one', () => {
+    const closed = groupRow(false)
+    createKeyboard(grouped([closed])).onGridKeyDown(rootKeyEvent({ key: 'ArrowRight' }))
+    expect(closed.toggleExpanded).toHaveBeenCalledTimes(1)
+    const open = groupRow(true)
+    createKeyboard(grouped([open, leaf()])).onGridKeyDown(rootKeyEvent({ key: 'ArrowLeft' }))
+    expect(open.toggleExpanded).toHaveBeenCalledTimes(1)
+  })
+
+  it('Enter and Space toggle a group, and Ctrl+Enter still does', () => {
+    for (const init of [{ key: 'Enter' }, { key: ' ' }, { key: 'Enter', ctrlKey: true }]) {
+      const row = groupRow(true)
+      createKeyboard(grouped([row, leaf()])).onGridKeyDown(rootKeyEvent(init))
+      expect(row.toggleExpanded).toHaveBeenCalledTimes(1)
+    }
+  })
+
+  it('Right on an open group goes to its first row', () => {
+    const ctx = grouped([groupRow(true), leaf()])
+    createKeyboard(ctx).onGridKeyDown(rootKeyEvent({ key: 'ArrowRight' }))
+    expect(ctx.setActiveCell).toHaveBeenCalledWith(1, 0)
+  })
+
+  it('Left on a closed group goes to the group above it', () => {
+    const ctx = grouped([groupRow(true, 0), groupRow(false, 1), groupRow(false, 1)], 2)
+    createKeyboard(ctx).onGridKeyDown(rootKeyEvent({ key: 'ArrowLeft' }))
+    expect(ctx.setActiveCell).toHaveBeenCalledWith(0, 0)
+  })
+
+  it('on a leaf the arrows walk cells and Enter moves down', () => {
+    const ctx = grouped([groupRow(true), leaf(), leaf()], 1)
+    createKeyboard(ctx).onGridKeyDown(rootKeyEvent({ key: 'ArrowRight' }))
+    expect(ctx.setActiveCell).toHaveBeenLastCalledWith(1, 1)
+  })
+
+  it('Shift+Arrow on a group grows the range, it toggles nothing', () => {
+    const row = groupRow(false)
+    const ctx = grouped([row, leaf()])
+    createKeyboard(ctx).onGridKeyDown(rootKeyEvent({ key: 'ArrowRight', shiftKey: true }))
+    expect(row.toggleExpanded).not.toHaveBeenCalled()
+  })
+})
+
+describe('onGridKeyDown / an IME composition', () => {
+  it('leaves a key that belongs to a composition alone', () => {
+    const ctx = makeCtx()
+    createKeyboard(ctx).onGridKeyDown(rootKeyEvent({ key: 'Enter', isComposing: true }))
+    createKeyboard(ctx).onGridKeyDown(rootKeyEvent({ key: 'a', keyCode: 229 }))
+    expect(ctx.setActiveCell).not.toHaveBeenCalled()
+    expect(ctx.startEditingWithChar).not.toHaveBeenCalled()
+  })
+})
+
+describe('onGridKeyDown / right to left', () => {
+  function rtlKey(key: string) {
+    const el = document.createElement('div')
+    el.dir = 'rtl'
+    document.body.appendChild(el)
+    const event = new KeyboardEvent('keydown', { key, cancelable: true })
+    Object.defineProperty(event, 'target', { value: el })
+    Object.defineProperty(event, 'currentTarget', { value: el })
+    return { event, done: () => el.remove() }
+  }
+  const moved = (key: string) => {
+    const ctx = makeCtx({ allRows: [{}, {}, {}], allColumns: [{ id: 'a' }, { id: 'b' }, { id: 'c' }] })
+    const { event, done } = rtlKey(key)
+    createKeyboard(ctx).onGridKeyDown(event)
+    done()
+    return ctx.setActiveCell.mock.calls[0]
+  }
+
+  it('ArrowRight goes to the previous column, which lies to the right', () => {
+    expect(moved('ArrowRight')).toEqual([1, 0])
+  })
+
+  it('ArrowLeft goes to the next column', () => {
+    expect(moved('ArrowLeft')).toEqual([1, 2])
+  })
+
+  it('ArrowUp and ArrowDown stay as they are', () => {
+    expect(moved('ArrowDown')).toEqual([2, 1])
+  })
+})
+
 describe('onGridKeyDown / clipboard shortcuts', () => {
   it('Ctrl+C copies the selection', () => {
     const ctx = makeCtx()

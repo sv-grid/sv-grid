@@ -374,9 +374,15 @@ The board is fully keyboard operable, so drag-and-drop is not mouse-only. Focus
 a card and:
 
 - **Space** / **Enter** - grab it (press again to drop).
-- **Arrow Left / Right** - move it to the previous / next lane.
-- **Arrow Up / Down** - reorder it within its lane.
-- **Escape** - cancel and restore its original position.
+- **Arrow Left / Right** - show it in the previous / next lane.
+- **Arrow Up / Down** - show it higher or lower in its lane.
+- **Escape** - cancel and put it back. Tab or a click elsewhere does the same.
+
+The arrows only show where the card is going. `onCardMove` and `onCardReorder`
+fire once, on the drop, from where the card was picked up to where it landed, so
+Escape has nothing to take back and two lanes in one carry are one write. On a
+`server` board the card stays in its lane until the drop, and the drop marker
+shows where it is going.
 
 Every step is announced through an ARIA live region for screen-reader users.
 

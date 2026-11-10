@@ -35,6 +35,12 @@ export type ServerFilterModel = {
   /** Free-text global search. */
   global?: string
   /**
+   * The fields the global search looks in, by the name the data source knows
+   * them. Absent: the source's own choice. A field left out is not searched,
+   * so a hidden field cannot be found through the search box.
+   */
+  searchIn?: string[]
+  /**
    * Per-column filters, keyed by column id. `value` (+ `valueTo`) carry the
    * operator-style filter; `selectedValues` carries a facet/checklist
    * selection (set-filter). Either or both may be present.
@@ -50,15 +56,21 @@ export type ServerFilterModel = {
    *
    * CONTRACT - all or nothing. A backend that receives this MUST either:
    *
-   *   (a) translate the WHOLE expression into its query, make `rowCount`
-   *       reflect it, and set `appliedExpression: true` on the result; or
+   *   (a) evaluate EVERY condition on the value the cell shows, make
+   *       `rowCount` reflect it, and set `appliedExpression: true` on the
+   *       result; or
    *   (b) apply none of it and leave `appliedExpression` unset.
    *
-   * Partial application is a contract violation, not a degraded mode: it
-   * returns a SUPERSET of the requested rows while the UI says the filter is
-   * on. That is strictly worse than not filtering, because nothing about the
-   * result looks wrong. When the ack is missing the grid says so rather than
-   * filtering the loaded page itself - see `ServerState.expressionUnapplied`.
+   * A backend that cannot work out a field the expression names (a formula, a
+   * lookup) takes (b) for the WHOLE expression. It must never read that field
+   * as blank: "contains Gold" would match nothing and "is empty" everything,
+   * and neither looks wrong.
+   *
+   * A partial application is not an application: it returns a SUPERSET of the
+   * requested rows while the UI says the filter is on. That is strictly worse
+   * than not filtering, because nothing about the result looks wrong. When the
+   * ack is missing the grid says so rather than filtering the loaded page
+   * itself - see `ServerState.expressionUnapplied`.
    */
   expression?: GridPredicateExpr
   /**
@@ -108,6 +120,12 @@ export type ServerRequest = {
    * **leaf rows** under that path.
    */
   groupKeys?: string[]
+  /**
+   * Group a link field by the id of the record it points at, not by that
+   * record's name: a base asking how many records point at each of several
+   * records. A backend grouping on a foreign key does this already.
+   */
+  groupRawKeys?: boolean
   /** Value columns to aggregate per group. */
   aggregations?: ServerAggregation[]
   /**
@@ -365,8 +383,12 @@ export type ServerDataSource<TData> = {
    * Calling a controller method whose source counterpart is missing throws.
    */
   createRow?(input: Partial<TData>): Promise<TData>
+  /** Create a block of records in one call, answering in the same order. Without it they go one `createRow` at a time. */
+  createRows?(input: ReadonlyArray<Partial<TData>>, options?: { keepIds?: boolean }): Promise<TData[]>
   updateRow?(id: string, patch: Partial<TData>): Promise<TData>
   deleteRow?(id: string): Promise<void>
+  /** Delete a block of records in one call. Without it they go one `deleteRow` at a time. */
+  deleteRows?(ids: ReadonlyArray<string>): Promise<void>
   /**
    * Apply one patch to every row a selection RULE names, server-side - the
    * write behind a bulk edit of rows the grid never loaded. `filterModel`

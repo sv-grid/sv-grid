@@ -8,6 +8,7 @@
   import type { Snippet } from "svelte";
   import type { GridIconName } from "./grid-icons";
   import type { SvGridController } from "./SvGrid.controller.svelte";
+  import { resolveGridMenuMessages } from "./grid-menu-messages";
 
   let {
     ctrl,
@@ -18,6 +19,10 @@
   } = $props();
 
   const findHits = $derived(ctrl.findHits);
+  const m = $derived(resolveGridMenuMessages(ctrl.props.localization?.text));
+  // Not the `autofocus` attribute: Svelte applies it only when nothing has
+  // focus, and the bar is opened from the grid or a button that does.
+  const takeFocus = (node: HTMLInputElement) => node.focus();
 
   function step(by: number) {
     if (findHits.length === 0) return;
@@ -39,14 +44,13 @@
 
 <!-- Anchored to the TOP of the grid root so it tracks the grid even when the
      page scrolls. -->
-<div class="sv-grid-find" role="search" aria-label="Find in grid">
+<div class="sv-grid-find" role="search" aria-label={m.findLabel}>
   {@render icon("search")}
-  <!-- svelte-ignore a11y_autofocus -->
   <input
     class="sv-grid-find-input"
     type="search"
-    placeholder="Find in grid…"
-    autofocus
+    placeholder={m.findPlaceholder}
+    use:takeFocus
     bind:value={ctrl.findQuery}
     oninput={() => (ctrl.findHitIndex = 0)}
     onkeydown={(event) => {
@@ -63,26 +67,26 @@
   />
   <span class="sv-grid-find-count">
     {findHits.length === 0 && ctrl.findQuery.trim()
-      ? "No matches"
+      ? m.findNoMatches
       : findHits.length === 0
         ? ""
-        : `${ctrl.findHitIndex + 1} of ${findHits.length}`}
+        : m.findCount.replace("{at}", String(ctrl.findHitIndex + 1)).replace("{total}", String(findHits.length))}
   </span>
   <button
     type="button"
     class="sv-grid-find-step"
-    aria-label="Previous match"
+    aria-label={m.findPrevious}
     disabled={findHits.length === 0}
     onclick={() => step(-1)}>{@render icon("find-prev")}</button
   >
   <button
     type="button"
     class="sv-grid-find-step"
-    aria-label="Next match"
+    aria-label={m.findNext}
     disabled={findHits.length === 0}
     onclick={() => step(1)}>{@render icon("find-next")}</button
   >
-  <button type="button" class="sv-grid-find-close" aria-label="Close find" onclick={close}
+  <button type="button" class="sv-grid-find-close" aria-label={m.findClose} onclick={close}
     >{@render icon("close")}</button
   >
 </div>

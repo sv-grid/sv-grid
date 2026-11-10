@@ -20,6 +20,7 @@
   import SvChartPanes from "./SvChartPanes.svelte";
   import SvGridChartPickers, { chartPanelTypes } from "./SvGridChartPickers.svelte";
   import { chartPanelMessage, resolveChartPanelMessages } from "./chart-panel-messages";
+  import { menuFocus } from "./a11y/menu-focus";
   // The builder is a lazy chunk: a modal with a thumbnail per type, loaded
   // the first time someone opens it.
   let Builder = $state<typeof import("./SvGridChartBuilder.svelte").default | null>(null);
@@ -169,19 +170,29 @@
     if (spec) downloadChartCsv(spec, "chart.csv");
     exportOpen = false;
   }
+  // The PDF chunk comes with the menu: its PDF item says when the PDF's font cannot draw the title.
+  let pdfMod = $state<typeof import("./chart-export-pdf") | null>(null);
+  const pdfTitle = () => spec?.title ?? ctrl.charts[ctrl.activeChartIndex]?.title;
+  const pdfWhy = $derived.by(() => {
+    const text = pdfMod?.pdfUndrawable(pdfTitle());
+    return text ? chartPanelMessage(m.chartExportPdfCannotDraw, { text }) : "";
+  });
+  $effect(() => {
+    if (exportOpen && !pdfMod) import("./chart-export-pdf").then((p) => (pdfMod = p));
+  });
   async function exportPdf() {
     const el = svgEl();
+    const p = (pdfMod ??= await import("./chart-export-pdf"));
+    // A title it cannot draw: the item says why and stays, and nothing is written.
+    if (pdfWhy || !el) return;
     exportOpen = false;
-    if (!el) return;
-    const m = await import("./chart-export-pdf");
-    await m.downloadChartPdf(el, "chart.pdf", { title: spec?.title ?? ctrl.charts[ctrl.activeChartIndex]?.title });
+    await p.downloadChartPdf(el, "chart.pdf", { title: pdfTitle() });
   }
   async function printChart() {
     const el = svgEl();
     exportOpen = false;
     if (!el) return;
-    const m = await import("./chart-export-pdf");
-    m.printChart(el, { title: spec?.title ?? ctrl.charts[ctrl.activeChartIndex]?.title });
+    (pdfMod ??= await import("./chart-export-pdf")).printChart(el, { title: pdfTitle() });
   }
   async function copyImage() {
     const el = svgEl();
@@ -368,11 +379,13 @@
             {/if}
           </button>
           {#if exportOpen}
-            <div class="sv-grid-chart-export-menu" role="menu">
+            <!-- Arrow keys, Home, End and letters move in it; focus goes to its first item and back to Export when it closes.
+                 An item that is off stays focusable and says why (ARIA menu pattern). -->
+            <div class="sv-grid-chart-export-menu" role="menu" tabindex="-1" aria-label={m.chartExportLabel} use:menuFocus={{ close: () => (exportOpen = false), returnTo: () => exportBtn }}>
               <button type="button" role="menuitem" onclick={exportPng}>{m.chartExportPng}</button>
               <button type="button" role="menuitem" onclick={exportSvg}>{m.chartExportSvg}</button>
-              <button type="button" role="menuitem" onclick={exportPdf}>{m.chartExportPdf}</button>
-              <button type="button" role="menuitem" disabled={!csvExportable} onclick={exportCsv}>{m.chartExportCsv}</button>
+              <button type="button" role="menuitem" class:is-off={!!pdfWhy} aria-disabled={pdfWhy ? "true" : undefined} onclick={exportPdf}>{pdfWhy || m.chartExportPdf}</button>
+              <button type="button" role="menuitem" class:is-off={!csvExportable} aria-disabled={csvExportable ? undefined : "true"} title={csvExportable ? undefined : m.chartExportCsvNone} onclick={() => csvExportable && exportCsv()}>{m.chartExportCsv}</button>
               <button type="button" role="menuitem" onclick={copyImage}>{m.chartExportCopy}</button>
               <button type="button" role="menuitem" onclick={printChart}>{m.chartExportPrint}</button>
               <button type="button" role="menuitem" onclick={describeChart}>{m.chartExportDescribe}</button>

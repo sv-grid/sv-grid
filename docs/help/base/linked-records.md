@@ -129,16 +129,23 @@ with + Create "Initech": it adds an account called Initech to the Accounts
 table, with a new id, and ticks it. The account is added at once; Cancel
 leaves the link as it was but does not take the account back.
 
+Enter in the search box takes the row that is lit, which is the first match, or
++ Create when nothing matches: typed text and Enter makes the record. On a table a
+server searches, Enter waits for the answer to what was typed.
+
 Copy and paste work on names. Ctrl+C on a link cell copies "Northwind
 Traders", not `a1`. Pasting text into a link cell splits it at commas and
 links each part that matches a record's name or id, ignoring case; parts that
-match nothing are dropped, and a single link keeps the first match.
+match nothing are left out and the page says so, and a single link keeps the
+first match. With no part matching, the cell keeps the links it has.
 
 A name with a comma or a double quote is copied in quotes, CSV style:
 `"Acme, Inc.", Contoso`, with an inner quote doubled (`"The ""Big"" Shop"`).
 The paste reads a quoted part as one name, so the copy pastes back to the
 same records. A user field with several people copies and pastes its names
-the same way.
+the same way. A copy on the same page keeps the very records when two share a
+name. A file's column can go to a link field too: it is read the same way, and
+the import says how many names it could not find.
 
 Pick Litware for "Contoso: Pilot", press Done, and switch to Accounts:
 Contoso no longer lists the pilot and Litware does. The base rewrites the
@@ -160,7 +167,7 @@ value, written as their cells write them. Empty fields are skipped and do not
 count toward the four. Move onto the card to
 read it; it closes when the pointer leaves. Touch input skips the preview.
 
-Click a chip to open the record in a dialog. It shows every field of the
+Select the cell and click a chip to open the record in a dialog. It shows every field of the
 linked record with the field's icon and name, drawn the way its cells draw
 them: a select as its pill, a link as chips. The record is read here, not
 edited. A chip inside it opens that record over this one, so you can walk
@@ -266,8 +273,8 @@ deal's value on the Deals tab and the account's numbers follow.
 
 A `SUM`, `AVERAGE`, `MIN` or `MAX` writes its result the way the linked field
 writes its values, so a sum of dollar amounts shows "$78,000". Set
-`precision` (0 to 8) on the rollup and it writes a plain number with that many
-decimals instead. A rollup with one of these four or with `COUNT`, `COUNTA`
+`precision` (0 to 8) on the rollup and it keeps the symbol at that many
+decimals: "$78,000.00". A rollup with one of these four or with `COUNT`, `COUNTA`
 or `COUNTALL` is a number column: it right-aligns, and its footer offers Sum,
 Average and the other number summaries (step 7).
 
@@ -508,8 +515,16 @@ link to many a junction table, and the field back is not stored at all. See
 
 Records added through the base get an id from `newRecordId()`: "+ Add row",
 a form, a group's "+", the picker's "+ Create". The id is text starting with
-`rec`. Use it for records you add in code, so they can be linked like the
-others:
+`rec`, 19 letters and digits, and ids sort in the order they were made: the time,
+then a count within the millisecond, then four random characters. Use it for records you add in code, so they can be linked like the
+others.
+
+On a database, a text id column must hold at least 19 characters: `varchar(19)` or
+wider, or `text`. Earlier versions made ids of 12 characters, so a column sized for those
+(`varchar(12)`, `varchar(16)`) refuses every record the base adds. The base then says "Record
+ids need 19 characters; this table's id column holds 16." and adds nothing. Widen the id
+column, and the columns of other tables that hold its ids; the records already there keep
+their ids.
 
 ```ts
 import { blankTable, newRecordId, type BaseTable } from '@svgrid/enterprise/base'

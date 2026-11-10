@@ -1,0 +1,28 @@
+{
+  "description": "Rich text fields in an SvGrid Base, in Svelte 5. A release-notes table has two formatted fields: double-click a cell to edit it in a panel with a toolbar for bold, italic, lists and links, plus headings, quotes and code in the full toolbar. The value is sanitized HTML; a filter view matches the words in the notes and a formula counts the letters of a note, not its tags.",
+  "keywords": [
+    "svelte rich text editor grid cell",
+    "svelte wysiwyg table field",
+    "rich text column data grid",
+    "sanitized html cell svelte",
+    "svelte release notes table"
+  ],
+  "faq": [
+    {
+      "question": "How is a rich text value stored?",
+      "answer": "As an HTML string. It goes through the grid's sanitizer when it is saved and again before a cell draws it, so scripts, styles, event attributes such as onclick and javascript: links never reach the page, whether the HTML came from the editor, a paste or an import."
+    },
+    {
+      "question": "Can I filter, sort and search a rich text field?",
+      "answer": "Yes. Search, the filter, sorting, copy, lookups and formulas read the words without the markup. In this demo the Mentions migration view keeps the notes that contain the word, and LEN({Customer note}) counts letters, not tags."
+    },
+    {
+      "question": "What is the difference between the standard and the full toolbar?",
+      "answer": "The standard toolbar has bold, italic, underline, strikethrough, bullet and numbered lists, link and clear formatting. fieldProps: { toolbar: 'full' } adds headings, quotes, code blocks, undo and redo. Ctrl+B, Ctrl+I, Ctrl+U and Ctrl+K work with either."
+    },
+    {
+      "question": "Which license does it need?",
+      "answer": "SvGrid Base is part of the Suite edition of @svgrid/enterprise. Without a key it runs with a watermark, so it can be evaluated as is."
+    }
+  ]
+}

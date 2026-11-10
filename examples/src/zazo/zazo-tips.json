@@ -3882,5 +3882,19 @@
    "sel": "button",
    "text": "Edit dashboard"
   }
+ },
+ "722-base-rich-text": {
+  "text": "Pick Mentions migration from the view menu: it matches the word in the notes, not their tags.",
+  "target": {
+   "sel": "button",
+   "text": "All changes"
+  }
+ },
+ "723-base-million-orders": {
+  "text": "Pick By status from the view menu: the server counts a million orders per status.",
+  "target": {
+   "sel": "button",
+   "text": "All orders"
+  }
  }
 }

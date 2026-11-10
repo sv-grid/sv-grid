@@ -5,7 +5,7 @@
     "type": "commercial",
     "url": "https://svgrid.com/pricing"
   },
-  "version": "3.0.43",
+  "version": "3.0.41",
   "description": "Model Context Protocol server for SvGrid, the Svelte 5 data grid: checks the code your AI writes against the real API surface, plus version-pinned docs, API reference and the source of every live demo.",
   "license": "MIT",
   "author": "jQWidgets <sales@jqwidgets.com>",
@@ -40,7 +40,7 @@
     "lint": "eslint ./src"
   },
   "dependencies": {
-    "svelte": "^5.55.5"
+    "svelte": "^5.57.3"
   },
   "peerDependencies": {
     "@svgrid/enterprise": "workspace:^"

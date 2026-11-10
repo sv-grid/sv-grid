@@ -88,7 +88,9 @@ Every method:
 
 - defaults to the **current view** (`rows: 'selected' | 'all'` to change),
 - formats values **as shown on screen** (currency, dates) - pass
-  `rawValues: true` for the underlying values,
+  `rawValues: true` for the underlying values. This reads the row's stored
+  values through the column's `format`: a base's formula, link or person field
+  needs [Download a view](./base/undo-trash-import.md#download-a-view),
 - accepts a `columns: string[]` field subset (in that order),
 - runs on a chunked, cancelable loop (`signal`, `onProgress`) so a 100k-row
   export never freezes the tab,
@@ -265,7 +267,7 @@ working.
 | `excelTable`      | `boolean \| { totalsRow?; style? }`                   | -                    | Wrap single-sheet xlsx in a native Excel Table (filter dropdowns, banded rows; `{ totalsRow: true }` adds SUM formulas). |
 | `download`        | `boolean`                                             | `true`               | When false, return the {@link ExportResult} without downloading. |
 | `filename`        | `string`                                              | `"grid"`             | Extension is appended if missing. |
-| `columns`         | `{ field; header?; format?; align?; exportValue? }[]` | grid's own columns   | Drives column selection + header labels. Auto-derived from the grid (with each column's `format`) when omitted. See `exportValue` below. |
+| `columns`         | `{ field; header?; format?; numFmt?; align?; exportValue? }[]` | grid's own columns   | Drives column selection + header labels. `numFmt` is an Excel format code for the column's number cells in xlsx, and wins over `format`. Auto-derived from the grid (with each column's `format`) when omitted. See `exportValue` below. |
 | `rows`            | `ReadonlyArray<TData> \| 'displayed' \| 'selected' \| 'all'` | `'displayed'`  | `'displayed'` = current filtered/sorted/paged view, `'selected'` = checked rows, `'all'` = full dataset, or pass an explicit array. |
 | `rawValues`       | `boolean`                                             | `false`              | By default the exporter writes the **formatted display value** (what you see). Set `true` to write raw underlying values (numbers stay numeric in xlsx). |
 | `autoGroup`       | `boolean`                                             | `true`               | Carry the grid's active row grouping into xlsx outline rows. Pass your own `groupBy` to override, or `false` to ignore. |

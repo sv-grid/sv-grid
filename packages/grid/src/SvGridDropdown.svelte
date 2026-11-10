@@ -41,6 +41,8 @@
     onCommit?: () => void
     /** Called when the user dismisses (Escape, blur with no change). */
     onCancel?: () => void
+    /** Tab, when the host moves focus itself: a cell editor commits and steps to the next cell. */
+    onTab?: (back: boolean) => void
     /** The option list is still being fetched (async `editorOptions`). Shows a
      *  loading line instead of "No options", which would read as "nothing to
      *  pick" when the truth is "not here yet". */
@@ -70,6 +72,7 @@
     onChange,
     onCommit,
     onCancel,
+    onTab,
     loading = false,
     id,
     ariaLabel,
@@ -277,7 +280,10 @@
       if (opt) toggleOption(opt)
     } else if (event.key === 'Tab') {
       if (open) closePanel()
-      onCommit?.()
+      if (onTab) {
+        event.preventDefault()
+        onTab(event.shiftKey)
+      } else onCommit?.()
     }
   }
 

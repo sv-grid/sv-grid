@@ -539,6 +539,11 @@ export type ColumnDef<TFeatures extends TableFeatures, TData extends RowData> = 
    */
   cellFlash?: boolean | { className?: string }
   /**
+   * A checkbox column: the first click selects the cell, a click on the selected
+   * cell toggles. A finger toggles on the tap. Default: any click toggles.
+   */
+  toggleOnSecondClick?: boolean
+  /**
    * When `false`, this column never shows a sort indicator and clicking
    * its header is a no-op - `api.setSort(thisColumn, ...)` is also
    * ignored. Defaults to `true` (the column participates in sorting as

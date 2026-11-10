@@ -273,9 +273,9 @@ const PAGE_GROUPS = {
   // reference routed in from help/ (SECTION_OVERRIDE in doc-meta.mjs).
   'help/base': [
     { label: 'Start here', pages: ['quick-start', 'start', 'templates'] },
-    { label: 'Build it out', pages: ['linked-records', 'formulas', 'views', 'forms', 'undo-trash-import', 'collaboration', 'custom-field-type'] },
+    { label: 'Build it out', pages: ['linked-records', 'formulas', 'views', 'forms', 'undo-trash-import', 'collaboration', 'permissions', 'languages', 'custom-field-type'] },
     { label: 'Automate', pages: ['automations'] },
-    { label: 'Connect your data', pages: ['data', 'supabase', 'postgres', 'rest-api'] },
+    { label: 'Connect your data', pages: ['data', 'supabase', 'postgres', 'rest-api', 'server-compute'] },
     { label: 'AI agents', pages: ['ai-agents', 'review-queue'] },
     { label: 'Reference', pages: ['help/fields.md'] },
   ],

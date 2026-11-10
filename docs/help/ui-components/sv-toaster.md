@@ -162,11 +162,27 @@ receives the `Toast` and replaces the default icon/title/message:
 
 ### Position and cap
 
-Anchor the stack where it suits the layout and cap how many show at once; extras
-stay queued and appear as room frees:
+Anchor the stack where it suits the layout and cap how many show at once. The
+newest `max` toasts show; older ones stay in the store and come back when a
+newer one closes. Their timers keep running while hidden, so a hidden toast
+whose time runs out never shows. The toasts below are sticky (`duration: 0`):
+send five, then close one and an older one moves up.
 
 ```svelte {runnable}
+<script lang="ts">
+  import { SvToaster, SvButton, toast, clearToasts } from '@svgrid/grid'
+
+  function sendFive() {
+    for (let i = 1; i <= 5; i++) toast(`Import ${i} of 5 finished`, { duration: 0 })
+  }
+</script>
+
 <SvToaster position="top-center" max={3} />
+
+<div style="display: flex; gap: 8px;">
+  <SvButton onclick={sendFive}>Send five toasts</SvButton>
+  <SvButton variant="outline" onclick={clearToasts}>Clear all</SvButton>
+</div>
 ```
 
 ### Feedback on an async save

@@ -8,9 +8,9 @@ data, the backend and the rest of the app.
 
 <div data-docs-demo="504-project-tracker" data-height="660"></div>
 
-> **SvGrid Base is part of the Suite edition** of `@svgrid/enterprise`. It runs
-> without a key during an evaluation (with a watermark), and with a Grid
-> edition key it runs too, showing the watermark and an upgrade notice.
+> **SvGrid Base is part of the Suite edition** of `@svgrid/enterprise`. Without
+> a license key it runs for evaluation, with a watermark and an upgrade notice.
+> A key removes both.
 
 This page builds a small tracker step by step. Each step works on its own.
 
@@ -36,6 +36,11 @@ const STATUS = [
   { value: 'In progress', color: '#2d7ff9' },
   { value: 'Done', color: '#20c933' },
 ]
+
+let rows = $state.raw([
+  { id: 't1', task: 'Write the brief', status: 'In progress', owner: 'ana', due: '2026-12-01', budget: 1200, files: [] },
+  { id: 't2', task: 'Book the venue', status: 'Todo', owner: 'ben', due: '2026-12-15', budget: 4500, files: [] },
+])
 
 let columns = $state.raw([
   { field: 'task', header: 'Task', fieldType: 'text' },

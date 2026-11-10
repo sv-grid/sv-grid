@@ -32,6 +32,8 @@ export type ColumnResizeOptions = {
   onResizeEnd?: (columnId: string, width: number, startWidth: number) => void
   /** Accessible name for the handle. Defaults to the column id. */
   label?: (columnId: string) => string
+  /** The handle's name and value in the page's language: `{column}` and `{width}`. */
+  words?: { name: string; width: string }
   /**
    * Per-column opt-out, backing `ColumnDef.resizable`. Returning false means no
    * handle is created for that column at all - which is what makes the drag,
@@ -160,7 +162,7 @@ export function columnResize(node: HTMLElement, opts: ColumnResizeOptions) {
     const w = Math.round(current.getWidth(columnId))
     handle.setAttribute('aria-valuenow', String(w))
     handle.setAttribute('aria-valuemin', String(minWidth()))
-    handle.setAttribute('aria-valuetext', `${w} pixels`)
+    handle.setAttribute('aria-valuetext', (current.words?.width ?? '{width} pixels').replace('{width}', String(w)))
   }
 
   /** One handle per header cell. Skips group headers and spacer columns,
@@ -181,12 +183,18 @@ export function columnResize(node: HTMLElement, opts: ColumnResizeOptions) {
         th.querySelector(`:scope > .${HANDLE_CLASS}`)?.remove()
         continue
       }
-      if (th.querySelector(`:scope > .${HANDLE_CLASS}`)) continue
+      const name = (current.words?.name ?? 'Resize {column}').replace('{column}', current.label?.(columnId) ?? columnId)
+      const drawn = th.querySelector(`:scope > .${HANDLE_CLASS}`)
+      if (drawn) {
+        // The page's language may have changed since it was made.
+        drawn.setAttribute('aria-label', name)
+        continue
+      }
       const handle = document.createElement('div')
       handle.className = HANDLE_CLASS
       handle.setAttribute('role', 'separator')
       handle.setAttribute('aria-orientation', 'vertical')
-      handle.setAttribute('aria-label', `Resize ${current.label?.(columnId) ?? columnId}`)
+      handle.setAttribute('aria-label', name)
       handle.tabIndex = 0
       syncAria(handle, columnId)
       // Double-click the handle to size the column to its content - the
@@ -209,15 +217,23 @@ export function columnResize(node: HTMLElement, opts: ColumnResizeOptions) {
 
   node.addEventListener('pointerdown', onPointerDown, { capture: true })
   node.addEventListener('keydown', onKeyDown, { capture: true })
-  const observer = new MutationObserver(() => decorate())
+  // Only a change that reached the header: a scroll rewrites body cells every frame.
+  const observer = new MutationObserver((records) => {
+    for (const r of records) {
+      const t = r.target as Element
+      if (t.closest?.('thead')) return decorate()
+      if (t.closest?.('tbody')) continue
+      for (const n of r.addedNodes) if ((n as Element).matches?.('thead,th') || (n as Element).querySelector?.('thead,th')) return decorate()
+    }
+  })
   observer.observe(node, { childList: true, subtree: true })
   decorate()
 
   return {
     update(next: ColumnResizeOptions) {
-      const wasDisabled = current.disabled
+      const was = current
       current = next
-      if (wasDisabled !== current.disabled) decorate()
+      if (was.disabled !== next.disabled || was.words?.name !== next.words?.name) decorate()
     },
     destroy() {
       node.removeEventListener('pointerdown', onPointerDown, { capture: true })

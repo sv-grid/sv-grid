@@ -179,6 +179,8 @@ export {
   type WorkingWindow,
   eventsOnDay,
   layoutDayEvents,
+  wallMinutes,
+  atWallMinute,
   monthWeekSegments,
   agendaGroups,
   rangeForView,
@@ -235,6 +237,7 @@ export {
   FOCUSABLE_SELECTOR,
   getFocusable,
   createFocusTrap,
+  keepFocus,
   type FocusTrap,
   type FocusTrapOptions,
 } from './a11y/focus-trap'
@@ -247,6 +250,8 @@ export {
   type DismissableOptions,
 } from './a11y/dismissable'
 export { announce, type AnnounceOptions } from './a11y/live-region'
+export { menuFocus, type MenuFocusOptions } from './a11y/menu-focus'
+export type { GridMenuMessages } from './grid-menu-messages'
 // Dialog-overlay core (SvModal / SvDrawer): open -> focus-trap + scroll-lock +
 // Escape/backdrop dismissal -> restore, on the primitives above.
 export { createOverlay, type Overlay, type OverlayConfig, type DialogProps } from './createOverlay.svelte'
@@ -296,7 +301,7 @@ export {
   type CellEditorRegistration,
 } from './editor-registry'
 export { registerBuiltinEditors } from './builtin-editors'
-export { sanitizeHtml, renderMarkdown, htmlToText } from './sanitize-html'
+export { sanitizeHtml, trustedHtml, renderMarkdown, htmlToText } from './sanitize-html'
 // UI kit - shared field chrome (label + hint + error + direction wrapper)
 export { default as SvField } from './SvField.svelte'
 // UI kit - headless cores (state + prop-getters you render yourself, like createSvGrid)
@@ -465,7 +470,7 @@ export { createFileUpload, fileMatchesAccept, type FileUpload, type FileUploadCo
 // UI kit - overlays (popover / tooltip / modal), sharing the popover.ts positioning + animation
 export { default as SvPopover } from './SvPopover.svelte'
 export { default as SvTooltip } from './SvTooltip.svelte'
-export { default as SvModal } from './SvModal.svelte'
+export { default as SvModal, setModalCloseLabel } from './SvModal.svelte'
 export { default as SvDrawer } from './SvDrawer.svelte'
 export type DrawerSide = 'right' | 'left' | 'top' | 'bottom'
 export { default as SvToaster } from './SvToaster.svelte'
@@ -733,7 +738,7 @@ export {
   downloadChartCsv,
   type ChartExportOptions,
 } from './chart-export'
-export { chartToPdfBlob, downloadChartPdf, printChart, buildChartPdf, type ChartPdfOptions } from './chart-export-pdf'
+export { chartToPdfBlob, downloadChartPdf, printChart, buildChartPdf, pdfUndrawable, ChartPdfTextError, type ChartPdfOptions } from './chart-export-pdf'
 export {
   buildSparkline,
   toSparklineValues,
@@ -915,6 +920,7 @@ export {
   type GridCommandContext,
 } from './shortcut-registry'
 export type { HistoryStep } from './history'
+export { pushHistory, nextGroupId } from './history'
 export { createVirtualizer } from './virtualization/virtualizer'
 export { createSvelteVirtualizer } from './virtualization/svelte-virtualizer.svelte'
 export { createColumnVirtualizer } from './virtualization/column-virtualizer'

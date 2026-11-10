@@ -85,6 +85,42 @@ describe('groupBy reactivity', () => {
   })
 })
 
+describe('a group row says what it is', () => {
+  it('its state follows a toggle with the row kept, in the row, the button and its label', () => {
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    const app = mount(SvGrid, { target, props: baseProps({ groupBy: ['department'], expanded: {} }) as never })
+    flushSync()
+    const row = target.querySelector<HTMLElement>('.sv-grid-group-row')!
+    const toggle = row.querySelector<HTMLButtonElement>('.sv-grid-group-toggle')!
+    expect(row.getAttribute('aria-expanded')).toBe('false')
+    toggle.click()
+    flushSync()
+    expect(target.querySelector('.sv-grid-group-row')).toBe(row)
+    expect(row.getAttribute('aria-expanded')).toBe('true')
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+    expect(toggle.getAttribute('aria-label')).toBe('Collapse group')
+    toggle.click()
+    flushSync()
+    expect(row.getAttribute('aria-expanded')).toBe('false')
+    expect(toggle.getAttribute('aria-label')).toBe('Expand group')
+    unmount(app)
+    target.remove()
+  })
+
+  it('a leaf has its level and no expanded state', () => {
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    const app = mount(SvGrid, { target, props: baseProps({ groupBy: ['department'], expanded: { group_department_Engineering: true } }) as never })
+    flushSync()
+    const leaf = target.querySelector<HTMLElement>('tbody tr:not(.sv-grid-group-row)')!
+    expect(leaf.getAttribute('aria-level')).toBe('2')
+    expect(leaf.hasAttribute('aria-expanded')).toBe(false)
+    unmount(app)
+    target.remove()
+  })
+})
+
 describe('expanded reactivity', () => {
   it('opens and closes a group when the prop is reassigned', () => {
     const target = document.createElement('div')
@@ -144,6 +180,31 @@ describe('expanded reactivity', () => {
     flushSync()
     expect(notifications).toBe(2)
     expect(target.querySelectorAll('tbody tr').length).toBe(2)
+
+    unmount(app)
+    target.remove()
+  })
+
+  it('keeps open groups when another prop changes and `expanded` was never given', () => {
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    let api: SvGridApi<typeof features, Row> | null = null
+    const props = $state(
+      baseProps({
+        groupBy: ['department'],
+        onApiReady: (a: SvGridApi<typeof features, Row>) => (api = a),
+      }),
+    )
+    const app = mount(SvGrid as never, { target, props: props as never })
+    flushSync()
+    api!.expandAllGroups()
+    flushSync()
+    const open = target.querySelectorAll('tbody tr').length
+    expect(open).toBeGreaterThan(2)
+
+    props.data = [...rows, { id: 4, name: 'Margaret', department: 'Engineering' }]
+    flushSync()
+    expect(target.querySelectorAll('tbody tr').length).toBe(open + 1)
 
     unmount(app)
     target.remove()

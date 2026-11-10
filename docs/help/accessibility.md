@@ -17,7 +17,7 @@ walk-through:
 | Standard                | Status                                                                 |
 | ----------------------- | ---------------------------------------------------------------------- |
 | WAI-ARIA 1.2 grid pattern | Implemented (see [Roles & properties](#roles--properties)).         |
-| WCAG 2.2 AA             | Self-assessed, criterion by criterion, in the [Accessibility Conformance Report](../compliance/vpat.md), gaps included. Structure is audited by `axe-core` in CI, in jsdom and in a real browser. Contrast is enforced in CI for **all 20 built-in presets, light and dark**; a custom theme is yours to verify. |
+| WCAG 2.2 AA             | Self-assessed, criterion by criterion, in the [Accessibility Conformance Report](../compliance/vpat.md), gaps included. Structure is audited by `axe-core` in CI, in jsdom and in a real browser. Contrast is enforced in CI for **all 20 built-in presets, light and dark**, with one stated exception: Ember's white text on its accent is below 4.5:1 by design ([1.4.3](../compliance/vpat.md)). A custom theme is yours to verify. |
 | Keyboard navigation     | Navigation, selection, sorting, filtering and editing; see [Keyboard map](#keyboard-map). Row dragging and moving columns by drag have no keyboard path yet; the ACR lists them. |
 | Screen-reader announcements | Filter results and bulk selection changes, via a single `aria-live=polite` region. See [What the grid announces](#what-the-grid-announces). |
 | Reduced motion          | The cell flash and the loading shimmer stop under `prefers-reduced-motion: reduce`. |
@@ -27,7 +27,7 @@ walk-through:
 
 | Element                        | Role           | Notable attributes                                                                                  |
 | ------------------------------ | -------------- | --------------------------------------------------------------------------------------------------- |
-| `<table>` root                 | `grid` (`treegrid` with `treeData` or server grouping) | `tabindex="0"`, `aria-activedescendant` pointing at the active cell, `aria-rowcount`, `aria-colcount` |
+| `<table>` root                 | `grid` (`treegrid` with `treeData`, grouping or server grouping) | `tabindex="0"`, `aria-activedescendant` pointing at the active cell, `aria-rowcount`, `aria-colcount` |
 | `<thead>`, `<tbody>`, `<tfoot>` | `rowgroup`    |                                                                                                     |
 | Body `<tr>`                    | `row`          | `aria-rowindex` (1-based, absolute, so it holds under virtualization); `aria-level` / `aria-expanded` on tree and group rows |
 | Header `<th>`                  | `columnheader` | `aria-sort` (`"ascending"` / `"descending"` / `"none"`) on sortable columns                         |
@@ -62,6 +62,7 @@ shortcuts:
 | Ctrl/Cmd + End      | Active cell → bottom-right.                                           |
 | Ctrl/Cmd + Arrow    | Reserved. The grid does not move the active cell; `enableSheet()` in `@svgrid/enterprise` binds it to Excel's jump-to-edge-of-data-region. See [Excel keyboard shortcuts](./cells/keyboard-shortcuts.md). |
 | Page Up / Page Down | Scroll a viewport's worth of rows.                                    |
+| Menu key / Shift+F10 | Open the `contextMenu` of the active cell. Focus moves into the menu; arrows, Home, End and first letters move in it, Enter runs an item, Escape and Tab close it and focus goes back to the grid. |
 
 ### Selection (when `rowSelectionFeature` is on)
 
@@ -81,7 +82,9 @@ shortcuts:
 | Escape (in a filter menu)        | Close the menu.                                          |
 
 Header buttons are reached with the mouse or, from outside the grid, with
-Tab; they are not part of the cell navigation.
+Tab; they are not part of the cell navigation. The column menu takes focus
+when it opens. Arrows, Home, End and first letters move in it, and Escape or
+Tab closes it and puts focus back on the button that opened it.
 
 ### Editing
 
@@ -108,6 +111,10 @@ On a grouped grid, a tree (`getSubRows`) or a
 the grid handles these itself, and **Ctrl+Enter** on any cell of a group
 row toggles it; on the server model a leaf with a detail panel
 (`renderDetailRow`) opens or closes it with the same key.
+
+On a group's row of a grouped grid, Enter and Space toggle it as well, Right on an
+open group goes to its first row, and Left on a closed group goes to the group
+above. On a record's row the arrows walk cells and Enter moves down, as in any grid.
 
 ## Screen-reader announcements
 
@@ -199,11 +206,63 @@ The examples on this page run against these rows:
 An unknown placeholder is left in the output rather than blanked, so a typo in
 an override is visible instead of silently eating the number.
 
+## In SvGrid Base
+
+A base's grid changes one thing in this map and adds a few.
+
+| Key | Action |
+| --- | --- |
+| Tab / Shift+Tab | Leave the rows: the rows are one tab stop, and Tab goes on to the header and footer controls. |
+| Tab after a click on a cell, or in an open editor | Walk the cells as in a spreadsheet. A line on screen, also read out, gives the way out: Esc, then Tab. An arrow key ends a run started in an editor. |
+| Space | Open the record. |
+| Shift+Space | Select or deselect the row. |
+| Menu key / Shift+F10 | The record menu: expand, comment, select, insert, duplicate, copy, paste, delete. |
+
+On a touch screen the row number has an actions button that opens the same
+menu, and a long press on a cell does too.
+
+Where a table shows as cards or a list (a phone's width, a gallery view, a list
+view), the Menu key, Shift+F10, a long press and the button on each card open
+the same record actions, without copy and paste, which work on a cell.
+
+A list is one Tab stop, in every shape: rows on the page, grouped, read from a
+server. Tab lands on the record you were last on, or the first, and a second Tab
+on its actions button, where Enter or Space opens the menu. Up and Down walk the
+records and group headers, Home and End go to the ends, Enter opens a record, and
+Right and Left open and fold a group (Left on a record goes to its group; in a
+right-to-left page the two swap). A selected row has the grid's selected-row fill
+and a tick, and says "Selected"; the ring is focus alone.
+
+The selection bar gives focus back: Escape or Cancel on Delete's question to the
+Delete button, and Clear, Escape on the bar or a confirmed Delete to where you were
+before the bar, or to the next record.
+
+To move a board card, press Space, carry it with the arrows and press Space to
+drop it. Nothing is written until then. Escape, Tab or a click elsewhere puts it
+back, and focus stays on the card with Escape.
+
+To move a field, use Move left and Move right in its column menu, or the grip
+beside it in Hide fields, which takes the up and down arrows.
+
+To move a calendar event, focus it and press Space to pick it up. Arrow keys
+carry it, Space or Enter puts it down, and Escape puts it back. Nothing is
+written until it is put down, and each step is read out. Carried past the edge of
+the view, the view goes with it, in a month drawn in five weeks too; Escape brings
+both back. While an event is in hand, keys on another event act on the one in hand.
+Enter on its own opens the event.
+
+Cell edits, clears, pastes, undo and redo are read out through a polite live
+region. Under `dir="rtl"` the left and right arrows go where they point.
+
+Escape in a record's comment box leaves the box and keeps the text, and on a
+comment being changed it is Cancel. Text not sent holds the record open against
+Escape.
+
 ## Focus management
 
-- The `<table>` is the grid's single tab stop. Focus stays on it, and
-  `aria-activedescendant` names the active cell; cells themselves carry no
-  `tabindex`.
+- Focus stays on the `<table>`, and `aria-activedescendant` names the active
+  cell; cells themselves carry no `tabindex`. Tab walks the cells, so a plain
+  grid is not one tab stop; [SvGrid Base](#in-svgrid-base) is.
 - The active cell is drawn with an accent ring. It is hidden while the grid
   sits untouched at its seeded first cell, and shown as soon as a click, a
   key or the api activates a cell, or the keyboard brings focus to the grid.
@@ -211,9 +270,11 @@ an override is visible instead of silently eating the number.
   [keyboard map](#navigation)).
 - Editing transfers focus to the editor `<input>`, which is named after the
   column; committing returns focus to the grid.
-- The filter popover moves focus to its first control when it opens. Grid
-  menus do not yet return focus to the button that opened them on close;
-  the [ACR](../compliance/vpat.md) lists it under 2.4.3.
+- The filter popover moves focus to its first control when it opens. The
+  column and context menus take focus when they open and give it back when
+  they close.
+- Moving the active cell, or tabbing to a header control, stops clear of the
+  pinned columns on either side.
 
 ## High-contrast / forced-colors mode
 
@@ -281,7 +342,10 @@ The grid can't know:
    > and fails the build below AA. Body text, secondary text, header text, text
    > on zebra / hovered / selected rows, and text on accent-filled controls all
    > have to clear 4.5:1, and the accent has to clear 3:1 where it signals focus
-   > or selection. So the presets are checked exhaustively rather than whichever
+   > or selection. The one exemption is named in the test: Ember's white on its
+   > accent, 3.53:1 light and 3.12:1 dark, a brand choice. For AA use another
+   > preset, an accent override, or `--sg-on-accent: #18181b`.
+   > So the presets are checked exhaustively rather than whichever
    > one a browser test happened to load. What is still yours to verify is a
    > **custom** theme.
 4. **axe-core in your e2e suite.**

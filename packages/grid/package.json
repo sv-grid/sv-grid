@@ -1,6 +1,6 @@
 {
   "name": "@svgrid/grid",
-  "version": "3.0.33",
+  "version": "3.0.32",
   "description": "Svelte 5 data grid and data table, MIT. Drop-in <SvGrid> component or the same engine headless: virtual scrolling for 100k+ rows, Excel-style filtering, inline editing, grouping, tree data and server-side data. TypeScript, SvelteKit SSR.",
   "author": "jQWidgets <boikom@jqwidgets.com>",
   "license": "MIT",
@@ -131,7 +131,9 @@
   },
   "files": [
     "dist",
+    "!dist/**/node_modules",
     "src",
+    "!src/**/node_modules",
     "!src/**/*.test.ts",
     "!src/**/*.test.svelte",
     "!src/**/*.spec.ts",
@@ -158,7 +160,7 @@
     "eslint-plugin-svelte": "^3.17.1",
     "jsdom": "^29.1.1",
     "publint": "^0.3.21",
-    "svelte": "^5.55.5",
+    "svelte": "^5.57.3",
     "svelte-check": "^4.4.6"
   },
   "peerDependencies": {

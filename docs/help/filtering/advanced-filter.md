@@ -176,7 +176,10 @@ nothing on screen to say why. Both strings go through `localeText`
 
 `ServerFilterModel.expression` carries the expression to your backend. The
 contract is **all-or-nothing**: apply the whole expression and set
-`appliedExpression: true`, or apply none of it.
+`appliedExpression: true`, or apply none of it. `true` means every condition was
+evaluated on the value the cell shows: a backend that cannot work out a field in
+the filter leaves it unset for the whole filter, and never treats that field as
+blank.
 
 If a backend ignores it, the grid does **not** filter the page it already has.
 Doing so would turn "3 of 1,000,000 match" into a confident lie, and paging

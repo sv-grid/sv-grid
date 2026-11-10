@@ -82,6 +82,27 @@ test.describe('clipboard commands (regression: missing ctx getters)', () => {
     const clip = await page.evaluate(() => navigator.clipboard.readText())
     expect(clip).toContain(src) // value made it to the clipboard
   })
+
+  // A clipboard that refuses (a page that lost focus, a denied permission): the
+  // cut clears nothing, since nothing was copied. It used to clear at once.
+  test('Ctrl+X with the clipboard refused clears nothing', async ({ page }) => {
+    await page.addInitScript(() => {
+      const refuse = () => Promise.reject(new DOMException('Document is not focused.', 'NotAllowedError'))
+      Object.defineProperty(navigator, 'clipboard', { value: { writeText: refuse, write: refuse, readText: refuse }, configurable: true })
+      document.execCommand = () => false
+    })
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(String(e)))
+    await page.goto(DEMO)
+    await setup(page)
+    const src = (await page.locator(c(2)).innerText()).trim()
+    expect(src.length).toBeGreaterThan(0)
+    await page.locator(c(2)).click()
+    await page.keyboard.press('Control+x')
+    await page.waitForTimeout(300)
+    expect(errors, errors.join('\n')).toHaveLength(0)
+    expect((await page.locator(c(2)).innerText()).trim()).toBe(src)
+  })
 })
 
 // Plain HTTP / XAMPP simulation: navigator.clipboard removed entirely.

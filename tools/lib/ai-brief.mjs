@@ -249,7 +249,7 @@ export function plainDocBody(body, { site, slug, knownSlugs, demoTitle = () => n
       const title = demoTitle(id)
       return `> Live demo${title ? `: ${title}` : ''} - ${site}/demos/${id}/`
     })
-    .replace(/^(```[a-z]*)[ \t]+\{(?:runnable|preamble|nocheck)\}[^\n]*$/gm, '$1')
+    .replace(/^(```[a-z]*)[ \t]+\{(?:runnable|preamble|nocheck|norun)\}[^\n]*$/gm, '$1')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 }

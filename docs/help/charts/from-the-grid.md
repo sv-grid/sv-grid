@@ -277,9 +277,22 @@ JPEG quality (default 0.92); `background` paints behind the chart, since a
 JPEG has no transparency. `buildChartPdf(jpeg, options)` is the writer
 itself, for a caller that already has the image bytes.
 
-`printChart(el, { title })` opens a window with the standalone SVG sized to
-the page and calls `print()` once it has drawn; it returns `false` when
-the popup was blocked, so the caller can say so.
+The text is drawn in the PDF's built-in Helvetica, which has Western European
+letters only (Latin-1, plus the euro sign, curly quotes and dashes). A title,
+subtitle or caption with other letters is refused rather than written as `?`:
+`chartToPdfBlob` and `buildChartPdf` throw a `ChartPdfTextError` whose `text`
+names it, and `pdfUndrawable(title, subtitle, caption)` tells beforehand. On
+screen the refusal is said where the person looks: the chart's context menu
+shows its PDF item off with that text; the toolbar's PDF button is marked off
+(`aria-disabled`, the reason as its tooltip) once it is pointed at or focused,
+and a press puts the reason in the button's own text; the grid's chart panel
+shows its Export menu's PDF item off with the reason. PNG and SVG draw any
+script.
+
+`printChart(el, { title })` opens a window with the standalone SVG as an image
+sized to the page and calls `print()` once it has drawn; it returns `false`
+when the popup was blocked, so the caller can say so. The window is built
+node by node, so it runs under Trusted Types; a CSP `img-src` needs `data:`.
 
 ### CSV
 

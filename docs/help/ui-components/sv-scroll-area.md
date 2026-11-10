@@ -43,10 +43,13 @@ import { SvScrollArea } from '@svgrid/grid'
 ```svelte {runnable}
 <script lang="ts">
   import { SvScrollArea } from '@svgrid/grid'
+  const events = Array.from({ length: 30 }, (_, i) => `Order #${1040 + i} shipped`)
 </script>
 
 <SvScrollArea maxHeight="240px">
-  <!-- long list / detail content -->
+  <ul style="margin: 0; padding: 8px 16px;">
+    {#each events as e (e)}<li style="padding: 4px 0;">{e}</li>{/each}
+  </ul>
 </SvScrollArea>
 ```
 

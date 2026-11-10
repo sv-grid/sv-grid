@@ -1,6 +1,6 @@
 # Migrating from SVAR Svelte DataGrid
 
-SVAR Svelte DataGrid (`wx-svelte-grid`) is, like SvGrid, an actual
+SVAR Svelte DataGrid (`@svar-ui/svelte-grid`, formerly `wx-svelte-grid`) is, like SvGrid, an actual
 Svelte-native grid rather than a wrapper, and both are MIT-licensed and
 free for commercial use. Because both are component-first with
 array-of-object column definitions, a port is mostly a configuration
@@ -16,12 +16,12 @@ also exposes a headless engine and an MCP server).
 > current SVAR docs and map them onto the SvGrid equivalents below.
 
 <!-- facts:start svar-svelte-datagrid -->
-> **Facts, checked 12 Sep 2026.** `wx-svelte-grid` 2.7.0, MIT, last published 3 Jun 2026, 62,800 npm downloads in the 30 days to 10 Sep 2026. `@svgrid/grid` 3.0.3, MIT, last published 11 Sep 2026, 16,900 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.33 99.9 KB JS + 11.3 KB CSS (measured 10 Nov 2026); `wx-svelte-grid` 2.7.0 51.5 KB JS, no separate stylesheet, svelte external (measured 12 Sep 2026). SVAR Svelte DataGrid pricing, as its site states it: The DataGrid is MIT and free for commercial use with no paid tier; svar.dev sells PRO editions of its Gantt, Calendar and Kanban components and offers paid consulting and custom development, with no price list for the grid (https://svar.dev/svelte/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs SVAR Svelte DataGrid](https://svgrid.com/compare/svar-svelte-datagrid/).
+> **Facts, checked 9 Nov 2026.** `@svar-ui/svelte-grid` 2.7.6, MIT, last published 7 Nov 2026, 106,000 npm downloads in the 30 days to 8 Nov 2026. `@svgrid/grid` 3.0.32, MIT, last published 3 Nov 2026, 44,600 npm downloads in the same window. Bundle, minified and gzipped, each package built alone with Svelte external: SvGrid 3.0.32 99.9 KB JS + 11.3 KB CSS (measured 3 Nov 2026); `@svar-ui/svelte-grid` 2.7.6 53.1 KB JS, no separate stylesheet, svelte external (measured 9 Nov 2026). SVAR Svelte DataGrid pricing, as its site states it: The DataGrid is MIT and free for commercial use with no paid tier; svar.dev sells PRO editions of its Gantt, Calendar and Kanban components and offers paid consulting and custom development, with no price list for the grid (https://svar.dev/svelte/, read 12 Sep 2026). SvGrid: MIT core; @svgrid/enterprise from $299 per developer per year (Indie, under $1M revenue), $599 for Enterprise. Side by side, with sources: [SvGrid vs SVAR Svelte DataGrid](https://svgrid.com/compare/svar-svelte-datagrid/).
 <!-- facts:end -->
 
 ## Concept map
 
-| SVAR DataGrid (wx-svelte-grid)            | sv-grid                                   |
+| SVAR DataGrid (@svar-ui/svelte-grid)      | sv-grid                                   |
 | ----------------------------------------- | ----------------------------------------- |
 | `<Grid {data} {columns} />`               | `<SvGrid data={...} columns={...} />`      |
 | `columns: [{ id, header, width, ... }]`   | `columns: [{ field, header, width, ... }]` |
@@ -83,7 +83,7 @@ The example at the end of this page runs against these rows:
 
 ```diff
 - <script>
--   import { Grid } from 'wx-svelte-grid'
+-   import { Grid } from '@svar-ui/svelte-grid'
 -   const columns = [
 -     { id: 'name',   header: 'Name',   width: 200 },
 -     { id: 'amount', header: 'Amount', width: 120, editor: 'text' },

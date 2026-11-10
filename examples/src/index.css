@@ -150,6 +150,14 @@ a:focus-visible,
   outline: none;
   box-shadow: 0 0 0 2px var(--sg-focus-ring);
 }
+/* Contrast themes remove box shadows, so the ring above is gone there. */
+@media (forced-colors: active) {
+  button:focus-visible,
+  a:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid Highlight;
+  }
+}
 /* The grid <table> carries a tabindex for keyboard nav, so the global
  * focus ring above lands on it - and the scroll container's overflow
  * clips it into a stray blue line along the bottom edge. The grid shows

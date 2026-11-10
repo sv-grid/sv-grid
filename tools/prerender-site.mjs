@@ -36,6 +36,7 @@ import { buildTagHubs, postTags, tagSlug, tagLabel } from './lib/blog-tags.mjs'
 import { prerenderedRoutes, ROUTE_SEO } from './lib/route-seo.mjs'
 import { FREE_TOOLS, findFreeTool } from './lib/free-tools.mjs'
 import { productGraph } from './lib/product-ld.mjs'
+import { transform as esbuildTransform } from 'esbuild'
 import { HOME_GUIDES } from './lib/home-guides.mjs'
 import { tutorialIdsIn, videoObjectLd, tutorialBlock } from './lib/tutorial-media.mjs'
 import { readManifest as readTutorialManifest } from './tutorials/lib/manifest.mjs'
@@ -593,6 +594,38 @@ async function parseQaPairs(relPath) {
   return out
 }
 
+/**
+ * The testimonials from website/src/lib/testimonials.ts in carousel order
+ * (orderedTestimonials). The deploy runs Node 20, which cannot import a .ts
+ * file, so esbuild strips the types and the module loads from a data: URL.
+ * That only works while the file has no imports of its own.
+ * The quotes go into the page bodies only, not into the product graph: that
+ * graph is on every page, and seo-guardrails.test.ts keeps Review markup off
+ * the comparison pages.
+ */
+async function loadTestimonials() {
+  const src = await readFile(join(ROOT, 'website', 'src', 'lib', 'testimonials.ts'), 'utf-8')
+  const { code } = await esbuildTransform(src, { loader: 'ts', format: 'esm' })
+  const mod = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
+  return mod.orderedTestimonials()
+}
+
+/**
+ * The quotes as static HTML. Home.svelte shows them in a carousel and
+ * Pricing.svelte shows the first one; hydration replaces this, so it only has
+ * to carry the same words and names for crawlers and no-JS readers.
+ */
+function testimonialsHtml(list, heading) {
+  if (!list.length) return ''
+  let html = heading ? `<h2>${heading}</h2>` : ''
+  for (const t of list) {
+    html += `<figure><blockquote>${t.quote.map((p) => `<p>${escapeAttr(p)}</p>`).join('')}</blockquote>`
+    if (t.translation) html += `<p>Translated: ${escapeAttr(t.translation)}</p>`
+    html += `<figcaption>${escapeAttr(t.name)}, ${escapeAttr(t.role)}</figcaption></figure>`
+  }
+  return html
+}
+
 /** Parse the homeFaqs Q&A from Home.svelte (q/a keys). */
 const parseHomeFaqs = () => parseQaPairs(['website', 'src', 'routes', 'Home.svelte'])
 
@@ -605,7 +638,7 @@ const parseHomeFaqs = () => parseQaPairs(['website', 'src', 'routes', 'Home.svel
  * type ("Svelte data grid", "Svelte datagrid", "Svelte grid"), not only the
  * "Svelte 5 data grid" wording the hero uses.
  */
-function homeCrawlBody(faq) {
+function homeCrawlBody(faq, testimonials = []) {
   const free = [
     'Headless engine (createSvGrid) you drive with your own markup, plus a drop-in &lt;SvGrid&gt; render component',
     'Sorting, Excel-style filters, a filter row, find-in-grid, row grouping with aggregation, tree data, master/detail',
@@ -638,6 +671,7 @@ function homeCrawlBody(faq) {
   html += `<h2>What @svgrid/enterprise adds</h2><ul>${li(enterprise)}</ul>`
   html += `<h2>Two packages</h2><p><code>npm install @svgrid/grid</code> is the full data grid under the MIT License, including commercial use, with no license key and no row-count cap. <code>npm install @svgrid/enterprise</code> plugs into it: prices start at $299 per developer (Indie, for freelancers and companies under $1M yearly revenue), Enterprise is $599 per developer for the enterprise grid and Enterprise Suite $999 per developer with the Spreadsheet, SvGrid Base and SvGrid Studio on top, both for unlimited apps, as a perpetual license with one year of updates and support. A 30-day free Enterprise trial includes email support. <a href="${BASE}pricing/">Pricing and the full feature matrix</a>.</p>`
   html += `<h2>How SvGrid compares</h2><ul>${cmp.map(([s, l]) => `<li><a href="${BASE}compare/${s}/">SvGrid vs ${escapeAttr(l)}</a></li>`).join('')}</ul>`
+  html += testimonialsHtml(testimonials, 'What people say')
   html += `<h2>Guides</h2><ul>${HOME_GUIDES.map((g) => `<li><a href="${BASE}blog/${g.slug}/">${escapeAttr(g.title)}</a></li>`).join('')}</ul>`
   html += `<p><a href="${BASE}docs/getting-started/">Get started</a> &middot; <a href="${BASE}demos/">Browse 550+ demos</a> &middot; <a href="${BASE}docs/">Documentation</a> &middot; <a href="${BASE}compare/">All comparisons</a> &middot; <a href="${BASE}blog/">Blog</a> &middot; <a href="${BASE}pricing/">Pricing</a></p>`
   if (faq.length) html += `<h2>Svelte data grid FAQs</h2>${faq.map((f) => `<h3>${escapeAttr(f.question)}</h3><p>${escapeAttr(f.answer)}</p>`).join('')}`
@@ -969,12 +1003,13 @@ function mcpBody() {
   return html + `</main>`
 }
 
-function pricingBody() {
+function pricingBody(testimonials = []) {
   let html = `<main class="prerender-index" data-prerender="1"><h1>SvGrid Pricing</h1><p>SvGrid Community is free under the MIT License. The optional @svgrid/enterprise pack is licensed per developer as a perpetual license that includes 1 year of updates and support, renewing automatically each year (cancel anytime and keep your paid-term versions).</p>`
   for (const t of PRICING_TIERS) {
     const price = t.price === '0' ? '$0' : `$${t.price}`
     html += `<h2>${escapeAttr(t.name)} - ${price} ${escapeAttr(t.cadence)}</h2><p>${escapeAttr(t.desc)}</p>`
   }
+  html += testimonialsHtml(testimonials.slice(0, 1))
   return html + `</main>`
 }
 
@@ -1251,6 +1286,7 @@ async function main() {
   const gridVersion = JSON.parse(await readFile(join(ROOT, 'packages', 'grid', 'package.json'), 'utf-8')).version
   if (!/^\d+\.\d+\.\d+/.test(gridVersion)) throw new Error(`prerender: packages/grid/package.json version "${gridVersion}" is not a release version`)
   template = injectJsonLd(template, productGraph({ homepage: `${CANON}/`, version: gridVersion }))
+  const testimonials = await loadTestimonials()
   // Advertise the blog's RSS feed (written in step 5c) from every page, so feed
   // readers autodiscover it from any URL on the site. One insertion into the
   // shell covers every prerendered page, the home page, and 404.html.
@@ -1458,7 +1494,7 @@ async function main() {
       body = faqIndexBody(faqItems)
       if (faqItems.length) html = injectJsonLd(html, faqLd(faqItems))
     } else if (route === 'pricing') {
-      body = pricingBody()
+      body = pricingBody(testimonials)
       html = injectJsonLd(html, pricingLd(url))
     } else if (route === 'mcp') {
       body = mcpBody()
@@ -1927,7 +1963,7 @@ async function main() {
   // Build from `template` (the normalized clean shell), not by re-reading
   // dist/index.html - that file is this step's own output, so re-reading it
   // makes a second prerender run over the same dist non-idempotent.
-  let homeBody = homeCrawlBody(homeFaqs)
+  let homeBody = homeCrawlBody(homeFaqs, testimonials)
   // The head goes through applyHead like every other static route: the raw
   // index.html head used to be served as-is (a 245-char description Google
   // cut mid-list) while hydration clamped the same table entry to 155.

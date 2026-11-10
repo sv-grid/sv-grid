@@ -21,6 +21,7 @@ import {
   createSortedRowModel,
   rowExpandingFeature,
   columnGroupingFeature,
+  registerAdvancedFilterEngine,
   rowSortingFeature,
   sortFns,
   tableFeatures,
@@ -276,5 +277,32 @@ describe('tree rows use the same expansion props', () => {
     await tick()
     // Ada plus her two direct reports; Alan stays hidden under Grace.
     expect(bodyRows(g.target)).toBe(3)
+  })
+})
+
+describe('a filter under grouping', () => {
+  const politeText = () => document.querySelector('[aria-live="polite"]')?.textContent ?? ''
+  const past = () => new Promise((r) => setTimeout(r, 520))
+  afterEach(() => registerAdvancedFilterEngine(null))
+
+  it('counts what the filter keeps in a closed group, and opening one says nothing', async () => {
+    registerAdvancedFilterEngine((() => (row: { original: Row }) => row.original.salary >= 100) as never)
+    const g = mountGrid({ groupBy: ['department'], initialAdvancedFilter: { op: 'true' } })
+    await tick()
+    await past()
+    expect(politeText()).toBe('3 of 5 rows match the current filters')
+
+    const said: string[] = []
+    const region = document.querySelector('[aria-live="polite"]')!
+    const watch = new MutationObserver(() => said.push(region.textContent ?? ''))
+    watch.observe(region, { childList: true, characterData: true, subtree: true })
+    g.api.expandAllGroups()
+    await tick()
+    await past()
+    g.api.collapseAllGroups()
+    await tick()
+    await past()
+    watch.disconnect()
+    expect(said).toEqual([])
   })
 })

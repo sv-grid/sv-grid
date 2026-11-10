@@ -17,7 +17,11 @@
     <SvBase {tables} editable sortable showRowNumbers expandRows columnAdder fieldMenu containerHeight="100%" />
   </div>
 {:catch error}
-  <p>The database did not answer: {error.message}. Is DATABASE_URL set in .env, and did you run <code>npm run db:setup</code>?</p>
+  {#if error.message.includes('403')}
+    <p>This route answers only in development until you say who may use it. Set <code>authorize</code> in <code>src/routes/api/base/+server.ts</code>.</p>
+  {:else}
+    <p>The database did not answer: {error.message}. Is DATABASE_URL set in .env, and did you run <code>npm run db:setup</code>?</p>
+  {/if}
 {/await}
 
 <style>

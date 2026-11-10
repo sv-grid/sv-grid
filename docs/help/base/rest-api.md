@@ -22,8 +22,9 @@ section shows how to read others.
 | `DELETE /api/deals/d3` | `204` |
 
 A foreign key is a plain field: a deal has `company_id`. To refuse a write,
-answer with a `4xx` status and `{ "error": "Amount must be 0 or more" }`;
-the base puts the cell back and shows that sentence.
+answer with a `4xx` status and `{ "error": "Amount must be 0 or more" }`
+(or `{ "message": ... }`); the base puts the cell back and shows that sentence. A
+`400`, `409` or `422` is a refusal of the values, so it offers no Try again.
 
 ## 2. Read another shape
 

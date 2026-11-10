@@ -72,9 +72,17 @@ export type GridExtension = {
   /**
    * Called after a cell's value was written by an edit, a checkbox toggle, a
    * paste, a fill or a clear, with the row object as it now is (e.g. to stamp
-   * a "last modified" field).
+   * a "last modified" field). `rowId` is the row's id: asking the grid for it
+   * walks the rows, so a bulk writer pays that per change. `offGrid`: a record
+   * the grid may not hold, written from outside it.
    */
-  cellEdited?: (ctrl: any, info: { row: unknown; columnId: string }) => void
+  cellEdited?: (ctrl: any, info: { row: unknown; columnId: string; rowId?: string; offGrid?: boolean }) => void
+  /**
+   * A copy, cut, clear, fill, move or Ctrl+Enter over the selection, asked before
+   * the grid does it. True: the extension did it or refused it, and the grid does
+   * nothing. Rows a row model has not loaded are out of the grid's reach.
+   */
+  rangeAction?: (ctrl: any, action: { kind: 'copy' | 'cut' | 'clear' | 'fill' | 'fillDown' | 'move' | 'entry'; drag?: any; toggled?: boolean; value?: unknown }) => boolean
   /** The column menu's sort labels for a column, e.g. ['1 → 9', '9 → 1'] (null: "ascending" / "descending"). */
   sortLabels?: (def: any) => readonly [string, string] | null | undefined
   /** A column the menu may not pin, unpin or move to the other edge (a table's primary field). */

@@ -28,16 +28,28 @@ The examples on this page run against these rows:
     startDate: string
     active: boolean
   }
+
+  const people: Person[] = [
+    { id: 1, name: 'Ada Lovelace',   email: 'ada@example.com',   department: 'Engineering', age: 36, salary: 142000, city: 'London',   startDate: '2021-03-01', active: true },
+    { id: 2, name: 'Grace Hopper',   email: 'grace@example.com', department: 'Engineering', age: 45, salary: 168000, city: 'New York', startDate: '2019-07-15', active: true },
+    { id: 3, name: 'Linus Torvalds', email: 'linus@example.com', department: 'Platform',    age: 54, salary: 155000, city: 'Portland', startDate: '2020-01-20', active: false },
+  ]
 </script>
 ```
 
+The callback runs again when the column's sort changes, so the header can show
+it. The grid still draws its own sort arrow; this one adds the order in words.
+Click Salary to sort.
+
 ```svelte {runnable}
 <script lang="ts">
-  import { renderSnippet, type GridColumns } from '@svgrid/grid'
+  import { renderSnippet, tableFeatures, rowSortingFeature, type GridColumns } from '@svgrid/grid'
 
+  const features = tableFeatures({ rowSortingFeature })
   const columns: GridColumns<Person> = [
+    { field: 'name', header: 'Name' },
     {
-      field: 'salary',
+      field: 'salary', width: 220,
       header: (ctx) => renderSnippet(SalaryHeader, { sorted: ctx.column.getIsSorted() }),
       format: { type: 'currency', currency: 'USD' },
     },
@@ -45,11 +57,13 @@ The examples on this page run against these rows:
 </script>
 
 {#snippet SalaryHeader(p: { sorted: false | 'asc' | 'desc' })}
-  <span class="inline-flex items-center gap-1">
+  <span style="display: inline-flex; align-items: center; gap: 4px">
     <span>💰 Salary</span>
-    {#if p.sorted === 'asc'}↑{:else if p.sorted === 'desc'}↓{/if}
+    {#if p.sorted === 'asc'}<small>(low first)</small>{:else if p.sorted === 'desc'}<small>(high first)</small>{/if}
   </span>
 {/snippet}
+
+<SvGrid data={people} {columns} {features} />
 ```
 
 ## With a component

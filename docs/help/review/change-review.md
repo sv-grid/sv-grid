@@ -188,6 +188,21 @@ On accept, for each proposal:
 `acceptGroup` and `rejectGroup` take the ids that were shown, so a proposal
 that arrived after the panel rendered is never decided unseen.
 
+### A record at a time, a source at a time
+
+```ts
+review.pendingIn('r42')        // the record's pending proposals
+await review.acceptRecord('r42') // every one of them, one undo step
+review.rejectRecord('r42')
+
+review.sources()               // [{ id, kind, label, pending, accepted, rejected }, ...]
+review.pendingFrom('Claude')   // one source's pending proposals, by its id or its label
+```
+
+`sources()` lists each producer in the order it first proposed something,
+with its counts: the numbers for "Claude proposed 120 changes, you accepted
+96".
+
 ### Server row model
 
 With the server row model there is no app array to replace. Pass the
@@ -202,8 +217,10 @@ const review = createReview({
 ```
 
 Accept saves through `onCommit` and refreshes the controller. Undo saves the
-inverse (`before` and `after` swapped) and refreshes again. The backend decides
-staleness there.
+inverse (`before` and `after` swapped) and refreshes again. On a grouped server
+row model that refresh reads the records of every open group too, so an accepted
+value shows in its group and a record whose group changed moves. The backend
+decides staleness there.
 
 ## SvReviewPanel
 
@@ -213,6 +230,10 @@ staleness there.
 | `title` | `string` | `'Review changes'` | The panel heading. |
 | `confirmOver` | `number` | `50` | Ask before deciding more than this many at once. |
 | `onDecide` | `(outcome) => void` | | Called after each decision. |
+
+When more than one source has pending proposals (an agent and an import, two
+agents), a **From** picker above the buttons narrows the panel to one of them,
+and **Accept all** and **Reject all** then decide that source's proposals only.
 
 **Accept rule groups** accepts every rule group at once (trims, case changes,
 reformats, one numeric factor), the changes that are proven by their rule, and
@@ -332,6 +353,14 @@ Ctrl+Z covers the last decisions. To take back a whole set later,
 reverse. It is reviewed and accepted like any other, so a cell edited after the
 original accept is not overwritten.
 
+To take back everything one agent did, across all its sets:
+
+```ts
+const set = review.revertSource('Claude') // its id, its label, or (source) => boolean
+// "Revert everything from Claude": one proposal per cell it changed, back to
+// what the cell held before the agent first touched it. null when nothing of it was accepted.
+```
+
 ## Routing to an approver
 
 `review.toJSON({ setIds })` exports sets with their proposals as plain JSON.
@@ -418,6 +447,10 @@ What a base shows:
   text set to rich text or a percent drawn as a bar. The cell draws as it
   always does and "→ Closed" follows it, read through the field's own
   formatter, so a person shows by name.
+- **The record view.** An expanded record lists its pending proposals under
+  their fields: "Proposed by CRM agent (60%)", the value, the source's reason,
+  and Accept and Reject for that field. A strip above the fields says "3
+  proposed changes" with Accept all and Reject all for the record.
 - **Cards and events too.** Kanban and gallery cards with pending proposals
   show "2 proposed", and calendar events a dot, with the fields and values on
   hover. A form adds new records, so it has nothing to mark.

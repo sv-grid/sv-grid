@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { defaultGridMessages, resolveGridMessages } from './grid-messages'
+import { defaultGridMenuMessages, resolveGridMenuMessages } from './grid-menu-messages'
+
+describe('resolveGridMenuMessages', () => {
+  it('is English until told otherwise', () => {
+    expect(resolveGridMenuMessages()).toEqual(defaultGridMenuMessages)
+  })
+
+  it('takes the menus\' words from the same map as the rest', () => {
+    const m = resolveGridMenuMessages({ menuRemoveSort: 'Sortierung entfernen' })
+    expect(m.menuRemoveSort).toBe('Sortierung entfernen')
+    expect(m.findClose).toBe('Close find')
+  })
+})
 
 describe('resolveGridMessages', () => {
   it('returns the full English defaults when no overrides are given', () => {

@@ -67,7 +67,7 @@ const pushed = baseSource(createKitDataSource({ endpoint }), {
 
 Either way the base reads the table again and compares it with what it read
 last, so only what really moved is marked, and its own writes never are. A
-poll reads the whole table each time (up to the source's `limit`); keep the
+poll reads the whole table each time; keep the
 interval long on a big table.
 
 ## 3. A view for what needs review

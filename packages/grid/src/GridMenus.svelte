@@ -8,7 +8,10 @@
     type TableFeatures,
   } from "./index";
   import "./sv-grid-scrollbar";
-  import { onScrollOutside } from "./a11y/dismissable";
+  import { createDismissableLayer, onScrollOutside } from "./a11y/dismissable";
+  import { menuFocus } from "./a11y/menu-focus";
+  import { keepFocus } from "./a11y/focus-trap";
+  import { resolveGridMenuMessages } from "./grid-menu-messages";
   import type { Snippet } from "svelte";
   import type { GridIconName } from "./grid-icons";
   import SvListBox from "./SvListBox.svelte";
@@ -38,11 +41,19 @@
     openChooseColumns, sortColumnFromMenu, clearColumnSort, groupByColumnFromMenu, clearGroupingFromMenu, setFacetSelection, isAllFacetsChecked, toggleAllFacets, contextMenuItems, closeContextMenu, saveComment, removeComment, closeCommentEditor,
   } = createMenuActions<TFeatures, TData>(ctrl);
 
+  const m = $derived(resolveGridMenuMessages(ctrl.props.localization?.text));
   // View facade: re-bind the controller's reactive members so the markup
   // (moved verbatim from SvGrid.svelte) stays identical.
   const groupingControlsEnabled = $derived(ctrl.groupingControlsEnabled);
   const filterMenuValues = $derived(ctrl.filterMenuValues);
   const tooltip = $derived(ctrl.tooltip);
+  // Escape puts a tooltip away with the pointer still on what it explains.
+  const tooltipLayer = createDismissableLayer({ element: () => null, closeOnOutside: false, onDismiss: () => ctrl.hideTooltip() });
+  $effect(() => {
+    if (!tooltip) return;
+    tooltipLayer.activate();
+    return () => tooltipLayer.release();
+  });
   const columnMenuFor = $derived(ctrl.columnMenuFor);
   const columnMenuPos = $derived(ctrl.columnMenuPos);
   const filterMenuFor = $derived(ctrl.filterMenuFor);
@@ -93,6 +104,11 @@
   }
   const isColumnFiltered = $derived(ctrl.isColumnFiltered);
   const closeMenus = $derived(ctrl.closeMenus);
+  // An item that is off stays in the arrow-key order (aria-disabled, not
+  // disabled, as the ARIA menu pattern has it), so its click stops here.
+  const offItem = (e: MouseEvent) => {
+    if ((e.target as Element).closest?.('[role="menuitem"][aria-disabled="true"]')) e.stopPropagation();
+  };
 
   // Column/filter/operator menus are position:fixed and anchored to their
   // trigger by a one-time measurement taken when they open. On scroll they'd
@@ -221,15 +237,27 @@
    * Opening the filter popover used to leave focus on the funnel button
    * outside it, so a keyboard user landed nowhere and had to tab in past the
    * whole menu. Focus the first control instead - the condition value if the
-   * column has one, else the value search.
+   * column has one, else the value search. Its controls come and go ("Add
+   * condition" is replaced by what it adds), and closing it goes back to the funnel.
    */
   function focusFilterPanel(node: HTMLElement) {
+    const opener = document.activeElement as HTMLElement | null;
+    const kept = keepFocus(node);
     requestAnimationFrame(() => {
       const first = node.querySelector<HTMLElement>(
         ".sv-grid-menu-condition-value, .sv-dtp__input, .sv-dri__input, .sv-grid-menu-search",
       );
       first?.focus({ preventScroll: true });
     });
+    return {
+      destroy() {
+        kept.destroy();
+        queueMicrotask(() => {
+          const now = document.activeElement;
+          if ((!now || now === document.body || !now.isConnected) && opener?.isConnected) opener.focus({ preventScroll: true });
+        });
+      },
+    };
   }
 
   /**
@@ -387,12 +415,11 @@
       </div>
       {:else}
       <div class="sv-grid-menu-filter-head">
-        <span class="sv-grid-header-icon">{@render icon("filter")}</span> Filter
-        condition
+        <span class="sv-grid-header-icon">{@render icon("filter")}</span> {m.filterCondition}
       </div>
       <select
         class="sv-grid-menu-operator-select"
-        aria-label="Filter condition"
+        aria-label={m.filterCondition}
         value={menuActiveOperator}
         onchange={(event) =>
           updateFilterOperator(colId, (event.currentTarget as HTMLSelectElement).value as FilterOperator)}
@@ -416,7 +443,7 @@
               value={from && to ? [from, to] : null}
               formatString="yyyy-MM-dd"
               block
-              placeholder="Pick a range..."
+              placeholder={m.filterPickRange}
               onChange={(range) => {
                 updateFilterMenuValue(colId, range ? toIsoDateLocal(range[0]) : "");
                 updateFilterMenuValueTo(colId, range ? toIsoDateLocal(range[1]) : "");
@@ -431,7 +458,7 @@
             dropDownDisplayMode="calendar"
             block
             nullable
-            placeholder="Filter value..."
+            placeholder={m.filterValue}
             onChange={(d) => updateFilterMenuValue(colId, toIsoDateLocal(d))}
           />
         {/if}
@@ -446,12 +473,12 @@
           type={menuActiveOperator === "regex" ? "text" : menuInputType}
           value={filterMenuValues[colId]?.value ?? ""}
           placeholder={menuActiveOperator === "between"
-            ? "From"
+            ? m.filterFrom
             : isSetOp
-              ? "value, value..."
+              ? m.filterValues
               : menuActiveOperator === "regex"
-                ? "Pattern..."
-                : "Filter value..."}
+                ? m.filterPattern
+                : m.filterValue}
           onfocus={(event) => {
             if (isSetOperatorFor(colId)) onSetOpFilterFocus(event.currentTarget as HTMLInputElement, colId);
           }}
@@ -469,7 +496,7 @@
             class="sv-grid-menu-condition-value"
             type={menuInputType}
             value={filterMenuValues[colId]?.valueTo ?? ""}
-            placeholder="To"
+            placeholder={m.filterTo}
             oninput={(event) => updateFilterMenuValueTo(colId, (event.currentTarget as HTMLInputElement).value)}
           />
         {/if}
@@ -479,18 +506,18 @@
         {@const mf = filterMenuValues[colId]}
         {#if mf?.operator2}
           {@const op2 = mf.operator2 ?? defaultOperatorFor(menuColumn)}
-          <div class="sv-grid-menu-join" role="radiogroup" aria-label="Combine conditions">
+          <div class="sv-grid-menu-join" role="radiogroup" aria-label={m.filterCombine}>
             <button type="button" class:is-on={(mf.join ?? "AND") === "AND"}
-              onclick={() => patchFilter(colId, { join: "AND" })}>AND</button>
+              onclick={() => patchFilter(colId, { join: "AND" })}>{m.filterAnd}</button>
             <button type="button" class:is-on={mf.join === "OR"}
-              onclick={() => patchFilter(colId, { join: "OR" })}>OR</button>
-            <button type="button" class="sv-grid-menu-join-x" title="Remove second condition"
-              aria-label="Remove second condition"
+              onclick={() => patchFilter(colId, { join: "OR" })}>{m.filterOr}</button>
+            <button type="button" class="sv-grid-menu-join-x" title={m.filterRemoveSecond}
+              aria-label={m.filterRemoveSecond}
               onclick={() => patchFilter(colId, { operator2: undefined, value2: undefined, valueTo2: undefined, join: undefined })}>{@render icon("remove")}</button>
           </div>
           <select
             class="sv-grid-menu-operator-select"
-            aria-label="Second filter condition"
+            aria-label={m.filterSecondCondition}
             value={op2}
             onchange={(event) =>
               patchFilter(colId, { operator2: (event.currentTarget as HTMLSelectElement).value as FilterOperator })}
@@ -504,7 +531,7 @@
               class="sv-grid-menu-condition-value"
               type={menuInputType}
               value={mf.value2 ?? ""}
-              placeholder={op2 === "between" ? "From" : "Filter value..."}
+              placeholder={op2 === "between" ? m.filterFrom : m.filterValue}
               oninput={(event) => patchFilter(colId, { value2: (event.currentTarget as HTMLInputElement).value })}
             />
             {#if op2 === "between"}
@@ -512,7 +539,7 @@
                 class="sv-grid-menu-condition-value"
                 type={menuInputType}
                 value={mf.valueTo2 ?? ""}
-                placeholder="To"
+                placeholder={m.filterTo}
                 oninput={(event) => patchFilter(colId, { valueTo2: (event.currentTarget as HTMLInputElement).value })}
               />
             {/if}
@@ -520,7 +547,7 @@
         {:else}
           <button type="button" class="sv-grid-menu-add-cond"
             onclick={() => patchFilter(colId, { operator2: defaultOperatorFor(menuColumn), value2: "", join: "AND" })}>
-            + Add condition
+            {m.filterAddCondition}
           </button>
         {/if}
       {/if}
@@ -545,7 +572,7 @@
         {@render icon("search")}
         <input
           class="sv-grid-menu-search"
-          placeholder="Search values..."
+          placeholder={m.filterSearchValues}
           bind:value={ctrl.columnMenuSearch}
         />
       </span>
@@ -554,7 +581,7 @@
         <!-- Says what it will actually do: with a query typed it acts on the
              matches only, leaving the rest of the selection untouched. -->
         <span class="sv-grid-facet-label"
-          >{searching ? "(Select all results)" : "(Select all)"}</span
+          >{searching ? m.filterSelectAllResults : m.filterSelectAll}</span
         >
       </label>
       <!-- Windowed checklist. A high-cardinality column (10k distinct symbols
@@ -570,17 +597,17 @@
           rows={facetRows}
           rowHeight={24}
           size="sm"
-          ariaLabel="Filter values"
+          ariaLabel={m.filterValuesLabel}
           options={columnMenuFacetOptions}
           value={columnMenuSelectedFacets}
           onChange={(next) => setFacetSelection(colId, next as Set<string>)}
         />
       {:else}
-        <div class="sv-grid-facet-empty">No values</div>
+        <div class="sv-grid-facet-empty">{m.filterNoValues}</div>
       {/if}
       {#if columnMenuFacetValues.length > columnMenuVisibleFacets.length}
         <div class="sv-grid-facet-note">
-          Showing {columnMenuVisibleFacets.length} of {columnMenuFacetValues.length}
+          {m.filterShowing.replace("{shown}", String(columnMenuVisibleFacets.length)).replace("{total}", String(columnMenuFacetValues.length))}
         </div>
       {/if}
       {/if}
@@ -591,10 +618,10 @@
           disabled={!isColumnFiltered(colId)}
           onclick={() => clearColumnFilter(colId)}
         >
-          Clear filter
+          {ctrl.messages.clearFilter}
         </button>
         <button type="button" class="sv-grid-menu-btn sv-grid-menu-btn-primary" onclick={closeMenus}>
-          Done
+          {m.filterDone}
         </button>
       </div>
     </div>
@@ -612,28 +639,31 @@
       class="sv-grid-menu sv-grid-column-menu"
       data-svgrid-menu={ctrl.gridDomId}
       role="menu"
+      tabindex="-1"
       style={`left: ${columnMenuPos.x}px; top: ${columnMenuPos.y}px; max-height: calc(100vh - ${columnMenuPos.y}px - 12px);`}
+      use:menuFocus={{ close: closeMenus }}
+      onclickcapture={offItem}
     >
       {#if columnMenuTabsEnabled}
         <div class="sv-grid-menu-tabs" role="tablist">
           <button type="button" class="sv-grid-menu-tab" class:is-active={menuTab === "general"}
             role="tab" aria-selected={menuTab === "general"}
-            onclick={() => (ctrl.columnMenuTab = "general")}>General</button>
+            onclick={() => (ctrl.columnMenuTab = "general")}>{m.menuTabGeneral}</button>
           {#if menuCanFilter && showColumnFiltersEffective}
             <button type="button" class="sv-grid-menu-tab" class:is-active={menuTab === "filter"}
               role="tab" aria-selected={menuTab === "filter"}
-              onclick={() => (ctrl.columnMenuTab = "filter")}>Filter</button>
+              onclick={() => (ctrl.columnMenuTab = "filter")}>{m.menuTabFilter}</button>
           {/if}
           <button type="button" class="sv-grid-menu-tab" class:is-active={menuTab === "columns"}
             role="tab" aria-selected={menuTab === "columns"}
-            onclick={() => (ctrl.columnMenuTab = "columns")}>Columns</button>
+            onclick={() => (ctrl.columnMenuTab = "columns")}>{m.menuTabColumns}</button>
         </div>
       {/if}
       {#if columnMenuTabsEnabled && menuTab === "filter" && menuCanFilter && showColumnFiltersEffective}
         {@render filterPanelBody(menuColumnId)}
       {:else if columnMenuTabsEnabled && menuTab === "columns"}
         {@const tabColumns = grid.getAllColumns()}
-        <div class="sv-grid-menu-filter-head">Visible columns</div>
+        <div class="sv-grid-menu-filter-head">{m.menuVisibleColumns}</div>
         <SvListBox
           block
           checkbox
@@ -642,7 +672,7 @@
           rows={9}
           rowHeight={24}
           size="sm"
-          ariaLabel="Visible columns"
+          ariaLabel={m.menuVisibleColumns}
           options={columnVisibilityOptions(tabColumns)}
           value={visibleColumnIds(tabColumns)}
           onChange={(next) => applyColumnVisibility(tabColumns, next as Set<string>)}
@@ -656,7 +686,7 @@
           onclick={() => sortColumnFromMenu(menuColumnId, false)}
         >
           <span class="sv-grid-header-icon">{@render icon("sort-asc")}</span>
-          {menuSortLabels ? `Sort ${menuSortLabels[0]}` : "Sort ascending"}
+          {menuSortLabels ? m.menuSortBy.replace("{label}", menuSortLabels[0]) : m.menuSortAscending}
         </button>
         <button
           type="button"
@@ -665,16 +695,16 @@
           onclick={() => sortColumnFromMenu(menuColumnId, true)}
         >
           <span class="sv-grid-header-icon">{@render icon("sort-desc")}</span>
-          {menuSortLabels ? `Sort ${menuSortLabels[1]}` : "Sort descending"}
+          {menuSortLabels ? m.menuSortBy.replace("{label}", menuSortLabels[1]) : m.menuSortDescending}
         </button>
         <button
           type="button"
           class="sv-grid-menu-item"
           role="menuitem"
-          disabled={!sortDirectionByColumn[menuColumnId]}
+          aria-disabled={!sortDirectionByColumn[menuColumnId]}
           onclick={() => clearColumnSort(menuColumnId)}
         >
-          <span class="sv-grid-header-icon">{@render icon("x")}</span> Remove sort
+          <span class="sv-grid-header-icon">{@render icon("x")}</span> {m.menuRemoveSort}
         </button>
       {/if}
       <!-- Pinning works with column virtualization on: the pinned columns render
@@ -686,32 +716,32 @@
           type="button"
           class="sv-grid-menu-item"
           role="menuitem"
-          disabled={menuPinSide === "left" || menuLocked}
+          aria-disabled={menuPinSide === "left" || menuLocked}
           onclick={() => pinColumnLeft(menuColumnId)}
         >
           <span class="sv-grid-header-icon"
             >{@render icon("pin-left")}</span
-          > Pin to left
+          > {m.menuPinLeft}
         </button>
         <button
           type="button"
           class="sv-grid-menu-item"
           role="menuitem"
-          disabled={menuPinSide === "right" || menuLocked}
+          aria-disabled={menuPinSide === "right" || menuLocked}
           onclick={() => pinColumnRight(menuColumnId)}
         >
           <span class="sv-grid-header-icon"
             >{@render icon("pin-right")}</span
-          > Pin to right
+          > {m.menuPinRight}
         </button>
         <button
           type="button"
           class="sv-grid-menu-item"
           role="menuitem"
-          disabled={!menuPinSide || menuLocked}
+          aria-disabled={!menuPinSide || menuLocked}
           onclick={() => unpinColumn(menuColumnId)}
         >
-          <span class="sv-grid-header-icon">{@render icon("unpin")}</span> Unpin column
+          <span class="sv-grid-header-icon">{@render icon("unpin")}</span> {m.menuUnpin}
         </button>
       {/if}
       <!-- Items an opt-in module adds (grid-extension columnMenuItems), e.g. the
@@ -725,7 +755,7 @@
             type="button"
             class="sv-grid-menu-item"
             role="menuitem"
-            disabled={item.disabled}
+            aria-disabled={!!item.disabled}
             onclick={() => {
               closeMenus();
               item.run();
@@ -751,8 +781,7 @@
             closeMenus();
           }}
         >
-          <span class="sv-grid-header-icon">{@render icon("autosize")}</span> Autosize
-          this column
+          <span class="sv-grid-header-icon">{@render icon("autosize")}</span> {m.menuAutosize}
         </button>
       {/if}
       <button
@@ -764,8 +793,7 @@
           closeMenus();
         }}
       >
-        <span class="sv-grid-header-icon">{@render icon("autosize")}</span> Autosize
-        all columns
+        <span class="sv-grid-header-icon">{@render icon("autosize")}</span> {m.menuAutosizeAll}
       </button>
       {#if groupingControlsEnabled}
         <div class="sv-grid-menu-sep"></div>
@@ -773,20 +801,19 @@
           type="button"
           class="sv-grid-menu-item"
           role="menuitem"
-          disabled={groupingColumns.includes(menuColumnId)}
+          aria-disabled={groupingColumns.includes(menuColumnId)}
           onclick={() => groupByColumnFromMenu(menuColumnId)}
         >
-          <span class="sv-grid-header-icon">{@render icon("group")}</span> Group
-          by this column
+          <span class="sv-grid-header-icon">{@render icon("group")}</span> {m.menuGroupBy}
         </button>
         <button
           type="button"
           class="sv-grid-menu-item"
           role="menuitem"
-          disabled={!groupingColumns.includes(menuColumnId)}
+          aria-disabled={!groupingColumns.includes(menuColumnId)}
           onclick={() => clearGroupingFromMenu(menuColumnId)}
         >
-          <span class="sv-grid-header-icon">{@render icon("x")}</span> Remove grouping
+          <span class="sv-grid-header-icon">{@render icon("x")}</span> {m.menuRemoveGrouping}
         </button>
       {/if}
       <div class="sv-grid-menu-sep"></div>
@@ -803,7 +830,7 @@
           onclick={(event) => openChooseColumns(event)}
         >
           <span class="sv-grid-header-icon">{@render icon("columns")}</span>
-          Choose columns
+          {m.menuChooseColumns}
           <span class="sv-grid-header-icon sv-grid-menu-item-chevron">{@render icon("chevron-down")}</span>
         </button>
       {/if}
@@ -816,7 +843,7 @@
           closeMenus();
         }}
       >
-        <span class="sv-grid-header-icon">{@render icon("reset")}</span> Reset columns
+        <span class="sv-grid-header-icon">{@render icon("reset")}</span> {m.menuResetColumns}
       </button>
       {/if}
     </div>
@@ -843,9 +870,11 @@
       class="sv-grid-menu sv-grid-choose-columns-menu"
       data-svgrid-menu={ctrl.gridDomId}
       role="menu"
+      tabindex="-1"
       style={`left: ${chooseColumnsPos.x}px; top: ${chooseColumnsPos.y}px;`}
+      use:menuFocus={{ close: closeMenus }}
     >
-      <div class="sv-grid-menu-filter-head">Visible columns</div>
+      <div class="sv-grid-menu-filter-head">{m.menuVisibleColumns}</div>
       <SvListBox
         block
         checkbox
@@ -854,7 +883,7 @@
         rows={11}
         rowHeight={24}
         size="sm"
-        ariaLabel="Visible columns"
+        ariaLabel={m.menuVisibleColumns}
         options={columnVisibilityOptions(everyColumn)}
         value={visibleColumnIds(everyColumn)}
         onChange={(next) => applyColumnVisibility(everyColumn, next as Set<string>)}
@@ -921,7 +950,7 @@
           rows={8}
           rowHeight={26}
           size="sm"
-          ariaLabel="Filter values"
+          ariaLabel={m.filterValuesLabel}
           options={inSuggestOptions}
           value={selectedTokens}
           onChange={(next) => {
@@ -938,7 +967,7 @@
           }}
         />
       {:else}
-        <div class="sv-grid-facet-empty">No values</div>
+        <div class="sv-grid-facet-empty">{m.filterNoValues}</div>
       {/if}
     </div>
   {/if}
@@ -956,8 +985,12 @@
       class="sv-grid-menu sv-grid-context-menu"
       data-svgrid-menu={ctrl.gridDomId}
       role="menu"
+      tabindex="-1"
       style={`left: ${contextMenuPos.x}px; top: ${contextMenuPos.y}px;`}
       use:keepInViewport={contextMenuPos}
+      use:menuFocus={{ close: closeContextMenu, returnTo: () => ctrl.gridRootEl }}
+      onclickcapture={offItem}
+      oncontextmenu={(e) => e.preventDefault()}
     >
       {#each items as item (item.key)}
         {#if item.separator}
@@ -967,7 +1000,7 @@
             type="button"
             class="sv-grid-menu-item"
             role="menuitem"
-            disabled={item.disabled}
+            aria-disabled={!!item.disabled}
             onclick={() => { item.run?.(); closeContextMenu(); }}
           >
             <!-- Every item keeps the gutter once one has an icon, so the labels
@@ -1000,14 +1033,14 @@
       class="sv-grid-menu sv-grid-comment-editor"
       data-svgrid-menu={ctrl.gridDomId}
       role="dialog"
-      aria-label="Edit comment"
+      aria-label={ctrl.messages.menuEditComment}
       style={`left: ${commentEditFor.x}px; top: ${commentEditFor.y}px;`}
     >
       <!-- svelte-ignore a11y_autofocus -->
       <textarea
         class="sv-grid-comment-textarea"
         rows="3"
-        placeholder="Add a comment…"
+        placeholder={m.commentPlaceholder}
         autofocus
         bind:value={ctrl.commentDraft}
         onkeydown={(e) => {
@@ -1017,10 +1050,10 @@
         }}
       ></textarea>
       <div class="sv-grid-comment-actions">
-        <button type="button" class="sv-grid-comment-remove" onclick={removeComment}>Remove</button>
+        <button type="button" class="sv-grid-comment-remove" onclick={removeComment}>{m.commentRemove}</button>
         <span class="sv-grid-comment-spacer"></span>
-        <button type="button" class="sv-grid-comment-cancel" onclick={closeCommentEditor}>Cancel</button>
-        <button type="button" class="sv-grid-comment-save" onclick={saveComment}>Save</button>
+        <button type="button" class="sv-grid-comment-cancel" onclick={closeCommentEditor}>{m.commentCancel}</button>
+        <button type="button" class="sv-grid-comment-save" onclick={saveComment}>{m.commentSave}</button>
       </div>
     </div>
   {/if}

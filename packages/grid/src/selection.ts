@@ -228,6 +228,9 @@ export function createSelection<
     const container = ctx.scrollContainer as HTMLElement;
     const topBefore = container.scrollTop;
     const leftBefore = container.scrollLeft;
+    // A footer sticks to the bottom of the view, and a row must stop above it.
+    const footHeight = container.querySelector<HTMLElement>("tfoot")?.offsetHeight ?? 0;
+    container.style.scrollPaddingBottom = `${footHeight}px`;
     // A frozen row is always in view; only the column may need to move.
     const frozen: number = ctx.frozenRowCount ?? 0;
     const frozenBand: number = ctx.frozenBandHeight ?? 0;
@@ -259,19 +262,10 @@ export function createSelection<
         // to a DOM scrollTop (the DOM scroll range is capped), so the plain
         // offset math below would clamp and never reach the target. Map the
         // logical offset into DOM space and align the row just under the
-        // sticky header. Rows are sub-pixel tall in DOM space here, so exact
-        // minimum-scroll is meaningless; once the row mounts the native
+        // sticky header, which a scroll offset is already measured under. Exact
+        // minimum-scroll is meaningless here; once the row mounts the native
         // `scrollIntoView` path above fine-tunes on the next navigation.
-        const headerHeight = (ctx.theadEl as HTMLElement | null)?.offsetHeight
-          ?? ctx.headerHeight ?? 0
-        const rowLogicalTop = ctx.virtualizer.getOffsetForIndex(rowIndex)
-        const nextTop = Math.max(
-          ctx.logicalToDomRowOffset(rowLogicalTop) - headerHeight,
-          0,
-        )
-        if (Math.abs(nextTop - root.scrollTop) > 0.5) {
-          root.scrollTop = nextTop
-        }
+        root.scrollTop = ctx.logicalToDomRowOffset(ctx.virtualizer.getOffsetForIndex(rowIndex))
       } else {
         // Row outside the rendered virtualizer window. Compute the
         // scroll-coordinate target manually and set scrollTop. On the
@@ -289,8 +283,8 @@ export function createSelection<
         // it clears both.
         if (rowTopScroll < currentTop + headerHeight + frozenBand) {
           nextTop = rowTopScroll - headerHeight - frozenBand
-        } else if (rowBottom > currentTop + clientHeight) {
-          nextTop = rowBottom - clientHeight
+        } else if (rowBottom > currentTop + clientHeight - footHeight) {
+          nextTop = rowBottom - clientHeight + footHeight
         }
         nextTop = Math.max(nextTop, 0)
         if (nextTop !== currentTop) {
@@ -311,7 +305,7 @@ export function createSelection<
         const cellRect       = cellEl.getBoundingClientRect();
         const cellTopInView  = cellRect.top    - containerRect.top;
         const cellBotInView  = cellRect.bottom - containerRect.top;
-        const clientHeight   = ctx.scrollContainer.clientHeight;
+        const clientHeight   = ctx.scrollContainer.clientHeight - footHeight;
         let nextTop = ctx.scrollContainer.scrollTop;
         if (cellTopInView < ctx.headerHeight) {
           nextTop = ctx.scrollContainer.scrollTop + cellTopInView - ctx.headerHeight;
@@ -333,13 +327,23 @@ export function createSelection<
     const fallbackWidth = ctx.props.columnWidth ?? 140;
     const cellStart = item?.start ?? ctx.columnVirtualizer?.getOffsetForIndex?.(colIndex) ?? (colIndex * fallbackWidth);
     const cellSize  = item?.size  ?? ctx.columnVirtualizer?.getSizeForIndex?.(colIndex)  ?? fallbackWidth;
-    const cellEnd = cellStart + cellSize;
-    const viewStart = ctx.scrollContainer.scrollLeft;
-    const viewEnd = viewStart + ctx.scrollContainer.clientWidth;
-    if (cellStart < viewStart) {
-      ctx.scrollContainer.scrollLeft = cellStart;
-    } else if (cellEnd > viewEnd) {
-      ctx.scrollContainer.scrollLeft = cellEnd - ctx.scrollContainer.clientWidth;
+    // Measured from the start of the row, where the row numbers and the
+    // left-pinned columns cover `pins.start` of the view and the right-pinned
+    // ones `pins.end`: a cell has to clear them, or the active cell sits under
+    // a pin. A pinned cell is on screen already. Under rtl scrollLeft runs
+    // from 0 down, so it is read and written with its sign flipped.
+    const pins = ctx.pinnedOffsets;
+    const columnId = ctx.allColumns[colIndex].id;
+    if (!(columnId in pins.left || columnId in pins.right)) {
+      const flip = getComputedStyle(container).direction === "rtl" ? -1 : 1;
+      const view = container.scrollLeft * flip;
+      const start = ctx.systemColumnsWidth + cellStart;
+      const end = start + cellSize;
+      if (start < view + pins.start) {
+        container.scrollLeft = (start - pins.start) * flip;
+      } else if (end > view + container.clientWidth - pins.end) {
+        container.scrollLeft = (end - container.clientWidth + pins.end) * flip;
+      }
     }
     // The scroll position is known right here, so hand it to the
     // virtualizers now rather than waiting for the `scroll` event + rAF:
@@ -637,6 +641,8 @@ export function createSelection<
     // so it selects a range without toggling.
 
     const active = ctx.grid.getState().activeCell;
+    pressedByTouch = event.pointerType === "touch";
+    activeWasChosen = !!ctx.userHasActivatedCell;
     ctx.activeAtPointerDown = active
       ? { rowIndex: active.rowIndex, colIndex: active.colIndex }
       : null;
@@ -751,6 +757,9 @@ export function createSelection<
    *  selection it grabbed. One gesture, one flag - cleared on the next click
    *  whether or not the grab turned into a real drag. */
   let moveGrabSwallowsClick = false;
+  // The cell seeded on mount was never chosen: a first click on it is a first click.
+  let activeWasChosen = true;
+  let pressedByTouch = false;
 
   function onCellClick(rowIndex: number, colIndex: number) {
     if (moveGrabSwallowsClick) {
@@ -799,9 +808,20 @@ export function createSelection<
       typeof cellValue === "boolean" &&
       column.columnDef.cell == null;
 
+    // onCellPointerDown already set active+selection for data cells.
+    const wasActive =
+      activeWasChosen &&
+      ctx.activeAtPointerDown !== null &&
+      ctx.activeAtPointerDown.rowIndex === rowIndex &&
+      ctx.activeAtPointerDown.colIndex === colIndex;
+
     if (declaredCheckbox || inferredCheckbox) {
       const editable = ctx.isCellEditableAt?.(rowIndex, colIndex) ?? true;
-      if (editable && (declaredCheckbox || ctx.editingEnabled)) {
+      if (
+        editable &&
+        (declaredCheckbox || ctx.editingEnabled) &&
+        (wasActive || pressedByTouch || !column.columnDef.toggleOnSecondClick)
+      ) {
         ctx.toggleBooleanCell(rowIndex, colIndex);
       }
       setActiveCell(rowIndex, colIndex);
@@ -810,13 +830,8 @@ export function createSelection<
       return;
     }
 
-    // onCellPointerDown already set active+selection for data cells. Only
-    // decide whether to enter edit mode (click on the previously-active cell,
-    // unless the grid was told a second click is just a click).
-    const wasActive =
-      ctx.activeAtPointerDown !== null &&
-      ctx.activeAtPointerDown.rowIndex === rowIndex &&
-      ctx.activeAtPointerDown.colIndex === colIndex;
+    // Only decide whether to enter edit mode (click on the previously-active
+    // cell, unless the grid was told a second click is just a click).
     if (wasActive && ctx.editingEnabled && ctx.props.editOnSecondClick !== false) {
       ctx.onCellDoubleClick(rowIndex, colIndex);
       return;

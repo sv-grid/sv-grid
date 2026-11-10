@@ -26,8 +26,8 @@ lists its tasks with their average progress and their budget. The
 <div data-docs-demo="511-base-content-calendar" data-height="640"></div>
 
 Two tables, Posts and Campaigns. A post has a stage, channels, an author, a
-publish date, a cover image, a word count, a brief and its campaign; a
-campaign lists its posts and adds up their words.
+publish date, a cover image, a word count, a brief (a rich text field) and
+its campaign; a campaign lists its posts and adds up their words.
 
 - **Content plan:** the posts in publishing order, colored by stage, word
   counts summed in the footer.

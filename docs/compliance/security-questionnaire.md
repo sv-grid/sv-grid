@@ -21,20 +21,26 @@ financial statements) go to sales@jqwidgets.com.
 
 | Question | Answer |
 | --- | --- |
-| Does the library send data anywhere? | **No.** No telemetry, analytics or update checks. The only network calls are ones you configure: a server data source calls the `fetch` you pass it, and the AI helpers call the `AIProvider` you register. |
+| Does the library send data anywhere? | **Not to us.** No telemetry, analytics or update checks. Its network calls go to systems you configure or a person chose: a server data source calls your endpoint, the AI helpers call the `AIProvider` you register, SvGrid Base `fetch`es an attachment's URL for a PDF preview, and a server automation calls the webhook URL its author wrote. Full list: [SvGrid Base](../help/security.md#what-it-connects-to). |
+| Does any of it run on our server? | `@svgrid/grid` does not. In `@svgrid/enterprise`, `createKitHandlers`, `createSqlDataSource`, `createBaseEndpoint` and `createAutomationServer` do, inside your app, with your credentials. See [server handlers](../help/security.md#server-handlers). |
+| Can an automation reach our internal network? | Not by default. A server webhook refuses private, local and metadata addresses, connects to the addresses it checked (on Node) and follows no redirect. `allowInternalWebhooks` opens this, and a `fetch` of your own gets the check but not the pin. See [webhooks and email](../help/security.md#webhooks-and-email). |
+| Does it send email? | Only through the `sendEmail` function you give the server runner. |
+| Where do attachments go? | Wherever your `upload` function puts them. The library stores and scans nothing. A preview frames a file only when its bytes were read and are a PDF. See [attachments](../help/security.md#attachments). |
+| Does deleting a record erase it? | Not on a table with `softDelete`: the row stays until it is purged. See [GDPR](./gdpr.md#erasure-in-svgrid-base). |
 | Does the license check phone home? | **No.** The Enterprise key is validated offline, in the browser. Without a valid key the features still run and show a watermark. |
 | Does it write to storage? | Not unless you opt in (saved views, for example). See [GDPR + data residency](./gdpr.md). |
 | Does it evaluate code? | No `eval` or `new Function` in `@svgrid/grid`; it runs under a strict CSP. See [security](../help/security.md#csp-guidance). |
+| Does it run under Trusted Types? | Yes, the grid and SvGrid Base with every field type, under `require-trusted-types-for 'script'`. Rich text goes through the sanitizer and one policy, `svgrid`; Svelte adds `svelte-trusted-html`. `printGrid` opening its window, the spreadsheet's Print, file open and HTML paste, and an `SvTour` step `image` given as markup instead of a URL do not run under it. See [SECURITY.md](https://github.com/sv-grid/sv-grid/blob/main/SECURITY.md#trusted-types). |
 | Personal data, PHI | The library processes only what your app renders. See [GDPR](./gdpr.md) and [HIPAA](./hipaa.md). |
 
 ## Supply chain
 
 | Question | Answer |
 | --- | --- |
-| Runtime dependencies | `@svgrid/grid`: one, `esm-env` (MIT, no dependencies of its own). `@svgrid/enterprise`: none required; `jszip` and `pdfmake` are optional peers loaded on first XLSX or PDF use. Enterprise also ships one vendored module, the Smart UI exporter (jQWidgets). |
+| Runtime dependencies | `@svgrid/grid`: one, `esm-env` (MIT, no dependencies of its own). `@svgrid/enterprise`: none required; `jszip` and `pdfmake` are optional peers loaded on first XLSX or PDF use, and `react`, `react-dom` and `vue` are optional peers for the framework wrappers only. Enterprise also ships one vendored module, the Smart UI exporter (jQWidgets). |
 | SBOM | CycloneDX 1.6, one per package, in [`sbom/`](https://github.com/sv-grid/sv-grid/tree/main/sbom). Regenerated with every release, and CI fails if one drifts from its manifest (`pnpm sbom:check`). Vendored code is listed as a component. |
 | Are releases signed? | npm packages are published from GitHub Actions with `--provenance`, so npm shows the workflow and commit that built them. From the next release on, each SBOM also carries a Sigstore attestation: `gh attestation verify sbom/svgrid-grid.cdx.json --repo sv-grid/sv-grid`. |
-| Can you build from source? | Yes. The npm packages are built from this public repository; there are no private patches. |
+| Can you build from source? | The MIT packages, yes: they are built from this public repository, with no private patches. `@svgrid/enterprise` is commercial, built from a private repository and published minified; the Custom plan includes source-code escrow. |
 | Licenses of what you ship | MIT for the grid and its dependency; the vendored exporter is jQWidgets' own code under its license. The SBOM records each license. |
 
 ## Secure development
@@ -43,7 +49,7 @@ financial statements) go to sales@jqwidgets.com.
 | --- | --- |
 | How is code tested before release? | Every push to `main` runs the Test workflow (`.github/workflows/test.yml`): type checks of every package, lint, the grid and Enterprise unit suites, browser specs in Chromium, bundle-size budgets and SBOM drift. The release workflow (`.github/workflows/publish-npm.yml`) runs when a push to `main` finishes its Test run green, and publishes that commit; there is no scheduled publish. A manual run is the maintainer's override. |
 | Security-relevant tests | HTML sanitization of cell content (`sanitize-html.test.ts`); formula injection in CSV, TSV and chart CSV exports (`csv-injection.test.ts`); crafted .xlsx files that address cells far outside the sheet (`import-xlsx-limits.dom.test.ts`) or unzip to far more than they weigh (`xlsx-zip-bomb.dom.test.ts`); LIMIT and OFFSET rejected unless they are non-negative integers in the SvelteKit SQL data source (`sql-source.test.ts`); and the accessibility suites. |
-| CSV / formula injection | File exports prefix text that a spreadsheet would run as a formula (`=`, `+`, `-`, `@`, tab, carriage return) with `'`, by default. See [export](../help/export.md). |
+| CSV / formula injection | File exports prefix text that a spreadsheet would run as a formula (`=`, `+`, `-`, `@`, tab, line feed, carriage return) with `'`, by default. See [export](../help/export.md). |
 | Can a version change after release? | No. npm does not allow a published version to be overwritten. |
 
 ## Vulnerability management

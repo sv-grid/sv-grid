@@ -36,9 +36,11 @@ const DROP_SUBTREE = new Set([
 ])
 
 /** Attributes allowed per tag. `*` applies to every allowed tag. A `style`
- *  attribute is never allowed: it is the classic sanitizer hole (url(...)
+ *  attribute is not allowed: it is the classic sanitizer hole (url(...)
  *  payloads, position tricks that let a cell cover the page chrome), and cell
- *  styling belongs to the column rather than to the data. */
+ *  styling belongs to the column rather than to the data. One thing is kept:
+ *  a text alignment, which `SvRichText`'s buttons write, rebuilt from scratch so
+ *  nothing else of the attribute survives. */
 const ALLOWED_ATTRS: Record<string, Set<string>> = {
   '*': new Set(['class', 'dir', 'lang', 'title']),
   a: new Set(['href', 'target', 'rel']),
@@ -69,9 +71,31 @@ function attrAllowed(tag: string, attr: string): boolean {
   return ALLOWED_ATTRS[tag]?.has(attr) ?? false
 }
 
+type Policy = { createHTML(html: string): string }
+let policy: Policy | null | undefined
+
+/**
+ * Trusted Types: the one policy SvGrid makes, `svgrid`, made the first time it is
+ * needed and only where the page has `trustedTypes`. It passes HTML through as it
+ * is, so it takes only markup on its way into the inert parser below or markup this
+ * file just sanitized. Nothing outside this package reaches it.
+ */
+export function asTrustedHtml(html: string): string {
+  if (policy === undefined) {
+    const tt = (globalThis as { trustedTypes?: { createPolicy(name: string, rules: Policy): Policy } }).trustedTypes
+    try {
+      policy = tt ? tt.createPolicy('svgrid', { createHTML: (s) => s }) : null
+    } catch {
+      policy = null
+      console.warn("SvGrid: the page's CSP refused the Trusted Types policy \"svgrid\". Add it to `trusted-types`, or rich text cannot render.")
+    }
+  }
+  return policy ? policy.createHTML(html) : html
+}
+
 /** DOM path: walk the parsed tree and strip anything off the allowlist. */
 function sanitizeWithDom(html: string): string {
-  const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html')
+  const doc = new DOMParser().parseFromString(asTrustedHtml(`<body>${html}</body>`), 'text/html')
   const walk = (node: Element): void => {
     // Snapshot the child list: the loop mutates it as it unwraps and removes.
     for (const child of [...node.children]) {
@@ -90,7 +114,9 @@ function sanitizeWithDom(html: string): string {
       for (const attr of [...child.attributes]) {
         const name = attr.name.toLowerCase()
         if (!attrAllowed(tag, name)) {
-          child.removeAttribute(attr.name)
+          const align = name === 'style' && /text-align:\s*(left|right|center|justify)/i.exec(attr.value)
+          if (align) child.setAttribute(name, `text-align:${align[1]}`)
+          else child.removeAttribute(attr.name)
           continue
         }
         if ((name === 'href' || name === 'src') && !isSafeUrl(attr.value, tag, name)) {
@@ -139,6 +165,13 @@ export function sanitizeHtml(html: string | null | undefined): string {
   if (!input.includes('<')) return input // no angle bracket, no markup to strip
   return typeof DOMParser === 'undefined' ? sanitizeWithoutDom(input) : sanitizeWithDom(input)
 }
+
+/**
+ * `sanitizeHtml`, ready for an HTML sink (`{@html}`, `innerHTML`, `DOMParser`)
+ * on a page that requires Trusted Types: there it is a `TrustedHTML` of the
+ * `svgrid` policy, elsewhere the same string.
+ */
+export const trustedHtml = (html: string | null | undefined): string => asTrustedHtml(sanitizeHtml(html))
 
 /** Escape text so it embeds in HTML as literal characters. */
 function escapeHtml(text: string): string {

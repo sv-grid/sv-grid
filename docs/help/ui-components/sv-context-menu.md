@@ -65,7 +65,7 @@ import { SvContextMenu } from '@svgrid/grid'
 | `separator` | `boolean`         | Render a divider instead of an item.                      |
 | `icon`      | `Snippet`         | Leading icon.                                             |
 | `shortcut`  | `string`          | Right-aligned hint, e.g. a keyboard shortcut.            |
-| `disabled`  | `boolean`         | Dim and skip the item.                                   |
+| `disabled`  | `boolean`         | Dim the item; arrows reach it, choosing it does nothing. |
 | `children`  | `MenuItem[]`      | Nested submenu items (renders a flyout).                 |
 | `onSelect`  | `() => void`      | Per-item callback fired when the item is chosen.        |
 
@@ -136,6 +136,16 @@ Bind `disabled` to context - for example, no menu on read-only rows - to skip th
 handler without unwrapping the region.
 
 ## Accessibility
+
+A menu built from your own markup gets the same keyboard from the `menuFocus`
+action: focus moves to the first item, arrows, Home, End and first letters move,
+Tab and Escape call `close`, and focus goes back to what opened the menu.
+
+```svelte
+<div role="menu" tabindex="-1" use:menuFocus={{ close }}>
+  <button role="menuitem">Rename</button>
+</div>
+```
 
 - The surface is a WAI-ARIA `menu`; the first enabled item is focused on open and
   arrow keys, Home/End, Enter, and Escape all work (via SvMenuList).

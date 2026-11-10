@@ -1,10 +1,10 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-11-10T09:28:48.747Z",
+  "generatedAt": "2026-11-10T01:51:19.481Z",
   "counts": {
-    "pages": 480,
-    "enterprise": 109,
+    "pages": 483,
+    "enterprise": 112,
     "withDemo": 349
   },
   "pillars": [
@@ -496,12 +496,15 @@
         "help/base/forms.md",
         "help/base/undo-trash-import.md",
         "help/base/collaboration.md",
+        "help/base/permissions.md",
+        "help/base/languages.md",
         "help/base/custom-field-type.md",
         "help/base/automations.md",
         "help/base/data.md",
         "help/base/supabase.md",
         "help/base/postgres.md",
         "help/base/rest-api.md",
+        "help/base/server-compute.md",
         "help/base/ai-agents.md",
         "help/base/review-queue.md",
         "help/fields.md"
@@ -524,6 +527,8 @@
             "help/base/forms.md",
             "help/base/undo-trash-import.md",
             "help/base/collaboration.md",
+            "help/base/permissions.md",
+            "help/base/languages.md",
             "help/base/custom-field-type.md"
           ]
         },
@@ -539,7 +544,8 @@
             "help/base/data.md",
             "help/base/supabase.md",
             "help/base/postgres.md",
-            "help/base/rest-api.md"
+            "help/base/rest-api.md",
+            "help/base/server-compute.md"
           ]
         },
         {
@@ -1065,7 +1071,7 @@
       "section": "",
       "pillar": "grid",
       "tier": "community",
-      "words": 13139,
+      "words": 35558,
       "lastUpdated": "2026-11-10",
       "demoIds": []
     },
@@ -1077,32 +1083,32 @@
       "section": "compliance",
       "pillar": "enterprise",
       "tier": "community",
-      "words": 661,
-      "lastUpdated": "2026-08-17",
+      "words": 845,
+      "lastUpdated": "2026-11-06",
       "demoIds": []
     },
     {
       "path": "compliance/gdpr.md",
       "url": "/docs/compliance/gdpr/",
       "title": "GDPR + data residency",
-      "summary": "sv-grid is **GDPR-neutral**: the library never transmits personal data, never stores it server-side, and never logs it. If your app is GDPR-compliant before adding sv-grid, adding sv-grid does not break that compliance.",
+      "summary": "@svgrid/grid is **GDPR-neutral**: it never transmits personal data, never stores it server-side, and never logs it. If your app is GDPR-compliant before adding the grid, adding it does not break that compliance.",
       "section": "compliance",
       "pillar": "enterprise",
       "tier": "community",
-      "words": 615,
-      "lastUpdated": "2026-06-12",
+      "words": 1272,
+      "lastUpdated": "2026-11-07",
       "demoIds": []
     },
     {
       "path": "compliance/hipaa.md",
       "url": "/docs/compliance/hipaa/",
       "title": "HIPAA posture",
-      "summary": "sv-grid is **HIPAA-neutral**: the library does not transmit, store, or process PHI on its own. If your app is HIPAA-compliant before adding sv-grid, adding sv-grid does not break that compliance.",
+      "summary": "@svgrid/grid is **HIPAA-neutral**: it does not transmit, store, or process PHI on its own. If your app is HIPAA-compliant before adding it, adding it does not break that compliance.",
       "section": "compliance",
       "pillar": "enterprise",
       "tier": "community",
-      "words": 647,
-      "lastUpdated": "2026-08-20",
+      "words": 935,
+      "lastUpdated": "2026-11-07",
       "demoIds": []
     },
     {
@@ -1113,32 +1119,32 @@
       "section": "compliance",
       "pillar": "enterprise",
       "tier": "community",
-      "words": 945,
-      "lastUpdated": "2026-10-26",
+      "words": 1232,
+      "lastUpdated": "2026-11-08",
       "demoIds": []
     },
     {
       "path": "compliance/soc2.md",
       "url": "/docs/compliance/soc2/",
       "title": "SOC 2 posture",
-      "summary": "sv-grid is a UI library, not a service - so it cannot itself hold a SOC 2 report. But it can sit inside a SOC 2-audited application, and the controls below describe the line where the library's responsibility ends and yours begins.",
+      "summary": "sv-grid is a set of libraries, not a service - so it cannot itself hold a SOC 2 report. But it can sit inside a SOC 2-audited application, and the controls below describe the line where the library's responsibility ends and yours begins.",
       "section": "compliance",
       "pillar": "enterprise",
       "tier": "community",
-      "words": 700,
-      "lastUpdated": "2026-10-17",
+      "words": 1010,
+      "lastUpdated": "2026-11-07",
       "demoIds": []
     },
     {
       "path": "compliance/vpat.md",
       "url": "/docs/compliance/vpat/",
       "title": "Accessibility Conformance Report (VPAT 2.5Rev, INT)",
-      "summary": "**Product:** SvGrid (@svgrid/grid, @svgrid/enterprise) **Report version:** 2.0 **Report date:** 2026-10-25 **Standards:** WCAG 2.2 Level A and AA, Revised Section 508, EN 301 549 v3.2.1 **Contact:** support@jqwidgets.com",
+      "summary": "**Product:** SvGrid (@svgrid/grid, @svgrid/enterprise, SvGrid Base) **Report version:** 2.5 **Report date:** 2026-11-08 **Standards:** WCAG 2.2 Level A and AA, Revised Section 508, EN 301 549 v3.2.1 **Contact:** support@jqwidgets.com",
       "section": "compliance",
       "pillar": "enterprise",
       "tier": "community",
-      "words": 2343,
-      "lastUpdated": "2026-10-26",
+      "words": 6632,
+      "lastUpdated": "2026-11-09",
       "demoIds": []
     },
     {
@@ -1201,8 +1207,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Auth & security",
-      "words": 1209,
-      "lastUpdated": "2026-08-20",
+      "words": 1633,
+      "lastUpdated": "2026-11-09",
       "demoIds": []
     },
     {
@@ -1383,8 +1389,8 @@
       "pillar": "studio",
       "tier": "enterprise",
       "group": "Connect to data",
-      "words": 1677,
-      "lastUpdated": "2026-08-17",
+      "words": 1825,
+      "lastUpdated": "2026-11-06",
       "demoIds": []
     },
     {
@@ -1921,7 +1927,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1828,
-      "lastUpdated": "2026-10-06",
+      "lastUpdated": "2026-11-04",
       "demoIds": [
         "09-server-side",
         "06-large-dataset",
@@ -1952,7 +1958,7 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 906,
+      "words": 873,
       "lastUpdated": "2026-11-10",
       "demoIds": []
     },
@@ -1976,8 +1982,8 @@
       "section": "getting-started",
       "pillar": "grid",
       "tier": "community",
-      "words": 2289,
-      "lastUpdated": "2026-10-10",
+      "words": 2506,
+      "lastUpdated": "2026-11-09",
       "demoIds": [],
       "tutorialIds": [
         "learn-9-sveltekit"
@@ -1991,8 +1997,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2699,
-      "lastUpdated": "2026-10-25",
+      "words": 3469,
+      "lastUpdated": "2026-11-08",
       "demoIds": [
         "17-accessibility",
         "65-keyboard-shortcuts",
@@ -2174,8 +2180,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Automate",
-      "words": 2205,
-      "lastUpdated": "2026-10-14",
+      "words": 2739,
+      "lastUpdated": "2026-11-08",
       "demoIds": [
         "504-project-tracker"
       ]
@@ -2189,8 +2195,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Build it out",
-      "words": 6136,
-      "lastUpdated": "2026-11-03",
+      "words": 6622,
+      "lastUpdated": "2026-11-07",
       "demoIds": [
         "514-base-hiring-tracker",
         "712-base-mentions",
@@ -2207,8 +2213,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Build it out",
-      "words": 5454,
-      "lastUpdated": "2026-10-14",
+      "words": 5503,
+      "lastUpdated": "2026-11-07",
       "demoIds": []
     },
     {
@@ -2220,11 +2226,12 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Connect your data",
-      "words": 1998,
-      "lastUpdated": "2026-10-17",
+      "words": 8619,
+      "lastUpdated": "2026-11-09",
       "demoIds": [
         "516-base-postgres",
-        "700-base-ai-triage"
+        "700-base-ai-triage",
+        "723-base-million-orders"
       ]
     },
     {
@@ -2236,8 +2243,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Build it out",
-      "words": 4958,
-      "lastUpdated": "2026-11-03",
+      "words": 5592,
+      "lastUpdated": "2026-11-07",
       "demoIds": [
         "514-base-hiring-tracker",
         "711-base-form-logic"
@@ -2252,12 +2259,25 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Build it out",
-      "words": 5503,
-      "lastUpdated": "2026-11-03",
+      "words": 5558,
+      "lastUpdated": "2026-11-06",
       "demoIds": [
         "515-base-inventory",
         "708-base-formula-compat"
       ]
+    },
+    {
+      "path": "help/base/languages.md",
+      "url": "/docs/help/base/languages/",
+      "title": "A base in your language",
+      "summary": "Every word a base shows comes from one table of messages: the tab bar, the view bar and its panels, the record view and its activity, forms, the field editor and the field types, menus, notices, color and icon names, and what the grid and the calendar draw inside a base. English is the default. Hand over the words you have, and a key you leave out stays English.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "Build it out",
+      "words": 535,
+      "lastUpdated": "2026-11-06",
+      "demoIds": []
     },
     {
       "path": "help/base/linked-records.md",
@@ -2268,12 +2288,25 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Build it out",
-      "words": 4377,
-      "lastUpdated": "2026-10-14",
+      "words": 4586,
+      "lastUpdated": "2026-11-08",
       "demoIds": [
         "512-base-sales-crm",
         "522-base-okrs"
       ]
+    },
+    {
+      "path": "help/base/permissions.md",
+      "url": "/docs/help/base/permissions/",
+      "title": "Permissions: what each person may do",
+      "summary": "Your app already knows its roles: who is an editor, who only comments, who sees the margin column. permissions hands that to the base, and the screen offers only what the signed-in person may do. A commenter gets no \"+\" row and no Delete in the record menu; a sales rep never sees the Cost field, or the formula that reads it.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "Build it out",
+      "words": 1123,
+      "lastUpdated": "2026-11-06",
+      "demoIds": []
     },
     {
       "path": "help/base/postgres.md",
@@ -2284,8 +2317,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Connect your data",
-      "words": 1406,
-      "lastUpdated": "2026-10-14",
+      "words": 2268,
+      "lastUpdated": "2026-11-09",
       "demoIds": [
         "516-base-postgres"
       ]
@@ -2299,8 +2332,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Start here",
-      "words": 1263,
-      "lastUpdated": "2026-10-17",
+      "words": 3703,
+      "lastUpdated": "2026-11-09",
       "demoIds": [
         "519-base-from-database"
       ],
@@ -2317,8 +2350,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Connect your data",
-      "words": 925,
-      "lastUpdated": "2026-10-14",
+      "words": 947,
+      "lastUpdated": "2026-11-09",
       "demoIds": [
         "518-base-rest-api"
       ]
@@ -2332,8 +2365,21 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "AI agents",
-      "words": 1108,
-      "lastUpdated": "2026-10-17",
+      "words": 1103,
+      "lastUpdated": "2026-11-05",
+      "demoIds": []
+    },
+    {
+      "path": "help/base/server-compute.md",
+      "url": "/docs/help/base/server-compute/",
+      "title": "Formulas on a server",
+      "summary": "A base works out its formulas, lookups, rollups and counts in the page and never stores them. An API, an AI chat or a nightly report that reads the database sees the stored fields only: a deal with no margin, a project with no hours. @svgrid/enterprise/base/compute works them out where you need them, with the same engine the grid uses, so the server sees the values people see.",
+      "section": "help/base",
+      "pillar": "base",
+      "tier": "enterprise",
+      "group": "Connect your data",
+      "words": 2013,
+      "lastUpdated": "2026-11-08",
       "demoIds": []
     },
     {
@@ -2345,8 +2391,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Start here",
-      "words": 996,
-      "lastUpdated": "2026-10-14",
+      "words": 1030,
+      "lastUpdated": "2026-11-06",
       "demoIds": [
         "504-project-tracker"
       ]
@@ -2360,8 +2406,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Connect your data",
-      "words": 1310,
-      "lastUpdated": "2026-10-14",
+      "words": 2435,
+      "lastUpdated": "2026-11-07",
       "demoIds": [
         "517-base-supabase"
       ]
@@ -2375,8 +2421,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Start here",
-      "words": 1649,
-      "lastUpdated": "2026-10-25",
+      "words": 1653,
+      "lastUpdated": "2026-11-04",
       "demoIds": [
         "511-base-content-calendar",
         "512-base-sales-crm",
@@ -2399,8 +2445,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Build it out",
-      "words": 968,
-      "lastUpdated": "2026-11-03",
+      "words": 4141,
+      "lastUpdated": "2026-11-09",
       "demoIds": [
         "705-base-undo-redo",
         "706-base-trash",
@@ -2416,8 +2462,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Build it out",
-      "words": 6222,
-      "lastUpdated": "2026-11-03",
+      "words": 6673,
+      "lastUpdated": "2026-11-07",
       "demoIds": [
         "513-base-product-roadmap",
         "721-base-dashboard",
@@ -2437,7 +2483,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 4891,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-03",
       "demoIds": [
         "06-large-dataset"
       ],
@@ -2489,7 +2535,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 774,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-03",
       "demoIds": []
     },
     {
@@ -2887,8 +2933,8 @@
       "pillar": "grid",
       "tier": "community",
       "group": "Grid and reference",
-      "words": 2242,
-      "lastUpdated": "2026-09-20",
+      "words": 2391,
+      "lastUpdated": "2026-11-08",
       "demoIds": [
         "353-built-in-charting",
         "357-ai-chart-this",
@@ -3163,8 +3209,8 @@
       "section": "help/columns",
       "pillar": "grid",
       "tier": "community",
-      "words": 719,
-      "lastUpdated": "2026-09-04",
+      "words": 849,
+      "lastUpdated": "2026-11-04",
       "demoIds": [
         "121-pivot-conditional-cells"
       ]
@@ -3208,7 +3254,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 4311,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-09",
       "demoIds": [
         "139-migration-from-ag-grid",
         "186-headless-table"
@@ -3416,8 +3462,8 @@
       "pillar": "enterprise",
       "tier": "enterprise",
       "group": "Reference",
-      "words": 5810,
-      "lastUpdated": "2026-10-29",
+      "words": 5849,
+      "lastUpdated": "2026-11-07",
       "demoIds": [
         "21-export-and-print",
         "93-password-protected-export",
@@ -3499,10 +3545,11 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Reference",
-      "words": 5918,
-      "lastUpdated": "2026-11-03",
+      "words": 7226,
+      "lastUpdated": "2026-11-08",
       "demoIds": [
         "504-project-tracker",
+        "722-base-rich-text",
         "715-base-checklist-color-time"
       ]
     },
@@ -3526,8 +3573,8 @@
       "section": "help/filtering",
       "pillar": "grid",
       "tier": "community",
-      "words": 1328,
-      "lastUpdated": "2026-09-04",
+      "words": 1365,
+      "lastUpdated": "2026-11-05",
       "demoIds": [
         "98-advanced-filter-builder",
         "111-set-filter-advanced"
@@ -3709,8 +3756,8 @@
       "pillar": "enterprise",
       "tier": "community",
       "group": "Beyond the chart",
-      "words": 1667,
-      "lastUpdated": "2026-09-19",
+      "words": 1706,
+      "lastUpdated": "2026-11-06",
       "demoIds": []
     },
     {
@@ -3784,8 +3831,8 @@
       "pillar": "enterprise",
       "tier": "community",
       "group": "Start here",
-      "words": 1486,
-      "lastUpdated": "2026-09-19",
+      "words": 1618,
+      "lastUpdated": "2026-11-06",
       "demoIds": [
         "475-gantt-editing"
       ]
@@ -4005,8 +4052,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1798,
-      "lastUpdated": "2026-09-20",
+      "words": 1825,
+      "lastUpdated": "2026-11-06",
       "demoIds": [
         "38-rtl-i18n",
         "15-localization"
@@ -4061,8 +4108,8 @@
       "section": "help/kanban",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 1836,
-      "lastUpdated": "2026-09-22",
+      "words": 1846,
+      "lastUpdated": "2026-11-07",
       "demoIds": [
         "344-kanban-sprint",
         "349-kanban-subtasks"
@@ -4125,7 +4172,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 3404,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-09",
       "demoIds": [
         "139-migration-from-ag-grid"
       ]
@@ -4138,8 +4185,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 3329,
-      "lastUpdated": "2026-11-03",
+      "words": 3384,
+      "lastUpdated": "2026-11-09",
       "demoIds": [
         "707-base-airtable-import",
         "708-base-formula-compat"
@@ -4153,8 +4200,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1105,
-      "lastUpdated": "2026-10-14",
+      "words": 1126,
+      "lastUpdated": "2026-11-09",
       "demoIds": []
     },
     {
@@ -4166,7 +4213,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 837,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-09",
       "demoIds": []
     },
     {
@@ -4178,7 +4225,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1314,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-09",
       "demoIds": []
     },
     {
@@ -4190,7 +4237,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 762,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-09",
       "demoIds": []
     },
     {
@@ -4202,7 +4249,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2130,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-09",
       "demoIds": [
         "208-freeze-panes",
         "207-blank-sheet"
@@ -4217,7 +4264,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 946,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-09",
       "demoIds": []
     },
     {
@@ -4229,7 +4276,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 871,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-09",
       "demoIds": []
     },
     {
@@ -4241,7 +4288,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1641,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-09",
       "demoIds": [
         "148-server-row-model",
         "467-server-row-model-1m"
@@ -4255,8 +4302,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1032,
-      "lastUpdated": "2026-10-14",
+      "words": 1053,
+      "lastUpdated": "2026-11-09",
       "demoIds": []
     },
     {
@@ -4269,7 +4316,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 939,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-09",
       "demoIds": []
     },
     {
@@ -4281,7 +4328,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 816,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-09",
       "demoIds": []
     },
     {
@@ -4293,7 +4340,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1790,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-09",
       "demoIds": []
     },
     {
@@ -4306,7 +4353,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1088,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-09",
       "demoIds": [
         "77-smart-chart"
       ]
@@ -4315,12 +4362,12 @@
       "path": "help/migrating-from-svar-svelte-datagrid.md",
       "url": "/docs/help/migrating-from-svar-svelte-datagrid/",
       "title": "Migrating from SVAR Svelte DataGrid",
-      "summary": "SVAR Svelte DataGrid (wx-svelte-grid) is, like SvGrid, an actual Svelte-native grid rather than a wrapper, and both are MIT-licensed and free for commercial use. Because both are component-first with array-of-object column definitions, a port is mostly a configuration translation. The reasons people switch are **capability** (SvGrid adds row grouping with aggregation, master-detail, Excel-style cell-range selection, integrated charts, and pivot) and **architecture** (SvGrid also exposes a headless engine and an MCP server).",
+      "summary": "SVAR Svelte DataGrid (@svar-ui/svelte-grid, formerly wx-svelte-grid) is, like SvGrid, an actual Svelte-native grid rather than a wrapper, and both are MIT-licensed and free for commercial use. Because both are component-first with array-of-object column definitions, a port is mostly a configuration translation. The reasons people switch are **capability** (SvGrid adds row grouping with aggregation, master-detail, Excel-style cell-range selection, integrated charts, and pivot) and **architecture** (SvGrid also exposes a headless engine and an MCP server).",
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1630,
-      "lastUpdated": "2026-11-10",
+      "words": 1632,
+      "lastUpdated": "2026-11-09",
       "demoIds": [
         "07-grouping-aggregation",
         "181-master-detail-grid"
@@ -4337,7 +4384,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1905,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-09",
       "demoIds": [
         "186-headless-table"
       ]
@@ -4351,7 +4398,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 841,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-09",
       "demoIds": []
     },
     {
@@ -4363,7 +4410,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 832,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-09",
       "demoIds": []
     },
     {
@@ -4375,7 +4422,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1610,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-09",
       "demoIds": [
         "148-server-row-model",
         "186-headless-table"
@@ -4391,7 +4438,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1053,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-09",
       "demoIds": []
     },
     {
@@ -4403,7 +4450,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 987,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-09",
       "demoIds": []
     },
     {
@@ -4515,7 +4562,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 1534,
-      "lastUpdated": "2026-09-22",
+      "lastUpdated": "2026-11-04",
       "demoIds": [
         "22-admin-template"
       ]
@@ -4528,8 +4575,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 2083,
-      "lastUpdated": "2026-09-29",
+      "words": 2192,
+      "lastUpdated": "2026-11-04",
       "demoIds": [
         "34-realtime-orders"
       ]
@@ -4579,8 +4626,8 @@
       "section": "help/review",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 3247,
-      "lastUpdated": "2026-10-24",
+      "words": 3501,
+      "lastUpdated": "2026-11-09",
       "demoIds": [
         "702-change-review",
         "704-agent-review-desk"
@@ -4622,8 +4669,8 @@
       "section": "help/rows",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 781,
-      "lastUpdated": "2026-10-14",
+      "words": 853,
+      "lastUpdated": "2026-11-07",
       "demoIds": [
         "505-gallery-catalog",
         "508-gallery-field-types",
@@ -4640,8 +4687,8 @@
       "section": "help/kanban",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 4375,
-      "lastUpdated": "2026-10-25",
+      "words": 4451,
+      "lastUpdated": "2026-11-07",
       "demoIds": [
         "343-kanban-board",
         "344-kanban-sprint",
@@ -4782,8 +4829,8 @@
       "section": "help/scheduler",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 7583,
-      "lastUpdated": "2026-10-14",
+      "words": 7857,
+      "lastUpdated": "2026-11-09",
       "demoIds": [
         "363-scheduler-intro",
         "382-scheduler-app-clinic",
@@ -4914,8 +4961,8 @@
       "section": "help/scheduler",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 2140,
-      "lastUpdated": "2026-09-22",
+      "words": 2169,
+      "lastUpdated": "2026-11-07",
       "demoIds": [
         "382-scheduler-app-clinic"
       ]
@@ -4948,8 +4995,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 1519,
-      "lastUpdated": "2026-10-26",
+      "words": 3004,
+      "lastUpdated": "2026-11-08",
       "demoIds": [
         "16-csp-compliant"
       ]
@@ -5040,8 +5087,8 @@
       "section": "help/server",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 3544,
-      "lastUpdated": "2026-10-06",
+      "words": 3825,
+      "lastUpdated": "2026-11-09",
       "demoIds": [
         "496-server-grouping-model",
         "467-server-row-model-1m",
@@ -5525,7 +5572,7 @@
       "pillar": "grid",
       "tier": "community",
       "words": 2407,
-      "lastUpdated": "2026-11-10",
+      "lastUpdated": "2026-11-09",
       "demoIds": []
     },
     {
@@ -6346,8 +6393,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 694,
-      "lastUpdated": "2026-09-04",
+      "words": 755,
+      "lastUpdated": "2026-11-04",
       "demoIds": [
         "339-status-display"
       ]
@@ -6623,8 +6670,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 906,
-      "lastUpdated": "2026-09-14",
+      "words": 964,
+      "lastUpdated": "2026-11-08",
       "demoIds": [
         "331-app-overlays",
         "67-context-menu",
@@ -6956,8 +7003,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 520,
-      "lastUpdated": "2026-09-04",
+      "words": 553,
+      "lastUpdated": "2026-11-04",
       "demoIds": [
         "409-layout-feedback"
       ]
@@ -6985,8 +7032,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 857,
-      "lastUpdated": "2026-08-11",
+      "words": 875,
+      "lastUpdated": "2026-11-08",
       "demoIds": [
         "326-menu"
       ]
@@ -6999,8 +7046,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 913,
-      "lastUpdated": "2026-09-04",
+      "words": 918,
+      "lastUpdated": "2026-11-08",
       "demoIds": [
         "326-menu"
       ]
@@ -7027,8 +7074,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 899,
-      "lastUpdated": "2026-09-16",
+      "words": 921,
+      "lastUpdated": "2026-11-06",
       "demoIds": [
         "288-overlays"
       ]
@@ -7244,8 +7291,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 814,
-      "lastUpdated": "2026-09-04",
+      "words": 845,
+      "lastUpdated": "2026-11-06",
       "demoIds": [
         "341-rich-text-editor"
       ]
@@ -7258,8 +7305,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 532,
-      "lastUpdated": "2026-09-04",
+      "words": 555,
+      "lastUpdated": "2026-11-04",
       "demoIds": [
         "340-command-palette"
       ]
@@ -7315,8 +7362,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 814,
-      "lastUpdated": "2026-09-04",
+      "words": 862,
+      "lastUpdated": "2026-11-04",
       "demoIds": []
     },
     {
@@ -7489,8 +7536,8 @@
       "section": "help/ui-components",
       "pillar": "ui",
       "tier": "community",
-      "words": 1016,
-      "lastUpdated": "2026-09-04",
+      "words": 1109,
+      "lastUpdated": "2026-11-04",
       "demoIds": [
         "331-app-overlays"
       ]
@@ -7727,8 +7774,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Start here",
-      "words": 1149,
-      "lastUpdated": "2026-11-03",
+      "words": 1312,
+      "lastUpdated": "2026-11-04",
       "demoIds": []
     },
     {
@@ -7757,8 +7804,8 @@
       "pillar": "grid",
       "tier": "community",
       "group": "Start here",
-      "words": 1695,
-      "lastUpdated": "2026-10-29",
+      "words": 1724,
+      "lastUpdated": "2026-11-07",
       "demoIds": [
         "07-grouping-aggregation",
         "90-selection-api"
@@ -7918,8 +7965,8 @@
       "section": "recipes",
       "pillar": "grid",
       "tier": "community",
-      "words": 871,
-      "lastUpdated": "2026-09-04",
+      "words": 930,
+      "lastUpdated": "2026-11-04",
       "demoIds": []
     },
     {
@@ -8751,6 +8798,7 @@
         "svar data grid",
         "svar grid",
         "svar svelte grid",
+        "@svar-ui/svelte-grid",
         "wx-svelte-grid",
         "svar alternative",
         "svelte data grid comparison",

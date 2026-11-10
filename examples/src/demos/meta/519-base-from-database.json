@@ -14,7 +14,7 @@
     },
     {
       "question": "Does the page need the database password?",
-      "answer": "No. In an app the database is behind your server: createBaseEndpoint({ execute }) in a SvelteKit route serves the tables, and baseFromEndpoint('/api/base') in the page reads them. The demo runs Postgres in the page with PGlite so it needs no server."
+      "answer": "No. In an app the database is behind your server: createBaseEndpoint({ execute, tables, authorize }) in a SvelteKit route serves the tables, and baseFromEndpoint('/api/base') in the page reads them. The demo runs Postgres in the page with PGlite so it needs no server."
     },
     {
       "question": "How do I start a new app like this?",

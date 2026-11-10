@@ -91,7 +91,7 @@ const best = (xs: number[]) => Math.min(...xs)
  * layout totals at each mark, which gives the work a frame or a jump cost.
  * Opening bench.html by hand there is no hook and the marks do nothing.
  */
-async function phase(label: string): Promise<void> {
+export async function phase(label: string): Promise<void> {
   const hook = (globalThis as { __benchPhase?: (label: string) => Promise<void> }).__benchPhase
   if (hook) await hook(label)
 }
@@ -102,7 +102,7 @@ async function phase(label: string): Promise<void> {
  * between timed steps, never inside one, so the GC it forces is not on any
  * clock. By hand there is no hook and nothing is collected.
  */
-async function heap(label: string): Promise<void> {
+export async function heap(label: string): Promise<void> {
   const hook = (globalThis as { __benchHeap?: (label: string) => Promise<void> }).__benchHeap
   if (hook) await hook(label)
 }
@@ -113,7 +113,7 @@ async function heap(label: string): Promise<void> {
  * without this every Svelte grid's heap after destroy reads as the whole
  * grid still alive. See EventSink.svelte.
  */
-async function releaseLastSvelteEvent(): Promise<void> {
+export async function releaseLastSvelteEvent(): Promise<void> {
   const [{ mount, unmount }, { default: EventSink }] = await Promise.all([import('svelte'), import('./EventSink.svelte')])
   const box = document.createElement('div')
   document.body.appendChild(box)
@@ -316,7 +316,7 @@ function assertScrolled(adapter: GridAdapter, axis: 'top' | 'left', from: number
  * nothing. Mount is still timed to first rows; this only keeps the scroll
  * measurements from starting on a grid that is not ready to scroll.
  */
-async function waitScrollable(adapter: GridAdapter, axis: 'top' | 'left') {
+export async function waitScrollable(adapter: GridAdapter, axis: 'top' | 'left') {
   const el = adapter.scroller?.()
   if (!el) return
   await settle(() => {
@@ -334,7 +334,7 @@ async function waitScrollable(adapter: GridAdapter, axis: 'top' | 'left') {
  * insertion, so counting records alone charges a grid that recycles its rows
  * as if it built them.
  */
-function domInsertions(host: HTMLElement) {
+export function domInsertions(host: HTMLElement) {
   const known = new WeakSet<Element>()
   for (const el of host.getElementsByTagName('*')) known.add(el)
   let built = 0
