@@ -5,6 +5,8 @@ sign-in, roles, Stripe billing, an admin area, and data screens built on
 [SvGrid](https://svgrid.com). MIT licensed. Clone it, rename `project` to
 whatever your product stores, and start on the part only you can build.
 
+![Projects: the signed-in user's rows, edited in the grid, with the Free plan's project count](https://raw.githubusercontent.com/sv-grid/sveltekit-saas-starter/main/.github/screenshots/projects.png)
+
 ```bash
 npm create @svgrid@latest my-app -- --template saas
 cd my-app
@@ -34,6 +36,26 @@ writes a `.env` with a fresh secret, creates an embedded Postgres in
 | Admin: users | `src/routes/(app)/admin/users` | Server-side sort, search and paging kept in the URL; role edit in the grid; ban and unban |
 | Admin: subscriptions | `src/routes/(app)/admin/subscriptions` | Monthly revenue, status filters, every subscription |
 | Admin: audit log | `src/routes/(app)/admin/audit` | 100,000 seeded rows, infinite scroll, sort, filter and search in SQL |
+
+Admin: users. Sort, search and paging run in SQL and stay in the URL;
+double-click a role to change it, select rows to ban or unban.
+
+![Admin users grid with search, role badges, a banned user and paging](https://raw.githubusercontent.com/sv-grid/sveltekit-saas-starter/main/.github/screenshots/admin-users.png)
+
+Admin: audit log. 100,000 seeded rows; the grid asks the server for the
+rows it is about to show as you scroll.
+
+![Audit log grid with 100,001 rows, action badges and a scrollbar](https://raw.githubusercontent.com/sv-grid/sveltekit-saas-starter/main/.github/screenshots/admin-audit.png)
+
+Admin: subscriptions. Monthly revenue per currency, status filters in the
+URL, one row per Stripe subscription.
+
+![Subscriptions page with MRR, active and past-due cards, status filter chips and the subscriptions grid](https://raw.githubusercontent.com/sv-grid/sveltekit-saas-starter/main/.github/screenshots/admin-subscriptions.png)
+
+Pricing reads the plans from `src/lib/plans.ts`; the same file sets the Free
+plan's limit.
+
+![Pricing page with the Free and Pro plans](https://raw.githubusercontent.com/sv-grid/sveltekit-saas-starter/main/.github/screenshots/pricing.png)
 
 The stack: SvelteKit 3, Svelte 5, [Better Auth](https://www.better-auth.com)
 (with its admin plugin for roles and bans), [Drizzle](https://orm.drizzle.team)

@@ -24,7 +24,9 @@ const SOURCES = [
 // local database; `.env.example` is the one that ships. Tested against the
 // path relative to the source root, so a checkout under `.../build/...`
 // doesn't skip everything.
-const SKIP = /(^|[\\/])(node_modules|\.svelte-kit|\.vercel|build|dist|\.data|\.env|test-results|playwright-report)([\\/]|$)/
+// screenshots: the README images, which the README loads from GitHub, so a
+// scaffolded app does not carry them.
+const SKIP = /(^|[\\/])(node_modules|\.svelte-kit|\.vercel|build|dist|\.data|\.env|test-results|playwright-report|screenshots)([\\/]|$)/
 
 // Names that must be `_`-prefixed in the package so npm ships them intact.
 const RENAME_ON_COPY = new Map([
