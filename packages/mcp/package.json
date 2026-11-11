@@ -39,19 +39,17 @@
     "test:types": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint ./src"
   },
-  "dependencies": {
-    "svelte": "^5.57.3"
-  },
   "peerDependencies": {
-    "@svgrid/enterprise": "workspace:^"
+    "svelte": "^5.0.0"
   },
   "peerDependenciesMeta": {
-    "@svgrid/enterprise": {
+    "svelte": {
       "optional": true
     }
   },
   "devDependencies": {
     "@svgrid/enterprise": "workspace:^",
+    "svelte": "^5.57.3",
     "@types/node": "^22.10.7",
     "typescript": "6.0.3"
   },

@@ -85,9 +85,10 @@ What it checks:
 - **Svelte 5 rules.** `export let` and `$:` in a runes file (compiler errors),
   `on:` / `<slot>` / `createEventDispatcher` (deprecations), and a plain `let`
   array that gets mutated and silently never re-renders.
-- **The file, compiled.** When a Svelte compiler is reachable - the user's
-  project copy first, then the one shipped here - real parse errors come back
-  too. The result says which of the two ran in its `compiler` field, so
+- **The file, compiled.** When a Svelte compiler is reachable - the copy in
+  the project the server starts in, or one installed beside `@svgrid/mcp` -
+  real parse errors come back too. Svelte is an optional peer, so a bare
+  `npx -y @svgrid/mcp` does not download it and starts in a few seconds. The result says which of the two ran in its `compiler` field, so
   "no errors" is never mistaken for "this compiles".
 
 It is tuned to shut up when the code is right: it reports **nothing** across
@@ -102,9 +103,9 @@ The `studio_*` tools let an agent build and edit the **same validated project mo
 server's env. Tools that need a licence to be useful should not cost every
 other user context on every request.
 
-These tools and `svgrid_scaffold` run on `@svgrid/enterprise`, an optional
-peer that `npx -y @svgrid/mcp` does not install (it would double the cold
-start). Install both in the project and run the local server:
+These tools and `svgrid_scaffold` run on `@svgrid/enterprise`, which
+`npx -y @svgrid/mcp` does not install (it would double the cold start).
+Install both in the project and run the local server:
 
 ```bash
 npm i -D @svgrid/mcp @svgrid/enterprise

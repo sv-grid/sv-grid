@@ -78,6 +78,10 @@ for (const [name, range] of Object.entries(pkg.dependencies ?? {})) {
   deps[name] = `^${localPkg.version}`
   console.log(`  resolved ${name} ${range} -> ${deps[name]}`)
 }
+// Svelte is an optional peer of the npm package (a cold npx install skips it),
+// but a desktop client starts the bundle outside any project, so the bundle
+// carries its own compiler for the svgrid_check_code compile pass.
+deps.svelte = pkg.devDependencies.svelte
 
 await rm(stage, { recursive: true, force: true })
 await mkdir(join(stage, 'server'), { recursive: true })

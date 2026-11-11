@@ -287,10 +287,6 @@ importers:
         version: 3.3.11(typescript@6.0.3)
 
   packages/mcp:
-    dependencies:
-      svelte:
-        specifier: ^5.57.3
-        version: 5.57.3(@typescript-eslint/types@8.67.0)
     devDependencies:
       '@svgrid/enterprise':
         specifier: workspace:^
@@ -298,6 +294,9 @@ importers:
       '@types/node':
         specifier: ^22.10.7
         version: 22.19.19
+      svelte:
+        specifier: ^5.57.3
+        version: 5.57.3(@typescript-eslint/types@8.67.0)
       typescript:
         specifier: 6.0.3
         version: 6.0.3

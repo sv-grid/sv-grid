@@ -32,7 +32,10 @@ import { ENTERPRISE_LINE, checkNeedsEnterprise } from './enterprise.js'
 import type { EntitySchema } from '@svgrid/enterprise/studio'
 
 /**
- * Studio and scaffolding run on `@svgrid/enterprise`, an optional peer.
+ * Studio and scaffolding run on `@svgrid/enterprise`, loaded when it is
+ * installed beside this package. It is not declared even as an optional peer:
+ * npm still walked enterprise's dependency tree to check one, 1-2.5 s of a
+ * cold install (2026-11-11).
  *
  * It used to be a dependency, so `npx -y @svgrid/mcp` unpacked enterprise and
  * the grid it peers on (about 2,200 files) before the server could answer. On

@@ -185,11 +185,20 @@ describe.skipIf(!hasDist)('the server works with no network', () => {
     // 30 s a client waits to connect. Studio loads it when it is present.
     const pkg = JSON.parse(readFileSync(join(ROOT, 'packages/mcp/package.json'), 'utf8')) as {
       dependencies?: Record<string, string>
+      peerDependencies?: Record<string, string>
       peerDependenciesMeta?: Record<string, { optional?: boolean }>
     }
     expect(Object.keys(pkg.dependencies ?? {})).not.toContain('@svgrid/enterprise')
     expect(Object.keys(pkg.dependencies ?? {})).not.toContain('@svgrid/grid')
-    expect(pkg.peerDependenciesMeta?.['@svgrid/enterprise']?.optional).toBe(true)
+    // Not even as an optional peer: npm still fetched the metadata of
+    // enterprise's whole tree (grid, react, vue, pdfmake, jszip, typescript)
+    // to check it, 1-2.5 s of a cold install. Installed beside the server, npm
+    // and pnpm's default hoisting resolve it without the declaration.
+    expect(Object.keys(pkg.peerDependencies ?? {})).not.toContain('@svgrid/enterprise')
+    // Svelte and its dependencies were 4-5 s of a 6-9 s cold install
+    // (2026-11-11). The compile pass uses the project's Svelte.
+    expect(Object.keys(pkg.dependencies ?? {})).not.toContain('svelte')
+    expect(pkg.peerDependenciesMeta?.svelte?.optional).toBe(true)
   })
 
   it('never imports @svgrid/enterprise statically', async () => {
@@ -247,5 +256,17 @@ describe.skipIf(!hasDist)('the server works with no network', () => {
       }
     }
     expect(offenders, `outbound network in: ${offenders.join(', ')}`).toEqual([])
+  })
+})
+
+describe('the compile pass without a bundled Svelte', () => {
+  it("finds the project's Svelte compiler", async () => {
+    // Svelte is an optional peer, so a cold npx install has no copy of its own
+    // and the compile pass depends on this lookup. It read `compile` off the
+    // top level of a CommonJS import, found nothing, and fell back to the
+    // bundled copy every time.
+    const { projectCompiler } = await import('../packages/mcp/src/compile-svelte')
+    const mod = await projectCompiler(join(ROOT, 'examples'))
+    expect(typeof mod.compile).toBe('function')
   })
 })

@@ -54,7 +54,7 @@ in the loop.
 | --- | --- | --- |
 | Setup | a URL | `npx @svgrid/mcp` |
 | Needs Node | no | yes |
-| Code check compiles | no, static checks only | yes |
+| Code check compiles | no, static checks only | yes, with your project's Svelte |
 | Resources and prompts | yes | yes |
 | Visual preview | yes | yes |
 | `studio_*` tools | no | yes, opt-in |
@@ -523,6 +523,22 @@ to the binary. For the hosted one, confirm the endpoint answers:
 ```bash
 curl https://mcp.svgrid.com/health
 ```
+
+**"The svgrid MCP server timed out" or "connection timed out after
+30000ms".** The server starts in well under a second; the wait is `npx`
+downloading it. That happens on the first start and again after each new
+`@svgrid/mcp` release, and a slow network or a virus scanner can push it
+past the 30 seconds a client waits. Any of these fixes it:
+
+- use the hosted server, which has nothing to download:
+  `claude mcp add --transport http svgrid https://mcp.svgrid.com/mcp`
+- install it once, so later starts skip the download:
+  `pnpm add -D @svgrid/mcp`, then `claude mcp add svgrid -- npx svgrid-mcp`
+- give the client longer: in Claude Code, start it with `MCP_TIMEOUT=60000`
+
+The compile pass of `svgrid_check_code` uses the Svelte in the project the
+server starts in. Started outside a Svelte project, the check still runs
+its API rules and its `compiler` field reads `unavailable`.
 
 ## Security model
 

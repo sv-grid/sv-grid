@@ -15,18 +15,28 @@ import { compileDiagnostics, type CompileApi } from './compile-core.js'
 
 /**
  * Prefer the Svelte the USER's project is on, so the check matches what their
- * build will do; fall back to the copy that ships with this package. Resolved
- * once and reused - the compiler is not cheap to load.
+ * build will do; fall back to one installed beside this package. Svelte is an
+ * optional peer, not a dependency: it and its dependencies were most of a cold
+ * `npx -y @svgrid/mcp` install, and a slow one ran past the 30 s a client
+ * waits to connect. Resolved once and reused - the compiler is not cheap to
+ * load.
  */
 let cached: CompileApi | null | undefined
+
+/** The Svelte compiler of the project in `dir`; throws when it has none. */
+export async function projectCompiler(dir: string): Promise<CompileApi> {
+  // require.resolve picks svelte's `require` entry, a CommonJS file, so the
+  // import puts `compile` on `default`. Reading only the top level missed it,
+  // and the project's Svelte was never used.
+  const require = createRequire(join(dir, 'package.json'))
+  const mod = (await import(pathToFileURL(require.resolve('svelte/compiler')).href)) as CompileApi & { default?: CompileApi }
+  return typeof mod.compile === 'function' ? mod : (mod.default as CompileApi)
+}
 
 async function loadCompiler(): Promise<CompileApi | null> {
   if (cached !== undefined) return cached
   const attempts: Array<() => Promise<CompileApi>> = [
-    async () => {
-      const require = createRequire(join(process.cwd(), 'package.json'))
-      return (await import(pathToFileURL(require.resolve('svelte/compiler')).href)) as CompileApi
-    },
+    () => projectCompiler(process.cwd()),
     async () => (await import('svelte/compiler')) as unknown as CompileApi,
   ]
   for (const attempt of attempts) {
