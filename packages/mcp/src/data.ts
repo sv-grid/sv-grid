@@ -8849,7 +8849,7 @@ export const apiReference = {
 
 export const apiSurface: ApiSurface = {
   "gridVersion": "3.0.34",
-  "enterpriseVersion": "3.1.38",
+  "enterpriseVersion": "3.1.39",
   "grid": {
     "values": [
       "ALL_FILTER_OPERATORS",
