@@ -176,7 +176,11 @@ const ROUTES = {
   base: {
     waitFor: '[role="tab"]',
     async assert(page) {
-      const tabs = await page.$$eval('[role="tablist"] [role="tab"]', (els) => els.map((e) => e.textContent?.trim() ?? ''))
+      // The table tabs are not inside their tablist: it names them with aria-owns, so
+      // the strip can hold the menus between them. Read them through it.
+      const tabs = await page.$$eval('[role="tablist"][aria-owns]', (lists) =>
+        lists.flatMap((l) => (l.getAttribute('aria-owns') ?? '').split(/\s+/).map((id) => document.getElementById(id)?.textContent?.trim() ?? '')),
+      )
       expect(tabs.some((t) => t.includes('Posts')) && tabs.some((t) => t.includes('Authors')), `table tabs: ${JSON.stringify(tabs)}`)
       const text = await page.evaluate(() => document.querySelector('main')?.innerText ?? '')
       expect(text.includes('Keyboard shortcuts'), 'the Posts table rows did not render')

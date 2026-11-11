@@ -197,6 +197,17 @@ export async function run(ctx) {
         if (!/Set DATABASE_URL/.test(r.out)) throw new Error(`no "Set DATABASE_URL" message:\n${tail(r.out)}`)
         if (/^\s+at .+[:(]\d+/m.test(r.out)) throw new Error(`printed a stack trace:\n${tail(r.out)}`)
       })
+      // The route answers in development only, until the app says who may use it. A
+      // preview is a production build, so the check opens it the way a user does
+      // before deploying: by setting `authorize`.
+      await ctx.step(L('the base route is closed once built, until authorize is set'), async () => {
+        const route = join(dir, 'src', 'routes', 'api', 'base', '+server.ts')
+        const text = readFileSync(route, 'utf8')
+        const closed = 'authorize: () => () => dev,'
+        if (!text.includes(closed)) throw new Error(`no "${closed}" in ${route}:\n${text.slice(0, 600)}`)
+        writeFileSync(route, text.replace(closed, 'authorize: () => () => true,'))
+        return 'opened for the preview'
+      })
     }
 
     const built = await ctx.step(L('npm run build'), async () => {
