@@ -21,6 +21,11 @@ section shows how to read others.
 | `PATCH /api/deals/d3` with the changed fields only | `200` with the record as stored |
 | `DELETE /api/deals/d3` | `204` |
 
+A view with an advanced filter (conditions in and/or groups) adds `filter`,
+the filter as JSON. Apply it in full and answer `"appliedExpression": true`
+with the rows; otherwise leave that out, and the base knows the filter did
+not run on the server.
+
 A foreign key is a plain field: a deal has `company_id`. To refuse a write,
 answer with a `4xx` status and `{ "error": "Amount must be 0 or more" }`
 (or `{ "message": ... }`); the base puts the cell back and shows that sentence. A
