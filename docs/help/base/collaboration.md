@@ -813,7 +813,9 @@ setRecordHistory({
 
 A change is `{ at, by, columnId, value, from? }` (`at` in milliseconds,
 `by` a user id from `setFieldUsers`), plus `automation` for a change an
-automation made and `via` for a proposal someone accepted. The record view
+automation made, `via` for a proposal someone accepted ("CRM agent (accepted
+by Ana)"), and `through` for a change a person made through an app as
+themselves, an AI chat client say ("Ana via Claude"). The record view
 shows what `list` gave with this session's changes it does not have yet;
 give back the `at` that `add` received, and a change shows once. A change
 made elsewhere and read in through `realtime` is not passed to `add`:
