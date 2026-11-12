@@ -17,7 +17,26 @@ type Layer = {
   onDismiss: (reason: Reason) => void
   closeOnEscape: boolean
   closeOnOutside: boolean
+  /** The press that opened the layer, when one had just happened. */
+  openedBy: Press | null
 }
+
+/**
+ * A person's press: where and when. The second press of a double-click lands
+ * where the first did, a moment later. A grid opens an editor on the first
+ * click of a cell that is already selected, so a double-click there opened a
+ * dialog or panel (files, long text, a link picker) and its second press,
+ * outside the new panel, closed it again at once. That press is not someone
+ * clicking away: it does not dismiss.
+ */
+type Press = { x: number; y: number; at: number }
+const DOUBLE_CLICK_MS = 500
+const DOUBLE_CLICK_PX = 10
+let lastPress: Press | null = null
+/** Only a person's press: a synthetic one (a test, a script) carries no place to compare. */
+const pressOf = (e: PointerEvent): Press | null => (e.isTrusted ? { x: e.clientX, y: e.clientY, at: e.timeStamp } : null)
+const secondPressOf = (press: Press | null, opened: Press | null) =>
+  !!press && !!opened && press.at - opened.at < DOUBLE_CLICK_MS && Math.abs(press.x - opened.x) <= DOUBLE_CLICK_PX && Math.abs(press.y - opened.y) <= DOUBLE_CLICK_PX
 
 function containsTarget(target: DismissTarget, node: Node | null): boolean {
   if (!node) return false
@@ -46,9 +65,13 @@ function ensureWired() {
   document.addEventListener(
     'pointerdown',
     (e) => {
+      const press = pressOf(e)
+      lastPress = press
       const top = stack[stack.length - 1]
       if (!top?.closeOnOutside) return
-      if (!containsTarget(top.element(), e.target as Node)) top.onDismiss('outside')
+      if (containsTarget(top.element(), e.target as Node)) return
+      if (secondPressOf(press, top.openedBy)) return
+      top.onDismiss('outside')
     },
     true,
   )
@@ -75,10 +98,13 @@ export function createDismissableLayer(options: DismissableOptions): Dismissable
     onDismiss: options.onDismiss,
     closeOnEscape: options.closeOnEscape ?? true,
     closeOnOutside: options.closeOnOutside ?? true,
+    openedBy: null,
   }
   return {
     activate() {
       ensureWired()
+      // The press it opened on, if it opened on one just now: its double-click's second press is part of it.
+      layer.openedBy = lastPress && typeof performance !== 'undefined' && performance.now() - lastPress.at < DOUBLE_CLICK_MS ? lastPress : null
       if (!stack.includes(layer)) stack.push(layer)
     },
     release() {
