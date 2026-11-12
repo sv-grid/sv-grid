@@ -497,7 +497,10 @@ it is, with `rawInput` set to that same value rather than to text.
 `newRowValue` gives each new row a value: from the row adder, a group's
 "+", a form, a board lane. Return `undefined` to fall back to the field's
 `default` property. `onCreate` fills every existing row once, when someone
-creates the field in the field editor. Both get a `FieldRowContext`: the
+creates the field in the field editor. Without `onCreate`, a field created
+with a default fills every existing row with it: a new field holds nothing
+yet, so nothing is overwritten. A default set on a field later fills only
+new records. Both get a `FieldRowContext`: the
 field's `props`, its `field` key and the table's `rows`.
 
 ```ts
@@ -524,8 +527,9 @@ registerFieldType({
 })
 ```
 
-When `onCreate` returns values, `onColumnAdd` hands your app the new rows
-as `data` next to the columns, so store both. `editable: false` also keeps
+When `onCreate` returns values, or the new field has a default,
+`onColumnAdd` hands your app the new rows as `data` next to the columns, so
+store both. `editable: false` also keeps
 the field out of a form. "Duplicate record" copies every stored field into
 the copy. `copy: false` opts a type out: the copy gets a new value from
 `newRowValue` (the next ticket number here), or the field's `default` when
