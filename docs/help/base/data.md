@@ -324,7 +324,9 @@ const source = baseSource(createSupabaseDataSource({ client, table: 'tasks', sch
 The base updates just the records a change names: the other records keep
 their objects, so the grid redraws one row, not 50,000, and the table is not
 read again. A burst of changes (an agent updating 200 records) goes into the
-page as one update.
+page as one update. A change to a record this page wrote in the last few
+seconds may be its own write coming back late, or someone else's edit after
+it: that record alone is read again, by id, to know which.
 
 Any other feed works the same way: a WebSocket message, a server-sent event,
 a poll. Call `apply` with the changes, as the database has the records
