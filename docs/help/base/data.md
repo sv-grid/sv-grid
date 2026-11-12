@@ -86,6 +86,59 @@ The data sources that ship with `@svgrid/enterprise`:
 Your own source works too: an object with `getRows`, `createRow`,
 `updateRow` and `deleteRow` (the grid's `ServerDataSource`).
 
+## Tables your server makes, copies and deletes
+
+A table with a source lives in your database, so a new one should too. Give
+`<SvBase>` the four hooks and the tab bar's Add table, Duplicate table and
+Delete table, and the trash's Restore for a table, go through your server:
+
+```svelte
+<script lang="ts">
+  import { SvBase, baseSource, type BaseTable } from '@svgrid/enterprise/base'
+  import { createRestDataSource } from '@svgrid/enterprise'
+
+  let { tables } = $props()
+
+  // What your API answers for a table, as a BaseTable reading its records from it.
+  const asTable = (t: any): BaseTable => ({ ...t, data: [], source: baseSource(createRestDataSource({ url: `/api/tables/${t.id}/rows` })) })
+  const post = async (url: string, body?: unknown) => {
+    const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body ?? {}) })
+    if (!res.ok) throw new Error((await res.json()).error ?? 'The table was not saved.')
+    return res.json()
+  }
+</script>
+
+<SvBase
+  bind:tables
+  editable
+  onAddTable={async (name) => asTable(await post('/api/tables', { name }))}
+  onDuplicateTable={async (table, name) => asTable(await post(`/api/tables/${table.id}/copy`, { name }))}
+  onDeleteTable={async (table) => (await post(`/api/tables/${table.id}/trash`)).item}
+  onRestoreTable={async (item) => asTable(await post(`/api/tables/${item.table.id}/restore`))}
+/>
+```
+
+- **Add table** calls `onAddTable` with the name the base would give the
+  table ("Table", "Table 2"...). The table it answers is added and opened,
+  and its `source` is read at once, as the first tables' were. Nothing
+  answered adds nothing. A rejection's message is shown.
+- **Duplicate table** calls `onDuplicateTable` with the table and
+  "Name copy". The copy it answers is added and opened.
+- **Delete table** asks the person first, as always, then calls
+  `onDeleteTable`. `false`, or a rejection, keeps the table. A trash item it
+  answers is what the trash shows for the table, and your `trashStore` is not
+  handed it again. Otherwise the base keeps its own item.
+- **Restore** of a table in the trash calls `onRestoreTable` with the item.
+  The table it answers goes back where it was, read from its `source`, and
+  opens. Nothing answered leaves the item in the trash.
+
+A table made, copied or brought back this way is yours, not a step of the
+page's history: Ctrl+Z does not take it away. Without a hook, the base makes,
+copies, deletes and restores tables in the page, as before.
+
+Any table you put in `tables` after the base opened, hooks or not, is read
+from its `source` and kept in sync like the first ones.
+
 ## Link fields
 
 ![How link fields are stored. A link to one record is a foreign key column. A link to many records is a junction table with one row per pair. The field that links back is not stored.](/docs-media/base-links.svg)
