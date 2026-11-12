@@ -37,6 +37,11 @@ let lastPress: Press | null = null
 const pressOf = (e: PointerEvent): Press | null => (e.isTrusted ? { x: e.clientX, y: e.clientY, at: e.timeStamp } : null)
 const secondPressOf = (press: Press | null, opened: Press | null) =>
   !!press && !!opened && press.at - opened.at < DOUBLE_CLICK_MS && Math.abs(press.x - opened.x) <= DOUBLE_CLICK_PX && Math.abs(press.y - opened.y) <= DOUBLE_CLICK_PX
+// From the start, not from the first layer's opening: the press that opens the
+// very first dialog on a page (a double-click on a file cell) has to be known.
+if (typeof document !== 'undefined') {
+  document.addEventListener('pointerdown', (e) => (lastPress = pressOf(e)), true)
+}
 
 function containsTarget(target: DismissTarget, node: Node | null): boolean {
   if (!node) return false
@@ -66,7 +71,6 @@ function ensureWired() {
     'pointerdown',
     (e) => {
       const press = pressOf(e)
-      lastPress = press
       const top = stack[stack.length - 1]
       if (!top?.closeOnOutside) return
       if (containsTarget(top.element(), e.target as Node)) return
