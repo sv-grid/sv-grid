@@ -122,6 +122,11 @@ Delete table, and the trash's Restore for a table, go through your server:
   table ("Table", "Table 2"...). The table it answers is added and opened,
   and its `source` is read at once, as the first tables' were. Nothing
   answered adds nothing. A rejection's message is shown.
+- **Import a file as a table** calls `onImportTable` with the table the
+  import built: its fields (with the types it found) and its records in
+  `data`. Keep it, and answer the table to add, with its `source`; it opens and
+  is read from there. Nothing answered adds nothing; a rejection's message is
+  shown. Without the hook the table is made in the page.
 - **Duplicate table** calls `onDuplicateTable` with the table and
   "Name copy". The copy it answers is added and opened.
 - **Delete table** asks the person first, as always, then calls

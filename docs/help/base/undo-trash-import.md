@@ -443,7 +443,8 @@ drop zone of its own, a download) opens the same dialog with it:
 <button onclick={() => base?.openImport('append', file)}>Import</button>
 ```
 
-`openImport('new', file)` makes a new table from it. In code, without the
+`openImport('new', file)` makes a new table from it. A base whose tables live on a server keeps it
+with `onImportTable` (see [Keep a base in a database](./data.md)). In code, without the
 dialog, `tableFromMatrix(rows, tables, name)` builds a table from a header row
 and rows of text, and `recordsFromMatrix(rows, table, matchColumns(header,
 table))` turns them into records of an existing table. `fileImport={false}`
