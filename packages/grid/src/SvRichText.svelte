@@ -5,6 +5,7 @@
     | 'ul' | 'ol' | 'quote' | 'code'
     | 'alignLeft' | 'alignCenter' | 'alignRight'
     | 'link' | 'clear' | 'undo' | 'redo'
+    | 'image' | 'table' | 'hr' | 'source'
     | '|'
 </script>
 
@@ -22,6 +23,13 @@
    * ```svelte
    * <SvRichText bind:value={html} placeholder="Write something…" />
    * ```
+   *
+   * Beyond the default toolbar: `image` (uploaded through `onImageUpload`, or by
+   * URL without it), `table`, `hr` and `source` (the HTML itself, in a text
+   * area) can be listed in `tools`. `name` posts the value with a native form,
+   * as a hidden input. `sanitize` replaces the sanitizer for content the app
+   * trusts (a CMS page written by its administrators); everywhere else, keep
+   * the default.
    */
   import { nextEditorId, resolveMessages } from './editor-contract'
   import { sanitizeHtml, asTrustedHtml } from './sanitize-html'
@@ -42,19 +50,21 @@
     ul: '•', ol: '1.', quote: '❝', code: '</>',
     alignLeft: '≡', alignCenter: '≣', alignRight: '≡', link: '🔗',
     clear: '⌫', undo: '↶', redo: '↷',
+    image: '▣', table: '▦', hr: '―', source: 'HTML',
   }
 
   /** User-facing strings (localizable via `messages`). Every one is a tooltip +
    *  accessible name on a toolbar button, so leaving them hard-coded made the
    *  whole toolbar English-only for screen-reader users. */
-  type RichTextMessages = Record<Exclude<RichTextTool, '|'>, string> & { linkPrompt: string; toolbar: string }
+  type RichTextMessages = Record<Exclude<RichTextTool, '|'>, string> & { linkPrompt: string; imagePrompt: string; toolbar: string }
   const DEFAULT_MESSAGES: RichTextMessages = {
     bold: 'Bold', italic: 'Italic', underline: 'Underline', strike: 'Strikethrough',
     h1: 'Heading 1', h2: 'Heading 2', h3: 'Heading 3', p: 'Paragraph',
     ul: 'Bullet list', ol: 'Numbered list', quote: 'Quote', code: 'Code block',
     alignLeft: 'Align left', alignCenter: 'Align center', alignRight: 'Align right',
     link: 'Link', clear: 'Clear formatting', undo: 'Undo', redo: 'Redo',
-    linkPrompt: 'Link URL', toolbar: 'Formatting',
+    image: 'Image', table: 'Table', hr: 'Horizontal line', source: 'HTML source',
+    linkPrompt: 'Link URL', imagePrompt: 'Image URL', toolbar: 'Formatting',
   }
 
   type Props = {
@@ -70,6 +80,14 @@
     ariaLabel?: string
     /** Override any toolbar label / prompt (localization). */
     messages?: Partial<RichTextMessages>
+    /** The `image` tool's upload: given the picked file, resolve to the URL to
+     *  insert (or null to insert nothing). Without it, the tool asks for a URL. */
+    onImageUpload?: (file: File) => Promise<string | null>
+    /** Replaces `sanitizeHtml` for the value both ways. Only for content the app
+     *  trusts; a stored string may otherwise be someone else's script. */
+    sanitize?: (html: string) => string
+    /** Posts the value with a native form, as a hidden input of this name. */
+    name?: string
   }
 
   let {
@@ -82,7 +100,12 @@
     tools = DEFAULT_TOOLS,
     ariaLabel = 'Rich text editor',
     messages,
+    onImageUpload,
+    sanitize,
+    name,
   }: Props = $props()
+
+  const clean = (html: string | null | undefined): string => (sanitize ? sanitize(String(html ?? '')) : sanitizeHtml(html))
 
   const M = $derived(resolveMessages(DEFAULT_MESSAGES, messages))
   const uid = nextEditorId('sv-rt')
@@ -90,22 +113,28 @@
   let focused = $state(false)
   let empty = $state(true)
   let activeState = $state<Record<string, boolean>>({})
+  // The `source` tool: the HTML in a text area, in place of the body.
+  let sourceMode = $state(false)
+  let sourceText = $state('')
+  let fileInput = $state<HTMLInputElement | null>(null)
+  // Where the caret was when a dialog (the file picker, a prompt) took focus.
+  let savedRange: Range | null = null
 
   // Push external value into the DOM only when it differs and we're not typing
   // (writing innerHTML while focused would collapse the caret).
   $effect(() => {
-    const v = sanitizeHtml(value)
+    const v = clean(value)
     // A contenteditable owns its own DOM: letting Svelte re-render the body
     // would wipe the caret mid-typing, so the value is pushed in by hand and
     // only while the editor is unfocused.
     // eslint-disable-next-line svelte/no-dom-manipulating
-    if (editorEl && !focused && editorEl.innerHTML !== v) editorEl.innerHTML = asTrustedHtml(v)
+    if (editorEl && !focused && !sourceMode && editorEl.innerHTML !== v) editorEl.innerHTML = asTrustedHtml(v)
     if (editorEl) empty = editorEl.textContent!.trim().length === 0
   })
 
   function sync() {
     if (!editorEl) return
-    const html = sanitizeHtml(editorEl.innerHTML)
+    const html = clean(editorEl.innerHTML)
     empty = editorEl.textContent!.trim().length === 0
     value = html
     onChange?.(html)
@@ -127,6 +156,66 @@
     refreshState()
   }
 
+  function saveRange() {
+    const sel = typeof getSelection === 'function' ? getSelection() : null
+    savedRange = sel && sel.rangeCount && editorEl && editorEl.contains(sel.anchorNode) ? sel.getRangeAt(0).cloneRange() : null
+  }
+  function restoreRange() {
+    editorEl?.focus()
+    const sel = typeof getSelection === 'function' ? getSelection() : null
+    if (sel && savedRange) {
+      sel.removeAllRanges()
+      sel.addRange(savedRange)
+    }
+  }
+  function insertImage(url: string | null) {
+    if (!url) return
+    restoreRange()
+    exec('insertImage', url)
+  }
+  function pickImage() {
+    if (disabled || readonly) return
+    saveRange()
+    if (onImageUpload) {
+      fileInput?.click()
+      return
+    }
+    const url = typeof prompt === 'function' ? prompt(M.imagePrompt, 'https://') : null
+    insertImage(url)
+  }
+  async function onFilePicked(e: Event) {
+    const input = e.currentTarget as HTMLInputElement
+    const file = input.files && input.files[0]
+    input.value = ''
+    if (!file || !onImageUpload) return
+    insertImage(await onImageUpload(file))
+  }
+  function insertTable() {
+    const cells = (tag: string) => `<tr>${`<${tag}><br></${tag}>`.repeat(3)}</tr>`
+    exec('insertHTML', `<table><thead>${cells('th')}</thead><tbody>${cells('td')}${cells('td')}</tbody></table><p><br></p>`)
+  }
+  function toggleSource() {
+    if (disabled || readonly) return
+    if (!sourceMode) {
+      sourceText = value
+      sourceMode = true
+      return
+    }
+    // Back to the editor: the HTML as edited, through the sanitizer.
+    const html = clean(sourceText)
+    sourceMode = false
+    value = html
+    onChange?.(html)
+    // eslint-disable-next-line svelte/no-dom-manipulating
+    if (editorEl) editorEl.innerHTML = asTrustedHtml(html)
+    if (editorEl) empty = editorEl.textContent!.trim().length === 0
+  }
+  function onSourceInput() {
+    const html = clean(sourceText)
+    value = html
+    onChange?.(html)
+  }
+
   const run: Record<Exclude<RichTextTool, '|'>, () => void> = {
     bold: () => exec('bold'), italic: () => exec('italic'), underline: () => exec('underline'), strike: () => exec('strikeThrough'),
     h1: () => exec('formatBlock', 'H1'), h2: () => exec('formatBlock', 'H2'), h3: () => exec('formatBlock', 'H3'), p: () => exec('formatBlock', 'P'),
@@ -135,6 +224,7 @@
     alignLeft: () => exec('justifyLeft'), alignCenter: () => exec('justifyCenter'), alignRight: () => exec('justifyRight'),
     link: () => { const url = typeof prompt === 'function' ? prompt(M.linkPrompt, 'https://') : null; if (url) exec('createLink', url) },
     clear: () => exec('removeFormat'), undo: () => exec('undo'), redo: () => exec('redo'),
+    image: pickImage, table: insertTable, hr: () => exec('insertHorizontalRule'), source: toggleSource,
   }
 </script>
 
@@ -148,18 +238,32 @@
           <button
             type="button"
             class="sv-rt__btn"
-            class:is-on={activeState[t]}
+            class:is-on={t === 'source' ? sourceMode : activeState[t]}
             data-tool={t}
             title={M[t]}
             aria-label={M[t]}
-            aria-pressed={activeState[t] ? true : undefined}
-            {disabled}
+            aria-pressed={t === 'source' ? sourceMode : activeState[t] ? true : undefined}
+            disabled={disabled || (sourceMode && t !== 'source')}
             onmousedown={(e) => e.preventDefault()}
             onclick={run[t]}
           >{GLYPH[t]}</button>
         {/if}
       {/each}
     </div>
+    {#if onImageUpload}
+      <input bind:this={fileInput} type="file" accept="image/*" hidden onchange={onFilePicked} />
+    {/if}
+  {/if}
+  {#if name}<input type="hidden" {name} {value} />{/if}
+  {#if sourceMode}
+    <textarea
+      class="sv-rt__source"
+      style:min-height={minHeight}
+      aria-label={M.source}
+      spellcheck="false"
+      bind:value={sourceText}
+      oninput={onSourceInput}
+    ></textarea>
   {/if}
   <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
   <div
@@ -167,6 +271,7 @@
     id={uid}
     class="sv-rt__body"
     class:is-empty={empty}
+    hidden={sourceMode}
     style:min-height={minHeight}
     contenteditable={!disabled && !readonly}
     role="textbox"
@@ -205,6 +310,10 @@
   .sv-rt__btn[data-tool='alignRight'] { transform: scaleX(-1); }
   .sv-rt__sep { width: 1px; height: 18px; background: var(--sg-border, #e2e8f0); margin: 0 4px; }
   .sv-rt__body { padding: 10px 12px; outline: none; overflow: auto; font-size: 14px; line-height: 1.6; }
+  .sv-rt__source { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 0; outline: none; resize: vertical; font: 12.5px/1.6 ui-monospace, monospace; color: inherit; background: transparent; }
+  .sv-rt__body :global(table) { border-collapse: collapse; margin: 0.4em 0; }
+  .sv-rt__body :global(th), .sv-rt__body :global(td) { border: 1px solid var(--sg-border, #cbd5e1); padding: 4px 8px; min-width: 48px; vertical-align: top; }
+  .sv-rt__body :global(img) { max-width: 100%; height: auto; }
   .sv-rt__body.is-empty::before { content: attr(data-placeholder); color: var(--sg-muted, #94a3b8); pointer-events: none; }
   .sv-rt__body :global(h1) { font-size: 1.5em; font-weight: 700; margin: 0.4em 0; }
   .sv-rt__body :global(h2) { font-size: 1.25em; font-weight: 700; margin: 0.4em 0; }

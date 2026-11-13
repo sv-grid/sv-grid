@@ -14,6 +14,10 @@ approach for a component-kit editor. All color comes from the `--sg-*` tokens.
 cannot run a script: event attributes, `javascript:` links and any style but a
 text alignment are removed.
 
+Four more tools can be listed in `tools` for page and article editing: `image`
+(uploaded through `onImageUpload`), `table`, `hr` and `source` (the HTML itself).
+With `name`, the editor posts its value with a plain form.
+
 Related: [Inputs overview](inputs.md) · [SvForm](sv-form.md) · [Navigation & rich overview](navigation.md)
 
 ## Installation
@@ -66,10 +70,16 @@ import { SvRichText } from '@svgrid/grid'
 | `minHeight`   | `string`                    | `160px`               | Minimum height of the editable body (any CSS length).         |
 | `tools`       | `RichTextTool[]`            | full default set      | Toolbar tools and their order; use `'\|'` for a separator.     |
 | `ariaLabel`   | `string`                    | `Rich text editor`    | Accessible name for the editable region.                       |
+| `messages`    | `Partial<RichTextMessages>` | -                     | Any toolbar label or prompt, for localization.                 |
+| `onImageUpload` | `(file: File) => Promise<string \| null>` | - | The `image` tool's upload: resolve to the URL to insert. Without it, the tool asks for a URL. |
+| `sanitize`    | `(html: string) => string`  | `sanitizeHtml`        | Replaces the sanitizer both ways, for content the app trusts. |
+| `name`        | `string`                    | -                     | Posts the value with a native form, as a hidden input.        |
 
 `RichTextTool` (exported) is one of:
-`'bold' | 'italic' | 'underline' | 'strike' | 'h1' | 'h2' | 'h3' | 'p' | 'ul' | 'ol' | 'quote' | 'code' | 'alignLeft' | 'alignCenter' | 'alignRight' | 'link' | 'clear' | 'undo' | 'redo' | '|'`.
-The `'|'` entry draws a visual separator between tool groups.
+`'bold' | 'italic' | 'underline' | 'strike' | 'h1' | 'h2' | 'h3' | 'p' | 'ul' | 'ol' | 'quote' | 'code' | 'alignLeft' | 'alignCenter' | 'alignRight' | 'link' | 'clear' | 'undo' | 'redo' | 'image' | 'table' | 'hr' | 'source' | '|'`.
+The `'|'` entry draws a visual separator between tool groups. The default
+toolbar is every tool up to `redo`; `image`, `table`, `hr` and `source` appear
+only when listed.
 
 ## Examples
 
@@ -83,6 +93,40 @@ Pass just the tools you need; group them with `'|'` separators:
   tools={['bold', 'italic', '|', 'ul', 'ol', '|', 'link']}
 />
 ```
+
+### Pages and articles: images, tables, the HTML
+
+For a CMS page or a blog post, list the extra tools, upload images to your
+server and post the editor with the rest of the form. `sanitize` is replaced
+only because the administrators who write these pages are trusted to use
+inline styles; keep the default for anything a visitor can write.
+
+```svelte
+<script lang="ts">
+  import { SvRichText } from '@svgrid/grid'
+
+  async function upload(file: File) {
+    const body = new FormData()
+    body.append('image', file)
+    const answer = await (await fetch('/api/upload', { method: 'POST', body })).json()
+    return answer.url ?? null
+  }
+</script>
+
+<form method="post">
+  <SvRichText
+    name="content"
+    value={page.content}
+    tools={['bold', 'italic', 'h2', 'h3', '|', 'ul', 'ol', '|', 'link', 'image', 'table', 'hr', '|', 'source', 'undo', 'redo']}
+    onImageUpload={upload}
+    sanitize={(html) => html.replace(/<script[\s\S]*?<\/script>/gi, '')}
+  />
+  <button>Save</button>
+</form>
+```
+
+`source` swaps the body for a text area with the HTML; the other tools wait
+until it is switched off, and what was typed there goes through `sanitize`.
 
 ### Read-only rendering
 

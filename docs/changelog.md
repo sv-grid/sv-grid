@@ -25,6 +25,13 @@ For machine-readable releases, fetch
 
 #### Added
 
+- **`SvRichText` for pages and articles.** Four tools to list in `tools`: `image` (the file
+  goes to `onImageUpload`, which resolves to the URL to insert; without it, a URL is asked
+  for), `table`, `hr` and `source` (the HTML in a text area). `name` posts the value with a
+  native form as a hidden input, and `sanitize` replaces the sanitizer for content the app
+  trusts. The default toolbar is unchanged. `sanitizeHtml` now keeps tables (with `colspan`,
+  `rowspan` and `scope`) and `<hr>`.
+
 - **`trustedHtml(html)`.** `sanitizeHtml`, ready for an HTML sink on a page that requires Trusted
   Types: there it is a `TrustedHTML` of the `svgrid` policy, elsewhere the same string.
 
@@ -860,6 +867,12 @@ For machine-readable releases, fetch
   it off; `copyToClipboard` takes `escapeFormulas: true` to turn it on.
 
 ### @svgrid/enterprise
+
+#### Fixed
+
+- **Export on a page with no global `Smart`.** A bundler that inlines dynamic imports ran the
+  vendored exporter at page load, before its namespace shim, and the whole bundle threw
+  "Smart is not defined". The exporter now loads through an entry that installs the shim first.
 
 #### Added
 

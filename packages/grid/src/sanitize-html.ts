@@ -22,8 +22,10 @@
 /** Tags that survive sanitization. Everything else is unwrapped or dropped. */
 const ALLOWED_TAGS = new Set([
   'a', 'b', 'blockquote', 'br', 'code', 'del', 'div', 'em', 'h1', 'h2', 'h3',
-  'h4', 'h5', 'h6', 'i', 'img', 'li', 'mark', 'ol', 'p', 'pre', 's', 'small',
+  'h4', 'h5', 'h6', 'hr', 'i', 'img', 'li', 'mark', 'ol', 'p', 'pre', 's', 'small',
   'span', 'strong', 'sub', 'sup', 'u', 'ul',
+  // SvRichText's table tool.
+  'table', 'caption', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td',
 ])
 
 /** Tags whose whole subtree is removed rather than unwrapped. What sits inside
@@ -46,6 +48,8 @@ const ALLOWED_ATTRS: Record<string, Set<string>> = {
   a: new Set(['href', 'target', 'rel']),
   img: new Set(['src', 'alt', 'width', 'height']),
   ol: new Set(['start']),
+  th: new Set(['colspan', 'rowspan', 'scope']),
+  td: new Set(['colspan', 'rowspan']),
 }
 
 /** URL schemes a href/src may use. Anything else, `javascript:` and
