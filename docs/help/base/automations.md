@@ -392,6 +392,31 @@ for yours: set a task to Blocked and its chat message shows under "Sent by
 the server"; run `update tasks set status = 'Blocked' where id = 't9'` and it
 runs for that change too.
 
+## Every automation on the server
+
+An app whose server hears of every change (people, its API, AI agents)
+can run all of a base's automations there and none in the page:
+
+```svelte
+<SvBase
+  bind:tables
+  editable
+  automationsOnServer
+  serverRuns={() => fetch('/api/automations/runs').then((r) => r.json())}
+  runAutomation={(automation, tableId, recordId) =>
+    fetch('/api/automations/run', { method: 'POST', body: JSON.stringify({ automation: automation.id, table: tableId, record: recordId }) })}
+/>
+```
+
+With `automationsOnServer` the dialog offers no "Runs in", every
+automation saved through it is `runOn: 'server'`, and none runs in the page.
+`runAutomation` is "Run now" in the dialog and what a Button field does:
+the page asks the server to run the automation on that record (or on none),
+then reads the server's runs. A Promise that rejects shows its message in
+the dialog, or as a notice for a button. Without `runAutomation` the dialog
+says the automation runs on the server, and a Button field that only server
+automations listen to does nothing in the page.
+
 ## See also
 
 - [Keep a base in a database](./data.md)
