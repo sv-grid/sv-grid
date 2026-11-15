@@ -454,7 +454,13 @@ test.describe('SvGrid Base: a million records (real browser)', () => {
       await expect(count(page)).toContainText('1,000,001 records', { timeout: 20_000 })
       await page.locator('.sv-btabs-tool[aria-label^="Undo"]').first().click()
       await expect(count(page)).toContainText(MILLION, { timeout: 20_000 })
-      await page.locator('.sv-btabs-tool[aria-label^="Redo"]').first().click()
+      // The count drops as the Undo takes the record out, before its delete has
+      // answered. Until then the Undo is still running, the buttons say so with
+      // aria-busy, and a Redo pressed then is refused (one turn at a time). A
+      // press in that window failed this test on CI, about 1 run in 9 here.
+      const redo = page.locator('.sv-btabs-tool[aria-label^="Redo"]').first()
+      await expect(redo).not.toHaveAttribute('aria-busy', 'true', { timeout: 20_000 })
+      await redo.click()
       await expect(count(page)).toContainText('1,000,001 records', { timeout: 20_000 })
     })
   }
