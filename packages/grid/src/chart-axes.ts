@@ -51,9 +51,12 @@ export function axisDomain(
 ): NiceScale {
   let dMin = Infinity
   let dMax = -Infinity
+  // Every value a whole number (counts): the axis steps by whole numbers too.
+  let whole = true
   const note = (v: number) => {
     if (!Number.isFinite(v)) return
     if (isLog && v <= 0) return
+    if (!Number.isInteger(v)) whole = false
     if (v < dMin) dMin = v
     if (v > dMax) dMax = v
   }
@@ -152,7 +155,13 @@ export function axisDomain(
     if (lo === ls.min && hi === ls.max) return ls
     return { min: lo, max: hi, step: ls.step, ticks: ls.ticks.filter((t) => t >= lo && t <= hi) }
   }
-  return axisScale(dMin, dMax, axis)
+  const scale = axisScale(dMin, dMax, axis)
+  // Counts of 0 to 2 would get ticks at 0.5, which read "0, 1, 1, 2, 2" once
+  // written as whole numbers: a whole-number axis steps by at least one.
+  if (whole && scale.step < 1 && axis.tickInterval == null && axis.nice !== false && axis.tickCount == null) {
+    return axisScale(dMin, dMax, { ...axis, tickInterval: 1 })
+  }
+  return scale
 }
 
 /**
