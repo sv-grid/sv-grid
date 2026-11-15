@@ -417,6 +417,66 @@ the dialog, or as a notice for a button. Without `runAutomation` the dialog
 says the automation runs on the server, and a Button field that only server
 automations listen to does nothing in the page.
 
+## A page of their own
+
+The dialog shows one table's automations. `SvBaseAutomations` shows every
+table's on a page, the way an app gives automations a section of their own:
+
+- **On the left**, every automation of the base, with its table, what sets it
+  off and an on/off switch, "+ Create automation" and "Run history".
+- **In the middle**, the one picked as a flow of cards: its trigger, its
+  condition, then its actions in order. A "+" between two cards adds an
+  action there, and "+ Add an action" adds one at the end.
+- **On the right**, the settings of the card picked: the trigger and its
+  table, the condition, or the action, with its order and Remove. Under them,
+  Test on a record of the table, and Delete automation.
+
+Changing the trigger's table moves the automation to that table: its trigger
+starts again there, and its condition and the fields its actions set go, as
+they were the other table's fields.
+
+```svelte
+<script lang="ts">
+  import { SvBaseAutomations, enableBase, type BaseAutomation, type BaseTable } from '@svgrid/enterprise/base'
+
+  enableBase()
+
+  let { tables }: { tables: BaseTable[] } = $props()
+
+  // The page hands back a table's whole list after each change: store it with the table.
+  function changed(tableId: string, automations: BaseAutomation[]) {
+    tables = tables.map((t) => (t.id === tableId ? { ...t, automations } : t))
+    void fetch(`/api/tables/${tableId}/automations`, { method: 'PUT', body: JSON.stringify(automations) })
+  }
+</script>
+
+<SvBaseAutomations
+  {tables}
+  onChange={changed}
+  onServer
+  serverRuns={() => fetch('/api/automations/runs').then((r) => r.json())}
+  runOnServer={(automation, tableId, recordId) =>
+    fetch('/api/automations/run', { method: 'POST', body: JSON.stringify({ automation: automation.id, table: tableId, record: recordId }) })}
+  records={(tableId) => fetch(`/api/tables/${tableId}/rows?limit=200`).then((r) => r.json())}
+  height="100%"
+/>
+```
+
+| Prop | Type | What it does |
+|---|---|---|
+| `tables` | `BaseTable[]` | The base's tables, each with its `automations`. |
+| `onChange` | `(tableId, automations) => void` | A table's automations changed: its whole list, as `automations` on the table. |
+| `onServer` | `boolean` | Every automation runs on the server, as `automationsOnServer`: no "Runs in" to pick. |
+| `runOnServer` | `(automation, tableId, recordId) => Promise` | Test for an automation that runs on the server: your server runs it on that record (or on none). |
+| `serverRuns` | `() => Promise<AutomationRun[]>` | The server's runs, for Run history. |
+| `runner` | automation runner | Runs automations set to "This browser" when tested, and lists their runs. |
+| `records` | `(tableId) => Promise<Row[]>` | Records to test on, for a table whose rows are on a server. Without it, the table's `data`. |
+| `height` | `number \| string` | The page's height (default `'100%'`). |
+
+The page and the dialog edit the same `automations`. When both are on one
+page, keep one copy of the tables and hand each list the page gives back to
+that copy, so a change in one is not undone by the other.
+
 ## See also
 
 - [Keep a base in a database](./data.md)

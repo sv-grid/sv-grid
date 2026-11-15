@@ -688,6 +688,8 @@ On a page of your own, `SvBaseForm` takes the same as `footerText` and a
 | `prefill` | `boolean \| string \| URLSearchParams \| Record<string, unknown>` (`FormPrefill`) | | Answers to start with: `true` reads the page's URL, a string or `URLSearchParams` is read for `prefill_` and `hide_`, an object gives values by field name or column id ([Fill the form from a link](#fill-the-form-from-a-link)). |
 | `prefillFields` | `ReadonlyArray<string>` | every field asked for | The fields `prefill` may fill or hide, by field name or column id. |
 | `footerText` | `string` | | A line under the submit button. |
+| `labels` | `Record<string, string>` | | Column id -> the question this form asks for that field, in place of the field's name. The required message uses it too. |
+| `help` | `Record<string, string>` | | Column id -> the help under that field on this form, in place of its description. An empty string shows none. |
 | `footer` | `Snippet` | | What goes under the submit button, after `footerText`. |
 | `onSubmit` | `(row: Record<string, unknown>) => void \| Promise<unknown>` | | Called after the row was appended to the grid and the grid's `onRowAdd` ran. A Promise keeps the button disabled until it settles: resolved shows "Thank you", rejected takes the row back out of the grid, keeps the fields and shows the error's message. |
 
@@ -705,6 +707,8 @@ On a page of your own, `SvBaseForm` takes the same as `footerText` and a
 | `formConditions` | Column id -> when that field shows, as `conditions` on `SvBaseForm` |
 | `formPrefill` | `true` fills fields from the page's URL, as `prefill` on `SvBaseForm`; a list of field names or column ids lets the link fill only those |
 | `formFooter` | A line of plain text under the submit button |
+| `formLabels` | Column id -> the question asked for that field, as `labels` on `SvBaseForm` |
+| `formHelp` | Column id -> the help under that field, as `help` on `SvBaseForm` |
 
 A record the view sends reaches `onRowAdd`, `onTablesChange` and the
 `formSubmitted` automations, which get the view's `id`.
