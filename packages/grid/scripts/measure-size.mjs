@@ -826,7 +826,15 @@ const BUDGET_KB = {
   // steps rounded; gauge units; the range area drawn as a band. Every one
   // is a rule the renderer or a layout applies on every chart, so none can
   // be lazy.
-  'chart surface (SvChart)': 71.9,
+  //
+  // 71.9 -> 72.0 for the whole-number value axis (2026-11-15, d1edc7dc).
+  // Counts of 0 to 2 got ticks at 0.5, which read "0, 1, 1, 2, 2" once
+  // written as whole numbers; axisDomain now steps such an axis by 1.
+  // Measured 73,652 B from the repo root, 26 B over 71.9 (73,625.6 B). It
+  // runs on every value axis, so it cannot be lazy. The figure depends on
+  // the directory the script runs from (73,618 B from scripts/), so measure
+  // from the root, as CI does.
+  'chart surface (SvChart)': 72.0,
 }
 
 const CHECK = process.argv.includes('--check')

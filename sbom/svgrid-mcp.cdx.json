@@ -38,33 +38,19 @@
       "name": "svelte",
       "version": "5.57.3",
       "purl": "pkg:npm/svelte@5.57.3",
-      "scope": "required",
-      "description": "Runtime dependency (declared range: ^5.57.3)"
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/enterprise@3.1.39",
-      "name": "@svgrid/enterprise",
-      "version": "3.1.39",
-      "purl": "pkg:npm/%40svgrid/enterprise@3.1.39",
       "scope": "optional",
-      "description": "Peer dependency (declared range: workspace:^)"
+      "description": "Peer dependency (declared range: ^5.0.0)"
     }
   ],
   "dependencies": [
     {
       "ref": "pkg:npm/%40svgrid/mcp@3.0.45",
       "dependsOn": [
-        "pkg:npm/svelte@5.57.3",
-        "pkg:npm/%40svgrid/enterprise@3.1.39"
+        "pkg:npm/svelte@5.57.3"
       ]
     },
     {
       "ref": "pkg:npm/svelte@5.57.3",
-      "dependsOn": []
-    },
-    {
-      "ref": "pkg:npm/%40svgrid/enterprise@3.1.39",
       "dependsOn": []
     }
   ]
