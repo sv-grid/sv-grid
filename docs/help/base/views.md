@@ -664,7 +664,8 @@ way as the others.
 
 When a table is narrower than 600px (its own width, not the window's), a
 grid view shows each record as a card: the primary field, then the next four
-fields the view shows, in the view's filter and sort. A tap opens the
+fields the view shows, each name beside its value so several records fit on
+the screen, in the view's filter and sort. A tap opens the
 record, "+" adds one, and on a phone screen the opened record fills it. The
 view bar keeps its icons and the tab bar its tabs.
 
