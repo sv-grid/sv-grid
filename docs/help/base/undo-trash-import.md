@@ -450,6 +450,24 @@ and rows of text, and `recordsFromMatrix(rows, table, matchColumns(header,
 table))` turns them into records of an existing table. `fileImport={false}`
 removes the menu items.
 
+The base reads CSV, TSV, `.xlsx` (its first sheet) and JSON itself. To take
+other formats (an old `.xls`, `.ods`, `.xlsb`), give your own reader:
+`importReader` gets every file first and answers its rows as text, the header
+row first, or `null` to leave the file to the base. With it, the file picker
+offers those formats too.
+
+```ts
+import * as XLSX from 'xlsx'
+
+const importReader = async (file: File) => {
+  if (!/\.(xls|xlsb|ods)$/i.test(file.name)) return null
+  const book = XLSX.read(new Uint8Array(await file.arrayBuffer()), { type: 'array' })
+  const sheet = book.Sheets[book.SheetNames[0]]
+  return XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' })
+}
+// <SvBase {tables} {importReader} />
+```
+
 <div data-docs-demo="709-base-import-csv-excel" data-height="620"></div>
 
 ## Next
