@@ -9,11 +9,16 @@ import SvGrid from './SvGrid.svelte'
 import { orderKeepingScreen, pinCountAt, pinEdges } from './pin-splitter'
 
 const settle = () => new Promise<void>((r) => setTimeout(r))
-async function until(check: () => boolean, label: string) {
-  for (let i = 0; i < 100; i++) {
+// The splitter arrives through import(), so how long it takes is the
+// runner's, not the grid's. A budget of 100 zero-delay ticks ran out on CI
+// under coverage (2026-11-15); wait on the clock instead.
+async function until(check: () => boolean, label: string, ms = 5000) {
+  const end = Date.now() + ms
+  while (Date.now() < end) {
     if (check()) return
-    await settle()
+    await new Promise<void>((r) => setTimeout(r, 10))
   }
+  if (check()) return
   throw new Error(`timed out waiting for ${label}`)
 }
 
