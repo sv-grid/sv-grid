@@ -96,6 +96,21 @@ A support agent who needs the "Open tickets" view and nothing else:
 They see the Tickets tab with one view, edit records in it, and nothing else
 of the base. Their filter and sort changes stay in their page.
 
+## A view as a page of an app: `chrome="page"`
+
+For an app built on the base, where each page is one view (an interface, a
+portal), drop the base's own chrome:
+
+```svelte
+<SvBase bind:tables chrome="page" activeTable="tickets" permissions={{ viewsOnly: ['tickets.open'], canEditSchema: false }} editable />
+```
+
+`chrome="page"` shows the view alone: no table tabs, no views menu. The rest
+of the view bar stays (fields, filter, sort, group, search), so people still
+narrow what they see; with `canEditViews: false` that stays in their page,
+and a dashboard offers no "Edit dashboard". The default, `chrome="base"`, is
+the base as it always was.
+
 ## One table
 
 With `data` and `columns` instead of `tables`, `permissions` works the same.

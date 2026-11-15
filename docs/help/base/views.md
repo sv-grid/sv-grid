@@ -389,6 +389,67 @@ dashboard.
 
 <div data-docs-demo="721-base-dashboard" data-height="680"></div>
 
+### Text, buttons, images, dividers and a record picker
+
+A dashboard can also say, show and link to things, which makes it a page of
+an app rather than only a summary (Airtable's "blank" interface layout):
+
+```ts
+const home: FieldView = {
+  id: 'home',
+  name: 'Home',
+  type: 'dashboard',
+  dashboard: [
+    { id: 'hello', kind: 'text', text: '# Welcome\nYour open requests are below. See [the guide](https://example.com/guide).' },
+    { id: 'help', kind: 'button', label: 'Ask for help', url: 'https://example.com/help' },
+    { id: 'logo', kind: 'image', url: '/img/office.jpg', alt: 'Our office', fit: 'cover' },
+    { id: 'sec', kind: 'divider', title: 'By account' },
+    { id: 'account', kind: 'picker', table: 'accounts', title: 'Account', fields: ['city', 'owner'] },
+    { id: 'deals', kind: 'number', title: 'Deals', pickedBy: { tile: 'account', field: 'account' } },
+  ],
+}
+```
+
+- **`'text'`**: `text` in a small part of Markdown: a line starting with `#`
+  is a heading, a blank line starts a paragraph, `**bold**` and
+  `[words](https://...)` links inside lines. It is drawn as text, never as
+  HTML, so what anyone types shows as typed.
+- **`'button'`**: `label` (default "Open") and `url`. An address on another
+  site opens in a new tab; a path (`/...`) in the same one.
+- **`'image'`**: `url` and `alt` (said to people who cannot see it); `fit` is
+  `'contain'` (the whole picture, default) or `'cover'` (the tile filled).
+- **`'divider'`**: a line across the whole dashboard with its `title` over
+  it, to start a section.
+- **`'picker'`**: the records of its `table` to choose from by name; the one
+  picked shows its `fields` (default: the next four after its name) and an
+  "Open the record" button.
+
+Links and pictures go only to `https:`, `http:`, `mailto:` (a link) or a path
+on the site: a `javascript:` or `data:` address is shown as words, not
+followed.
+
+A number, chart, list or progress tile with `pickedBy: { tile, field }` is
+narrowed by that picker: once a record is picked, it counts only the records
+whose link field `field` holds it ("the deals of the account picked"), and
+"Every record" counts them all again. The pick is the viewer's and is not
+saved. Under the hood the tile's filter gains a condition of the kind
+`'linked'`:
+
+```ts
+const narrowing = { column: 'account', kind: 'linked', op: 'hasAnyOf', value: ['a1'] } // the link holds record a1, by id
+```
+
+For a table the page holds, the page applies it. For a table read from a
+server (`serverRows`), the server must apply it too: `fieldFilterToSql` and
+`fieldFilterToPostgrest` answer that they cannot (the tile then shows what
+the server sends), so a server of your own reads `kind: 'linked'` and matches
+the link's record ids.
+
+In the tile dialog, "Shows" offers these kinds too; a picker's tile picks its
+fields, and the tiles it can narrow offer "Narrowed by" with each picker the
+tile's table links to. Dividers take one row across the dashboard; the other
+tiles keep their sizes.
+
 ## 10. A list for the phone
 
 ```ts
