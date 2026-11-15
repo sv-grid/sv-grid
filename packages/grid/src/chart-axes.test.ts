@@ -43,13 +43,13 @@ describe('axisScale', () => {
 
 describe('value axis config', () => {
   it('counts step by whole numbers: no "0, 1, 1, 2, 2" on an axis of small counts', () => {
-    const geo = buildChart({ type: 'bar', categories: ['Todo', 'Done'], series: [{ name: 'Records', values: [1, 2] }] } as ChartSpec)
+    const geo = buildChart(line({ type: 'bar', categories: ['Todo', 'Done'], series: [{ label: 'Records', values: [1, 2] }] }))
     expect(geo.yTicks.map((t) => t.value)).toEqual([0, 1, 2])
     // Values that are not whole keep the finer steps.
-    const fine = buildChart({ type: 'bar', categories: ['a', 'b'], series: [{ name: 'x', values: [0.4, 1.6] }] } as ChartSpec)
+    const fine = buildChart(line({ type: 'bar', categories: ['a', 'b'], series: [{ label: 'x', values: [0.4, 1.6] }] }))
     expect(fine.yTicks.some((t) => !Number.isInteger(t.value))).toBe(true)
     // A larger count is untouched.
-    const big = buildChart({ type: 'bar', categories: ['a', 'b'], series: [{ name: 'x', values: [120, 380] }] } as ChartSpec)
+    const big = buildChart(line({ type: 'bar', categories: ['a', 'b'], series: [{ label: 'x', values: [120, 380] }] }))
     expect(big.yTicks.every((t) => Number.isInteger(t.value))).toBe(true)
   })
   it('yAxis.min / max pin the domain', () => {
