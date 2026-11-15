@@ -673,6 +673,27 @@ form view, so one snippet can serve every form:
 On a page of your own, `SvBaseForm` takes the same as `footerText` and a
 `footer` snippet.
 
+## One question at a time
+
+`layout="steps"` asks one question at a time, as a conversation: a progress
+bar, "Question 2 of 6", Back and Next. Each answer is checked before the next
+question comes (a required field left empty, or an e-mail that is not one,
+stays with its message). Enter after an answer goes on, and on the last
+question sends the form. Shift+Enter, or Enter in a long text, starts a new
+line. A send that finds a problem goes back to the question it is on.
+
+The next question slides in from the side it is on (`transition="slide"`),
+fades in (`"fade"`) or just appears (`"none"`). A visitor who asks the system
+for less motion gets none, whatever the form says.
+
+```svelte
+<SvBaseForm {api} fields={['name', 'email', 'role', 'note']} required={['name', 'email']}
+  layout="steps" transition="slide" title="Apply" />
+```
+
+Conditions work as in the list: a question whose condition fails is skipped,
+and the count follows.
+
 ## SvBaseForm props
 
 | Prop | Type | Default | What it does |
@@ -691,6 +712,8 @@ On a page of your own, `SvBaseForm` takes the same as `footerText` and a
 | `labels` | `Record<string, string>` | | Column id -> the question this form asks for that field, in place of the field's name. The required message uses it too. |
 | `help` | `Record<string, string>` | | Column id -> the help under that field on this form, in place of its description. An empty string shows none. |
 | `footer` | `Snippet` | | What goes under the submit button, after `footerText`. |
+| `layout` | `'list' \| 'steps'` | `'list'` | `steps` asks one question at a time, with Back and Next ([One question at a time](#one-question-at-a-time)). |
+| `transition` | `'slide' \| 'fade' \| 'none'` | `'slide'` | How the next question comes in, with `layout="steps"`. None for visitors who ask for less motion. |
 | `onSubmit` | `(row: Record<string, unknown>) => void \| Promise<unknown>` | | Called after the row was appended to the grid and the grid's `onRowAdd` ran. A Promise keeps the button disabled until it settles: resolved shows "Thank you", rejected takes the row back out of the grid, keeps the fields and shows the error's message. |
 
 ## Form view keys
