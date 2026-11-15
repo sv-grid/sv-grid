@@ -675,6 +675,12 @@ shows on its card, as a ring on its list row, and in the selection bar. Copy and
 paste work on a cell, so they stay with the table. A gallery view and a list view
 have the same menu.
 
+Fields are added and changed from the fields button (Hide fields), since the
+cards have no column headers: "Add a field" at the foot of its list, and a
+pencil on each field to rename it or change its type. Both are there wherever
+fields may be changed (`columnAdder`, off without `canEditSchema`), on any
+screen, and open the same field editor as the header's "+" and field menu.
+
 A Kanban lane takes the table's width, the next lane a swipe away and
 snapped into place. A calendar opens in its agenda, the days listed one under
 another, since a month of seven columns has no room for a title; Month, Week
