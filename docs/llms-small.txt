@@ -44,9 +44,9 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## Key facts
 
-- Package: `@svgrid/grid` 3.0.34, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
+- Package: `@svgrid/grid` 3.0.35, MIT licensed. Import from `@svgrid/grid` and `@svgrid/grid/themes/<name>.css`. It is an npm library, not a CLI that copies component source into the project.
 - Peer dependency: `svelte` ^5. Works in SvelteKit, including server-side rendering.
-- Size (gzip, Svelte external, measured 2026-11-10 on 3.0.34): 99.6 KB for the full `<SvGrid>` entry plus 11.4 KB CSS; 3.2 KB for the headless entry. Features load on demand.
+- Size (gzip, Svelte external, measured 2026-11-15 on 3.0.35): 99.6 KB for the full `<SvGrid>` entry plus 11.4 KB CSS; 3.2 KB for the headless entry. Features load on demand.
 - Styling: `--sg-*` CSS custom properties, and 20 theme stylesheets, each with a light and a dark palette. No CSS framework is required; Tailwind and shadcn-svelte setups are documented.
 - Accessibility: the WAI-ARIA grid pattern with full keyboard navigation and screen-reader announcements.
 - AI helpers ship free in `@svgrid/grid` and work with any model: `setAIProvider`, `aiFilter`, `aiSmartFill`, `aiSummarize`, `aiClassify`, `aiFindAnomalies`.
@@ -2510,14 +2510,14 @@ typed anywhere else on this page. An earlier version of this page typed its
 numbers and sat a month behind the measurement.
 
 <!-- size:start -->
-Re-measured **10 Nov 2026** at `@svgrid/grid` 3.0.34 with the script that ships in the repo (`pnpm size:json`):
+Re-measured **15 Nov 2026** at `@svgrid/grid` 3.0.35 with the script that ships in the repo (`pnpm size:json`):
 
 | Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |
 | --- | ---: | ---: | ---: |
 | Headless core (`createSvGrid`) | **3.2 KB** | - | - |
 | Headless subpath (`@svgrid/grid/core`) | **10.2 KB** | - | - |
-| Full render component (`<SvGrid>`) | **99.6 KB** | **11.4 KB** | **206.3 KB** |
-| Standalone chart (`<SvChart>`) | **71.9 KB** | - | **16.0 KB** |
+| Full render component (`<SvGrid>`) | **99.6 KB** | **11.4 KB** | **206.6 KB** |
+| Standalone chart (`<SvChart>`) | **71.9 KB** | - | **16.2 KB** |
 <!-- size:end -->
 
 The two headless rows measure different things on purpose. `createSvGrid` is
@@ -3035,7 +3035,7 @@ in the loop.
 | --- | --- | --- |
 | Setup | a URL | `npx @svgrid/mcp` |
 | Needs Node | no | yes |
-| Code check compiles | no, static checks only | yes |
+| Code check compiles | no, static checks only | yes, with your project's Svelte |
 | Resources and prompts | yes | yes |
 | Visual preview | yes | yes |
 | `studio_*` tools | no | yes, opt-in |
@@ -3504,6 +3504,22 @@ to the binary. For the hosted one, confirm the endpoint answers:
 ```bash
 curl https://mcp.svgrid.com/health
 ```
+
+**"The svgrid MCP server timed out" or "connection timed out after
+30000ms".** The server starts in well under a second; the wait is `npx`
+downloading it. That happens on the first start and again after each new
+`@svgrid/mcp` release, and a slow network or a virus scanner can push it
+past the 30 seconds a client waits. Any of these fixes it:
+
+- use the hosted server, which has nothing to download:
+  `claude mcp add --transport http svgrid https://mcp.svgrid.com/mcp`
+- install it once, so later starts skip the download:
+  `pnpm add -D @svgrid/mcp`, then `claude mcp add svgrid -- npx svgrid-mcp`
+- give the client longer: in Claude Code, start it with `MCP_TIMEOUT=60000`
+
+The compile pass of `svgrid_check_code` uses the Svelte in the project the
+server starts in. Started outside a Svelte project, the check still runs
+its API rules and its `compiler` field reads `unavailable`.
 
 ## Security model
 
