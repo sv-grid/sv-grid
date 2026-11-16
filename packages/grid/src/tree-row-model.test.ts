@@ -166,3 +166,18 @@ describe('flattenTreeData', () => {
     expect(flat[1]!.pid).toBe(1)
   })
 })
+
+describe('createTreeRowModel with a link field as the parent', () => {
+  it('reads a one-item list as the parent, matching ids as text', () => {
+    const data = [
+      { id: 1, parent: [], name: 'root' },
+      { id: 2, parent: ['1'], name: 'child' },
+      { id: 3, parent: ['2'], name: 'grandchild' },
+      { id: 4, parent: ['1', '2'], name: 'two parents: a root' },
+    ] as never as Node[]
+    const roots = run(data)
+    expect(ids(roots)).toEqual(['1', '4'])
+    expect(ids(roots[0]!.subRows!)).toEqual(['2'])
+    expect(ids(roots[0]!.subRows![0]!.subRows!)).toEqual(['3'])
+  })
+})

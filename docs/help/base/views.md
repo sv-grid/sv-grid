@@ -525,7 +525,55 @@ leaves the record on the right too.
 
 <div data-docs-demo="720-base-inbox-view" data-height="620"></div>
 
-## 12. Keep the views
+## 12. A tree of tasks
+
+```ts
+const tree: FieldView = {
+  id: 'tree',
+  name: 'Work breakdown',
+  type: 'tree',
+  parentField: 'parent',
+}
+```
+
+A tree is a grid whose records nest under their parent: `parentField` is a
+link field to the same table, and a record sits under the one record it
+names, with an expander on the primary field. A record whose link names
+several records, or one the view's filter leaves out, is at the top level, so
+no record goes missing. The records stay records: every cell edits as in a
+grid, and the footer counts them all, folded or not.
+
+Creating a tree view asks for the link field. A table without a link to
+itself cannot have one: the type is greyed out, and says why.
+
+## 13. A pivot of effort
+
+```ts
+const pivot: FieldView = {
+  id: 'pivot',
+  name: 'Hours by status and team',
+  type: 'pivot',
+  pivot: {
+    rows: ['status'],
+    cols: ['team'],
+    values: [{ agg: 'count' }, { agg: 'sum', field: 'hours' }],
+  },
+}
+```
+
+A pivot adds up the records the view shows (its filter applies) by the fields
+down the side (`rows`, outermost first) and the one across the top (`cols`):
+a count of records, or a number field's `'sum'`, `'avg'`, `'min'` or `'max'`.
+Fields are grouped as a chart groups them: options in their order, people and
+linked records by name, dates by month, and a record with two options counts
+under each. Subtotals, a total row and, with a field across the top, a total
+column come with it.
+
+Its own bar, over the table, changes the rows, the column field and the
+values; the view keeps them (`onViewsChange`). On a table read from a server
+a page at a time, it adds up the records loaded and says how many of how many.
+
+## 14. Keep the views
 
 `onViewsChange` fires with the whole list when a view is created, renamed,
 duplicated or deleted, and about 400ms after the shown view's settings stop
@@ -759,8 +807,10 @@ grid has called `onApiReady`; the box does this for you.
 | `'kanban'` | `stackBy`: a single select, or a user field with one person | Hide fields, Filter, Sort |
 | `'calendar'` | `dateField`, `endField` (optional), `color` | Hide fields, Filter, Sort, Color |
 | `'gantt'` | `dateField`, `endField`, `progressField`, `dependencyField`, `zoom`, `color` | Hide fields, Filter, Sort, Color, Customize timeline |
+| `'tree'` | `parentField`: a link field to the same table | Hide fields, Filter, Sort, Color, Row height |
 | `'gallery'` | `coverField`: an attachment field | Hide fields, Filter, Sort |
 | `'chart'` | `chart`: `kind`, `x`, `y`, `aggregation` | Filter, Customize chart |
+| `'pivot'` | `pivot`: `rows`, `cols`, `values` (`{ agg, field }`) | Filter; its own bar for rows, columns and values |
 | `'list'` | `listFields`: the fields under each name | Hide fields, Filter, Group, Sort, Customize list |
 | `'inbox'` | `inboxDateField`: a date field, newest first; `listFields` | Hide fields, Filter, Sort, Customize inbox |
 | `'form'` | `formFields`, `formRequired`, `formTitle`, `formDescription`, `formSubmitLabel`, `formConditions`, `formPrefill` | none |

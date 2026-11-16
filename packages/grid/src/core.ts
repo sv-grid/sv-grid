@@ -1531,8 +1531,16 @@ export function createTreeRowModel<TData extends RowData>(
   const { parentField, idField = 'id' } = options
   return ({ table, rows }) => {
     if (!rows.length) return rows
-    const keyOf = (row: Row<TData>) => (row.original as any)?.[idField]
-    const parentOf = (row: Row<TData>) => (row.original as any)?.[parentField]
+    // Ids compare as text (a link field holds "7" for the row whose id is 7),
+    // and a parent given as a one-item list (as a link field holds it) is
+    // that item; a row with several parents, like one whose parent is absent,
+    // is a root.
+    const textOf = (v: unknown) => (v == null || v === '' ? null : String(v))
+    const keyOf = (row: Row<TData>) => textOf((row.original as any)?.[idField])
+    const parentOf = (row: Row<TData>) => {
+      const raw = (row.original as any)?.[parentField]
+      return Array.isArray(raw) ? (raw.length === 1 ? textOf(raw[0]) : null) : textOf(raw)
+    }
 
     const present = new Set<unknown>()
     for (const row of rows) present.add(keyOf(row))
