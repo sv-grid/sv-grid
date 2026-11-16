@@ -469,6 +469,7 @@ export { default as SvFileUpload, type FileRejection, type FileRejectReason } fr
 export { createFileUpload, fileMatchesAccept, type FileUpload, type FileUploadConfig } from './createFileUpload.svelte'
 // UI kit - overlays (popover / tooltip / modal), sharing the popover.ts positioning + animation
 export { default as SvPopover } from './SvPopover.svelte'
+export { setPopoverSheets, popoverSheets, SHEET_MAX_WIDTH, type PopoverSheetMode } from './popover-sheets.svelte'
 export { default as SvTooltip } from './SvTooltip.svelte'
 export { default as SvModal, setModalCloseLabel } from './SvModal.svelte'
 export { default as SvDrawer } from './SvDrawer.svelte'

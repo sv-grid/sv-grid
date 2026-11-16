@@ -2481,6 +2481,31 @@ select.sv-grid-fr-editor {
   background: transparent;
 }
 
+/* A phone with sheets on (setPopoverSheets('phone')): the column, filter and
+   cell menus as bottom sheets, over a dimmed page, rows a finger can hit. The
+   menus are placed by inline left/top: the sheet's place wins over them. */
+.sv-grid-menu-backdrop.sv-grid-menu-backdrop--dim {
+  background: rgba(15, 23, 42, 0.32);
+}
+.sv-grid-menu.sv-grid-menu--sheet {
+  left: 0 !important;
+  right: 0;
+  top: auto !important;
+  bottom: 0;
+  width: 100%;
+  max-width: none;
+  max-height: 75vh !important;
+  box-sizing: border-box;
+  padding: 10px 8px calc(10px + env(safe-area-inset-bottom, 0px));
+  border-radius: 16px 16px 0 0;
+  border-bottom: 0;
+  font-size: 15px;
+  box-shadow: 0 -12px 40px -12px rgba(15, 23, 42, 0.35);
+}
+.sv-grid-menu--sheet .sv-grid-menu-item {
+  min-height: 44px;
+}
+
 .sv-grid-menu {
   position: fixed;
   z-index: 901;

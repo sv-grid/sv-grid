@@ -32,8 +32,14 @@
   import { takesNoValue } from "./filter-operators";
   import { getGridExtension } from "./grid-extension.svelte";
   import { columnDataType, isDateDataType } from "./column-types";
+  import { popoverSheets, SHEET_MAX_WIDTH } from "./popover-sheets.svelte";
 
   let { ctrl, icon }: { ctrl: SvGridController<TFeatures, TData>; icon: Snippet<[GridIconName]> } = $props();
+
+  // A phone, when the page asked for sheets (setPopoverSheets('phone')): the column, filter and
+  // cell menus open from the bottom of the screen, the screen's width, over a dimmed page.
+  let menuWindowW = $state(typeof window !== "undefined" ? window.innerWidth : 1024);
+  const sheetMenus = $derived(popoverSheets() === "phone" && menuWindowW > 0 && menuWindowW <= SHEET_MAX_WIDTH);
 
   // The menus' own actions (menu-actions.ts) load with this component, not
   // with the grid: it is imported on the first menu open.
@@ -360,7 +366,7 @@
   }
 </script>
 
-<svelte:window onkeydown={onContextMenuKeydown} />
+<svelte:window onkeydown={onContextMenuKeydown} bind:innerWidth={menuWindowW} />
 
   {#if tooltip}
     <!-- Custom hover tooltip. Floats above the grid; positioned by
@@ -376,6 +382,7 @@
   {#if columnMenuFor || filterMenuFor || operatorMenuFor || chooseColumnsPos}
     <div
       class="sv-grid-menu-backdrop"
+      class:sv-grid-menu-backdrop--dim={sheetMenus}
       role="presentation"
       onclick={closeMenus}
     ></div>
@@ -637,6 +644,7 @@
     {@const menuTab = ctrl.columnMenuTab}
     <div
       class="sv-grid-menu sv-grid-column-menu"
+      class:sv-grid-menu--sheet={sheetMenus}
       data-svgrid-menu={ctrl.gridDomId}
       role="menu"
       tabindex="-1"
@@ -853,6 +861,7 @@
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
       class="sv-grid-menu sv-grid-filter-menu"
+      class:sv-grid-menu--sheet={sheetMenus}
       data-svgrid-menu={ctrl.gridDomId}
       role="menu"
       style={`left: ${filterMenuPos.x}px; top: ${filterMenuPos.y}px; max-height: calc(100vh - ${filterMenuPos.y}px - 12px);`}
@@ -868,6 +877,7 @@
     {@const everyColumn = grid.getAllColumns()}
     <div
       class="sv-grid-menu sv-grid-choose-columns-menu"
+      class:sv-grid-menu--sheet={sheetMenus}
       data-svgrid-menu={ctrl.gridDomId}
       role="menu"
       tabindex="-1"
@@ -899,6 +909,7 @@
       filterMenuValues[opColumnId]?.operator ?? defaultOperatorFor(opColumn)}
     <div
       class="sv-grid-menu sv-grid-operator-menu"
+      class:sv-grid-menu--sheet={sheetMenus}
       data-svgrid-menu={ctrl.gridDomId}
       role="menu"
       style={`left: ${operatorMenuPos.x}px; top: ${operatorMenuPos.y}px;`}
@@ -977,12 +988,14 @@
     {@const gutter = items.some((it) => it.icon)}
     <div
       class="sv-grid-menu-backdrop"
+      class:sv-grid-menu-backdrop--dim={sheetMenus}
       role="presentation"
       oncontextmenu={(e) => { e.preventDefault(); closeContextMenu(); }}
       onclick={closeContextMenu}
     ></div>
     <div
       class="sv-grid-menu sv-grid-context-menu"
+      class:sv-grid-menu--sheet={sheetMenus}
       data-svgrid-menu={ctrl.gridDomId}
       role="menu"
       tabindex="-1"
@@ -1026,6 +1039,7 @@
   {#if commentEditFor}
     <div
       class="sv-grid-menu-backdrop"
+      class:sv-grid-menu-backdrop--dim={sheetMenus}
       role="presentation"
       onclick={closeCommentEditor}
     ></div>
