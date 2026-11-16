@@ -114,6 +114,12 @@ export const ELEMENT_PROPS = [
     "ts": "boolean"
   },
   {
+    "name": "maxPinnedColumnWidth",
+    "type": "Number",
+    "attribute": "max-pinned-column-width",
+    "ts": "number"
+  },
+  {
     "name": "primaryField",
     "type": "String",
     "attribute": "primary-field",

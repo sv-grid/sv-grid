@@ -25,6 +25,7 @@
       fieldMenu: { type: 'Boolean', attribute: 'field-menu' },
       expandRows: { type: 'Boolean', attribute: 'expand-rows' },
       pinSplitter: { type: 'Boolean', attribute: 'pin-splitter' },
+      maxPinnedColumnWidth: { type: 'Number', attribute: 'max-pinned-column-width' },
       primaryField: { type: 'String', attribute: 'primary-field' },
       features: { type: 'Object' },
       sortable: { type: 'Boolean', attribute: 'sortable' },

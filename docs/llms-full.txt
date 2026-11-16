@@ -56,7 +56,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## About this file
 
-The full SvGrid documentation, generated 2026-11-15 from 483 pages, 21 comparison pages, plus 83 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
+The full SvGrid documentation, generated 2026-11-16 from 483 pages, 21 comparison pages, plus 83 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
 
 <!-- =================================================================
      /docs/getting-started/  (community)
@@ -3534,7 +3534,7 @@ project, with no local setup.
   `<sv-grid>` like any built-in element.
 - **One bundle, no framework lock-in.** Ship a single file to a CDN; consumers
   add one `<script type="module">` and a tag.
-- **The whole grid.** 127 properties and 36 events, so virtualization,
+- **The whole grid.** 128 properties and 36 events, so virtualization,
   Excel-style filters, inline editing, grouping, tree data, pinning, pagination
   and the enterprise features are all reachable - not a hand-picked subset. The
   surface is **generated** from `<SvGrid>`'s own `Props` type and CI fails if
@@ -42804,7 +42804,7 @@ local setup, nothing to configure.
 | Vue | `import { SvGrid } from '@svgrid/grid-wc/vue'` | `<SvGrid :data="rows" :columns="cols" sortable filterable />` |
 | Angular | `import { SvGridComponent } from '@svgrid/grid-wc/angular'` | `<sv-grid [data]="rows" [columns]="cols" [sortable]="true" />` |
 
-That is the whole integration. All 127 properties and 36 events of the grid are
+That is the whole integration. All 128 properties and 36 events of the grid are
 typed props on every one of them.
 
 **Or skip step 1** and open a working project right now:
@@ -43059,7 +43059,7 @@ attribute is the extra convenience, offered only where it can work.
 
 <!-- BEGIN generated reference - packages/grid-wc/scripts/generate-surface.mjs -->
 
-### Attributes (86)
+### Attributes (87)
 
 Primitives, so they work in plain HTML as well as through a property.
 
@@ -43073,6 +43073,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `field-menu` | `fieldMenu` | `boolean` |
 | `expand-rows` | `expandRows` | `boolean` |
 | `pin-splitter` | `pinSplitter` | `boolean` |
+| `max-pinned-column-width` | `maxPinnedColumnWidth` | `number` |
 | `primary-field` | `primaryField` | `string` |
 | `sortable` | `sortable` | `boolean` |
 | `filterable` | `filterable` | `boolean` |
@@ -43459,7 +43460,7 @@ flag can switch it, so no attribute can either.
 </script>
 ```
 
-Everything else is identical: the same 127 properties, the same 86 attributes,
+Everything else is identical: the same 128 properties, the same 87 attributes,
 the same 36 events. Events are dispatched `composed: true`, so
 `addEventListener` on the host works exactly as it does on `<sv-grid>`.
 
@@ -43562,7 +43563,7 @@ export default function Screen() {
 ```
 
 That is the whole integration. The component is generated from `<SvGrid>`'s
-own types, so all 127 properties and 36 events are typed props, and it works the
+own types, so all 128 properties and 36 events are typed props, and it works the
 same on React 17, 18 and 19.
 
 ## Server rendering (Next.js, TanStack Start, Remix)
@@ -93548,7 +93549,8 @@ way as the others.
 
 When a table is narrower than 600px (its own width, not the window's), a
 grid view shows each record as a card: the primary field, then the next four
-fields the view shows, in the view's filter and sort. A tap opens the
+fields the view shows, each name beside its value so several records fit on
+the screen, in the view's filter and sort. A tap opens the
 record, "+" adds one, and on a phone screen the opened record fills it. The
 view bar keeps its icons and the tab bar its tabs.
 
@@ -93559,6 +93561,12 @@ shows on its card, as a ring on its list row, and in the selection bar. Copy and
 paste work on a cell, so they stay with the table. A gallery view and a list view
 have the same menu.
 
+Fields are added and changed from the fields button (Hide fields), since the
+cards have no column headers: "Add a field" at the foot of its list, and a
+pencil on each field to rename it or change its type. Both are there wherever
+fields may be changed (`columnAdder`, off without `canEditSchema`), on any
+screen, and open the same field editor as the header's "+" and field menu.
+
 A Kanban lane takes the table's width, the next lane a swipe away and
 snapped into place. A calendar opens in its agenda, the days listed one under
 another, since a month of seven columns has no room for a title; Month, Week
@@ -93567,6 +93575,11 @@ column at any width.
 
 `phoneLayout` on `SvBase` moves the breakpoint (`phoneLayout={480}`), turns
 the cards on at every width (`true`) or keeps the grid (`false`).
+`phoneGrid="grid"` keeps a grid view a grid on a phone while the other views
+keep their phone layouts: a spreadsheet to scroll both ways, its first field
+pinned and drawn at most about two fifths of the width
+(`maxPinnedColumnWidth` on the grid, the field's own width kept), with "+"
+to add a record. A tap selects a cell and a second tap edits it.
 
 <div data-docs-demo="713-base-phone-layout" data-height="720"></div>
 
@@ -94514,6 +94527,27 @@ form view, so one snippet can serve every form:
 On a page of your own, `SvBaseForm` takes the same as `footerText` and a
 `footer` snippet.
 
+## One question at a time
+
+`layout="steps"` asks one question at a time, as a conversation: a progress
+bar, "Question 2 of 6", Back and Next. Each answer is checked before the next
+question comes (a required field left empty, or an e-mail that is not one,
+stays with its message). Enter after an answer goes on, and on the last
+question sends the form. Shift+Enter, or Enter in a long text, starts a new
+line. A send that finds a problem goes back to the question it is on.
+
+The next question slides in from the side it is on (`transition="slide"`),
+fades in (`"fade"`) or just appears (`"none"`). A visitor who asks the system
+for less motion gets none, whatever the form says.
+
+```svelte
+<SvBaseForm {api} fields={['name', 'email', 'role', 'note']} required={['name', 'email']}
+  layout="steps" transition="slide" title="Apply" />
+```
+
+Conditions work as in the list: a question whose condition fails is skipped,
+and the count follows.
+
 ## SvBaseForm props
 
 | Prop | Type | Default | What it does |
@@ -94529,7 +94563,11 @@ On a page of your own, `SvBaseForm` takes the same as `footerText` and a
 | `prefill` | `boolean \| string \| URLSearchParams \| Record<string, unknown>` (`FormPrefill`) | | Answers to start with: `true` reads the page's URL, a string or `URLSearchParams` is read for `prefill_` and `hide_`, an object gives values by field name or column id ([Fill the form from a link](#fill-the-form-from-a-link)). |
 | `prefillFields` | `ReadonlyArray<string>` | every field asked for | The fields `prefill` may fill or hide, by field name or column id. |
 | `footerText` | `string` | | A line under the submit button. |
+| `labels` | `Record<string, string>` | | Column id -> the question this form asks for that field, in place of the field's name. The required message uses it too. |
+| `help` | `Record<string, string>` | | Column id -> the help under that field on this form, in place of its description. An empty string shows none. |
 | `footer` | `Snippet` | | What goes under the submit button, after `footerText`. |
+| `layout` | `'list' \| 'steps'` | `'list'` | `steps` asks one question at a time, with Back and Next ([One question at a time](#one-question-at-a-time)). |
+| `transition` | `'slide' \| 'fade' \| 'none'` | `'slide'` | How the next question comes in, with `layout="steps"`. None for visitors who ask for less motion. |
 | `onSubmit` | `(row: Record<string, unknown>) => void \| Promise<unknown>` | | Called after the row was appended to the grid and the grid's `onRowAdd` ran. A Promise keeps the button disabled until it settles: resolved shows "Thank you", rejected takes the row back out of the grid, keeps the fields and shows the error's message. |
 
 ## Form view keys
@@ -94546,6 +94584,8 @@ On a page of your own, `SvBaseForm` takes the same as `footerText` and a
 | `formConditions` | Column id -> when that field shows, as `conditions` on `SvBaseForm` |
 | `formPrefill` | `true` fills fields from the page's URL, as `prefill` on `SvBaseForm`; a list of field names or column ids lets the link fill only those |
 | `formFooter` | A line of plain text under the submit button |
+| `formLabels` | Column id -> the question asked for that field, as `labels` on `SvBaseForm` |
+| `formHelp` | Column id -> the help under that field, as `help` on `SvBaseForm` |
 
 A record the view sends reaches `onRowAdd`, `onTablesChange` and the
 `formSubmitted` automations, which get the view's `id`.
@@ -97459,6 +97499,66 @@ then reads the server's runs. A Promise that rejects shows its message in
 the dialog, or as a notice for a button. Without `runAutomation` the dialog
 says the automation runs on the server, and a Button field that only server
 automations listen to does nothing in the page.
+
+## A page of their own
+
+The dialog shows one table's automations. `SvBaseAutomations` shows every
+table's on a page, the way an app gives automations a section of their own:
+
+- **On the left**, every automation of the base, with its table, what sets it
+  off and an on/off switch, "+ Create automation" and "Run history".
+- **In the middle**, the one picked as a flow of cards: its trigger, its
+  condition, then its actions in order. A "+" between two cards adds an
+  action there, and "+ Add an action" adds one at the end.
+- **On the right**, the settings of the card picked: the trigger and its
+  table, the condition, or the action, with its order and Remove. Under them,
+  Test on a record of the table, and Delete automation.
+
+Changing the trigger's table moves the automation to that table: its trigger
+starts again there, and its condition and the fields its actions set go, as
+they were the other table's fields.
+
+```svelte
+<script lang="ts">
+  import { SvBaseAutomations, enableBase, type BaseAutomation, type BaseTable } from '@svgrid/enterprise/base'
+
+  enableBase()
+
+  let { tables }: { tables: BaseTable[] } = $props()
+
+  // The page hands back a table's whole list after each change: store it with the table.
+  function changed(tableId: string, automations: BaseAutomation[]) {
+    tables = tables.map((t) => (t.id === tableId ? { ...t, automations } : t))
+    void fetch(`/api/tables/${tableId}/automations`, { method: 'PUT', body: JSON.stringify(automations) })
+  }
+</script>
+
+<SvBaseAutomations
+  {tables}
+  onChange={changed}
+  onServer
+  serverRuns={() => fetch('/api/automations/runs').then((r) => r.json())}
+  runOnServer={(automation, tableId, recordId) =>
+    fetch('/api/automations/run', { method: 'POST', body: JSON.stringify({ automation: automation.id, table: tableId, record: recordId }) })}
+  records={(tableId) => fetch(`/api/tables/${tableId}/rows?limit=200`).then((r) => r.json())}
+  height="100%"
+/>
+```
+
+| Prop | Type | What it does |
+|---|---|---|
+| `tables` | `BaseTable[]` | The base's tables, each with its `automations`. |
+| `onChange` | `(tableId, automations) => void` | A table's automations changed: its whole list, as `automations` on the table. |
+| `onServer` | `boolean` | Every automation runs on the server, as `automationsOnServer`: no "Runs in" to pick. |
+| `runOnServer` | `(automation, tableId, recordId) => Promise` | Test for an automation that runs on the server: your server runs it on that record (or on none). |
+| `serverRuns` | `() => Promise<AutomationRun[]>` | The server's runs, for Run history. |
+| `runner` | automation runner | Runs automations set to "This browser" when tested, and lists their runs. |
+| `records` | `(tableId) => Promise<Row[]>` | Records to test on, for a table whose rows are on a server. Without it, the table's `data`. |
+| `height` | `number \| string` | The page's height (default `'100%'`). |
+
+The page and the dialog edit the same `automations`. When both are on one
+page, keep one copy of the tables and hand each list the page gives back to
+that copy, so a change in one is not undone by the other.
 
 ## See also
 
