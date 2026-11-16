@@ -938,6 +938,22 @@ for a card's menu. Chart and form views are drawn by `SvBase`, not by the
 bar, so leave them out of `viewTypes` here, or draw `SvBaseForm` yourself
 when a form view is active.
 
+## Sections in the views menu
+
+A table with many views groups them in sections, as Airtable does: a shared
+view's `section` lists it under that heading in the views menu, after the
+views with none and before "My views". A heading folds its views, except the
+one on screen. Whoever may manage views moves one into a section, or out of
+it, with the folder button on its row; the box offers the sections there are.
+
+```ts
+views: [
+  { id: 'all', name: 'All tasks', type: 'grid' },
+  { id: 'q1', name: 'Q1 plan', type: 'grid', section: 'Planning' },
+  { id: 'late', name: 'Late', type: 'grid', section: 'Reports' },
+]
+```
+
 ## Your own actions on a view
 
 `setViewActions` adds buttons of the app's to each saved view in the views
