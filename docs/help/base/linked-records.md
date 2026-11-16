@@ -159,6 +159,25 @@ exists.
 Automations hear these changes too: linking a deal from Accounts counts as a
 change to the deal's Account field. See [Automations](./automations.md#when).
 
+### Pick only from a view
+
+"Pick records from" in the link field's settings names a view of the linked
+table: the picker then lists only the records that view's filter keeps, and
+says which view ("Records of the view "Active clients""). In code it is the
+field's `pickFrom`, a view id:
+
+```ts
+{ id: 'client', field: 'client', header: 'Client', fieldType: 'link', fieldProps: { table: 'clients', multiple: false, pickFrom: 'active' } }
+```
+
+A table read from a server searches with the view's filter
+(`filterModel.expression`); a source that cannot apply it answers as before
+and the picker keeps that page to the view itself. A link written another
+way (a paste, the API, an automation) is not held to the view, as in
+Airtable. `baseFromAirtable` brings Airtable's "Limit record selection to a
+view" over as `pickFrom`; Airtable's API does not say a view's filter, so
+set it again on the imported view.
+
 ## 3. Open and preview a linked record
 
 Rest the pointer on a chip for a moment and a card opens under it: the
