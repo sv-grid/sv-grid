@@ -690,6 +690,11 @@ column at any width.
 
 `phoneLayout` on `SvBase` moves the breakpoint (`phoneLayout={480}`), turns
 the cards on at every width (`true`) or keeps the grid (`false`).
+`phoneGrid="grid"` keeps a grid view a grid on a phone while the other views
+keep their phone layouts: a spreadsheet to scroll both ways, its first field
+pinned and drawn at most about two fifths of the width
+(`maxPinnedColumnWidth` on the grid, the field's own width kept), with "+"
+to add a record. A tap selects a cell and a second tap edits it.
 
 <div data-docs-demo="713-base-phone-layout" data-height="720"></div>
 

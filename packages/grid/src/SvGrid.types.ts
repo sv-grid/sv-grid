@@ -1732,6 +1732,12 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    */
   pinSplitter?: boolean;
   /**
+   * The widest a pinned column is drawn, in pixels (its width is kept, and
+   * comes back when the limit goes). For a narrow screen, where a wide pinned
+   * column leaves no room for the rest: `maxPinnedColumnWidth={150}`.
+   */
+  maxPinnedColumnWidth?: number;
+  /**
    * The table's primary field (a column id or field): always the first
    * column and pinned, never hidden or deleted, and the name of a record (the
    * expanded record's title, a gallery card's title).
