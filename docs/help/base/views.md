@@ -975,6 +975,22 @@ setViewActions((view, tableId) =>
 `icon` is an SVG path on a 24 by 24 box. `setViewActions(null)` takes them
 away; a function that throws gives none.
 
+## Your own actions on a record
+
+`setRecordActions` does the same for records: the app's actions show in a
+record's right-click menu (a grid row, a card) and at the top of the record
+view, and run with the table's id, the record's id and the record.
+
+```ts
+import { setRecordActions } from '@svgrid/enterprise/base'
+
+setRecordActions((tableId) => [
+  { id: 'print', label: 'Print', icon: 'M4.5 6V2.5h7V6M4.5 12H3V7.5h10V12h-1.5M5 10h6v4H5z', run: ({ tableId, rowId }) => window.open(`/print/${tableId}/${rowId}`) },
+])
+```
+
+`icon` is an SVG path on a 16 by 16 box. `setRecordActions(null)` takes them away.
+
 ## Pitfalls
 
 - **A new view from "Create" starts with `color: { mode: 'none' }`**, so it
