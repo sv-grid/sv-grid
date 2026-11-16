@@ -40,6 +40,7 @@ record you pick, as if its trigger had happened.
 | A form is sent | When a form view sends a record; pick the form, or any form of the table |
 | A button is pressed | When a Button field is pressed on a record |
 | At a scheduled time | Every day at 9, every Monday, every hour, or a cron expression: once for each record that matches the condition then, or once with no record |
+| A webhook is received | On the server: a request to the automation's own address, with no record. The body's values are `{webhook.name}` in the steps ([below](#a-webhook-starts-it)) |
 
 A paste or a fill that changes several cells of one record is one change to
 it. An undo or a redo is no change: it runs no automation.
@@ -54,6 +55,11 @@ it. An undo or a redo is no change: it runs no automation.
 | Color the record while it matches | Colors the whole row, or some fields, for as long as the record matches the condition |
 | Call a webhook | POSTs the record (or a body you write) to a URL: a team chat, your API. Secrets as `{secret:NAME}`, read on the server only |
 | Send an email | To, subject and text with field names; sent by the [server](#on-the-server) |
+| Send a Slack, Teams or Google Chat message | A message to a channel through the address its chat app gave; only that app's own addresses ([below](#chat-messages)) |
+| Find records and, for each, do | Steps run on every record of a table that matches a condition ([below](#if-and-find-records)) |
+| If a condition holds, do | Then steps when the record matches, Otherwise steps when it does not |
+| Ask AI | A prompt with field names; the answer goes into a field, and is `{ai}` in the next steps ([below](#ask-ai)) |
+| Run a script | JavaScript in a sandbox in the browser, as Airtable's automation scripts ([below](#run-a-script)) |
 | Your own actions | Anything the app adds with `registerAutomationAction` |
 
 A webhook's URL, headers and body name fields in braces, and secrets as
@@ -85,6 +91,104 @@ Values are written as the field shows them:
 | Link | A record's name, several with commas, or `{record}` for the record that set it off |
 | Any text | Text with fields in braces: `{Task} follow-up` |
 | Any field | Nothing, to clear it |
+
+## If and Find records
+
+"If a condition holds" runs its Then steps when the record matches the
+condition, and its Otherwise steps when it does not. With no record (a
+schedule, a webhook) only an "If" with no condition runs Then.
+
+"Find records and, for each, do" reads the records of a table that match a
+condition, at most the number you set (100, up to 1,000), and runs its steps
+on each: in them `{Field}` is the found record's field, `{trigger.Field}` the
+field of the record that set the automation off, and `{found}` how many were
+found. "Update the record" there updates the found record.
+
+```ts
+{ type: 'repeat', table: 'tasks', condition: statusIs('Todo'), limit: 50, actions: [
+  { type: 'updateRecord', values: { note: 'Waiting on {trigger.Task}' } },
+] }
+{ type: 'if', condition: statusIs('Done'), then: [{ type: 'notify', message: 'Shipped' }], else: [] }
+```
+
+A step can be inside an "If" or a "Find records", and one of those inside
+another, but no deeper. A script or a color is a step of the automation
+itself only.
+
+## Chat messages
+
+Paste the address the chat app gives for its channel:
+
+| App | Where the address comes from | What is sent |
+|---|---|---|
+| Slack | Apps, Incoming Webhooks, Add to a channel (`https://hooks.slack.com/...`) | `{ "text": ... }` |
+| Microsoft Teams | The channel's Workflows, "Post to a channel when a webhook request is received" (`*.logic.azure.com`, `*.powerplatform.com`) | An Adaptive Card with the text |
+| Google Chat | The space's Apps and integrations, Webhooks (`https://chat.googleapis.com/...`) | `{ "text": ... }` |
+
+The text names fields in braces. A message goes only to its app's own https
+addresses, so a chat step cannot be pointed at any other server; an address
+may name a secret (`{secret:SLACK_HOOK}`) on the server.
+
+## Ask AI
+
+The prompt names fields in braces: `Write a two-line summary of {Name} for
+the weekly report.` The answer goes into a text field of the record when you
+pick one, and is `{ai}` in the steps after it. In the page the model is the
+runner's `ai` option, on the server `createAutomationServer({ ai })`: a
+function from a prompt to the answer, behind which you call your model, with
+your key on your server.
+
+```ts
+createAutomationServer({ tables, ai: async (prompt) => (await anthropic.messages.create({ model, max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })).content[0].text })
+```
+
+## Run a script
+
+A script is JavaScript with Airtable's automation scripting objects:
+
+```js
+const { recordId, Status } = input.config()   // the record's fields, as text, by name
+const tasks = base.getTable('Tasks')
+const query = await tasks.selectRecordsAsync()
+for (const r of query.records) {
+  if (r.getCellValueAsString('Status') === 'Blocked') await tasks.updateRecordAsync(r.id, { Owner: 'Ana Ruiz' })
+}
+output.set('blocked', query.records.length)    // {script.blocked} in the next steps
+```
+
+`base.getTable(name)` has `selectRecordsAsync`, `updateRecordAsync`,
+`updateRecordsAsync`, `createRecordAsync`, `createRecordsAsync`,
+`deleteRecordAsync` and `deleteRecordsAsync`; a record has `id`, `name`,
+`getCellValue` and `getCellValueAsString`. Values are written as the field
+shows them, as in "Update the record". `console.log` lines are the step's
+detail in the run history, and `fetch` calls https addresses that allow it.
+
+It runs in the browser, in a sandboxed iframe with no access to the page, its
+cookies or its storage, for up to 30 seconds and 1,000 calls to the base
+(`runScript` from `@svgrid/enterprise/base` runs one with a bridge of your
+own). The browser runner runs it in the page of the person who made the
+change; the server runner (`createAutomationServer`) cannot run JavaScript of
+a person's and fails the step, saying so. An app can hand a server run's
+script to that person's page instead, as Artavolo does: pass
+`scriptsInPage` to `<SvBaseAutomations>` so the editor does not warn.
+
+## A webhook starts it
+
+"A webhook is received" gives the automation an address of its own: the
+editor shows it (`webhookUrl` on `<SvBaseAutomations>` turns the token into
+your endpoint's URL) and makes a new one on request. Your endpoint hands the
+request to the server runner:
+
+```ts
+// POST /hooks/[token]
+export const POST = async ({ params, request }) => json(await automations.webhookReceived(params.token, await request.json()))
+```
+
+The JSON body's values are `{webhook.name}` in the steps, `{webhook.order.id}`
+inside objects and `{webhook.items.0.sku}` in lists; `{webhook}` is the whole
+body. The run has no record: "Create a record" with values from the body is
+the usual first step. Anyone with the address can start the automation, so
+keep it secret, and limit how often your endpoint takes a request.
 
 ## Runs
 
