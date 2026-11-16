@@ -938,6 +938,27 @@ for a card's menu. Chart and form views are drawn by `SvBase`, not by the
 bar, so leave them out of `viewTypes` here, or draw `SvBaseForm` yourself
 when a form view is active.
 
+## Your own actions on a view
+
+`setViewActions` adds buttons of the app's to each saved view in the views
+menu, beside rename and duplicate, for everyone who sees the view: "Subscribe
+in your calendar app" on a calendar view, "Copy a link", "Export". The
+function is called for each view with its table's id and answers the
+view's actions (none: `[]`).
+
+```ts
+import { setViewActions } from '@svgrid/enterprise/base'
+
+setViewActions((view, tableId) =>
+  view.type === 'calendar'
+    ? [{ id: 'feed', label: 'Subscribe in your calendar app', icon: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4', run: () => openFeed(tableId, view.id) }]
+    : [],
+)
+```
+
+`icon` is an SVG path on a 24 by 24 box. `setViewActions(null)` takes them
+away; a function that throws gives none.
+
 ## Pitfalls
 
 - **A new view from "Create" starts with `color: { mode: 'none' }`**, so it
