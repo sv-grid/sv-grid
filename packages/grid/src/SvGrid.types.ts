@@ -1032,8 +1032,24 @@ export type SchedulerConfig<
   titleField?: keyof TData & string;
   /** Field holding a per-event accent color (any CSS color). Else `color`. */
   colorField?: keyof TData & string;
+  /**
+   * A row's accent color, worked out by the app (rules over several fields,
+   * say). Wins over `colorField`; `undefined` falls back to the others.
+   */
+  colorOf?: (row: TData) => string | undefined;
   /** Fallback accent color for every event. */
   color?: string;
+  /**
+   * The phone layout: a one-line toolbar, swipe between periods, the month as
+   * dots with the picked day's events listed under it, the week as a list of
+   * days, and a day without hours when no event has a time. `'auto'` (the
+   * default) when the calendar is 560px wide or less; `true` always; `false` never.
+   */
+  compact?: boolean | 'auto';
+  /** Fields shown under an event's title in the lists (the agenda, and the phone's day and week lists). */
+  detailFields?: ReadonlyArray<keyof TData & string>;
+  /** The line under an event's title in those lists, written by the app (wins over `detailFields`). */
+  detailsOf?: (row: TData) => string;
   /**
    * Field holding a SECONDARY accent color, rendered as a strip on the LEFT edge
    * of the event - distinct from the main `colorField`. Lets an event encode two

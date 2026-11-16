@@ -460,6 +460,18 @@ describe('agendaGroups', () => {
     expect(groups[0]!.events.map((e) => e.rowKey)).toEqual(['c', 'b'])
     expect(groups[1]!.events.map((e) => e.rowKey)).toEqual(['a'])
   })
+
+  it('lists an event still going under the first day, not under its earlier start', () => {
+    const rows: Row[] = [
+      { id: 'month', title: 'month', start: '2026-07-01T00:00', end: '2026-07-31T00:00' },
+      { id: 'later', title: 'later', start: '2026-07-18T09:00', end: '2026-07-18T10:00' },
+      { id: 'today', title: 'today', start: '2026-07-16T09:00', end: '2026-07-16T10:00' },
+    ]
+    const evs = resolveEvents(rows, spec(), at(2026, 7, 16), at(2026, 8, 15))
+    const groups = agendaGroups(evs, at(2026, 7, 16))
+    expect(groups.map((g) => g.day.getDate())).toEqual([16, 18])
+    expect(groups[0]!.events.map((e) => e.rowKey)).toEqual(['month', 'today'])
+  })
 })
 
 describe('rangeForView / daysForView / navigateAnchor', () => {
