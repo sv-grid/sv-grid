@@ -220,6 +220,30 @@ schema; on MySQL the connected database. The other table still has to be one the
 serves. Supabase does not describe a key of more than one column, so there
 neither column is a link.
 
+## Record templates
+
+A table's `recordTemplates` are saved values a new record can start with,
+as Airtable's record templates. The arrow beside "+ Add row" lists them; a
+record added from one gets its values, worked out at that moment and written
+as an automation's "Update the record" writes them: an option's name, a
+person's name, `today` or `today+7` for a date, a linked record's name.
+
+```ts
+{
+  id: 'tasks',
+  name: 'Tasks',
+  columns,
+  recordTemplates: [
+    { id: 'bug', name: 'Bug report', values: { status: 'Todo', priority: 'High', due: 'today+3' } },
+  ],
+}
+```
+
+"Manage templates" in the same menu adds and changes them, for whoever may
+change the table's design (`permissions.canEditSchema`); the changed table
+comes back through `onTablesChange`. Keep `recordTemplates` with the rest of
+the table's design on your server.
+
 ## Record ids
 
 A new record gets an id in the page at once, so it can be edited and linked
