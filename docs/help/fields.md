@@ -250,6 +250,7 @@ A property the column sets itself wins over its type:
 | `duration` | `durationFormat` (`h:mm`, `h:mm:ss`, `h:mm:ss.S`, `h:mm:ss.SS`, `h:mm:ss.SSS`); values are seconds, typed as `1:30` or `1h 30m` |
 | `timeOfDay` | `timeFormat` (`12hour`, `24hour`), `showSeconds`, `default`; values are `'HH:MM'` (24 hour), `'HH:MM:SS'` with seconds |
 | `rating` | `max` 1 to 10, `icon` (`star`, `heart`, `thumbsUp`, `flag`, `dot`), `color` |
+| `timer` | `durationFormat` (`h:mm`, `h:mm:ss`), `color`; values are seconds once stopped, and `{ total, since }` while running (`since` an ISO time). The cell's button (or Enter, Space) starts or stops it, each run adding to the total, and the time ticks each second while it runs; a typed `1:30` or `45m` sets the time. Formulas, rollups, sums, sorting, filters and exports read it as seconds, a running timer's run so far included (`timerSeconds`) |
 | `vote` | `icon` (`up`, `thumb`, `heart`), `color`; values are the voters' user ids. A click on the selected cell (or Enter, Space) adds the signed-in person's vote or takes it back; it sorts by the count and filters as people |
 | `sparkline` | `chart` (`line`, `area`, `bar`), `color`, `showLast`; values are numbers, typed or pasted as `3, 7, 4, 9`, sorted by the last |
 | `formula` | `formula`, `result` (`auto`, `number`, `currency`, `percent`, `date`) and that format's options |
@@ -380,7 +381,7 @@ const row = {
 }
 ```
 
-In a grid a click on a checkbox's box, a star, a vote or a button acts at once, and
+In a grid a click on a checkbox's box, a star, a vote, a timer's button or a button acts at once, and
 selects the cell too. A click on the rest of the cell only selects it, so a click to
 select never changes a record. A double-click on a button runs it once.
 
