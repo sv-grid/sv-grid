@@ -1873,6 +1873,19 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
     column?: string;
     /** Indent per depth level, in px. Default `12`. */
     indentPx?: number;
+    /**
+     * Under a filter, keep the parents of the rows it keeps, greyed, so a row
+     * stays where it belongs in the tree. Default `false`: such a row is a root.
+     */
+    keepAncestors?: boolean;
+    /**
+     * Set to draw a small "+" at the end of each row's tree cell, shown while
+     * the row is hovered or focused, that calls this with the row: add a child
+     * under it (the grid adds nothing itself).
+     */
+    onAddChild?: (row: TData) => void;
+    /** The "+" button's label and tooltip. Default "Add a row under this one". */
+    addChildLabel?: string;
   };
   /**
    * Show the grouping controls: "Group by this column" in the column menu, and

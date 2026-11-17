@@ -1149,6 +1149,7 @@ export function createSvGridController<
       ? createTreeRowModel<TData>({
           parentField: treeDataConfig.parentField,
           idField: treeDataConfig.idField,
+          keepAncestors: treeDataConfig.keepAncestors,
         })
       : serverGroupsPass(keepGroups(createGroupedRowModel<TData>())),
     expandedRowModel: createExpandedRowModel<TData>(),
@@ -1966,7 +1967,11 @@ export function createSvGridController<
     advancedKeep = null;
     if (externalFilterOn()) return rawRows;
 
-    let rows = rawRows;
+    // A tree that keeps a kept row's parents: the filters below test every
+    // record of it, folded or not, and the tree is drawn again from the ones
+    // they keep (filteredTree).
+    const treeNodes = props.treeData?.keepAncestors ? everyTreeNode(rawRows) : null;
+    let rows = treeNodes ?? rawRows;
     if (globalFilter.trim()) {
       const locale = props.filterLocale ?? props.localization?.locale;
       const needle = normalizeForFilter(globalFilter, locale);
@@ -2016,8 +2021,53 @@ export function createSvGridController<
       }
     }
 
+    if (treeNodes) return rows.length === treeNodes.length ? rawRows : filteredTree(rawRows, new Set(rows));
     return rows;
   });
+
+  /** Every row of a tree, folded or not: the roots and all that is under them. */
+  function everyTreeNode(rows: ReadonlyArray<Row<TData>>): Array<Row<TData>> {
+    const out: Array<Row<TData>> = [];
+    const walk = (row: Row<TData>) => {
+      out.push(row);
+      for (const sub of row.subRows ?? []) walk(sub);
+    };
+    for (const row of rows) if ((row.depth ?? 0) === 0) walk(row);
+    return out;
+  }
+
+  /**
+   * The tree again with only the rows a filter kept, and the parents above
+   * them, which stay as context (greyed, not counted): a match keeps its
+   * place under what it belongs to. Folded rows stay folded.
+   */
+  function filteredTree(rows: ReadonlyArray<Row<TData>>, kept: ReadonlySet<Row<TData>>): Array<Row<TData>> {
+    const prune = (row: Row<TData>): Row<TData> | null => {
+      const subRows = (row.subRows ?? []).map(prune).filter((r): r is Row<TData> => r !== null);
+      const match = kept.has(row);
+      if (!match && !subRows.length) return null;
+      const records = subRows.reduce((n, sub) => n + ((sub as { treeRecords?: number }).treeRecords ?? 1), match ? 1 : 0);
+      return {
+        ...row,
+        subRows,
+        leafCount: subRows.reduce((n, sub) => n + 1 + (sub.leafCount ?? 0), 0),
+        treeRecords: records,
+        __treeContext: !match,
+        getCanExpand: () => subRows.length > 0,
+      } as Row<TData>;
+    };
+    const out: Array<Row<TData>> = [];
+    const flat = (row: Row<TData>) => {
+      out.push(row);
+      if (row.subRows?.length && row.getIsExpanded?.()) for (const sub of row.subRows) flat(sub);
+    };
+    for (const row of rows) {
+      if ((row.depth ?? 0) !== 0) continue;
+      const pruned = prune(row);
+      if (pruned) flat(pruned);
+    }
+    return out;
+  }
 
   /**
    * Visible rows for the current page. Applied last so filters operate on

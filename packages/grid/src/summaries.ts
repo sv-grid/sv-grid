@@ -119,6 +119,17 @@ export function createSummaries<
    * (through the advanced filter, which tested only what was in the list).
    */
   function recordsOf(rows: ReadonlyArray<Row<TData>>, keep: ((row: Row<TData>) => boolean) | null): ReadonlyArray<Row<TData>> {
+    // A tree: every record of it, folded or not, without the parents a filter
+    // only shows for context.
+    if (rows.length && (rows[0] as { __treeRow?: boolean }).__treeRow) {
+      const out: Array<Row<TData>> = [];
+      const walk = (row: Row<TData>) => {
+        if (!(row as { __treeContext?: boolean }).__treeContext) out.push(row);
+        for (const sub of row.subRows ?? []) walk(sub);
+      };
+      for (const row of rows) if ((row.depth ?? 0) === 0) walk(row);
+      return out;
+    }
     let grouped = false;
     for (const row of rows) {
       if (isGroupRow(row)) {

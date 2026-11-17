@@ -1650,6 +1650,22 @@
         {@render treeAffordance(row)}
       {/if}
       {@render cellBodyFormatted(row, column, cellValue)}
+      {#if treeData?.onAddChild && column.id === treeColumnId}
+        <!-- A child under this row, from the row itself: shown while the row is hovered or has focus. -->
+        <button
+          type="button"
+          class="sv-grid-tree-add"
+          tabindex="-1"
+          aria-label={treeData.addChildLabel ?? "Add a row under this one"}
+          title={treeData.addChildLabel ?? "Add a row under this one"}
+          onmousedown={(event) => event.stopPropagation()}
+          ondblclick={(event) => event.stopPropagation()}
+          onclick={(event) => {
+            event.stopPropagation();
+            treeData.onAddChild?.(row.original as TData);
+          }}>+</button
+        >
+      {/if}
     {/if}
   {/snippet}
 
@@ -1925,6 +1941,7 @@
                       class:sv-grid-row-alt={opt.zebraRows &&
                         rowIndex % 2 === 1}
                       class:sv-grid-row-draggable={rowDragManagedEffective}
+                      class:sv-grid-row-tree-context={(row as { __treeContext?: boolean }).__treeContext === true}
                       class:sv-grid-row-drag-by-header={rowDragManagedEffective && showRowNumbersEffective}
                       class:sv-grid-group-footer-row={isGroupFooterRow(row)}
                       class:sv-grid-grand-total-row={isGrandTotalRow(row)}

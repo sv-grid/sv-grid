@@ -3902,3 +3902,53 @@ select.sv-grid-fr-editor {
 .sv-grid-table-flex:not([data-row-layout="table"]) > :is(thead, tbody, tfoot) > tr > td > .sv-grid-cell-line {
   flex: 1 1 auto;
 }
+
+/* A tree's context row: a parent a filter hid, shown so its children stay under it. */
+.sv-grid-row-tree-context > .sv-grid-cell {
+  color: var(--sg-muted, #64748b);
+}
+.sv-grid-row-tree-context > .sv-grid-cell > * {
+  opacity: 0.6;
+}
+
+/* A tree cell's "+": a child under the row, at the cell's end while the row is hovered or focused. */
+.sv-grid-cell:has(> .sv-grid-tree-add):not([data-pinned]) {
+  position: relative;
+}
+.sv-grid-tree-add {
+  position: absolute;
+  inset-inline-end: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--sg-border, #e2e8f0);
+  border-radius: 6px;
+  background: var(--sg-surface, #fff);
+  color: var(--sg-muted, #64748b);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+}
+tr:hover > .sv-grid-cell > .sv-grid-tree-add,
+tr:focus-within > .sv-grid-cell > .sv-grid-tree-add,
+.sv-grid-cell[data-active="true"] > .sv-grid-tree-add {
+  opacity: 1;
+  pointer-events: auto;
+}
+.sv-grid-tree-add:hover {
+  color: var(--sg-accent, #2563eb);
+  border-color: currentColor;
+}
+@media (hover: none) {
+  .sv-grid-tree-add {
+    display: none;
+  }
+}

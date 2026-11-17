@@ -587,7 +587,8 @@ export function createGridApi<
         // `denseRows`: with no sort or filter `allRows` is the lazy row list,
         // and a trap per read made this ~85 ms at 1M rows.
         return denseRows(ctx.allRows as any[])
-          .filter((row) => !isGroupRow(row))
+          // A tree's context row (a parent a filter only shows) is not one of the records.
+          .filter((row) => !isGroupRow(row) && !(row as { __treeContext?: boolean }).__treeContext)
           .map((row) => row.original as TData);
       },
       getData() {

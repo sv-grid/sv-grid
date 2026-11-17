@@ -563,13 +563,42 @@ const tree: FieldView = {
 
 A tree is a grid whose records nest under their parent: `parentField` is a
 link field to the same table, and a record sits under the one record it
-names, with an expander on the primary field. A record whose link names
-several records, or one the view's filter leaves out, is at the top level, so
-no record goes missing. The records stay records: every cell edits as in a
-grid, and the footer counts them all, folded or not.
+names, with an expander on the primary field. It opens unfolded. A record
+whose link names several records is at the top level, so no record goes
+missing. The records stay records: every cell edits as in a grid, and the
+footer and the view bar count them all, folded or not.
+
+Building it by hand, every change is a write to `parentField`, so undo, the
+database and automations see a plain edit:
+
+- **Add subtask** on a row's menu, and the "+" at the end of its name: a record
+  under it, last, opened for its name. **Enter** on that name keeps it and
+  starts the next one beside it; **Escape**, or Enter with no name, ends the
+  list and the empty record goes.
+- **Insert record above** and **below** keep the row's parent: a sibling.
+- **Alt+Shift+Right** puts the record under the one above it at its level;
+  **Alt+Shift+Left** moves it up a level.
+- A row dragged by its number onto the middle of another goes under it;
+  between two rows, beside them; below the last, to the top level.
+
+A record never goes under itself or one of its own subtasks: the move is
+refused with a notice.
+
+The first time the view is kept, `parentField` gets its field back in the same
+table, **Subtasks** (`addSubtasks(tables, tableId, fieldId)` from
+`@svgrid/enterprise/base` does the same in code). It lists the records under
+each one, so a count or rollup of it adds them up: subtasks, their hours,
+their progress. It reads one level, the records directly under a record.
+
+A filter or a search keeps each matching record under its parents: the
+parents that do not match stay in the tree, greyed, and are not counted (the
+grid's `treeData.keepAncestors`). A sort orders each level and keeps
+subtasks under their parent.
 
 Creating a tree view asks for the link field. A table without a link to
-itself cannot have one: the type is greyed out, and says why.
+itself cannot have one: the type is greyed out, and says why. A table read a
+part at a time (`serverRows`) has no tree, since a tree needs every record at
+once: an existing tree view shows its records as a list.
 
 ## 13. A pivot of effort
 
