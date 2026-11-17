@@ -63,7 +63,7 @@ export interface SvGridProps {
   filterable?: boolean
   /** `editable` - boolean */
   editable?: boolean
-  /** `property only` - { parentField: string; idField?: string; column?: string; indentPx?: number; } */
+  /** `property only` - { parentField: string; idField?: string; column?: string; indentPx?: number; keepAncestors */
   treeData?: unknown
   /** `groupable` - boolean */
   groupable?: boolean

@@ -153,7 +153,7 @@ export const ELEMENT_PROPS = [
     "name": "treeData",
     "type": "Object",
     "attribute": null,
-    "ts": "{ parentField: string; idField?: string; column?: string; indentPx?: number; }"
+    "ts": "{ parentField: string; idField?: string; column?: string; indentPx?: number; keepAncestors?: boolean; onAddChild?: (row: TData) => void; addChildLabel?: string; }"
   },
   {
     "name": "groupable",
