@@ -449,6 +449,21 @@ describe('getColumnWidth', () => {
     const h = createColumns(makeCtx())
     expect(h.getColumnWidth('c')).toBe(200)
   })
+
+  it('draws a pinned column no wider than maxPinnedColumnWidth, and keeps its own width', () => {
+    const ctx = makeCtx({ columnPinning: { left: ['c'], right: [] }, columnWidths: { c: 260 }, props: { maxPinnedColumnWidth: 150 } })
+    const h = createColumns(ctx)
+    expect(h.getColumnWidth('c')).toBe(150)
+    // A column that is not pinned, and a pinned one already narrower, keep theirs.
+    expect(h.getColumnWidth('a')).toBe(120)
+    ctx.columnWidths.c = 100
+    expect(h.getColumnWidth('c')).toBe(100)
+    // The limit gone, the width it kept comes back.
+    ctx.columnWidths.c = 260
+    ctx.props.maxPinnedColumnWidth = undefined
+    expect(h.getColumnWidth('c')).toBe(260)
+    expect(ctx.columnWidths.c).toBe(260)
+  })
 })
 
 describe('measureText', () => {

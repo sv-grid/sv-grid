@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:f7a087b8-d252-4b1a-a1b9-2ae34444cbad",
+  "serialNumber": "urn:uuid:f6f2305d-3f7d-4773-a662-1601057bc0aa",
   "version": 1,
   "metadata": {
     "tools": {
@@ -16,10 +16,10 @@
     },
     "component": {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/grid@3.0.34",
+      "bom-ref": "pkg:npm/%40svgrid/grid@3.0.35",
       "name": "@svgrid/grid",
-      "version": "3.0.34",
-      "purl": "pkg:npm/%40svgrid/grid@3.0.34",
+      "version": "3.0.35",
+      "purl": "pkg:npm/%40svgrid/grid@3.0.35",
       "scope": "required",
       "licenses": [
         {
@@ -53,7 +53,7 @@
   ],
   "dependencies": [
     {
-      "ref": "pkg:npm/%40svgrid/grid@3.0.34",
+      "ref": "pkg:npm/%40svgrid/grid@3.0.35",
       "dependsOn": [
         "pkg:npm/esm-env@1.2.2",
         "pkg:npm/svelte@5.57.3"

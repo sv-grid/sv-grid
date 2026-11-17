@@ -137,7 +137,7 @@ A view is a name, a type and the settings it had when it was last left:
 
 | Key | What it holds |
 |---|---|
-| `id`, `name`, `type` | `'grid'`, `'kanban'`, `'calendar'`, `'gantt'`, `'gallery'`, `'chart'` or `'form'` |
+| `id`, `name`, `type` | `'grid'`, `'tree'`, `'kanban'`, `'calendar'`, `'timeline'`, `'gantt'`, `'gallery'`, `'chart'`, `'pivot'`, `'list'`, `'inbox'`, `'dashboard'` or `'form'` |
 | `state` | the grid's state: sorts, groups, the filter, hidden fields, order, widths, pinned columns |
 | `rowHeight`, `color` | the row height and how rows are colored |
 | `stackBy` | Kanban: the single select or user field the cards stack by |

@@ -9,6 +9,8 @@ import {
   type TableFeatures,
 } from "./index";
 import "./sv-grid-scrollbar";
+import { isWindowedData } from "./windowed-brand";
+import { loadedRows } from "./selection";
 import {
   getCellKey,
 } from "./SvGrid.helpers";
@@ -39,9 +41,22 @@ export function createSummaries<
     rows: ReadonlyArray<Row<TData>>,
     columns: ReadonlyArray<Column<TData>>,
   ): Record<string, string> {
-    rows = recordsOf(rows, ctx.advancedKeep);
+    // Windowed rows (a server row model) are mostly placeholders, which hold no
+    // values: only the loaded rows can add anything. Walking every index built a
+    // row for each of a million entries and held the page for over a second on
+    // each scroll. The entries not loaded still count as records.
+    let rowCount: number;
+    if (isWindowedData(rows)) {
+      const total = rows.length;
+      const loaded = loadedRows(rows as Array<Row<TData>>);
+      rows = recordsOf(loaded, ctx.advancedKeep);
+      rowCount = rows.length + (total - loaded.length);
+    } else {
+      rows = recordsOf(rows, ctx.advancedKeep);
+      rowCount = rows.length;
+    }
+    const walked = rows.length;
     const summary: Record<string, string> = {};
-    const rowCount = rows.length;
     const hasEdits = Object.keys(ctx.editedCellValues).length > 0;
     for (const column of columns) {
       const def = column.columnDef;
@@ -70,7 +85,7 @@ export function createSummaries<
 
       let numericSum = 0;
       let numericCount = 0;
-      for (let i = 0; i < rowCount; i += 1) {
+      for (let i = 0; i < walked; i += 1) {
         const row = rows[i]!;
         let value: unknown;
         const base = fieldFn
@@ -104,6 +119,17 @@ export function createSummaries<
    * (through the advanced filter, which tested only what was in the list).
    */
   function recordsOf(rows: ReadonlyArray<Row<TData>>, keep: ((row: Row<TData>) => boolean) | null): ReadonlyArray<Row<TData>> {
+    // A tree: every record of it, folded or not, without the parents a filter
+    // only shows for context.
+    if (rows.length && (rows[0] as { __treeRow?: boolean }).__treeRow) {
+      const out: Array<Row<TData>> = [];
+      const walk = (row: Row<TData>) => {
+        if (!(row as { __treeContext?: boolean }).__treeContext) out.push(row);
+        for (const sub of row.subRows ?? []) walk(sub);
+      };
+      for (const row of rows) if ((row.depth ?? 0) === 0) walk(row);
+      return out;
+    }
     let grouped = false;
     for (const row of rows) {
       if (isGroupRow(row)) {

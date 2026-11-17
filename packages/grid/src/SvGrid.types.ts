@@ -1032,8 +1032,24 @@ export type SchedulerConfig<
   titleField?: keyof TData & string;
   /** Field holding a per-event accent color (any CSS color). Else `color`. */
   colorField?: keyof TData & string;
+  /**
+   * A row's accent color, worked out by the app (rules over several fields,
+   * say). Wins over `colorField`; `undefined` falls back to the others.
+   */
+  colorOf?: (row: TData) => string | undefined;
   /** Fallback accent color for every event. */
   color?: string;
+  /**
+   * The phone layout: a one-line toolbar, swipe between periods, the month as
+   * dots with the picked day's events listed under it, the week as a list of
+   * days, and a day without hours when no event has a time. `'auto'` (the
+   * default) when the calendar is 560px wide or less; `true` always; `false` never.
+   */
+  compact?: boolean | 'auto';
+  /** Fields shown under an event's title in the lists (the agenda, and the phone's day and week lists). */
+  detailFields?: ReadonlyArray<keyof TData & string>;
+  /** The line under an event's title in those lists, written by the app (wins over `detailFields`). */
+  detailsOf?: (row: TData) => string;
   /**
    * Field holding a SECONDARY accent color, rendered as a strip on the LEFT edge
    * of the event - distinct from the main `colorField`. Lets an event encode two
@@ -1732,6 +1748,12 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
    */
   pinSplitter?: boolean;
   /**
+   * The widest a pinned column is drawn, in pixels (its width is kept, and
+   * comes back when the limit goes). For a narrow screen, where a wide pinned
+   * column leaves no room for the rest: `maxPinnedColumnWidth={150}`.
+   */
+  maxPinnedColumnWidth?: number;
+  /**
    * The table's primary field (a column id or field): always the first
    * column and pinned, never hidden or deleted, and the name of a record (the
    * expanded record's title, a gallery card's title).
@@ -1851,6 +1873,19 @@ export type Props<TFeatures extends TableFeatures = TableFeatures, TData extends
     column?: string;
     /** Indent per depth level, in px. Default `12`. */
     indentPx?: number;
+    /**
+     * Under a filter, keep the parents of the rows it keeps, greyed, so a row
+     * stays where it belongs in the tree. Default `false`: such a row is a root.
+     */
+    keepAncestors?: boolean;
+    /**
+     * Set to draw a small "+" at the end of each row's tree cell, shown while
+     * the row is hovered or focused, that calls this with the row: add a child
+     * under it (the grid adds nothing itself).
+     */
+    onAddChild?: (row: TData) => void;
+    /** The "+" button's label and tooltip. Default "Add a row under this one". */
+    addChildLabel?: string;
   };
   /**
    * Show the grouping controls: "Group by this column" in the column menu, and

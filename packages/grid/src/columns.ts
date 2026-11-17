@@ -195,9 +195,15 @@ export function createColumns<
     // Collapsed: no room at all, whatever width it keeps for later.
     if (ctx.collapsedColumns?.[columnId]) return 0;
     const fitted = ctx.fittedColumnWidths?.[columnId];
-    if (fitted !== undefined && ctx.columnWidths[columnId] === undefined)
-      return fitted;
-    return getColumnBaseWidth(columnId);
+    const width = fitted !== undefined && ctx.columnWidths[columnId] === undefined ? fitted : getColumnBaseWidth(columnId);
+    return capPinned(columnId, width);
+  }
+
+  /** A pinned column is drawn no wider than `maxPinnedColumnWidth`; its own width is kept. */
+  function capPinned(columnId: string, width: number): number {
+    const max = ctx.props.maxPinnedColumnWidth;
+    if (!(typeof max === "number" && max > 0) || width <= max) return width;
+    return isColumnPinned(columnId) ? max : width;
   }
 
 
@@ -283,6 +289,7 @@ export function createColumns<
     toggleGroupInPanel,
     getColumnBaseWidth,
     getColumnWidth,
+    capPinned,
     measureText,
     autosizeColumn,
     autosizeAllColumns,

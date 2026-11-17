@@ -35,7 +35,7 @@ attribute is the extra convenience, offered only where it can work.
 
 <!-- BEGIN generated reference - packages/grid-wc/scripts/generate-surface.mjs -->
 
-### Attributes (86)
+### Attributes (87)
 
 Primitives, so they work in plain HTML as well as through a property.
 
@@ -49,6 +49,7 @@ Primitives, so they work in plain HTML as well as through a property.
 | `field-menu` | `fieldMenu` | `boolean` |
 | `expand-rows` | `expandRows` | `boolean` |
 | `pin-splitter` | `pinSplitter` | `boolean` |
+| `max-pinned-column-width` | `maxPinnedColumnWidth` | `number` |
 | `primary-field` | `primaryField` | `string` |
 | `sortable` | `sortable` | `boolean` |
 | `filterable` | `filterable` | `boolean` |

@@ -1149,6 +1149,7 @@ export function createSvGridController<
       ? createTreeRowModel<TData>({
           parentField: treeDataConfig.parentField,
           idField: treeDataConfig.idField,
+          keepAncestors: treeDataConfig.keepAncestors,
         })
       : serverGroupsPass(keepGroups(createGroupedRowModel<TData>())),
     expandedRowModel: createExpandedRowModel<TData>(),
@@ -1966,7 +1967,11 @@ export function createSvGridController<
     advancedKeep = null;
     if (externalFilterOn()) return rawRows;
 
-    let rows = rawRows;
+    // A tree that keeps a kept row's parents: the filters below test every
+    // record of it, folded or not, and the tree is drawn again from the ones
+    // they keep (filteredTree).
+    const treeNodes = props.treeData?.keepAncestors ? everyTreeNode(rawRows) : null;
+    let rows = treeNodes ?? rawRows;
     if (globalFilter.trim()) {
       const locale = props.filterLocale ?? props.localization?.locale;
       const needle = normalizeForFilter(globalFilter, locale);
@@ -2016,8 +2021,53 @@ export function createSvGridController<
       }
     }
 
+    if (treeNodes) return rows.length === treeNodes.length ? rawRows : filteredTree(rawRows, new Set(rows));
     return rows;
   });
+
+  /** Every row of a tree, folded or not: the roots and all that is under them. */
+  function everyTreeNode(rows: ReadonlyArray<Row<TData>>): Array<Row<TData>> {
+    const out: Array<Row<TData>> = [];
+    const walk = (row: Row<TData>) => {
+      out.push(row);
+      for (const sub of row.subRows ?? []) walk(sub);
+    };
+    for (const row of rows) if ((row.depth ?? 0) === 0) walk(row);
+    return out;
+  }
+
+  /**
+   * The tree again with only the rows a filter kept, and the parents above
+   * them, which stay as context (greyed, not counted): a match keeps its
+   * place under what it belongs to. Folded rows stay folded.
+   */
+  function filteredTree(rows: ReadonlyArray<Row<TData>>, kept: ReadonlySet<Row<TData>>): Array<Row<TData>> {
+    const prune = (row: Row<TData>): Row<TData> | null => {
+      const subRows = (row.subRows ?? []).map(prune).filter((r): r is Row<TData> => r !== null);
+      const match = kept.has(row);
+      if (!match && !subRows.length) return null;
+      const records = subRows.reduce((n, sub) => n + ((sub as { treeRecords?: number }).treeRecords ?? 1), match ? 1 : 0);
+      return {
+        ...row,
+        subRows,
+        leafCount: subRows.reduce((n, sub) => n + 1 + (sub.leafCount ?? 0), 0),
+        treeRecords: records,
+        __treeContext: !match,
+        getCanExpand: () => subRows.length > 0,
+      } as Row<TData>;
+    };
+    const out: Array<Row<TData>> = [];
+    const flat = (row: Row<TData>) => {
+      out.push(row);
+      if (row.subRows?.length && row.getIsExpanded?.()) for (const sub of row.subRows) flat(sub);
+    };
+    for (const row of rows) {
+      if ((row.depth ?? 0) !== 0) continue;
+      const pruned = prune(row);
+      if (pruned) flat(pruned);
+    }
+    return out;
+  }
 
   /**
    * Visible rows for the current page. Applied last so filters operate on
@@ -4462,9 +4512,9 @@ export function createSvGridController<
       const own = resized[id];
       widths[i] = collapsed[id]
         ? 0
-        : own !== undefined
+        : capPinned(id, own !== undefined
           ? own
-          : (fitted?.[id] ?? getColumnBaseWidth(id));
+          : (fitted?.[id] ?? getColumnBaseWidth(id)));
     }
     // `columnOverscan` columns stay rendered ahead of a scroll at all times.
     // The window does not move on every column boundary: it stays put while
@@ -5892,7 +5942,7 @@ export function createSvGridController<
   const { cellConditionalFormat, computeRowClass, computeCellClass, computeCellTooltip, computeCellValidity, computeCellNote, getColumnEditorOptions, areEditorOptionsLoading, formatListCellValue, formatCellValue, formatPinnedValue, computePinnedCellClass } = createCellRender<TFeatures, TData>(ctx);
   const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, commitAndMoveByTab, commitAndMoveByEnter, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste, armPasteFallback } = createEditing<TFeatures, TData>(ctx);
   const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, activeRangeRect, cellSelectionState, getSelectionRects, isInFillPreview, dragPreviewRect, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
-  const { cellPinStyle, isColumnPinned, getCurrentColumnOrder, emitColumnOrder, setColumnOrderInternal, moveColumnsByUser, applyColumnDrop, onColumnHeaderDragStart, onColumnHeaderDragOver, onColumnHeaderDragLeave, onColumnHeaderDrop, onColumnHeaderDragEnd, pinColumnLeft, pinColumnRight, unpinColumn, toggleColumnVisibleInPanel, moveColumnInPanel, toggleGroupInPanel, getColumnBaseWidth, getColumnWidth, measureText, autosizeColumn, autosizeAllColumns, resetColumns } = createColumns<TFeatures, TData>(ctx);
+  const { cellPinStyle, isColumnPinned, getCurrentColumnOrder, emitColumnOrder, setColumnOrderInternal, moveColumnsByUser, applyColumnDrop, onColumnHeaderDragStart, onColumnHeaderDragOver, onColumnHeaderDragLeave, onColumnHeaderDrop, onColumnHeaderDragEnd, pinColumnLeft, pinColumnRight, unpinColumn, toggleColumnVisibleInPanel, moveColumnInPanel, toggleGroupInPanel, getColumnBaseWidth, getColumnWidth, capPinned, measureText, autosizeColumn, autosizeAllColumns, resetColumns } = createColumns<TFeatures, TData>(ctx);
   // Managed row dragging loads with the first `rowDragManaged`, not with the
   // grid: SvGrid.svelte attaches these handlers only when the prop is on, they
   // do nothing until the module lands (a frame on a warm cache), and a grid

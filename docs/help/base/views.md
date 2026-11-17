@@ -224,12 +224,12 @@ base is `editable`, Move to (a submenu of the lanes), Duplicate record and
 Delete record, which asks "Delete record?" first. A card with comments shows
 their count; click it to open the record at its comment box.
 
-## 5. A timeline
+## 5. A Gantt chart, and a timeline in lanes
 
 ```ts
-const timeline: FieldView = {
-  id: 'timeline',
-  name: 'Timeline',
+const plan: FieldView = {
+  id: 'gantt',
+  name: 'Gantt',
   type: 'gantt',
   dateField: 'start',
   endField: 'target',
@@ -253,6 +253,31 @@ them.
 
 Moving and resizing need `editable` on the base. Without it the calendar is
 read-only.
+
+A timeline puts the same bars in lanes: one row per value of `laneField`, so
+records that share a person, a property or a channel share a row, and the gaps
+between them show where there is room.
+
+```ts
+const occupancy: FieldView = {
+  id: 'occupancy',
+  name: 'Occupancy',
+  type: 'timeline',
+  dateField: 'checkIn',
+  endField: 'checkOut',
+  laneField: 'property',
+  zoom: 'month',
+}
+```
+
+Day, Week, Month and Year at the top right set the span. A bar dragged along
+its lane changes its dates; dragged to another lane it changes `laneField` too,
+in the same step, so one Ctrl+Z takes both back. For a link field with several
+records the record of the lane it left is swapped for the one it lands on, and
+the others stay. A double-click in a lane adds a record there, in that lane.
+With a single select or a person field every option or person is a lane, empty
+or not; with a link field the lanes are the records the rows link to, named by
+the linked table's primary field.
 
 ## 6. Effort by team
 
@@ -323,7 +348,7 @@ the view switcher on a form.
 All the views so far, in one list:
 
 ```ts
-let views = $state<FieldView[]>([roadmap, board, timeline, effort, now, mine, gallery, request])
+let views = $state<FieldView[]>([roadmap, board, plan, effort, now, mine, gallery, request])
 ```
 
 ## 9. A dashboard
@@ -525,7 +550,84 @@ leaves the record on the right too.
 
 <div data-docs-demo="720-base-inbox-view" data-height="620"></div>
 
-## 12. Keep the views
+## 12. A tree of tasks
+
+```ts
+const tree: FieldView = {
+  id: 'tree',
+  name: 'Work breakdown',
+  type: 'tree',
+  parentField: 'parent',
+}
+```
+
+A tree is a grid whose records nest under their parent: `parentField` is a
+link field to the same table, and a record sits under the one record it
+names, with an expander on the primary field. It opens unfolded. A record
+whose link names several records is at the top level, so no record goes
+missing. The records stay records: every cell edits as in a grid, and the
+footer and the view bar count them all, folded or not.
+
+Building it by hand, every change is a write to `parentField`, so undo, the
+database and automations see a plain edit:
+
+- **Add subtask** on a row's menu, and the "+" at the end of its name: a record
+  under it, last, opened for its name. **Enter** on that name keeps it and
+  starts the next one beside it; **Escape**, or Enter with no name, ends the
+  list and the empty record goes.
+- **Insert record above** and **below** keep the row's parent: a sibling.
+- **Alt+Shift+Right** puts the record under the one above it at its level;
+  **Alt+Shift+Left** moves it up a level.
+- A row dragged by its number onto the middle of another goes under it;
+  between two rows, beside them; below the last, to the top level.
+
+A record never goes under itself or one of its own subtasks: the move is
+refused with a notice.
+
+The first time the view is kept, `parentField` gets its field back in the same
+table, **Subtasks** (`addSubtasks(tables, tableId, fieldId)` from
+`@svgrid/enterprise/base` does the same in code). It lists the records under
+each one, so a count or rollup of it adds them up: subtasks, their hours,
+their progress. It reads one level, the records directly under a record.
+
+A filter or a search keeps each matching record under its parents: the
+parents that do not match stay in the tree, greyed, and are not counted (the
+grid's `treeData.keepAncestors`). A sort orders each level and keeps
+subtasks under their parent.
+
+Creating a tree view asks for the link field. A table without a link to
+itself cannot have one: the type is greyed out, and says why. A table read a
+part at a time (`serverRows`) has no tree, since a tree needs every record at
+once: an existing tree view shows its records as a list.
+
+## 13. A pivot of effort
+
+```ts
+const pivot: FieldView = {
+  id: 'pivot',
+  name: 'Hours by status and team',
+  type: 'pivot',
+  pivot: {
+    rows: ['status'],
+    cols: ['team'],
+    values: [{ agg: 'count' }, { agg: 'sum', field: 'hours' }],
+  },
+}
+```
+
+A pivot adds up the records the view shows (its filter applies) by the fields
+down the side (`rows`, outermost first) and the one across the top (`cols`):
+a count of records, or a number field's `'sum'`, `'avg'`, `'min'` or `'max'`.
+Fields are grouped as a chart groups them: options in their order, people and
+linked records by name, dates by month, and a record with two options counts
+under each. Subtotals, a total row and, with a field across the top, a total
+column come with it.
+
+Its own bar, over the table, changes the rows, the column field and the
+values; the view keeps them (`onViewsChange`). On a table read from a server
+a page at a time, it adds up the records loaded and says how many of how many.
+
+## 14. Keep the views
 
 `onViewsChange` fires with the whole list when a view is created, renamed,
 duplicated or deleted, and about 400ms after the shown view's settings stop
@@ -664,7 +766,8 @@ way as the others.
 
 When a table is narrower than 600px (its own width, not the window's), a
 grid view shows each record as a card: the primary field, then the next four
-fields the view shows, in the view's filter and sort. A tap opens the
+fields the view shows, each name beside its value so several records fit on
+the screen, in the view's filter and sort. A tap opens the
 record, "+" adds one, and on a phone screen the opened record fills it. The
 view bar keeps its icons and the tab bar its tabs.
 
@@ -675,6 +778,12 @@ shows on its card, as a ring on its list row, and in the selection bar. Copy and
 paste work on a cell, so they stay with the table. A gallery view and a list view
 have the same menu.
 
+Fields are added and changed from the fields button (Hide fields), since the
+cards have no column headers: "Add a field" at the foot of its list, and a
+pencil on each field to rename it or change its type. Both are there wherever
+fields may be changed (`columnAdder`, off without `canEditSchema`), on any
+screen, and open the same field editor as the header's "+" and field menu.
+
 A Kanban lane takes the table's width, the next lane a swipe away and
 snapped into place. A calendar opens in its agenda, the days listed one under
 another, since a month of seven columns has no room for a title; Month, Week
@@ -683,6 +792,11 @@ column at any width.
 
 `phoneLayout` on `SvBase` moves the breakpoint (`phoneLayout={480}`), turns
 the cards on at every width (`true`) or keeps the grid (`false`).
+`phoneGrid="grid"` keeps a grid view a grid on a phone while the other views
+keep their phone layouts: a spreadsheet to scroll both ways, its first field
+pinned and drawn at most about two fifths of the width
+(`maxPinnedColumnWidth` on the grid, the field's own width kept), with "+"
+to add a record. A tap selects a cell and a second tap edits it.
 
 <div data-docs-demo="713-base-phone-layout" data-height="720"></div>
 
@@ -746,9 +860,12 @@ grid has called `onApiReady`; the box does this for you.
 | `'grid'` | `state`, `rowHeight`, `color` | Hide fields, Filter, Group, Sort, Color, Row height |
 | `'kanban'` | `stackBy`: a single select, or a user field with one person | Hide fields, Filter, Sort |
 | `'calendar'` | `dateField`, `endField` (optional), `color` | Hide fields, Filter, Sort, Color |
-| `'gantt'` | `dateField`, `endField`, `progressField`, `dependencyField`, `zoom`, `color` | Hide fields, Filter, Sort, Color, Customize timeline |
+| `'timeline'` | `dateField`, `endField`, `laneField` (a single select, person or link field), `zoom` (`day`, `week`, `month`, `year`), `color` | Hide fields, Filter, Sort, Color, Customize timeline |
+| `'gantt'` | `dateField`, `endField`, `progressField`, `dependencyField`, `zoom`, `color` | Hide fields, Filter, Sort, Color, Customize Gantt |
+| `'tree'` | `parentField`: a link field to the same table | Hide fields, Filter, Sort, Color, Row height |
 | `'gallery'` | `coverField`: an attachment field | Hide fields, Filter, Sort |
 | `'chart'` | `chart`: `kind`, `x`, `y`, `aggregation` | Filter, Customize chart |
+| `'pivot'` | `pivot`: `rows`, `cols`, `values` (`{ agg, field }`) | Filter; its own bar for rows, columns and values |
 | `'list'` | `listFields`: the fields under each name | Hide fields, Filter, Group, Sort, Customize list |
 | `'inbox'` | `inboxDateField`: a date field, newest first; `listFields` | Hide fields, Filter, Sort, Customize inbox |
 | `'form'` | `formFields`, `formRequired`, `formTitle`, `formDescription`, `formSubmitLabel`, `formConditions`, `formPrefill` | none |
@@ -765,9 +882,11 @@ filter, sorts or groups and every field shown.
 `viewTypes={['grid', 'kanban', 'calendar']}` on `SvBase` limits what
 "Create" offers.
 
-A timeline (`type: 'gantt'`) is a calendar with a task table beside the bars.
-"Create" offers it as Timeline in every base, and its renderer loads the first
-time one is shown. Its bars take the view's colors, `progressField` is a percent field drawn as each
+A Gantt chart (`type: 'gantt'`) is one bar per record with a task table beside the bars.
+"Create" offers it as Gantt in every base, and its renderer loads the first
+time one is shown. A timeline (`type: 'timeline'`) is the other kind of plan:
+records in lanes by `laneField`, several to a lane, as Airtable's Timeline view
+draws them; an Airtable Timeline view converts to it, and an Airtable Gantt to a Gantt. Its bars take the view's colors, `progressField` is a percent field drawn as each
 bar's fill, and `dependencyField` is a link field to the same table naming
 what each record waits for, drawn as arrows.
 
@@ -925,6 +1044,59 @@ that type is shown, and opens the record and the "Delete record?" question
 for a card's menu. Chart and form views are drawn by `SvBase`, not by the
 bar, so leave them out of `viewTypes` here, or draw `SvBaseForm` yourself
 when a form view is active.
+
+## Sections in the views menu
+
+A table with many views groups them in sections, as Airtable does: a shared
+view's `section` lists it under that heading in the views menu, after the
+views with none and before "My views". A heading folds its views, except the
+one on screen. Whoever may manage views moves one into a section, or out of
+it, with the folder button on its row; the box offers the sections there are.
+
+```ts
+views: [
+  { id: 'all', name: 'All tasks', type: 'grid' },
+  { id: 'q1', name: 'Q1 plan', type: 'grid', section: 'Planning' },
+  { id: 'late', name: 'Late', type: 'grid', section: 'Reports' },
+]
+```
+
+## Your own actions on a view
+
+`setViewActions` adds buttons of the app's to each saved view in the views
+menu, beside rename and duplicate, for everyone who sees the view: "Subscribe
+in your calendar app" on a calendar view, "Copy a link", "Export". The
+function is called for each view with its table's id and answers the
+view's actions (none: `[]`).
+
+```ts
+import { setViewActions } from '@svgrid/enterprise/base'
+
+setViewActions((view, tableId) =>
+  view.type === 'calendar'
+    ? [{ id: 'feed', label: 'Subscribe in your calendar app', icon: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4', run: () => openFeed(tableId, view.id) }]
+    : [],
+)
+```
+
+`icon` is an SVG path on a 24 by 24 box. `setViewActions(null)` takes them
+away; a function that throws gives none.
+
+## Your own actions on a record
+
+`setRecordActions` does the same for records: the app's actions show in a
+record's right-click menu (a grid row, a card) and at the top of the record
+view, and run with the table's id, the record's id and the record.
+
+```ts
+import { setRecordActions } from '@svgrid/enterprise/base'
+
+setRecordActions((tableId) => [
+  { id: 'print', label: 'Print', icon: 'M4.5 6V2.5h7V6M4.5 12H3V7.5h10V12h-1.5M5 10h6v4H5z', run: ({ tableId, rowId }) => window.open(`/print/${tableId}/${rowId}`) },
+])
+```
+
+`icon` is an SVG path on a 16 by 16 box. `setRecordActions(null)` takes them away.
 
 ## Pitfalls
 

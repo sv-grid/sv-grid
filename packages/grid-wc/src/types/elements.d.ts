@@ -46,6 +46,8 @@ export interface SvGridElement extends HTMLElement {
   expandRows: boolean
   /** attribute `pin-splitter` */
   pinSplitter: boolean
+  /** attribute `max-pinned-column-width` */
+  maxPinnedColumnWidth: number
   /** attribute `primary-field` */
   primaryField: string
   /** property only - an attribute cannot hold this */

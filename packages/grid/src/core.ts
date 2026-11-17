@@ -1508,6 +1508,13 @@ export type TreeRowModelOptions = {
   parentField: string
   /** Field holding the row's own id. Defaults to `'id'`. */
   idField?: string
+  /**
+   * A row a filter keeps whose parent it hides: the parent (and its parents)
+   * come back as context rows (`__treeContext`), so the row stays under what
+   * it belongs to instead of moving to the top. Context rows are not counted
+   * in `treeRecords` and not totalled. Default `false`.
+   */
+  keepAncestors?: boolean
 }
 
 /**
@@ -1528,30 +1535,56 @@ export type TreeRowModelOptions = {
 export function createTreeRowModel<TData extends RowData>(
   options: TreeRowModelOptions,
 ): RowModelFactory<TData> {
-  const { parentField, idField = 'id' } = options
+  const { parentField, idField = 'id', keepAncestors = false } = options
   return ({ table, rows }) => {
     if (!rows.length) return rows
-    const keyOf = (row: Row<TData>) => (row.original as any)?.[idField]
-    const parentOf = (row: Row<TData>) => (row.original as any)?.[parentField]
+    // Ids compare as text (a link field holds "7" for the row whose id is 7),
+    // and a parent given as a one-item list (as a link field holds it) is
+    // that item; a row with several parents, like one whose parent is absent,
+    // is a root.
+    const textOf = (v: unknown) => (v == null || v === '' ? null : String(v))
+    const keyOf = (row: Row<TData>) => textOf((row.original as any)?.[idField])
+    const parentOf = (row: Row<TData>) => {
+      const raw = (row.original as any)?.[parentField]
+      return Array.isArray(raw) ? (raw.length === 1 ? textOf(raw[0]) : null) : textOf(raw)
+    }
 
     const present = new Set<unknown>()
     for (const row of rows) present.add(keyOf(row))
 
+    // Every record before the filter, by id: the parents a filter hid.
+    const all = keepAncestors ? prefilteredRowsOf(table) : null
+    const byKey = new Map<unknown, Row<TData>>()
+    if (all && all.length !== rows.length) for (const row of all) byKey.set(keyOf(row), row)
+    const context = new Set<unknown>()
+
     const childrenByParent = new Map<unknown, Array<Row<TData>>>()
     const roots: Array<Row<TData>> = []
-    for (const row of rows) {
-      const parent = parentOf(row)
+    const place = (row: Row<TData>, chain: Set<unknown>) => {
+      const key = keyOf(row)
+      let parent = parentOf(row)
+      if (parent != null && parent !== key && !present.has(parent) && !chain.has(parent)) {
+        // The parent is filtered out: it comes back, greyed, with its own parents.
+        const hidden = byKey.get(parent)
+        if (hidden) {
+          present.add(parent)
+          context.add(parent)
+          chain.add(key)
+          place(hidden, chain)
+        }
+      }
       // A row whose parent is absent (filtered out, or never existed) becomes a
       // root rather than disappearing - silently dropping rows is worse than a
       // shallower tree. Self-parenting is treated the same way.
-      if (parent == null || parent === keyOf(row) || !present.has(parent)) {
+      if (parent == null || parent === key || !present.has(parent)) {
         roots.push(row)
-        continue
+        return
       }
       const list = childrenByParent.get(parent) ?? []
       list.push(row)
       childrenByParent.set(parent, list)
     }
+    for (const row of rows) place(row, new Set())
 
     // Guards a cycle in the parent chain from recursing forever.
     const seen = new Set<unknown>()
@@ -1563,11 +1596,15 @@ export function createTreeRowModel<TData extends RowData>(
       }
       seen.add(key)
       const subRows = (childrenByParent.get(key) ?? []).map((child) => build(child, depth + 1))
+      const shownOnly = context.has(key)
       return {
         ...row,
         depth,
         subRows,
         leafCount: subRows.reduce((n, sub) => n + 1 + (sub.leafCount ?? 0), 0),
+        // The records of this branch the filter keeps: a context row is not one.
+        treeRecords: subRows.reduce((n, sub) => n + ((sub as { treeRecords?: number }).treeRecords ?? 0), shownOnly ? 0 : 1),
+        ...(shownOnly ? { __treeContext: true } : {}),
         __treeRow: true,
         getCanExpand: () => subRows.length > 0,
         getIsExpanded: () => Boolean((table.getState().expanded ?? {})[id]),
@@ -1669,6 +1706,14 @@ export function createExpandedRowModel<TData extends RowData>(): RowModelFactory
  * `SvGrid` type, so the stage signature stays `({ table, rows }) => rows`.
  */
 const replacedRowsByGrid = new WeakMap<object, ReadonlyMap<Row<any>, Row<any>> | null>()
+
+/** The rows before the filter stage of the run under way (what the tree's context rows come from). */
+const prefilteredByGrid = new WeakMap<object, ReadonlyArray<Row<any>> | null>()
+
+/** The rows the filter stage of the current pipeline run started from, or null outside a run. */
+export function prefilteredRowsOf(table: SvGrid<any>): ReadonlyArray<Row<any>> | null {
+  return prefilteredByGrid.get(table) ?? null
+}
 
 /** The rows `getRowModel` replaced in the rebuild this pipeline run follows, or null. */
 export function replacedRowsOf(table: SvGrid<any>): ReadonlyMap<Row<any>, Row<any>> | null {
@@ -2778,10 +2823,13 @@ export function createSvGridCore<TFeatures extends TableFeatures, TData extends 
       // run lasts; a stage that runs outside one sees null.
       replacedRowsByGrid.set(grid, replacedRows)
       try {
-        ordered.forEach((fn) => {
+        ordered.forEach((fn, i) => {
+          // The filter is the second stage: what it starts from is every record.
+          if (i === 1) prefilteredByGrid.set(grid, rows)
           if (fn) rows = fn({ table: grid, rows })
         })
       } finally {
+        prefilteredByGrid.set(grid, null)
         replacedRowsByGrid.set(grid, null)
         replacedRows = null
       }

@@ -623,16 +623,23 @@ export type AgendaGroup<TData = unknown> = {
   events: ResolvedEvent<TData>[]
 }
 
-/** Group resolved events by calendar day for the agenda view (days with no
- *  events are omitted; groups and their events are in chronological order). */
+/** Group resolved events by calendar day for the agenda (list) view (days with no
+ *  events are omitted; groups and their events are in chronological order).
+ *  With `from` (the list's first day), an event that began before it and is
+ *  still going is listed under that day, not under a start the list never
+ *  shows: a campaign running all month belongs under today. */
 export function agendaGroups<TData>(
   events: ReadonlyArray<ResolvedEvent<TData>>,
+  from?: Date,
 ): AgendaGroup<TData>[] {
+  const first = from ? startOfDay(from) : null
+  const dayOf = (e: ResolvedEvent<TData>) => (first && e.start.getTime() < first.getTime() ? first : startOfDay(e.start))
   const groups: AgendaGroup<TData>[] = []
-  for (const e of [...events].sort((a, b) => a.start.getTime() - b.start.getTime())) {
+  for (const e of [...events].sort((a, b) => dayOf(a).getTime() - dayOf(b).getTime() || a.start.getTime() - b.start.getTime())) {
+    const day = dayOf(e)
     const last = groups[groups.length - 1]
-    if (last && isSameDay(last.day, e.start)) last.events.push(e)
-    else groups.push({ day: startOfDay(e.start), events: [e] })
+    if (last && isSameDay(last.day, day)) last.events.push(e)
+    else groups.push({ day, events: [e] })
   }
   return groups
 }

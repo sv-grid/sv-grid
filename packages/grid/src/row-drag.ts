@@ -142,6 +142,8 @@ export function createRowDrag<TFeatures, TData>(ctx: any) {
     if (!row) return false;
     const sg = ctx.props.serverGroup;
     if (sg) return !!sg.isGroup(row.original);
+    // A tree row takes children whether or not it has any yet.
+    if ((row as { __treeRow?: boolean }).__treeRow) return true;
     return typeof row.getCanExpand === "function" && row.getCanExpand();
   }
 
