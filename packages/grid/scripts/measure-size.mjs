@@ -537,6 +537,14 @@ const BUDGET_KB = {
   // a chunk loaded with the first `rowDragManaged`. Its handlers are attached
   // only when that prop is on, so a grid that never drags rows never
   // downloads it.
+  // Then up to 100.6 (2026-11-17, over the line) with the phone layout
+  // (popover sheets, a cap on pinned column widths), tree views that read a
+  // link field's parent and keep a filtered match under its greyed parents,
+  // and the tree's + to add a child; back to 97.8 by loading the scrollbar
+  // element (sv-grid-scrollbar.ts, -2.8) when the first grid mounts instead
+  // of with the bundle. Fifteen modules imported it for its side effect; the
+  // scrollbars are drawn only after the grid has measured itself, and now
+  // only once the element is defined, so nothing shows later than before.
   'full render component (SvGrid)': 100.0,
   // 3.0 -> 3.5 (measured 3.2): the lazy first build of the row model above
   // (lazyRows / denseRows in getRowModel). createGrid builds rows too.
@@ -597,7 +605,13 @@ const BUDGET_KB = {
   // amounts to (a checklist by Not started / In progress / Done) and order
   // the groups when the grouped column is not sorted. 57 bytes gzip, all in
   // createGroupedRowModel; the entry had 49 bytes of headroom.
-  'headless subpath (@svgrid/grid/core)': 10.2,
+  //
+  // 10.2 -> 10.6 (measured 10.4) for the tree row model (2026-11-17): a
+  // link field as the parent (ids compared as text, a one-item list read as
+  // its item) and `keepAncestors`, the parents a filter hides brought back as
+  // greyed context rows so a match stays under what it belongs to, not
+  // counted or totalled. All in createTreeRowModel, which this entry exports.
+  'headless subpath (@svgrid/grid/core)': 10.6,
   // Measured 26.3 KB: SvGridChart.svelte plus the chart.ts engine it statically
   // imports. Nobody pays this unless they chart - SvGrid reaches both through
   // `import()` - but it is the biggest deferred thing in the package and until

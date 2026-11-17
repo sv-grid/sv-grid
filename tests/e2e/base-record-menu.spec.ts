@@ -65,7 +65,7 @@ test.describe('SvGrid Base record menu (real browser)', () => {
     await expect(rows.nth(0)).toHaveClass(/sv-grid-summary-row/)
     await expect(rows.nth(1)).toHaveClass(/sv-field-row-adder/)
     // What is drawn at the adder's left end, over the pinned column, is the adder.
-    const button = page.locator('.sv-grid-foot .sv-field-row-adder-button')
+    const button = page.locator('.sv-grid-foot .sv-field-row-adder-button:not(.sv-field-row-adder-more)')
     await showBottom(page)
     const box = (await button.boundingBox())!
     const hit = await page.evaluate(([x, y]) => document.elementFromPoint(x!, y!)?.closest('.sv-field-row-adder') != null, [box.x + 10, box.y + box.height / 2])

@@ -12,7 +12,6 @@
     type RowData,
     type TableFeatures,
   } from "./index";
-  import "./sv-grid-scrollbar";
   import "./SvGrid.css";
   import type { RowResizeOptions } from "./row-resize";
   import type { ColumnResizeOptions } from "./column-resize";
@@ -3250,7 +3249,7 @@
          straight from the virtualizers' authoritative state) avoids the
          lag - the scrollbar always sees the same overflow numbers our
          gating did. -->
-      {#if hasMeasured && hasVerticalOverflow}
+      {#if hasMeasured && ctrl.scrollbarsDefined && hasVerticalOverflow}
         <!-- content-size = the container's actual `scrollHeight`.
              The scroll container's real `scrollHeight` includes
              EVERYTHING in the scroll content: the sticky thead, the
@@ -3276,7 +3275,7 @@
           style={`top: ${headerHeight}px; height: calc(100% - ${headerHeight + (hasHorizontalOverflow ? 16 : 0)}px);`}
         ></sv-grid-scrollbar>
       {/if}
-      {#if hasMeasured && hasHorizontalOverflow}
+      {#if hasMeasured && ctrl.scrollbarsDefined && hasHorizontalOverflow}
         {@const horizontalContentSize =
           totalColumnWidth + ctrl.systemColumnsWidth}
         <sv-grid-scrollbar

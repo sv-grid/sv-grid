@@ -9,7 +9,6 @@ import {
     type RowData,
     type TableFeatures,
   } from "./index";
-import "./sv-grid-scrollbar";
 
 export function createFeatures<
   TFeatures extends TableFeatures = TableFeatures,

@@ -5,7 +5,6 @@ import {
   type RowData,
   type TableFeatures,
 } from "./index";
-import "./sv-grid-scrollbar";
 import { pushHistory } from "./history";
 
 export function createColumns<

@@ -335,15 +335,18 @@ test.describe('copy and paste, field by field', () => {
 
   test('an empty cell pasted over a value clears it, in every field', async ({ page }) => {
     await open(page)
+    const cleared = (v: unknown) => v == null || v === '' || (Array.isArray(v) && !v.length)
     for (const field of WRITABLE) {
       await copyCell(page, 7, field)
       await pasteInto(page, 0, field)
+      // Each paste saved before the next: a paste that lands while the row redraws after the last write is lost.
+      if (field !== 'done') await soft.poll(async () => cleared((await record(page, 'r1'))[field]), { message: `${field} cleared`, timeout: 3000 }).toBe(true)
     }
     const now = await record(page, 'r1')
     for (const field of WRITABLE) {
       if (field === 'done') continue
       const v = now[field]
-      soft(v == null || v === '' || (Array.isArray(v) && !v.length), `${field} is ${JSON.stringify(v)}`).toBe(true)
+      soft(cleared(v), `${field} is ${JSON.stringify(v)}`).toBe(true)
     }
   })
 

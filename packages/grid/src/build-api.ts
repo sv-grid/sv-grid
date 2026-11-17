@@ -6,7 +6,6 @@ import {
   type SvGridApi,
   type TableFeatures,
 } from "./index";
-import "./sv-grid-scrollbar";
 import { untrack } from "svelte";
 // The export serializers load lazily (their own chunk) so export-format.ts stays
 // out of the base bundle - it is fetched only when an export/copy method is

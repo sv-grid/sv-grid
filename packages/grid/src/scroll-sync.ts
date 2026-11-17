@@ -5,7 +5,6 @@ import {
   type RowData,
   type TableFeatures,
 } from "./index";
-import "./sv-grid-scrollbar";
 
 export function createScrollSync<
   TFeatures extends TableFeatures = TableFeatures,

@@ -44,7 +44,6 @@ import { denseRows, type RowModelFactory } from "./core";
 import { isWindowedData } from "./windowed-brand";
 import { applyFieldColumns } from "./grid-extension.svelte";
 import { DEV } from "esm-env";
-import "./sv-grid-scrollbar";
 import type { ColumnStat } from "./conditional-formatting";
 import type {
     Props,
@@ -341,10 +340,22 @@ export type SvGridController<
   TData extends RowData = RowData,
 > = ReturnType<typeof createSvGridController<TFeatures, TData>>;
 
+/**
+ * The grid's scrollbars (`<sv-grid-scrollbar>`, sv-grid-scrollbar.ts): a
+ * custom element defined when its module loads, started by the first grid
+ * that mounts. They are drawn only after the grid has measured itself, and
+ * only once the element is defined, so it never meets an element it has not
+ * upgraded yet.
+ */
+let scrollbarsDefined = $state(typeof customElements !== "undefined" && !!customElements.get("sv-grid-scrollbar"));
+
 export function createSvGridController<
   TFeatures extends TableFeatures = TableFeatures,
   TData extends RowData = RowData,
 >(rawProps: Props<TFeatures, TData>, domIdBase?: string) {
+  if (!scrollbarsDefined && typeof window !== "undefined") {
+    void import("./sv-grid-scrollbar").then(() => (scrollbarsDefined = true));
+  }
 
   /**
    * Base for every DOM id this grid mints (`<base>_cell_<row>_<col>`). The view
@@ -5918,6 +5929,7 @@ export function createSvGridController<
     get buildBuckets() { return buildBuckets; },
     get isInBucket() { return isInBucket; },
     get facetBucketsByColumn() { return facetBucketsByColumn; },
+    get scrollbarsDefined() { return scrollbarsDefined; },
     get serverFacetLoading() { return serverFacetLoading; },
     get columnMenuFacetValues() { return columnMenuFacetValues; },
     get columnMenuVisibleFacets() { return columnMenuVisibleFacets; },

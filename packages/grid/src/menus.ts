@@ -5,7 +5,6 @@ import {
   type RowData,
   type TableFeatures,
 } from "./index";
-import "./sv-grid-scrollbar";
 import { untrack } from "svelte";
 import type { FilterOperator } from "./SvGrid.types";
 import { takesNoValue } from "./filter-operators";

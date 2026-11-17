@@ -6,7 +6,6 @@ import {
   type RowData,
   type TableFeatures,
 } from "./index";
-import "./sv-grid-scrollbar";
 import type {
   SelectionRange,
 } from "./SvGrid.types";

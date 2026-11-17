@@ -5,7 +5,6 @@ import {
   type RowData,
   type TableFeatures,
 } from "./index";
-import "./sv-grid-scrollbar";
 
 import { getKeyboardIntent, getNextActiveCell, getEntryStep, pastCollapsed } from "./keyboard";
 // The merges module loads with the first `mergedCells` (ctx.merges); without

@@ -8,7 +8,6 @@ import {
   type RowData,
   type TableFeatures,
 } from "./index";
-import "./sv-grid-scrollbar";
 import { isWindowedData } from "./windowed-brand";
 import { loadedRows } from "./selection";
 import {

@@ -10,7 +10,6 @@ import {
   type RowData,
   type TableFeatures,
 } from "./index";
-import "./sv-grid-scrollbar";
 import { getEntryStep } from "./keyboard";
 import {
   getCellKey,

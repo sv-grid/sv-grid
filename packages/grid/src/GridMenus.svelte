@@ -7,7 +7,6 @@
     type RowData,
     type TableFeatures,
   } from "./index";
-  import "./sv-grid-scrollbar";
   import { createDismissableLayer, onScrollOutside } from "./a11y/dismissable";
   import { menuFocus } from "./a11y/menu-focus";
   import { keepFocus } from "./a11y/focus-trap";

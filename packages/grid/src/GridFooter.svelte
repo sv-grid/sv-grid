@@ -3,7 +3,6 @@
       type RowData,
       type TableFeatures,
     } from "./index";
-  import "./sv-grid-scrollbar";
   import {
       fmtStat,
     } from "./SvGrid.helpers";
