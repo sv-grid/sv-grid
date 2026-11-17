@@ -170,7 +170,11 @@ export function createKeyboard<
     // group's row has one cell to walk, so its Enter and Space are the toggle,
     // Right on an open group goes in and Left on a closed one goes to its parent.
     const grouped = ctx.grid.getState().grouping?.length > 0;
-    if ((ctx.props.treeData || grouped) && !event.shiftKey) {
+    // A tree's rows are records with many cells: only the cell with the
+    // expander folds and unfolds; elsewhere the arrows move between cells.
+    const tree = ctx.props.treeData;
+    const onExpander = !tree || grouped || ctx.allColumns[current.colIndex]?.id === (tree.column ?? ctx.allColumns[0]?.id);
+    if ((tree || grouped) && onExpander && !event.shiftKey) {
       const row = ctx.allRows[current.rowIndex];
       if (row?.getCanExpand?.()) {
         const expanded = row.getIsExpanded?.() ?? false;

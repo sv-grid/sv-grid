@@ -884,3 +884,31 @@ describe('onGridKeyDown / Ctrl+Enter on a server-side tree', () => {
     expect(onDetail.onCellDoubleClick).toHaveBeenCalled()
   })
 })
+
+describe('onGridKeyDown / tree data', () => {
+  const treeRow = (open: boolean) => ({ depth: 0, getCanExpand: () => true, getIsExpanded: () => open, toggleExpanded: vi.fn() })
+  const tree = (rows: unknown[], colIndex: number) =>
+    makeCtx({ allRows: rows, props: { rowHeight: 30, treeData: { parentField: 'p', column: 'name' } }, allColumns: [{ id: 'name', columnDef: {} }, { id: 'team', columnDef: {} }, { id: 'hours', columnDef: {} }], state: { activeCell: { rowIndex: 0, colIndex, cellId: null } } })
+
+  it('the expander cell folds with Left and unfolds with Right', () => {
+    const open = treeRow(true)
+    createKeyboard(tree([open], 0)).onGridKeyDown(rootKeyEvent({ key: 'ArrowLeft' }))
+    expect(open.toggleExpanded).toHaveBeenCalledTimes(1)
+    const closed = treeRow(false)
+    createKeyboard(tree([closed], 0)).onGridKeyDown(rootKeyEvent({ key: 'ArrowRight' }))
+    expect(closed.toggleExpanded).toHaveBeenCalledTimes(1)
+  })
+
+  it('in any other cell the arrows move between cells and fold nothing', () => {
+    const open = treeRow(true)
+    const ctx = tree([open], 2)
+    createKeyboard(ctx).onGridKeyDown(rootKeyEvent({ key: 'ArrowLeft' }))
+    expect(open.toggleExpanded).not.toHaveBeenCalled()
+    expect(ctx.setActiveCell).toHaveBeenLastCalledWith(0, 1)
+    const closed = treeRow(false)
+    const right = tree([closed], 1)
+    createKeyboard(right).onGridKeyDown(rootKeyEvent({ key: 'ArrowRight' }))
+    expect(closed.toggleExpanded).not.toHaveBeenCalled()
+    expect(right.setActiveCell).toHaveBeenLastCalledWith(0, 2)
+  })
+})

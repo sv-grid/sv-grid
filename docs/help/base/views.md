@@ -224,12 +224,12 @@ base is `editable`, Move to (a submenu of the lanes), Duplicate record and
 Delete record, which asks "Delete record?" first. A card with comments shows
 their count; click it to open the record at its comment box.
 
-## 5. A timeline
+## 5. A Gantt chart, and a timeline in lanes
 
 ```ts
-const timeline: FieldView = {
-  id: 'timeline',
-  name: 'Timeline',
+const plan: FieldView = {
+  id: 'gantt',
+  name: 'Gantt',
   type: 'gantt',
   dateField: 'start',
   endField: 'target',
@@ -253,6 +253,31 @@ them.
 
 Moving and resizing need `editable` on the base. Without it the calendar is
 read-only.
+
+A timeline puts the same bars in lanes: one row per value of `laneField`, so
+records that share a person, a property or a channel share a row, and the gaps
+between them show where there is room.
+
+```ts
+const occupancy: FieldView = {
+  id: 'occupancy',
+  name: 'Occupancy',
+  type: 'timeline',
+  dateField: 'checkIn',
+  endField: 'checkOut',
+  laneField: 'property',
+  zoom: 'month',
+}
+```
+
+Day, Week, Month and Year at the top right set the span. A bar dragged along
+its lane changes its dates; dragged to another lane it changes `laneField` too,
+in the same step, so one Ctrl+Z takes both back. For a link field with several
+records the record of the lane it left is swapped for the one it lands on, and
+the others stay. A double-click in a lane adds a record there, in that lane.
+With a single select or a person field every option or person is a lane, empty
+or not; with a link field the lanes are the records the rows link to, named by
+the linked table's primary field.
 
 ## 6. Effort by team
 
@@ -323,7 +348,7 @@ the view switcher on a form.
 All the views so far, in one list:
 
 ```ts
-let views = $state<FieldView[]>([roadmap, board, timeline, effort, now, mine, gallery, request])
+let views = $state<FieldView[]>([roadmap, board, plan, effort, now, mine, gallery, request])
 ```
 
 ## 9. A dashboard
@@ -806,7 +831,8 @@ grid has called `onApiReady`; the box does this for you.
 | `'grid'` | `state`, `rowHeight`, `color` | Hide fields, Filter, Group, Sort, Color, Row height |
 | `'kanban'` | `stackBy`: a single select, or a user field with one person | Hide fields, Filter, Sort |
 | `'calendar'` | `dateField`, `endField` (optional), `color` | Hide fields, Filter, Sort, Color |
-| `'gantt'` | `dateField`, `endField`, `progressField`, `dependencyField`, `zoom`, `color` | Hide fields, Filter, Sort, Color, Customize timeline |
+| `'timeline'` | `dateField`, `endField`, `laneField` (a single select, person or link field), `zoom` (`day`, `week`, `month`, `year`), `color` | Hide fields, Filter, Sort, Color, Customize timeline |
+| `'gantt'` | `dateField`, `endField`, `progressField`, `dependencyField`, `zoom`, `color` | Hide fields, Filter, Sort, Color, Customize Gantt |
 | `'tree'` | `parentField`: a link field to the same table | Hide fields, Filter, Sort, Color, Row height |
 | `'gallery'` | `coverField`: an attachment field | Hide fields, Filter, Sort |
 | `'chart'` | `chart`: `kind`, `x`, `y`, `aggregation` | Filter, Customize chart |
@@ -827,9 +853,11 @@ filter, sorts or groups and every field shown.
 `viewTypes={['grid', 'kanban', 'calendar']}` on `SvBase` limits what
 "Create" offers.
 
-A timeline (`type: 'gantt'`) is a calendar with a task table beside the bars.
-"Create" offers it as Timeline in every base, and its renderer loads the first
-time one is shown. Its bars take the view's colors, `progressField` is a percent field drawn as each
+A Gantt chart (`type: 'gantt'`) is one bar per record with a task table beside the bars.
+"Create" offers it as Gantt in every base, and its renderer loads the first
+time one is shown. A timeline (`type: 'timeline'`) is the other kind of plan:
+records in lanes by `laneField`, several to a lane, as Airtable's Timeline view
+draws them; an Airtable Timeline view converts to it, and an Airtable Gantt to a Gantt. Its bars take the view's colors, `progressField` is a percent field drawn as each
 bar's fill, and `dependencyField` is a link field to the same table naming
 what each record waits for, drawn as arrows.
 
