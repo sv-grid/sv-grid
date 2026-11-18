@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-11-17T14:55:49.702Z",
+  "generatedAt": "2026-11-18T13:42:57.485Z",
   "counts": {
     "pages": 483,
     "enterprise": 112,
@@ -2180,8 +2180,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Automate",
-      "words": 4264,
-      "lastUpdated": "2026-11-16",
+      "words": 4479,
+      "lastUpdated": "2026-11-18",
       "demoIds": [
         "504-project-tracker"
       ]
