@@ -34,10 +34,10 @@
   "components": [
     {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/enterprise@3.1.41",
+      "bom-ref": "pkg:npm/%40svgrid/enterprise@3.1.42",
       "name": "@svgrid/enterprise",
-      "version": "3.1.41",
-      "purl": "pkg:npm/%40svgrid/enterprise@3.1.41",
+      "version": "3.1.42",
+      "purl": "pkg:npm/%40svgrid/enterprise@3.1.42",
       "scope": "required",
       "description": "Runtime dependency (declared range: workspace:^)"
     }
@@ -46,11 +46,11 @@
     {
       "ref": "pkg:npm/%40svgrid/create-studio@0.8.2",
       "dependsOn": [
-        "pkg:npm/%40svgrid/enterprise@3.1.41"
+        "pkg:npm/%40svgrid/enterprise@3.1.42"
       ]
     },
     {
-      "ref": "pkg:npm/%40svgrid/enterprise@3.1.41",
+      "ref": "pkg:npm/%40svgrid/enterprise@3.1.42",
       "dependsOn": []
     }
   ]
