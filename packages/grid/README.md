@@ -95,7 +95,7 @@ until its prop is set, so a grid you never configured stays small. `GridColumns<
 |---|---|
 | **License** | MIT, free for commercial use |
 | **Requires** | `svelte@^5` (peer dependency), Node 16+ |
-| **Bundle (gzip)** | ~3.2 KB headless core, ~100 KB full `<SvGrid>` + ~11 KB CSS; charts, date pickers, menus and export load as separate chunks on first use |
+| **Bundle (gzip)** | ~3.2 KB headless core, ~98 KB full `<SvGrid>` + ~11 KB CSS; charts, date pickers, menus and export load as separate chunks on first use |
 | **Types** | Bundled, no `@types/` package needed |
 | **Module format** | ESM, plus a CDN build at `@svgrid/grid/cdn` |
 | **SSR** | Works under SvelteKit SSR and static builds |
