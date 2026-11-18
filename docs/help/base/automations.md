@@ -56,6 +56,7 @@ it. An undo or a redo is no change: it runs no automation.
 | Call a webhook | POSTs the record (or a body you write) to a URL: a team chat, your API. Secrets as `{secret:NAME}`, read on the server only |
 | Send an email | To, subject and text with field names; sent by the [server](#on-the-server) |
 | Send a Slack, Teams or Google Chat message | A message to a channel through the address its chat app gave; only that app's own addresses ([below](#chat-messages)) |
+| Send a text message (SMS or Viber) | A text to phone numbers, or a phone field, by SMS or by Viber; sent by the [server](#on-the-server) through your provider ([below](#text-messages)) |
 | Find records and, for each, do | Steps run on every record of a table that matches a condition ([below](#if-and-find-records)) |
 | If a condition holds, do | Then steps when the record matches, Otherwise steps when it does not |
 | Ask AI | A prompt with field names; the answer goes into a field, and is `{ai}` in the next steps ([below](#ask-ai)) |
@@ -128,6 +129,31 @@ Paste the address the chat app gives for its channel:
 The text names fields in braces. A message goes only to its app's own https
 addresses, so a chat step cannot be pointed at any other server; an address
 may name a secret (`{secret:SLACK_HOOK}`) on the server.
+
+## Text messages
+
+"Send a text message" sends a text to the numbers in **To**: written with their
+country code (`+359 88 123 4567`), or a phone field in braces (`{Phone}`),
+several apart with commas. The message names fields in braces. **Send by** is
+SMS, or Viber, which your provider may send as an SMS to a phone that is not on
+Viber.
+
+The browser has no account to send texts with, so this step runs on the
+[server](#on-the-server): give `createAutomationServer` a `sendText`, which gets
+`{ to, text, channel }` and calls your SMS or Viber provider.
+
+```ts
+import { createAutomationServer, type BaseTable } from '@svgrid/enterprise/base'
+
+// Your tables, and your SMS or Viber provider's client.
+declare const tables: BaseTable[]
+declare const texts: { send: (m: { phone: string; text: string; viber: boolean }) => Promise<unknown> }
+
+export const automations = createAutomationServer({
+  tables,
+  sendText: ({ to, text, channel }) => Promise.all(to.map((phone) => texts.send({ phone, text, viber: channel === 'viber' }))),
+})
+```
 
 ## Ask AI
 
@@ -398,6 +424,8 @@ export const automations = createAutomationServer({
   // whoever writes an automation can send any secret named here to any URL.
   secrets: { SLACK_HOOK: env.SLACK_HOOK },
   sendEmail: (m) => mailer.send({ from: 'tracker@example.com', ...m }),
+  // "Send a text message": { to, text, channel } to your SMS or Viber provider.
+  // sendText: (m) => texts.send(m),
   onRun: (run) => {
     if (run.status !== 'ok') console.error('automation failed', run)
   },
