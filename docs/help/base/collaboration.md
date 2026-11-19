@@ -321,6 +321,29 @@ const kept: RecordComment[] = []
 setRecordComments({ list: () => kept, add: (_rowId, comment) => kept.push(comment), files: true, internal: true })
 ```
 
+### Saved replies
+
+`setCommentSnippets` gives the comment box a **Saved replies** button: a
+service desk's standard answers. `list` is asked for the record open (its
+table, its id and its values), so the app can fill each reply in from the
+record before it is shown ("Hi Ana, we have your invoice"). The person
+searches, picks one, and its text (and its files) go into the box to change
+before sending; picking sends nothing. With `save`, the panel also offers
+**Save this text as a reply**, which hands the app the text and a name.
+
+```ts
+import { setCommentSnippets } from '@svgrid/enterprise/base'
+
+setCommentSnippets({
+  list: async (tableId, { row }) => [
+    { id: 'received', title: 'Invoice received', text: `Hi ${String(row.contact ?? '')}, we have your invoice and will pay it this week.` },
+  ],
+  save: async (tableId, { title, text }) => {
+    await fetch('/replies', { method: 'POST', body: JSON.stringify({ tableId, title, text }) })
+  },
+})
+```
+
 `rowId` is the record's id (its `id`, or the table's `getRowId`). In
 `<SvBase tables>`, `context.tableId` (and the comment's `tableId`) names the
 table, so Tasks `1` and Milestones `1` are two records; with one table it is
