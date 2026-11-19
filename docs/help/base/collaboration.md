@@ -285,7 +285,7 @@ With one table (`data` and `columns`) they are kept per grid. A comment is
 a `RecordComment`, and a store is two functions:
 
 ```ts {nocheck}
-export type RecordComment = { id: string; rowId: string; tableId?: string; text: string; at: number; by?: string; mentions?: string[] }
+export type RecordComment = { id: string; rowId: string; tableId?: string; text: string; at: number; by?: string; mentions?: string[]; files?: Attachment[]; internal?: boolean }
 
 export type RecordCommentContext = { tableId?: string; api: unknown }
 
@@ -295,7 +295,30 @@ export type RecordCommentStore = {
   update?: (rowId: string, comment: RecordComment, api: unknown, context: RecordCommentContext) => void
   remove?: (rowId: string, commentId: string, api: unknown, context: RecordCommentContext) => void
   onMention?: (event: MentionEvent) => void
+  files?: boolean
+  internal?: boolean
 }
+```
+
+### Files and internal notes
+
+A store with `files: true` gets an **Attach files** button in the comment
+box. Each file goes through the app's attachment uploader
+(`setAttachmentUploader`, see [Upload files](#6-upload-files)) and the comment carries the
+results in `files`; a comment of files alone has empty `text`. The record
+view lists them under the comment as links.
+
+A store with `internal: true` gets an **Internal note** box to tick. The
+comment comes with `internal: true` and shows with an "Internal" mark. Hiding
+it from people outside the team (the clients of a portal, say) is the
+store's job: `list` should leave it out for them, and the server should
+refuse it from them.
+
+```ts
+import { setRecordComments, type RecordComment } from '@svgrid/enterprise/base'
+
+const kept: RecordComment[] = []
+setRecordComments({ list: () => kept, add: (_rowId, comment) => kept.push(comment), files: true, internal: true })
 ```
 
 `rowId` is the record's id (its `id`, or the table's `getRowId`). In

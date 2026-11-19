@@ -51,7 +51,7 @@ it. An undo or a redo is no change: it runs no automation.
 |---|---|
 | Update the record | Sets fields of the record that set it off |
 | Create a record | Adds a record to any table of the base; "Link it back" fills a link field of the new record with the record that set it off |
-| Show a notice | A toast; `{Field name}` is that field of the record |
+| Show a notice | A toast; `{Field name}` is that field of the record. `to` (user ids, or `field:<column id>` for the people a person field names) also sends it to their notifications when a server runs the automation |
 | Color the record while it matches | Colors the whole row, or some fields, for as long as the record matches the condition |
 | Call a webhook | POSTs the record (or a body you write) to a URL: a team chat, your API. Secrets as `{secret:NAME}`, read on the server only |
 | Send an email | To, subject and text with field names; sent by the [server](#on-the-server) |

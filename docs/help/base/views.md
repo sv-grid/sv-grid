@@ -1098,6 +1098,17 @@ setRecordActions((tableId) => [
 
 `icon` is an SVG path on a 16 by 16 box. `setRecordActions(null)` takes them away.
 
+In the record view the function is also told the record it shows, so an
+action can depend on it: "Stop notifications" on a record you follow, "Notify
+me" on one you do not. The right-click menu tells it no record; return none
+there for actions that need one.
+
+```ts
+setRecordActions((tableId, record) =>
+  record ? [{ id: 'follow', label: followed.has(record.rowId) ? 'Stop notifications' : 'Notify me', run: ({ rowId }) => toggleFollow(rowId) }] : [],
+)
+```
+
 ## Pitfalls
 
 - **A new view from "Create" starts with `color: { mode: 'none' }`**, so it
