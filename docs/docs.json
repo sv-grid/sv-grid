@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-11-18T14:51:14.596Z",
+  "generatedAt": "2026-11-19T10:56:55.472Z",
   "counts": {
     "pages": 483,
     "enterprise": 112,
@@ -2180,8 +2180,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Automate",
-      "words": 4479,
-      "lastUpdated": "2026-11-18",
+      "words": 4504,
+      "lastUpdated": "2026-11-19",
       "demoIds": [
         "504-project-tracker"
       ]
@@ -2195,8 +2195,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Build it out",
-      "words": 6647,
-      "lastUpdated": "2026-11-12",
+      "words": 6798,
+      "lastUpdated": "2026-11-19",
       "demoIds": [
         "514-base-hiring-tracker",
         "712-base-mentions",
@@ -2462,8 +2462,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Build it out",
-      "words": 8512,
-      "lastUpdated": "2026-11-17",
+      "words": 8589,
+      "lastUpdated": "2026-11-19",
       "demoIds": [
         "513-base-product-roadmap",
         "721-base-dashboard",
