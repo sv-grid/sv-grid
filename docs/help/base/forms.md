@@ -694,6 +694,33 @@ for less motion gets none, whatever the form says.
 Conditions work as in the list: a question whose condition fails is skipped,
 and the count follows.
 
+## Suggest answers before it is sent
+
+A help desk's request form can show the help articles that may already
+answer the question, before anyone sends it. `setFormSuggestions` gives every
+form that: once the first text field (the subject) holds a few words, `list`
+is asked with the table, that text and the answers so far, and up to five
+suggestions show under the field. Each opens in place; **This solved it** calls
+`solved` and ends the form with nothing added, and **Ask something else**
+starts again.
+
+```ts
+import { setFormSuggestions } from '@svgrid/enterprise/base'
+
+setFormSuggestions({
+  list: async (tableId, text) => {
+    const res = await fetch(`/articles?q=${encodeURIComponent(text)}`)
+    return (await res.json()) as Array<{ id: string; title: string; text: string }>
+  },
+  solved: (tableId, id) => {
+    void fetch(`/articles/${id}/solved`, { method: 'POST' })
+  },
+})
+```
+
+A text field takes its value when it is left (Tab, Enter, or a click
+elsewhere), so the suggestions come then, not on every key.
+
 ## SvBaseForm props
 
 | Prop | Type | Default | What it does |
