@@ -251,6 +251,13 @@ Full detail: [SvGrid vs AG Grid vs TanStack Table](https://svgrid.com/docs/help/
 - [Accessibility](https://svgrid.com/docs/help/accessibility/) - the WAI-ARIA grid pattern as implemented.
 - [Bundle size](https://svgrid.com/docs/reference/bundle-size/) - measured numbers and how to reproduce them.
 
+## In production
+
+[Artavolo](https://artavolo.com/?utm_source=svgrid&utm_medium=npm) runs on SvGrid. It is an online
+database for small businesses, with a client portal, booking pages, forms and an online shop on the
+same records, and every table, board and calendar in it is this grid. Sign up free to try the grid in
+a real product before you install it.
+
 ## Who's behind it
 
 SvGrid is built by [jQWidgets](https://www.jqwidgets.com), shipping UI components since 2011 to 5,000+

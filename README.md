@@ -147,6 +147,15 @@ The MIT package has no license key, no watermark, and no row-count cap.
 >
 > <a href="https://github.com/SikandarJODD"><img src="https://github.com/SikandarJODD.png?size=64" width="32" height="32" align="left" alt="" /></a> **[Sikandar Bhide](https://github.com/SikandarJODD)** - built an accounting app on SvelteKit
 
+**[Artavolo](https://artavolo.com/?utm_source=svgrid&utm_medium=readme)** is our own product built on
+SvGrid and SvGrid Base: an online database for small businesses, with a client portal, booking pages,
+forms and an online shop on the same records. Every table, board, calendar and form in it is the
+component in this repository. Sign up free to see the grid running in a real product.
+
+<p align="center">
+  <a href="https://artavolo.com/?utm_source=svgrid&utm_medium=readme"><img src="https://artavolo.com/site/templates/default/assets/img/app/screens/grid.webp" alt="Artavolo's table screen, built on SvGrid Base: typed fields, row colors and a toolbar of views." width="100%" /></a>
+</p>
+
 ## Quick facts
 
 | | |

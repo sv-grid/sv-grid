@@ -12,6 +12,10 @@ data, the backend and the rest of the app.
 > a license key it runs for evaluation, with a watermark and an upgrade notice.
 > A key removes both.
 
+To see SvGrid Base in a finished product first, open
+[Artavolo](https://artavolo.com/?utm_source=svgrid&utm_medium=docs): its tables, views, forms and
+automations are this component, under a client portal, booking pages and a shop.
+
 This page builds a small tracker step by step. Each step works on its own.
 
 ## 1. Turn it on
