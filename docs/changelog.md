@@ -893,6 +893,13 @@ For machine-readable releases, fetch
   the right to add fields it pastes what fits and says what was left out. `openFieldEditor`
   takes a `preset` (type and properties) for a new field.
 
+- **SvGrid Base: `celebrate`, fireworks when a record is finished.** With the prop on, a
+  short burst of fireworks rises where someone sets a single select to Done, Completed,
+  Shipped, Paid or Won (Готово, Завършено, Платено), or ticks a Done checkbox: in the grid,
+  on a board, in a record. Never for an undo, a paste or fill of several records, or a
+  reader whose system asks for less motion; at most once every two seconds. A field opts
+  out with `fieldProps.celebrate: false`, or in for any value with `true`.
+
 - **SvGrid Base: cell colors by rule, and records marked by hand.** A view's `cellColors`
   tint a field's cell while it matches a condition on that field, first match first, set
   under Cells in the view bar's Color. **Mark records by hand** adds a Highlight single
