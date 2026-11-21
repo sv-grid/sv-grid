@@ -893,6 +893,14 @@ For machine-readable releases, fetch
   the right to add fields it pastes what fits and says what was left out. `openFieldEditor`
   takes a `preset` (type and properties) for a new field.
 
+- **SvGrid Base: formulas as easy as a sheet's.** The formula box suggests functions and
+  fields as you type (`{` lists the fields), shows the syntax of the function being written
+  with the current argument in bold, shows the result for the first three records, drops a
+  leading `=`, and lists every function with what it gives, searchable. **Describe it**
+  asks the app's AI provider (`task: 'formula'`) for a formula from words, checks it with
+  the compiler and asks again with the error when it fails. Tips explain how a formula is
+  written. `FORMULA_DOCS` holds each function's syntax, summary, example and group.
+
 - **SvGrid Base: `celebrate`, fireworks when a record is finished.** With the prop on, a
   short burst of fireworks rises where someone sets a single select to Done, Completed,
   Shipped, Paid or Won (Готово, Завършено, Платено), or ticks a Done checkbox: in the grid,

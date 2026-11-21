@@ -375,13 +375,31 @@ People who use the base can add formulas without code. Press "+" after the
 last column (or Edit field in a column's menu), name the field and pick
 Formula under "Computed and automatic". The editor shows:
 
-- **Formula**: a text box. As you type, a message under it says what is
-  wrong (`No field named "Unit price"`, `Unknown function SUMM`) and the box
-  is marked invalid.
+- **Describe it** (when the app has set an AI provider with
+  `setAIProvider`): a line where the person writes what they want ("total
+  with 20% VAT"); **Write it** asks the model for the formula, with the
+  table's fields, their types, sample values and every function's syntax.
+  The answer is checked by the formula's own compiler and asked for again,
+  with the error, when it does not compile (three tries); a sentence says what
+  the formula works out. The request goes to the provider with
+  `task: 'formula'`.
+- **Formula**: a text box that suggests as a sheet does. Letters list the
+  functions that start with them (and fields from two letters), each with
+  what it gives; `{` lists the fields. Up and Down choose, Enter or Tab put it
+  in (a function with its opening bracket), Escape closes. Inside a
+  function's brackets its syntax shows under the box, the argument being
+  typed in bold. A `=` typed at the start, a sheet's habit, is dropped. As
+  you type, a message under it says what is wrong (`No field named "Unit
+  price"`, `Unknown function SUMM`) and the box is marked invalid.
+- **Result**: what the formula gives for the first three records, as it is
+  typed.
 - A button for each other field. A click puts `{Field name}` where the cursor
   is.
-- **Functions**: shows the name of every function the formula can call
-  (Hide functions closes the list).
+- **Functions**: every function with its syntax and what it gives, grouped
+  (Logic, Text, Numbers, Dates, Lists, Records) and searchable by any words
+  ("days between" finds `DATETIME_DIFF`); a click puts it in.
+- **Tips**: how a formula is written, with examples, for someone who knows a
+  spreadsheet.
 - **Format the result as**: As computed, Number, Currency, Percent or Date,
   then Precision for a number, currency or percent, Currency symbol for a
   currency, and Date format for a date.
