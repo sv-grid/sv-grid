@@ -12,13 +12,13 @@ typed anywhere else on this page. An earlier version of this page typed its
 numbers and sat a month behind the measurement.
 
 <!-- size:start -->
-Re-measured **17 Nov 2026** at `@svgrid/grid` 3.0.36 with the script that ships in the repo (`pnpm size:json`):
+Re-measured **21 Nov 2026** at `@svgrid/grid` 3.0.37 with the script that ships in the repo (`pnpm size:json`):
 
 | Target | Base JS (gzip) | CSS (gzip) | Loaded on demand |
 | --- | ---: | ---: | ---: |
 | Headless core (`createSvGrid`) | **3.2 KB** | - | - |
 | Headless subpath (`@svgrid/grid/core`) | **10.4 KB** | - | - |
-| Full render component (`<SvGrid>`) | **97.8 KB** | **11.7 KB** | **209.8 KB** |
+| Full render component (`<SvGrid>`) | **97.9 KB** | **11.7 KB** | **209.8 KB** |
 | Standalone chart (`<SvChart>`) | **71.9 KB** | - | **16.2 KB** |
 <!-- size:end -->
 
