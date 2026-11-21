@@ -914,6 +914,7 @@ export function createEditing<
     focusOnMount,
     onCellDoubleClick,
     pasteFromClipboard,
+    applyPastedText,
     onGridPaste,
     armPasteFallback,
   };

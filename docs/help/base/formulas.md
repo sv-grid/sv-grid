@@ -601,6 +601,25 @@ cut short. The
 values arrive in `onColumnChange` as `data`. A formula that did not
 compile stores nothing. Lookups, rollups and counts convert the same way.
 
+## From a spreadsheet
+
+Someone used to a sheet types a formula into a cell. The base keeps what
+they typed in a text cell (a number cell keeps its number) and shows a
+notice with **Make a formula field**, which opens the field editor on the
+Formula type with the formula filled in. References on the row it was typed
+on become fields, counted from the first shown field as column A: `=B2*C2`
+typed on row 2 of Name, Qty, Price is `{Qty}*{Price}`, `=SUM(B2:C2)` is
+`SUM({Qty}, {Price})`, and `;` between arguments (a sheet with a comma
+decimal) is read as `,`.
+
+A function of one column down several rows, such as `=SUM(C2:C9)` or
+`=AVERAGE(C2:C9)`, is what the summary bar does: the notice offers **Show it
+for Price**, which sets that field's summary. So does Alt+=: on a number
+field it shows the sum in the summary bar instead of writing `=SUM(...)`.
+A record named "Total" offers **Show the sums** once. A formula that reaches
+other rows any other way has no formula field like it; the button opens an
+empty formula.
+
 ## Formulas from code
 
 The same parser is exported, for checking a formula in your own UI or

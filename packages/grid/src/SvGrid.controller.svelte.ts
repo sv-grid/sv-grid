@@ -5869,6 +5869,8 @@ export function createSvGridController<
     get copySelectionToClipboard() { return copySelectionToClipboard; },
     get cutSelectionToClipboard() { return cutSelectionToClipboard; },
     get pasteFromClipboard() { return pasteFromClipboard; },
+    /** Paste this text at the selection, as Ctrl+V pastes the clipboard's: one history step. */
+    get pasteText() { return applyPastedText; },
     get onGridPaste() { return onGridPaste; },
     get armPasteFallback() { return armPasteFallback; },
     get clearSelectedCells() { return clearSelectedCells; },
@@ -5952,7 +5954,7 @@ export function createSvGridController<
 
   const { updateFilterRow, updateFilterOperator, updateFilterMenuValue, updateFilterMenuValueTo, addFilterToken, removeFilterToken, toggleFilterToken, toggleCheckboxWithKeyboard, isColumnFiltered, setCustomFilter, closeMenus, openInSuggest, closeInSuggest, openColumnMenu, openFilterMenu, openOperatorMenu, setFilterTokens, clearColumnFilter, changePage, goToPage, setPageSize, openContextMenu, openActiveCellMenu } = createMenus<TFeatures, TData>(ctx);
   const { cellConditionalFormat, computeRowClass, computeCellClass, computeCellTooltip, computeCellValidity, computeCellNote, getColumnEditorOptions, areEditorOptionsLoading, formatListCellValue, formatCellValue, formatPinnedValue, computePinnedCellClass } = createCellRender<TFeatures, TData>(ctx);
-  const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, commitAndMoveByTab, commitAndMoveByEnter, focusOnMount, onCellDoubleClick, pasteFromClipboard, onGridPaste, armPasteFallback } = createEditing<TFeatures, TData>(ctx);
+  const { isCellEditable, isCellEditableAt, getRowColumnValue, getCellDisplayValue, startEditingWithChar, startEditing, stopEditing, startFullRowEdit, setFullRowDraft, commitFullRowEdit, cancelFullRowEdit, saveEditingCell, applyHistoryStep, updateEditingCellValue, onEditorKeyDown, commitAndMoveByTab, commitAndMoveByEnter, focusOnMount, onCellDoubleClick, pasteFromClipboard, applyPastedText, onGridPaste, armPasteFallback } = createEditing<TFeatures, TData>(ctx);
   const { isRowSelected, toggleRowSelectionById, toggleSelectAllRows, setSelectAllRows, setActiveCell, scrollActiveCellIntoView, setSelection, extendSelection, isCellInSelectedRange, getCellRangeEdges, activeRangeRect, cellSelectionState, getSelectionRects, isInFillPreview, dragPreviewRect, fillMarqueeEdges, findColumnById, onCellPointerDown, onCellPointerEnter, endDragSelection, onWindowPointerMove, onCellClick, emitCellDoubleClick } = createSelection<TFeatures, TData>(ctx);
   const { cellPinStyle, isColumnPinned, getCurrentColumnOrder, emitColumnOrder, setColumnOrderInternal, moveColumnsByUser, applyColumnDrop, onColumnHeaderDragStart, onColumnHeaderDragOver, onColumnHeaderDragLeave, onColumnHeaderDrop, onColumnHeaderDragEnd, pinColumnLeft, pinColumnRight, unpinColumn, toggleColumnVisibleInPanel, moveColumnInPanel, toggleGroupInPanel, getColumnBaseWidth, getColumnWidth, capPinned, measureText, autosizeColumn, autosizeAllColumns, resetColumns } = createColumns<TFeatures, TData>(ctx);
   // Managed row dragging loads with the first `rowDragManaged`, not with the

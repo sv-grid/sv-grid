@@ -25,6 +25,9 @@ For machine-readable releases, fetch
 
 #### Added
 
+- **`pasteText(text)` on the controller.** Pastes text at the selection as Ctrl+V pastes the
+  clipboard's: one undo step, through `parseClipboardText` and `processCellFromClipboard`.
+
 - **`SvRichText` for pages and articles.** Four tools to list in `tools`: `image` (the file
   goes to `onImageUpload`, which resolves to the URL to insert; without it, a URL is asked
   for), `table`, `hr` and `source` (the HTML in a text area). `name` posts the value with a
@@ -870,11 +873,25 @@ For machine-readable releases, fetch
 
 #### Fixed
 
+- **SvGrid Base: an import tells Cyrillic headings apart.** Matching a file's headings to fields
+  kept only Latin letters, so every Bulgarian heading matched the first Bulgarian field.
+  Typing "=" on a number cell now opens its editor.
+
 - **Export on a page with no global `Smart`.** A bundler that inlines dynamic imports ran the
   vendored exporter at page load, before its namespace shim, and the whole bundle threw
   "Smart is not defined". The exporter now loads through an entry that installs the shim first.
 
 #### Added
+
+- **SvGrid Base answers spreadsheet habits.** A formula typed in a cell (`=B2*C2`) is kept
+  as typed, and a notice offers a formula field made from it (`{Qty}*{Price}`, with `;`
+  read as `,`), or the summary bar for a sum down one column (`=SUM(C2:C9)`). Alt+= shows
+  the field's sum in the summary bar rather than writing `=SUM(B1:B9)`. A record named
+  "Total" (or "Общо") offers the sums, once. A paste whose first line is the fields' names
+  leaves that line out and says so. A paste with more columns than the table has asks to
+  add the fields, named from its first line and typed from its values, then pastes; without
+  the right to add fields it pastes what fits and says what was left out. `openFieldEditor`
+  takes a `preset` (type and properties) for a new field.
 
 - **SvGrid Base: Delete forever can be one transaction.** `transaction` next to `execute` on
   `createSqlDataSource`, `createBaseEndpoint` and `baseFromDatabase`, and `linkedFrom` on
