@@ -242,7 +242,7 @@ A property the column sets itself wins over its type:
 | `user` | `multiple`, `default`; the people come from `setFieldUsers` |
 | `date` | `dateFormat` (`local`, `friendly`, `us`, `european`, `iso`), `time`, `timeFormat` (`12hour`, `24hour`), `gmt` (one time zone for everyone), `showTimeZone`, `defaultToday` |
 | `phone`, `email`, `url` | none |
-| `barcode` | none |
+| `barcode` | none; on a phone the cell has a scan button (the browser's BarcodeDetector, or an app's own scanner given with `setBarcodeScanner(() => Promise<string \| null>)`, which the view bar's Scan to find uses too) |
 | `checklist` | none; values are `{ id, text, done }[]` |
 | `color` | `default`; values are `'#rrggbb'` |
 | `button` | `label`, `color`, `url` (`{Field name}` filled from the row), or `onClick` set in code |
