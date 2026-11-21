@@ -152,6 +152,23 @@
       pos = { x: Math.round(right - W), y: Math.round((perch.seat === 'top' ? b.top : b.bottom) - SEAT) }
     })
   }
+  // ---- Christmas ------------------------------------------------------------------
+  // From 20 November to 6 January he wears a Santa hat, a scarf and a Christmas
+  // jumper, and a small tree stands on the bar to his right. `?zazo=xmas` shows
+  // the outfit on any date, `?zazo=plain` hides it.
+  let festive = $state(false)
+  const isChristmas = (d: Date) => {
+    const m = d.getMonth()
+    const day = d.getDate()
+    return (m === 10 && day >= 20) || m === 11 || (m === 0 && day <= 6)
+  }
+  const TREE_W = 30
+  const TREE_H = 42
+  // The tree needs its own room past his right side; without it he sits alone.
+  const treeFits = $derived(!!pos && pos.x + W + 2 + TREE_W <= vw - 4)
+  // A bubble on his right starts past the tree, not over it.
+  const treeGap = $derived(festive && treeFits ? TREE_W + 4 : 0)
+
   const PANEL = 340
   const panelLeft = $derived(pos ? Math.max(8, Math.min(vw - PANEL - 8, pos.x + W / 2 - PANEL + 60)) : 8)
   const panelTop = $derived(pos ? pos.y + H + 6 : 80)
@@ -355,7 +372,10 @@
   }
 
   onMount(() => {
-    const forced = new URLSearchParams(location.search).has('zazo')
+    const params = new URLSearchParams(location.search)
+    const forced = params.has('zazo')
+    const season = params.get('zazo')
+    festive = season === 'xmas' || (season !== 'plain' && isChristmas(new Date()))
     if (navigator.webdriver && !forced) return
     if (forced) write(KEY, '')
     if (read(KEY) === 'off') return
@@ -812,6 +832,44 @@
 {#if !off}
   <div class="zazo">
     {#if !hidden && pos}
+    {#if festive && treeFits}
+      <!-- The tree stands on the bar beside him and stays put while he walks. -->
+      <svg
+        class="zazo-tree"
+        class:is-shown={shown_}
+        viewBox="0 0 30 42"
+        aria-hidden="true"
+        style:left="{pos.x + W + 2}px"
+        style:top="{pos.y + SEAT - TREE_H}px"
+        style:width="{TREE_W}px"
+        style:height="{TREE_H}px"
+      >
+        <rect x="12.6" y="34" width="4.8" height="4" fill="#78350f" />
+        <path d="M8.5 37.5 H21.5 L20 42 H10 Z" fill="#b91c1c" />
+        <path d="M8.5 37.5 H21.5" stroke="#fca5a5" stroke-width="0.8" />
+        <path d="M1.5 35 L15 16 L28.5 35 Q15 37.5 1.5 35 Z" fill="#15803d" stroke="#166534" stroke-width="0.8" stroke-linejoin="round" />
+        <path d="M4.5 25.5 L15 9 L25.5 25.5 Q15 28 4.5 25.5 Z" fill="#16a34a" stroke="#166534" stroke-width="0.8" stroke-linejoin="round" />
+        <path d="M8 16.5 L15 4.5 L22 16.5 Q15 18.5 8 16.5 Z" fill="#22c55e" stroke="#166534" stroke-width="0.8" stroke-linejoin="round" />
+        <!-- tinsel -->
+        <path d="M6 31 Q15 35 25.5 29" fill="none" stroke="#fde68a" stroke-width="1" stroke-linecap="round" />
+        <path d="M8 22.5 Q15 25.5 22.5 20.5" fill="none" stroke="#fde68a" stroke-width="1" stroke-linecap="round" />
+        <!-- baubles -->
+        <circle cx="7.5" cy="33.4" r="1.9" fill="#dc2626" />
+        <circle cx="16" cy="33.6" r="1.9" fill="#facc15" />
+        <circle cx="23.5" cy="32.6" r="1.9" fill="#ff3e00" />
+        <circle cx="10.5" cy="24" r="1.7" fill="#facc15" />
+        <circle cx="19.5" cy="24.4" r="1.7" fill="#dc2626" />
+        <circle cx="15" cy="15.2" r="1.5" fill="#ff3e00" />
+        <!-- lights that twinkle -->
+        <circle class="zazo-light zazo-light-a" cx="12" cy="29.6" r="1" fill="#fef9c3" />
+        <circle class="zazo-light zazo-light-b" cx="20.5" cy="28.8" r="1" fill="#fef9c3" />
+        <circle class="zazo-light zazo-light-b" cx="14" cy="20.6" r="1" fill="#fef9c3" />
+        <circle class="zazo-light zazo-light-a" cx="12.4" cy="12.8" r="0.9" fill="#fef9c3" />
+        <!-- star -->
+        <circle class="zazo-star-glow" cx="15" cy="4.6" r="4.6" fill="#fde047" />
+        <path d="M15 0.4 L16.2 3.4 L19.4 3.6 L16.9 5.6 L17.8 8.7 L15 7 L12.2 8.7 L13.1 5.6 L10.6 3.6 L13.8 3.4 Z" fill="#facc15" stroke="#ca8a04" stroke-width="0.5" stroke-linejoin="round" />
+      </svg>
+    {/if}
     <button
       bind:this={figure}
       type="button"
@@ -821,6 +879,7 @@
       class:is-speaking={speaking}
       class:is-listening={listening}
       class:is-working={working}
+      class:is-festive={festive}
       class:no-analyser={speaking && !liveMouth}
       class:is-standing={leaving !== '' || arriving !== ''}
       class:is-walking={leaving === 'walk' || arriving === 'start' || arriving === 'walk'}
@@ -879,6 +938,21 @@
           <rect x="4" y="13" width="6" height="3" rx="0.9" fill="#71717a" /><rect x="11" y="13" width="4" height="3" rx="0.9" fill="#71717a" /><rect x="16" y="13" width="4" height="3" rx="0.9" fill="#ff5a1f" />
           <rect x="4" y="17" width="6" height="3" rx="0.9" fill="#71717a" /><rect x="11" y="17" width="4" height="3" rx="0.9" fill="#71717a" /><rect x="16" y="17" width="4" height="3" rx="0.9" fill="#ff5a1f" />
         </g>
+        {#if festive}
+          <!-- Christmas: a knit band of white zigzags over a green hem, snow
+               dots either side of the mark, and a green scarf with a tail. -->
+          <g class="zazo-xmas">
+            <path d="M26.6 94 Q50 98 73.4 94 L73 91 Q50 95 27 91 Z" fill="#15803d" />
+            <path d="M28 89.5 l2.6 -2.6 l2.6 2.6 l2.6 -2.6 l2.6 2.6 l2.6 -2.6 l2.6 2.6 l2.6 -2.6 l2.6 2.6 l2.6 -2.6 l2.6 2.6 l2.6 -2.6 l2.6 2.6 l2.6 -2.6 l2.6 2.6 l2.6 -2.6 l2.6 2.6" fill="none" stroke="#fafaf9" stroke-width="1.3" stroke-linejoin="round" />
+            <circle cx="34" cy="76" r="1.1" fill="#fafaf9" /><circle cx="37.5" cy="82" r="0.9" fill="#fafaf9" />
+            <circle cx="66" cy="76" r="1.1" fill="#fafaf9" /><circle cx="62.5" cy="82" r="0.9" fill="#fafaf9" />
+            <path d="M40.5 61.5 Q50 66.5 59.5 61.5 L60.5 66.5 Q50 71.5 39.5 66.5 Z" fill="#16a34a" stroke="#166534" stroke-width="0.7" stroke-linejoin="round" />
+            <path d="M44 63.8 v4.6 M50 64.6 v4.8 M56 63.8 v4.6" stroke="#fafaf9" stroke-width="1.2" opacity="0.85" />
+            <path d="M36.5 66 L42 67.5 L41 81 L35.5 80.2 Z" fill="#16a34a" stroke="#166534" stroke-width="0.7" stroke-linejoin="round" />
+            <path d="M36.3 71 L41.6 71.9 M36 75.6 L41.3 76.4" stroke="#fafaf9" stroke-width="1.2" opacity="0.85" />
+            <path d="M36.2 80.6 v2.2 M38 80.9 v2.2 M39.8 81.1 v2.2" stroke="#166534" stroke-width="0.9" stroke-linecap="round" />
+          </g>
+        {/if}
         <g class="zazo-arm-l">
           <path d="M31 70 Q21 80 24 92" stroke="#8d5a3b" stroke-width="7" stroke-linecap="round" fill="none" />
           <path class="zazo-sleeve" d="M31 70 Q26 74.5 25.3 79" stroke="#18181b" stroke-width="9.5" stroke-linecap="round" fill="none" />
@@ -906,6 +980,15 @@
             <circle cx="63" cy="11.5" r="12.5" /><circle cx="72.5" cy="20" r="11.5" /><circle cx="76.5" cy="31.5" r="9" />
             <circle cx="23.5" cy="31.5" r="9" /><circle cx="34" cy="6.5" r="8.5" /><circle cx="56.5" cy="3.5" r="9" /><circle cx="67.5" cy="7.5" r="7.5" />
           </g>
+          {#if festive}
+            <!-- a Santa hat over the curls, its tip flopping to his left, under the headphones -->
+            <g class="zazo-hat">
+              <path d="M21 17 C19 -2 36 -12 56 -11 C72 -10 85 -5 91 5 C84 2 77 2 74 6 C76 9 78 13 79 17 Z" fill="#dc2626" stroke="#991b1b" stroke-width="0.9" stroke-linejoin="round" />
+              <path d="M30 4 C36 -5 48 -8 60 -7" fill="none" stroke="#f87171" stroke-width="1.6" stroke-linecap="round" opacity="0.7" />
+              <path d="M18.5 15 Q50 6 81.5 15 Q83 20.5 79.5 22 Q50 13.5 20.5 22 Q17 20.5 18.5 15 Z" fill="#fafaf9" stroke="#d6d3d1" stroke-width="0.8" stroke-linejoin="round" />
+              <circle cx="91" cy="6" r="5.5" fill="#fafaf9" stroke="#d6d3d1" stroke-width="0.8" />
+            </g>
+          {/if}
           <path d="M22.5 35 q27.5 -47.5 55 0" fill="none" stroke="#27272a" stroke-width="3" />
           <rect x="19" y="34" width="7.5" height="14.5" rx="3" fill="#27272a" />
           <rect x="73.5" y="34" width="7.5" height="14.5" rx="3" fill="#27272a" />
@@ -1018,7 +1101,7 @@
         class="zazo-hello"
         class:on-left={onLeft}
         style:top="{Math.round(pos.y + H * 0.22)}px"
-        style:left={onLeft ? undefined : `${pos.x + W + 10}px`}
+        style:left={onLeft ? undefined : `${pos.x + W + 10 + treeGap}px`}
         style:right={onLeft ? `${vw - pos.x + 10}px` : undefined}
         onclick={() => { emit('open', { via: 'hello' }); show('hi', true) }}
       >{HELLO}</button>
@@ -1031,7 +1114,7 @@
         class="zazo-hello zazo-work-note"
         class:on-left={onLeft}
         style:top="{Math.round(pos.y + H * 0.22)}px"
-        style:left={onLeft ? undefined : `${pos.x + W + 10}px`}
+        style:left={onLeft ? undefined : `${pos.x + W + 10 + treeGap}px`}
         style:right={onLeft ? `${vw - pos.x + 10}px` : undefined}
         onclick={() => { emit('open', { via: 'working' }); show('hi', true) }}
       >{WORKING_NOTE}</button>
@@ -1393,6 +1476,33 @@
      header buttons. In light mode it is denim; the dark theme keeps black. */
   :global(html:not([data-theme='dark'])) .zazo-shirt { fill: #3b5b8c; stroke: #2c4670; }
   :global(html:not([data-theme='dark'])) .zazo-sleeve { stroke: #3b5b8c; }
+  /* Christmas: a red jumper in both themes (it beats the denim above on
+     specificity), with red sleeves to match. */
+  .zazo-figure.is-festive .zazo-shirt { fill: #c62828; stroke: #8e1b1b; }
+  .zazo-figure.is-festive .zazo-sleeve { stroke: #c62828; }
+  .zazo-tree {
+    position: fixed;
+    z-index: 90;
+    overflow: visible;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(6px) scale(0.9);
+    transform-origin: 50% 100%;
+    transition: opacity 0.3s, transform 0.45s cubic-bezier(0.34, 1.6, 0.64, 1);
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.25));
+  }
+  .zazo-tree.is-shown { opacity: 1; transform: none; }
+  .zazo-light { animation: zazo-twinkle 1.4s ease-in-out infinite; }
+  .zazo-light-b { animation-delay: -0.7s; }
+  @keyframes zazo-twinkle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.25; }
+  }
+  .zazo-star-glow { opacity: 0.35; transform-box: fill-box; transform-origin: center; animation: zazo-star 2.4s ease-in-out infinite; }
+  @keyframes zazo-star {
+    0%, 100% { opacity: 0.2; transform: scale(0.8); }
+    50% { opacity: 0.45; transform: scale(1.1); }
+  }
   .zazo-ring { stroke: var(--z-accent); opacity: 0; transform-origin: 50px 40px; }
   .zazo-figure.is-listening .zazo-brows { transform: translateY(-3px); }
   .zazo-figure.is-listening .zazo-ring { animation: zazo-pulse 1.2s ease-out infinite; }
@@ -1621,7 +1731,9 @@
     .zazo-lid, .zazo-panel,
     .zazo-figure.is-listening .zazo-ring,
     .zazo-figure.no-analyser .zazo-talk,
-    .zazo-target { animation: none !important; }
+    .zazo-target,
+    .zazo-light, .zazo-star-glow { animation: none !important; }
+    .zazo-tree { transition: none; }
     /* At the laptop, still: open at once, no typing, a finished line on a
        steady screen. The chimney does not rise; a short still column of 0s and
        1s stands over the lid's corner instead, so what he is doing still reads
