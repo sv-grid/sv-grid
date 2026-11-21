@@ -893,6 +893,12 @@ For machine-readable releases, fetch
   the right to add fields it pastes what fits and says what was left out. `openFieldEditor`
   takes a `preset` (type and properties) for a new field.
 
+- **SvGrid Base: cell colors by rule, and records marked by hand.** A view's `cellColors`
+  tint a field's cell while it matches a condition on that field, first match first, set
+  under Cells in the view bar's Color. **Mark records by hand** adds a Highlight single
+  select and colors the rows by it. Ctrl+B, Ctrl+I, Ctrl+U and Ctrl+1 in a base say once
+  where colors come from, with **Open Color**.
+
 - **SvGrid Base: Delete forever can be one transaction.** `transaction` next to `execute` on
   `createSqlDataSource`, `createBaseEndpoint` and `baseFromDatabase`, and `linkedFrom` on
   `createKitHandlers`, make it one server step. See Undo, trash and import for each driver.

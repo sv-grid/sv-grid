@@ -123,6 +123,30 @@ least 52px tall so the field's name fits over the value; with
 on its row header. 56 is the row height menu's "Medium": from 48px, text and
 select pills wrap.
 
+Cells can be colored too, a spreadsheet's conditional formatting kept with the
+view. `cellColors` is a list of rules; each tints the cell of the field its
+condition tests while the record matches, and for one field the first match
+wins. The view bar's Color has them under **Cells**:
+
+```ts
+const atRisk: FieldView = {
+  id: 'at-risk',
+  name: 'At risk',
+  type: 'grid',
+  cellColors: [
+    { color: '#f82b60', condition: { column: 'target', kind: 'date', op: 'isBefore', value: { mode: 'today' } } },
+    { color: '#fcb400', condition: { column: 'effort', kind: 'number', op: 'gt', value: 20 } },
+  ],
+}
+```
+
+The tint is the rule's color at 30% over the cell, so text stays readable in
+a light or dark theme. Under **Rows**, **Mark records by hand** adds a
+"Highlight" single select (Yellow, Red, Green, Blue) and colors the rows by
+it: a color picked by hand that is still a value forms, filters and the API
+read. In a base's grid, Ctrl+B, Ctrl+I, Ctrl+U and Ctrl+1 change nothing and
+say once where colors come from, with **Open Color**.
+
 ## 3. A view that starts filtered
 
 The filter is the grid's advanced filter with its own kind, `fieldFilter`.
