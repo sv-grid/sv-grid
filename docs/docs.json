@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-11-21T19:22:25.707Z",
+  "generatedAt": "2026-11-22T22:25:24.973Z",
   "counts": {
     "pages": 483,
     "enterprise": 112,
@@ -4687,8 +4687,8 @@
       "section": "help/kanban",
       "pillar": "enterprise",
       "tier": "enterprise",
-      "words": 4451,
-      "lastUpdated": "2026-11-10",
+      "words": 4575,
+      "lastUpdated": "2026-11-22",
       "demoIds": [
         "343-kanban-board",
         "344-kanban-sprint",
