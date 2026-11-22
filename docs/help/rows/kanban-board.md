@@ -386,6 +386,22 @@ shows where it is going.
 
 Every step is announced through an ARIA live region for screen-reader users.
 
+## Touch drag-and-drop
+
+On a phone or a tablet a card moves with a finger, in browsers and in app web
+views that have no HTML drag and drop:
+
+- **Press and hold** a card for a moment, then move it. A copy follows the
+  finger and the drop marker shows where it will land.
+- Near the **edges**, the lanes scroll sideways and the lane under the finger
+  scrolls up or down.
+- **Let go** to drop it. The move is the same as a mouse drop, so
+  `onCardMove`, `onCardReorder`, WIP limits and multi-select apply.
+
+A finger that moves before the hold scrolls the board, as before. A hold let
+go without moving opens the [card context menu](#card-context-menu), as a long
+press does.
+
 ## Editing cards
 
 Set `editable` and the board gets a **built-in card editor**: double-click a
