@@ -508,6 +508,7 @@ level 5, Last counted `2026-09-05`, Status `Low`.
 | `POWER(x, p)` | `x` to the power `p` | `POWER(2, 10)` is 1024 |
 | `SQRT(x)` | Square root; empty for a negative | `SQRT(16)` is 4 |
 | `CEILING(x, s)`, `FLOOR(x, s)` | Up or down to a multiple of `s` (default 1) | `CEILING(2.1)` is 3, `CEILING(7, 5)` is 10, `FLOOR(2.37, 0.05)` is 2.35 |
+| `DISTANCE(place, place)` | Whole metres between two places written as coordinates (`"42.6977, 23.3219"`, as a phone's location is saved, also inside a maps link); four numbers are lat, lng, lat, lng; empty when a place has none | `DISTANCE("42.6977, 23.3219", "42.6986, 23.3219")` is 100 |
 
 **Dates**
 

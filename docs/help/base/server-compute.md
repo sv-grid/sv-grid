@@ -173,7 +173,7 @@ more slowly.
 | `TRIM` | yes | no | yes |
 | `LEN`, `FIND`, `SEARCH`, `POWER`, `SQRT` | yes | yes | no |
 | `MOD` | no | yes | no |
-| `UPPER`, `LOWER`, `LEFT`, `RIGHT`, `MID`, `FLOOR`, `CEILING`, `TODAY` | no | no | no |
+| `UPPER`, `LOWER`, `LEFT`, `RIGHT`, `MID`, `FLOOR`, `CEILING`, `TODAY`, `DISTANCE` | no | no | no |
 
 The last row is deliberate. A database's text and float rules differ from a cell's
 (`UPPER("straße")`, `FLOOR(4.35 * 100)`), and its `TODAY` is the server's day and
