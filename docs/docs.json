@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-11-22T22:25:24.973Z",
+  "generatedAt": "2026-11-23T19:06:30.260Z",
   "counts": {
     "pages": 483,
     "enterprise": 112,
@@ -2259,8 +2259,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Build it out",
-      "words": 5944,
-      "lastUpdated": "2026-11-21",
+      "words": 5990,
+      "lastUpdated": "2026-11-23",
       "demoIds": [
         "515-base-inventory",
         "708-base-formula-compat"
@@ -2378,8 +2378,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Connect your data",
-      "words": 2013,
-      "lastUpdated": "2026-11-10",
+      "words": 2014,
+      "lastUpdated": "2026-11-23",
       "demoIds": []
     },
     {

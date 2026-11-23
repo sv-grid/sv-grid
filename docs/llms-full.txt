@@ -56,7 +56,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## About this file
 
-The full SvGrid documentation, generated 2026-11-22 from 483 pages, 21 comparison pages, plus 83 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
+The full SvGrid documentation, generated 2026-11-23 from 483 pages, 21 comparison pages, plus 83 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
 
 <!-- =================================================================
      /docs/getting-started/  (community)
@@ -92676,6 +92676,7 @@ level 5, Last counted `2026-09-05`, Status `Low`.
 | `POWER(x, p)` | `x` to the power `p` | `POWER(2, 10)` is 1024 |
 | `SQRT(x)` | Square root; empty for a negative | `SQRT(16)` is 4 |
 | `CEILING(x, s)`, `FLOOR(x, s)` | Up or down to a multiple of `s` (default 1) | `CEILING(2.1)` is 3, `CEILING(7, 5)` is 10, `FLOOR(2.37, 0.05)` is 2.35 |
+| `DISTANCE(place, place)` | Whole metres between two places written as coordinates (`"42.6977, 23.3219"`, as a phone's location is saved, also inside a maps link); four numbers are lat, lng, lat, lng; empty when a place has none | `DISTANCE("42.6977, 23.3219", "42.6986, 23.3219")` is 100 |
 
 **Dates**
 
@@ -99972,7 +99973,7 @@ more slowly.
 | `TRIM` | yes | no | yes |
 | `LEN`, `FIND`, `SEARCH`, `POWER`, `SQRT` | yes | yes | no |
 | `MOD` | no | yes | no |
-| `UPPER`, `LOWER`, `LEFT`, `RIGHT`, `MID`, `FLOOR`, `CEILING`, `TODAY` | no | no | no |
+| `UPPER`, `LOWER`, `LEFT`, `RIGHT`, `MID`, `FLOOR`, `CEILING`, `TODAY`, `DISTANCE` | no | no | no |
 
 The last row is deliberate. A database's text and float rules differ from a cell's
 (`UPPER("straße")`, `FLOOR(4.35 * 100)`), and its `TODAY` is the server's day and
