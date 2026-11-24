@@ -641,8 +641,9 @@ const photo = {
 ### What the user sees
 
 The cell shows images as thumbnails and other files as chips with the
-extension and the name, as many as the column width holds, then "+N". A
-click on a thumbnail or a chip opens that file full size, as Airtable does:
+extension and the name, as many as the column width holds, then "+N". The
+first click selects the cell, as on any cell; then a click on a thumbnail or
+a chip opens that file full size, as Airtable does:
 pictures large, PDFs in the page, anything else with Download; Previous and
 Next (or the arrow keys) go through the cell's files, Escape closes. Enter
 or a double click opens the dialog: add files with "Add files", by dropping,

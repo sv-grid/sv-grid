@@ -40,6 +40,16 @@ test.describe('a double-click opens a cell\'s dialog, and it stays open', () => 
     await expect(page.locator('.sv-attd')).toBeVisible()
   })
 
+  test('a single click on a file of the selected cell opens it full size, not the dialog', async ({ page }) => {
+    const at = await resumeCell(page)
+    await page.mouse.click(at.x, at.y)
+    await page.waitForTimeout(400)
+    await expect(page.locator('.sv-attp')).toHaveCount(0)
+    await page.mouse.click(at.x, at.y)
+    await expect(page.locator('.sv-attp')).toBeVisible()
+    await expect(page.locator('.sv-attd')).toHaveCount(0)
+  })
+
   test('a press away, a moment later, still closes it', async ({ page }) => {
     const at = await resumeCell(page)
     await page.mouse.click(at.x, at.y)
