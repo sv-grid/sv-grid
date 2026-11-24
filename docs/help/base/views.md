@@ -1109,7 +1109,7 @@ away; a function that throws gives none.
 ## Your own actions on a record
 
 `setRecordActions` does the same for records: the app's actions show in a
-record's right-click menu (a grid row, a card) and at the top of the record
+record's right-click menu (a grid row, a gallery or board card) and at the top of the record
 view, and run with the table's id, the record's id and the record.
 
 ```ts
