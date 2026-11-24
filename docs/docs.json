@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-11-23T19:06:30.260Z",
+  "generatedAt": "2026-11-24T12:00:44.292Z",
   "counts": {
     "pages": 483,
     "enterprise": 112,
@@ -2226,8 +2226,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Connect your data",
-      "words": 9417,
-      "lastUpdated": "2026-11-21",
+      "words": 9543,
+      "lastUpdated": "2026-11-24",
       "demoIds": [
         "516-base-postgres",
         "700-base-ai-triage",
