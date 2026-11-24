@@ -20,10 +20,11 @@ name: Publish npm packages
 #
 # Required repo secrets:
 #   NPM_TOKEN     - an npm automation token with publish rights to the @svgrid scope.
-#   WEBSITE_TOKEN - read access to the private website submodule (a workspace member),
-#                   and write access to sv-grid/sv-grid-enterprise, the private
-#                   submodule at packages/enterprise: the version bumps of
-#                   @svgrid/enterprise and @svgrid/studio are committed there.
+#   WEBSITE_TOKEN - write access to sv-grid/website, the private website submodule
+#                   (a workspace member): the served doc indexes under public/ are
+#                   committed there. And write access to sv-grid/sv-grid-enterprise,
+#                   the private submodule at packages/enterprise: the version bumps
+#                   of @svgrid/enterprise and @svgrid/studio are committed there.
 #
 # Publishing follows a push and its tests, nothing else: there is no schedule.
 # The daily cron that used to sweep up after cancelled runs published main HEAD
@@ -247,6 +248,26 @@ jobs:
               git -C "$SUB" push origin HEAD:main
             }
             git add -- "$SUB"
+          fi
+          # build-docs-index above also rewrote the copies svgrid.com serves,
+          # under website/public in the private website submodule. Left there
+          # uncommitted, the website kept the previous release's llms-full.txt,
+          # and the next ordinary push after every release went red in "keeps
+          # the served copy in sync with the source" (3.0.29, 3.0.30, 3.0.37,
+          # 3.1.47, 3.1.48), each time repaired by hand. Pushed first, as the
+          # enterprise bump is, and the parent commit records the gitlink.
+          WEB=website
+          git -C "$WEB" add -A -- public/docs.json public/llms.txt public/llms-full.txt public/llms-small.txt \
+            public/llms public/docs/reference public/api.json public/api public/.well-known/mcp public/.well-known/mcp.json
+          if ! git -C "$WEB" diff --cached --quiet; then
+            git -C "$WEB" config user.name "github-actions[bot]"
+            git -C "$WEB" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git -C "$WEB" commit -m "public: the served doc indexes after ${{ steps.release.outputs.summary }}"
+            git -C "$WEB" push origin HEAD:main || {
+              git -C "$WEB" pull --rebase --autostash origin main
+              git -C "$WEB" push origin HEAD:main
+            }
+            git add -- "$WEB"
           fi
           git add -- $PARENT_FILES plugins/svgrid sbom
           git commit -m "release: ${{ steps.release.outputs.summary }} [skip ci]" || echo "nothing to commit"
