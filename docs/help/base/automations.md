@@ -344,7 +344,9 @@ setAutomationDrafter({
 ```
 
 The automation is a `BaseAutomation` as the table keeps them; it gets a new
-id. `words`, when given, shows under the note. A question shows under the box,
+id. The automations page (`SvBaseAutomations`) has the same box at the top of
+its list and asks with `tableId` `''`: answer `tableId` with the table the
+automation belongs to, and it is added there. `words`, when given, shows under the note. A question shows under the box,
 and so does the message of a rejected promise. Without a drafter there is no
 box.
 
