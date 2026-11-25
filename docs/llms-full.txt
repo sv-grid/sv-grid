@@ -94095,10 +94095,10 @@ setRecordActions((tableId, record) =>
 )
 ```
 
-## Repeating records on a calendar or timeline
+## Repeating records on a calendar, timeline or Gantt
 
 The app decides which records repeat ("every Monday", "the 1st of each
-month"). `setRecordSeries` hands calendar and timeline views the upcoming
+month"). `setRecordSeries` hands calendar, timeline and Gantt views the upcoming
 occurrences that are not records yet. A view draws them lighter than records,
 with a dashed outline. A screen reader says "upcoming" after each one. The
 record itself still shows on its own date.
@@ -94119,7 +94119,12 @@ setRecordSeries({
   a moment after the table's records change, and on `refreshRecordSeries()`.
   It keeps only the latest answer, and a failed answer draws nothing.
 - An occurrence shows only while its record is in the view, so the view's
-  filter hides it too.
+  filter hides it too. On a table read a part at a time, a calendar reads the
+  repeating records by id through the view's filter, so a record dated before
+  the dates on screen still shows its copies.
+- A Gantt draws the copies on the repeating record's own line, for the dates
+  the chart shows. A click or Enter calls `open`. They are not dragged or
+  deleted there.
 - A click or Enter calls `open`. A drag (or a resize) calls `move`, and the
   Delete key or Delete in its menu calls `remove`. Before a move or a delete
   the view asks "This event", "This and following" or "All events", and
@@ -94133,6 +94138,11 @@ setRecordSeries({
   or delete them.
 
 `setRecordSeries(null)` takes them away.
+
+When the app changes records through a request of its own (a button, a
+panel like the one `open` shows) and hands the page the new record through
+the table's `realtime`, it marks the change `mine: true`. The page puts it in
+like any change and never shows it as changed by someone else.
 
 ## Pitfalls
 
