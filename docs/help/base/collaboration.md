@@ -638,6 +638,41 @@ const photo = {
 
 `fieldProps.upload` sets an uploader for one column instead of the app's.
 
+### More places to add files from
+
+"Add files" lists where files come from: the person's device (choose or
+drop), a link, the camera on a phone, and any sources the app adds with
+`setAttachmentSources`: Google Drive, Dropbox or your own storage, each
+through its own picker. A source answers the files chosen, in any of three
+forms: a `File` (uploaded through the uploader, with progress), a file to
+fetch first (`{ name, size?, type?, load(signal) }`: it shows as a tile at
+once, and `load` brings it), or an attachment kept as it is (a link).
+
+```ts
+import { setAttachmentSources, type AttachmentSource } from '@svgrid/enterprise/base'
+
+const drive: AttachmentSource = {
+  id: 'drive',
+  label: 'Google Drive',
+  icon: '/icons/drive.svg',
+  hint: 'A copy of each file is kept here.',
+  // When the dialog opens: load the picker's script, so a click opens it at once.
+  prepare: () => loadDrivePicker(),
+  // Called straight from the click, so a sign-in window it opens is not blocked.
+  async pick({ accept, multiple, max, signal }) {
+    const picked = await openDrivePicker({ accept, multiple, max, signal })
+    return picked.map((f) => ({ name: f.name, size: f.size, load: (s) => downloadFromDrive(f.id, s) }))
+  },
+}
+setAttachmentSources([drive])
+```
+
+The same checks as a file from the device apply to every answer (`maxFiles`,
+`maxSize`, `accept`), and a file fetched with `load` is checked again once it
+is here. While a source's picker is open, Escape and a click outside belong
+to the picker: the dialog stays open. A `pick` that throws shows its message
+under the source's name. `fieldProps.sources` sets the list for one column.
+
 ### What the user sees
 
 The cell shows images as thumbnails and other files as chips with the
@@ -646,8 +681,10 @@ first click selects the cell, as on any cell; then a click on a thumbnail or
 a chip opens that file full size, as Airtable does:
 pictures large, PDFs in the page, anything else with Download; Previous and
 Next (or the arrow keys) go through the cell's files, Escape closes. Enter
-or a double click opens the dialog: add files with "Add files", by dropping,
-by pasting files, or by pasting a URL into "or paste a URL". Each upload is a
+or a double click opens the dialog. An empty cell opens on the places to add
+from (Your device, Link (URL), the app's sources); a cell with files shows
+them, with "Add files" for more. Files can also be dropped or pasted
+anywhere in the dialog, and a pasted URL is added as a link. Each upload is a
 tile with its percent and a bar; Done reads "Uploading 2..." and stays
 disabled until they finish. Tiles can be dragged to reorder, or moved with
 Alt+Left and Alt+Right; Delete removes one. Cancel or Escape leaves the cell

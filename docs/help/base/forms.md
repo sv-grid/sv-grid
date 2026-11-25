@@ -388,8 +388,9 @@ export async function PUT({ request, url }: { request: Request; url: URL }) {
 }
 ```
 
-Click the Resume box ("Add files") and the attachment dialog opens: pick,
-drop or paste a file, or paste a URL. Before uploading, the dialog checks
+Click the Resume box ("Add files") and the attachment dialog opens on the
+places to add from: choose, drop or paste a file, or add a link under
+Link (URL). Before uploading, the dialog checks
 the field's `maxFiles` (default 20), `maxSize` (default 25 MB) and
 `accept`, and lists each refused file with its name and the reason:
 "At most 1 file", "Larger than 10 MB", "Not an accepted type". A file added
