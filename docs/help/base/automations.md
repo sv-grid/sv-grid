@@ -317,6 +317,37 @@ registerAutomationAction('post-to-chat', {
 An automation runs it with `{ type: 'run', action: 'post-to-chat' }`. What it
 returns is the run's detail; what it throws is the run's error.
 
+## Describe it in words
+
+`setAutomationDrafter` puts a box at the top of the dialog, "Describe what
+should happen". What the person writes goes to your app, which turns it into
+an automation (with its own AI, say); the dialog adds it switched off and
+selected, with a note to check each part before switching it on.
+
+```ts
+import { setAutomationDrafter } from '@svgrid/enterprise/base'
+
+setAutomationDrafter({
+  // Asked when the dialog opens: no box when it answers false.
+  available: async () => (await fetch('/api/ai/status').then((r) => r.json())).available,
+  // { automation } to add, { question } when the words do not say enough.
+  draft: async (text, tableId) => {
+    const res = await fetch(`/api/tables/${tableId}/automations/draft`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text }),
+    })
+    if (!res.ok) throw new Error((await res.json()).error)
+    return res.json()
+  },
+})
+```
+
+The automation is a `BaseAutomation` as the table keeps them; it gets a new
+id. `words`, when given, shows under the note. A question shows under the box,
+and so does the message of a rejected promise. Without a drafter there is no
+box.
+
 ## Where they run
 
 Each automation says where it runs, under "Runs in":
