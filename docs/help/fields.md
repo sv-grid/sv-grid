@@ -245,7 +245,7 @@ A property the column sets itself wins over its type:
 | `barcode` | none; on a phone the cell has a scan button (the browser's BarcodeDetector, or an app's own scanner given with `setBarcodeScanner(() => Promise<string \| null>)`, which the view bar's Scan to find uses too) |
 | `checklist` | none; values are `{ id, text, done }[]` |
 | `color` | `default`; values are `'#rrggbb'` |
-| `button` | `label`, `color`, `url` (`{Field name}` filled from the row), or `onClick` set in code |
+| `button` | `label`, `color`, `action` (below), `url`, `values`, `doneLabel`, `template`, `recordAction`, `copy`, `when`, `ask`, `askText`, or `onClick` set in code |
 | `number` | `format` (`integer`, `decimal`, `currency`, `percent`), `precision` 0 to 8, `step` (the editor's spinner, default 1), `separators` (`local`, `comma-period`, `period-comma`, `space-comma`, `space-period`), `showThousands`, `abbreviation` (`none`, `thousand`, `million`, `billion`; not for percent), `allowNegative`, `default`; currency: `symbol`, `symbolPosition` (`before`, `after`); percent: `showBar`, `points` (values 0 to 100 instead of fractions) |
 | `duration` | `durationFormat` (`h:mm`, `h:mm:ss`, `h:mm:ss.S`, `h:mm:ss.SS`, `h:mm:ss.SSS`); values are seconds, typed as `1:30` or `1h 30m` |
 | `timeOfDay` | `timeFormat` (`12hour`, `24hour`), `showSeconds`, `default`; values are `'HH:MM'` (24 hour), `'HH:MM:SS'` with seconds |
@@ -277,6 +277,51 @@ negative where the field allows none, keeps the box open and says why under
 the cell. Pasting `$1,200.50` into the cell is read the same way. Columns
 with the older `currency` and `percent` field types keep working and open in
 the field editor as a number in that format.
+
+### Button
+
+A Button field draws a button in every record. What it does is its `action`:
+
+| `action` | What a press does | Its properties |
+| --- | --- | --- |
+| `link` (the default) | Opens a link. Web links open in a new tab, a link to this site (`/orders/7`) in the same tab, and `mailto:`, `tel:` and `sms:` in the app that takes them. Nothing else opens (no `javascript:` or `data:`) | `url`: text starting as a link does, with `{Field name}` filled in and URL-encoded (`https://maps.google.com/?q={Address}`), or else a formula, as Airtable's button takes one (`"mailto:" & {Email} & "?subject=" & ENCODE_URL_COMPONENT({Name})`, or `{Website}` for the link a field holds). A bare `example.com` is a web link |
+| `automation` | Runs the automations whose trigger is "A button is pressed" on this field | none |
+| `update` | Sets fields of the record, in one step that Ctrl+Z takes back | `values`: column id to value, written as an automation's "Update the record" writes them (an option's name, `today+7`, `{Task} done`); in a person field `me` is whoever presses. `doneLabel`: once the record holds the values the button shows a check and this label, and is not pressed again |
+| `template` | Fills the record's empty fields from one of the table's record templates; fields that have a value keep it | `template`: the template's id; `doneLabel` as above, once nothing is left to fill |
+| `recordAction` | Runs one of the app's record actions (`setRecordActions`): Print, Make a document | `recordAction`: its id |
+| `copy` | Copies text made from the record | `copy`: text with `{Field name}`, or a formula after `=` |
+| `duplicate`, `delete`, `open` | Duplicates the record, deletes it (after the usual question), or opens it | none |
+
+Every button also takes `when`, a condition (the view bar's filter, a
+`FieldFilter`): on records that do not match it is greyed out, and its tooltip
+says why. `ask: true` asks before it runs (`askText` is the question, "Are you
+sure?" by default); a delete always asks. A person who may only read cannot
+press one that changes records (`update`, `template`, `duplicate`, `delete`,
+`automation`), and a shared base runs none of them.
+
+Whatever the action, the automations listening on the button run after it,
+on the record as the action left it. A `link` button with no link to open runs
+them alone, as a button did before it had actions.
+
+Outside `<SvBase>`, in a plain grid, a button opens its link or copies its
+text; the actions that need a base's records are not offered.
+
+```ts
+const finish = {
+  field: 'finish',
+  header: 'Finish',
+  fieldType: 'button',
+  fieldProps: {
+    label: 'Mark done',
+    action: 'update',
+    values: { status: 'Done', closed: 'today', owner: 'me' },
+    doneLabel: 'Done',
+    when: { kind: 'fieldFilter', conjunction: 'and', conditions: [{ column: 'status', kind: 'select', op: 'isNot', value: 'Done' }] },
+    ask: true,
+    askText: 'Close this task?',
+  },
+}
+```
 
 Long text opens a panel over the cell with room for paragraphs: Enter
 starts a new line, Ctrl+Enter (Cmd+Enter), Tab or a click outside saves,

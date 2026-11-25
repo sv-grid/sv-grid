@@ -38,7 +38,7 @@ record you pick, as if its trigger had happened.
 | A record changes | When a record is edited; pick fields to run only when one of them changes. A link made from the other table counts: adding a guest to an event from Guests changes the event's Guests field |
 | A record matches a condition | When a record starts to match the condition. It does not run again while the record keeps matching |
 | A form is sent | When a form view sends a record; pick the form, or any form of the table |
-| A button is pressed | When a Button field is pressed on a record |
+| A button is pressed | When a Button field is pressed on a record, after the button's own action (a change it makes is in the record the steps read). `{pressed.name}`, `{pressed.email}` and `{pressed.id}` are the person who pressed it |
 | At a scheduled time | Every day at 9, every Monday, every hour, or a cron expression: once for each record that matches the condition then, or once with no record |
 | A webhook is received | On the server: a request to the automation's own address, with no record. The body's values are `{webhook.name}` in the steps ([below](#a-webhook-starts-it)) |
 
