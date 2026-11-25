@@ -669,6 +669,11 @@ bytes and they are a PDF, so your storage has to allow the page's origin with CO
 (`Access-Control-Allow-Origin`). A file it cannot read, or one that is not a PDF
 whatever it calls itself, offers its Download link instead.
 
+In the grid, one click on a picture in a cell opens the same preview and selects
+the cell with it. A file's chip fills most of its cell, so it works like a link:
+the first click selects the cell, and a click on the chip of the selected cell
+opens the file. A double-click still opens the cell's editor.
+
 ## 7. Track who changed what
 
 `lastModifiedTime` and `lastModifiedBy` change on every edit to the record by
