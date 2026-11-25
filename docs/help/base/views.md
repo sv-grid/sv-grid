@@ -1133,6 +1133,45 @@ setRecordActions((tableId, record) =>
 )
 ```
 
+## Repeating records on a calendar or timeline
+
+The app decides which records repeat ("every Monday", "the 1st of each
+month"). `setRecordSeries` hands calendar and timeline views the upcoming
+occurrences that are not records yet. A view draws them lighter than records,
+with a dashed outline. A screen reader says "upcoming" after each one. The
+record itself still shows on its own date.
+
+```ts
+import { setRecordSeries, refreshRecordSeries } from '@svgrid/enterprise/base'
+
+setRecordSeries({
+  // Occurrences whose dates fall in [from, to]. values are by field id.
+  occurrences: (tableId, from, to) => api.repeats(tableId, from, to), // [{ rowId, day: '2026-12-07', values: { due: '2026-12-07' } }]
+  open: (tableId, occ) => openRepeat(tableId, occ),
+  move: async (tableId, occ, scope, values) => { await api.moveRepeat(tableId, occ, scope, values); refreshRecordSeries(tableId) },
+  remove: async (tableId, occ, scope) => { await api.skipRepeat(tableId, occ, scope); refreshRecordSeries(tableId) },
+})
+```
+
+- A view asks for the dates on screen. It asks again when those dates change,
+  a moment after the table's records change, and on `refreshRecordSeries()`.
+  It keeps only the latest answer, and a failed answer draws nothing.
+- An occurrence shows only while its record is in the view, so the view's
+  filter hides it too.
+- A click or Enter calls `open`. A drag (or a resize) calls `move`, and the
+  Delete key or Delete in its menu calls `remove`. Before a move or a delete
+  the view asks "This event", "This and following" or "All events", and
+  `scope` is `'occurrence'`, `'following'` or `'series'`.
+- `values` for a move is written the way a moved record is written: a date
+  field without a time as `'YYYY-MM-DD'` (the end is the last day), a date
+  with a time as an ISO instant, and on a timeline dropped in another lane,
+  the lane field too. The occurrence stays where it was until the app reads
+  again.
+- A person who may not edit can see and open occurrences. They cannot move
+  or delete them.
+
+`setRecordSeries(null)` takes them away.
+
 ## Pitfalls
 
 - **A new view from "Create" starts with `color: { mode: 'none' }`**, so it
