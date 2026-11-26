@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:b0192c2d-0e45-4b56-ad64-9df159c19ae9",
+  "serialNumber": "urn:uuid:25a77fc2-4b98-4ee1-a0d6-424283cbdf32",
   "version": 1,
   "metadata": {
     "tools": {
@@ -16,10 +16,10 @@
     },
     "component": {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/mcp@3.0.55",
+      "bom-ref": "pkg:npm/%40svgrid/mcp@3.0.56",
       "name": "@svgrid/mcp",
-      "version": "3.0.55",
-      "purl": "pkg:npm/%40svgrid/mcp@3.0.55",
+      "version": "3.0.56",
+      "purl": "pkg:npm/%40svgrid/mcp@3.0.56",
       "scope": "required",
       "licenses": [
         {
@@ -44,7 +44,7 @@
   ],
   "dependencies": [
     {
-      "ref": "pkg:npm/%40svgrid/mcp@3.0.55",
+      "ref": "pkg:npm/%40svgrid/mcp@3.0.56",
       "dependsOn": [
         "pkg:npm/svelte@5.57.3"
       ]
