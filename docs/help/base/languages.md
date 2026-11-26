@@ -99,7 +99,16 @@ setBaseMessages(
   gets under a chart keeps "Category" and "bar chart" in English for now.
 
 Dates and numbers follow the field's own format settings and the browser's
-locale.
+locale. When the page's language differs from the browser's (a Bulgarian app
+on an English Chrome), pass it as `locale`, and the dates the base writes
+itself are in it too: a calendar's month and weekdays, a Gantt's axis and bar
+dates, a card's date:
+
+```ts
+setBaseMessages(bulgarianWords, { locale: 'bg' })
+```
+
+`setDateLocale('bg')` sets the same alone. Set it before the views draw.
 
 ## Next
 
