@@ -56,7 +56,7 @@ Every feature is off until its prop is set, so an unconfigured grid stays small.
 
 ## About this file
 
-The full SvGrid documentation, generated 2026-11-25 from 483 pages, 21 comparison pages, plus 83 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
+The full SvGrid documentation, generated 2026-11-26 from 483 pages, 21 comparison pages, plus 83 API reference pages. A shorter selection is at https://svgrid.com/llms-small.txt.
 
 <!-- =================================================================
      /docs/getting-started/  (community)
@@ -96772,7 +96772,16 @@ setBaseMessages(
   gets under a chart keeps "Category" and "bar chart" in English for now.
 
 Dates and numbers follow the field's own format settings and the browser's
-locale.
+locale. When the page's language differs from the browser's (a Bulgarian app
+on an English Chrome), pass it as `locale`, and the dates the base writes
+itself are in it too: a calendar's month and weekdays, a Gantt's axis and bar
+dates, a card's date:
+
+```ts
+setBaseMessages(bulgarianWords, { locale: 'bg' })
+```
+
+`setDateLocale('bg')` sets the same alone. Set it before the views draw.
 
 ## Next
 
@@ -97562,7 +97571,7 @@ record you pick, as if its trigger had happened.
 | A record changes | When a record is edited; pick fields to run only when one of them changes. A link made from the other table counts: adding a guest to an event from Guests changes the event's Guests field |
 | A record matches a condition | When a record starts to match the condition. It does not run again while the record keeps matching |
 | A form is sent | When a form view sends a record; pick the form, or any form of the table |
-| A button is pressed | When a Button field is pressed on a record |
+| A button is pressed | When a Button field is pressed on a record, after the button's own action (a change it makes is in the record the steps read). `{pressed.name}`, `{pressed.email}` and `{pressed.id}` are the person who pressed it |
 | At a scheduled time | Every day at 9, every Monday, every hour, or a cron expression: once for each record that matches the condition then, or once with no record |
 | A webhook is received | On the server: a request to the automation's own address, with no record. The body's values are `{webhook.name}` in the steps ([below](#a-webhook-starts-it)) |
 
@@ -101034,7 +101043,7 @@ A property the column sets itself wins over its type:
 | `barcode` | none; on a phone the cell has a scan button (the browser's BarcodeDetector, or an app's own scanner given with `setBarcodeScanner(() => Promise<string \| null>)`, which the view bar's Scan to find uses too) |
 | `checklist` | none; values are `{ id, text, done }[]` |
 | `color` | `default`; values are `'#rrggbb'` |
-| `button` | `label`, `color`, `url` (`{Field name}` filled from the row), or `onClick` set in code |
+| `button` | `label`, `color`, `action` (below), `url`, `values`, `doneLabel`, `template`, `recordAction`, `copy`, `when`, `ask`, `askText`, or `onClick` set in code |
 | `number` | `format` (`integer`, `decimal`, `currency`, `percent`), `precision` 0 to 8, `step` (the editor's spinner, default 1), `separators` (`local`, `comma-period`, `period-comma`, `space-comma`, `space-period`), `showThousands`, `abbreviation` (`none`, `thousand`, `million`, `billion`; not for percent), `allowNegative`, `default`; currency: `symbol`, `symbolPosition` (`before`, `after`); percent: `showBar`, `points` (values 0 to 100 instead of fractions) |
 | `duration` | `durationFormat` (`h:mm`, `h:mm:ss`, `h:mm:ss.S`, `h:mm:ss.SS`, `h:mm:ss.SSS`); values are seconds, typed as `1:30` or `1h 30m` |
 | `timeOfDay` | `timeFormat` (`12hour`, `24hour`), `showSeconds`, `default`; values are `'HH:MM'` (24 hour), `'HH:MM:SS'` with seconds |
@@ -101066,6 +101075,51 @@ negative where the field allows none, keeps the box open and says why under
 the cell. Pasting `$1,200.50` into the cell is read the same way. Columns
 with the older `currency` and `percent` field types keep working and open in
 the field editor as a number in that format.
+
+### Button
+
+A Button field draws a button in every record. What it does is its `action`:
+
+| `action` | What a press does | Its properties |
+| --- | --- | --- |
+| `link` (the default) | Opens a link. Web links open in a new tab, a link to this site (`/orders/7`) in the same tab, and `mailto:`, `tel:` and `sms:` in the app that takes them. Nothing else opens (no `javascript:` or `data:`) | `url`: text starting as a link does, with `{Field name}` filled in and URL-encoded (`https://maps.google.com/?q={Address}`), or else a formula, as Airtable's button takes one (`"mailto:" & {Email} & "?subject=" & ENCODE_URL_COMPONENT({Name})`, or `{Website}` for the link a field holds). A bare `example.com` is a web link |
+| `automation` | Runs the automations whose trigger is "A button is pressed" on this field | none |
+| `update` | Sets fields of the record, in one step that Ctrl+Z takes back | `values`: column id to value, written as an automation's "Update the record" writes them (an option's name, `today+7`, `{Task} done`); in a person field `me` is whoever presses. `doneLabel`: once the record holds the values the button shows a check and this label, and is not pressed again |
+| `template` | Fills the record's empty fields from one of the table's record templates; fields that have a value keep it | `template`: the template's id; `doneLabel` as above, once nothing is left to fill |
+| `recordAction` | Runs one of the app's record actions (`setRecordActions`): Print, Make a document | `recordAction`: its id |
+| `copy` | Copies text made from the record | `copy`: text with `{Field name}`, or a formula after `=` |
+| `duplicate`, `delete`, `open` | Duplicates the record, deletes it (after the usual question), or opens it | none |
+
+Every button also takes `when`, a condition (the view bar's filter, a
+`FieldFilter`): on records that do not match it is greyed out, and its tooltip
+says why. `ask: true` asks before it runs (`askText` is the question, "Are you
+sure?" by default); a delete always asks. A person who may only read cannot
+press one that changes records (`update`, `template`, `duplicate`, `delete`,
+`automation`), and a shared base runs none of them.
+
+Whatever the action, the automations listening on the button run after it,
+on the record as the action left it. A `link` button with no link to open runs
+them alone, as a button did before it had actions.
+
+Outside `<SvBase>`, in a plain grid, a button opens its link or copies its
+text; the actions that need a base's records are not offered.
+
+```ts
+const finish = {
+  field: 'finish',
+  header: 'Finish',
+  fieldType: 'button',
+  fieldProps: {
+    label: 'Mark done',
+    action: 'update',
+    values: { status: 'Done', closed: 'today', owner: 'me' },
+    doneLabel: 'Done',
+    when: { kind: 'fieldFilter', conjunction: 'and', conditions: [{ column: 'status', kind: 'select', op: 'isNot', value: 'Done' }] },
+    ask: true,
+    askText: 'Close this task?',
+  },
+}
+```
 
 Long text opens a panel over the cell with room for paragraphs: Enter
 starts a new line, Ctrl+Enter (Cmd+Enter), Tab or a click outside saves,
