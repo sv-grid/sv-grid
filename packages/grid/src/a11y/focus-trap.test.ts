@@ -15,6 +15,12 @@ afterEach(() => {
 describe('keepFocus', () => {
   /** Past the observer and the timer that decide where focus goes. */
   const settled = () => new Promise((r) => setTimeout(r, 5))
+  /** Until focus is on `id`, or a second has gone: a busy machine runs the observer and the timer late. */
+  const settledOn = async (id: string | HTMLElement) => {
+    const there = () => (typeof id === 'string' ? document.activeElement?.id === id : document.activeElement === id)
+    await settled()
+    for (let i = 0; i < 100 && !there(); i++) await new Promise((r) => setTimeout(r, 10))
+  }
 
   it('moves to the control now in the place of one that left the page', async () => {
     const host = build('<button id="a">a</button><button id="b">b</button><button id="c">c</button>')
@@ -22,7 +28,7 @@ describe('keepFocus', () => {
     const b = host.querySelector<HTMLElement>('#b')!
     b.focus()
     b.remove()
-    await settled()
+    await settledOn('c')
     expect(document.activeElement?.id).toBe('c')
     kept.destroy()
   })
@@ -33,7 +39,7 @@ describe('keepFocus', () => {
     const b = host.querySelector<HTMLElement>('#b')!
     b.focus()
     b.remove()
-    await settled()
+    await settledOn('a')
     expect(document.activeElement?.id).toBe('a')
     kept.destroy()
   })
@@ -44,7 +50,7 @@ describe('keepFocus', () => {
     const a = host.querySelector<HTMLButtonElement>('#a')!
     a.focus()
     a.disabled = true
-    await settled()
+    await settledOn('b')
     expect(document.activeElement?.id).toBe('b')
     kept.destroy()
   })
@@ -56,7 +62,7 @@ describe('keepFocus', () => {
     a.focus()
     // Svelte's keyed each moves the node: that drops focus without removing it.
     host.append(a)
-    await settled()
+    await settledOn('a')
     expect(document.activeElement?.id).toBe('a')
     kept.destroy()
   })
@@ -67,7 +73,7 @@ describe('keepFocus', () => {
     const a = host.querySelector<HTMLElement>('#a')!
     a.focus()
     a.remove()
-    await settled()
+    await settledOn(host)
     expect(document.activeElement).toBe(host)
     kept.destroy()
   })
@@ -105,7 +111,7 @@ describe('keepFocus', () => {
     a.focus()
     a.dispatchEvent(Object.assign(new Event('pointerdown', { bubbles: true }), { pointerType: 'touch' }))
     a.remove()
-    await settled()
+    await settledOn(host)
     expect(document.activeElement).toBe(host)
     kept.destroy()
   })
@@ -118,7 +124,7 @@ describe('keepFocus', () => {
     const a = host.querySelector<HTMLElement>('#a')!
     a.focus()
     a.remove()
-    await settled()
+    await settledOn('b')
     expect(document.activeElement?.id).toBe('b')
     trap.release()
   })

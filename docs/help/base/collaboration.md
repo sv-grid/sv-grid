@@ -321,6 +321,27 @@ const kept: RecordComment[] = []
 setRecordComments({ list: () => kept, add: (_rowId, comment) => kept.push(comment), files: true, internal: true })
 ```
 
+### Votes on comments
+
+A store with `vote` shows **Up** and **Down** under every comment, with how
+many voted each way and, on hover, who. A person has one vote on a comment
+and none on their own: pressing their vote again takes it back, and the
+other one replaces it. The comment comes to `vote` with its new `votes`
+(`{ up?: string[], down?: string[] }`, user ids), and the vote (`'up'`,
+`'down'` or `null`). Without a store, votes are kept in the page; a store
+without `vote` shows none.
+
+```ts
+import { setRecordComments, type RecordComment } from '@svgrid/enterprise/base'
+
+let kept: RecordComment[] = []
+setRecordComments({
+  list: () => kept,
+  add: (_rowId, comment) => kept.push(comment),
+  vote: (_rowId, comment) => (kept = kept.map((c) => (c.id === comment.id ? comment : c))),
+})
+```
+
 ### Saved replies
 
 `setCommentSnippets` gives the comment box a **Saved replies** button: a
@@ -764,6 +785,36 @@ What the protection covers, for the person in front of the page:
 - a board stacked by the field (its cards do not move) and a calendar or
   timeline whose dates it holds (its events do not drag);
 - an import into the table, which does not offer the field as a target.
+
+### Whoever the record names, and only some choices
+
+An entry `field:<field>` names whoever a person field of the record holds
+(a person field, or Created by), record by record. With `editorChoices`, a
+choice field holds only those choices for the people named: everyone else
+picks the other choices, and cannot change a record that has one. That is
+an approval: only the request's approver approves or declines it.
+
+```ts
+const columns = [
+  { field: 'approver', header: 'Approver', fieldType: 'user' },
+  { field: 'status', header: 'Status', fieldType: 'singleSelect', fieldProps: {
+    options: [{ value: 'Open' }, { value: 'Approved' }, { value: 'Declined' }],
+    editors: ['field:approver'],
+    editorChoices: ['Approved', 'Declined'],
+  } },
+  { field: 'budget', header: 'Budget', fieldType: 'currency', fieldProps: { editors: ['u1', 'field:approver'] } },
+]
+```
+
+The cell, the record view and the choice picker ask each record: the picker
+leaves out the choices a person may not pick, and the lock says "Only
+whoever is in Approver can choose Approved or Declined." In the base, Edit
+field > Who can edit its values > Only these people lists the table's
+person fields as "Whoever is in Approver", and a choice field offers "Only
+for some choices". A question about the field as a whole (a board's lanes,
+an import) cannot know the record, so it lets the change through to your
+server, which decides. A `canEditField` check of your own gets the record
+as its third argument.
 
 A field's name, type and options stay editable: protection is about the
 values. A new record still takes its group's value, so "+" on a group still

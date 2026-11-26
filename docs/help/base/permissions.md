@@ -36,9 +36,28 @@ Everything is allowed by default. Each key turns one thing off:
 | `canDelete` | No Delete record in the row and card menus, no Delete in the selection bar, no trash button. |
 | `canEditSchema` | No field editor or "+" field column, no Add, Rename, Duplicate or Delete table, no "Import a file as a table", no Automations button, no SQL export. The field menu keeps Filter, Group, Hide and Color by. |
 | `canEditViews` | No Create, Rename, Duplicate, Delete, Lock or Unlock on shared views. Filters, sorts and groups the person changes stay in their page; they may still make personal views, which are saved. |
-| `canComment` | Comments are read, not written: no comment box, no Comment in the menus. |
+| `canComment` | Comments are read, not written: no comment box, no Comment in the menus, no votes. |
+| `deleters` | Who of those with `canDelete` deletes a given record: user ids, and `field:<field>` for whoever a person field of the record names. The others get no Delete record for it. |
 | `fields` | Per field: `'hidden'` or `'readOnly'`. A key is a column id (in every table) or `tableId.columnId`. |
 | `viewsOnly` | Only these views (a view id, or `tableId.viewId`). Tables with none of them are not shown, the field editor is off, and view changes stay in the page. |
+
+## Who deletes which record
+
+`deleters` keeps deleting a record to the people it names, record by
+record: "only the person who added it" is `field:createdBy`, "only its
+approver" `field:approver`. The menus, the record view and a Delete button
+ask each record; `canDeleteRecord(ctrl, row)` asks it in code.
+
+```ts
+import type { BaseTable } from '@svgrid/enterprise/base'
+
+const tables: BaseTable[] = [
+  { id: 'requests', name: 'Requests', columns: [], data: [], permissions: { deleters: ['u1', 'field:approver'] } },
+]
+```
+
+A delete from the selection bar sends every ticked record: your server
+refuses the ones the person may not delete, and the page puts them back.
 
 ## A table's own permissions
 

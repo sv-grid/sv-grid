@@ -299,6 +299,12 @@ sure?" by default); a delete always asks. A person who may only read cannot
 press one that changes records (`update`, `template`, `duplicate`, `delete`,
 `automation`), and a shared base runs none of them.
 
+`who` keeps the button to some people: user ids, and `field:<field>` for
+whoever a person field of the record names (`who: ['field:approver']`: only
+the request's approver presses Approve). A button that changes a field is
+also held to that field's "Who can edit": it is greyed out for someone who
+may not set the value on this record, with the field's lock as its tooltip.
+
 Whatever the action, the automations listening on the button run after it,
 on the record as the action left it. A `link` button with no link to open runs
 them alone, as a button did before it had actions.
