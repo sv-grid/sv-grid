@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:98d3bcb9-4c83-4c93-a5c9-949690564ee6",
+  "serialNumber": "urn:uuid:18cd90ad-d440-40cf-a048-49cb2567e518",
   "version": 1,
   "metadata": {
     "tools": {
@@ -16,10 +16,10 @@
     },
     "component": {
       "type": "library",
-      "bom-ref": "pkg:npm/%40svgrid/grid-wc@3.0.69",
+      "bom-ref": "pkg:npm/%40svgrid/grid-wc@3.0.70",
       "name": "@svgrid/grid-wc",
-      "version": "3.0.69",
-      "purl": "pkg:npm/%40svgrid/grid-wc@3.0.69",
+      "version": "3.0.70",
+      "purl": "pkg:npm/%40svgrid/grid-wc@3.0.70",
       "scope": "required",
       "licenses": [
         {
@@ -80,7 +80,7 @@
   ],
   "dependencies": [
     {
-      "ref": "pkg:npm/%40svgrid/grid-wc@3.0.69",
+      "ref": "pkg:npm/%40svgrid/grid-wc@3.0.70",
       "dependsOn": [
         "pkg:npm/%40angular/common@22.1.5",
         "pkg:npm/%40angular/core@22.1.5",
