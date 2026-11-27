@@ -393,6 +393,25 @@ columns of their own), values a field type cannot hold, names that match no
 person or record, and records that repeat a name already in the table. A file
 that is not text is refused.
 
+### Update the records a file repeats
+
+Importing into the shown table asks what to do with **Records already in the
+table**. **Add every row as a new record** is the default. **Update the records
+that match, add the rest** matches each row to a record by the field picked
+under **Match by** (the primary field, an email, a SKU: any field the file maps
+to), ignoring case and spaces at the ends. A matching record gets the file's
+values; a row that matches nothing is added. Only the fields the file maps to
+are written, and a blank cell leaves its field as it is, so a file of SKU and
+Price changes only the prices. The dialog says how many records it will update
+and add before the import, and the import is one step that one Undo takes back.
+
+A table read from a server a page at a time (`source.server`) is not all in the
+page to match against, so it offers only adding.
+
+`mergeByKey(table, rows, field, filled?)`, exported from `@svgrid/enterprise/base`,
+does the matching for code: it returns the patches by record id
+and the rows to add.
+
 ## Download a view
 
 The list of tables has "Download this view as CSV" and "Download this view as
