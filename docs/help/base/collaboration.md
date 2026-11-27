@@ -964,6 +964,15 @@ give back the `at` that `add` received, and a change shows once. A change
 made elsewhere and read in through `realtime` is not passed to `add`:
 whoever made it keeps it.
 
+### Restore an earlier value
+
+A change that knows what the field held before (`from`) has **Restore**
+under it. It writes `from` back through the grid's edit path, as typing it in
+the cell would: one undo step, the field's validation and protection, and a
+new change in the activity. It shows only to someone who may edit that field,
+and only while the field holds something else; a link to other records or a
+file list is left out, since a history keeps their names, not their ids.
+
 `historyOf(ctrl, rowId)` gives a record's history as the record view shows
 it, for a panel of your own. `setRecordHistory(null)` goes back to memory.
 
