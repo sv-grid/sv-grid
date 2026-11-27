@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-11-27T21:15:24.760Z",
+  "generatedAt": "2026-11-27T23:13:28.043Z",
   "counts": {
     "pages": 483,
     "enterprise": 112,
@@ -2445,8 +2445,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Build it out",
-      "words": 4268,
-      "lastUpdated": "2026-11-15",
+      "words": 4460,
+      "lastUpdated": "2026-11-28",
       "demoIds": [
         "705-base-undo-redo",
         "706-base-trash",
