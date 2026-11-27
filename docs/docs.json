@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-11-27T17:00:35.051Z",
+  "generatedAt": "2026-11-27T21:15:24.760Z",
   "counts": {
     "pages": 483,
     "enterprise": 112,
@@ -2180,8 +2180,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Automate",
-      "words": 4743,
-      "lastUpdated": "2026-11-25",
+      "words": 4884,
+      "lastUpdated": "2026-11-27",
       "demoIds": [
         "504-project-tracker"
       ]
@@ -2259,8 +2259,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Build it out",
-      "words": 5990,
-      "lastUpdated": "2026-11-23",
+      "words": 5992,
+      "lastUpdated": "2026-11-27",
       "demoIds": [
         "515-base-inventory",
         "708-base-formula-compat"
@@ -2462,7 +2462,7 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Build it out",
-      "words": 9554,
+      "words": 9588,
       "lastUpdated": "2026-11-27",
       "demoIds": [
         "513-base-product-roadmap",
@@ -4185,8 +4185,8 @@
       "section": "help",
       "pillar": "grid",
       "tier": "community",
-      "words": 3384,
-      "lastUpdated": "2026-11-10",
+      "words": 3405,
+      "lastUpdated": "2026-11-27",
       "demoIds": [
         "707-base-airtable-import",
         "708-base-formula-compat"

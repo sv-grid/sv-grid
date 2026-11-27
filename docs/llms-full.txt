@@ -12218,8 +12218,8 @@ Try any of them in a formula field below; the second tab is this table.
 | Function | SvGrid Base | Notes |
 | --- | --- | --- |
 | `RECORD_ID` | Supported | The record's id; after baseFromAirtable, the Airtable record id. |
-| `CREATED_TIME` | Not supported | A Base record keeps that time in a Created time field. baseFromAirtable rewrites CREATED_TIME() to read the table's, and adds one when the table has none. |
-| `LAST_MODIFIED_TIME` | Not supported | A Base record keeps that time in a Last modified time field. baseFromAirtable rewrites LAST_MODIFIED_TIME() to read one that watches every field, and LAST_MODIFIED_TIME({Field}) one that watches that field, and adds it when the table has none. |
+| `CREATED_TIME` | Supported | When the record was made: the row's created_at (from a server) or createdTime. baseFromAirtable still rewrites CREATED_TIME() to read a Created time field, and adds one when the table has none, so Airtable's times come over. |
+| `LAST_MODIFIED_TIME` | Supported with a difference | When the record last changed: the row's updated_at or lastModifiedTime; field arguments are read as the whole record's. baseFromAirtable rewrites LAST_MODIFIED_TIME() to read a Last modified time field that watches every field, and LAST_MODIFIED_TIME({Field}) one that watches that field, and adds it when the table has none. |
 
 ## 1. Export each table
 
@@ -92705,7 +92705,7 @@ databases most teams come from. What each one does, and where Base differs
 | Numbers | `EVEN`, `ODD`, `EXP`, `LOG`, `COUNTALL` |
 | Lists | `ARRAYCOMPACT`, `ARRAYFLATTEN`, `ARRAYUNIQUE`, `ARRAYSLICE` |
 | Dates | `HOUR`, `MINUTE`, `SECOND`, `WEEKNUM`, `IS_SAME`, `TIMESTR`, `DATETIME_FORMAT`, `DATETIME_PARSE`, `SET_LOCALE`, `SET_TIMEZONE`, `TONOW`, `FROMNOW`, `WORKDAY`, `WORKDAY_DIFF`; `WEEKDAY` takes the first day of the week, and `"quarters"` is a unit |
-| Record | `RECORD_ID()` |
+| Record | `RECORD_ID()`, `CREATED_TIME()`, `LAST_MODIFIED_TIME()` |
 
 <div data-docs-demo="708-base-formula-compat" data-height="640"></div>
 
@@ -93910,7 +93910,10 @@ time one is shown. A timeline (`type: 'timeline'`) is the other kind of plan:
 records in lanes by `laneField`, several to a lane, as Airtable's Timeline view
 draws them; an Airtable Timeline view converts to it, and an Airtable Gantt to a Gantt. Its bars take the view's colors, `progressField` is a percent field drawn as each
 bar's fill, and `dependencyField` is a link field to the same table naming
-what each record waits for, drawn as arrows.
+what each record waits for, drawn as arrows. With a dependency field,
+`criticalPath: true` ("Show the critical path" in Customize Gantt) outlines the
+tasks that set the finish in red, and each other task's tooltip says how many
+days it can slip.
 
 A record's dates are its own: a drop on a Sunday stays on the Sunday. By keyboard a
 bar works as a calendar event does: Space picks it up, Left and Right carry it a day
@@ -97676,6 +97679,7 @@ record you pick, as if its trigger had happened.
 | A record is created | When a record is added: "+ Add row", a form, a board lane, a calendar day, another automation. A record brought back by Restore or an undo of a delete is not created, and no rule runs for it |
 | A record changes | When a record is edited; pick fields to run only when one of them changes. A link made from the other table counts: adding a guest to an event from Guests changes the event's Guests field |
 | A record matches a condition | When a record starts to match the condition. It does not run again while the record keeps matching |
+| A record enters a view | When a record starts to show in a view through its filter (`{ type: 'recordEntersView', view }`), read as the view has it then, so the trigger follows the view. Once; again only after the record has left the view. A view with no filter sets nothing off |
 | A form is sent | When a form view sends a record; pick the form, or any form of the table |
 | A button is pressed | When a Button field is pressed on a record, after the button's own action (a change it makes is in the record the steps read). `{pressed.name}`, `{pressed.email}` and `{pressed.id}` are the person who pressed it |
 | At a scheduled time | Every day at 9, every Monday, every hour, or a cron expression: once for each record that matches the condition then, or once with no record |
@@ -97684,12 +97688,17 @@ record you pick, as if its trigger had happened.
 A paste or a fill that changes several cells of one record is one change to
 it. An undo or a redo is no change: it runs no automation.
 
+Duplicate, at the foot of an automation's settings, puts a copy right after it,
+named "<name> copy" and switched off, so the two do not both run until you
+turn it on; a webhook trigger gets an address of its own.
+
 ## Do
 
 | Action | What it does |
 |---|---|
 | Update the record | Sets fields of the record that set it off |
 | Create a record | Adds a record to any table of the base; "Link it back" fills a link field of the new record with the record that set it off |
+| Delete the record | Deletes the record that set it off; inside "Find records", each record found. A table read from a server removes it as a person's delete does (`server.remove` of the runner, the table source's `remove` on the Node server) |
 | Show a notice | A toast; `{Field name}` is that field of the record. `to` (user ids, or `field:<column id>` for the people a person field names) also sends it to their notifications when a server runs the automation |
 | Color the record while it matches | Colors the whole row, or some fields, for as long as the record matches the condition |
 | Call a webhook | POSTs the record (or a body you write) to a URL: a team chat, your API. Secrets as `{secret:NAME}`, read on the server only |
