@@ -248,6 +248,42 @@ base is `editable`, Move to (a submenu of the lanes), Duplicate record and
 Delete record, which asks "Delete record?" first. A card with comments shows
 their count; click it to open the record at its comment box.
 
+### Customize board
+
+"Customize board" in the view bar sets what the board shows beyond its lanes.
+Each change shows at once and is kept in the view:
+
+```ts
+const board: FieldView = {
+  id: 'board', name: 'Status board', type: 'kanban', stackBy: 'status',
+  swimlaneBy: 'team',                // rows: one band per team, in option order
+  cardFields: ['quarter', 'lead'],   // up to four, in place of the next three shown
+  dueField: 'target',                // a date badge, red once the day has passed
+  fadeField: 'updated',              // cards fade a little more each week since it
+  blockedField: 'blocked',           // a checkbox: a red corner and a Blocked badge
+  quickFilters: ['teams'],           // select fields as chips above the board
+  wipLimits: { 'In progress': 4 },   // the lane's count turns red past four
+}
+```
+
+`swimlaneBy` takes a single select or a one-person field other than `stackBy`.
+The bands follow its options (or the people of `setFieldUsers`), each with the
+full set of lanes, and a band folds from its header; "Uncategorized" shows only
+while a record has no value. Drop a card in another band and that field
+changes too, in the same undo step as the lane.
+
+`fadeField` reads a date, a Created time or a Last modified time. A Last
+modified time fades the cards nobody has changed, as Trello's card aging does:
+a little after a week, more after two and three, most after four, and a card
+shows at full strength under the pointer. A blocked card still moves. A
+`wipLimits` key is a lane's value (`''` for Uncategorized); the lane shows
+`5/4` in red past it. A lane folds to a slim strip when its header is clicked.
+
+A board that reads its table a page at a time (a data source) keeps the lanes
+the server counts, so it has no rows or quick filters. Deleting a field the
+cards show says so first ("shows it on its cards"). A field id that is no
+longer in the table is left out.
+
 ## 5. A Gantt chart, and a timeline in lanes
 
 ```ts

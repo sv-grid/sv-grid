@@ -716,6 +716,13 @@ export type BoardConfig<TFeatures extends TableFeatures = TableFeatures, TData e
    * cards. Dragging a card into another band reassigns this field too.
    */
   swimlaneBy?: keyof TData & string;
+  /**
+   * The swimlane bands in order, with their titles (a person's name for an id,
+   * a select's options in their order). Without it the bands are the values
+   * the cards have, as found. A value none of them names gets a band after
+   * them; a `""` band (no value) shows only while a card is in it.
+   */
+  swimlanes?: ReadonlyArray<{ id: string; title: string }>;
   /** Let users collapse a swimlane band via its header chevron. */
   collapsibleSwimlanes?: boolean;
   /**
@@ -804,6 +811,12 @@ export type BoardConfig<TFeatures extends TableFeatures = TableFeatures, TData e
    * relative **age** badge (e.g. `3d`).
    */
   ageField?: keyof TData & string;
+  /**
+   * Cards fade as `ageField` gets older (Trello's card aging): a little after
+   * a week, more after two and three, most after four. Hovering or focusing a
+   * card shows it at full strength.
+   */
+  ageFade?: boolean;
   /**
    * Fields to expose as a **facet filter bar** above the board - a chip per
    * distinct value; selecting chips filters the visible cards.
