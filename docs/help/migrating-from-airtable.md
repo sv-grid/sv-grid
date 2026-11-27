@@ -272,8 +272,8 @@ Try any of them in a formula field below; the second tab is this table.
 | Function | SvGrid Base | Notes |
 | --- | --- | --- |
 | `RECORD_ID` | Supported | The record's id; after baseFromAirtable, the Airtable record id. |
-| `CREATED_TIME` | Not supported | A Base record keeps that time in a Created time field. baseFromAirtable rewrites CREATED_TIME() to read the table's, and adds one when the table has none. |
-| `LAST_MODIFIED_TIME` | Not supported | A Base record keeps that time in a Last modified time field. baseFromAirtable rewrites LAST_MODIFIED_TIME() to read one that watches every field, and LAST_MODIFIED_TIME({Field}) one that watches that field, and adds it when the table has none. |
+| `CREATED_TIME` | Supported | When the record was made: the row's created_at (from a server) or createdTime. baseFromAirtable still rewrites CREATED_TIME() to read a Created time field, and adds one when the table has none, so Airtable's times come over. |
+| `LAST_MODIFIED_TIME` | Supported with a difference | When the record last changed: the row's updated_at or lastModifiedTime; field arguments are read as the whole record's. baseFromAirtable rewrites LAST_MODIFIED_TIME() to read a Last modified time field that watches every field, and LAST_MODIFIED_TIME({Field}) one that watches that field, and adds it when the table has none. |
 
 ## 1. Export each table
 
