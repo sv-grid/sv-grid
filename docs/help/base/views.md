@@ -948,7 +948,10 @@ time one is shown. A timeline (`type: 'timeline'`) is the other kind of plan:
 records in lanes by `laneField`, several to a lane, as Airtable's Timeline view
 draws them; an Airtable Timeline view converts to it, and an Airtable Gantt to a Gantt. Its bars take the view's colors, `progressField` is a percent field drawn as each
 bar's fill, and `dependencyField` is a link field to the same table naming
-what each record waits for, drawn as arrows.
+what each record waits for, drawn as arrows. With a dependency field,
+`criticalPath: true` ("Show the critical path" in Customize Gantt) outlines the
+tasks that set the finish in red, and each other task's tooltip says how many
+days it can slip.
 
 A record's dates are its own: a drop on a Sunday stays on the Sunday. By keyboard a
 bar works as a calendar event does: Space picks it up, Left and Right carry it a day

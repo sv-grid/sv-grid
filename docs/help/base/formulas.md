@@ -537,7 +537,7 @@ databases most teams come from. What each one does, and where Base differs
 | Numbers | `EVEN`, `ODD`, `EXP`, `LOG`, `COUNTALL` |
 | Lists | `ARRAYCOMPACT`, `ARRAYFLATTEN`, `ARRAYUNIQUE`, `ARRAYSLICE` |
 | Dates | `HOUR`, `MINUTE`, `SECOND`, `WEEKNUM`, `IS_SAME`, `TIMESTR`, `DATETIME_FORMAT`, `DATETIME_PARSE`, `SET_LOCALE`, `SET_TIMEZONE`, `TONOW`, `FROMNOW`, `WORKDAY`, `WORKDAY_DIFF`; `WEEKDAY` takes the first day of the week, and `"quarters"` is a unit |
-| Record | `RECORD_ID()` |
+| Record | `RECORD_ID()`, `CREATED_TIME()`, `LAST_MODIFIED_TIME()` |
 
 <div data-docs-demo="708-base-formula-compat" data-height="640"></div>
 

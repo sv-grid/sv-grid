@@ -37,6 +37,7 @@ record you pick, as if its trigger had happened.
 | A record is created | When a record is added: "+ Add row", a form, a board lane, a calendar day, another automation. A record brought back by Restore or an undo of a delete is not created, and no rule runs for it |
 | A record changes | When a record is edited; pick fields to run only when one of them changes. A link made from the other table counts: adding a guest to an event from Guests changes the event's Guests field |
 | A record matches a condition | When a record starts to match the condition. It does not run again while the record keeps matching |
+| A record enters a view | When a record starts to show in a view through its filter (`{ type: 'recordEntersView', view }`), read as the view has it then, so the trigger follows the view. Once; again only after the record has left the view. A view with no filter sets nothing off |
 | A form is sent | When a form view sends a record; pick the form, or any form of the table |
 | A button is pressed | When a Button field is pressed on a record, after the button's own action (a change it makes is in the record the steps read). `{pressed.name}`, `{pressed.email}` and `{pressed.id}` are the person who pressed it |
 | At a scheduled time | Every day at 9, every Monday, every hour, or a cron expression: once for each record that matches the condition then, or once with no record |
@@ -45,12 +46,17 @@ record you pick, as if its trigger had happened.
 A paste or a fill that changes several cells of one record is one change to
 it. An undo or a redo is no change: it runs no automation.
 
+Duplicate, at the foot of an automation's settings, puts a copy right after it,
+named "<name> copy" and switched off, so the two do not both run until you
+turn it on; a webhook trigger gets an address of its own.
+
 ## Do
 
 | Action | What it does |
 |---|---|
 | Update the record | Sets fields of the record that set it off |
 | Create a record | Adds a record to any table of the base; "Link it back" fills a link field of the new record with the record that set it off |
+| Delete the record | Deletes the record that set it off; inside "Find records", each record found. A table read from a server removes it as a person's delete does (`server.remove` of the runner, the table source's `remove` on the Node server) |
 | Show a notice | A toast; `{Field name}` is that field of the record. `to` (user ids, or `field:<column id>` for the people a person field names) also sends it to their notifications when a server runs the automation |
 | Color the record while it matches | Colors the whole row, or some fields, for as long as the record matches the condition |
 | Call a webhook | POSTs the record (or a body you write) to a URL: a team chat, your API. Secrets as `{secret:NAME}`, read on the server only |
