@@ -1,7 +1,7 @@
 {
   "name": "sv-grid documentation",
   "site": "https://svgrid.com",
-  "generatedAt": "2026-11-28T08:16:33.250Z",
+  "generatedAt": "2026-11-28T11:55:44.901Z",
   "counts": {
     "pages": 483,
     "enterprise": 112,
@@ -2288,8 +2288,8 @@
       "pillar": "base",
       "tier": "enterprise",
       "group": "Build it out",
-      "words": 4738,
-      "lastUpdated": "2026-11-16",
+      "words": 4931,
+      "lastUpdated": "2026-11-28",
       "demoIds": [
         "512-base-sales-crm",
         "522-base-okrs"
