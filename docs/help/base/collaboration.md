@@ -309,7 +309,7 @@ With one table (`data` and `columns`) they are kept per grid. A comment is
 a `RecordComment`, and a store is two functions:
 
 ```ts {nocheck}
-export type RecordComment = { id: string; rowId: string; tableId?: string; text: string; at: number; by?: string; mentions?: string[]; files?: Attachment[]; internal?: boolean }
+export type RecordComment = { id: string; rowId: string; tableId?: string; text: string; at: number; by?: string; mentions?: string[]; files?: Attachment[]; internal?: boolean; replyTo?: string; resolved?: { at: number; by?: string } }
 
 export type RecordCommentContext = { tableId?: string; api: unknown }
 
@@ -321,6 +321,8 @@ export type RecordCommentStore = {
   onMention?: (event: MentionEvent) => void
   files?: boolean
   internal?: boolean
+  replies?: boolean
+  resolve?: (rowId: string, comment: RecordComment, resolved: boolean, api: unknown, context: RecordCommentContext) => void
 }
 ```
 
@@ -364,6 +366,36 @@ setRecordComments({
   add: (_rowId, comment) => kept.push(comment),
   vote: (_rowId, comment) => (kept = kept.map((c) => (c.id === comment.id ? comment : c))),
 })
+```
+
+### Replies and resolved threads
+
+A store with `replies: true` gets **Reply** under each comment. The comment
+box then says who it answers, and the answer comes to `add` with `replyTo`:
+the id of the first comment of the thread, so an answer to an answer joins
+the same thread. An answer to an internal note is internal too. The record
+view shows the answers under the comment, oldest first; an answer whose
+comment is gone shows on its own.
+
+A store with `resolve` gets **Resolve** under each thread. A resolved thread
+folds to one line, its first words and who resolved it, with **Show** to read
+it again and **Reopen** to take the mark off. `resolve` hears the thread's
+first comment, with `resolved: { at, by }` when it was resolved and without
+it when it was opened again, and `true` or `false`. Without a store, both are
+kept in the page.
+
+```ts
+import { commentThreads, setRecordComments, type RecordComment } from '@svgrid/enterprise/base'
+
+let kept: RecordComment[] = []
+setRecordComments({
+  list: () => kept,
+  add: (_rowId, comment) => (kept = [...kept, comment]),
+  replies: true,
+  resolve: (_rowId, comment) => (kept = kept.map((c) => (c.id === comment.id ? comment : c))),
+})
+// The threads of a record, as the record view draws them.
+const { top, replies } = commentThreads(kept)
 ```
 
 ### Saved replies
