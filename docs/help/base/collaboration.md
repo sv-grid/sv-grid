@@ -255,6 +255,30 @@ record leave the view's filter, the record says "This row is not in the
 grid's view any more." and the footer "Not in view (12 records)". Previous
 and next still work: they move to the records that were before and after it.
 
+### Where the record opens
+
+Three buttons in the record's header pick where it opens, and the choice is
+kept on the device (`localStorage`):
+
+- **Open in the middle**: a dialog over the grid, as before.
+- **Open beside the table**: a panel on the right that leaves the grid
+  usable. The base (`.sv-fbase-tables`, or the grid's root) gives up the
+  panel's width, and the panel starts where the base starts, under the app's
+  own bar. Picking another row in the grid (a click, the arrow keys) shows that
+  record in the panel. Its left edge is dragged, or moved with the arrow keys,
+  to set the width (360 to 900 px, 480 at first). Escape closes it. It is not
+  modal: the focus is not held in it.
+- **Open full page**: the dialog fills the window.
+
+Below 760 px of window width the record always opens in the middle. Records
+opened from a link chip keep their own dialog over the others.
+
+```ts
+import { recordDock, setRecordDock, setRecordDockWidth } from '@svgrid/enterprise/base'
+
+setRecordDock('right') // what this device opens records as from now on
+```
+
 App code opens a record with the grid api that `onApiReady` hands it:
 
 ```ts

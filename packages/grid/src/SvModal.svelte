@@ -51,6 +51,10 @@
      * Pass a getter to target a specific field (e.g. a search input).
      */
     initialFocus?: () => HTMLElement | null
+    /** Fill the whole window: no margin, no rounded corners, not draggable. A record opened "full page". */
+    fill?: boolean
+    /** Controls drawn in the header, before the close (x): a mode switch, say. */
+    headerEnd?: Snippet
     children?: Snippet
     footer?: Snippet
   }
@@ -68,6 +72,8 @@
     hideClose = false,
     describedBy,
     initialFocus,
+    fill = false,
+    headerEnd,
     children,
     footer,
   }: Props = $props()
@@ -108,7 +114,7 @@
   let dragging = false
   let dragStart = { x: 0, y: 0, ox: 0, oy: 0 }
   function onHeaderDown(e: PointerEvent) {
-    if (!draggable || (e.target as HTMLElement).closest('.sv-modal__x')) return
+    if (!draggable || fill || (e.target as HTMLElement).closest('.sv-modal__x, .sv-modal__header-end')) return
     dragging = true
     dragStart = { x: e.clientX, y: e.clientY, ox: drag.x, oy: drag.y }
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
@@ -154,24 +160,26 @@
     <div
       bind:this={dialogEl}
       class="sv-modal sv-modal--{size}"
-      class:is-resized={!!box}
+      class:is-resized={!!box && !fill}
+      class:is-fill={fill}
       {...overlay.dialogProps({ labelledBy: title ? titleId : undefined })}
       aria-describedby={describedBy}
-      style:transform={`translate(calc(-50% + ${drag.x}px), calc(-50% + ${drag.y}px))`}
-      style:width={box ? `${box.w}px` : width ? `${width}px` : undefined}
-      style:height={box ? `${box.h}px` : undefined}
+      style:transform={fill ? 'none' : `translate(calc(-50% + ${drag.x}px), calc(-50% + ${drag.y}px))`}
+      style:width={fill ? undefined : box ? `${box.w}px` : width ? `${width}px` : undefined}
+      style:height={fill ? undefined : box ? `${box.h}px` : undefined}
     >
       {#if title || !hideClose}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
           class="sv-modal__header"
-          class:is-draggable={draggable}
+          class:is-draggable={draggable && !fill}
           onpointerdown={onHeaderDown}
           onpointermove={onHeaderMove}
           onpointerup={onHeaderUp}
           onpointercancel={onHeaderUp}
         >
           <h2 class="sv-modal__title" id={titleId}>{title ?? ''}</h2>
+          {#if headerEnd}<div class="sv-modal__header-end">{@render headerEnd()}</div>{/if}
           {#if !hideClose}
             <button type="button" class="sv-modal__x" aria-label={closeWord} onclick={close}>&times;</button>
           {/if}
@@ -179,7 +187,7 @@
       {/if}
       <div class="sv-modal__body">{@render children?.()}</div>
       {#if footer}<div class="sv-modal__footer">{@render footer()}</div>{/if}
-      {#if resizable}
+      {#if resizable && !fill}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
           class="sv-modal__resize"
@@ -217,6 +225,11 @@
   :global(.sv-modal--md) { width: 520px; }
   :global(.sv-modal--lg) { width: 720px; }
   :global(.sv-modal.is-resized) { max-width: none; max-height: none; }
+  :global(.sv-modal.is-fill) {
+    top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; max-width: none; max-height: none;
+    border: 0; border-radius: 0; box-shadow: none; animation: sv-modal-fade 0.16s ease both;
+  }
+  :global(.sv-modal__header-end) { flex: none; display: flex; align-items: center; gap: 6px; }
 
   :global(.sv-modal__header) {
     display: flex; align-items: center; gap: 12px; padding: 13px 16px;

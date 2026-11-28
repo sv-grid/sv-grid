@@ -68,6 +68,8 @@ import { SvModal } from '@svgrid/grid'
 | `closeOnBackdrop` | `boolean`            | `true`  | Close when the backdrop is clicked.                  |
 | `closeOnEsc`      | `boolean`            | `true`  | Close on the Escape key.                             |
 | `hideClose`       | `boolean`            | `false` | Hide the header close (x) button.                    |
+| `fill`            | `boolean`            | `false` | Fill the whole window: no margin, no rounded corners. |
+| `headerEnd`       | `Snippet`            | -       | Controls in the header, before the close (x).        |
 | `children`        | `Snippet`            | -       | Dialog body.                                         |
 | `footer`          | `Snippet`            | -       | Footer content, typically the action buttons.        |
 
