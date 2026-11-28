@@ -110,6 +110,34 @@ What the link needs:
 `multiple: false` lets a deal pick one account. Leave it out and the field
 links many records; that is the type's default.
 
+### Colours, and the tables on the left
+
+A table's `color` (any CSS colour) tints its tab and colours its name; the
+open tab is white with a band of it along the top. Tables without one keep
+the plain tabs.
+
+With many tables, `tablesAt="left"` lists them on the left of the base
+instead, top to bottom, each with a square of its colour. A table's `section`
+puts it under a heading there ("Clients", "Money"); tables with none come
+first. A heading folds with a click, remembered on the device, and a folded
+heading still shows the table that is open. Up and Down go through the list,
+the table menu has "Put under a heading" (a box with the headings there to
+pick from), and the list of tables (the arrow after the tabs) switches
+between "Show the tables on the left" and "Show the tables as tabs". A base
+narrower than 760 px keeps tabs.
+
+```svelte
+<SvBase
+  bind:tables
+  tablesAt={layout.at}
+  onTablesAt={(at) => save({ at })}
+  onTableSection={(tableId, section) => save({ tableId, section })}
+/>
+```
+
+`onTablesAt` and `onTableSection` say what to keep: the tables' new `section`
+also reaches `onTablesChange`, as one undo step.
+
 ## 2. Pick linked records
 
 Select an Account cell and press Enter, or double-click it. A dialog titled
