@@ -700,7 +700,8 @@ The cell shows images as thumbnails and other files as chips with the
 extension and the name, as many as the column width holds, then "+N". The
 first click selects the cell, as on any cell; then a click on a thumbnail or
 a chip opens that file full size, as Airtable does:
-pictures large, PDFs in the page, anything else with Download; Previous and
+pictures large, PDFs in the page, films and sounds in the browser's player,
+anything else with Download; Previous and
 Next (or the arrow keys) go through the cell's files, Escape closes. Enter
 or a double click opens the dialog. An empty cell opens on the places to add
 from (Your device, Link (URL), the app's sources); a cell with files shows
@@ -721,8 +722,11 @@ cell goes away (scrolled out, or the table switched) are aborted through
 `signal`.
 
 Enter on a tile, or a click on its picture, opens the preview: images inline,
-PDFs in an iframe, anything else as its name with a Download link. Left and
-Right step through the files. A PDF is framed only when the page could read its
+PDFs in an iframe, films (mp4, webm, mov, ogv) and sounds (mp3, wav, m4a,
+ogg, aac) in the browser's own player, anything else as its name with a
+Download link. Left and Right step through the files, except inside a player,
+where they seek. For a film to start fast and jump ahead, and to play at all in
+Safari, your storage should answer byte ranges (`Range`, 206). A PDF is framed only when the page could read its
 bytes and they are a PDF, so your storage has to allow the page's origin with CORS
 (`Access-Control-Allow-Origin`). A file it cannot read, or one that is not a PDF
 whatever it calls itself, offers its Download link instead.
